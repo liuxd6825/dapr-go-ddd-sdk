@@ -1,15 +1,17 @@
-package ddd
+package test
 
 import (
+	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"liuxd/dapr/ddd-iris/demo-command-service/infrastructure/ddd/example"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"testing"
 )
 
 func TestEventStorage_LoadAggregate(t *testing.T) {
-	sidecar := NewEventStorage()
-	agg, _, err := sidecar.LoadAggregate("tenant_1", "001", &example.TestAggregate{})
+	eventStorage := NewEventStorage()
+
+	agg, _, err := eventStorage.LoadAggregate(context.Background(), "tenant_1", "001", &TestAggregate{})
 	if err != nil {
 		panic(err)
 	}
@@ -18,11 +20,11 @@ func TestEventStorage_LoadAggregate(t *testing.T) {
 
 func TestEventStorage_LoadEvents(t *testing.T) {
 	sidecar := NewEventStorage()
-	req := &LoadEventsRequest{
+	req := &ddd.LoadEventsRequest{
 		TenantId:    "tenant_1",
 		AggregateId: "001",
 	}
-	respData, err := sidecar.LoadEvents(req)
+	respData, err := sidecar.LoadEvents(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +37,7 @@ func TestEventStorage_LoadEvents(t *testing.T) {
 func TestEventStorage_ApplyEvent(t *testing.T) {
 	sidecar := NewEventStorage()
 	id, _ := uuid.NewUUID()
-	req := &ApplyEventRequest{
+	req := &ddd.ApplyEventRequest{
 		TenantId:      "tenantId_1",
 		CommandId:     id.String(),
 		EventId:       id.String(),
@@ -48,7 +50,7 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 		PubsubName:    "pubsub",
 		Topic:         "topic1",
 	}
-	respData, err := sidecar.ApplyEvent(req)
+	respData, err := sidecar.ApplyEvent(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +62,7 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 
 func TestEventStorage_SaveSnapshot(t *testing.T) {
 	sidecar := NewEventStorage()
-	req := &SaveSnapshotRequest{
+	req := &ddd.SaveSnapshotRequest{
 		TenantId:          "tenantId_1",
 		AggregateId:       "aggregateId_001",
 		AggregateType:     "system.user",
@@ -69,7 +71,7 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 		AggregateRevision: "1.0",
 		SequenceNumber:    1,
 	}
-	respData, err := sidecar.SaveSnapshot(req)
+	respData, err := sidecar.SaveSnapshot(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}
@@ -79,6 +81,6 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 	}
 }
 
-func NewEventStorage() EventStorage {
-	return newEventStorage("localhost", 3500, "pubsub")
+func NewEventStorage() ddd.EventStorage {
+	return ddd.NewEventStorage("localhost", 3500, "pubsub")
 }

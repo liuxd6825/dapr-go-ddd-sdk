@@ -20,6 +20,10 @@ const (
 	IdleConnTimeout     = 5
 )
 
+func NewEventStorage(host string, port int, defaultPussubName string) EventStorage {
+	return NewDaprEventStorage(host, port, defaultPussubName)
+}
+
 func newEventStorage(host string, port int, defaultPussubName string) EventStorage {
 	return NewDaprEventStorage(host, port, defaultPussubName)
 }
