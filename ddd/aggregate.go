@@ -2,6 +2,7 @@ package ddd
 
 import "context"
 
+// Aggregate 聚合根接口类
 type Aggregate interface {
 	OnSourceEvent(ctx context.Context, domainEvent DomainEvent) error
 	OnCommand(ctx context.Context, cmd DomainCommand) error
