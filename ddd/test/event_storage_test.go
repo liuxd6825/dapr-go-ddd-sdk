@@ -3,8 +3,8 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	uuid "github.com/satori/go.uuid"
 	"testing"
 )
 
