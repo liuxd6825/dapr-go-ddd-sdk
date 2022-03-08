@@ -1,4 +1,4 @@
-# dapr-ddd-sdk
+# dapr-go-ddd-sdk
 
 #### 介绍
 基于go语言的dapr的DDD sdk
