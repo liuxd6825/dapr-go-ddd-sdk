@@ -12,14 +12,53 @@ import (
 	"time"
 )
 
+const (
+	DefaultMaxIdleConns        = 10
+	DefaultMaxIdleConnsPerHost = 50
+	DefaultIdleConnTimeout     = 5
+)
+
 type daprEventStorage struct {
-	host              string
-	port              int
-	client            *http.Client
-	defaultPubsubName string
+	host       string
+	port       int
+	client     *http.Client
+	pubsubName string
 }
 
-func NewDaprEventStorage(host string, port int, pubsubName string) EventStorage {
+type DaprEventStorageOption func(EventStorage)
+
+func PubsubName(pubsubName string) DaprEventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		s.pubsubName = pubsubName
+	}
+}
+
+func IdleConnTimeout(idleConnTimeout time.Duration) DaprEventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		t, _ := s.client.Transport.(*http.Transport)
+		t.IdleConnTimeout = idleConnTimeout
+	}
+}
+
+func MaxIdleConns(maxIdleConns int) DaprEventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		t, _ := s.client.Transport.(*http.Transport)
+		t.MaxIdleConns = maxIdleConns
+	}
+}
+
+func MaxIdleConnsPerHost(maxIdleConnsPerHost int) DaprEventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		t, _ := s.client.Transport.(*http.Transport)
+		t.MaxIdleConnsPerHost = maxIdleConnsPerHost
+	}
+}
+
+func NewDaprEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
@@ -27,17 +66,20 @@ func NewDaprEventStorage(host string, port int, pubsubName string) EventStorage 
 				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			MaxIdleConns:        MaxIdleConns,
-			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
-			IdleConnTimeout:     IdleConnTimeout * time.Second,
+			MaxIdleConns:        DefaultMaxIdleConns,
+			MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
+			IdleConnTimeout:     DefaultIdleConnTimeout * time.Second,
 		},
 	}
-	return &daprEventStorage{
-		host:              host,
-		port:              port,
-		client:            client,
-		defaultPubsubName: pubsubName,
+	res := &daprEventStorage{
+		host:   host,
+		port:   port,
+		client: client,
 	}
+	for _, option := range options {
+		option(res)
+	}
+	return res, nil
 }
 
 func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
@@ -115,7 +157,7 @@ func (s *daprEventStorage) LoadEvents(ctx context.Context, req *LoadEventsReques
 
 func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
 	if len(req.PubsubName) == 0 {
-		req.PubsubName = s.defaultPubsubName
+		req.PubsubName = s.pubsubName
 	}
 	url := fmt.Sprintf("/v1.0/event-sourcing/events/apply")
 	if err := isEmpty(req.CommandId, "CommandId"); err != nil {

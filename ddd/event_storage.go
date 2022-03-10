@@ -14,18 +14,12 @@ type EventStorage interface {
 	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
 }
 
-const (
-	MaxIdleConns        = 10
-	MaxIdleConnsPerHost = 50
-	IdleConnTimeout     = 5
-)
-
-func NewEventStorage(host string, port int, defaultPussubName string) EventStorage {
-	return NewDaprEventStorage(host, port, defaultPussubName)
+func NewEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
+	return NewDaprEventStorage(host, port, options...)
 }
 
-func newEventStorage(host string, port int, defaultPussubName string) EventStorage {
-	return NewDaprEventStorage(host, port, defaultPussubName)
+func newEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
+	return NewDaprEventStorage(host, port, options...)
 }
 
 func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error) {
