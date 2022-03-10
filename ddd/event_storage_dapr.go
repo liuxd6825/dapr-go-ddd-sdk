@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"time"
 )
 
 const (
@@ -25,61 +23,16 @@ type daprEventStorage struct {
 	pubsubName string
 }
 
-type DaprEventStorageOption func(EventStorage)
-
-func PubsubName(pubsubName string) DaprEventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		s.pubsubName = pubsubName
-	}
+func (s *daprEventStorage) GetHost() string {
+	return s.host
 }
 
-func IdleConnTimeout(idleConnTimeout time.Duration) DaprEventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		t, _ := s.client.Transport.(*http.Transport)
-		t.IdleConnTimeout = idleConnTimeout
-	}
+func (s *daprEventStorage) GetPort() int {
+	return s.port
 }
 
-func MaxIdleConns(maxIdleConns int) DaprEventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		t, _ := s.client.Transport.(*http.Transport)
-		t.MaxIdleConns = maxIdleConns
-	}
-}
-
-func MaxIdleConnsPerHost(maxIdleConnsPerHost int) DaprEventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		t, _ := s.client.Transport.(*http.Transport)
-		t.MaxIdleConnsPerHost = maxIdleConnsPerHost
-	}
-}
-
-func NewDaprEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			MaxIdleConns:        DefaultMaxIdleConns,
-			MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
-			IdleConnTimeout:     DefaultIdleConnTimeout * time.Second,
-		},
-	}
-	res := &daprEventStorage{
-		host:   host,
-		port:   port,
-		client: client,
-	}
-	for _, option := range options {
-		option(res)
-	}
-	return res, nil
+func (s *daprEventStorage) GetPussubName() string {
+	return s.pubsubName
 }
 
 func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {

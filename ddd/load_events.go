@@ -32,19 +32,14 @@ type EventRecord struct {
 	SequenceNumber int64                  `json:"sequenceNumber"`
 }
 
-func (e *EventRecord) Marshal(domainEvent interface{}) error {
-	marshal, ok := domainEvent.(EventMarshal)
-	if ok {
-		return marshal.Marshal(e)
-	} else {
-		jsonEvent, err := json.Marshal(e.EventData)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(jsonEvent, domainEvent)
-		if err != nil {
-			return err
-		}
+func (e *EventRecord) Marshal(domainEvent DomainEvent) error {
+	jsonEvent, err := json.Marshal(e.EventData)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(jsonEvent, domainEvent)
+	if err != nil {
+		return err
 	}
 	return nil
 }

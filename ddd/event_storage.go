@@ -3,7 +3,9 @@ package ddd
 import (
 	"context"
 	"errors"
-	"strings"
+	"net"
+	"net/http"
+	"time"
 )
 
 type EventStorage interface {
@@ -12,26 +14,102 @@ type EventStorage interface {
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error)
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
+	GetPussubName() string
+	GetHost() string
+	GetPort() int
+}
+
+type EventStorageOption func(EventStorage)
+
+func PubsubName(pubsubName string) EventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		s.pubsubName = pubsubName
+	}
+}
+
+func IdleConnTimeout(idleConnTimeout time.Duration) EventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		t, _ := s.client.Transport.(*http.Transport)
+		t.IdleConnTimeout = idleConnTimeout
+	}
+}
+
+func MaxIdleConns(maxIdleConns int) EventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		t, _ := s.client.Transport.(*http.Transport)
+		t.MaxIdleConns = maxIdleConns
+	}
+}
+
+func MaxIdleConnsPerHost(maxIdleConnsPerHost int) EventStorageOption {
+	return func(es EventStorage) {
+		s, _ := es.(*daprEventStorage)
+		t, _ := s.client.Transport.(*http.Transport)
+		t.MaxIdleConnsPerHost = maxIdleConnsPerHost
+	}
 }
 
 func NewEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
-	return NewDaprEventStorage(host, port, options...)
-}
-
-func newEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
-	return NewDaprEventStorage(host, port, options...)
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			MaxIdleConns:        DefaultMaxIdleConns,
+			MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
+			IdleConnTimeout:     DefaultIdleConnTimeout * time.Second,
+		},
+	}
+	res := &daprEventStorage{
+		host:   host,
+		port:   port,
+		client: client,
+	}
+	for _, option := range options {
+		option(res)
+	}
+	return res, nil
 }
 
 func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error) {
-	return _eventStorage.LoadAggregate(ctx, tenantId, aggregateId, aggregate)
+	return eventStorage.LoadAggregate(ctx, tenantId, aggregateId, aggregate)
 }
 
 func LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
-	return _eventStorage.LoadEvents(ctx, req)
+	return eventStorage.LoadEvents(ctx, req)
 }
 
-func Apply(ctx context.Context, pubsubName string, aggregate Aggregate, event DomainEvent, metadata map[string]string) error {
-	topic := strings.ToLower(event.GetEventType())
+type ApplyOptions struct {
+	pubsubName string
+	metadata   map[string]string
+}
+type ApplyOption func(*ApplyOptions)
+
+func ApplyPubsubName(pubsubName string) ApplyOption {
+	return func(o *ApplyOptions) {
+		o.pubsubName = pubsubName
+	}
+}
+
+func ApplyMetadata(metadata map[string]string) ApplyOption {
+	return func(o *ApplyOptions) {
+		o.metadata = metadata
+	}
+}
+
+func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options ...ApplyOption) error {
+	appOptions := &ApplyOptions{
+		pubsubName: "",
+		metadata:   map[string]string{},
+	}
+	for _, option := range options {
+		option(appOptions)
+	}
 	req := &ApplyEventRequest{
 		TenantId:      event.GetTenantId(),
 		CommandId:     event.GetCommandId(),
@@ -40,12 +118,12 @@ func Apply(ctx context.Context, pubsubName string, aggregate Aggregate, event Do
 		EventType:     event.GetEventType(),
 		AggregateId:   event.GetAggregateId(),
 		AggregateType: aggregate.GetAggregateType(),
-		Metadata:      metadata,
+		Metadata:      appOptions.metadata,
+		PubsubName:    appOptions.pubsubName,
 		EventData:     event,
-		PubsubName:    pubsubName,
-		Topic:         topic,
+		Topic:         event.GetEventType(),
 	}
-	if _, err := _eventStorage.ApplyEvent(ctx, req); err != nil {
+	if _, err := eventStorage.ApplyEvent(ctx, req); err != nil {
 		return err
 	}
 	if err := aggregate.OnSourceEvent(ctx, event); err != nil {
@@ -55,7 +133,7 @@ func Apply(ctx context.Context, pubsubName string, aggregate Aggregate, event Do
 }
 
 func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand) error {
-	ok, err := _eventStorage.ExistAggregate(ctx, cmd.GetTenantId(), cmd.GetAggregateId())
+	ok, err := eventStorage.ExistAggregate(ctx, cmd.GetTenantId(), cmd.GetAggregateId())
 	if err != nil {
 		return err
 	}
@@ -77,9 +155,9 @@ func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd DomainComman
 }
 
 func applyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
-	return _eventStorage.ApplyEvent(ctx, req)
+	return eventStorage.ApplyEvent(ctx, req)
 }
 
 func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
-	return _eventStorage.SaveSnapshot(ctx, req)
+	return eventStorage.SaveSnapshot(ctx, req)
 }

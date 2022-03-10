@@ -9,8 +9,7 @@ import (
 )
 
 func TestEventStorage_LoadAggregate(t *testing.T) {
-	eventStorage := NewEventStorage()
-
+	eventStorage, err := NewEventStorage()
 	agg, _, err := eventStorage.LoadAggregate(context.Background(), "tenant_1", "001", &TestAggregate{})
 	if err != nil {
 		panic(err)
@@ -19,12 +18,12 @@ func TestEventStorage_LoadAggregate(t *testing.T) {
 }
 
 func TestEventStorage_LoadEvents(t *testing.T) {
-	sidecar := NewEventStorage()
+	eventStorage, err := NewEventStorage()
 	req := &ddd.LoadEventsRequest{
 		TenantId:    "tenant_1",
 		AggregateId: "001",
 	}
-	respData, err := sidecar.LoadEvents(context.Background(), req)
+	respData, err := eventStorage.LoadEvents(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +34,7 @@ func TestEventStorage_LoadEvents(t *testing.T) {
 }
 
 func TestEventStorage_ApplyEvent(t *testing.T) {
-	sidecar := NewEventStorage()
+	eventStorage, err := NewEventStorage()
 	id := newId()
 	req := &ddd.ApplyEventRequest{
 		TenantId:      "tenantId_1",
@@ -50,7 +49,7 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 		PubsubName:    "pubsub",
 		Topic:         "topic1",
 	}
-	respData, err := sidecar.ApplyEvent(context.Background(), req)
+	respData, err := eventStorage.ApplyEvent(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +60,7 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 }
 
 func TestEventStorage_SaveSnapshot(t *testing.T) {
-	sidecar := NewEventStorage()
+	eventStorage, err := NewEventStorage()
 	req := &ddd.SaveSnapshotRequest{
 		TenantId:          "tenantId_1",
 		AggregateId:       "aggregateId_001",
@@ -71,7 +70,7 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 		AggregateRevision: "1.0",
 		SequenceNumber:    1,
 	}
-	respData, err := sidecar.SaveSnapshot(context.Background(), req)
+	respData, err := eventStorage.SaveSnapshot(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}
@@ -81,8 +80,8 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 	}
 }
 
-func NewEventStorage() ddd.EventStorage {
-	return ddd.NewEventStorage("localhost", 3500, "pubsub")
+func NewEventStorage() (ddd.EventStorage, error) {
+	return ddd.NewEventStorage("localhost", 3500, ddd.PubsubName("pubsub"))
 }
 
 func newId() string {
