@@ -1,5 +1,7 @@
 package ddd
 
+import "context"
+
 type QueryEventHandler interface {
-	OnEvent(record *EventRecord) error
+	OnEvent(ctx context.Context, record *EventRecord) error
 }

@@ -19,3 +19,21 @@ func (s *SetResult) GetError() error {
 func (s *SetResult) GetData() interface{} {
 	return s.data
 }
+
+func (s *SetResult) Result() (interface{}, error) {
+	return s.data, s.err
+}
+
+func (s *SetResult) OnSuccess(success OnSuccess) *SetResult {
+	if s.err == nil && success != nil {
+		s.err = success(s.data)
+	}
+	return s
+}
+
+func (s *SetResult) OnError(err OnError) *SetResult {
+	if s.err != nil && err != nil {
+		s.err = err(s.err)
+	}
+	return s
+}

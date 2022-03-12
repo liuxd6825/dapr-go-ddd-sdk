@@ -25,3 +25,28 @@ func (f *FindResult) GetData() interface{} {
 func (f *FindResult) GetIsFind() interface{} {
 	return f.isFind
 }
+
+func (f *FindResult) Result() (interface{}, bool, error) {
+	return f.data, f.isFind, f.err
+}
+
+func (f *FindResult) OnSuccess(success OnSuccess) *FindResult {
+	if f.err == nil && success != nil {
+		f.err = success(f.data)
+	}
+	return f
+}
+
+func (f *FindResult) OnError(err OnError) *FindResult {
+	if f.err != nil && err != nil {
+		f.err = err(f.err)
+	}
+	return f
+}
+
+func (f *FindResult) OnNotFond(fond OnIsFond) *FindResult {
+	if f.err != nil && !f.isFind {
+		f.err = fond()
+	}
+	return f
+}

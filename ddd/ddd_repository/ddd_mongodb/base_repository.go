@@ -1,4 +1,4 @@
-package mongodb
+package ddd_mongodb
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type Repository struct {
 	collection    *mongo.Collection
 }
 
-func NewRepository(entityBuilder ddd_repository.EntityBuilder, collection *mongo.Collection) ddd_repository.Repository {
+func NewBaseRepository(entityBuilder ddd_repository.EntityBuilder, collection *mongo.Collection) ddd_repository.BaseRepository {
 	return &Repository{
 		entityBuilder: entityBuilder,
 		collection:    collection,
