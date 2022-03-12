@@ -81,7 +81,7 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 }
 
 func NewEventStorage() (ddd.EventStorage, error) {
-	return ddd.NewEventStorage("localhost", 3500, ddd.PubsubName("pubsub"))
+	return ddd.NewDaprEventStorage("localhost", 3500, ddd.PubsubName("pubsub"))
 }
 
 func newId() string {

@@ -7,7 +7,7 @@ type ApplyEventRequest struct {
 	EventData     interface{} `json:"eventData"`
 	EventType     string      `json:"eventType"`
 	EventRevision string      `json:"eventRevision"`
-	AggregateId   string      `json:"aggregateId"`
+	AggregateId   string      `json:"AggregateId"`
 	AggregateType string      `json:"aggregateType"`
 	Metadata      interface{} `json:"metadata"`
 	PubsubName    string      `json:"pubsubName"`

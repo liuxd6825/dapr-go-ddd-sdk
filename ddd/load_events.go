@@ -6,12 +6,12 @@ import (
 
 type LoadEventsRequest struct {
 	TenantId    string `json:"tenantId"`
-	AggregateId string `json:"aggregateId"`
+	AggregateId string `json:"AggregateId"`
 }
 
 type LoadEventsResponse struct {
 	TenantId      string         `json:"tenantId"`
-	AggregateId   string         `json:"aggregateId"`
+	AggregateId   string         `json:"AggregateId"`
 	AggregateType string         `json:"aggregateType"`
 	Snapshot      *Snapshot      `json:"snapshot"`
 	EventRecords  *[]EventRecord `json:"events"`

@@ -7,7 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"time"
 )
 
 const (
@@ -21,6 +23,33 @@ type daprEventStorage struct {
 	port       int
 	client     *http.Client
 	pubsubName string
+	subscribes *[]Subscribe
+}
+
+func NewDaprEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			MaxIdleConns:        DefaultMaxIdleConns,
+			MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
+			IdleConnTimeout:     DefaultIdleConnTimeout * time.Second,
+		},
+	}
+	subscribes = make([]Subscribe, 0)
+	res := &daprEventStorage{
+		host:       host,
+		port:       port,
+		client:     client,
+		subscribes: &subscribes,
+	}
+	for _, option := range options {
+		option(res)
+	}
+	return res, nil
 }
 
 func (s *daprEventStorage) GetHost() string {
@@ -31,7 +60,7 @@ func (s *daprEventStorage) GetPort() int {
 	return s.port
 }
 
-func (s *daprEventStorage) GetPussubName() string {
+func (s *daprEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 

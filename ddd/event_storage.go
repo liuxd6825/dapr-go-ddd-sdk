@@ -3,7 +3,6 @@ package ddd
 import (
 	"context"
 	"errors"
-	"net"
 	"net/http"
 	"time"
 )
@@ -14,7 +13,7 @@ type EventStorage interface {
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error)
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
-	GetPussubName() string
+	GetPubsubName() string
 	GetHost() string
 	GetPort() int
 }
@@ -52,47 +51,55 @@ func MaxIdleConnsPerHost(maxIdleConnsPerHost int) EventStorageOption {
 	}
 }
 
-func NewEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			MaxIdleConns:        DefaultMaxIdleConns,
-			MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
-			IdleConnTimeout:     DefaultIdleConnTimeout * time.Second,
-		},
+type LoadAggregateOptions struct {
+	eventStorageKey string
+}
+type LoadAggregateOption func(*LoadAggregateOptions)
+
+func LoadAggregateKey(eventStorageKey string) LoadAggregateOption {
+	return func(options *LoadAggregateOptions) {
+		options.eventStorageKey = eventStorageKey
 	}
-	res := &daprEventStorage{
-		host:   host,
-		port:   port,
-		client: client,
-	}
-	for _, option := range options {
-		option(res)
-	}
-	return res, nil
 }
 
-func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error) {
+func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate, opts ...LoadAggregateOption) (Aggregate, bool, error) {
+	options := &LoadAggregateOptions{
+		eventStorageKey: "",
+	}
+	for _, item := range opts {
+		item(options)
+	}
+	eventStorage, err := GetEventStorage(options.eventStorageKey)
+	if err != nil {
+		return nil, false, err
+	}
 	return eventStorage.LoadAggregate(ctx, tenantId, aggregateId, aggregate)
 }
 
-func LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
+func LoadEvents(ctx context.Context, req *LoadEventsRequest, eventStorageKey string) (*LoadEventsResponse, error) {
+	eventStorage, err := GetEventStorage(eventStorageKey)
+	if err != nil {
+		return nil, err
+	}
 	return eventStorage.LoadEvents(ctx, req)
 }
 
 type ApplyOptions struct {
-	pubsubName string
-	metadata   map[string]string
+	pubsubName      string
+	metadata        map[string]string
+	eventStorageKey string
 }
 type ApplyOption func(*ApplyOptions)
 
 func ApplyPubsubName(pubsubName string) ApplyOption {
 	return func(o *ApplyOptions) {
 		o.pubsubName = pubsubName
+	}
+}
+
+func ApplyEventStorageKey(eventStorageKey string) ApplyOption {
+	return func(o *ApplyOptions) {
+		o.eventStorageKey = eventStorageKey
 	}
 }
 
@@ -104,11 +111,16 @@ func ApplyMetadata(metadata map[string]string) ApplyOption {
 
 func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options ...ApplyOption) error {
 	appOptions := &ApplyOptions{
-		pubsubName: "",
-		metadata:   map[string]string{},
+		pubsubName:      "",
+		metadata:        map[string]string{},
+		eventStorageKey: "",
 	}
 	for _, option := range options {
 		option(appOptions)
+	}
+	eventStorage, err := GetEventStorage(appOptions.eventStorageKey)
+	if err != nil {
+		return err
 	}
 	req := &ApplyEventRequest{
 		TenantId:      event.GetTenantId(),
@@ -132,7 +144,29 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options 
 	return nil
 }
 
-func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand) error {
+type CreateAggregateOptions struct {
+	eventStorageKey string
+}
+type CreateAggregateOption func(*CreateAggregateOptions)
+
+func CreateAggregateKey(eventStorageKey string) CreateAggregateOption {
+	return func(options *CreateAggregateOptions) {
+		options.eventStorageKey = eventStorageKey
+	}
+}
+
+func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand, opts ...CreateAggregateOption) error {
+	options := &CreateAggregateOptions{
+		eventStorageKey: "",
+	}
+	for _, item := range opts {
+		item(options)
+	}
+
+	eventStorage, err := GetEventStorage(options.eventStorageKey)
+	if err != nil {
+		return err
+	}
 	ok, err := eventStorage.ExistAggregate(ctx, cmd.GetTenantId(), cmd.GetAggregateId())
 	if err != nil {
 		return err
@@ -143,8 +177,8 @@ func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand
 	return aggregate.OnCommand(ctx, cmd)
 }
 
-func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand) error {
-	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), cmd.GetAggregateId(), aggregate)
+func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand, opts ...LoadAggregateOption) error {
+	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), cmd.GetAggregateId(), aggregate, opts...)
 	if err != nil {
 		return err
 	}
@@ -154,10 +188,18 @@ func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd DomainComman
 	return aggregate.OnCommand(ctx, cmd)
 }
 
-func applyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
+func applyEvent(ctx context.Context, req *ApplyEventRequest, eventStorageKey string) (*ApplyEventsResponse, error) {
+	eventStorage, err := GetEventStorage(eventStorageKey)
+	if err != nil {
+		return nil, err
+	}
 	return eventStorage.ApplyEvent(ctx, req)
 }
 
-func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
+func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest, eventStorageKey string) (*SaveSnapshotResponse, error) {
+	eventStorage, err := GetEventStorage(eventStorageKey)
+	if err != nil {
+		return nil, err
+	}
 	return eventStorage.SaveSnapshot(ctx, req)
 }

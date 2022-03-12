@@ -1,38 +1,65 @@
 package ddd
 
-type SubscribeHandler = func(Subscribe)
-type SubscribeHandlers interface {
-	GetSubscribes() []Subscribe
-	RegisterSubscribe(Subscribe)
+import (
+	"errors"
+)
+
+// SubscribeController type SubscribeHandler = func(Subscribe)
+type SubscribeController interface {
+	GetSubscribes() (*[]Subscribe, error)
+	RegisterSubscribe(Subscribe) error
 }
 
-var eventStorage EventStorage = NewEmptyEventStorage()
+var eventStorages = map[string]EventStorage{"": NewEmptyEventStorage()}
 var subscribes = make([]Subscribe, 0)
-var subscribeController = make([]SubscribeHandlers, 0)
+var subscribeControllers = make([]SubscribeController, 0)
 
-func RegisterEventStorage(es EventStorage) {
-	eventStorage = es
+func RegisterEventStorage(key string, es EventStorage) {
+	eventStorages[key] = es
 }
 
-func RegisterSubscribe(ctl SubscribeHandlers) {
-	subscribeController = append(subscribeController, ctl)
-	for _, s := range ctl.GetSubscribes() {
+func RegisterSubscribe(ctl SubscribeController) error {
+	subscribeControllers = append(subscribeControllers, ctl)
+	items, err := ctl.GetSubscribes()
+	if err != nil {
+		return err
+	}
+	for _, s := range *items {
 		subscribes = append(subscribes, s)
 	}
+	return nil
 }
 
-func Start() {
-	for _, ctl := range subscribeController {
-		for _, subscribe := range ctl.GetSubscribes() {
-			ctl.RegisterSubscribe(subscribe)
+func Start() error {
+	for _, ctl := range subscribeControllers {
+		items, err := ctl.GetSubscribes()
+		if err != nil {
+			return err
+		}
+		for _, subscribe := range *items {
+			if err := ctl.RegisterSubscribe(subscribe); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func GetSubscribes() []Subscribe {
 	return subscribes
 }
 
-func GetEventStorage() EventStorage {
-	return eventStorage
+func GetEventStorage(key string) (EventStorage, error) {
+	eventStorage, ok := eventStorages[key]
+	if !ok {
+		return nil, errors.New("eventStorage is nil")
+	}
+	if eventStorage == nil {
+		return nil, errors.New("eventStorage is nil")
+	}
+	_, ok = eventStorage.(*emptyEventStorage)
+	if ok {
+		return nil, errors.New("eventStorage is EmptyEventStorage")
+	}
+	return eventStorage, nil
 }

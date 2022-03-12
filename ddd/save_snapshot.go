@@ -2,7 +2,7 @@ package ddd
 
 type SaveSnapshotRequest struct {
 	TenantId          string                 `json:"tenantId"`
-	AggregateId       string                 `json:"aggregateId"`
+	AggregateId       string                 `json:"AggregateId"`
 	AggregateType     string                 `json:"aggregateType"`
 	AggregateData     interface{}            `json:"aggregateData"`
 	AggregateRevision string                 `json:"aggregateRevision"`

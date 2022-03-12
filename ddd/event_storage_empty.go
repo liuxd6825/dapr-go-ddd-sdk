@@ -8,6 +8,10 @@ import (
 type emptyEventStorage struct {
 }
 
+func (s *emptyEventStorage) GetPubsubName() string {
+	return ""
+}
+
 func NewEmptyEventStorage() EventStorage {
 	return &emptyEventStorage{}
 }
@@ -18,10 +22,6 @@ func (s *emptyEventStorage) GetHost() string {
 
 func (s *emptyEventStorage) GetPort() int {
 	return -1
-}
-
-func (s *emptyEventStorage) GetPussubName() string {
-	return ""
 }
 
 func (s *emptyEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
