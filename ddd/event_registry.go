@@ -9,8 +9,20 @@ type NewEventFunc func() interface{}
 
 var _registry = newEventRegistry()
 
-func RegisterEventType(eventType string, eventRevision string, newFunc NewEventFunc) error {
-	return _registry.add(eventType, eventRevision, newFunc)
+type RegisterEventTypeOptions struct {
+	marshaler JsonMarshaler
+}
+
+type RegisterOption func(*RegisterEventTypeOptions)
+
+func RegisterOptionMarshaler(marshaler JsonMarshaler) RegisterOption {
+	return func(options *RegisterEventTypeOptions) {
+		options.marshaler = marshaler
+	}
+}
+
+func RegisterEventType(eventType string, eventRevision string, newFunc NewEventFunc, options ...RegisterOption) error {
+	return _registry.add(eventType, eventRevision, newFunc, options...)
 }
 
 func NewDomainEvent(record *EventRecord) (interface{}, error) {
@@ -60,7 +72,11 @@ func newEventRegistry() *eventRegistry {
 	}
 }
 
-func (r *eventRegistry) add(eventType string, revision string, newFunc NewEventFunc) error {
+func (r *eventRegistry) add(eventType string, revision string, newFunc NewEventFunc, options ...RegisterOption) error {
+	opts := &RegisterEventTypeOptions{}
+	for _, item := range options {
+		item(opts)
+	}
 	eventTypes, ok := r.typeMap[eventType]
 	if !ok {
 		ts := newEventType(eventType)
