@@ -16,18 +16,29 @@ func RegisterEventType(eventType string, eventRevision string, newFunc NewEventF
 func NewDomainEvent(record *EventRecord) (interface{}, error) {
 	if eventTypes, ok := _registry.typeMap[record.EventType]; ok {
 		if item, ok := eventTypes.revisionMap[record.EventRevision]; ok {
-			return item.newFunc(), nil
+			event := item.newFunc()
+			var err error
+			if item.marshaler != nil {
+				err = item.marshaler(record, event)
+			} else {
+				err = record.Marshal(event)
+			}
+			if err != nil {
+				return nil, err
+			}
+			return event, nil
 		}
 	}
 	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventRevision))
 }
 
-type newEventFunc func(record *EventRecord) interface{}
+type JsonMarshaler func(record *EventRecord, event interface{}) error
 
 type registryItem struct {
 	eventType string
 	revision  string
 	newFunc   NewEventFunc
+	marshaler JsonMarshaler
 }
 
 func newRegistryItem(eventType, revision string, eventFunc NewEventFunc) *registryItem {

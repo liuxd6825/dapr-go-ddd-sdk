@@ -47,7 +47,7 @@ type EventRecordJsonMarshalResult struct {
 }
 
 func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *EventRecord) error) *EventRecordJsonMarshalResult {
-	if r.err != nil {
+	if r.err == nil {
 		r.err = doSuccess(r.eventRecord)
 	}
 	return r
