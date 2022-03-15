@@ -1,0 +1,88 @@
+package ddd
+
+import (
+	"errors"
+	"fmt"
+)
+
+type NewEventFunc func() interface{}
+
+var _registry = newEventRegistry()
+
+func RegisterEventType(eventType string, eventRevision string, newFunc NewEventFunc) error {
+	return _registry.add(eventType, eventRevision, newFunc)
+}
+
+func NewDomainEventByRecord(record *EventRecord) (interface{}, error) {
+	return NewDomainEvent(record.EventType, record.EventRevision)
+}
+
+func NewDomainEvent(eventType string, revision string) (interface{}, error) {
+	if eventTypes, ok := _registry.typeMap[eventType]; ok {
+		if item, ok := eventTypes.revisionMap[revision]; ok {
+			return item.newFunc(), nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", eventType, revision))
+}
+
+type registryItem struct {
+	eventType string
+	revision  string
+	newFunc   NewEventFunc
+}
+
+// 事件注册表
+type eventRegistry struct {
+	typeMap map[string]*eventTypes
+}
+
+func newEventRegistry() *eventRegistry {
+	return &eventRegistry{
+		typeMap: make(map[string]*eventTypes),
+	}
+}
+
+func (r *eventRegistry) add(eventType string, revision string, newFunc NewEventFunc) error {
+	eventTypes, ok := r.typeMap[eventType]
+	if !ok {
+		ts := newEventType(eventType)
+		r.typeMap[ts.eventType] = ts
+	} else {
+		_, ok := eventTypes.revisionMap[eventType]
+		if !ok {
+			eventTypes.revisionMap[revision] = &registryItem{
+				eventType: eventType,
+				revision:  revision,
+				newFunc:   newFunc,
+			}
+		} else {
+			return errors.New(fmt.Sprintf("%s.%s已经存存", eventType, revision))
+		}
+	}
+	return nil
+}
+
+// 事件类
+type eventTypes struct {
+	eventType   string
+	revisionMap map[string]*registryItem
+}
+
+func newEventType(eventType string) *eventTypes {
+	return &eventTypes{
+		eventType:   eventType,
+		revisionMap: make(map[string]*registryItem),
+	}
+}
+
+// 事件版本
+type eventRevisions struct {
+	domainTypes map[string]*registryItem
+}
+
+func newRevisions() *eventRevisions {
+	return &eventRevisions{
+		domainTypes: make(map[string]*registryItem),
+	}
+}
