@@ -9,8 +9,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"reflect"
-	"strings"
 	"time"
 )
 
@@ -66,39 +64,6 @@ func (s *daprEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func CallEventHandler(ctx context.Context, handler interface{}, eventType string, eventRevision string) error {
-	v := reflect.ValueOf(handler)
-	domainEvent, err := NewDomainEvent(eventType, eventRevision)
-	if err != nil {
-		return errors.New(fmt.Sprintf("Method is not found or not exported."))
-	}
-	methodName := getMethodName(eventType, eventRevision)
-	method := v.MethodByName(methodName)
-	if method.IsValid() {
-		p1 := []reflect.Value{
-			reflect.ValueOf(ctx),
-			reflect.ValueOf(domainEvent),
-		}
-		resValues := method.Call(p1)
-		if len(resValues) == 1 {
-			err, ok := resValues[0].Interface().(error)
-			if ok {
-				return err
-			}
-		}
-	} else {
-		return errors.New(fmt.Sprintf("Method %s is not found or not exported.", methodName))
-	}
-	return nil
-}
-
-func getMethodName(eventType string, revision string) string {
-	names := strings.Split(eventType, ".")
-	name := names[len(names)-1]
-	ver := strings.Replace(revision, ".", "_", -1)
-	return fmt.Sprintf("On%sV%s", name, ver)
-}
-
 func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
 	req := &LoadEventsRequest{
 		TenantId:    tenantId,
@@ -128,17 +93,7 @@ func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 		sequenceNumber := int64(0)
 		for _, record := range *resp.EventRecords {
 			sequenceNumber = record.SequenceNumber
-
-			domainEvent, err := NewDomainEvent(record.EventType, record.EventRevision)
-			if err != nil {
-				return nil, true, errors.New(fmt.Sprintf("Method is not found or not exported."))
-			}
-			//domainEvent := aggregate.CreateDomainEvent(ctx, &record)
-
-			if err := record.Marshal(domainEvent); err != nil {
-				return res, find, err
-			}
-			if err = CallEventHandler(ctx, aggregate, record.EventType, record.EventRevision); err != nil {
+			if err = CallEventHandler(ctx, aggregate, &record); err != nil {
 				return res, find, err
 			}
 		}

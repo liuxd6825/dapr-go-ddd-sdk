@@ -3,7 +3,10 @@ package ddd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -138,7 +141,7 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options 
 	if _, err := eventStorage.ApplyEvent(ctx, req); err != nil {
 		return err
 	}
-	if err := aggregate.OnSourceEvent(ctx, event); err != nil {
+	if err := callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventRevision(), event); err != nil {
 		return err
 	}
 	return nil
@@ -202,4 +205,40 @@ func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest, eventStorageKey
 		return nil, err
 	}
 	return eventStorage.SaveSnapshot(ctx, req)
+}
+
+func CallEventHandler(ctx context.Context, handler interface{}, record *EventRecord) error {
+	domainEvent, err := NewDomainEvent(record)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Method is not found or not exported."))
+	}
+	return callEventHandler(ctx, handler, record.EventType, record.EventRevision, domainEvent)
+}
+
+func callEventHandler(ctx context.Context, handler interface{}, eventType string, eventRevision string, event interface{}) error {
+	v := reflect.ValueOf(handler)
+	methodName := getMethodName(eventType, eventRevision)
+	method := v.MethodByName(methodName)
+	if method.IsValid() {
+		p1 := []reflect.Value{
+			reflect.ValueOf(ctx),
+			reflect.ValueOf(event),
+		}
+		resValues := method.Call(p1)
+		for _, v := range resValues {
+			if err, ok := v.Interface().(error); ok {
+				return err
+			}
+		}
+	} else {
+		return errors.New(fmt.Sprintf("Method %s is not found or not exported.", methodName))
+	}
+	return nil
+}
+
+func getMethodName(eventType string, revision string) string {
+	names := strings.Split(eventType, ".")
+	name := names[len(names)-1]
+	ver := strings.Replace(revision, ".", "_", -1)
+	return fmt.Sprintf("On%sV%s", name, ver)
 }

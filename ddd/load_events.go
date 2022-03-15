@@ -32,6 +32,40 @@ type EventRecord struct {
 	SequenceNumber int64                  `json:"sequenceNumber"`
 }
 
+func EventRecordJsonMarshal(data []byte) *EventRecordJsonMarshalResult {
+	eventRecord := &EventRecord{}
+	err := json.Unmarshal(data, &eventRecord)
+	return &EventRecordJsonMarshalResult{
+		eventRecord: eventRecord,
+		err:         err,
+	}
+}
+
+type EventRecordJsonMarshalResult struct {
+	eventRecord *EventRecord
+	err         error
+}
+
+func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *EventRecord) error) *EventRecordJsonMarshalResult {
+	if r.err != nil {
+		r.err = doSuccess(r.eventRecord)
+	}
+	return r
+}
+func (r *EventRecordJsonMarshalResult) OnError(doError func(err error)) *EventRecordJsonMarshalResult {
+	if r.err != nil {
+		doError(r.err)
+	}
+	return r
+}
+func (r *EventRecordJsonMarshalResult) GetError() error {
+	return r.err
+}
+
+func (r *EventRecordJsonMarshalResult) GetEventRecord() *EventRecord {
+	return r.eventRecord
+}
+
 func (e *EventRecord) Marshal(domainEvent interface{}) error {
 	jsonEvent, err := json.Marshal(e.EventData)
 	if err != nil {
