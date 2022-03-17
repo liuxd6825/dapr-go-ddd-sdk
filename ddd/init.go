@@ -4,40 +4,18 @@ import (
 	"errors"
 )
 
-// SubscribeController type SubscribeHandler = func(Subscribe)
-type SubscribeController interface {
-	GetSubscribes() (*[]Subscribe, error)
-	RegisterSubscribe(Subscribe) error
-}
-
 var eventStorages = map[string]EventStorage{"": NewEmptyEventStorage()}
 var subscribes = make([]Subscribe, 0)
-var subscribeControllers = make([]SubscribeController, 0)
-
-func RegisterEventStorage(key string, es EventStorage) {
-	eventStorages[key] = es
-}
-
-func RegisterSubscribe(ctl SubscribeController) error {
-	subscribeControllers = append(subscribeControllers, ctl)
-	items, err := ctl.GetSubscribes()
-	if err != nil {
-		return err
-	}
-	for _, s := range *items {
-		subscribes = append(subscribes, s)
-	}
-	return nil
-}
+var subscribeHandlers = make([]SubscribeHandler, 0)
 
 func Start() error {
-	for _, ctl := range subscribeControllers {
-		items, err := ctl.GetSubscribes()
+	for _, handler := range subscribeHandlers {
+		items, err := handler.GetSubscribes()
 		if err != nil {
 			return err
 		}
-		for _, subscribe := range *items {
-			if err := ctl.RegisterSubscribe(subscribe); err != nil {
+		for _, subscribe := range items {
+			if err := handler.RegisterSubscribe(subscribe); err != nil {
 				return err
 			}
 		}
@@ -62,4 +40,20 @@ func GetEventStorage(key string) (EventStorage, error) {
 		return nil, errors.New("eventStorage is EmptyEventStorage")
 	}
 	return eventStorage, nil
+}
+
+func RegisterEventStorage(key string, es EventStorage) {
+	eventStorages[key] = es
+}
+
+func RegisterSubscribeHandler(subHandler SubscribeHandler) error {
+	subscribeHandlers = append(subscribeHandlers, subHandler)
+	items, err := subHandler.GetSubscribes()
+	if err != nil {
+		return err
+	}
+	for _, s := range items {
+		subscribes = append(subscribes, s)
+	}
+	return nil
 }

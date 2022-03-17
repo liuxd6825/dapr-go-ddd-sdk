@@ -44,20 +44,31 @@ func NewDomainEvent(record *EventRecord) (interface{}, error) {
 	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventRevision))
 }
 
+func getRegistryItem(eventType, eventRevision string) (*registryItem, error) {
+	if eventTypes, ok := _registry.typeMap[eventType]; ok {
+		if item, ok := eventTypes.revisionMap[eventRevision]; ok {
+			return item, nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", eventType, eventRevision))
+}
+
 type JsonMarshaler func(record *EventRecord, event interface{}) error
 
 type registryItem struct {
-	eventType string
-	revision  string
-	newFunc   NewEventFunc
-	marshaler JsonMarshaler
+	eventType      string
+	revision       string
+	newFunc        NewEventFunc
+	marshaler      JsonMarshaler
+	eventPrototype interface{}
 }
 
-func newRegistryItem(eventType, revision string, eventFunc NewEventFunc) *registryItem {
+func newRegistryItem(eventType, revision string, eventFunc NewEventFunc, eventPrototype interface{}) *registryItem {
 	return &registryItem{
-		eventType: eventType,
-		revision:  revision,
-		newFunc:   eventFunc,
+		eventType:      eventType,
+		revision:       revision,
+		newFunc:        eventFunc,
+		eventPrototype: eventPrototype,
 	}
 }
 
@@ -80,12 +91,12 @@ func (r *eventRegistry) add(eventType string, revision string, newFunc NewEventF
 	eventTypes, ok := r.typeMap[eventType]
 	if !ok {
 		ts := newEventType(eventType)
-		ts.revisionMap[revision] = newRegistryItem(eventType, revision, newFunc)
+		ts.revisionMap[revision] = newRegistryItem(eventType, revision, newFunc, nil)
 		r.typeMap[ts.eventType] = ts
 	} else {
 		_, ok := eventTypes.revisionMap[eventType]
 		if !ok {
-			eventTypes.revisionMap[revision] = newRegistryItem(eventType, revision, newFunc)
+			eventTypes.revisionMap[revision] = newRegistryItem(eventType, revision, newFunc, nil)
 		} else {
 			return errors.New(fmt.Sprintf("%s.%s已经存存", eventType, revision))
 		}

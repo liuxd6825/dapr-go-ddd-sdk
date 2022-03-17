@@ -6,7 +6,9 @@ import (
 )
 
 type BaseRepository interface {
-	BaseCreate(ctx context.Context, entity ddd.Entity, opts ...SetOption) *SetResult
-	BaseUpdate(ctx context.Context, entity ddd.Entity, opts ...SetOption) *SetResult
-	BaseFindById(ctx context.Context, tenantId string, id string, opts ...FindOption) *FindResult
+	BaseCreate(ctx context.Context, entity ddd.Entity) *SetResult
+	BaseUpdate(ctx context.Context, entity ddd.Entity) *SetResult
+	BaseFindById(ctx context.Context, tenantId string, id string) *FindResult
+	BaseFindAll(ctx context.Context, tenantId string) *FindResult
+	BaseDeleteById(ctx context.Context, tenantId string, id string) *SetResult
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"net/http"
 	"reflect"
 	"strings"
@@ -175,20 +177,26 @@ func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand
 		return err
 	}
 	if ok {
-		return errors.New(cmd.GetAggregateId() + " aggregate root already exists.")
+		return ddd_errors.NewNotFondAggregateIdError(cmd.GetAggregateId())
 	}
-	return aggregate.OnCommand(ctx, cmd)
+	return callCommandHandler(ctx, aggregate, cmd)
 }
 
+func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd DomainCommand) error {
+	cmdTypeName := reflect.ValueOf(cmd).Elem().Type().Name()
+	methodName := fmt.Sprintf("%s", cmdTypeName)
+	metadata := ddd_context.GetMetadataContext(ctx)
+	return CallMethod(aggregate, methodName, ctx, cmd, metadata)
+}
 func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand, opts ...LoadAggregateOption) error {
 	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), cmd.GetAggregateId(), aggregate, opts...)
 	if err != nil {
 		return err
 	}
 	if !find {
-		return errors.New(cmd.GetAggregateId() + " aggregate root not fond.")
+		return ddd_errors.NewNotFondAggregateIdError(aggregate.GetAggregateId())
 	}
-	return aggregate.OnCommand(ctx, cmd)
+	return callCommandHandler(ctx, aggregate, cmd)
 }
 
 func applyEvent(ctx context.Context, req *ApplyEventRequest, eventStorageKey string) (*ApplyEventsResponse, error) {
@@ -208,37 +216,21 @@ func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest, eventStorageKey
 }
 
 func CallEventHandler(ctx context.Context, handler interface{}, record *EventRecord) error {
-	domainEvent, err := NewDomainEvent(record)
+	event, err := NewDomainEvent(record)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Method is not found or not exported."))
 	}
-	return callEventHandler(ctx, handler, record.EventType, record.EventRevision, domainEvent)
+	return callEventHandler(ctx, handler, record.EventType, record.EventRevision, event)
 }
 
 func callEventHandler(ctx context.Context, handler interface{}, eventType string, eventRevision string, event interface{}) error {
-	v := reflect.ValueOf(handler)
-	methodName := getMethodName(eventType, eventRevision)
-	method := v.MethodByName(methodName)
-	if method.IsValid() {
-		p1 := []reflect.Value{
-			reflect.ValueOf(ctx),
-			reflect.ValueOf(event),
-		}
-		resValues := method.Call(p1)
-		for _, v := range resValues {
-			if err, ok := v.Interface().(error); ok {
-				return err
-			}
-		}
-	} else {
-		return errors.New(fmt.Sprintf("Method %s is not found or not exported.", methodName))
-	}
-	return nil
+	methodName := getEventMethodName(eventType, eventRevision)
+	return CallMethod(handler, methodName, ctx, event)
 }
 
-func getMethodName(eventType string, revision string) string {
+func getEventMethodName(eventType string, revision string) string {
 	names := strings.Split(eventType, ".")
 	name := names[len(names)-1]
-	ver := strings.Replace(revision, ".", "_", -1)
+	ver := strings.Replace(revision, ".", "s", -1)
 	return fmt.Sprintf("On%sV%s", name, ver)
 }

@@ -32,7 +32,8 @@ type EventRecord struct {
 	SequenceNumber int64                  `json:"sequenceNumber"`
 }
 
-func EventRecordJsonMarshal(data []byte) *EventRecordJsonMarshalResult {
+// NewEventRecordByJsonBytes 通过json反序列化EventRecord
+func NewEventRecordByJsonBytes(data []byte) *EventRecordJsonMarshalResult {
 	eventRecord := &EventRecord{}
 	err := json.Unmarshal(data, &eventRecord)
 	return &EventRecordJsonMarshalResult{
@@ -41,6 +42,7 @@ func EventRecordJsonMarshal(data []byte) *EventRecordJsonMarshalResult {
 	}
 }
 
+// EventRecordJsonMarshalResult EventRecord反序列化返回值
 type EventRecordJsonMarshalResult struct {
 	eventRecord *EventRecord
 	err         error
@@ -58,6 +60,7 @@ func (r *EventRecordJsonMarshalResult) OnError(doError func(err error)) *EventRe
 	}
 	return r
 }
+
 func (r *EventRecordJsonMarshalResult) GetError() error {
 	return r.err
 }
