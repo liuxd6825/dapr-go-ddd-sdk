@@ -39,7 +39,7 @@ func Test_Search(t *testing.T) {
 
 	search := &ddd_repository.SearchQuery{
 		TenantId: "001",
-		Filter:   "id=='001'",
+		Filter:   "id=='003'",
 	}
 	err = repository.BaseSearch(ctx, search).OnSuccess(func(data interface{}) error {
 		println(data)
