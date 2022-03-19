@@ -1,10 +1,19 @@
 package ddd_errors
 
 import (
-	"errors"
 	"fmt"
 )
 
+type NoEventHandledError struct {
+	eventType string
+}
+
 func NewNoEventHandledError(eventType string) error {
-	return errors.New(fmt.Sprintf("“%s” no domain event type handled.", eventType))
+	return &NoEventHandledError{
+		eventType: eventType,
+	}
+}
+
+func (e *NoEventHandledError) Error() string {
+	return fmt.Sprintf("“%s” no domain event type handled.", e.eventType)
 }

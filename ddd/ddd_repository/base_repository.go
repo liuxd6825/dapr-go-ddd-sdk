@@ -11,4 +11,19 @@ type BaseRepository interface {
 	BaseFindById(ctx context.Context, tenantId string, id string) *FindResult
 	BaseFindAll(ctx context.Context, tenantId string) *FindResult
 	BaseDeleteById(ctx context.Context, tenantId string, id string) *SetResult
+	BaseSearch(ctx context.Context, search *SearchQuery) *FindResult
+}
+
+type Pageable struct {
+	PageNumber int
+	PageSize   int
+}
+
+type SearchQuery struct {
+	TenantId string
+	Fields   string
+	Filter   string
+	Sort     string
+	Page     int
+	Size     int
 }

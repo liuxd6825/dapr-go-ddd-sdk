@@ -7,5 +7,5 @@ func NewNullError() *NullError {
 	return &NullError{}
 }
 func (e *NullError) Error() string {
-	return "null"
+	return "null error"
 }

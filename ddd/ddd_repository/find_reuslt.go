@@ -31,21 +31,21 @@ func (f *FindResult) Result() (interface{}, bool, error) {
 }
 
 func (f *FindResult) OnSuccess(success OnSuccess) *FindResult {
-	if f.err == nil && success != nil {
+	if f.err == nil && success != nil && f.isFind {
 		f.err = success(f.data)
 	}
 	return f
 }
 
-func (f *FindResult) OnError(err OnError) *FindResult {
-	if f.err != nil && err != nil {
-		f.err = err(f.err)
+func (f *FindResult) OnError(onErr OnError) *FindResult {
+	if f.err != nil && onErr != nil {
+		f.err = onErr(f.err)
 	}
 	return f
 }
 
 func (f *FindResult) OnNotFond(fond OnIsFond) *FindResult {
-	if f.err != nil && !f.isFind {
+	if f.err != nil && !f.isFind && fond != nil {
 		f.err = fond()
 	}
 	return f
