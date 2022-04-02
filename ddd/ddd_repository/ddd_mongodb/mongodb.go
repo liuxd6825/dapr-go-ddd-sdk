@@ -57,6 +57,7 @@ type Config struct {
 	WriteConcern     string
 	ReadConcern      string
 	Params           string
+	ReplicaSet       string
 	OperationTimeout time.Duration
 }
 
@@ -122,14 +123,17 @@ func getMongoURI(metadata *Config) string {
 	return fmt.Sprintf(connectionURIFormat, metadata.Host, metadata.DatabaseName, metadata.Params)
 }
 
-func getMongoDBClient(metadata *Config) (*mongo.Client, error) {
-	uri := getMongoURI(metadata)
+func getMongoDBClient(config *Config) (*mongo.Client, error) {
+	uri := getMongoURI(config)
 
 	// Set client options
 	clientOptions := options.Client().ApplyURI(uri)
+	if len(config.ReplicaSet) != 0 {
+		clientOptions = clientOptions.SetReplicaSet(config.ReplicaSet)
+	}
 
 	// Connect to MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), metadata.OperationTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), config.OperationTimeout)
 	defer cancel()
 
 	mongoLog := "mongodb-"

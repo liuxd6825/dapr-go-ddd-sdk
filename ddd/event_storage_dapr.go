@@ -1,49 +1,32 @@
 package ddd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/httpclient"
 	"io"
-	"net"
 	"net/http"
-	"time"
 )
 
 const (
-	DefaultMaxIdleConns        = 10
-	DefaultMaxIdleConnsPerHost = 50
-	DefaultIdleConnTimeout     = 5
+	ApiEventStorageEventApply     = "/v1.0/event-storage/events/apply"
+	ApiEventStorageSnapshotSave   = "/v1.0/event-storage/snapshot/save"
+	ApiEventStorageExistAggregate = "/v1.0/event-storage/aggregates/%s/%s"
+	ApiEventStorageLoadEvents     = "/v1.0/event-storage/events/%s/%s"
 )
 
 type daprEventStorage struct {
-	host       string
-	port       int
-	client     *http.Client
+	httpClient *httpclient.HttpClient
 	pubsubName string
 	subscribes *[]Subscribe
 }
 
-func NewDaprEventStorage(host string, port int, options ...func(s EventStorage)) (EventStorage, error) {
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			MaxIdleConns:        DefaultMaxIdleConns,
-			MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
-			IdleConnTimeout:     DefaultIdleConnTimeout * time.Second,
-		},
-	}
+func NewDaprEventStorage(httpClient *httpclient.HttpClient, options ...func(s EventStorage)) (EventStorage, error) {
 	subscribes = make([]Subscribe, 0)
 	res := &daprEventStorage{
-		host:       host,
-		port:       port,
-		client:     client,
+		httpClient: httpClient,
 		subscribes: &subscribes,
 	}
 	for _, option := range options {
@@ -52,13 +35,13 @@ func NewDaprEventStorage(host string, port int, options ...func(s EventStorage))
 	return res, nil
 }
 
-func (s *daprEventStorage) GetHost() string {
+/*func (s *daprEventStorage) GetHost() string {
 	return s.host
 }
 
 func (s *daprEventStorage) GetPort() int {
 	return s.port
-}
+}*/
 
 func (s *daprEventStorage) GetPubsubName() string {
 	return s.pubsubName
@@ -119,8 +102,8 @@ func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 }
 
 func (s *daprEventStorage) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
-	url := fmt.Sprintf("/v1.0/event-sourcing/events/%s/%s", req.TenantId, req.AggregateId)
-	data, err := s.httpGet(url)
+	url := fmt.Sprintf(ApiEventStorageLoadEvents, req.TenantId, req.AggregateId)
+	data, err := s.httpClient.Get(url)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +119,7 @@ func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventReques
 	if len(req.PubsubName) == 0 {
 		req.PubsubName = s.pubsubName
 	}
-	url := fmt.Sprintf("/v1.0/event-sourcing/events/apply")
+	url := fmt.Sprintf(ApiEventStorageEventApply)
 	if err := isEmpty(req.CommandId, "CommandId"); err != nil {
 		return nil, err
 	}
@@ -165,7 +148,7 @@ func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventReques
 		return nil, errors.New("EventData cannot be null.")
 	}
 
-	data, err := s.httpPost(url, req)
+	data, err := s.httpClient.Post(url, req)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +164,8 @@ func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventReques
 }
 
 func (s *daprEventStorage) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
-	url := fmt.Sprintf("/v1.0/event-sourcing/snapshot/save")
-	data, err := s.httpPost(url, req)
+	url := fmt.Sprintf(ApiEventStorageSnapshotSave)
+	data, err := s.httpClient.Post(url, req)
 	if err != nil {
 		return nil, err
 	}
@@ -198,40 +181,14 @@ func (s *daprEventStorage) SaveSnapshot(ctx context.Context, req *SaveSnapshotRe
 }
 
 func (s *daprEventStorage) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error) {
-	url := fmt.Sprintf("/v1.0/event-sourcing/aggregates/%s/%s", tenantId, aggregateId)
-	data, err := s.httpGet(url)
+	url := fmt.Sprintf(ApiEventStorageExistAggregate, tenantId, aggregateId)
+	data, err := s.httpClient.Get(url)
 	if err != nil {
 		return false, err
 	}
 	resp := &ExistAggregateResponse{}
 	err = json.Unmarshal(data, resp)
 	return resp.IsExist, err
-}
-
-func (s *daprEventStorage) httpGet(url string) ([]byte, error) {
-	resp, err := s.client.Get(fmt.Sprintf("http://%s:%d/%s", s.host, s.port, url))
-	if err != nil {
-		return nil, err
-	}
-	bytes, err := s.getBodyBytes(resp)
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(bytes))
-	}
-	return bytes, err
-}
-
-func (s *daprEventStorage) httpPost(url string, reqData interface{}) ([]byte, error) {
-	httpUrl := fmt.Sprintf("http://%s:%d/%s", s.host, s.port, url)
-	jsonData, err := json.Marshal(reqData)
-	resp, err := s.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, err
-	}
-	bytes, err := s.getBodyBytes(resp)
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(bytes))
-	}
-	return bytes, err
 }
 
 func (s *daprEventStorage) getBodyBytes(resp *http.Response) ([]byte, error) {

@@ -11,15 +11,14 @@ import (
 
 func Test_Search(t *testing.T) {
 	ctx := context.Background()
-	coll := newCollection("users")
+	mongodb, coll := newCollection("users")
 
 	entityBuilder := ddd_repository.NewEntityBuilder(func() interface{} {
 		return &User{}
 	}, func() interface{} {
 		return make([]User, 0)
 	})
-
-	repository := NewBaseRepository(entityBuilder, coll)
+	repository := NewRepository(entityBuilder, mongodb, coll)
 	user := &User{
 		Id:        "001",
 		TenantId:  "001",
@@ -30,7 +29,7 @@ func Test_Search(t *testing.T) {
 		Telephone: "17767788888",
 	}
 
-	err := repository.BaseCreate(ctx, user).OnSuccess(func(data interface{}) error {
+	err := repository.DoCreate(ctx, user).OnSuccess(func(data interface{}) error {
 		println(data)
 		return nil
 	}).GetError()
@@ -41,7 +40,7 @@ func Test_Search(t *testing.T) {
 		TenantId: "001",
 		Filter:   "id=='003'",
 	}
-	err = repository.BaseSearch(ctx, search).OnSuccess(func(data interface{}) error {
+	err = repository.DoSearch(ctx, search).OnSuccess(func(data interface{}) error {
 		println(data)
 		return nil
 	}).OnNotFond(func() error {
@@ -53,7 +52,7 @@ func Test_Search(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func newCollection(name string) *mongo.Collection {
+func newCollection(name string) (*MongoDB, *mongo.Collection) {
 	mongodb := NewMongoDB()
 	err := mongodb.Init(&Config{
 		Host:         "192.168.64.4",
@@ -65,7 +64,7 @@ func newCollection(name string) *mongo.Collection {
 		panic(err)
 	}
 	coll := mongodb.NewCollection(name)
-	return coll
+	return mongodb, coll
 }
 
 type User struct {
@@ -84,14 +83,4 @@ func (u *User) GetTenantId() string {
 
 func (u *User) GetId() string {
 	return u.Id
-}
-
-type builder struct {
-}
-
-func (b *builder) New() interface{} {
-	return &User{}
-}
-func (b *builder) NewList() interface{} {
-	return make([]User, 0)
 }

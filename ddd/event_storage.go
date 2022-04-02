@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
-	"net/http"
 	"reflect"
 	"strings"
-	"time"
 )
 
 type EventStorage interface {
@@ -19,8 +17,6 @@ type EventStorage interface {
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
 	GetPubsubName() string
-	GetHost() string
-	GetPort() int
 }
 
 type EventStorageOption func(EventStorage)
@@ -29,30 +25,6 @@ func PubsubName(pubsubName string) EventStorageOption {
 	return func(es EventStorage) {
 		s, _ := es.(*daprEventStorage)
 		s.pubsubName = pubsubName
-	}
-}
-
-func IdleConnTimeout(idleConnTimeout time.Duration) EventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		t, _ := s.client.Transport.(*http.Transport)
-		t.IdleConnTimeout = idleConnTimeout
-	}
-}
-
-func MaxIdleConns(maxIdleConns int) EventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		t, _ := s.client.Transport.(*http.Transport)
-		t.MaxIdleConns = maxIdleConns
-	}
-}
-
-func MaxIdleConnsPerHost(maxIdleConnsPerHost int) EventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
-		t, _ := s.client.Transport.(*http.Transport)
-		t.MaxIdleConnsPerHost = maxIdleConnsPerHost
 	}
 }
 

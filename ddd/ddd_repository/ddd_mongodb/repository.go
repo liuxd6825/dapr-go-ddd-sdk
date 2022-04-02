@@ -3,6 +3,7 @@ package ddd_mongodb
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,12 +14,14 @@ import (
 type Repository struct {
 	entityBuilder ddd_repository.EntityBuilder
 	collection    *mongo.Collection
+	mongodb       *MongoDB
 }
 
-func NewBaseRepository(entityBuilder ddd_repository.EntityBuilder, collection *mongo.Collection) ddd_repository.BaseRepository {
+func NewRepository(entityBuilder ddd_repository.EntityBuilder, mongodb *MongoDB, collection *mongo.Collection) ddd_repository.Repository {
 	return &Repository{
 		entityBuilder: entityBuilder,
 		collection:    collection,
+		mongodb:       mongodb,
 	}
 }
 
@@ -30,8 +33,8 @@ func (r *Repository) NewEntityList() interface{} {
 	return r.entityBuilder.NewList()
 }
 
-func (r *Repository) BaseSearch(ctx context.Context, search *ddd_repository.SearchQuery) *ddd_repository.FindResult {
-	return r.BaseFind(func() (interface{}, error) {
+func (r *Repository) DoSearch(ctx context.Context, search *ddd_repository.SearchQuery) *ddd_repository.FindResult {
+	return r.Find(func() (interface{}, error) {
 		p := NewMongoProcess()
 		err := rsql.ParseProcess(search.Filter, p)
 		if err != nil {
@@ -48,34 +51,34 @@ func (r *Repository) BaseSearch(ctx context.Context, search *ddd_repository.Sear
 	})
 }
 
-func (r *Repository) BaseCreate(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
-	return r.BaseSet(func() (interface{}, error) {
+func (r *Repository) DoCreate(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
+	return r.Set(func() (interface{}, error) {
 		_, err := r.collection.InsertOne(ctx, entity)
 		return entity, err
 	})
 }
 
-func (r *Repository) BaseUpdate(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
-	return r.BaseSet(func() (interface{}, error) {
-		filter := bson.D{{"id", id}}
+func (r *Repository) DoUpdate(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
+	return r.Set(func() (interface{}, error) {
+		filter := bson.D{{"_id", id}}
 		_, err := r.collection.UpdateOne(ctx, filter, entity, options.Update())
 		return entity, err
 	})
 }
 
-func (r *Repository) BaseDeleteById(ctx context.Context, tenantId string, id string) *ddd_repository.SetResult {
-	return r.BaseSet(func() (interface{}, error) {
-		filter := bson.D{{"id", id}, {"tenantId", tenantId}}
+func (r *Repository) DoDeleteById(ctx context.Context, tenantId string, id string) *ddd_repository.SetResult {
+	return r.Set(func() (interface{}, error) {
+		filter := bson.D{{"_id", id}, {"tenantId", tenantId}}
 		_, err := r.collection.DeleteOne(ctx, filter)
 		return nil, err
 	})
 }
 
-func (r *Repository) BaseFindById(ctx context.Context, tenantId string, id string) *ddd_repository.FindResult {
-	return r.BaseFind(func() (interface{}, error) {
+func (r *Repository) DoFindById(ctx context.Context, tenantId string, id string) *ddd_repository.FindResult {
+	return r.Find(func() (interface{}, error) {
 		filter := bson.M{
 			"tenantId": tenantId,
-			"id":       id,
+			"_id":      id,
 		}
 		data := r.NewEntity()
 		result := r.collection.FindOne(ctx, filter)
@@ -89,8 +92,8 @@ func (r *Repository) BaseFindById(ctx context.Context, tenantId string, id strin
 	})
 }
 
-func (r *Repository) BaseFindAll(ctx context.Context, tenantId string) *ddd_repository.FindResult {
-	return r.BaseFind(func() (interface{}, error) {
+func (r *Repository) DoFindAll(ctx context.Context, tenantId string) *ddd_repository.FindResult {
+	return r.Find(func() (interface{}, error) {
 		filter := bson.D{{"tenantId", tenantId}}
 		data := r.NewEntityList()
 		cursor, err := r.collection.Find(ctx, filter)
@@ -102,11 +105,11 @@ func (r *Repository) BaseFindAll(ctx context.Context, tenantId string) *ddd_repo
 	})
 }
 
-func (r *Repository) BaseFind(doFind func() (interface{}, error)) *ddd_repository.FindResult {
+func (r *Repository) Find(fun func() (interface{}, error)) *ddd_repository.FindResult {
 	isFind := false
-	data, err := doFind()
+	data, err := fun()
 	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
+		if ddd_errors.IsMongoNoDocumentsInResult(err) {
 			isFind = false
 			err = nil
 		}
@@ -114,7 +117,7 @@ func (r *Repository) BaseFind(doFind func() (interface{}, error)) *ddd_repositor
 	return ddd_repository.NewFindResult(data, isFind, err)
 }
 
-func (r *Repository) BaseSet(doFunc func() (interface{}, error)) *ddd_repository.SetResult {
-	data, err := doFunc()
+func (r *Repository) Set(fun func() (interface{}, error)) *ddd_repository.SetResult {
+	data, err := fun()
 	return ddd_repository.NewSetResult(data, err)
 }
