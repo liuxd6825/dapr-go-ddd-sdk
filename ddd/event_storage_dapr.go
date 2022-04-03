@@ -101,21 +101,19 @@ func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 	return res, find, err
 }
 
-func (s *daprEventStorage) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
+func (s *daprEventStorage) LoadEvents(ctx context.Context, req *LoadEventsRequest) (res *LoadEventsResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageLoadEvents, req.TenantId, req.AggregateId)
-	data, err := s.httpClient.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	res := &LoadEventsResponse{}
-	err = json.Unmarshal(data, res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	data := &LoadEventsResponse{}
+	s.httpClient.Get(ctx, url).OnSuccess(data, func() error {
+		res = data
+		return nil
+	}).OnError(func(err error) {
+		resErr = err
+	})
+	return
 }
 
-func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
+func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (res *ApplyEventsResponse, resErr error) {
 	if len(req.PubsubName) == 0 {
 		req.PubsubName = s.pubsubName
 	}
@@ -148,47 +146,39 @@ func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventReques
 		return nil, errors.New("EventData cannot be null.")
 	}
 
-	data, err := s.httpClient.Post(url, req)
-	if err != nil {
-		return nil, err
-	}
-	if len(data) == 0 {
-		return nil, nil
-	}
-	res := &ApplyEventsResponse{}
-	err = json.Unmarshal(data, res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	data := &ApplyEventsResponse{}
+	s.httpClient.Post(ctx, url, req).OnSuccess(data, func() error {
+		res = data
+		return nil
+	}).OnError(func(err error) {
+		resErr = err
+	})
+	return
 }
 
-func (s *daprEventStorage) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
+func (s *daprEventStorage) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (res *SaveSnapshotResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageSnapshotSave)
-	data, err := s.httpClient.Post(url, req)
-	if err != nil {
-		return nil, err
-	}
-	if len(data) == 0 {
-		return nil, nil
-	}
-	res := &SaveSnapshotResponse{}
-	err = json.Unmarshal(data, res)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	data := &SaveSnapshotResponse{}
+	s.httpClient.Post(ctx, url, req).OnSuccess(data, func() error {
+		res = data
+		return nil
+	}).OnError(func(err error) {
+		resErr = err
+	})
+	return
 }
 
-func (s *daprEventStorage) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error) {
+func (s *daprEventStorage) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (isFind bool, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageExistAggregate, tenantId, aggregateId)
-	data, err := s.httpClient.Get(url)
-	if err != nil {
-		return false, err
-	}
-	resp := &ExistAggregateResponse{}
-	err = json.Unmarshal(data, resp)
-	return resp.IsExist, err
+	data := &ExistAggregateResponse{}
+	isFind = false
+	s.httpClient.Get(ctx, url).OnSuccess(data, func() error {
+		isFind = data.IsExist
+		return nil
+	}).OnError(func(err error) {
+		resErr = err
+	})
+	return
 }
 
 func (s *daprEventStorage) getBodyBytes(resp *http.Response) ([]byte, error) {
