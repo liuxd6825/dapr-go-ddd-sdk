@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestLogger_WriteEventLog(t *testing.T) {
+func TestLogger_EventLog(t *testing.T) {
 	logger := newLogger()
 	ctx := context.Background()
 	uid := uuid.New()
@@ -59,6 +59,56 @@ func TestLogger_WriteEventLog(t *testing.T) {
 		CommandId: uid.String(),
 	}
 	getResp, err := logger.GetEventLogByCommandId(ctx, getReq)
+	if err != nil {
+		t.Error(err)
+	}
+	println(getResp)
+}
+
+func TestLogger_AppLog(t *testing.T) {
+	logger := newLogger()
+	ctx := context.Background()
+	uid := uuid.New()
+	writeReq := &WriteAppLogRequest{
+		Id:       uid.String(),
+		AppId:    "test_subAppId",
+		Class:    "test",
+		Func:     "TestLogger_WriteEventLog",
+		Level:    "info",
+		TenantId: "test",
+		Time:     newTime(),
+		Status:   false,
+		Message:  "test message-create",
+	}
+	createResp, err := logger.WriteAppLog(ctx, writeReq)
+	if err != nil {
+		t.Error(err)
+	}
+
+	println(createResp)
+
+	updateReq := &UpdateAppLogRequest{
+		Id:       uid.String(),
+		AppId:    "test_subAppId",
+		Class:    "test",
+		Func:     "TestLogger_WriteEventLog",
+		Level:    "info",
+		TenantId: "test",
+		Time:     newTime(),
+		Status:   false,
+		Message:  "test message-update",
+	}
+	updateResp, err := logger.UpdateAppLog(ctx, updateReq)
+	if err != nil {
+		t.Error(err)
+	}
+	println(updateResp)
+
+	getReq := &GetAppLogByIdRequest{
+		TenantId: "test",
+		Id:       uid.String(),
+	}
+	getResp, err := logger.GetAppLogById(ctx, getReq)
 	if err != nil {
 		t.Error(err)
 	}

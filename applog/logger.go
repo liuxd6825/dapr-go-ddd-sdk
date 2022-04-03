@@ -10,9 +10,9 @@ const (
 	ApiUpdateEventLog         = "v1.0/logger/event-log/update"
 	ApiGetEventLogByCommandId = "v1.0/logger/event-log/tenant-id/%s/app-id/%s/command-id/%s"
 
-	ApiWriteAppLog   = "v1.0/logger/event-log/create"
-	ApiUpdateAppLog  = "v1.0/logger/event-log/update"
-	ApiGetAppLogById = "v1.0/logger/event-log/tenant-id/%s/id/%s"
+	ApiWriteAppLog   = "v1.0/logger/app-log/create"
+	ApiUpdateAppLog  = "v1.0/logger/app-log/update"
+	ApiGetAppLogById = "v1.0/logger/app-log/tenant-id/%s/id/%s"
 )
 
 type Logger interface {

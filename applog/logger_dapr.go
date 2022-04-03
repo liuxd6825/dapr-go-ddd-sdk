@@ -62,7 +62,7 @@ func (l *logger) WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp
 
 func (l *logger) UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error) {
 	data := &UpdateAppLogResponse{}
-	l.httpclient.Post(ctx, ApiUpdateAppLog, req).OnSuccess(resp, func() error {
+	l.httpclient.Post(ctx, ApiUpdateAppLog, req).OnSuccess(data, func() error {
 		resp = data
 		return nil
 	}).OnError(func(err error) {
