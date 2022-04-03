@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -85,30 +86,45 @@ func NewHttpClient(host string, port int, opts ...Option) (*HttpClient, error) {
 
 }
 
-func (c *HttpClient) Get(url string) ([]byte, error) {
-	resp, err := c.client.Get(fmt.Sprintf("http://%c:%d/%c", c.host, c.port, url))
+func (c *HttpClient) Get(ctx context.Context, url string) *Response {
+	getUlr := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
+	resp, err := c.client.Get(getUlr)
 	if err != nil {
-		return nil, err
+		return NewResponse(nil, err)
 	}
 	bs, err := c.getBodyBytes(resp)
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(bs))
+		return NewResponse(nil, errors.New(string(bs)))
 	}
-	return bs, err
+	return NewResponse(bs, err)
 }
 
-func (c *HttpClient) Post(url string, reqData interface{}) ([]byte, error) {
-	httpUrl := fmt.Sprintf("http://%c:%d/%c", c.host, c.port, url)
+func (c *HttpClient) Post(ctx context.Context, url string, reqData interface{}) *Response {
+	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
 	jsonData, err := json.Marshal(reqData)
 	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, err
+		return NewResponse(nil, err)
 	}
 	bs, err := c.getBodyBytes(resp)
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(bs))
+		return NewResponse(nil, errors.New(string(bs)))
 	}
-	return bs, err
+	return NewResponse(bs, err)
+}
+
+func (c *HttpClient) Put(ctx context.Context, url string, reqData interface{}) *Response {
+	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
+	jsonData, err := json.Marshal(reqData)
+	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return NewResponse(nil, err)
+	}
+	bs, err := c.getBodyBytes(resp)
+	if resp.StatusCode != http.StatusOK {
+		return NewResponse(nil, errors.New(string(bs)))
+	}
+	return NewResponse(bs, err)
 }
 
 func (c *HttpClient) getBodyBytes(resp *http.Response) ([]byte, error) {
