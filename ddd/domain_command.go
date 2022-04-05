@@ -9,12 +9,17 @@ type DomainCommand interface {
 	NewDomainEvent() DomainEvent
 	GetAggregateId() string
 	GetTenantId() string
+	GetCommandId() string
 	Verify
 }
 
 type BaseDomainCommand struct {
 	CommandId   string `json:"commandId"  validate:"gt=0"`
 	IsValidOnly bool   `json:"isValidOnly"`
+}
+
+func (d *BaseDomainCommand) GetCommandId() string {
+	return d.CommandId
 }
 
 func (d *BaseDomainCommand) Validate() error {

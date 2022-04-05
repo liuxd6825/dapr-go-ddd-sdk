@@ -34,20 +34,20 @@ func (r *Repository) NewEntityList() interface{} {
 }
 
 func (r *Repository) DoSearch(ctx context.Context, search *ddd_repository.SearchQuery) *ddd_repository.FindResult {
-	return r.Find(func() (interface{}, error) {
+	return r.Find(func() (interface{}, bool, error) {
 		p := NewMongoProcess()
 		err := rsql.ParseProcess(search.Filter, p)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		filter := p.GetFilter(search.TenantId)
 		data := r.NewEntityList()
 		cursor, err := r.collection.Find(ctx, filter)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		err = cursor.All(ctx, &data)
-		return data, err
+		return data, true, err
 	})
 }
 
@@ -75,46 +75,45 @@ func (r *Repository) DoDeleteById(ctx context.Context, tenantId string, id strin
 }
 
 func (r *Repository) DoFindById(ctx context.Context, tenantId string, id string) *ddd_repository.FindResult {
-	return r.Find(func() (interface{}, error) {
+	return r.Find(func() (interface{}, bool, error) {
 		filter := bson.M{
 			"tenantId": tenantId,
-			"_id":      id,
+			"id":       id,
 		}
 		data := r.NewEntity()
 		result := r.collection.FindOne(ctx, filter)
 		if result.Err() != nil {
-			return nil, result.Err()
+			return nil, false, result.Err()
 		}
-		if err := result.Decode(&data); err != nil {
-			return nil, err
+		if err := result.Decode(data); err != nil {
+			return nil, false, err
 		}
-		return data, nil
+		return data, true, nil
 	})
 }
 
 func (r *Repository) DoFindAll(ctx context.Context, tenantId string) *ddd_repository.FindResult {
-	return r.Find(func() (interface{}, error) {
+	return r.Find(func() (interface{}, bool, error) {
 		filter := bson.D{{"tenantId", tenantId}}
 		data := r.NewEntityList()
 		cursor, err := r.collection.Find(ctx, filter)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		err = cursor.All(ctx, &data)
-		return data, err
+		return data, true, err
 	})
 }
 
-func (r *Repository) Find(fun func() (interface{}, error)) *ddd_repository.FindResult {
-	isFind := false
-	data, err := fun()
+func (r *Repository) Find(fun func() (interface{}, bool, error)) *ddd_repository.FindResult {
+	data, isFound, err := fun()
 	if err != nil {
 		if ddd_errors.IsMongoNoDocumentsInResult(err) {
-			isFind = false
+			isFound = false
 			err = nil
 		}
 	}
-	return ddd_repository.NewFindResult(data, isFind, err)
+	return ddd_repository.NewFindResult(data, isFound, err)
 }
 
 func (r *Repository) Set(fun func() (interface{}, error)) *ddd_repository.SetResult {

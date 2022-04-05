@@ -65,8 +65,8 @@ func ErrorEvent(tenantId, className, funcName, message, eventId, commandId, pubA
 	return writeEventLog(context.Background(), tenantId, className, funcName, ERROR, message, eventId, commandId, pubAppId, false)
 }
 
-func GetEventInfo(tenantId, commandId string) (*[]EventLogDto, error) {
-	return getEventLogByCommandId(context.Background(), tenantId, commandId)
+func GetEventLogByAppIdAndCommandId(tenantId, appId, commandId string) (*[]EventLogDto, error) {
+	return getEventLogByAppIdAndCommandId(context.Background(), tenantId, appId, commandId)
 }
 
 func writeEventLog(ctx context.Context, tenantId, className, funcName string, level Level, message, eventId, commandId, pubAppId string, status bool) (string, error) {
@@ -111,7 +111,7 @@ func updateEventLog(ctx context.Context, tenantId, id, className, funcName strin
 	return req.Id, err
 }
 
-func getEventLogByCommandId(ctx context.Context, tenantId, commandId string) (*[]EventLogDto, error) {
+func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, commandId string) (*[]EventLogDto, error) {
 	req := &GetEventLogByCommandIdRequest{
 		TenantId:  tenantId,
 		AppId:     appId,

@@ -149,7 +149,7 @@ func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd DomainCommand
 		return err
 	}
 	if ok {
-		return ddd_errors.NewNotFondAggregateIdError(cmd.GetAggregateId())
+		return ddd_errors.NewAggregateIdExistsError(cmd.GetAggregateId())
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
 }
@@ -166,7 +166,7 @@ func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd DomainComman
 		return err
 	}
 	if !find {
-		return ddd_errors.NewNotFondAggregateIdError(aggregate.GetAggregateId())
+		return ddd_errors.NewAggregateIdNotFondError(aggregate.GetAggregateId())
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
 }
