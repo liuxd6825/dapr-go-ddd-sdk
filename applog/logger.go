@@ -15,6 +15,41 @@ const (
 	ApiGetAppLogById = "v1.0/logger/app-log/tenant-id/%s/id/%s"
 )
 
+type Level int
+
+const (
+	TRACE Level = iota
+	DEBUG
+	INFO
+	WARN
+	ERROR
+	FATAL
+	ALL
+	OFF
+)
+
+func (l Level) ToString() string {
+	switch l {
+	case TRACE:
+		return "trace"
+	case DEBUG:
+		return "debug"
+	case INFO:
+		return "info"
+	case WARN:
+		return "warn"
+	case ERROR:
+		return "error"
+	case FATAL:
+		return "fatal"
+	case ALL:
+		return "all"
+	case OFF:
+		return "off"
+	}
+	return "none"
+}
+
 type Logger interface {
 	WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (*WriteEventLogResponse, error)
 	UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (*UpdateEventLogResponse, error)
@@ -23,6 +58,9 @@ type Logger interface {
 	WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (*WriteAppLogResponse, error)
 	UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (*UpdateAppLogResponse, error)
 	GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (*GetAppLogByIdResponse, error)
+
+	SetLevel(level Level)
+	GetLevel() Level
 }
 type WriteEventLogRequest struct {
 	Id       string     `json:"id"`

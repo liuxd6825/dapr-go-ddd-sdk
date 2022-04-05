@@ -8,11 +8,13 @@ import (
 
 type logger struct {
 	httpclient *httpclient.HttpClient
+	level      Level
 }
 
 func NewLogger(httpclient *httpclient.HttpClient) Logger {
 	return &logger{
 		httpclient: httpclient,
+		level:      ERROR,
 	}
 }
 
@@ -80,4 +82,12 @@ func (l *logger) GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (
 		resErr = err
 	})
 	return
+}
+
+func (l *logger) SetLevel(level Level) {
+	l.level = level
+}
+
+func (l *logger) GetLevel() Level {
+	return l.level
 }
