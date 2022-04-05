@@ -2,6 +2,12 @@ package ddd
 
 import "encoding/json"
 
+type Event interface {
+	GetTenantId() string
+	GetCommandId() string
+	GetEventId() string
+}
+
 func DoEvent(eventData map[string]interface{}, event interface{}) *DoEventResult {
 	bs, err := json.Marshal(eventData)
 	err = json.Unmarshal(bs, event)
