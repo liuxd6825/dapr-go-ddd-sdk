@@ -50,7 +50,6 @@ func (r *Repository) DoFindList(ctx context.Context, search *ddd_repository.List
 			findOptions = &options.FindOptions{}
 			findOptions.SetLimit(search.Size)
 			findOptions.SetSkip(search.Size * search.Page)
-
 		}
 		if len(search.Sort) > 0 {
 			if findOptions == nil {
