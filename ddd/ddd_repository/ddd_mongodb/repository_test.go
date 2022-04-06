@@ -36,11 +36,11 @@ func Test_Search(t *testing.T) {
 
 	assert.Error(t, err)
 
-	search := &ddd_repository.ListQuery{
+	search := &ddd_repository.PagingQuery{
 		TenantId: "001",
 		Filter:   "id=='003'",
 	}
-	err = repository.DoFindList(ctx, search).OnSuccess(func(data interface{}) error {
+	err = repository.DoFindPaging(ctx, search).OnSuccess(func(data interface{}) error {
 		println(data)
 		return nil
 	}).OnNotFond(func() error {

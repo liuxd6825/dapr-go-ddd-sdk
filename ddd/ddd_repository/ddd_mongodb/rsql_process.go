@@ -14,8 +14,12 @@ type filterItem struct {
 }
 
 func newFilterItem(parent *filterItem, name string) *filterItem {
+	n := name
+	if n == "id" {
+		n = "_id"
+	}
 	return &filterItem{
-		name:   name,
+		name:   n,
 		parent: parent,
 		value:  nil,
 		items:  make([]*filterItem, 0),

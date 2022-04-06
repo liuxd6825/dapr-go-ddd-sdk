@@ -35,27 +35,27 @@ func (r *Repository) NewEntityList() interface{} {
 	return r.entityBuilder.NewList()
 }
 
-func (r *Repository) DoFindList(ctx context.Context, search *ddd_repository.ListQuery) *ddd_repository.FindResult {
-	return r.Find(func() (interface{}, bool, error) {
+func (r *Repository) DoFindPaging(ctx context.Context, query *ddd_repository.PagingQuery) *ddd_repository.FindPagingResult {
+	return r.FindPaging(func() (*ddd_repository.FindPagingData, bool, error) {
 		p := NewMongoProcess()
-		err := rsql.ParseProcess(search.Filter, p)
+		err := rsql.ParseProcess(query.Filter, p)
 		if err != nil {
 			return nil, false, err
 		}
-		filter := p.GetFilter(search.TenantId)
+		filter := p.GetFilter(query.TenantId)
 		data := r.NewEntityList()
 
 		var findOptions *options.FindOptions
-		if search.Size > 0 {
+		if query.Size > 0 {
 			findOptions = &options.FindOptions{}
-			findOptions.SetLimit(search.Size)
-			findOptions.SetSkip(search.Size * search.Page)
+			findOptions.SetLimit(query.Size)
+			findOptions.SetSkip(query.Size * query.Page)
 		}
-		if len(search.Sort) > 0 {
+		if len(query.Sort) > 0 {
 			if findOptions == nil {
 				findOptions = &options.FindOptions{}
 			}
-			sort, oerr := r.getSort(search.Sort)
+			sort, oerr := r.getSort(query.Sort)
 			if oerr != nil {
 				return nil, false, oerr
 			}
@@ -67,8 +67,26 @@ func (r *Repository) DoFindList(ctx context.Context, search *ddd_repository.List
 			return nil, false, err
 		}
 		err = cursor.All(ctx, data)
-		return data, true, err
+
+		count, err := r.collection.CountDocuments(ctx, filter)
+		findData := &ddd_repository.FindPagingData{
+			Data:      data,
+			Count:     count,
+			TotalPage: r.getTotalPage(count, query.Size),
+			Filter:    query.Filter,
+			Sort:      query.Sort,
+			Size:      query.Size,
+		}
+		return findData, true, err
 	})
+}
+
+func (r *Repository) getTotalPage(count int64, size int64) int64 {
+	totalPage := count / size
+	if count%size > 1 {
+		totalPage++
+	}
+	return totalPage
 }
 
 func (r *Repository) DoCreate(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
@@ -123,6 +141,17 @@ func (r *Repository) DoFindAll(ctx context.Context, tenantId string) *ddd_reposi
 		err = cursor.All(ctx, &data)
 		return data, true, err
 	})
+}
+
+func (r *Repository) FindPaging(fun func() (*ddd_repository.FindPagingData, bool, error)) *ddd_repository.FindPagingResult {
+	data, isFound, err := fun()
+	if err != nil {
+		if ddd_errors.IsMongoNoDocumentsInResult(err) {
+			isFound = false
+			err = nil
+		}
+	}
+	return ddd_repository.NewFindPagingListResult(data, isFound, err)
 }
 
 func (r *Repository) Find(fun func() (interface{}, bool, error)) *ddd_repository.FindResult {
