@@ -20,8 +20,8 @@ type Command interface {
 	GetTenantId() string
 }
 
-type GetOneFunc = func(ctx iris.Context) (interface{}, bool, error)
-type GetFunc = func(ctx iris.Context) (interface{}, error)
+// type GetOneFunc = func(ctx iris.Context) (interface{}, bool, error)
+// type GetFunc = func(ctx iris.Context) (interface{}, error)
 type CmdFunc func() error
 type QueryFunc func() (interface{}, bool, error)
 
@@ -67,29 +67,37 @@ func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) error {
 
 	err := fun()
 	if err != nil && !ddd_errors.IsAggregateExistsError(err) {
-		ctx.SetErr(err)
+		SetError(ctx, err)
 		return err
 	}
 	return nil
 }
 
 func DoQueryOne(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
-	data, isFund, err := fun()
+	data, isFound, err := fun()
 	if err != nil {
-		ctx.SetErr(err)
-		return nil, isFund, err
+		SetError(ctx, err)
+		return nil, isFound, err
 	}
-	if data == nil {
-		return nil, isFund, SetErrorNotFond(ctx)
+	if data == nil || !isFound {
+		return nil, isFound, SetErrorNotFond(ctx)
 	}
-	return data, isFund, nil
+	_, err = ctx.JSON(data)
+	if err != nil {
+		return nil, false, err
+	}
+	return data, isFound, nil
 }
 
 func DoQueryList(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
 	data, isFound, err := fun()
 	if err != nil {
-		ctx.SetErr(err)
+		SetError(ctx, err)
 		return nil, isFound, err
+	}
+	_, err = ctx.JSON(data)
+	if err != nil {
+		return nil, false, err
 	}
 	return data, isFound, nil
 }
@@ -146,7 +154,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	}
 
 	if isTimeout {
-		return nil, false, errors.New("query execution timeout.")
+		return nil, false, errors.New("query execution timeout")
 	}
 
 	var data interface{}
@@ -156,38 +164,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	} else {
 		data, isFound, err = DoQueryList(ctx, queryFun)
 	}
-
-	if err != nil {
-		return nil, false, err
-	}
-
-	if isFound {
-		ctx.JSON(data)
-	}
-
 	return data, isFound, err
-}
-
-func ResultOneData(ctx iris.Context, getAction GetOneFunc) {
-	data, ok, err := getAction(ctx)
-	if err != nil {
-		SetError(ctx, err)
-		return
-	}
-	if !ok || data == nil {
-		_ = SetErrorNotFond(ctx)
-		return
-	}
-	SetData(ctx, data)
-}
-
-func Result(ctx iris.Context, getAction GetFunc) {
-	data, err := getAction(ctx)
-	if err != nil {
-		SetError(ctx, err)
-		return
-	}
-	SetData(ctx, data)
 }
 
 func SetData(ctx iris.Context, data interface{}) {

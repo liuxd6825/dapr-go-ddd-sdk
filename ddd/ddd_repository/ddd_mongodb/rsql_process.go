@@ -41,7 +41,7 @@ func (f *filterItem) getValues(data map[string]interface{}) {
 			array[i] = item
 		}
 		data[f.name] = array
-	} else {
+	} else if f.value != nil {
 		data[f.name] = f.value
 	}
 }
@@ -75,6 +75,8 @@ func (m *MongoProcess) GetFilter(tenantId string) map[string]interface{} {
 	if ok {
 		d1 := m1.(map[string]interface{})
 		d1["tenantId"] = tenantId
+	} else if len(data) == 0 {
+		data["tenantId"] = tenantId
 	} else {
 		m1, ok := data["$and"]
 		d1, ok := m1.(map[string]interface{})

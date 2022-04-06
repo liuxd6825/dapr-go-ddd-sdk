@@ -11,7 +11,7 @@ type Repository interface {
 	DoFindById(ctx context.Context, tenantId string, id string) *FindResult
 	DoFindAll(ctx context.Context, tenantId string) *FindResult
 	DoDeleteById(ctx context.Context, tenantId string, id string) *SetResult
-	DoSearch(ctx context.Context, search *SearchQuery) *FindResult
+	DoFindList(ctx context.Context, search *ListQuery) *FindResult
 }
 
 type Pageable struct {
@@ -19,13 +19,13 @@ type Pageable struct {
 	PageSize   int
 }
 
-type SearchQuery struct {
+type ListQuery struct {
 	TenantId string
 	Fields   string
-	Filter   string
-	Sort     string
-	Page     int
-	Size     int
+	Filter   string // name=="lxd" and (id=="1" or id=="2")
+	Sort     string // name:desc,id:asc
+	Page     int64
+	Size     int64
 }
 
 type Option struct {

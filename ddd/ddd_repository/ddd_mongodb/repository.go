@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
+	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -9,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 )
 
 type Repository struct {
@@ -33,7 +35,7 @@ func (r *Repository) NewEntityList() interface{} {
 	return r.entityBuilder.NewList()
 }
 
-func (r *Repository) DoSearch(ctx context.Context, search *ddd_repository.SearchQuery) *ddd_repository.FindResult {
+func (r *Repository) DoFindList(ctx context.Context, search *ddd_repository.ListQuery) *ddd_repository.FindResult {
 	return r.Find(func() (interface{}, bool, error) {
 		p := NewMongoProcess()
 		err := rsql.ParseProcess(search.Filter, p)
@@ -42,11 +44,30 @@ func (r *Repository) DoSearch(ctx context.Context, search *ddd_repository.Search
 		}
 		filter := p.GetFilter(search.TenantId)
 		data := r.NewEntityList()
-		cursor, err := r.collection.Find(ctx, filter)
+
+		var findOptions *options.FindOptions
+		if search.Size > 0 {
+			findOptions = &options.FindOptions{}
+			findOptions.SetLimit(search.Size)
+			findOptions.SetSkip(search.Size * search.Page)
+
+		}
+		if len(search.Sort) > 0 {
+			if findOptions == nil {
+				findOptions = &options.FindOptions{}
+			}
+			sort, oerr := r.getSort(search.Sort)
+			if oerr != nil {
+				return nil, false, oerr
+			}
+			findOptions.SetSort(sort)
+		}
+
+		cursor, err := r.collection.Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
-		err = cursor.All(ctx, &data)
+		err = cursor.All(ctx, data)
 		return data, true, err
 	})
 }
@@ -119,4 +140,42 @@ func (r *Repository) Find(fun func() (interface{}, bool, error)) *ddd_repository
 func (r *Repository) Set(fun func() (interface{}, error)) *ddd_repository.SetResult {
 	data, err := fun()
 	return ddd_repository.NewSetResult(data, err)
+}
+
+func (r *Repository) getSort(sort string) (map[string]interface{}, error) {
+	if len(sort) == 0 {
+		return nil, nil
+	}
+	//name:desc,id:asc
+	res := map[string]interface{}{}
+	list := strings.Split(sort, ",")
+	for _, s := range list {
+		sortItem := strings.Split(s, ":")
+		name := sortItem[0]
+		name = strings.Trim(name, " ")
+
+		order := "asc"
+		if len(sortItem) > 1 {
+			order = sortItem[1]
+			order = strings.ToLower(order)
+			order = strings.Trim(order, " ")
+		}
+
+		// 其中 1 为升序排列，而-1是用于降序排列.
+		orderVal := 1
+		var oerr error
+		switch order {
+		case "asc":
+			orderVal = 1
+		case "desc":
+			orderVal = -1
+		default:
+			oerr = errors.New("order " + order + " is error")
+		}
+		if oerr != nil {
+			return nil, oerr
+		}
+		res[name] = orderVal
+	}
+	return res, nil
 }
