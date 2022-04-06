@@ -98,7 +98,7 @@ func (r *Repository) DoFindById(ctx context.Context, tenantId string, id string)
 	return r.Find(func() (interface{}, bool, error) {
 		filter := bson.M{
 			"tenantId": tenantId,
-			"id":       id,
+			"_id":      id,
 		}
 		data := r.NewEntity()
 		result := r.collection.FindOne(ctx, filter)
@@ -152,7 +152,9 @@ func (r *Repository) getSort(sort string) (map[string]interface{}, error) {
 		sortItem := strings.Split(s, ":")
 		name := sortItem[0]
 		name = strings.Trim(name, " ")
-
+		if name == "id" {
+			name = "_id"
+		}
 		order := "asc"
 		if len(sortItem) > 1 {
 			order = sortItem[1]
