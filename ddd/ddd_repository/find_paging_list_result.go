@@ -1,6 +1,6 @@
 package ddd_repository
 
-type FindPagingData struct {
+type PagingData struct {
 	Data      interface{} `json:"data"`
 	Count     int64       `json:"count"`
 	Page      int64       `json:"page"`
@@ -14,7 +14,7 @@ type FindPagingResult struct {
 	FindResult
 }
 
-func NewFindPagingListResult(data *FindPagingData, isFound bool, err error) *FindPagingResult {
+func NewFindPagingListResult(data *PagingData, isFound bool, err error) *FindPagingResult {
 	return &FindPagingResult{
 		FindResult{
 			data:    data,
@@ -26,7 +26,7 @@ func NewFindPagingListResult(data *FindPagingData, isFound bool, err error) *Fin
 
 func (f *FindPagingResult) OnSuccess(success OnSuccessPaging) *FindPagingResult {
 	if f.err == nil && success != nil && f.isFound {
-		data := f.data.(*FindPagingData)
+		data := f.data.(*PagingData)
 		f.err = success(data)
 	}
 	return f

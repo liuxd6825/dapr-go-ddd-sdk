@@ -6,12 +6,16 @@ import (
 )
 
 type Repository interface {
-	DoCreate(ctx context.Context, entity ddd.Entity) *SetResult
-	DoUpdate(ctx context.Context, entity ddd.Entity) *SetResult
-	DoFindById(ctx context.Context, tenantId string, id string) *FindResult
-	DoFindAll(ctx context.Context, tenantId string) *FindResult
-	DoDeleteById(ctx context.Context, tenantId string, id string) *SetResult
-	DoFindPaging(ctx context.Context, search *PagingQuery) *FindPagingResult
+	Insert(ctx context.Context, entity ddd.Entity) *SetResult
+	Update(ctx context.Context, entity ddd.Entity) *SetResult
+	DeleteById(ctx context.Context, tenantId string, id string) *SetResult
+	FindById(ctx context.Context, tenantId string, id string) *FindResult
+	FindAll(ctx context.Context, tenantId string) *FindResult
+	FindPagingData(ctx context.Context, search *PagingQuery) *FindPagingResult
+
+	DoFind(fun func() (interface{}, bool, error)) *FindResult
+	DoSet(fun func() (interface{}, error)) *SetResult
+	DoFindPagingData(fun func() (*PagingData, bool, error)) *FindPagingResult
 }
 
 type Pageable struct {

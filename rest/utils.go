@@ -66,7 +66,7 @@ func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) error {
 	}
 
 	err := fun()
-	if err != nil && !ddd_errors.IsAggregateExistsError(err) {
+	if err != nil && !ddd_errors.IsErrorAggregateExists(err) {
 		SetError(ctx, err)
 		return err
 	}
@@ -89,7 +89,7 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
 	return data, isFound, nil
 }
 
-func DoQueryList(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
+func DoQuery(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
 	data, isFound, err := fun()
 	if err != nil {
 		SetError(ctx, err)
@@ -132,7 +132,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	}
 
 	err := DoCmd(ctx, cmd, cmdFun)
-	isExists := ddd_errors.IsAggregateExistsError(err)
+	isExists := ddd_errors.IsErrorAggregateExists(err)
 	if err != nil && !isExists {
 		return nil, false, err
 	}
@@ -162,7 +162,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	if isGetOne {
 		data, isFound, err = DoQueryOne(ctx, queryFun)
 	} else {
-		data, isFound, err = DoQueryList(ctx, queryFun)
+		data, isFound, err = DoQuery(ctx, queryFun)
 	}
 	return data, isFound, err
 }

@@ -3,6 +3,8 @@ package daprsdk
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	sdk "github.com/dapr/go-sdk/client"
 )
 
@@ -12,7 +14,7 @@ func InvokeMethod(ctx context.Context, client sdk.Client, appID, methodName, ver
 	if request != nil {
 		reqBytes, err := json.Marshal(request)
 		if err != nil {
-			return nil, err
+			return nil, newAppError(appID, err)
 		}
 		content := &sdk.DataContent{
 			ContentType: "application/json",
@@ -23,14 +25,19 @@ func InvokeMethod(ctx context.Context, client sdk.Client, appID, methodName, ver
 		respBytes, err = client.InvokeMethod(ctx, appID, methodName, verb)
 	}
 	if err != nil {
-		return nil, err
+		return nil, newAppError(appID, err)
 	}
 	if len(respBytes) > 0 {
 		err = json.Unmarshal(respBytes, response)
 		if err != nil {
-			return nil, err
+			return nil, newAppError(appID, err)
 		}
 		return response, nil
 	}
 	return nil, nil
+}
+
+func newAppError(appID string, err error) error {
+	msg := fmt.Sprintf("AppId is %s , %s", appID, err.Error())
+	return errors.New(msg)
 }

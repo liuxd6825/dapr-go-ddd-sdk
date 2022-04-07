@@ -1,7 +1,9 @@
 package ddd_errors
 
-func IsMongoNoDocumentsInResult(err error) bool {
-	if err.Error() == "no documents in result" {
+import "go.mongodb.org/mongo-driver/mongo"
+
+func IsErrorMongoNoDocuments(err error) bool {
+	if err == mongo.ErrNoDocuments {
 		return true
 	}
 	return false

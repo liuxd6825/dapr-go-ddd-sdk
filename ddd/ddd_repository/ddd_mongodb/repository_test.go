@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/stretchr/testify/assert"
@@ -19,8 +20,10 @@ func Test_Search(t *testing.T) {
 		return make([]User, 0)
 	})
 	repository := NewRepository(entityBuilder, mongodb, coll)
+	objId := NewObjectID()
+	id := objId.String()
 	user := &User{
-		Id:        "001",
+		Id:        id,
 		TenantId:  "001",
 		UserName:  "UserName",
 		UserCode:  "UserCode",
@@ -29,7 +32,7 @@ func Test_Search(t *testing.T) {
 		Telephone: "17767788888",
 	}
 
-	err := repository.DoCreate(ctx, user).OnSuccess(func(data interface{}) error {
+	err := repository.Insert(ctx, user).OnSuccess(func(data interface{}) error {
 		println(data)
 		return nil
 	}).GetError()
@@ -38,9 +41,9 @@ func Test_Search(t *testing.T) {
 
 	search := &ddd_repository.PagingQuery{
 		TenantId: "001",
-		Filter:   "id=='003'",
+		Filter:   fmt.Sprintf("id=='%s'", id),
 	}
-	err = repository.DoFindPaging(ctx, search).OnSuccess(func(data interface{}) error {
+	err = repository.FindPagingData(ctx, search).OnSuccess(func(data *ddd_repository.FindPagingData) error {
 		println(data)
 		return nil
 	}).OnNotFond(func() error {

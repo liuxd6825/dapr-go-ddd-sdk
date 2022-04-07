@@ -16,7 +16,7 @@ func (e *AggregateExistsError) Error() string {
 	return fmt.Sprintf("aggregate root id %s  already exists.", e.AggregateId)
 }
 
-func IsAggregateExistsError(err error) bool {
+func IsErrorAggregateExists(err error) bool {
 	switch err.(type) {
 	case *AggregateExistsError:
 		return true

@@ -36,17 +36,18 @@ func (i *filterItem) addChildItem(name string, value interface{}) *filterItem {
 func (i *filterItem) getAndItem() {
 }
 
-func (f *filterItem) getValues(data map[string]interface{}) {
-	if len(f.items) != 0 {
-		array := make([]interface{}, len(f.items))
-		for i, v := range f.items {
+func (i *filterItem) getValues(data map[string]interface{}) {
+	if len(i.items) != 0 {
+		array := make([]interface{}, len(i.items))
+		for i, v := range i.items {
 			item := ddd_utils.NewMap()
 			item[v.name] = v.value
+
 			array[i] = item
 		}
-		data[f.name] = array
-	} else if f.value != nil {
-		data[f.name] = f.value
+		data[i.name] = array
+	} else if i.value != nil {
+		data[i.name] = i.value
 	}
 }
 
@@ -78,19 +79,19 @@ func (m *MongoProcess) GetFilter(tenantId string) map[string]interface{} {
 	m1, ok := data[""]
 	if ok {
 		d1 := m1.(map[string]interface{})
-		d1["tenantId"] = tenantId
+		d1[TenantIdField] = tenantId
 	} else if len(data) == 0 {
-		data["tenantId"] = tenantId
+		data[TenantIdField] = tenantId
 	} else {
 		m1, ok := data["$and"]
 		d1, ok := m1.(map[string]interface{})
 		if ok {
-			d1["tenantId"] = tenantId
+			d1[TenantIdField] = tenantId
 		}
 		d2, ok := m1.([]interface{})
 		if ok {
 			item := ddd_utils.NewMap()
-			item["tenantId"] = tenantId
+			item[TenantIdField] = tenantId
 			d2 := append(d2, item)
 			data["$and"] = d2
 		}

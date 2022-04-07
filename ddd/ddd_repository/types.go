@@ -1,7 +1,7 @@
 package ddd_repository
 
 type OnSuccess func(data interface{}) error
-type OnSuccessPaging func(data *FindPagingData) error
+type OnSuccessPaging func(data *PagingData) error
 type OnError func(err error) error
 type OnIsFond func() error
 
