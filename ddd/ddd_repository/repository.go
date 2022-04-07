@@ -11,11 +11,11 @@ type Repository interface {
 	DeleteById(ctx context.Context, tenantId string, id string) *SetResult
 	FindById(ctx context.Context, tenantId string, id string) *FindResult
 	FindAll(ctx context.Context, tenantId string) *FindResult
-	FindPagingData(ctx context.Context, search *PagingQuery) *FindPagingResult
+	FindPagingData(ctx context.Context, search *PagingQuery) *FindPagingDataResult
 
 	DoFind(fun func() (interface{}, bool, error)) *FindResult
 	DoSet(fun func() (interface{}, error)) *SetResult
-	DoFindPagingData(fun func() (*PagingData, bool, error)) *FindPagingResult
+	DoFindPagingData(fun func() (*PagingData, bool, error)) *FindPagingDataResult
 }
 
 type Pageable struct {

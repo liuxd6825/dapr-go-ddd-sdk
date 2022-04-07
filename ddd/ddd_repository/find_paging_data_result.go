@@ -10,12 +10,12 @@ type PagingData struct {
 	Sort      string      `json:"sort"`
 }
 
-type FindPagingResult struct {
+type FindPagingDataResult struct {
 	FindResult
 }
 
-func NewFindPagingListResult(data *PagingData, isFound bool, err error) *FindPagingResult {
-	return &FindPagingResult{
+func NewFindPagingDataResult(data *PagingData, isFound bool, err error) *FindPagingDataResult {
+	return &FindPagingDataResult{
 		FindResult{
 			data:    data,
 			isFound: isFound,
@@ -24,7 +24,7 @@ func NewFindPagingListResult(data *PagingData, isFound bool, err error) *FindPag
 	}
 }
 
-func (f *FindPagingResult) OnSuccess(success OnSuccessPaging) *FindPagingResult {
+func (f *FindPagingDataResult) OnSuccess(success OnSuccessPaging) *FindPagingDataResult {
 	if f.err == nil && success != nil && f.isFound {
 		data := f.data.(*PagingData)
 		f.err = success(data)

@@ -101,7 +101,7 @@ func (r *Repository) FindAll(ctx context.Context, tenantId string) *ddd_reposito
 	})
 }
 
-func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.PagingQuery) *ddd_repository.FindPagingResult {
+func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.PagingQuery) *ddd_repository.FindPagingDataResult {
 	return r.DoFindPagingData(func() (*ddd_repository.PagingData, bool, error) {
 		p := NewMongoProcess()
 		err := rsql.ParseProcess(query.Filter, p)
@@ -147,7 +147,7 @@ func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.P
 	})
 }
 
-func (r *Repository) DoFindPagingData(fun func() (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingResult {
+func (r *Repository) DoFindPagingData(fun func() (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingDataResult {
 	data, isFound, err := fun()
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
@@ -155,7 +155,7 @@ func (r *Repository) DoFindPagingData(fun func() (*ddd_repository.PagingData, bo
 			err = nil
 		}
 	}
-	return ddd_repository.NewFindPagingListResult(data, isFound, err)
+	return ddd_repository.NewFindPagingDataResult(data, isFound, err)
 }
 
 func (r *Repository) DoFind(fun func() (interface{}, bool, error)) *ddd_repository.FindResult {
