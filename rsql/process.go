@@ -1,6 +1,7 @@
 package rsql
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -99,11 +100,11 @@ func ParseProcess(input string, process Process) error {
 	}
 	expr, err := Parse(input)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("rsql %s expression error, %s", input, err.Error()))
 	}
 	err = parseProcess(expr, process)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("rsql %s parseProcess error, %s", input, err.Error()))
 	}
 	return nil
 }

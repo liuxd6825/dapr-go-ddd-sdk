@@ -15,7 +15,7 @@ comparison : 'IdentifierToken' 'Comparator' arguments
 arguments  : '(' listValue ')' | value
 value      : 'IntegerToken' | 'DoubleToken' | 'DateToken' | 'DateTimeToken' | 'BooleanToken' | 'StringToken'
 listValue  : value (',' value)*
- */
+*/
 
 type iterator struct {
 	length int
@@ -92,7 +92,7 @@ func section(tokens *iterator, separator TokenType, apply func(*iterator) (Expre
 		idx += 1
 	}
 	if idx > cursor {
-		items := tokens.items[cursor:idx];
+		items := tokens.items[cursor:idx]
 		next, err := apply(newIterator(items))
 		if err != nil {
 			return nil, err
@@ -230,7 +230,7 @@ func arguments(tokens *iterator) (Value, error) {
 func valueList(tokens *iterator) (Value, error) {
 	tokens.currentAndMove() // Remove first (
 	var items []Value
-	current := tokens.current();
+	current := tokens.current()
 	for current.Type != RightParenToken {
 		c, err := value(tokens)
 		if err != nil {
@@ -246,7 +246,7 @@ func valueList(tokens *iterator) (Value, error) {
 }
 
 func value(tokens *iterator) (Value, error) {
-	v := tokens.currentAndMove();
+	v := tokens.currentAndMove()
 	switch v.Type {
 	case StringToken:
 		return StringValue{v.Value}, nil

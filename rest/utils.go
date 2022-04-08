@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
@@ -38,9 +37,8 @@ func SetErrorInternalServerError(ctx iris.Context, err error) {
 	ctx.ContentType(ContentTypeTextPlain)
 }
 
-func SetErrorVerifyError(ctx iris.Context, err error) {
-	bytes, _ := json.Marshal(err)
-	_, _ = ctx.Write(bytes)
+func SetErrorVerifyError(ctx iris.Context, err *ddd_errors.VerifyError) {
+	ctx.SetErr(err)
 	ctx.StatusCode(http.StatusInternalServerError)
 	ctx.ContentType(ContentTypeTextPlain)
 }
@@ -51,7 +49,8 @@ func SetError(ctx iris.Context, err error) {
 		_ = SetErrorNotFond(ctx)
 		break
 	case *ddd_errors.VerifyError:
-		SetErrorVerifyError(ctx, err)
+		verr, _ := err.(*ddd_errors.VerifyError)
+		SetErrorVerifyError(ctx, verr)
 		break
 	default:
 		SetErrorInternalServerError(ctx, err)
@@ -60,12 +59,16 @@ func SetError(ctx iris.Context, err error) {
 }
 
 // DoCmd 执行命令
-func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) error {
-	if err := ctx.ReadBody(cmd); err != nil {
+func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) (err error) {
+	defer func() {
+		err = ddd_errors.GetRecoverError()
+	}()
+
+	if err = ctx.ReadBody(cmd); err != nil {
 		return err
 	}
 
-	err := fun()
+	err = fun()
 	if err != nil && !ddd_errors.IsErrorAggregateExists(err) {
 		SetError(ctx, err)
 		return err
@@ -73,8 +76,12 @@ func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) error {
 	return nil
 }
 
-func DoQueryOne(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
-	data, isFound, err := fun()
+func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
+	defer func() {
+		err = ddd_errors.GetRecoverError()
+	}()
+
+	data, isFound, err = fun()
 	if err != nil {
 		SetError(ctx, err)
 		return nil, isFound, err
@@ -89,12 +96,17 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
 	return data, isFound, nil
 }
 
-func DoQuery(ctx iris.Context, fun QueryFunc) (interface{}, bool, error) {
-	data, isFound, err := fun()
+func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
+	defer func() {
+		err = ddd_errors.GetRecoverError()
+	}()
+
+	data, isFound, err = fun()
 	if err != nil {
 		SetError(ctx, err)
 		return nil, isFound, err
 	}
+
 	_, err = ctx.JSON(data)
 	if err != nil {
 		return nil, false, err
@@ -125,7 +137,6 @@ func DoCmdAndQueryList(ctx iris.Context, subAppId string, cmd Command, cmdFun Cm
 }
 
 func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
-
 	options := &CmdAndQueryOptions{WaitSecond: 5}
 	for _, o := range opts {
 		o(options)

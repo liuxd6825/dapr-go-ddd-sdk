@@ -1,5 +1,40 @@
 package ddd_repository
 
+import "time"
+
+type FindOptions struct {
+	MaxTime *time.Duration
+}
+
+type FindOneOptions struct {
+	MaxTime *time.Duration
+}
+
+type SetOptions struct {
+	MaxTime *time.Duration
+}
+
+func MergeFindOptions(opts ...*FindOptions) *FindOptions {
+	res := &FindOptions{}
+	for _, o := range opts {
+		if o.MaxTime != nil {
+			res.MaxTime = o.MaxTime
+		}
+	}
+	return res
+}
+
+func MergeSetOptions(opts ...*SetOptions) *SetOptions {
+	res := &SetOptions{}
+	for _, o := range opts {
+		if o.MaxTime != nil {
+			res.MaxTime = o.MaxTime
+		}
+	}
+	return res
+}
+
+/*
 type FindOptions struct {
 	err       error
 	data      interface{}
@@ -56,3 +91,4 @@ func (f *FindOptions) Data() interface{} {
 func (f *FindOptions) IsFound() bool {
 	return f.isFind
 }
+*/

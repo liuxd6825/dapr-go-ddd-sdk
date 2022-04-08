@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"strings"
 )
 
@@ -40,44 +39,51 @@ func (r *Repository) NewEntityList() interface{} {
 	return r.entityBuilder.NewList()
 }
 
-func (r *Repository) Insert(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
+func (r *Repository) Insert(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
 	return r.DoSet(func() (interface{}, error) {
-		_, err := r.collection.InsertOne(ctx, entity)
+		_, err := r.collection.InsertOne(ctx, entity, getInsertOneOptions(opts...))
 		return entity, err
 	})
 }
 
-func (r *Repository) Update(ctx context.Context, entity ddd.Entity) *ddd_repository.SetResult {
+func (r *Repository) Update(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
 	return r.DoSet(func() (interface{}, error) {
 		objId, err := GetObjectID(entity.GetId())
 		if err != nil {
 			return entity, err
 		}
+		updateOptions := getUpdateOptions(opts...)
 		filter := bson.D{{IdField, objId}}
-		_, err = r.collection.UpdateOne(ctx, filter, entity, options.Update())
+		_, err = r.collection.UpdateOne(ctx, filter, entity, updateOptions)
 		return entity, err
 	})
 }
 
-func (r *Repository) DeleteById(ctx context.Context, tenantId string, id string) *ddd_repository.SetResult {
+func (r *Repository) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
+	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
+}
+
+func (r *Repository) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
 	return r.DoSet(func() (interface{}, error) {
 		filter := bson.D{
 			{IdField, id},
 			{TenantIdField, tenantId},
 		}
-		_, err := r.collection.DeleteOne(ctx, filter)
+		deleteOptions := getDeleteOptions(opts...)
+		_, err := r.collection.DeleteOne(ctx, filter, deleteOptions)
 		return nil, err
 	})
 }
 
-func (r *Repository) FindById(ctx context.Context, tenantId string, id string) *ddd_repository.FindResult {
+func (r *Repository) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindResult {
 	return r.DoFind(func() (interface{}, bool, error) {
 		filter := bson.M{
 			IdField:       id,
 			TenantIdField: tenantId,
 		}
+		findOneOptions := getFindOneOptions(opts...)
 		data := r.NewEntity()
-		result := r.collection.FindOne(ctx, filter)
+		result := r.collection.FindOne(ctx, filter, findOneOptions)
 		if result.Err() != nil {
 			return nil, false, result.Err()
 		}
@@ -88,11 +94,12 @@ func (r *Repository) FindById(ctx context.Context, tenantId string, id string) *
 	})
 }
 
-func (r *Repository) FindAll(ctx context.Context, tenantId string) *ddd_repository.FindResult {
+func (r *Repository) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindResult {
 	return r.DoFind(func() (interface{}, bool, error) {
 		filter := bson.D{{TenantIdField, tenantId}}
 		data := r.NewEntityList()
-		cursor, err := r.collection.Find(ctx, filter)
+		findOptions := getFindOptions(opts...)
+		cursor, err := r.collection.Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -101,29 +108,19 @@ func (r *Repository) FindAll(ctx context.Context, tenantId string) *ddd_reposito
 	})
 }
 
-func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.PagingQuery) *ddd_repository.FindPagingDataResult {
-	return r.DoFindPagingData(func() (*ddd_repository.PagingData, bool, error) {
-		p := NewMongoProcess()
-		err := rsql.ParseProcess(query.Filter, p)
-		if err != nil {
-			return nil, false, err
-		}
-		filter := p.GetFilter(query.TenantId)
+func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.PagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingDataResult {
+	return r.DoFilter(query.TenantId, query.Filter, func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error) {
 		data := r.NewEntityList()
 
-		var findOptions *options.FindOptions
+		findOptions := getFindOptions(opts...)
 		if query.Size > 0 {
-			findOptions = &options.FindOptions{}
 			findOptions.SetLimit(query.Size)
 			findOptions.SetSkip(query.Size * query.Page)
 		}
 		if len(query.Sort) > 0 {
-			if findOptions == nil {
-				findOptions = &options.FindOptions{}
-			}
-			sort, oerr := r.getSort(query.Sort)
-			if oerr != nil {
-				return nil, false, oerr
+			sort, err := r.getSort(query.Sort)
+			if err != nil {
+				return nil, false, err
 			}
 			findOptions.SetSort(sort)
 		}
@@ -147,8 +144,14 @@ func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.P
 	})
 }
 
-func (r *Repository) DoFindPagingData(fun func() (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingDataResult {
-	data, isFound, err := fun()
+func (r *Repository) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingDataResult {
+	p := NewMongoProcess()
+	err := rsql.ParseProcess(filter, p)
+	if err != nil {
+		return ddd_repository.NewFindPagingDataResult(nil, false, err)
+	}
+	filterData := p.GetFilter(tenantId)
+	data, isFound, err := fun(filterData)
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
 			isFound = false
