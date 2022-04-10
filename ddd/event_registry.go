@@ -3,6 +3,7 @@ package ddd
 import (
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 )
 
 type NewEventFunc func() interface{}
@@ -36,12 +37,15 @@ func NewDomainEvent(record *EventRecord) (interface{}, error) {
 				err = record.Marshal(event)
 			}
 			if err != nil {
+				_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
 				return nil, err
 			}
 			return event, nil
 		}
 	}
-	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventRevision))
+	err := errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventRevision))
+	_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
+	return nil, err
 }
 
 func getRegistryItem(eventType, eventRevision string) (*registryItem, error) {

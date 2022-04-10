@@ -2,47 +2,23 @@ package ddd
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"reflect"
 )
 
-type MethodNotExistError struct {
-	methodName string
-}
-
-func NewMethodError(methodName string) *MethodNotExistError {
-	return &MethodNotExistError{
-		methodName: methodName,
-	}
-}
-func (e *MethodNotExistError) Error() string {
-	return fmt.Sprintf(" %s() Method does not exist", e.methodName)
-}
-
-type MethodCallError struct {
-	methodName string
-	message    string
-}
-
-func NewMethodCallError(methodName string, message string) *MethodCallError {
-	return &MethodCallError{
-		methodName: methodName,
-		message:    message,
-	}
-}
-func (e *MethodCallError) Error() string {
-	return fmt.Sprintf("reflect.Method.Call()  %s doing erro, %s", e.methodName, e.message)
-}
-
 func CallMethod(object interface{}, methodName string, ps ...interface{}) (err error) {
+	at := reflect.TypeOf(object).Elem()
+	a := reflect.ValueOf(object)
+	typeName := at.Name()
+	method := a.MethodByName(methodName)
+
 	defer func() {
 		if e := recover(); e != nil {
 			message := fmt.Sprintf("%v", e)
-			err = NewMethodCallError(methodName, message)
+			err = ddd_errors.NewMethodCallError(typeName, methodName, message)
 		}
 	}()
 
-	a := reflect.ValueOf(object)
-	method := a.MethodByName(methodName)
 	if method.IsValid() {
 		args := make([]reflect.Value, len(ps))
 		for i, p := range ps {
@@ -51,10 +27,11 @@ func CallMethod(object interface{}, methodName string, ps ...interface{}) (err e
 		resValues := method.Call(args)
 		for _, v := range resValues {
 			if err, ok := v.Interface().(error); ok {
-				return err
+				return ddd_errors.NewMethodCallError(at.Name(), methodName, err.Error())
 			}
 		}
-		return err
+		return nil
 	}
-	return NewMethodError(methodName)
+
+	return ddd_errors.NewMethodNotExistError(typeName, methodName)
 }

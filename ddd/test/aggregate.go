@@ -15,7 +15,7 @@ func (t TestAggregate) OnSourceEvent(ctx context.Context, domainEvent ddd.Domain
 	return nil
 }
 
-func (t TestAggregate) OnCommand(ctx context.Context, cmd ddd.DomainCommand) error {
+func (t TestAggregate) OnCommand(ctx context.Context, cmd ddd.Command) error {
 	return nil
 }
 

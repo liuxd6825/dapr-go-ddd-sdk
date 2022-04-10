@@ -2,12 +2,18 @@ package applog
 
 import (
 	"context"
+	json2 "encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/httpclient"
 	"time"
 )
 
+var log Logger
+var appId string
+
 type DoAction func() error
+type DoMethod func() (interface{}, error)
 
 type Event interface {
 	GetTenantId() string
@@ -19,22 +25,35 @@ type EventHandler interface {
 	GetClassName() string
 }
 
-var log Logger
-var appId string
-
-func Init(httpClient *httpclient.HttpClient, aAppId string) {
+func Init(httpClient *httpclient.HttpClient, aAppId string, level Level) {
 	log = NewLogger(httpClient)
+	log.SetLevel(level)
 	appId = aAppId
 }
 
-func DoEvent(handler EventHandler, event Event, funcName string, actionFunc DoAction) error {
-	err := actionFunc()
+func DoEventLog(ctx context.Context, handler EventHandler, event Event, funcName string, method DoAction) error {
+	err := method()
 	if err == nil {
 		_, _ = InfoEvent(event.GetTenantId(), handler.GetClassName(), funcName, "success", event.GetEventId(), event.GetCommandId(), "")
 	} else {
 		_, _ = ErrorEvent(event.GetTenantId(), handler.GetClassName(), funcName, "error", event.GetEventId(), event.GetCommandId(), "")
 	}
 	return nil
+}
+
+func DoAppLog(ctx context.Context, info *LogInfo, method DoMethod) error {
+	resp, err := method()
+	_, _ = writeLog(ctx, info.TenantId, info.ClassName, info.FuncName, info.Level, info.Message)
+
+	if log.GetLevel() <= INFO {
+		bs, _ := json2.Marshal(resp)
+		println(fmt.Sprintf("Result:%v \r\n", string(bs)))
+	}
+
+	if err != nil {
+		_, _ = writeLog(ctx, info.TenantId, info.ClassName, info.FuncName, ERROR, err.Error())
+	}
+	return err
 }
 
 func Debug(tenantId, className, funcName, message string) (string, error) {
@@ -128,11 +147,12 @@ func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, comman
 }
 
 func writeLog(ctx context.Context, tenantId, className, funcName string, level Level, message string) (string, error) {
-	if level > log.GetLevel() {
+	if level < log.GetLevel() {
 		return "", nil
 	}
 	uid := uuid.New().String()
 	timeNow := time.Now()
+
 	req := &WriteAppLogRequest{
 		Id:       uid,
 		TenantId: tenantId,
@@ -144,6 +164,9 @@ func writeLog(ctx context.Context, tenantId, className, funcName string, level L
 		Status:   true,
 		Message:  message,
 	}
+
+	fmt.Printf("[%s] appid=%s; class=%s; func=%s; msg=%s; status=%t; time=%s;\n", req.Level, req.AppId, req.Class, req.Func, req.Message, req.Status, req.Time)
+
 	_, err := log.WriteAppLog(ctx, req)
 	return req.Id, err
 }
