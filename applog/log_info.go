@@ -15,12 +15,12 @@ type LogInfo struct {
 //
 // NewLogInfo
 // @Description: 新建日志信息
-// @param tenantId
-// @param className
-// @param funcName
-// @param message
-// @param level
-// @return *LogInfo
+// @param tenantId 租户id
+// @param className 结构名称
+// @param funcName 方法名称
+// @param message 日志信息内容
+// @param level 日志级别
+// @return *LogInfo 日志信息结构
 //
 func NewLogInfo(tenantId, className, funcName, message string, level Level) *LogInfo {
 	return &LogInfo{

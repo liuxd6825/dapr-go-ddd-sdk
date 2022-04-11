@@ -1,8 +1,8 @@
 package rsql
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestLexer_Parse_Functions(t *testing.T) {
@@ -14,15 +14,15 @@ func TestLexer_Parse_Functions(t *testing.T) {
 	assert.Equal(t, lexer.isBlankBefore(4), true)
 	assert.Equal(t, lexer.isBlankAfter(0), false)
 	assert.Equal(t, lexer.isBlankAfter(2), true)
-	assert.Equal(t, lexer.isBlankAfter(lexer.buflen - 1), true)
+	assert.Equal(t, lexer.isBlankAfter(lexer.buflen-1), true)
 	assert.Equal(t, lexer.isDigit(0), true, "digit 0")
 	assert.Equal(t, lexer.isDigit(1), false, "digit 1")
 	assert.Equal(t, lexer.isAlpha(1), true, "alpha 1")
 	assert.Equal(t, lexer.isAlpha(0), false, "alpha 0")
 	assert.Equal(t, lexer.isString(0, "1aA"), true, "string 0 -> 1")
 	assert.Equal(t, lexer.isString(0, "1aA "), true, "string 0 -> 2")
-	assert.Equal(t, lexer.isString(lexer.buflen - 2, ">=!"), false, "string -2")
-	assert.Equal(t, lexer.isString(lexer.buflen - 3, ">=!"), true, "string -3")
+	assert.Equal(t, lexer.isString(lexer.buflen-2, ">=!"), false, "string -2")
+	assert.Equal(t, lexer.isString(lexer.buflen-3, ">=!"), true, "string -3")
 }
 
 func TestLexer_Parse_Operator(t *testing.T) {
@@ -66,7 +66,7 @@ func TestLexer_Parse_Identifier(t *testing.T) {
 }
 
 func TestLexer_Parse_String(t *testing.T) {
-	lex := NewLexer( `"123" "123'12" "123\"12" '123' '123"12' '123\'12'`)
+	lex := NewLexer(`"123" "123'12" "123\"12" '123' '123"12' '123\'12'`)
 	token := lex.nextToken()
 	assert.Equal(t, token.Type, StringToken)
 	assert.Equal(t, token.Value, "123")
@@ -89,7 +89,7 @@ func TestLexer_Parse_String(t *testing.T) {
 }
 
 func TestLexer_Parse_Reserved(t *testing.T) {
-	lex := NewLexer( `== != !=~ ==~ =in= =out= > >= < <= , ( )`)
+	lex := NewLexer(`== != !=~ ==~ =in= =out= > >= < <= , ( )`)
 	assert.Equal(t, lex.nextToken().Type, EqualsToken)
 	assert.Equal(t, lex.nextToken().Type, NotEqualsToken)
 	assert.Equal(t, lex.nextToken().Type, NotLikeToken)

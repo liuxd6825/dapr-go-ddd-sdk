@@ -39,8 +39,19 @@ func LoadAggregateKey(eventStorageKey string) LoadAggregateOption {
 	}
 }
 
+//
+// LoadAggregate
+// @Description: 加载聚合根
+// @param ctx 上下文
+// @param tenantId 租户id
+// @param aggregateId 聚合根id
+// @param aggregate 聚合根对象
+// @param opts 可选参数
+// @return agg    聚合根对象
+// @return isFound 是否找到
+// @return err 错误
+//
 func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate, opts ...LoadAggregateOption) (agg Aggregate, isFound bool, err error) {
-
 	logInfo := &applog.LogInfo{
 		TenantId:  tenantId,
 		ClassName: "ddd",
@@ -67,6 +78,15 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 	return
 }
 
+//
+// LoadEvents
+// @Description: 获取领域事件
+// @param ctx 上下文
+// @param req 传入参数
+// @param eventStorageKey 事件存储器key
+// @return resp 响应体
+// @return err 错误
+//
 func LoadEvents(ctx context.Context, req *LoadEventsRequest, eventStorageKey string) (resp *LoadEventsResponse, err error) {
 	logInfo := &applog.LogInfo{
 		TenantId:  req.TenantId,
@@ -94,24 +114,51 @@ type ApplyOptions struct {
 }
 type ApplyOption func(*ApplyOptions)
 
+//
+// ApplyPubsubName
+// @Description: 设置选项应用消息
+// @param pubsubName 消息名称
+// @return ApplyOption
+//
 func ApplyPubsubName(pubsubName string) ApplyOption {
 	return func(o *ApplyOptions) {
 		o.pubsubName = pubsubName
 	}
 }
 
+//
+// ApplyEventStorageKey
+// @Description:  设置选项事件存储key
+// @param eventStorageKey
+// @return ApplyOption
+//
 func ApplyEventStorageKey(eventStorageKey string) ApplyOption {
 	return func(o *ApplyOptions) {
 		o.eventStorageKey = eventStorageKey
 	}
 }
 
+//
+// ApplyMetadata
+// @Description: 设置选项元数据
+// @param metadata
+// @return ApplyOption
+//
 func ApplyMetadata(metadata map[string]string) ApplyOption {
 	return func(o *ApplyOptions) {
 		o.metadata = metadata
 	}
 }
 
+//
+// Apply
+// @Description: 应用领域事件
+// @param ctx
+// @param aggregate
+// @param event
+// @param options
+// @return err
+//
 func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options ...ApplyOption) (err error) {
 
 	logInfo := &applog.LogInfo{
@@ -170,6 +217,15 @@ func CreateAggregateKey(eventStorageKey string) CreateAggregateOption {
 	}
 }
 
+//
+// CreateAggregate
+// @Description: 创建聚合根
+// @param ctx
+// @param aggregate
+// @param cmd
+// @param opts
+// @return error
+//
 func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...CreateAggregateOption) error {
 	options := &CreateAggregateOptions{
 		eventStorageKey: "",
@@ -198,6 +254,16 @@ func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd Command) e
 	metadata := ddd_context.GetMetadataContext(ctx)
 	return CallMethod(aggregate, methodName, ctx, cmd, metadata)
 }
+
+//
+// CommandAggregate
+// @Description: 执行聚合命令
+// @param ctx
+// @param aggregate
+// @param cmd
+// @param opts
+// @return error
+//
 func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...LoadAggregateOption) error {
 	rootId := cmd.GetAggregateId().RootId()
 	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), rootId, aggregate, opts...)
@@ -226,14 +292,22 @@ func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest, eventStorageKey
 	return eventStorage.SaveSnapshot(ctx, req)
 }
 
+//
+// CallEventHandler
+// @Description: 调用领域事件监听器
+// @param ctx
+// @param handler
+// @param record
+// @return error
+//
 func CallEventHandler(ctx context.Context, handler interface{}, record *EventRecord) error {
 	event, err := NewDomainEvent(record)
 	if err != nil {
-		applog.Error("", "ddd", "NewDomainEvent", err.Error())
+		_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
 		return err
 	}
 	if err = callEventHandler(ctx, handler, record.EventType, record.EventRevision, event); err != nil {
-		applog.Error("", "ddd", "CallEventHandler", err.Error())
+		_, _ = applog.Error("", "ddd", "CallEventHandler", err.Error())
 	}
 	return err
 }
@@ -243,6 +317,13 @@ func callEventHandler(ctx context.Context, handler interface{}, eventType string
 	return CallMethod(handler, methodName, ctx, event)
 }
 
+//
+//  getEventMethodName
+//  @Description: 根据事件类型名称获取接受事件方法名称
+//  @param eventType
+//  @param revision
+//  @return string
+//
 func getEventMethodName(eventType string, revision string) string {
 	names := strings.Split(eventType, ".")
 	name := names[len(names)-1]

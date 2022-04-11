@@ -8,6 +8,11 @@ var eventStorages = map[string]EventStorage{"": NewEmptyEventStorage()}
 var subscribes = make([]Subscribe, 0)
 var subscribeHandlers = make([]SubscribeHandler, 0)
 
+//
+// Start
+// @Description: 启动事件监听
+// @return error
+//
 func Start() error {
 	for _, handler := range subscribeHandlers {
 		items, err := handler.GetSubscribes()
@@ -23,10 +28,22 @@ func Start() error {
 	return nil
 }
 
+//
+// GetSubscribes
+// @Description: 获取事件监听列表
+// @return []Subscribe
+//
 func GetSubscribes() []Subscribe {
 	return subscribes
 }
 
+//
+// GetEventStorage
+// @Description: 获取事件存储器
+// @param key 事件存储器名称
+// @return EventStorage 事件存储器
+// @return error
+//
 func GetEventStorage(key string) (EventStorage, error) {
 	eventStorage, ok := eventStorages[key]
 	if !ok {
@@ -42,10 +59,22 @@ func GetEventStorage(key string) (EventStorage, error) {
 	return eventStorage, nil
 }
 
+//
+// RegisterEventStorage
+// @Description:  注册领域事件存储器
+// @param key 唯一名称
+// @param es  事件存储器
+//
 func RegisterEventStorage(key string, es EventStorage) {
 	eventStorages[key] = es
 }
 
+//
+// RegisterSubscribeHandler
+// @Description:  注册事件监听器
+// @param subHandler
+// @return error
+//
 func RegisterSubscribeHandler(subHandler SubscribeHandler) error {
 	subscribeHandlers = append(subscribeHandlers, subHandler)
 	items, err := subHandler.GetSubscribes()
