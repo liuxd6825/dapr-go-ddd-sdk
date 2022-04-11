@@ -27,12 +27,12 @@ type PagingData struct {
 	Filter string `json:"filter"`
 }
 
-type FindPagingDataResult struct {
+type FindPagingResult struct {
 	FindResult
 }
 
-func NewFindPagingDataResult(data *PagingData, isFound bool, err error) *FindPagingDataResult {
-	return &FindPagingDataResult{
+func NewFindPagingDataResult(data *PagingData, isFound bool, err error) *FindPagingResult {
+	return &FindPagingResult{
 		FindResult{
 			data:    data,
 			isFound: isFound,
@@ -41,7 +41,7 @@ func NewFindPagingDataResult(data *PagingData, isFound bool, err error) *FindPag
 	}
 }
 
-func (f *FindPagingDataResult) OnSuccess(success OnSuccessPaging) *FindPagingDataResult {
+func (f *FindPagingResult) OnSuccess(success OnSuccessPaging) *FindPagingResult {
 	if f.err == nil && success != nil && f.isFound {
 		data := f.data.(*PagingData)
 		f.err = success(data)

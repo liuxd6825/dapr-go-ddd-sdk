@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/httpclient"
+	"strings"
 	"time"
 )
 
@@ -165,7 +166,7 @@ func writeLog(ctx context.Context, tenantId, className, funcName string, level L
 		Message:  message,
 	}
 
-	fmt.Printf("[%s] appid=%s; class=%s; func=%s; msg=%s; status=%t; time=%s;\n", req.Level, req.AppId, req.Class, req.Func, req.Message, req.Status, req.Time)
+	fmt.Printf("[%s] appid=%s; class=%s; func=%s; msg=%s; status=%t; time=%s;\n", strings.ToUpper(req.Level), req.AppId, req.Class, req.Func, req.Message, req.Status, req.Time)
 
 	_, err := log.WriteAppLog(ctx, req)
 	return req.Id, err

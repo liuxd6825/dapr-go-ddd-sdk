@@ -1,28 +1,26 @@
 package ddd_repository
 
 type EntityBuilder interface {
-	New() interface{}
+	NewOne() interface{}
 	NewList() interface{}
 }
 
-type NewFunc func() interface{}
-
-func NewEntityBuilder(newOne NewFunc, newList NewFunc) EntityBuilder {
-	return &entityBuilder{
-		newOne:  newOne,
-		newList: newList,
-	}
-}
-
 type entityBuilder struct {
-	newOne  NewFunc
-	newList NewFunc
+	newOneFunc  func() interface{}
+	newListFunc func() interface{}
 }
 
-func (e *entityBuilder) New() interface{} {
-	return e.newOne()
+func (e *entityBuilder) NewOne() interface{} {
+	return e.newOneFunc()
 }
 
 func (e *entityBuilder) NewList() interface{} {
-	return e.newList()
+	return e.newListFunc()
+}
+
+func NewEntityBuilder(newOne func() interface{}, newList func() interface{}) EntityBuilder {
+	return &entityBuilder{
+		newOneFunc:  newOne,
+		newListFunc: newList,
+	}
 }

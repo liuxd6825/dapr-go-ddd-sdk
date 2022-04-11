@@ -2,8 +2,12 @@ package ddd_repository
 
 import "context"
 
+type Session interface {
+	UseTransaction(context.Context, SessionFunc) error
+}
+
 type SessionFunc func(ctx context.Context) error
 
-type DbSession interface {
-	UseSession(ctx context.Context, fn SessionFunc) error
+func StartSession(ctx context.Context, session Session, dbFunc SessionFunc) error {
+	return session.UseTransaction(ctx, dbFunc)
 }

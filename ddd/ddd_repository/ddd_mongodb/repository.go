@@ -32,7 +32,7 @@ func NewRepository(entityBuilder ddd_repository.EntityBuilder, mongodb *MongoDB,
 }
 
 func (r *Repository) NewEntity() interface{} {
-	return r.entityBuilder.New()
+	return r.entityBuilder.NewOne()
 }
 
 func (r *Repository) NewEntityList() interface{} {
@@ -108,7 +108,7 @@ func (r *Repository) FindAll(ctx context.Context, tenantId string, opts ...*ddd_
 	})
 }
 
-func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.PagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingDataResult {
+func (r *Repository) FindPaging(ctx context.Context, query *ddd_repository.PagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult {
 	return r.DoFilter(query.TenantId, query.Filter, func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error) {
 		data := r.NewEntityList()
 
@@ -144,7 +144,7 @@ func (r *Repository) FindPagingData(ctx context.Context, query *ddd_repository.P
 	})
 }
 
-func (r *Repository) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingDataResult {
+func (r *Repository) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingResult {
 	p := NewMongoProcess()
 	err := rsql.ParseProcess(filter, p)
 	if err != nil {

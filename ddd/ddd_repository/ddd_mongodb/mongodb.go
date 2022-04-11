@@ -100,8 +100,13 @@ func (m *MongoDB) Init(config *Config) error {
 	return nil
 }
 
-func (m *MongoDB) NewCollection(collectionName string) *mongo.Collection {
+func (m *MongoDB) GetCollection(collectionName string) *mongo.Collection {
 	return m.database.Collection(collectionName, m.collectionOptions)
+}
+
+func (m *MongoDB) CreateCollection(collectionName string) error {
+	ops := &options.CreateCollectionOptions{}
+	return m.database.CreateCollection(context.Background(), collectionName, ops)
 }
 
 func (m *MongoDB) Ping() error {

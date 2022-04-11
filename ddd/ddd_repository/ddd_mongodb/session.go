@@ -10,23 +10,22 @@ type MongoSession struct {
 	mongodb *MongoDB
 }
 
-func UseSession(ctx context.Context, db *MongoDB, fun ddd_repository.SessionFunc) error {
-	sess := &MongoSession{mongodb: db}
-	return sess.UseSession(ctx, fun)
+func NewSession(db *MongoDB) ddd_repository.Session {
+	return &MongoSession{mongodb: db}
 }
 
-func (r *MongoSession) UseSession(ctx context.Context, sessionFn func(ctx context.Context) error) error {
-	return r.mongodb.client.UseSession(ctx, func(sessionContext mongo.SessionContext) error {
-		if err := sessionContext.StartTransaction(); err != nil {
+func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc) error {
+	return r.mongodb.client.UseSession(ctx, func(sCtx mongo.SessionContext) error {
+		if err := sCtx.StartTransaction(); err != nil {
 			return err
 		}
-		err := sessionFn(ctx)
+		err := dbFunc(sCtx)
 		if err != nil {
-			if e1 := sessionContext.AbortTransaction(ctx); e1 != nil {
+			if e1 := sCtx.AbortTransaction(sCtx); e1 != nil {
 				err = e1
 			}
 		} else {
-			err = sessionContext.CommitTransaction(ctx)
+			err = sCtx.CommitTransaction(sCtx)
 		}
 		return err
 	})
