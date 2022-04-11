@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var strEmpty = ""
+
 type EventStorage interface {
 	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
@@ -108,46 +110,21 @@ func LoadEvents(ctx context.Context, req *LoadEventsRequest, eventStorageKey str
 }
 
 type ApplyOptions struct {
-	pubsubName      string
-	metadata        map[string]string
-	eventStorageKey string
-}
-type ApplyOption func(*ApplyOptions)
-
-//
-// ApplyPubsubName
-// @Description: 设置选项应用消息
-// @param pubsubName 消息名称
-// @return ApplyOption
-//
-func ApplyPubsubName(pubsubName string) ApplyOption {
-	return func(o *ApplyOptions) {
-		o.pubsubName = pubsubName
-	}
+	pubsubName      *string
+	metadata        *map[string]string
+	eventStorageKey *string
 }
 
-//
-// ApplyEventStorageKey
-// @Description:  设置选项事件存储key
-// @param eventStorageKey
-// @return ApplyOption
-//
-func ApplyEventStorageKey(eventStorageKey string) ApplyOption {
-	return func(o *ApplyOptions) {
-		o.eventStorageKey = eventStorageKey
-	}
+func (a *ApplyOptions) SetPubsubName(pubsubName string) {
+	a.pubsubName = &pubsubName
 }
 
-//
-// ApplyMetadata
-// @Description: 设置选项元数据
-// @param metadata
-// @return ApplyOption
-//
-func ApplyMetadata(metadata map[string]string) ApplyOption {
-	return func(o *ApplyOptions) {
-		o.metadata = metadata
-	}
+func (a *ApplyOptions) SetEventStorageKey(eventStorageKey string) {
+	a.eventStorageKey = &eventStorageKey
+}
+
+func (a *ApplyOptions) SetMetadata(value *map[string]string) {
+	a.metadata = value
 }
 
 //
@@ -159,7 +136,24 @@ func ApplyMetadata(metadata map[string]string) ApplyOption {
 // @param options
 // @return err
 //
-func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options ...ApplyOption) (err error) {
+func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyOptions) (err error) {
+	metadata := make(map[string]string)
+	options := &ApplyOptions{
+		pubsubName:      &strEmpty,
+		metadata:        &metadata,
+		eventStorageKey: &strEmpty,
+	}
+	for _, opt := range opts {
+		if opt.eventStorageKey != nil {
+			options.eventStorageKey = opt.eventStorageKey
+		}
+		if opt.metadata != nil {
+			options.metadata = opt.metadata
+		}
+		if opt.eventStorageKey != nil {
+			options.eventStorageKey = opt.eventStorageKey
+		}
+	}
 
 	logInfo := &applog.LogInfo{
 		TenantId:  aggregate.GetTenantId(),
@@ -169,15 +163,8 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options 
 		Level:     applog.INFO,
 	}
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
-		appOptions := &ApplyOptions{
-			pubsubName:      "",
-			metadata:        map[string]string{},
-			eventStorageKey: "",
-		}
-		for _, option := range options {
-			option(appOptions)
-		}
-		eventStorage, e := GetEventStorage(appOptions.eventStorageKey)
+
+		eventStorage, e := GetEventStorage(*options.eventStorageKey)
 		if e != nil {
 			err = e
 			return nil, err
@@ -190,8 +177,8 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options 
 			EventType:     event.GetEventType(),
 			AggregateId:   event.GetAggregateId(),
 			AggregateType: aggregate.GetAggregateType(),
-			Metadata:      appOptions.metadata,
-			PubsubName:    appOptions.pubsubName,
+			Metadata:      options.metadata,
+			PubsubName:    *options.pubsubName,
 			EventData:     event,
 			Topic:         event.GetEventType(),
 		}
@@ -207,14 +194,11 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, options 
 }
 
 type CreateAggregateOptions struct {
-	eventStorageKey string
+	eventStorageKey *string
 }
-type CreateAggregateOption func(*CreateAggregateOptions)
 
-func CreateAggregateKey(eventStorageKey string) CreateAggregateOption {
-	return func(options *CreateAggregateOptions) {
-		options.eventStorageKey = eventStorageKey
-	}
+func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {
+	o.eventStorageKey = &eventStorageKey
 }
 
 //
@@ -226,15 +210,18 @@ func CreateAggregateKey(eventStorageKey string) CreateAggregateOption {
 // @param opts
 // @return error
 //
-func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...CreateAggregateOption) error {
+func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...*CreateAggregateOptions) error {
+
 	options := &CreateAggregateOptions{
-		eventStorageKey: "",
+		eventStorageKey: &strEmpty,
 	}
 	for _, item := range opts {
-		item(options)
+		if item.eventStorageKey != nil {
+			options.eventStorageKey = item.eventStorageKey
+		}
 	}
 	rootId := cmd.GetAggregateId().RootId()
-	eventStorage, err := GetEventStorage(options.eventStorageKey)
+	eventStorage, err := GetEventStorage(*options.eventStorageKey)
 	if err != nil {
 		return err
 	}
