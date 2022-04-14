@@ -20,13 +20,13 @@ type Repository interface {
 }
 
 type Pageable struct {
-	PageNumber int
-	PageSize   int
+	PageNum  int `json:"pageNum"`
+	PageSize int `json:"pageSize"`
 }
 
 type PagingQuery struct {
-	TenantId string
-	Fields   string
+	TenantId string `json:"tenantId"`
+	Fields   string `json:"fields"`
 	// - name=="Kill Bill";year=gt=2003
 	// - name=="Kill Bill" and year>2003
 	// - genres=in=(sci-fi,action);(director=='Christopher Nolan',actor==*Bale);year=ge=2000
@@ -51,10 +51,10 @@ type PagingQuery struct {
 	// date       : [0-9]{4}'-'[0-9]{2}'-'\[0-9]{2}
 	// datetime   : date'T'[0-9]{2}':'[0-9]{2}':'[0-9]{2}('Z' | (('+'|'-')[0-9]{2}(':')?[0-9]{2}))?
 	// boolean    : 'true' | 'false'
-	Filter string
-	Sort   string // name:desc,id:asc
-	Page   int64
-	Size   int64
+	Filter   string `json:"filter"`
+	Sort     string `json:"sort"` // name:desc,id:asc
+	PageNum  int64  `json:"pageNum"`
+	PageSize int64  `json:"pageSize"`
 }
 
 type Option struct {

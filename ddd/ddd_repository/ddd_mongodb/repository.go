@@ -113,9 +113,9 @@ func (r *Repository) FindPaging(ctx context.Context, query *ddd_repository.Pagin
 		data := r.NewEntityList()
 
 		findOptions := getFindOptions(opts...)
-		if query.Size > 0 {
-			findOptions.SetLimit(query.Size)
-			findOptions.SetSkip(query.Size * query.Page)
+		if query.PageSize > 0 {
+			findOptions.SetLimit(query.PageSize)
+			findOptions.SetSkip(query.PageSize * query.PageNum)
 		}
 		if len(query.Sort) > 0 {
 			sort, err := r.getSort(query.Sort)
@@ -133,12 +133,13 @@ func (r *Repository) FindPaging(ctx context.Context, query *ddd_repository.Pagin
 
 		count, err := r.collection.CountDocuments(ctx, filter)
 		findData := &ddd_repository.PagingData{
-			Data:      data,
-			Count:     count,
-			TotalPage: r.getTotalPage(count, query.Size),
-			Filter:    query.Filter,
-			Sort:      query.Sort,
-			Size:      query.Size,
+			Data:       data,
+			TotalRows:  count,
+			TotalPages: r.getTotalPage(count, query.PageSize),
+			Filter:     query.Filter,
+			Sort:       query.Sort,
+			PageSize:   query.PageSize,
+			PageNum:    query.PageNum,
 		}
 		return findData, true, err
 	})

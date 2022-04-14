@@ -1,12 +1,12 @@
 package ddd_repository
 
 type PagingData struct {
-	Data      interface{} `json:"data"`
-	Count     int64       `json:"count"`
-	Page      int64       `json:"page"`
-	TotalPage int64       `json:"totalPage"`
-	Size      int64       `json:"size"`
-	Sort      string      `json:"sort"`
+	Data       interface{} `json:"data"`
+	TotalRows  int64       `json:"totalRows"`
+	TotalPages int64       `json:"totalPages"`
+	PageNum    int64       `json:"pageNum"`
+	PageSize   int64       `json:"pageSize"`
+	Sort       string      `json:"sort"`
 	// Parse 解析表达式
 	// or         : and ('OR' | 'or' and)*
 	// and        : constraint ('AND' | 'and' constraint)*
