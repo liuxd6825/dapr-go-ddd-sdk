@@ -9,7 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 )
 
-func InvokeMethod(ctx context.Context, client sdk.Client, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
+func (c *DaprClient) InvokeMethod(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
 	var err error
 	defer func() {
 		if e := ddd_errors.GetRecoverError(recover()); e != nil {
@@ -27,9 +27,9 @@ func InvokeMethod(ctx context.Context, client sdk.Client, appID, methodName, ver
 			ContentType: "application/json",
 			Data:        reqBytes,
 		}
-		respBytes, err = client.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
+		respBytes, err = c.grpcClient.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
 	} else {
-		respBytes, err = client.InvokeMethod(ctx, appID, methodName, verb)
+		respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
 	}
 	if err != nil {
 		return nil, newAppError(appID, err)

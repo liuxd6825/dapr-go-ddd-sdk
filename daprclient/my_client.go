@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	dapr_sdk_client "github.com/dapr/go-sdk/client"
 	"io"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -18,10 +20,12 @@ const (
 	DefaultIdleConnTimeout     = 5
 )
 
-type DaprHttpClient struct {
-	host   string
-	port   int
-	client *http.Client
+type DaprClient struct {
+	host       string
+	httpPort   int
+	grpcPort   int
+	client     *http.Client
+	grpcClient dapr_sdk_client.Client
 }
 
 type DaprHttpOptions struct {
@@ -59,7 +63,7 @@ func IdleConnTimeout(val int) Option {
 	}
 }
 
-func NewHttpClient(host string, port int, opts ...Option) (*DaprHttpClient, error) {
+func NewClient(host string, httpPort int, grpcPort int, opts ...Option) (*DaprClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)
@@ -78,16 +82,23 @@ func NewHttpClient(host string, port int, opts ...Option) (*DaprHttpClient, erro
 		},
 	}
 
-	return &DaprHttpClient{
-		client: client,
-		host:   host,
-		port:   port,
+	grpcClient, err := dapr_sdk_client.NewClientWithPort(strconv.Itoa(grpcPort))
+	if err != nil {
+		return nil, err
+	}
+
+	return &DaprClient{
+		client:     client,
+		host:       host,
+		httpPort:   httpPort,
+		grpcPort:   grpcPort,
+		grpcClient: grpcClient,
 	}, nil
 
 }
 
-func (c *DaprHttpClient) Get(ctx context.Context, url string) *Response {
-	getUlr := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
+func (c *DaprClient) Get(ctx context.Context, url string) *Response {
+	getUlr := fmt.Sprintf("http://%s:%d/%s", c.host, c.httpPort, url)
 	resp, err := c.client.Get(getUlr)
 	if err != nil {
 		return NewResponse(nil, err)
@@ -99,8 +110,8 @@ func (c *DaprHttpClient) Get(ctx context.Context, url string) *Response {
 	return NewResponse(bs, err)
 }
 
-func (c *DaprHttpClient) Post(ctx context.Context, url string, reqData interface{}) *Response {
-	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
+func (c *DaprClient) Post(ctx context.Context, url string, reqData interface{}) *Response {
+	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.httpPort, url)
 	jsonData, err := json.Marshal(reqData)
 	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -113,8 +124,8 @@ func (c *DaprHttpClient) Post(ctx context.Context, url string, reqData interface
 	return NewResponse(bs, err)
 }
 
-func (c *DaprHttpClient) Put(ctx context.Context, url string, reqData interface{}) *Response {
-	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
+func (c *DaprClient) Put(ctx context.Context, url string, reqData interface{}) *Response {
+	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.httpPort, url)
 	jsonData, err := json.Marshal(reqData)
 	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -127,7 +138,7 @@ func (c *DaprHttpClient) Put(ctx context.Context, url string, reqData interface{
 	return NewResponse(bs, err)
 }
 
-func (c *DaprHttpClient) getBodyBytes(resp *http.Response) ([]byte, error) {
+func (c *DaprClient) getBodyBytes(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()
 	bs, err := io.ReadAll(resp.Body)
 	return bs, err
