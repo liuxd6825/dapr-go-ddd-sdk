@@ -2,12 +2,20 @@ package ddd_errors
 
 import "errors"
 
-func GetRecoverError() (err error) {
-	if m := recover(); m != nil {
-		if msg, ok := m.(string); !ok {
-			err = errors.New(msg)
-		} else {
-			err = errors.New(" any error.")
+func GetRecoverError(re any) (err error) {
+	err = nil
+	if re != nil {
+		switch re.(type) {
+		case string:
+			{
+				msg, _ := re.(string)
+				err = errors.New(msg)
+			}
+		case error:
+			{
+				e, _ := re.(error)
+				err = e
+			}
 		}
 	}
 	return

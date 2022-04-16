@@ -6,11 +6,18 @@ import (
 	"errors"
 	"fmt"
 	sdk "github.com/dapr/go-sdk/client"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 )
 
 func InvokeMethod(ctx context.Context, client sdk.Client, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
-	var respBytes []byte
 	var err error
+	defer func() {
+		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			err = e
+		}
+	}()
+	var respBytes []byte
+
 	if request != nil {
 		reqBytes, err := json.Marshal(request)
 		if err != nil {
