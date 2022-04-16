@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/httpclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"io"
 	"net/http"
 )
@@ -18,12 +18,12 @@ const (
 )
 
 type daprEventStorage struct {
-	httpClient *httpclient.DaprHttpClient
+	httpClient *daprclient.DaprHttpClient
 	pubsubName string
 	subscribes *[]Subscribe
 }
 
-func NewDaprEventStorage(httpClient *httpclient.DaprHttpClient, options ...func(s EventStorage)) (EventStorage, error) {
+func NewDaprEventStorage(httpClient *daprclient.DaprHttpClient, options ...func(s EventStorage)) (EventStorage, error) {
 	subscribes = make([]Subscribe, 0)
 	res := &daprEventStorage{
 		httpClient: httpClient,

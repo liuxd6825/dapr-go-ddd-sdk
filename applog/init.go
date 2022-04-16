@@ -5,7 +5,7 @@ import (
 	json2 "encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/httpclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"runtime"
 	"strings"
 	"time"
@@ -34,7 +34,7 @@ type EventHandler interface {
 // @param aAppId Darp Appliation Id
 // @param level 日志级别
 //
-func Init(httpClient *httpclient.DaprHttpClient, aAppId string, level Level) {
+func Init(httpClient *daprclient.DaprHttpClient, aAppId string, level Level) {
 	log = NewLogger(httpClient)
 	log.SetLevel(level)
 	appId = aAppId

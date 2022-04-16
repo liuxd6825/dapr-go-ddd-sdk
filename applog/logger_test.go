@@ -3,7 +3,7 @@ package applog
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/httpclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"testing"
 	"time"
 )
@@ -116,7 +116,7 @@ func TestLogger_AppLog(t *testing.T) {
 }
 
 func newLogger() Logger {
-	client, _ := httpclient.NewHttpClient("localhost", 9011)
+	client, _ := daprclient.NewHttpClient("localhost", 9011)
 	logger := NewLogger(client)
 	return logger
 }

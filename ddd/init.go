@@ -24,7 +24,7 @@ func Start() error {
 		if err != nil {
 			return err
 		}
-		for _, subscribe := range items {
+		for _, subscribe := range *items {
 			if err := handler.RegisterSubscribe(subscribe); err != nil {
 				return err
 			}
@@ -86,7 +86,7 @@ func RegisterQueryHandler(subHandler SubscribeHandler) error {
 	if err != nil {
 		return err
 	}
-	for _, s := range items {
+	for _, s := range *items {
 		subscribes = append(subscribes, s)
 	}
 	return nil

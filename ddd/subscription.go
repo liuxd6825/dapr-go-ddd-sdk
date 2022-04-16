@@ -24,7 +24,7 @@ func NewSubscribe(pubsubName string, topic, route string, metadata map[string]st
 
 // SubscribeHandler 消息订阅处理器
 type SubscribeHandler interface {
-	GetSubscribes() ([]Subscribe, error)
+	GetSubscribes() (*[]Subscribe, error)
 	RegisterSubscribe(subscribe Subscribe) error
 	CallQueryEventHandler(ctx context.Context, sctx SubscribeContext) error
 }
@@ -38,12 +38,12 @@ type SubscribeHandlerFunc func(sh SubscribeHandler, subscribe Subscribe) error
 
 // SubscribeHandler 消息订阅处理器
 type subscribeHandler struct {
-	subscribes           []Subscribe
+	subscribes           *[]Subscribe
 	queryEventHandler    QueryEventHandler
 	subscribeHandlerFunc SubscribeHandlerFunc
 }
 
-func NewSubscribeHandler(subscribes []Subscribe, queryEventHandler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc) SubscribeHandler {
+func NewSubscribeHandler(subscribes *[]Subscribe, queryEventHandler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc) SubscribeHandler {
 	return &subscribeHandler{
 		subscribes:           subscribes,
 		queryEventHandler:    queryEventHandler,
@@ -51,7 +51,7 @@ func NewSubscribeHandler(subscribes []Subscribe, queryEventHandler QueryEventHan
 	}
 }
 
-func (h *subscribeHandler) GetSubscribes() ([]Subscribe, error) {
+func (h *subscribeHandler) GetSubscribes() (*[]Subscribe, error) {
 	return h.subscribes, nil
 }
 
