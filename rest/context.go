@@ -33,7 +33,7 @@ func NewListQuery(ctx iris.Context, tenantId string) (*ddd_repository.PagingQuer
 		Fields:   fields,
 		Filter:   filter,
 		Sort:     sort,
-		Page:     page,
-		Size:     size,
+		PageNum:  page,
+		PageSize: size,
 	}, nil
 }

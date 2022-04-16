@@ -18,22 +18,22 @@ const (
 	DefaultIdleConnTimeout     = 5
 )
 
-type HttpClient struct {
+type DaprHttpClient struct {
 	host   string
 	port   int
 	client *http.Client
 }
 
-type HttpOptions struct {
+type DaprHttpOptions struct {
 	MaxIdleConns        int
 	MaxIdleConnsPerHost int
 	IdleConnTimeout     int
 }
 
-type Option func(options *HttpOptions)
+type Option func(options *DaprHttpOptions)
 
-func newHttpOptions() *HttpOptions {
-	options := &HttpOptions{
+func newHttpOptions() *DaprHttpOptions {
+	options := &DaprHttpOptions{
 		MaxIdleConns:        DefaultMaxIdleConns,
 		MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
 		IdleConnTimeout:     DefaultIdleConnTimeout,
@@ -42,24 +42,24 @@ func newHttpOptions() *HttpOptions {
 }
 
 func MaxIdleConns(val int) Option {
-	return func(options *HttpOptions) {
+	return func(options *DaprHttpOptions) {
 		options.MaxIdleConns = val
 	}
 }
 
 func MaxIdleConnsPerHost(val int) Option {
-	return func(options *HttpOptions) {
+	return func(options *DaprHttpOptions) {
 		options.MaxIdleConnsPerHost = val
 	}
 }
 
 func IdleConnTimeout(val int) Option {
-	return func(options *HttpOptions) {
+	return func(options *DaprHttpOptions) {
 		options.IdleConnTimeout = val
 	}
 }
 
-func NewHttpClient(host string, port int, opts ...Option) (*HttpClient, error) {
+func NewHttpClient(host string, port int, opts ...Option) (*DaprHttpClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)
@@ -78,7 +78,7 @@ func NewHttpClient(host string, port int, opts ...Option) (*HttpClient, error) {
 		},
 	}
 
-	return &HttpClient{
+	return &DaprHttpClient{
 		client: client,
 		host:   host,
 		port:   port,
@@ -86,7 +86,7 @@ func NewHttpClient(host string, port int, opts ...Option) (*HttpClient, error) {
 
 }
 
-func (c *HttpClient) Get(ctx context.Context, url string) *Response {
+func (c *DaprHttpClient) Get(ctx context.Context, url string) *Response {
 	getUlr := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
 	resp, err := c.client.Get(getUlr)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *HttpClient) Get(ctx context.Context, url string) *Response {
 	return NewResponse(bs, err)
 }
 
-func (c *HttpClient) Post(ctx context.Context, url string, reqData interface{}) *Response {
+func (c *DaprHttpClient) Post(ctx context.Context, url string, reqData interface{}) *Response {
 	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
 	jsonData, err := json.Marshal(reqData)
 	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
@@ -113,7 +113,7 @@ func (c *HttpClient) Post(ctx context.Context, url string, reqData interface{}) 
 	return NewResponse(bs, err)
 }
 
-func (c *HttpClient) Put(ctx context.Context, url string, reqData interface{}) *Response {
+func (c *DaprHttpClient) Put(ctx context.Context, url string, reqData interface{}) *Response {
 	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.port, url)
 	jsonData, err := json.Marshal(reqData)
 	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
@@ -127,7 +127,7 @@ func (c *HttpClient) Put(ctx context.Context, url string, reqData interface{}) *
 	return NewResponse(bs, err)
 }
 
-func (c *HttpClient) getBodyBytes(resp *http.Response) ([]byte, error) {
+func (c *DaprHttpClient) getBodyBytes(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()
 	bs, err := io.ReadAll(resp.Body)
 	return bs, err

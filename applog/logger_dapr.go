@@ -7,11 +7,11 @@ import (
 )
 
 type logger struct {
-	httpclient *httpclient.HttpClient
+	httpclient *httpclient.DaprHttpClient
 	level      Level
 }
 
-func NewLogger(httpclient *httpclient.HttpClient) Logger {
+func NewLogger(httpclient *httpclient.DaprHttpClient) Logger {
 	return &logger{
 		httpclient: httpclient,
 		level:      ERROR,

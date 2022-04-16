@@ -1,6 +1,8 @@
 package ddd
 
-import "context"
+import (
+	"context"
+)
 
 // Subscribe dapr消息订阅项
 type Subscribe struct {
@@ -32,20 +34,20 @@ type SubscribeContext interface {
 	SetErr(err error)
 }
 
-type AppliationSubscribe func(sh SubscribeHandler, subscribe Subscribe) error
+type SubscribeHandlerFunc func(sh SubscribeHandler, subscribe Subscribe) error
 
 // SubscribeHandler 消息订阅处理器
 type subscribeHandler struct {
 	subscribes           []Subscribe
 	queryEventHandler    QueryEventHandler
-	appRegisterSubscribe AppliationSubscribe
+	subscribeHandlerFunc SubscribeHandlerFunc
 }
 
-func NewSubscribeHandler(subscribes []Subscribe, queryEventHandler QueryEventHandler, appRegisterSubscribe AppliationSubscribe) SubscribeHandler {
+func NewSubscribeHandler(subscribes []Subscribe, queryEventHandler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc) SubscribeHandler {
 	return &subscribeHandler{
 		subscribes:           subscribes,
 		queryEventHandler:    queryEventHandler,
-		appRegisterSubscribe: appRegisterSubscribe,
+		subscribeHandlerFunc: subscribeHandlerFunc,
 	}
 }
 
@@ -54,7 +56,7 @@ func (h *subscribeHandler) GetSubscribes() ([]Subscribe, error) {
 }
 
 func (h *subscribeHandler) RegisterSubscribe(subscribe Subscribe) error {
-	return h.appRegisterSubscribe(h, subscribe)
+	return h.subscribeHandlerFunc(h, subscribe)
 }
 
 // CallQueryEventHandler 消息订阅处理器

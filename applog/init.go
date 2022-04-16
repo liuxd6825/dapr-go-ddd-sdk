@@ -30,11 +30,11 @@ type EventHandler interface {
 //
 // Init
 // @Description: 初始化日期
-// @param httpClient HttpClient
+// @param httpClient DaprHttpClient
 // @param aAppId Darp Appliation Id
 // @param level 日志级别
 //
-func Init(httpClient *httpclient.HttpClient, aAppId string, level Level) {
+func Init(httpClient *httpclient.DaprHttpClient, aAppId string, level Level) {
 	log = NewLogger(httpClient)
 	log.SetLevel(level)
 	appId = aAppId

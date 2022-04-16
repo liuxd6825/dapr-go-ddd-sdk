@@ -18,12 +18,12 @@ const (
 )
 
 type daprEventStorage struct {
-	httpClient *httpclient.HttpClient
+	httpClient *httpclient.DaprHttpClient
 	pubsubName string
 	subscribes *[]Subscribe
 }
 
-func NewDaprEventStorage(httpClient *httpclient.HttpClient, options ...func(s EventStorage)) (EventStorage, error) {
+func NewDaprEventStorage(httpClient *httpclient.DaprHttpClient, options ...func(s EventStorage)) (EventStorage, error) {
 	subscribes = make([]Subscribe, 0)
 	res := &daprEventStorage{
 		httpClient: httpClient,

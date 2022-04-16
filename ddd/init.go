@@ -4,9 +4,14 @@ import (
 	"errors"
 )
 
+var appID string
 var eventStorages = map[string]EventStorage{"": NewEmptyEventStorage()}
 var subscribes = make([]Subscribe, 0)
 var subscribeHandlers = make([]SubscribeHandler, 0)
+
+func Init(appId string) {
+	appID = appId
+}
 
 //
 // Start
@@ -70,12 +75,12 @@ func RegisterEventStorage(key string, es EventStorage) {
 }
 
 //
-// RegisterSubscribeHandler
+// RegisterQueryHandler
 // @Description:  注册事件监听器
 // @param subHandler
 // @return error
 //
-func RegisterSubscribeHandler(subHandler SubscribeHandler) error {
+func RegisterQueryHandler(subHandler SubscribeHandler) error {
 	subscribeHandlers = append(subscribeHandlers, subHandler)
 	items, err := subHandler.GetSubscribes()
 	if err != nil {
