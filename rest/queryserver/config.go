@@ -1,4 +1,4 @@
-package queryservice
+package queryserver
 
 import (
 	"fmt"
@@ -7,20 +7,6 @@ import (
 	"io/ioutil"
 	"strings"
 )
-
-type EnvNameError struct {
-	msg string
-}
-
-func NewEnvNameError(msg string) *EnvNameError {
-	return &EnvNameError{
-		msg: msg,
-	}
-}
-
-func (e *EnvNameError) Error() string {
-	return e.msg
-}
 
 type Config struct {
 	EnvName string    `yaml:"env"`
@@ -74,6 +60,13 @@ type MongoConfig struct {
 	Database string `yaml:"dbname"`
 	UserName string `yaml:"user"`
 	Password string `yaml:"pwd"`
+}
+
+func (m MongoConfig) IsEmpty() bool {
+	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
+		return true
+	}
+	return false
 }
 
 func NewConfig() *Config {

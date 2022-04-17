@@ -1,4 +1,4 @@
-package queryservice
+package queryserver
 
 import (
 	"fmt"
@@ -100,7 +100,19 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subs *[]R
 	return nil
 }
 
-func RubConfig(config *EnvConfig, app *iris.Application, subs *[]RegisterSubscribe, controllers *[]Controller) error {
+func RunWithConfig(configFile string, app *iris.Application, subs *[]RegisterSubscribe, controllers *[]Controller) error {
+	config, err := NewConfigByFile(configFile)
+	if err != nil {
+		panic(err)
+	}
+	envConfig, err := config.GetEnvConfig()
+	if err != nil {
+		panic(err)
+	}
+	return RubWithEnvConfig(envConfig, app, subs, controllers)
+}
+
+func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subs *[]RegisterSubscribe, controllers *[]Controller) error {
 	//创建dapr客户端
 	daprClient, err := daprclient.NewClient(config.Dapr.Host, config.Dapr.HttpPort, config.Dapr.GrpcPort)
 	if err != nil {
@@ -117,12 +129,18 @@ func RubConfig(config *EnvConfig, app *iris.Application, subs *[]RegisterSubscri
 	eventStorages := map[string]ddd.EventStorage{}
 
 	//创建dapr事件存储器
-	eventStorage, err := ddd.NewDaprEventStorage(daprClient, ddd.PubsubName("pubsub"))
-	if err != nil {
-		panic(err)
-	}
 	esMap := map[string]ddd.EventStorage{}
-	esMap[eventStorage.GetPubsubName()] = eventStorage
+	for _, pubsubName := range config.Dapr.Pubsubs {
+		eventStorage, err := ddd.NewDaprEventStorage(daprClient, ddd.PubsubName(pubsubName))
+		if err != nil {
+			panic(err)
+		}
+		esMap[pubsubName] = eventStorage
+	}
+
+	if !config.Mongo.IsEmpty() {
+		initMongo(&config.Mongo)
+	}
 
 	return Run(options, app, config.App.RootUrl, subs, controllers, eventStorages)
 }

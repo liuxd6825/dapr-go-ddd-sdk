@@ -1,4 +1,4 @@
-package queryservice
+package queryserver
 
 import (
 	"errors"
