@@ -1,4 +1,4 @@
-package rest
+package queryservice
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ type StartOptions struct {
 	AppId      string
 	AppPort    int
 	LogLevel   applog.Level
-	HttpClient *daprclient.DaprClient
+	DaprClient daprclient.DaprClient
 }
 
 type RegisterSubscribe interface {
@@ -57,18 +57,18 @@ type Controller interface {
 }
 
 //
-// Start
+// Run
 //  @Description: 启动 iris web 服务
 //  @param port
 //  @param app
 //  @return *iris.Application
 //  @return error
 //
-func Start(options StartOptions, app *iris.Application, rootUrl string, subs *[]RegisterSubscribe, controllers *[]Controller, eventStorages map[string]ddd.EventStorage) error {
+func Run(options *StartOptions, app *iris.Application, rootUrl string, subs *[]RegisterSubscribe, controllers *[]Controller, eventStorages map[string]ddd.EventStorage) error {
 	_app = app
 
 	ddd.Init(options.AppId)
-	applog.Init(options.HttpClient, options.AppId, options.LogLevel)
+	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
 
 	if subs != nil {
 		for _, s := range *subs {
@@ -98,6 +98,33 @@ func Start(options StartOptions, app *iris.Application, rootUrl string, subs *[]
 		return err
 	}
 	return nil
+}
+
+func RubConfig(config *EnvConfig, app *iris.Application, subs *[]RegisterSubscribe, controllers *[]Controller) error {
+	//创建dapr客户端
+	daprClient, err := daprclient.NewClient(config.Dapr.Host, config.Dapr.HttpPort, config.Dapr.GrpcPort)
+	if err != nil {
+		panic(err)
+	}
+
+	options := &StartOptions{
+		AppId:      config.App.AppId,
+		AppPort:    config.App.AppPort,
+		LogLevel:   config.Log.GetLevel(),
+		DaprClient: daprClient,
+	}
+
+	eventStorages := map[string]ddd.EventStorage{}
+
+	//创建dapr事件存储器
+	eventStorage, err := ddd.NewDaprEventStorage(daprClient, ddd.PubsubName("pubsub"))
+	if err != nil {
+		panic(err)
+	}
+	esMap := map[string]ddd.EventStorage{}
+	esMap[eventStorage.GetPubsubName()] = eventStorage
+
+	return Run(options, app, config.App.RootUrl, subs, controllers, eventStorages)
 }
 
 func NewRegisterController(relativePath string, ctls ...interface{}) RegisterController {

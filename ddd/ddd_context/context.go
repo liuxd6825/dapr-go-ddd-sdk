@@ -20,13 +20,14 @@ func NewContext(parent context.Context, metadata map[string]string, serverCtx Se
 	return context.WithValue(ctx, ctxServerKey{}, serverCtx)
 }
 
-func GetMetadataContext(ctx context.Context) map[string]string {
+func GetMetadataContext(ctx context.Context) *map[string]string {
 	header := ctx.Value(ctxMetadataKey{})
 	mapData, ok := header.(map[string]string)
 	if ok {
-		return mapData
+		return &mapData
 	}
-	return make(map[string]string)
+	mapData = make(map[string]string)
+	return &mapData
 }
 
 func GetServerContext(ctx context.Context) ServerContext {

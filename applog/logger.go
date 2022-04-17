@@ -2,6 +2,9 @@ package applog
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 )
 
@@ -48,6 +51,28 @@ func (l Level) ToString() string {
 		return "off"
 	}
 	return "none"
+}
+func NewLevel(name string) (Level, error) {
+	v := strings.ToLower(name)
+	switch v {
+	case "trace":
+		return TRACE, nil
+	case "debug":
+		return DEBUG, nil
+	case "info":
+		return INFO, nil
+	case "warn":
+		return WARN, nil
+	case "error":
+		return ERROR, nil
+	case "fatal":
+		return FATAL, nil
+	case "all":
+		return ALL, nil
+	case "off":
+		return OFF, nil
+	}
+	return DEBUG, errors.New(fmt.Sprintf("%s as applog.Level error", name))
 }
 
 type Logger interface {

@@ -1,0 +1,19 @@
+env : dev
+dev :
+  app:
+    id: query-example
+    http-port: 9020
+    root-url: /api/v1.0
+  dapr:
+    host: localhost
+    http-port: 9021
+    grpc-port: 9022
+    pubsubs:
+      -pubsub
+  log:
+    level: debug
+  mongo:
+    host: 192.168.64.6:27019
+    dbname: query-example
+    user: query-example
+    pwd: 123456

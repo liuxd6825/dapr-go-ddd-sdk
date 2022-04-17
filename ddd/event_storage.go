@@ -115,16 +115,19 @@ type ApplyOptions struct {
 	eventStorageKey *string
 }
 
-func (a *ApplyOptions) SetPubsubName(pubsubName string) {
+func (a ApplyOptions) SetPubsubName(pubsubName string) *ApplyOptions {
 	a.pubsubName = &pubsubName
+	return &a
 }
 
-func (a *ApplyOptions) SetEventStorageKey(eventStorageKey string) {
+func (a ApplyOptions) SetEventStorageKey(eventStorageKey string) *ApplyOptions {
 	a.eventStorageKey = &eventStorageKey
+	return &a
 }
 
-func (a *ApplyOptions) SetMetadata(value *map[string]string) {
+func (a ApplyOptions) SetMetadata(value *map[string]string) *ApplyOptions {
 	a.metadata = value
+	return &a
 }
 
 //

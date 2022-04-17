@@ -18,12 +18,12 @@ const (
 )
 
 type daprEventStorage struct {
-	httpClient *daprclient.DaprHttpClient
+	httpClient daprclient.DaprClient
 	pubsubName string
 	subscribes *[]Subscribe
 }
 
-func NewDaprEventStorage(httpClient *daprclient.DaprHttpClient, options ...func(s EventStorage)) (EventStorage, error) {
+func NewDaprEventStorage(httpClient daprclient.DaprClient, options ...func(s EventStorage)) (EventStorage, error) {
 	subscribes = make([]Subscribe, 0)
 	res := &daprEventStorage{
 		httpClient: httpClient,
@@ -104,7 +104,7 @@ func (s *daprEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 func (s *daprEventStorage) LoadEvents(ctx context.Context, req *LoadEventsRequest) (res *LoadEventsResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageLoadEvents, req.TenantId, req.AggregateId)
 	data := &LoadEventsResponse{}
-	s.httpClient.Get(ctx, url).OnSuccess(data, func() error {
+	s.httpClient.HttpGet(ctx, url).OnSuccess(data, func() error {
 		res = data
 		return nil
 	}).OnError(func(err error) {
@@ -147,7 +147,7 @@ func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventReques
 	}
 
 	data := &ApplyEventsResponse{}
-	s.httpClient.Post(ctx, url, req).OnSuccess(data, func() error {
+	s.httpClient.HttpPost(ctx, url, req).OnSuccess(data, func() error {
 		res = data
 		return nil
 	}).OnError(func(err error) {
@@ -159,7 +159,7 @@ func (s *daprEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventReques
 func (s *daprEventStorage) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (res *SaveSnapshotResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageSnapshotSave)
 	data := &SaveSnapshotResponse{}
-	s.httpClient.Post(ctx, url, req).OnSuccess(data, func() error {
+	s.httpClient.HttpPost(ctx, url, req).OnSuccess(data, func() error {
 		res = data
 		return nil
 	}).OnError(func(err error) {
@@ -172,7 +172,7 @@ func (s *daprEventStorage) ExistAggregate(ctx context.Context, tenantId string, 
 	url := fmt.Sprintf(ApiEventStorageExistAggregate, tenantId, aggregateId)
 	data := &ExistAggregateResponse{}
 	isFind = false
-	s.httpClient.Get(ctx, url).OnSuccess(data, func() error {
+	s.httpClient.HttpGet(ctx, url).OnSuccess(data, func() error {
 		isFind = data.IsExist
 		return nil
 	}).OnError(func(err error) {

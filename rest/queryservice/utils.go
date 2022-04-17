@@ -1,4 +1,4 @@
-package rest
+package queryservice
 
 import (
 	"errors"
@@ -61,7 +61,9 @@ func SetError(ctx iris.Context, err error) {
 // DoCmd 执行命令
 func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) (err error) {
 	defer func() {
-		err = ddd_errors.GetRecoverError()
+		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			err = e
+		}
 	}()
 
 	if err = ctx.ReadBody(cmd); err != nil {
@@ -73,12 +75,14 @@ func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) (err error) {
 		SetError(ctx, err)
 		return err
 	}
-	return nil
+	return err
 }
 
 func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	defer func() {
-		err = ddd_errors.GetRecoverError()
+		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			err = e
+		}
 	}()
 
 	data, isFound, err = fun()
@@ -98,7 +102,9 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool
 
 func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	defer func() {
-		err = ddd_errors.GetRecoverError()
+		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			err = e
+		}
 	}()
 
 	data, isFound, err = fun()
@@ -145,6 +151,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	err := DoCmd(ctx, cmd, cmdFun)
 	isExists := ddd_errors.IsErrorAggregateExists(err)
 	if err != nil && !isExists {
+		SetError(ctx, err)
 		return nil, false, err
 	}
 	err = nil
@@ -154,6 +161,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 		time.Sleep(time.Duration(1) * time.Second)
 		logs, err := applog.GetEventLogByAppIdAndCommandId(cmd.GetTenantId(), subAppId, cmd.GetCommandId())
 		if err != nil {
+			SetError(ctx, err)
 			return nil, false, err
 		}
 
@@ -165,7 +173,9 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	}
 
 	if isTimeout {
-		return nil, false, errors.New("query execution timeout")
+		err = errors.New("query execution timeout")
+		SetError(ctx, err)
+		return nil, false, err
 	}
 
 	var data interface{}
@@ -174,6 +184,9 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 		data, isFound, err = DoQueryOne(ctx, queryFun)
 	} else {
 		data, isFound, err = DoQuery(ctx, queryFun)
+	}
+	if err != nil {
+		SetError(ctx, err)
 	}
 	return data, isFound, err
 }
