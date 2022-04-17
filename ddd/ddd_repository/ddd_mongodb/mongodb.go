@@ -60,6 +60,7 @@ type Config struct {
 	Params           string
 	ReplicaSet       string
 	OperationTimeout time.Duration
+	MaxPoolSize      uint64
 }
 
 // NewMongoDB returns a new MongoDB state store.
@@ -133,9 +134,9 @@ func getMongoDBClient(config *Config) (*mongo.Client, error) {
 	uri := getMongoURI(config)
 
 	// Set client options
-	clientOptions := options.Client().ApplyURI(uri)
+	opts := options.Client().ApplyURI(uri)
 	if len(config.ReplicaSet) != 0 {
-		clientOptions = clientOptions.SetReplicaSet(config.ReplicaSet)
+		opts = opts.SetReplicaSet(config.ReplicaSet)
 	}
 
 	// Connect to MongoDB
@@ -143,13 +144,23 @@ func getMongoDBClient(config *Config) (*mongo.Client, error) {
 	defer cancel()
 
 	mongoLog := "mongodb-"
-	if clientOptions.AppName != nil {
-		clientOptions.SetAppName(mongoLog + ":" + *clientOptions.AppName)
+	if opts.AppName != nil {
+		opts.SetAppName(mongoLog + ":" + *opts.AppName)
 	} else {
-		clientOptions.SetAppName(mongoLog)
+		opts.SetAppName(mongoLog)
 	}
 
-	client, err := mongo.Connect(ctx, clientOptions)
+	maxPoolSize := config.MaxPoolSize
+	if maxPoolSize < 1 {
+		maxPoolSize = 20
+	}
+	opts.SetMaxPoolSize(maxPoolSize)
+
+	if config.ReplicaSet != "" {
+		opts.SetReplicaSet(config.ReplicaSet)
+	}
+
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

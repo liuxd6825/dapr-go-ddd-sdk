@@ -56,10 +56,11 @@ func (l *LogConfig) GetLevel() applog.Level {
 }
 
 type MongoConfig struct {
-	Host     string `yaml:"host"`
-	Database string `yaml:"dbname"`
-	UserName string `yaml:"user"`
-	Password string `yaml:"pwd"`
+	Host        string `yaml:"host"`
+	Database    string `yaml:"dbname"`
+	UserName    string `yaml:"user"`
+	Password    string `yaml:"pwd"`
+	MaxPoolSize uint64 `yaml:"max-pool-size"`
 }
 
 func (m MongoConfig) IsEmpty() bool {

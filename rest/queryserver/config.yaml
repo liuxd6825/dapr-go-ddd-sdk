@@ -13,7 +13,9 @@ dev :
   log:
     level: debug
   mongo:
-    host: 192.168.64.6:27018;192.168.64.6:27019;192.168.64.6:27020
+    host: 192.168.64.6:27018,192.168.64.6:27019,192.168.64.6:27020
+    replica-set: mongors
     dbname: query-example
     user: query-example
     pwd: 123456
+    max-pool-size: 20

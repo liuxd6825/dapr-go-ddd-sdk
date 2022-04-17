@@ -64,18 +64,20 @@ type Controller interface {
 //  @return *iris.Application
 //  @return error
 //
-func Run(options *StartOptions, app *iris.Application, rootUrl string, subs *[]RegisterSubscribe, controllers *[]Controller, eventStorages map[string]ddd.EventStorage) error {
+func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage) error {
 	_app = app
 
 	ddd.Init(options.AppId)
 	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
 
+	subs := subsFunc()
 	if subs != nil {
 		for _, s := range *subs {
 			NewQueryHandler(s.GetSubscribes(), s.GetHandler())
 		}
 	}
 
+	controllers := controllersFunc()
 	if controllers != nil {
 		for _, c := range *controllers {
 			registerRestController(rootUrl, c)
@@ -100,7 +102,7 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subs *[]R
 	return nil
 }
 
-func RunWithConfig(configFile string, app *iris.Application, subs *[]RegisterSubscribe, controllers *[]Controller) error {
+func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller) error {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -109,10 +111,14 @@ func RunWithConfig(configFile string, app *iris.Application, subs *[]RegisterSub
 	if err != nil {
 		panic(err)
 	}
-	return RubWithEnvConfig(envConfig, app, subs, controllers)
+	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc)
 }
 
-func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subs *[]RegisterSubscribe, controllers *[]Controller) error {
+func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller) error {
+	if !config.Mongo.IsEmpty() {
+		initMongo(&config.Mongo)
+	}
+
 	//创建dapr客户端
 	daprClient, err := daprclient.NewClient(config.Dapr.Host, config.Dapr.HttpPort, config.Dapr.GrpcPort)
 	if err != nil {
@@ -138,11 +144,7 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subs *[]Register
 		esMap[pubsubName] = eventStorage
 	}
 
-	if !config.Mongo.IsEmpty() {
-		initMongo(&config.Mongo)
-	}
-
-	return Run(options, app, config.App.RootUrl, subs, controllers, eventStorages)
+	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, eventStorages)
 }
 
 func NewRegisterController(relativePath string, ctls ...interface{}) RegisterController {
