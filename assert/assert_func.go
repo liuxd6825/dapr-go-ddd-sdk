@@ -1,29 +1,35 @@
 package assert
 
-func Nil(a Assert, v interface{}, opts ...*Options) bool {
-	options := mergeOptions(opts...)
+func Nil(v interface{}, opts ...*Options) error {
+	options := mergeOptions("assert.Nil() error", opts...)
 	b := v == nil
-	setValue(a, options, b)
-	return b
+	setValue(options, b)
+	return options.Error()
 }
 
-func NotNil(a Assert, v interface{}, opts ...*Options) bool {
-	options := mergeOptions(opts...)
+func NotNil(v interface{}, opts ...*Options) error {
+	options := mergeOptions("assert.NotNil() error", opts...)
 	b := v != nil
-	setValue(a, options, b)
-	return b
+	setValue(options, b)
+	return options.Error()
 }
 
-func Equal(a Assert, v1 interface{}, v2 interface{}, opts ...*Options) bool {
-	options := mergeOptions(opts...)
+func Equal(v1 interface{}, v2 interface{}, opts ...*Options) error {
+	options := mergeOptions("assert.Equal() error ", opts...)
 	b := v1 == v2
-	setValue(a, options, b)
-	return b
+	setValue(options, b)
+	return options.Error()
 }
 
-func NotEqual(a Assert, v1 interface{}, v2 interface{}, opts ...*Options) bool {
-	options := mergeOptions(opts...)
+func NotEqual(v1 interface{}, v2 interface{}, opts ...*Options) error {
+	options := mergeOptions("assert.NotEqual() error ", opts...)
 	b := v1 != v2
-	setValue(a, options, b)
-	return b
+	setValue(options, b)
+	return options.Error()
+}
+
+func setValue(options *Options, bool2 bool) {
+	if options != nil && options.assert != nil {
+		options.assert.setValue(options, bool2)
+	}
 }

@@ -1,20 +1,48 @@
 package assert
 
-import "strings"
+import (
+	"strings"
+)
 
-type Assert map[string]*Options
-
-func NewAssert() Assert {
-	return Assert{}
+//
+// AssertError
+// @Description:  断言错误
+//
+type AssertError struct {
+	msg string
 }
 
-func (a Assert) setValue(opt *Options, value bool) {
+func NewAssertError(msg string) *AssertError {
+	return &AssertError{msg: msg}
+}
+
+func (e *AssertError) Error() string {
+	return e.msg
+}
+
+// Context
+// @Description:  断言上下文对象
+type Context map[string]*Options
+
+//
+// NewContext
+// @Description: 创建断言上下文对象
+// @return Context
+//
+func NewContext() Context {
+	return Context{}
+}
+
+func (a Context) setValue(opt *Options, value bool) {
+	if opt != nil {
+		opt.value = value
+	}
 	if opt != nil && opt.HasKey() {
 		a[*opt.GetKey()] = opt
 	}
 }
 
-func (a Assert) IsError() bool {
+func (a Context) IsError() bool {
 	for _, o := range a {
 		if o.value == false {
 			return false
@@ -23,7 +51,7 @@ func (a Assert) IsError() bool {
 	return true
 }
 
-func (a Assert) Error() error {
+func (a Context) Error() error {
 	err := &Error{}
 	for _, item := range a {
 		if !item.value {
@@ -51,9 +79,21 @@ func (e *Error) Error() string {
 }
 
 type Options struct {
-	key   *string
-	error *string
-	value bool
+	assert *Context
+	key    *string
+	error  *string
+	value  bool
+}
+
+func WidthOptionsError(error string) *Options {
+	return NewOptionsBuilder().SetError(error).Build()
+}
+func WidthOptionsKey(key string) *Options {
+	return NewOptionsBuilder().SetKey(key).Build()
+}
+
+func (o *Options) Assert(assert *Context) {
+	o.assert = assert
 }
 
 func (o *Options) HasKey() bool {
@@ -72,21 +112,68 @@ func (o *Options) GetError() *string {
 	return o.error
 }
 
-func setValue(a Assert, options *Options, bool2 bool) {
-	if a != nil {
-		a.setValue(options, bool2)
+func (o *Options) Error() error {
+	if !o.value {
+		return NewAssertError(*o.error)
+	}
+	return nil
+}
+
+type OptionsBuilder struct {
+	assert *Context
+	key    *string
+	error  *string
+}
+
+func NewOptionsBuilder() *OptionsBuilder {
+	return &OptionsBuilder{}
+}
+
+func (b *OptionsBuilder) SetAssert(assert *Context) *OptionsBuilder {
+	b.assert = assert
+	return b
+}
+
+func (b *OptionsBuilder) SetKey(key string) *OptionsBuilder {
+	b.key = &key
+	return b
+}
+
+func (b *OptionsBuilder) SetError(error string) *OptionsBuilder {
+	b.error = &error
+	return b
+}
+
+func (b *OptionsBuilder) Build() *Options {
+	return &Options{
+		assert: b.assert,
+		key:    b.key,
+		error:  b.error,
 	}
 }
 
-func mergeOptions(opts ...*Options) *Options {
+func mergeOptions(defaultError string, opts ...*Options) *Options {
 	opt := &Options{}
-	for _, o := range opts {
-		if o.key != nil {
-			opt.key = o.key
+	if opts != nil {
+		for _, o := range opts {
+			if o != nil {
+				if o.assert != nil {
+					opt.assert = o.assert
+				}
+				if o.key != nil {
+					opt.key = o.key
+				}
+				if o.error != nil {
+					opt.error = o.error
+				}
+			}
 		}
-		if o.error != nil {
-			opt.error = o.error
-		}
+	}
+	if opt.assert == nil {
+		opt.assert = &Context{}
+	}
+	if opt.error == nil {
+		opt.error = &defaultError
 	}
 	return opt
 }
