@@ -1,4 +1,4 @@
-package queryserver
+package restapp
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"

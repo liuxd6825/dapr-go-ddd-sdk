@@ -14,11 +14,11 @@ func Init(appId string) {
 }
 
 //
-// Start
+// StartSubscribeHandlers
 // @Description: 启动事件监听
 // @return error
 //
-func Start() error {
+func StartSubscribeHandlers() error {
 	for _, handler := range subscribeHandlers {
 		items, err := handler.GetSubscribes()
 		if err != nil {

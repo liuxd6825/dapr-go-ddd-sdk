@@ -1,4 +1,4 @@
-package queryserver
+package restapp
 
 import (
 	"errors"

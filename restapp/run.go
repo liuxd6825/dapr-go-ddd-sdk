@@ -1,6 +1,7 @@
-package queryserver
+package restapp
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
@@ -56,53 +57,13 @@ type Controller interface {
 	BeforeActivation(b mvc.BeforeActivation)
 }
 
-//
-// Run
-//  @Description: 启动 iris web 服务
-//  @param port
-//  @param app
-//  @return *iris.Application
-//  @return error
-//
-func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage) error {
-	_app = app
-
-	ddd.Init(options.AppId)
-	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
-
-	subs := subsFunc()
-	if subs != nil {
-		for _, s := range *subs {
-			NewQueryHandler(s.GetSubscribes(), s.GetHandler())
-		}
-	}
-
-	controllers := controllersFunc()
-	if controllers != nil {
-		for _, c := range *controllers {
-			registerRestController(rootUrl, c)
-		}
-	}
-
-	// dapr 服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
-	_app.Get(subscribePath, func(context *context.Context) {
-		_, _ = context.JSON(ddd.GetSubscribes())
-	})
-
-	for _, es := range eventStorages {
-		ddd.RegisterEventStorage(es.GetPubsubName(), es)
-	}
-
-	if err := ddd.Start(); err != nil {
-		return err
-	}
-	if err := app.Run(iris.Addr(fmt.Sprintf(":%d", options.AppPort))); err != nil {
-		return err
-	}
-	return nil
+type RegisterEvent struct {
+	EventType string
+	Revision  string
+	NewFunc   ddd.NewEventFunc
 }
 
-func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller) error {
+func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, events *[]RegisterEvent) error {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -111,10 +72,10 @@ func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]
 	if err != nil {
 		panic(err)
 	}
-	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc)
+	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc, events)
 }
 
-func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller) error {
+func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, events *[]RegisterEvent) error {
 	if !config.Mongo.IsEmpty() {
 		initMongo(&config.Mongo)
 	}
@@ -144,7 +105,67 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 		esMap[pubsubName] = eventStorage
 	}
 
-	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, eventStorages)
+	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, &eventStorages, events)
+}
+
+//
+// Run
+// @Description: 启动 iris web 服务
+// @param port
+// @param app
+// @return *iris.Application
+// @return error
+//
+func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc func() *[]RegisterSubscribe,
+	controllersFunc func() *[]Controller, eventStorages *map[string]ddd.EventStorage, events *[]RegisterEvent) error {
+	_app = app
+
+	ddd.Init(options.AppId)
+	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
+
+	// 注册消息订阅
+	subs := subsFunc()
+	if subs != nil {
+		for _, s := range *subs {
+			registerSubscribeHandler(s.GetSubscribes(), s.GetHandler())
+		}
+	}
+
+	// 注册控制器
+	controllers := controllersFunc()
+	if controllers != nil {
+		for _, c := range *controllers {
+			registerRestController(rootUrl, c)
+		}
+	}
+
+	// 注册领域事件类型
+	if events != nil {
+		for _, event := range *events {
+			if err := ddd.RegisterEventType(event.EventType, event.Revision, event.NewFunc); err != nil {
+				return errors.New(fmt.Sprintf("RegisterEventType() error:%s , EventType=%s, Revision=%s", err.Error(), event.EventType, event.Revision))
+			}
+		}
+	}
+
+	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
+	_app.Get(subscribePath, func(context *context.Context) {
+		_, _ = context.JSON(ddd.GetSubscribes())
+	})
+
+	// 注册事件存储器
+	if eventStorages != nil {
+		for _, es := range *eventStorages {
+			ddd.RegisterEventStorage(es.GetPubsubName(), es)
+		}
+	}
+	if err := ddd.StartSubscribeHandlers(); err != nil {
+		return err
+	}
+	if err := app.Run(iris.Addr(fmt.Sprintf(":%d", options.AppPort))); err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewRegisterController(relativePath string, ctls ...interface{}) RegisterController {
@@ -173,12 +194,12 @@ func registerRestController(relativePath string, controllers ...Controller) {
 }
 
 //
-// RegisterQueryHandler
+// registerQueryHandler
 // @Description: 注册领域事件控制器
 // @param handlers
 // @return error
 //
-func RegisterQueryHandler(handlers ...ddd.SubscribeHandler) error {
+func registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
 		err := ddd.RegisterQueryHandler(h)
@@ -190,13 +211,13 @@ func RegisterQueryHandler(handlers ...ddd.SubscribeHandler) error {
 }
 
 //
-// NewQueryHandler
+// registerSubscribeHandler
 // @Description: 新建领域事件控制器
 // @param subscribes
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
 //
-func NewQueryHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) ddd.SubscribeHandler {
+func registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) ddd.SubscribeHandler {
 	return ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
 		defer func() {
 			if e := ddd_errors.GetRecoverError(recover()); e != nil {
