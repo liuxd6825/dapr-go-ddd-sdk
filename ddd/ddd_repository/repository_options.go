@@ -66,7 +66,7 @@ func NewFindOptions() *FindOptions {
 	}
 }
 
-func (f *FindOptions) Init(opts ...FindOption) *FindOptions {
+func (f *FindOptions) init(opts ...FindOption) *FindOptions {
 	for _, opt := range opts {
 		opt(f)
 	}

@@ -94,13 +94,13 @@ func newEntityBuilder() ddd_repository.EntityBuilder {
 }
 
 func newCollection(name string) (*MongoDB, *mongo.Collection) {
-	mongodb := NewMongoDB()
-	err := mongodb.Init(&Config{
+	config := &Config{
 		Host:         "192.168.64.8:27019",
 		DatabaseName: "query-example",
 		UserName:     "query-example",
 		Password:     "123456",
-	})
+	}
+	mongodb, err := NewMongoDB(config)
 	if err != nil {
 		panic(err)
 	}

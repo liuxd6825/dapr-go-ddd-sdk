@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -63,14 +64,33 @@ type Config struct {
 	MaxPoolSize      uint64
 }
 
-// NewMongoDB returns a new MongoDB state store.
-func NewMongoDB() *MongoDB {
-	s := &MongoDB{}
-	return s
+//
+// NewMongoDB
+// @Description:  新建MongoDB
+// @param config  配置类
+// @return *MongoDB MongoDB对象
+// @return error 错误信息
+//
+func NewMongoDB(config *Config) (*MongoDB, error) {
+	mongodb := &MongoDB{}
+	if err := mongodb.init(config); err != nil {
+		return nil, err
+	}
+	return mongodb, nil
 }
 
-// Init establishes connection to the store based on the config.
-func (m *MongoDB) Init(config *Config) error {
+//
+//  init
+//  @Description: 初始化
+//  @receiver m  *MongoDB
+//  @param config  配置类
+//  @return error 错误信息
+//
+func (m *MongoDB) init(config *Config) error {
+	if config == nil {
+		return errors.New("NewMongoDB() error,config is nil")
+	}
+
 	m.operationTimeout = config.OperationTimeout
 
 	client, err := getMongoDBClient(config)

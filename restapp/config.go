@@ -16,10 +16,10 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	App   AppConfig   `yaml:"app"`
-	Log   LogConfig   `yaml:"log"`
-	Dapr  DaprConfig  `yaml:"dapr"`
-	Mongo MongoConfig `yaml:"mongo"`
+	App   AppConfig      `yaml:"app"`
+	Log   LogConfig      `yaml:"log"`
+	Dapr  DaprConfig     `yaml:"dapr"`
+	Mongo AppMongoConfig `yaml:"mongo"`
 }
 
 func (e EnvConfig) CheckError() error {
@@ -97,15 +97,18 @@ func (c *Config) GetEnvConfig() (*EnvConfig, error) {
 	return nil, NewEnvNameError(fmt.Sprintf("config.envName is \"%s\" error. range is [dev, test, prod]", c.EnvName))
 }
 
-type MongoConfig struct {
-	Host        string `yaml:"host"`
-	Database    string `yaml:"dbname"`
-	UserName    string `yaml:"user"`
-	Password    string `yaml:"pwd"`
-	MaxPoolSize uint64 `yaml:"max-pool-size"`
+type AppMongoConfig struct {
+	Host         string `yaml:"host"`
+	Database     string `yaml:"dbname"`
+	UserName     string `yaml:"user"`
+	Password     string `yaml:"pwd"`
+	MaxPoolSize  uint64 `yaml:"max-pool-size"`
+	ReplicaSet   string `yaml:"replica-set"`
+	WriteConcern string `yaml:"write-concern"`
+	ReadConcern  string `yaml:"read-concern"`
 }
 
-func (m MongoConfig) IsEmpty() bool {
+func (m AppMongoConfig) IsEmpty() bool {
 	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
 		return true
 	}
