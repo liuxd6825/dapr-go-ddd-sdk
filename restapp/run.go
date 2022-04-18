@@ -63,7 +63,7 @@ type RegisterEvent struct {
 	NewFunc   ddd.NewEventFunc
 }
 
-func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, events *[]RegisterEvent) error {
+func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEvent) error {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -72,10 +72,10 @@ func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]
 	if err != nil {
 		panic(err)
 	}
-	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc, events)
+	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc, eventsFunc)
 }
 
-func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, events *[]RegisterEvent) error {
+func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEvent) error {
 	if !config.Mongo.IsEmpty() {
 		initMongo(&config.Mongo)
 	}
@@ -105,7 +105,7 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 		esMap[pubsubName] = eventStorage
 	}
 
-	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, &eventStorages, events)
+	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, &eventStorages, eventsFunc)
 }
 
 //
@@ -117,7 +117,7 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 // @return error
 //
 func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventStorages *map[string]ddd.EventStorage, events *[]RegisterEvent) error {
+	controllersFunc func() *[]Controller, eventStorages *map[string]ddd.EventStorage, eventsFunc func() *[]RegisterEvent) error {
 	_app = app
 
 	ddd.Init(options.AppId)
@@ -140,6 +140,7 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 	}
 
 	// 注册领域事件类型
+	events := eventsFunc()
 	if events != nil {
 		for _, event := range *events {
 			if err := ddd.RegisterEventType(event.EventType, event.Revision, event.NewFunc); err != nil {
