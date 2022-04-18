@@ -22,13 +22,16 @@ type EnvConfig struct {
 	Mongo AppMongoConfig `yaml:"mongo"`
 }
 
-func (e EnvConfig) CheckError() error {
+func (e EnvConfig) Init() error {
 	if e.Log.Level != "" {
 		l, err := applog.NewLevel(e.Log.Level)
 		if err != nil {
 			return err
 		}
 		e.Log.level = l
+	}
+	if e.Dapr.Host == "" {
+		e.Dapr.Host = "localhost"
 	}
 	return nil
 }
@@ -72,13 +75,13 @@ func NewConfigByFile(fileName string) (*Config, error) {
 		return nil, err
 	}
 
-	if err := config.Dev.CheckError(); err != nil {
+	if err := config.Dev.Init(); err != nil {
 		return nil, err
 	}
-	if err := config.Test.CheckError(); err != nil {
+	if err := config.Test.Init(); err != nil {
 		return nil, err
 	}
-	if err := config.Prod.CheckError(); err != nil {
+	if err := config.Prod.Init(); err != nil {
 		return nil, err
 	}
 	return &config, nil
