@@ -16,10 +16,10 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	App   AppConfig      `yaml:"app"`
-	Log   LogConfig      `yaml:"log"`
-	Dapr  DaprConfig     `yaml:"dapr"`
-	Mongo AppMongoConfig `yaml:"mongo"`
+	App   AppConfig   `yaml:"app"`
+	Log   LogConfig   `yaml:"log"`
+	Dapr  DaprConfig  `yaml:"dapr"`
+	Mongo MongoConfig `yaml:"mongo"`
 }
 
 func (e EnvConfig) Init() error {
@@ -100,7 +100,7 @@ func (c *Config) GetEnvConfig() (*EnvConfig, error) {
 	return nil, NewEnvNameError(fmt.Sprintf("config.envName is \"%s\" error. range is [dev, test, prod]", c.EnvName))
 }
 
-type AppMongoConfig struct {
+type MongoConfig struct {
 	Host         string `yaml:"host"`
 	Database     string `yaml:"dbname"`
 	UserName     string `yaml:"user"`
@@ -111,7 +111,7 @@ type AppMongoConfig struct {
 	ReadConcern  string `yaml:"read-concern"`
 }
 
-func (m AppMongoConfig) IsEmpty() bool {
+func (m MongoConfig) IsEmpty() bool {
 	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
 		return true
 	}

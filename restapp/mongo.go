@@ -8,7 +8,7 @@ import (
 
 var _mongodb *ddd_mongodb.MongoDB
 
-func initMongo(appMongoConfig *AppMongoConfig) {
+func initMongo(appMongoConfig *MongoConfig) {
 	if err := assert.NotNil(appMongoConfig, assert.WidthOptionsError("appMongoConfig is nil")); err != nil {
 		panic(err)
 	}
