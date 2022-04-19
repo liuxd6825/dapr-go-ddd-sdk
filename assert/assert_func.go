@@ -1,6 +1,7 @@
 package assert
 
 func Nil(v interface{}, opts ...*Options) error {
+
 	options := mergeOptions("assert.Nil() error", opts...)
 	b := v == nil
 	setValue(options, b)
@@ -10,6 +11,33 @@ func Nil(v interface{}, opts ...*Options) error {
 func NotNil(v interface{}, opts ...*Options) error {
 	options := mergeOptions("assert.NotNil() error", opts...)
 	b := v != nil
+	setValue(options, b)
+	return options.Error()
+}
+
+func Ture(b bool, opts ...*Options) error {
+	options := mergeOptions("assert.Ture() error", opts...)
+	setValue(options, b)
+	return options.Error()
+}
+
+func False(v bool, opts ...*Options) error {
+	options := mergeOptions("assert.False() error", opts...)
+	b := !v
+	setValue(options, b)
+	return options.Error()
+}
+
+func Empty(v string, opts ...*Options) error {
+	options := mergeOptions("assert.Empty() error", opts...)
+	b := v == ""
+	setValue(options, b)
+	return options.Error()
+}
+
+func NotEmpty(v string, opts ...*Options) error {
+	options := mergeOptions("assert.NotEmpty() error", opts...)
+	b := v != ""
 	setValue(options, b)
 	return options.Error()
 }
