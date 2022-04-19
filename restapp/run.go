@@ -13,6 +13,7 @@ import (
 )
 
 const subscribePath = "dapr/subscribe"
+const eventTypesPath = "dapr/event-types"
 
 var _app *iris.Application
 
@@ -156,6 +157,11 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
 	_app.Get(subscribePath, func(context *context.Context) {
 		_, _ = context.JSON(ddd.GetSubscribes())
+	})
+
+	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
+	_app.Get(eventTypesPath, func(context *context.Context) {
+		//_, _ = context.JSON(ddd.RegisterEventType())
 	})
 
 	// 注册事件存储器

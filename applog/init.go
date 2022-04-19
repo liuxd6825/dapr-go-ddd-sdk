@@ -24,10 +24,6 @@ type Event interface {
 	GetEventId() string
 }
 
-type EventHandler interface {
-	GetClassName() string
-}
-
 //
 // Init
 // @Description: 初始化日期
@@ -51,12 +47,12 @@ func Init(daprClient daprclient.DaprClient, aAppId string, level Level) {
 // @param method 执行函数
 // @return error 错误
 //
-func DoEventLog(ctx context.Context, handler EventHandler, event Event, funcName string, fun DoAction) error {
+func DoEventLog(ctx context.Context, structNameFunc func() string, event Event, funcName string, fun DoAction) error {
 	err := fun()
 	if err == nil {
-		_, _ = InfoEvent(event.GetTenantId(), handler.GetClassName(), funcName, "success", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = InfoEvent(event.GetTenantId(), structNameFunc(), funcName, "success", event.GetEventId(), event.GetCommandId(), "")
 	} else {
-		_, _ = ErrorEvent(event.GetTenantId(), handler.GetClassName(), funcName, "error", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = ErrorEvent(event.GetTenantId(), structNameFunc(), funcName, "error", event.GetEventId(), event.GetCommandId(), "")
 	}
 	return nil
 }
@@ -176,8 +172,8 @@ func Fatal(tenantId, className, funcName, message string) (string, error) {
 //  @return string
 //  @return error
 //
-func InfoEvent(tenantId, className, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, className, funcName, INFO, message, eventId, commandId, pubAppId, false)
+func InfoEvent(tenantId, structName, funcName, message, eventId, commandId, pubAppId string) (string, error) {
+	return writeEventLog(context.Background(), tenantId, structName, funcName, INFO, message, eventId, commandId, pubAppId, false)
 }
 
 //
@@ -215,9 +211,9 @@ func GetEventLogByAppIdAndCommandId(tenantId, appId, commandId string) (*[]Event
 //  @Description: 写事件日志
 //  @param ctx
 //  @param tenantId
-//  @param className
-//  @param funcName
-//  @param level
+//  @param structName 被记录的结构名称
+//  @param funcName 被记录的方法名称
+//  @param level 日志级别
 //  @param message
 //  @param eventId
 //  @param commandId
@@ -226,14 +222,14 @@ func GetEventLogByAppIdAndCommandId(tenantId, appId, commandId string) (*[]Event
 //  @return string
 //  @return error
 //
-func writeEventLog(ctx context.Context, tenantId, className, funcName string, level Level, message, eventId, commandId, pubAppId string, status bool) (string, error) {
+func writeEventLog(ctx context.Context, tenantId, structName, funcName string, level Level, message, eventId, commandId, pubAppId string, status bool) (string, error) {
 	uid := uuid.New().String()
 	timeNow := time.Now()
 	req := &WriteEventLogRequest{
 		Id:        uid,
 		TenantId:  tenantId,
 		AppId:     appId,
-		Class:     className,
+		Class:     structName,
 		Func:      funcName,
 		Level:     level.ToString(),
 		Time:      &timeNow,

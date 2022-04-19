@@ -9,7 +9,7 @@ import (
 
 type NewEventFunc func() interface{}
 
-var _registry = newEventRegistry()
+var _eventTypeRegistry = newEventTypeRegistry()
 
 type RegisterEventTypeOptions struct {
 	marshaler JsonMarshaler
@@ -30,14 +30,14 @@ func RegisterEventType(eventType string, eventRevision string, newFunc NewEventF
 	if err := assert.NotEmpty(eventRevision, assert.WidthOptionsError("ddd.RegisterEventType() eventType is nil")); err != nil {
 		return err
 	}
-	if err := assert.Nil(newFunc, assert.WidthOptionsError("ddd.RegisterEventType() newFunc is nil")); err != nil {
+	if err := assert.NotNil(newFunc, assert.WidthOptionsError("ddd.RegisterEventType() newFunc is nil")); err != nil {
 		return err
 	}
-	return _registry.add(eventType, eventRevision, newFunc, options...)
+	return _eventTypeRegistry.add(eventType, eventRevision, newFunc, options...)
 }
 
 func NewDomainEvent(record *EventRecord) (interface{}, error) {
-	if eventTypes, ok := _registry.typeMap[record.EventType]; ok {
+	if eventTypes, ok := _eventTypeRegistry.typeMap[record.EventType]; ok {
 		if item, ok := eventTypes.revisionMap[record.EventRevision]; ok {
 			event := item.newFunc()
 			var err error
@@ -59,7 +59,7 @@ func NewDomainEvent(record *EventRecord) (interface{}, error) {
 }
 
 func getRegistryItem(eventType, eventRevision string) (*registryItem, error) {
-	if eventTypes, ok := _registry.typeMap[eventType]; ok {
+	if eventTypes, ok := _eventTypeRegistry.typeMap[eventType]; ok {
 		if item, ok := eventTypes.revisionMap[eventRevision]; ok {
 			return item, nil
 		}
@@ -86,18 +86,33 @@ func newRegistryItem(eventType, revision string, eventFunc NewEventFunc, eventPr
 	}
 }
 
-// 事件注册表
-type eventRegistry struct {
+// 事件类型注册表
+type eventTypeRegistry struct {
 	typeMap map[string]*eventTypes
 }
 
-func newEventRegistry() *eventRegistry {
-	return &eventRegistry{
+//
+//  newEventTypeRegistry
+//  @Description: 新建事件类型注册表
+//  @return *eventTypeRegistry
+//
+func newEventTypeRegistry() *eventTypeRegistry {
+	return &eventTypeRegistry{
 		typeMap: make(map[string]*eventTypes),
 	}
 }
 
-func (r *eventRegistry) add(eventType string, revision string, newFunc NewEventFunc, options ...RegisterOption) error {
+//
+// add
+// @Description: 添加事件类型
+// @receiver r
+// @param eventType 事件类型
+// @param revision 事件版本号
+// @param newFunc 事件方法
+// @param options 选项
+// @return error 错误
+//
+func (r *eventTypeRegistry) add(eventType string, revision string, newFunc NewEventFunc, options ...RegisterOption) error {
 	opts := &RegisterEventTypeOptions{}
 	for _, item := range options {
 		item(opts)
