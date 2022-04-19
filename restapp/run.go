@@ -127,7 +127,9 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 	subs := subsFunc()
 	if subs != nil {
 		for _, s := range *subs {
-			registerSubscribeHandler(s.GetSubscribes(), s.GetHandler())
+			if s != nil {
+				registerSubscribeHandler(s.GetSubscribes(), s.GetHandler())
+			}
 		}
 	}
 
@@ -135,7 +137,9 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 	controllers := controllersFunc()
 	if controllers != nil {
 		for _, c := range *controllers {
-			registerRestController(rootUrl, c)
+			if c != nil {
+				registerRestController(rootUrl, c)
+			}
 		}
 	}
 

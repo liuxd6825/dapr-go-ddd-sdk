@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 )
 
 type NewEventFunc func() interface{}
@@ -23,6 +24,15 @@ func RegisterOptionMarshaler(marshaler JsonMarshaler) RegisterOption {
 }
 
 func RegisterEventType(eventType string, eventRevision string, newFunc NewEventFunc, options ...RegisterOption) error {
+	if err := assert.NotEmpty(eventType, assert.WidthOptionsError("ddd.RegisterEventType() eventType is nil")); err != nil {
+		return err
+	}
+	if err := assert.NotEmpty(eventRevision, assert.WidthOptionsError("ddd.RegisterEventType() eventType is nil")); err != nil {
+		return err
+	}
+	if err := assert.Nil(newFunc, assert.WidthOptionsError("ddd.RegisterEventType() newFunc is nil")); err != nil {
+		return err
+	}
 	return _registry.add(eventType, eventRevision, newFunc, options...)
 }
 

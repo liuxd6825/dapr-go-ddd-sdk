@@ -5,6 +5,7 @@ import (
 	json2 "encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"runtime"
 	"strings"
@@ -69,6 +70,15 @@ func DoEventLog(ctx context.Context, handler EventHandler, event Event, funcName
 // @return error
 //
 func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
+	if err := assert.NotNil(info, assert.WidthOptionsError("info is nil")); err != nil {
+		return err
+	}
+	if err := assert.NotNil(ctx, assert.WidthOptionsError("ctx is nil")); err != nil {
+		return err
+	}
+	if err := assert.NotNil(fun, assert.WidthOptionsError("fun is nil")); err != nil {
+		return err
+	}
 	resp, err := fun()
 	_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, info.Level, info.Message)
 
@@ -85,13 +95,13 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 
 //
 // Debug
-//  @Description:  写调试级日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @return string
-//  @return error
+// @Description:  写调试级日志
+// @param tenantId
+// @param className
+// @param funcName
+// @param message
+// @return string
+// @return error
 //
 func Debug(tenantId, className, funcName, message string) (string, error) {
 	return writeAppLog(context.Background(), tenantId, className, funcName, DEBUG, message)
@@ -99,13 +109,13 @@ func Debug(tenantId, className, funcName, message string) (string, error) {
 
 //
 // Info
-//  @Description: 写信息级日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @return string
-//  @return error
+// @Description: 写信息级日志
+// @param tenantId
+// @param className
+// @param funcName
+// @param message
+// @return string
+// @return error
 //
 func Info(tenantId, className, funcName, message string) (string, error) {
 	return writeAppLog(context.Background(), tenantId, className, funcName, INFO, message)
