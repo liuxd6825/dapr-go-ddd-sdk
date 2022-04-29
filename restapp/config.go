@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	EnvName string    `yaml:"env"`
+	EnvType string    `yaml:"envType"`
 	Test    EnvConfig `yaml:"test"`
 	Dev     EnvConfig `yaml:"dev"`
 	Prod    EnvConfig `yaml:"prod"`
@@ -87,8 +87,11 @@ func NewConfigByFile(fileName string) (*Config, error) {
 	return &config, nil
 }
 
-func (c *Config) GetEnvConfig() (*EnvConfig, error) {
-	envName := strings.ToLower(c.EnvName)
+func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
+	envName := strings.ToLower(envType)
+	if len(envName) == 0 {
+		envName = strings.ToLower(c.EnvType)
+	}
 	switch envName {
 	case "test":
 		return &c.Test, nil
@@ -97,7 +100,7 @@ func (c *Config) GetEnvConfig() (*EnvConfig, error) {
 	case "prod":
 		return &c.Prod, nil
 	}
-	return nil, NewEnvNameError(fmt.Sprintf("config.envName is \"%s\" error. range is [dev, test, prod]", c.EnvName))
+	return nil, NewEnvTypeError(fmt.Sprintf("config.envType is \"%s\" error. choose one of: [dev, test, prod]", envName))
 }
 
 type MongoConfig struct {

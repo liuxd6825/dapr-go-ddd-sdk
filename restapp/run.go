@@ -16,6 +16,7 @@ const subscribePath = "dapr/subscribe"
 const eventTypesPath = "dapr/event-types"
 
 var _app *iris.Application
+var _webRootPath string
 
 type StartOptions struct {
 	AppId      string
@@ -58,25 +59,25 @@ type Controller interface {
 	BeforeActivation(b mvc.BeforeActivation)
 }
 
-type RegisterEvent struct {
+type RegisterEventType struct {
 	EventType string
 	Revision  string
 	NewFunc   ddd.NewEventFunc
 }
 
-func RunWithConfig(configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEvent) error {
+func RunWithConfig(envType string, configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType) error {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
 	}
-	envConfig, err := config.GetEnvConfig()
+	envConfig, err := config.GetEnvConfig(envType)
 	if err != nil {
 		panic(err)
 	}
 	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc, eventsFunc)
 }
 
-func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEvent) error {
+func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType) error {
 	if !config.Mongo.IsEmpty() {
 		initMongo(&config.Mongo)
 	}
@@ -94,33 +95,36 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 		DaprClient: daprClient,
 	}
 
-	eventStorages := map[string]ddd.EventStorage{}
-
 	//创建dapr事件存储器
-	esMap := map[string]ddd.EventStorage{}
+	esMap := make(map[string]ddd.EventStorage)
 	for _, pubsubName := range config.Dapr.Pubsubs {
 		eventStorage, err := ddd.NewDaprEventStorage(daprClient, ddd.PubsubName(pubsubName))
 		if err != nil {
 			panic(err)
 		}
 		esMap[pubsubName] = eventStorage
+		esMap[""] = eventStorage
 	}
 
-	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, &eventStorages, eventsFunc)
+	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc)
 }
 
 //
-// Run
-// @Description: 启动 iris web 服务
-// @param port
-// @param app
-// @return *iris.Application
-// @return error
+//  Run
+//  @Description:
+//  @param options
+//  @param app
+//  @param webRootPath web server URL root path
+//  @param subsFunc
+//  @param controllersFunc
+//  @param eventStorages
+//  @param eventTypesFunc
+//  @return error
 //
-func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventStorages *map[string]ddd.EventStorage, eventsFunc func() *[]RegisterEvent) error {
+func Run(options *StartOptions, app *iris.Application, webRootPath string, subsFunc func() *[]RegisterSubscribe,
+	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage, eventTypesFunc func() *[]RegisterEventType) error {
 	_app = app
-
+	_webRootPath = webRootPath
 	ddd.Init(options.AppId)
 	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
 
@@ -129,7 +133,9 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 	if subs != nil {
 		for _, s := range *subs {
 			if s != nil {
-				registerSubscribeHandler(s.GetSubscribes(), s.GetHandler())
+				if _, err := registerSubscribeHandler(s.GetSubscribes(), s.GetHandler()); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -139,24 +145,25 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 	if controllers != nil {
 		for _, c := range *controllers {
 			if c != nil {
-				registerRestController(rootUrl, c)
+				registerRestController(webRootPath, c)
 			}
 		}
 	}
 
 	// 注册领域事件类型
-	events := eventsFunc()
-	if events != nil {
-		for _, event := range *events {
-			if err := ddd.RegisterEventType(event.EventType, event.Revision, event.NewFunc); err != nil {
-				return errors.New(fmt.Sprintf("RegisterEventType() error:%s , EventType=%s, Revision=%s", err.Error(), event.EventType, event.Revision))
+	eventTypes := eventTypesFunc()
+	if eventTypes != nil {
+		for _, t := range *eventTypes {
+			if err := ddd.RegisterEventType(t.EventType, t.Revision, t.NewFunc); err != nil {
+				return errors.New(fmt.Sprintf("RegisterEventType() error:%s , EventType=%s, Revision=%s", err.Error(), t.EventType, t.Revision))
 			}
 		}
 	}
 
 	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
 	_app.Get(subscribePath, func(context *context.Context) {
-		_, _ = context.JSON(ddd.GetSubscribes())
+		data := ddd.GetSubscribes()
+		_, _ = context.JSON(data)
 	})
 
 	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
@@ -166,8 +173,8 @@ func Run(options *StartOptions, app *iris.Application, rootUrl string, subsFunc 
 
 	// 注册事件存储器
 	if eventStorages != nil {
-		for _, es := range *eventStorages {
-			ddd.RegisterEventStorage(es.GetPubsubName(), es)
+		for key, es := range eventStorages {
+			ddd.RegisterEventStorage(key, es)
 		}
 	}
 	if err := ddd.StartSubscribeHandlers(); err != nil {
@@ -228,8 +235,8 @@ func registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
 //
-func registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) ddd.SubscribeHandler {
-	return ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
+func registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
+	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
 		defer func() {
 			if e := ddd_errors.GetRecoverError(recover()); e != nil {
 				err = e
@@ -242,4 +249,8 @@ func registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd
 		})
 		return err
 	})
+	if err := ddd.RegisterQueryHandler(handler); err != nil {
+		return nil, err
+	}
+	return handler, nil
 }

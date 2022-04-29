@@ -30,7 +30,7 @@ type EnvNameError struct {
 	msg string
 }
 
-func NewEnvNameError(msg string) *EnvNameError {
+func NewEnvTypeError(msg string) *EnvNameError {
 	return &EnvNameError{
 		msg: msg,
 	}

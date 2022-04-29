@@ -4,13 +4,17 @@ import (
 	"errors"
 )
 
-var appID string
+var _appId string
 var eventStorages = map[string]EventStorage{"": NewEmptyEventStorage()}
 var subscribes = make([]Subscribe, 0)
 var subscribeHandlers = make([]SubscribeHandler, 0)
 
 func Init(appId string) {
-	appID = appId
+	_appId = appId
+}
+
+func AppId() string {
+	return _appId
 }
 
 //
