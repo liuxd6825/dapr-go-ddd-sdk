@@ -20,7 +20,8 @@ var _webRootPath string
 
 type StartOptions struct {
 	AppId      string
-	AppPort    int
+	HttpHost   string
+	HttpPort   int
 	LogLevel   applog.Level
 	DaprClient daprclient.DaprClient
 }
@@ -65,11 +66,18 @@ type RegisterEventType struct {
 	NewFunc   ddd.NewEventFunc
 }
 
+var _daprClient daprclient.DaprClient
+
+func GetDaprClient() daprclient.DaprClient {
+	return _daprClient
+}
+
 func RunWithConfig(envType string, configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType) error {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
 	}
+
 	envConfig, err := config.GetEnvConfig(envType)
 	if err != nil {
 		panic(err)
@@ -83,14 +91,17 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 	}
 
 	//创建dapr客户端
-	daprClient, err := daprclient.NewClient(config.Dapr.Host, config.Dapr.HttpPort, config.Dapr.GrpcPort)
+	daprClient, err := daprclient.NewClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {
 		panic(err)
 	}
 
+	_daprClient = daprClient
+
 	options := &StartOptions{
 		AppId:      config.App.AppId,
-		AppPort:    config.App.AppPort,
+		HttpHost:   config.App.HttpHost,
+		HttpPort:   config.App.HttpPort,
 		LogLevel:   config.Log.GetLevel(),
 		DaprClient: daprClient,
 	}
@@ -110,16 +121,16 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 }
 
 //
-//  Run
-//  @Description:
-//  @param options
-//  @param app
-//  @param webRootPath web server URL root path
-//  @param subsFunc
-//  @param controllersFunc
-//  @param eventStorages
-//  @param eventTypesFunc
-//  @return error
+// Run
+// @Description:
+// @param options
+// @param app
+// @param webRootPath web server URL root path
+// @param subsFunc
+// @param controllersFunc
+// @param eventStorages
+// @param eventTypesFunc
+// @return error
 //
 func Run(options *StartOptions, app *iris.Application, webRootPath string, subsFunc func() *[]RegisterSubscribe,
 	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage, eventTypesFunc func() *[]RegisterEventType) error {
@@ -180,7 +191,7 @@ func Run(options *StartOptions, app *iris.Application, webRootPath string, subsF
 	if err := ddd.StartSubscribeHandlers(); err != nil {
 		return err
 	}
-	if err := app.Run(iris.Addr(fmt.Sprintf(":%d", options.AppPort))); err != nil {
+	if err := app.Run(iris.Addr(fmt.Sprintf("%s:%d", options.HttpHost, options.HttpPort))); err != nil {
 		return err
 	}
 	return nil

@@ -3,16 +3,19 @@ package restapp
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
+	"os"
+	"strconv"
 	"strings"
 )
 
 type Config struct {
-	EnvType string    `yaml:"envType"`
-	Test    EnvConfig `yaml:"test"`
-	Dev     EnvConfig `yaml:"dev"`
-	Prod    EnvConfig `yaml:"prod"`
+	EnvType string     `yaml:"env-type"`
+	Test    *EnvConfig `yaml:"test"`
+	Dev     *EnvConfig `yaml:"dev"`
+	Prod    *EnvConfig `yaml:"prod"`
 }
 
 type EnvConfig struct {
@@ -22,7 +25,10 @@ type EnvConfig struct {
 	Mongo MongoConfig `yaml:"mongo"`
 }
 
-func (e EnvConfig) Init() error {
+func (e *EnvConfig) Init() error {
+	if len(e.App.HttpHost) == 0 {
+		e.App.HttpHost = "0.0.0.0"
+	}
 	if e.Log.Level != "" {
 		l, err := applog.NewLevel(e.Log.Level)
 		if err != nil {
@@ -30,23 +36,77 @@ func (e EnvConfig) Init() error {
 		}
 		e.Log.level = l
 	}
-	if e.Dapr.Host == "" {
-		e.Dapr.Host = "localhost"
+	if e.Dapr.Host == nil {
+		var value string = "localhost"
+		e.Dapr.Host = &value
 	}
+
+	if e.Dapr.HttpPort == nil {
+		var value int64 = 3500
+		e.Dapr.HttpPort = e.GetEnvInt("DAPR_HTTP_PORT", &value)
+	}
+
+	if e.Dapr.GrpcPort == nil {
+		var value int64 = 50001
+		e.Dapr.GrpcPort = e.GetEnvInt("DAPR_GRPC_PORT", &value)
+	}
+
 	return nil
 }
 
+func (e *EnvConfig) GetEnvInt(envName string, defValue *int64) *int64 {
+	value := os.Getenv(envName)
+	if len(value) == 0 {
+		return defValue
+	}
+	parseInt, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return &parseInt
+}
+
+func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
+	value := os.Getenv(envName)
+	if len(value) == 0 {
+		return defValue
+	}
+	return &value
+}
+
 type AppConfig struct {
-	AppId   string `yaml:"id"`
-	AppPort int    `yaml:"http-port"`
-	RootUrl string `yaml:"root-url"`
+	AppId    string `yaml:"id"`
+	HttpHost string `yaml:"http-host"`
+	HttpPort int    `yaml:"http-port"`
+	RootUrl  string `yaml:"root-url"`
 }
 
 type DaprConfig struct {
-	Host     string   `yaml:"host"`
-	HttpPort int      `yaml:"http-port"`
-	GrpcPort int      `yaml:"grpc-port"`
+	Host     *string  `yaml:"host"`
+	HttpPort *int64   `yaml:"http-port"`
+	GrpcPort *int64   `yaml:"grpc-port"`
 	Pubsubs  []string `yaml:"pubsubs,flow"`
+}
+
+func (d DaprConfig) GetHost() string {
+	if d.Host == nil {
+		return ""
+	}
+	return *d.Host
+}
+
+func (d DaprConfig) GetHttpPort() int64 {
+	if d.HttpPort == nil {
+		return 0
+	}
+	return *d.HttpPort
+}
+
+func (d DaprConfig) GetGrpcPort() int64 {
+	if d.GrpcPort == nil {
+		return 0
+	}
+	return *d.GrpcPort
 }
 
 type LogConfig struct {
@@ -88,19 +148,30 @@ func NewConfigByFile(fileName string) (*Config, error) {
 }
 
 func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
-	envName := strings.ToLower(envType)
-	if len(envName) == 0 {
-		envName = strings.ToLower(c.EnvType)
+	var envConfig *EnvConfig
+	envTypeValue := strings.ToLower(envType)
+	if len(envTypeValue) == 0 {
+		envTypeValue = strings.ToLower(c.EnvType)
 	}
-	switch envName {
+
+	switch envTypeValue {
 	case "test":
-		return &c.Test, nil
+		envConfig = c.Test
 	case "dev":
-		return &c.Dev, nil
+		envConfig = c.Dev
 	case "prod":
-		return &c.Prod, nil
+		envConfig = c.Prod
 	}
-	return nil, NewEnvTypeError(fmt.Sprintf("config.envType is \"%s\" error. choose one of: [dev, test, prod]", envName))
+
+	if envConfig != nil {
+		log.Infoln(fmt.Sprintf("CONFIG env-type:%s", envTypeValue))
+		log.Infoln(fmt.Sprintf("CONFIG APP   app-id:%s,  http-host:%s,   http-port:%d,   root-url:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("CONFIG DAPR  host:%s,  http-port:%d,   grpc-port:%d,   pubsubs:%s",
+			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
+		return envConfig, nil
+	}
+
+	return nil, NewEnvTypeError(fmt.Sprintf("error config env-type is \"%s\". choose one of: [dev, test, prod]", envTypeValue))
 }
 
 type MongoConfig struct {

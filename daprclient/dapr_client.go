@@ -8,6 +8,7 @@ import (
 	"fmt"
 	dapr_sdk_client "github.com/dapr/go-sdk/client"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"net/http"
@@ -30,8 +31,8 @@ type DaprClient interface {
 
 type daprClient struct {
 	host       string
-	httpPort   int
-	grpcPort   int
+	httpPort   int64
+	grpcPort   int64
 	client     *http.Client
 	grpcClient dapr_sdk_client.Client
 }
@@ -71,10 +72,31 @@ func IdleConnTimeout(val int) Option {
 	}
 }
 
-func NewClient(host string, httpPort int, grpcPort int, opts ...Option) (DaprClient, error) {
+func NewClient(host string, httpPort int64, grpcPort int64, opts ...Option) (DaprClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)
+	}
+
+	// 三次试错创建daprClient
+	port := strconv.FormatInt(grpcPort, 10)
+	var grpcClient dapr_sdk_client.Client
+	var err error
+	var waitSecond time.Duration = 5
+	for i := 0; i < 4; i++ {
+		if grpcClient, err = dapr_sdk_client.NewClientWithPort(port); err != nil {
+			log.Infoln("dapr client connection error", err)
+			continue
+		}
+		if grpcClient != nil {
+			log.Infoln("dapr client connection success")
+			break
+		}
+		time.Sleep(time.Second * waitSecond)
+		waitSecond = 3
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	client := &http.Client{
@@ -88,11 +110,6 @@ func NewClient(host string, httpPort int, grpcPort int, opts ...Option) (DaprCli
 			MaxIdleConnsPerHost: options.MaxIdleConnsPerHost,
 			IdleConnTimeout:     time.Second * time.Duration(options.IdleConnTimeout),
 		},
-	}
-
-	grpcClient, err := dapr_sdk_client.NewClientWithPort(strconv.Itoa(grpcPort))
-	if err != nil {
-		return nil, err
 	}
 
 	return &daprClient{

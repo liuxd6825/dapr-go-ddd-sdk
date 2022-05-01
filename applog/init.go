@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	logrus "github.com/sirupsen/logrus"
 )
 
 var log Logger
@@ -239,6 +241,22 @@ func writeEventLog(ctx context.Context, tenantId, structName, funcName string, l
 		CommandId: commandId,
 		PubAppId:  pubAppId,
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"id":        uid,
+		"tenantId":  tenantId,
+		"appId":     appId,
+		"class":     structName,
+		"func":      funcName,
+		"level":     level.ToString(),
+		"time":      &timeNow,
+		"status":    true,
+		"message":   message,
+		"eventId":   eventId,
+		"commandId": commandId,
+		"pubAppId":  pubAppId,
+	}).Infoln(fmt.Sprintf("EVENT LOG %s", structName))
+
 	_, err := log.WriteEventLog(ctx, req)
 	return req.Id, err
 }
@@ -337,6 +355,18 @@ func writeAppLog(ctx context.Context, tenantId, className, funcName string, leve
 		Status:   true,
 		Message:  message,
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"id":       uid,
+		"tenantId": tenantId,
+		"appId":    appId,
+		"class":    className,
+		"func":     funcName,
+		"level":    level.ToString(),
+		"time":     &timeNow,
+		"status":   true,
+		"message":  message,
+	}).Infoln("AppLog")
 
 	fmt.Printf("[%s] appid=%s; class=%s; func=%s; msg=%s; status=%t; time=%s;\n", strings.ToUpper(req.Level), req.AppId, req.Class, req.Func, req.Message, req.Status, req.Time)
 

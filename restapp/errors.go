@@ -26,16 +26,16 @@ func (c *ConfigError) ItemCount() int {
 	return len(c.items)
 }
 
-type EnvNameError struct {
+type EnvTypeError struct {
 	msg string
 }
 
-func NewEnvTypeError(msg string) *EnvNameError {
-	return &EnvNameError{
+func NewEnvTypeError(msg string) *EnvTypeError {
+	return &EnvTypeError{
 		msg: msg,
 	}
 }
 
-func (e *EnvNameError) Error() string {
+func (e *EnvTypeError) Error() string {
 	return e.msg
 }

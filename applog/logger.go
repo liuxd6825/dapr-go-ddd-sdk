@@ -98,8 +98,9 @@ type WriteEventLogRequest struct {
 	Status   bool       `json:"status"`
 	Message  string     `json:"message"`
 
-	PubAppId  string `json:"pubAppId"`
-	EventId   string `json:"eventId"`
+	PubAppId string `json:"pubAppId"`
+	EventId  string `json:"eventId"`
+	// EventType string `json:"eventType"`
 	CommandId string `json:"commandId"`
 }
 
