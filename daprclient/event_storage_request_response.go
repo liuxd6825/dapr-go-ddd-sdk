@@ -1,8 +1,27 @@
-package ddd
+package daprclient
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
+
+type ApplyEventRequest struct {
+	TenantId      string            `json:"tenantId"`
+	CommandId     string            `json:"commandId"`
+	EventId       string            `json:"eventId"`
+	EventData     interface{}       `json:"eventData"`
+	EventType     string            `json:"eventType"`
+	EventRevision string            `json:"eventRevision"`
+	AggregateId   string            `json:"AggregateId"`
+	AggregateType string            `json:"aggregateType"`
+	Metadata      map[string]string `json:"metadata"`
+	PubsubName    string            `json:"pubsubName"`
+	Topic         string            `json:"topic"`
+}
+
+type ApplyEventsResponse struct {
+}
+
+type ExistAggregateResponse struct {
+	IsExist bool `json:"isExist"`
+}
 
 type LoadEventsRequest struct {
 	TenantId    string `json:"tenantId"`
@@ -20,8 +39,8 @@ type LoadEventsResponse struct {
 type Snapshot struct {
 	AggregateData     map[string]interface{} `json:"aggregateData"`
 	AggregateRevision string                 `json:"aggregateRevision"`
-	SequenceNumber    int64                  `json:"sequenceNumber"`
-	Metadata          map[string]interface{} `json:"metadata"`
+	SequenceNumber    uint64                 `json:"sequenceNumber"`
+	Metadata          map[string]string      `json:"metadata"`
 }
 
 type EventRecord struct {
@@ -29,7 +48,7 @@ type EventRecord struct {
 	EventData      map[string]interface{} `json:"eventData"`
 	EventType      string                 `json:"eventType"`
 	EventRevision  string                 `json:"eventRevision"`
-	SequenceNumber int64                  `json:"sequenceNumber"`
+	SequenceNumber uint64                 `json:"sequenceNumber"`
 }
 
 // NewEventRecordByJsonBytes 通过json反序列化EventRecord
@@ -86,4 +105,17 @@ func (e *EventRecord) SetFields(key string, set func(value interface{})) {
 	if ok {
 		set(v)
 	}
+}
+
+type SaveSnapshotRequest struct {
+	TenantId          string            `json:"tenantId"`
+	AggregateId       string            `json:"AggregateId"`
+	AggregateType     string            `json:"aggregateType"`
+	AggregateData     interface{}       `json:"aggregateData"`
+	AggregateRevision string            `json:"aggregateRevision"`
+	Metadata          map[string]string `json:"metadata"`
+	SequenceNumber    uint64            `json:"sequenceNumber"`
+}
+
+type SaveSnapshotResponse struct {
 }

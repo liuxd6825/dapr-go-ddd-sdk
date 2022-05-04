@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"testing"
 	"time"
@@ -19,7 +20,7 @@ func TestEventStorage_LoadAggregate(t *testing.T) {
 
 func TestEventStorage_LoadEvents(t *testing.T) {
 	eventStorage, err := NewEventStorage()
-	req := &ddd.LoadEventsRequest{
+	req := &daprclient.LoadEventsRequest{
 		TenantId:    "tenant_1",
 		AggregateId: "001",
 	}
@@ -36,7 +37,7 @@ func TestEventStorage_LoadEvents(t *testing.T) {
 func TestEventStorage_ApplyEvent(t *testing.T) {
 	eventStorage, err := NewEventStorage()
 	id := newId()
-	req := &ddd.ApplyEventRequest{
+	req := &daprclient.ApplyEventRequest{
 		TenantId:      "tenantId_1",
 		CommandId:     id,
 		EventId:       id,
@@ -61,7 +62,7 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 
 func TestEventStorage_SaveSnapshot(t *testing.T) {
 	eventStorage, err := NewEventStorage()
-	req := &ddd.SaveSnapshotRequest{
+	req := &daprclient.SaveSnapshotRequest{
 		TenantId:          "tenantId_1",
 		AggregateId:       "aggregateId_001",
 		AggregateType:     "system.user",
@@ -81,7 +82,7 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 }
 
 func NewEventStorage() (ddd.EventStorage, error) {
-	return ddd.NewDaprEventStorage("localhost", 3500, ddd.PubsubName("pubsub"))
+	return ddd.NewGrpcEventStorage("localhost", 3500, ddd.PubsubName("pubsub"))
 }
 
 func newId() string {

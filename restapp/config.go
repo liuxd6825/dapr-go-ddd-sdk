@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	EnvType string     `yaml:"env-type"`
+	EnvType string     `yaml:"envType"`
 	Test    *EnvConfig `yaml:"test"`
 	Dev     *EnvConfig `yaml:"dev"`
 	Prod    *EnvConfig `yaml:"prod"`
@@ -26,9 +26,11 @@ type EnvConfig struct {
 }
 
 func (e *EnvConfig) Init() error {
+
 	if len(e.App.HttpHost) == 0 {
 		e.App.HttpHost = "0.0.0.0"
 	}
+
 	if e.Log.Level != "" {
 		l, err := applog.NewLevel(e.Log.Level)
 		if err != nil {
@@ -36,9 +38,10 @@ func (e *EnvConfig) Init() error {
 		}
 		e.Log.level = l
 	}
+
 	if e.Dapr.Host == nil {
-		var value string = "localhost"
-		e.Dapr.Host = &value
+		var value = "localhost"
+		e.Dapr.Host = e.GetEnvString("DAPR_HOST", &value)
 	}
 
 	if e.Dapr.HttpPort == nil {
@@ -55,8 +58,8 @@ func (e *EnvConfig) Init() error {
 }
 
 func (e *EnvConfig) GetEnvInt(envName string, defValue *int64) *int64 {
-	value := os.Getenv(envName)
-	if len(value) == 0 {
+	value, ok := os.LookupEnv(envName)
+	if !ok {
 		return defValue
 	}
 	parseInt, err := strconv.ParseInt(value, 10, 64)
@@ -67,8 +70,8 @@ func (e *EnvConfig) GetEnvInt(envName string, defValue *int64) *int64 {
 }
 
 func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
-	value := os.Getenv(envName)
-	if len(value) == 0 {
+	value, ok := os.LookupEnv(envName)
+	if !ok {
 		return defValue
 	}
 	return &value
@@ -76,15 +79,15 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 
 type AppConfig struct {
 	AppId    string `yaml:"id"`
-	HttpHost string `yaml:"http-host"`
-	HttpPort int    `yaml:"http-port"`
-	RootUrl  string `yaml:"root-url"`
+	HttpHost string `yaml:"httpHost"`
+	HttpPort int    `yaml:"httpPort"`
+	RootUrl  string `yaml:"rootUrl"`
 }
 
 type DaprConfig struct {
 	Host     *string  `yaml:"host"`
-	HttpPort *int64   `yaml:"http-port"`
-	GrpcPort *int64   `yaml:"grpc-port"`
+	HttpPort *int64   `yaml:"httpPort"`
+	GrpcPort *int64   `yaml:"grpcPort"`
 	Pubsubs  []string `yaml:"pubsubs,flow"`
 }
 
@@ -164,9 +167,9 @@ func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("CONFIG env-type:%s", envTypeValue))
-		log.Infoln(fmt.Sprintf("CONFIG APP   app-id:%s,  http-host:%s,   http-port:%d,   root-url:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
-		log.Infoln(fmt.Sprintf("CONFIG DAPR  host:%s,  http-port:%d,   grpc-port:%d,   pubsubs:%s",
+		log.Infoln(fmt.Sprintf("CONFIG envType:%s", envTypeValue))
+		log.Infoln(fmt.Sprintf("CONFIG APP   appId:%s,  httpHost:%s,   httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("CONFIG DAPR  host:%s,  httpPort:%d,   grpcPort:%d,   pubsubs:%s",
 			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
 		return envConfig, nil
 	}
@@ -179,10 +182,10 @@ type MongoConfig struct {
 	Database     string `yaml:"dbname"`
 	UserName     string `yaml:"user"`
 	Password     string `yaml:"pwd"`
-	MaxPoolSize  uint64 `yaml:"max-pool-size"`
-	ReplicaSet   string `yaml:"replica-set"`
-	WriteConcern string `yaml:"write-concern"`
-	ReadConcern  string `yaml:"read-concern"`
+	MaxPoolSize  uint64 `yaml:"maxPoolSize"`
+	ReplicaSet   string `yaml:"replicaSet"`
+	WriteConcern string `yaml:"writeConcern"`
+	ReadConcern  string `yaml:"readConcern"`
 }
 
 func (m MongoConfig) IsEmpty() bool {

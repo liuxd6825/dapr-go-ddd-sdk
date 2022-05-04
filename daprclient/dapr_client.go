@@ -1,15 +1,13 @@
 package daprclient
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	dapr_sdk_client "github.com/dapr/go-sdk/client"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	log "github.com/sirupsen/logrus"
-	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -20,13 +18,25 @@ const (
 	DefaultMaxIdleConns        = 10
 	DefaultMaxIdleConnsPerHost = 50
 	DefaultIdleConnTimeout     = 5
+	Protocol                   = "http"
 )
+
+type DaprHttpOptions struct {
+	MaxIdleConns        int
+	MaxIdleConnsPerHost int
+	IdleConnTimeout     int
+}
 
 type DaprClient interface {
 	HttpGet(ctx context.Context, url string) *Response
 	HttpPost(ctx context.Context, url string, reqData interface{}) *Response
 	HttpPut(ctx context.Context, url string, reqData interface{}) *Response
+
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
+	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
+	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error)
+	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
+	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
 }
 
 type daprClient struct {
@@ -35,12 +45,6 @@ type daprClient struct {
 	grpcPort   int64
 	client     *http.Client
 	grpcClient dapr_sdk_client.Client
-}
-
-type DaprHttpOptions struct {
-	MaxIdleConns        int
-	MaxIdleConnsPerHost int
-	IdleConnTimeout     int
 }
 
 type Option func(options *DaprHttpOptions)
@@ -54,47 +58,13 @@ func newHttpOptions() *DaprHttpOptions {
 	return options
 }
 
-func MaxIdleConns(val int) Option {
-	return func(options *DaprHttpOptions) {
-		options.MaxIdleConns = val
-	}
-}
-
-func MaxIdleConnsPerHost(val int) Option {
-	return func(options *DaprHttpOptions) {
-		options.MaxIdleConnsPerHost = val
-	}
-}
-
-func IdleConnTimeout(val int) Option {
-	return func(options *DaprHttpOptions) {
-		options.IdleConnTimeout = val
-	}
-}
-
 func NewClient(host string, httpPort int64, grpcPort int64, opts ...Option) (DaprClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)
 	}
 
-	// 三次试错创建daprClient
-	port := strconv.FormatInt(grpcPort, 10)
-	var grpcClient dapr_sdk_client.Client
-	var err error
-	var waitSecond time.Duration = 5
-	for i := 0; i < 4; i++ {
-		if grpcClient, err = dapr_sdk_client.NewClientWithPort(port); err != nil {
-			log.Infoln("dapr client connection error", err)
-			continue
-		}
-		if grpcClient != nil {
-			log.Infoln("dapr client connection success")
-			break
-		}
-		time.Sleep(time.Second * waitSecond)
-		waitSecond = 3
-	}
+	grpcClient, err := newDaprSdkClient(host, grpcPort)
 	if err != nil {
 		return nil, err
 	}
@@ -119,54 +89,33 @@ func NewClient(host string, httpPort int64, grpcPort int64, opts ...Option) (Dap
 		grpcPort:   grpcPort,
 		grpcClient: grpcClient,
 	}, nil
-
 }
 
-func (c *daprClient) HttpGet(ctx context.Context, url string) *Response {
-	getUlr := fmt.Sprintf("http://%s:%d/%s", c.host, c.httpPort, url)
-	resp, err := c.client.Get(getUlr)
+func newDaprSdkClient(host string, grpcPort int64) (dapr_sdk_client.Client, error) {
+
+	// 三次试错创建daprClient
+	port := strconv.FormatInt(grpcPort, 10)
+	var grpcClient dapr_sdk_client.Client
+	var err error
+	var waitSecond time.Duration = 5
+	addr := fmt.Sprintf("%s:%s", host, port)
+
+	for i := 0; i < 4; i++ {
+		if grpcClient, err = dapr_sdk_client.NewClientWithAddress(addr); err != nil {
+			log.Infoln(fmt.Sprintf("dapr client connection error, address=%s", addr), err)
+			continue
+		}
+		if grpcClient != nil {
+			log.Infoln(fmt.Sprintf("dapr client connection success, address=%s", addr))
+			break
+		}
+		time.Sleep(time.Second * waitSecond)
+		waitSecond = 3
+	}
 	if err != nil {
-		return NewResponse(nil, err)
+		return nil, err
 	}
-	bs, err := c.getBodyBytes(resp)
-	if resp.StatusCode != http.StatusOK {
-		return NewResponse(nil, errors.New(string(bs)))
-	}
-	return NewResponse(bs, err)
-}
-
-func (c *daprClient) HttpPost(ctx context.Context, url string, reqData interface{}) *Response {
-	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.httpPort, url)
-	jsonData, err := json.Marshal(reqData)
-	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return NewResponse(nil, err)
-	}
-	bs, err := c.getBodyBytes(resp)
-	if resp.StatusCode != http.StatusOK {
-		return NewResponse(nil, errors.New(string(bs)))
-	}
-	return NewResponse(bs, err)
-}
-
-func (c *daprClient) HttpPut(ctx context.Context, url string, reqData interface{}) *Response {
-	httpUrl := fmt.Sprintf("http://%s:%d/%s", c.host, c.httpPort, url)
-	jsonData, err := json.Marshal(reqData)
-	resp, err := c.client.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return NewResponse(nil, err)
-	}
-	bs, err := c.getBodyBytes(resp)
-	if resp.StatusCode != http.StatusOK {
-		return NewResponse(nil, errors.New(string(bs)))
-	}
-	return NewResponse(bs, err)
-}
-
-func (c *daprClient) getBodyBytes(resp *http.Response) ([]byte, error) {
-	defer resp.Body.Close()
-	bs, err := io.ReadAll(resp.Body)
-	return bs, err
+	return grpcClient, nil
 }
 
 func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
@@ -181,7 +130,7 @@ func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb 
 	if request != nil {
 		reqBytes, err := json.Marshal(request)
 		if err != nil {
-			return nil, newAppError(appID, err)
+			return nil, ddd_utils.NewAppError(appID, err)
 		}
 		content := &dapr_sdk_client.DataContent{
 			ContentType: "application/json",
@@ -192,19 +141,14 @@ func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb 
 		respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
 	}
 	if err != nil {
-		return nil, newAppError(appID, err)
+		return nil, ddd_utils.NewAppError(appID, err)
 	}
 	if len(respBytes) > 0 {
 		err = json.Unmarshal(respBytes, response)
 		if err != nil {
-			return nil, newAppError(appID, err)
+			return nil, ddd_utils.NewAppError(appID, err)
 		}
 		return response, nil
 	}
 	return nil, nil
-}
-
-func newAppError(appID string, err error) error {
-	msg := fmt.Sprintf("AppId is %s , %s", appID, err.Error())
-	return errors.New(msg)
 }

@@ -2,6 +2,7 @@ package ddd
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 )
 
 // Subscribe dapr消息订阅项
@@ -65,7 +66,7 @@ func (h *subscribeHandler) CallQueryEventHandler(ctx context.Context, sctx Subsc
 	if err != nil {
 		return err
 	}
-	return NewEventRecordByJsonBytes(data).OnSuccess(func(eventRecord *EventRecord) error {
+	return daprclient.NewEventRecordByJsonBytes(data).OnSuccess(func(eventRecord *daprclient.EventRecord) error {
 		return CallEventHandler(ctx, h.queryEventHandler, eventRecord)
 	}).GetError()
 }

@@ -109,7 +109,7 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 	//创建dapr事件存储器
 	esMap := make(map[string]ddd.EventStorage)
 	for _, pubsubName := range config.Dapr.Pubsubs {
-		eventStorage, err := ddd.NewDaprEventStorage(daprClient, ddd.PubsubName(pubsubName))
+		eventStorage, err := ddd.NewGrpcEventStorage(daprClient, ddd.PubsubName(pubsubName))
 		if err != nil {
 			panic(err)
 		}

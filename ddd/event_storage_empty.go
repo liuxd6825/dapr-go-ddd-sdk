@@ -3,6 +3,7 @@ package ddd
 import (
 	"context"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 )
 
 type emptyEventStorage struct {
@@ -28,15 +29,15 @@ func (s *emptyEventStorage) LoadAggregate(ctx context.Context, tenantId string, 
 	return nil, false, errors.New("emptyEventStorage")
 }
 
-func (s *emptyEventStorage) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
+func (s *emptyEventStorage) LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error) {
 	return nil, errors.New("emptyEventStorage")
 }
 
-func (s *emptyEventStorage) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
+func (s *emptyEventStorage) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventsResponse, error) {
 	return nil, errors.New("emptyEventStorage")
 }
 
-func (s *emptyEventStorage) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
+func (s *emptyEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error) {
 	return nil, errors.New("emptyEventStorage")
 }
 

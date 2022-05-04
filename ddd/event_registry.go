@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 )
 
 type NewEventFunc func() interface{}
@@ -36,7 +37,7 @@ func RegisterEventType(eventType string, eventRevision string, newFunc NewEventF
 	return _eventTypeRegistry.add(eventType, eventRevision, newFunc, options...)
 }
 
-func NewDomainEvent(record *EventRecord) (interface{}, error) {
+func NewDomainEvent(record *daprclient.EventRecord) (interface{}, error) {
 	if eventTypes, ok := _eventTypeRegistry.typeMap[record.EventType]; ok {
 		if item, ok := eventTypes.revisionMap[record.EventRevision]; ok {
 			event := item.newFunc()
@@ -67,7 +68,7 @@ func getRegistryItem(eventType, eventRevision string) (*registryItem, error) {
 	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", eventType, eventRevision))
 }
 
-type JsonMarshaler func(record *EventRecord, event interface{}) error
+type JsonMarshaler func(record *daprclient.EventRecord, event interface{}) error
 
 type registryItem struct {
 	eventType      string

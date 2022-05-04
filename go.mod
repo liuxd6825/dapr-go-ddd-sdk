@@ -77,3 +77,5 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.56.0 // indirect
 )
+
+replace github.com/dapr/go-sdk => ../../dapr/go-sdk

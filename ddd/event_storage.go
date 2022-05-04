@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"reflect"
@@ -14,9 +15,9 @@ var strEmpty = ""
 
 type EventStorage interface {
 	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error)
-	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
-	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error)
-	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
+	LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
+	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventsResponse, error)
+	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
 	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
 	GetPubsubName() string
 }
@@ -25,7 +26,7 @@ type EventStorageOption func(EventStorage)
 
 func PubsubName(pubsubName string) EventStorageOption {
 	return func(es EventStorage) {
-		s, _ := es.(*daprEventStorage)
+		s, _ := es.(*grpcEventStorage)
 		s.pubsubName = pubsubName
 	}
 }
@@ -89,7 +90,7 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 // @return resp 响应体
 // @return err 错误
 //
-func LoadEvents(ctx context.Context, req *LoadEventsRequest, eventStorageKey string) (resp *LoadEventsResponse, err error) {
+func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventStorageKey string) (resp *daprclient.LoadEventsResponse, err error) {
 	logInfo := &applog.LogInfo{
 		TenantId:  req.TenantId,
 		ClassName: "ddd",
@@ -166,13 +167,12 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 		Level:     applog.INFO,
 	}
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
-
 		eventStorage, e := GetEventStorage(*options.eventStorageKey)
 		if e != nil {
 			err = e
 			return nil, err
 		}
-		req := &ApplyEventRequest{
+		req := &daprclient.ApplyEventRequest{
 			TenantId:      event.GetTenantId(),
 			CommandId:     event.GetCommandId(),
 			EventId:       event.GetEventId(),
@@ -180,7 +180,7 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 			EventType:     event.GetEventType(),
 			AggregateId:   event.GetAggregateId(),
 			AggregateType: aggregate.GetAggregateType(),
-			Metadata:      options.metadata,
+			Metadata:      *options.metadata,
 			PubsubName:    *options.pubsubName,
 			EventData:     event,
 			Topic:         event.GetEventType(),
@@ -266,7 +266,7 @@ func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opt
 	return callCommandHandler(ctx, aggregate, cmd)
 }
 
-func applyEvent(ctx context.Context, req *ApplyEventRequest, eventStorageKey string) (*ApplyEventsResponse, error) {
+func applyEvent(ctx context.Context, req *daprclient.ApplyEventRequest, eventStorageKey string) (*daprclient.ApplyEventsResponse, error) {
 	eventStorage, err := GetEventStorage(eventStorageKey)
 	if err != nil {
 		return nil, err
@@ -274,7 +274,7 @@ func applyEvent(ctx context.Context, req *ApplyEventRequest, eventStorageKey str
 	return eventStorage.ApplyEvent(ctx, req)
 }
 
-func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest, eventStorageKey string) (*SaveSnapshotResponse, error) {
+func saveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest, eventStorageKey string) (*daprclient.SaveSnapshotResponse, error) {
 	eventStorage, err := GetEventStorage(eventStorageKey)
 	if err != nil {
 		return nil, err
@@ -290,7 +290,7 @@ func saveSnapshot(ctx context.Context, req *SaveSnapshotRequest, eventStorageKey
 // @param record
 // @return error
 //
-func CallEventHandler(ctx context.Context, handler interface{}, record *EventRecord) error {
+func CallEventHandler(ctx context.Context, handler interface{}, record *daprclient.EventRecord) error {
 	event, err := NewDomainEvent(record)
 	if err != nil {
 		_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
