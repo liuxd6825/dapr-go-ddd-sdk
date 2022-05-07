@@ -1,6 +1,7 @@
 package restapp
 
 import (
+	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	log "github.com/sirupsen/logrus"
@@ -8,14 +9,14 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 )
 
 type Config struct {
-	EnvType string     `yaml:"envType"`
-	Test    *EnvConfig `yaml:"test"`
-	Dev     *EnvConfig `yaml:"dev"`
-	Prod    *EnvConfig `yaml:"prod"`
+	EnvType string                `yaml:"envType"`
+	Test    *EnvConfig            `yaml:"test"`
+	Dev     *EnvConfig            `yaml:"dev"`
+	Prod    *EnvConfig            `yaml:"prod"`
+	Envs    map[string]*EnvConfig `yaml:"envs"`
 }
 
 type EnvConfig struct {
@@ -137,44 +138,29 @@ func NewConfigByFile(fileName string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if err := config.Dev.Init(); err != nil {
-		return nil, err
-	}
-	if err := config.Test.Init(); err != nil {
-		return nil, err
-	}
-	if err := config.Prod.Init(); err != nil {
-		return nil, err
+	for _, env := range config.Envs {
+		if err := env.Init(); err != nil {
+			return nil, err
+		}
 	}
 	return &config, nil
 }
 
 func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
-	var envConfig *EnvConfig
-	envTypeValue := strings.ToLower(envType)
-	if len(envTypeValue) == 0 {
-		envTypeValue = strings.ToLower(c.EnvType)
-	}
-
-	switch envTypeValue {
-	case "test":
-		envConfig = c.Test
-	case "dev":
-		envConfig = c.Dev
-	case "prod":
-		envConfig = c.Prod
+	envConfig, ok := c.Envs[envType]
+	if !ok {
+		return nil, errors.New("not found env: " + envType)
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("CONFIG envType:%s", envTypeValue))
+		log.Infoln(fmt.Sprintf("CONFIG envType:%s", envType))
 		log.Infoln(fmt.Sprintf("CONFIG APP   appId:%s,  httpHost:%s,   httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
 		log.Infoln(fmt.Sprintf("CONFIG DAPR  host:%s,  httpPort:%d,   grpcPort:%d,   pubsubs:%s",
 			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
 		return envConfig, nil
 	}
 
-	return nil, NewEnvTypeError(fmt.Sprintf("error config env-type is \"%s\". choose one of: [dev, test, prod]", envTypeValue))
+	return nil, NewEnvTypeError(fmt.Sprintf("error config env-type is \"%s\". choose one of: [dev, test, prod]", envType))
 }
 
 type MongoConfig struct {
