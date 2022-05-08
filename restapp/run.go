@@ -78,7 +78,12 @@ func RunWithConfig(envType string, configFile string, app *iris.Application, sub
 		panic(err)
 	}
 
-	envConfig, err := config.GetEnvConfig(envType)
+	envTypeValue := config.EnvType
+	if len(envType) > 0 {
+		envTypeValue = envType
+	}
+
+	envConfig, err := config.GetEnvConfig(envTypeValue)
 	if err != nil {
 		panic(err)
 	}
