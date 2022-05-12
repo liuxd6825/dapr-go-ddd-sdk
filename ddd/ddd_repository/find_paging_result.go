@@ -1,50 +1,161 @@
 package ddd_repository
 
-type PagingData struct {
-	Data       interface{} `json:"data"`
-	TotalRows  int64       `json:"totalRows"`
-	TotalPages int64       `json:"totalPages"`
-	PageNum    int64       `json:"pageNum"`
-	PageSize   int64       `json:"pageSize"`
-	Sort       string      `json:"sort"`
-	// Parse 解析表达式
-	// or         : and ('OR' | 'or' and)*
-	// and        : constraint ('AND' | 'and' constraint)*
-	// constraint : group | comparison
-	// group      : '(' or ')'
-	// comparison : identifier comparator arguments
-	// identifier : [a-zA-Z0-9]+('.'[a-zA-Z0-9]+)*
-	// comparator : '==' | '!=' | '==~' | '!=~' | '>' | '>=' | '<' | '<=' | '=in=' | '=out='
-	// arguments  : '(' listValue ')' | value
-	// value      : int | double | string | date | datetime | boolean
-	// listValue  : value(','value)*
-	// int        : [0-9]+
-	// double     : [0-9]+'.'[0-9]*
-	// string     : '"'.*'"' | '\''.*'\''
-	// date       : [0-9]{4}'-'[0-9]{2}'-'\[0-9]{2}
-	// datetime   : date'T'[0-9]{2}':'[0-9]{2}':'[0-9]{2}('Z' | (('+'|'-')[0-9]{2}(':')?[0-9]{2}))?
-	// boolean    : 'true' | 'false'
-	Filter string `json:"filter"`
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+)
+
+type FindPagingResult[T ddd.Entity] struct {
+	Data       *[]T   `json:"data"`
+	TotalRows  int64  `json:"totalRows"`
+	TotalPages int64  `json:"totalPages"`
+	PageNum    int64  `json:"pageNum"`
+	PageSize   int64  `json:"pageSize"`
+	Filter     string `json:"filter"`
+	Sort       string `json:"sort"`
+	Error      error  `json:"error"`
+	IsFound    bool   `json:"isFound"`
 }
 
-type FindPagingResult struct {
-	FindResult
-}
-
-func NewFindPagingDataResult(data *PagingData, isFound bool, err error) *FindPagingResult {
-	return &FindPagingResult{
-		FindResult{
-			data:    data,
-			isFound: isFound,
-			err:     err,
-		},
+func NewFindPagingResult[T ddd.Entity](data *[]T, totalRows int64, query *PagingQuery, err error) *FindPagingResult[T] {
+	if data != nil && query != nil {
+		return &FindPagingResult[T]{
+			Data:       data,
+			TotalRows:  totalRows,
+			TotalPages: getTotalPage(totalRows, query.PageSize),
+			PageNum:    query.PageNum,
+			PageSize:   query.PageSize,
+			Sort:       query.Sort,
+			Filter:     query.Filter,
+			IsFound:    totalRows > 0,
+			Error:      err,
+		}
+	}
+	return &FindPagingResult[T]{
+		Data:       data,
+		TotalRows:  totalRows,
+		TotalPages: 0,
+		PageNum:    0,
+		PageSize:   0,
+		Sort:       "",
+		Filter:     "",
+		IsFound:    false,
+		Error:      err,
 	}
 }
 
-func (f *FindPagingResult) OnSuccess(success OnSuccessPaging) *FindPagingResult {
-	if f.err == nil && success != nil && f.isFound {
-		data := f.data.(*PagingData)
-		f.err = success(data)
+func NewFindPagingResultWithError[T ddd.Entity](err error) *FindPagingResult[T] {
+	return &FindPagingResult[T]{
+		Data:    nil,
+		IsFound: false,
+		Error:   err,
 	}
+}
+
+func getTotalPage(totalRows int64, pageSize int64) int64 {
+	if pageSize == 0 {
+		return 0
+	}
+	totalPage := totalRows / pageSize
+	if totalRows%pageSize > 1 {
+		totalPage++
+	}
+	return totalPage
+}
+
+func (f *FindPagingResult[T]) GetError() error {
+	return f.Error
+}
+
+func (f *FindPagingResult[T]) GetData() *[]T {
+	return f.Data
+}
+
+func (f *FindPagingResult[T]) GetIsFound() bool {
+	return f.IsFound
+}
+
+func (f *FindPagingResult[T]) Result() (*FindPagingResult[T], bool, error) {
+	return f, f.IsFound, f.Error
+}
+
+func (f *FindPagingResult[T]) OnError(onErr OnError) *FindPagingResult[T] {
+	if f.Error != nil && onErr != nil {
+		f.Error = onErr(f.Error)
+	}
+	return f
+}
+
+func (f *FindPagingResult[T]) OnNotFond(fond OnIsFond) *FindPagingResult[T] {
+	if f.Error == nil && !f.IsFound && fond != nil {
+		f.Error = fond()
+	}
+	return f
+}
+
+func (f *FindPagingResult[T]) OnSuccess(success OnSuccessList[T]) *FindPagingResult[T] {
+	if f.Error == nil && success != nil && f.IsFound {
+		f.Error = success(f.Data)
+	}
+	return f
+}
+
+type FindPagingResultOptions[T ddd.Entity] struct {
+	Data       *[]T
+	TotalRows  int64
+	TotalPages int64
+	PageNum    int64
+	PageSize   int64
+	Filter     string
+	Sort       string
+	Error      error
+	IsFound    bool
+}
+
+func NewFindPagingResultOptions[T ddd.Entity]() *FindPagingResultOptions[T] {
+	return &FindPagingResultOptions[T]{}
+}
+
+func (f *FindPagingResultOptions[T]) SetData(data *[]T) *FindPagingResultOptions[T] {
+	f.Data = data
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetTotalRows(totalRows int64) *FindPagingResultOptions[T] {
+	f.TotalRows = totalRows
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetTotalPages(totalPages int64) *FindPagingResultOptions[T] {
+	f.TotalPages = totalPages
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetPageNum(pageNum int64) *FindPagingResultOptions[T] {
+	f.PageNum = pageNum
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetPageSize(pageSize int64) *FindPagingResultOptions[T] {
+	f.PageSize = pageSize
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetFilter(filter string) *FindPagingResultOptions[T] {
+	f.Filter = filter
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetSort(sort string) *FindPagingResultOptions[T] {
+	f.Sort = sort
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetError(err error) *FindPagingResultOptions[T] {
+	f.Error = err
+	return f
+}
+
+func (f *FindPagingResultOptions[T]) SetIsFound(isFound bool) *FindPagingResultOptions[T] {
+	f.IsFound = isFound
 	return f
 }

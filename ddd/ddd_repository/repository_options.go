@@ -36,7 +36,7 @@ func MergeSetOptions(opts ...*SetOptions) *SetOptions {
 
 /*
 type FindOptions struct {
-	err       error
+	Error       error
 	data      interface{}
 	isFind    bool
 	OnSuccess OnSuccess
@@ -73,22 +73,22 @@ func (f *FindOptions) init(opts ...FindOption) *FindOptions {
 	return f
 }
 
-func (f *FindOptions) SetResult(data interface{}, isFind bool, err error) *FindOptions {
+func (f *FindOptions) SetResult(data interface{}, isFind bool, Error error) *FindOptions {
 	f.data = data
 	f.isFind = isFind
-	f.err = err
+	f.Error = Error
 	return f
 }
 
 func (f *FindOptions) Error() error {
-	return f.err
+	return f.Error
 }
 
 func (f *FindOptions) Data() interface{} {
 	return f.data
 }
 
-func (f *FindOptions) IsFound() bool {
+func (f *FindOptions) isFound() bool {
 	return f.isFind
 }
 */

@@ -1,18 +1,8 @@
 package ddd_repository
 
-type OnSuccess func(data interface{}) error
-type OnSuccessPaging func(data *PagingData) error
+type OnSuccess[T any] func(data T) error
+type OnSuccessList[T any] func(list *[]T) error
+
+// type OnSuccessPaging func[T ddd.Entity](data *PagingData[T]) error
 type OnError func(err error) error
 type OnIsFond func() error
-
-func onSuccessDefault(data interface{}) error {
-	return nil
-}
-
-func onErrorDefault(err error) error {
-	return nil
-}
-
-func onNotFondDefault() error {
-	return nil
-}

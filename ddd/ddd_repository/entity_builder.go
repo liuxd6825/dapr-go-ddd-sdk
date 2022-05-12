@@ -1,25 +1,28 @@
 package ddd_repository
 
-type EntityBuilder interface {
-	NewOne() interface{}
-	NewList() interface{}
+import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+
+/*type EntityBuilder[T any] interface {
+	NewOne() T
+	NewList() T
+}
+*/
+
+type EntityBuilder[T ddd.Entity] struct {
+	newOneFunc  func() T
+	newListFunc func() *[]T
 }
 
-type entityBuilder struct {
-	newOneFunc  func() interface{}
-	newListFunc func() interface{}
-}
-
-func (e *entityBuilder) NewOne() interface{} {
+func (e *EntityBuilder[T]) NewOne() T {
 	return e.newOneFunc()
 }
 
-func (e *entityBuilder) NewList() interface{} {
+func (e *EntityBuilder[T]) NewList() *[]T {
 	return e.newListFunc()
 }
 
-func NewEntityBuilder(newOne func() interface{}, newList func() interface{}) EntityBuilder {
-	return &entityBuilder{
+func NewEntityBuilder[T ddd.Entity](newOne func() T, newList func() *[]T) *EntityBuilder[T] {
+	return &EntityBuilder[T]{
 		newOneFunc:  newOne,
 		newListFunc: newList,
 	}

@@ -5,19 +5,101 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 )
 
-type Repository interface {
-	Insert(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult
-	Update(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult
-	Delete(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult
-	DeleteById(ctx context.Context, tenantId string, id string, opts ...*SetOptions) *SetResult
-	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindResult
-	FindAll(ctx context.Context, tenantId string, opts ...*FindOptions) *FindResult
-	FindPaging(ctx context.Context, search *PagingQuery, opts ...*FindOptions) *FindPagingResult
+//
+// IRepository
+// @Description: 仓储类接口
+//
+type IRepository[T ddd.Entity] interface {
+	Insert(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
+	Update(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
 
-	DoFind(fun func() (any, bool, error)) *FindResult
-	DoSet(fun func() (interface{}, error)) *SetResult
-	DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*PagingData, bool, error)) *FindPagingResult
+	Delete(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
+	DeleteById(ctx context.Context, tenantId string, id string, opts ...*SetOptions) *SetResult[T]
+
+	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T]
+	FindAll(ctx context.Context, tenantId string, opts ...*FindOptions) *FindListResult[T]
+	FindPaging(ctx context.Context, search *PagingQuery, opts ...*FindOptions) *FindPagingResult[T]
+
+	DoFindOne(fun func() (T, bool, error)) *FindOneResult[T]
+	DoFindList(fun func() (*[]T, bool, error)) *FindListResult[T]
+	DoSet(fun func() (T, error)) *SetResult[T]
+	DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*PagingData[T], bool, error)) *FindPagingResult[T]
 }
+
+//
+// Repository
+// @Description: 仓储类，
+//
+/*type Repository[T ddd.Entity] struct {
+	mongo *ddd_mongodb.Repository[T]
+}
+
+func NewRepositoryWithMongo[T ddd.Entity](entityBuilder *EntityBuilder[T], mongodb *ddd_mongodb.MongoDB, collection *mongo.Collection) *Repository[T] {
+	return &Repository[T]{
+		entityBuilder: entityBuilder,
+		collection:    collection,
+		mongodb:       mongodb,
+	}
+}
+
+func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T] {
+	return r.mongo.Insert(ctx, entity, opts...)
+}
+
+func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T] {
+	return r.mongo.Update(ctx, entity, opts...)
+}
+
+func (r *Repository[T]) Delete(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T] {
+	return r.mongo.Delete(ctx, entity, opts...)
+}
+
+func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*SetOptions) *SetResult[T] {
+	return r.mongo.DeleteById(ctx, tenantId, id, opts...)
+}
+
+func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T] {
+	return r.mongo.FindById(ctx, tenantId, id, opts...)
+}
+
+func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*FindOptions) *FindOneResult[*[]T] {
+	return r.mongo.FindAll(ctx, tenantId, opts...)
+}
+
+func (r *Repository[T]) FindPaging(ctx context.Context, search *PagingQuery, opts ...*FindOptions) *FindPagingResult[T] {
+	return r.mongo.FindPaging(ctx, search, opts...)
+}
+
+func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *FindOneResult[T] {
+	return r.mongo.DoFindOne(fun)
+}
+
+func (r *Repository[T]) DoFindList(fun func() (*[]T, bool, error)) *FindOneResult[*[]T] {
+	return r.mongo.DoFindList(fun)
+}
+
+func (r *Repository[T]) DoSet(fun func() (T, error)) *SetResult[T] {
+	return r.mongo.DoSet(fun)
+}
+
+func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*[]T, bool, error)) *FindPagingResult[T] {
+	return r.mongo.DoFilter(tenantId, filter, fun)
+}
+*/
+/*type IRepos interface {
+	Insert(interface{})
+}
+
+type Repos[T interface{}] struct {
+}
+
+func NewRepos[T]() IRepos {
+	return &Repos{}
+}
+
+func (r Repos[T]) Insert(t T) {
+	panic("implement me")
+}*/
 
 type Pageable struct {
 	PageNum  int `json:"pageNum"`

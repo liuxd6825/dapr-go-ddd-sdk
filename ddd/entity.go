@@ -5,7 +5,4 @@ type Entity interface {
 	GetId() string
 }
 
-type View interface {
-	GetTenantId() string
-	GetId() string
-}
+type EntityList *[]Entity

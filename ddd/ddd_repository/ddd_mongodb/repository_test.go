@@ -26,46 +26,50 @@ func Test_Search(t *testing.T) {
 		Telephone: "17767788888",
 	}
 
-	err := repository.Insert(ctx, user).OnSuccess(func(data interface{}) error {
+	_ = repository.Insert(ctx, user).OnSuccess(func(data *User) error {
 		println(data)
 		return nil
-	}).GetError()
-
-	assert.Error(t, err)
+	}).OnError(func(err error) error {
+		assert.Error(t, err)
+		return err
+	})
 
 	search := &ddd_repository.PagingQuery{
 		TenantId: "001",
 		Filter:   fmt.Sprintf("id=='%s'", id),
 	}
-	err = repository.FindPaging(ctx, search).OnSuccess(func(data *ddd_repository.PagingData) error {
+
+	_ = repository.FindPaging(ctx, search).OnSuccess(func(data *[]*User) error {
 		println(data)
 		return nil
 	}).OnNotFond(func() error {
-		return ddd_errors.NewNotFondError()
+		err := ddd_errors.NewNotFondError()
+		assert.Error(t, err)
+		return err
 	}).OnError(func(err error) error {
+		assert.Error(t, err)
 		return err
 	}).GetError()
 
-	assert.Error(t, err)
 }
 
 func TestMongoSession_UseTransaction(t *testing.T) {
 	mongodb, coll := newCollection("test_users")
 	repository := newRepository(mongodb, coll)
 	err := ddd_repository.StartSession(context.Background(), NewSession(mongodb), func(ctx context.Context) error {
-		id := NewObjectID().String()
 		for i := 0; i < 5; i++ {
+			id := NewObjectID().String()
 			user := &User{
 				Id:        id,
 				TenantId:  "001",
-				UserName:  "userName" + string(i),
+				UserName:  "userName" + fmt.Sprint(i),
 				UserCode:  "UserCode",
 				Address:   "address",
 				Email:     "lxd@163.com",
 				Telephone: "17767788888",
 			}
 
-			err := repository.Insert(ctx, user).OnSuccess(func(data interface{}) error {
+			err := repository.Insert(ctx, user).OnSuccess(func(data *User) error {
 				println(data)
 				return nil
 			}).GetError()
@@ -80,16 +84,16 @@ func TestMongoSession_UseTransaction(t *testing.T) {
 	}
 }
 
-func newRepository(mongodb *MongoDB, coll *mongo.Collection) ddd_repository.Repository {
+func newRepository(mongodb *MongoDB, coll *mongo.Collection) *Repository[*User] {
 	entityBuilder := newEntityBuilder()
-	return NewRepository(entityBuilder, mongodb, coll)
+	return NewRepository[*User](entityBuilder, mongodb, coll)
 }
 
-func newEntityBuilder() ddd_repository.EntityBuilder {
-	return ddd_repository.NewEntityBuilder(func() interface{} {
+func newEntityBuilder() *ddd_repository.EntityBuilder[*User] {
+	return ddd_repository.NewEntityBuilder[*User](func() *User {
 		return &User{}
-	}, func() interface{} {
-		return make([]User, 0)
+	}, func() *[]*User {
+		return &[]*User{}
 	})
 }
 

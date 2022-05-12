@@ -17,37 +17,38 @@ const (
 	TenantIdField = "tenantId"
 )
 
-type Repository struct {
-	entityBuilder ddd_repository.EntityBuilder
+type Repository[T ddd.Entity] struct {
+	entityBuilder *ddd_repository.EntityBuilder[T]
 	collection    *mongo.Collection
 	mongodb       *MongoDB
+	emptyEntity   T
 }
 
-func NewRepository(entityBuilder ddd_repository.EntityBuilder, mongodb *MongoDB, collection *mongo.Collection) ddd_repository.Repository {
-	return &Repository{
+func NewRepository[T ddd.Entity](entityBuilder *ddd_repository.EntityBuilder[T], mongodb *MongoDB, collection *mongo.Collection) *Repository[T] {
+	return &Repository[T]{
 		entityBuilder: entityBuilder,
 		collection:    collection,
 		mongodb:       mongodb,
 	}
 }
 
-func (r *Repository) NewEntity() interface{} {
+func (r *Repository[T]) NewEntity() T {
 	return r.entityBuilder.NewOne()
 }
 
-func (r *Repository) NewEntityList() interface{} {
+func (r *Repository[T]) NewEntityList() *[]T {
 	return r.entityBuilder.NewList()
 }
 
-func (r *Repository) Insert(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
-	return r.DoSet(func() (interface{}, error) {
+func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	return r.DoSet(func() (T, error) {
 		_, err := r.collection.InsertOne(ctx, entity, getInsertOneOptions(opts...))
 		return entity, err
 	})
 }
 
-func (r *Repository) Update(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
-	return r.DoSet(func() (interface{}, error) {
+func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	return r.DoSet(func() (T, error) {
 		objId, err := GetObjectID(entity.GetId())
 		if err != nil {
 			return entity, err
@@ -59,24 +60,25 @@ func (r *Repository) Update(ctx context.Context, entity ddd.Entity, opts ...*ddd
 	})
 }
 
-func (r *Repository) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
+func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
 
-func (r *Repository) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult {
-	return r.DoSet(func() (interface{}, error) {
+func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	return r.DoSet(func() (T, error) {
 		filter := bson.D{
 			{IdField, id},
 			{TenantIdField, tenantId},
 		}
 		deleteOptions := getDeleteOptions(opts...)
 		_, err := r.collection.DeleteOne(ctx, filter, deleteOptions)
-		return nil, err
+		var result T
+		return result, err
 	})
 }
 
-func (r *Repository) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindResult {
-	return r.DoFind(func() (interface{}, bool, error) {
+func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+	return r.DoFindOne(func() (T, bool, error) {
 		filter := bson.M{
 			IdField:       id,
 			TenantIdField: tenantId,
@@ -85,17 +87,17 @@ func (r *Repository) FindById(ctx context.Context, tenantId string, id string, o
 		data := r.NewEntity()
 		result := r.collection.FindOne(ctx, filter, findOneOptions)
 		if result.Err() != nil {
-			return nil, false, result.Err()
+			return r.emptyEntity, false, result.Err()
 		}
 		if err := result.Decode(data); err != nil {
-			return nil, false, err
+			return r.emptyEntity, false, err
 		}
 		return data, true, nil
 	})
 }
 
-func (r *Repository) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindResult {
-	return r.DoFind(func() (interface{}, bool, error) {
+func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+	return r.DoFindList(func() (*[]T, bool, error) {
 		filter := bson.D{{TenantIdField, tenantId}}
 		data := r.NewEntityList()
 		findOptions := getFindOptions(opts...)
@@ -108,8 +110,8 @@ func (r *Repository) FindAll(ctx context.Context, tenantId string, opts ...*ddd_
 	})
 }
 
-func (r *Repository) FindPaging(ctx context.Context, query *ddd_repository.PagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult {
-	return r.DoFilter(query.TenantId, query.Filter, func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error) {
+func (r *Repository[T]) FindPaging(ctx context.Context, query *ddd_repository.PagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
+	return r.DoFilter(query.TenantId, query.Filter, func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		data := r.NewEntityList()
 
 		findOptions := getFindOptions(opts...)
@@ -130,39 +132,30 @@ func (r *Repository) FindPaging(ctx context.Context, query *ddd_repository.Pagin
 			return nil, false, err
 		}
 		err = cursor.All(ctx, data)
-
-		count, err := r.collection.CountDocuments(ctx, filter)
-		findData := &ddd_repository.PagingData{
-			Data:       data,
-			TotalRows:  count,
-			TotalPages: r.getTotalPage(count, query.PageSize),
-			Filter:     query.Filter,
-			Sort:       query.Sort,
-			PageSize:   query.PageSize,
-			PageNum:    query.PageNum,
-		}
+		totalRows, err := r.collection.CountDocuments(ctx, filter)
+		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, true, err
 	})
+
 }
 
-func (r *Repository) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.PagingData, bool, error)) *ddd_repository.FindPagingResult {
+func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
 	p := NewMongoProcess()
 	err := rsql.ParseProcess(filter, p)
 	if err != nil {
-		return ddd_repository.NewFindPagingDataResult(nil, false, err)
+		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
 	filterData := p.GetFilter(tenantId)
-	data, isFound, err := fun(filterData)
+	data, _, err := fun(filterData)
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
-			isFound = false
 			err = nil
 		}
 	}
-	return ddd_repository.NewFindPagingDataResult(data, isFound, err)
+	return data
 }
 
-func (r *Repository) DoFind(fun func() (interface{}, bool, error)) *ddd_repository.FindResult {
+func (r *Repository[T]) DoFindList(fun func() (*[]T, bool, error)) *ddd_repository.FindListResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
@@ -170,15 +163,26 @@ func (r *Repository) DoFind(fun func() (interface{}, bool, error)) *ddd_reposito
 			err = nil
 		}
 	}
-	return ddd_repository.NewFindResult(data, isFound, err)
+	return ddd_repository.NewFindListResult[T](data, isFound, err)
 }
 
-func (r *Repository) DoSet(fun func() (interface{}, error)) *ddd_repository.SetResult {
+func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.FindOneResult[T] {
+	data, isFound, err := fun()
+	if err != nil {
+		if ddd_errors.IsErrorMongoNoDocuments(err) {
+			isFound = false
+			err = nil
+		}
+	}
+	return ddd_repository.NewFindOneResult[T](data, isFound, err)
+}
+
+func (r *Repository[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T] {
 	data, err := fun()
-	return ddd_repository.NewSetResult(data, err)
+	return ddd_repository.NewSetResult[T](data, err)
 }
 
-func (r *Repository) getSort(sort string) (map[string]interface{}, error) {
+func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
 	if len(sort) == 0 {
 		return nil, nil
 	}
@@ -216,12 +220,4 @@ func (r *Repository) getSort(sort string) (map[string]interface{}, error) {
 		res[name] = orderVal
 	}
 	return res, nil
-}
-
-func (r *Repository) getTotalPage(count int64, size int64) int64 {
-	totalPage := count / size
-	if count%size > 1 {
-		totalPage++
-	}
-	return totalPage
 }
