@@ -18,7 +18,7 @@ type IRepository[T ddd.Entity] interface {
 
 	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T]
 	FindAll(ctx context.Context, tenantId string, opts ...*FindOptions) *FindListResult[T]
-	FindPaging(ctx context.Context, search *PagingQuery, opts ...*FindOptions) *FindPagingResult[T]
+	FindPaging(ctx context.Context, search *FindPagingQuery, opts ...*FindOptions) *FindPagingResult[T]
 
 	DoFindOne(fun func() (T, bool, error)) *FindOneResult[T]
 	DoFindList(fun func() (*[]T, bool, error)) *FindListResult[T]
@@ -106,7 +106,7 @@ type Pageable struct {
 	PageSize int `json:"pageSize"`
 }
 
-type PagingQuery struct {
+type FindPagingQuery struct {
 	TenantId string `json:"tenantId"`
 	Fields   string `json:"fields"`
 	// - name=="Kill Bill";year=gt=2003

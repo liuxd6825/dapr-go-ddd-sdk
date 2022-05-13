@@ -22,22 +22,23 @@ type Repository[T ddd.Entity] struct {
 	collection    *mongo.Collection
 	mongodb       *MongoDB
 	emptyEntity   T
+	newFun        func() T
 }
 
-func NewRepository[T ddd.Entity](entityBuilder *ddd_repository.EntityBuilder[T], mongodb *MongoDB, collection *mongo.Collection) *Repository[T] {
+func NewRepository[T ddd.Entity](newFun func() T, mongodb *MongoDB, collection *mongo.Collection) *Repository[T] {
 	return &Repository[T]{
-		entityBuilder: entityBuilder,
-		collection:    collection,
-		mongodb:       mongodb,
+		newFun:     newFun,
+		collection: collection,
+		mongodb:    mongodb,
 	}
 }
 
 func (r *Repository[T]) NewEntity() T {
-	return r.entityBuilder.NewOne()
+	return r.newFun()
 }
 
 func (r *Repository[T]) NewEntityList() *[]T {
-	return r.entityBuilder.NewList()
+	return &[]T{}
 }
 
 func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
@@ -110,7 +111,7 @@ func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*d
 	})
 }
 
-func (r *Repository[T]) FindPaging(ctx context.Context, query *ddd_repository.PagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
+func (r *Repository[T]) FindPaging(ctx context.Context, query *ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
 	return r.DoFilter(query.TenantId, query.Filter, func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		data := r.NewEntityList()
 

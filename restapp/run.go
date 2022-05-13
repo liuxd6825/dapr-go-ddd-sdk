@@ -139,8 +139,10 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 //
 func Run(options *StartOptions, app *iris.Application, webRootPath string, subsFunc func() *[]RegisterSubscribe,
 	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage, eventTypesFunc func() *[]RegisterEventType) error {
+
 	_app = app
 	_webRootPath = webRootPath
+
 	ddd.Init(options.AppId)
 	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
 

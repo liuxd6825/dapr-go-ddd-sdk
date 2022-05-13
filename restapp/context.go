@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func NewListQuery(ctx iris.Context, tenantId string) (*ddd_repository.PagingQuery, error) {
+func NewListQuery(ctx iris.Context, tenantId string) (*ddd_repository.FindPagingQuery, error) {
 	fields := ctx.URLParamDefault("fields", "")
 	filter := ctx.URLParamDefault("filter", "")
 	sort := ctx.URLParamDefault("sort", "")
@@ -28,7 +28,7 @@ func NewListQuery(ctx iris.Context, tenantId string) (*ddd_repository.PagingQuer
 		return nil, err
 	}
 
-	return &ddd_repository.PagingQuery{
+	return &ddd_repository.FindPagingQuery{
 		TenantId: tenantId,
 		Fields:   fields,
 		Filter:   filter,

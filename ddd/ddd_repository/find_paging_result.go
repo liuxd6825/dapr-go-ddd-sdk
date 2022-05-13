@@ -12,11 +12,11 @@ type FindPagingResult[T ddd.Entity] struct {
 	PageSize   int64  `json:"pageSize"`
 	Filter     string `json:"filter"`
 	Sort       string `json:"sort"`
-	Error      error  `json:"error"`
-	IsFound    bool   `json:"isFound"`
+	Error      error  `json:"-"`
+	IsFound    bool   `json:"-"`
 }
 
-func NewFindPagingResult[T ddd.Entity](data *[]T, totalRows int64, query *PagingQuery, err error) *FindPagingResult[T] {
+func NewFindPagingResult[T ddd.Entity](data *[]T, totalRows int64, query *FindPagingQuery, err error) *FindPagingResult[T] {
 	if data != nil && query != nil {
 		return &FindPagingResult[T]{
 			Data:       data,
