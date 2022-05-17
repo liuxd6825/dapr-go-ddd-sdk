@@ -34,7 +34,7 @@ func Test_Search(t *testing.T) {
 		return err
 	})
 
-	search := &ddd_repository.PagingQuery{
+	search := &ddd_repository.FindPagingQuery{
 		TenantId: "001",
 		Filter:   fmt.Sprintf("id=='%s'", id),
 	}
@@ -85,16 +85,7 @@ func TestMongoSession_UseTransaction(t *testing.T) {
 }
 
 func newRepository(mongodb *MongoDB, coll *mongo.Collection) *Repository[*User] {
-	entityBuilder := newEntityBuilder()
-	return NewRepository[*User](entityBuilder, mongodb, coll)
-}
-
-func newEntityBuilder() *ddd_repository.EntityBuilder[*User] {
-	return ddd_repository.NewEntityBuilder[*User](func() *User {
-		return &User{}
-	}, func() *[]*User {
-		return &[]*User{}
-	})
+	return NewRepository[*User](func() *User { return &User{} }, mongodb, coll)
 }
 
 func newCollection(name string) (*MongoDB, *mongo.Collection) {
