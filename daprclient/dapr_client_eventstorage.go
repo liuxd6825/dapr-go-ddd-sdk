@@ -38,7 +38,7 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 		if err != nil {
 			return nil, err
 		}
-		
+
 		snapshot := &Snapshot{
 			AggregateData:     aggregateData,
 			AggregateRevision: out.Snapshot.AggregateRevision,
@@ -104,8 +104,8 @@ func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*A
 		return nil, err
 	}
 
-	metadata, err:= ddd_utils.ToJson(req.Metadata)
-	if err!=nil{
+	metadata, err := ddd_utils.ToJson(req.Metadata)
+	if err != nil {
 		return nil, err
 	}
 
@@ -188,5 +188,3 @@ func (c *daprClient) ExistAggregate(ctx context.Context, tenantId string, aggreg
 	}
 	return out.IsExist, nil
 }
-
-
