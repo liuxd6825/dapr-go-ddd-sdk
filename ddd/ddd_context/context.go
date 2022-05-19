@@ -12,6 +12,7 @@ type ctxServerKey struct {
 
 type ServerContext interface {
 	SetResponseHeader(key string, value string)
+	URLParamDefault(name, def string) string
 }
 
 func NewContext(parent context.Context, metadata map[string]string, serverCtx ServerContext) context.Context {

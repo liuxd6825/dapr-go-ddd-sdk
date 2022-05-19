@@ -34,11 +34,16 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 		if err != nil {
 			return nil, err
 		}
+		metadata, err := ddd_utils.NewMapString(out.Snapshot.Metadata)
+		if err != nil {
+			return nil, err
+		}
+		
 		snapshot := &Snapshot{
 			AggregateData:     aggregateData,
 			AggregateRevision: out.Snapshot.AggregateRevision,
 			SequenceNumber:    out.Snapshot.SequenceNumber,
-			Metadata:          out.Snapshot.Metadata,
+			Metadata:          metadata,
 		}
 		resp.Snapshot = snapshot
 	}
@@ -65,10 +70,6 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 }
 
 func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
-	eventData, err := ddd_utils.ToJson(req.EventData)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := ddd_utils.IsEmpty(req.CommandId, "CommandId"); err != nil {
 		return nil, err
@@ -98,9 +99,19 @@ func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*A
 		return nil, errors.New("EventData cannot be nil.")
 	}
 
+	eventData, err := ddd_utils.ToJson(req.EventData)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err:= ddd_utils.ToJson(req.Metadata)
+	if err!=nil{
+		return nil, err
+	}
+
 	in := &pb.ApplyEventRequest{
 		TenantId:      req.TenantId,
-		Metadata:      req.Metadata,
+		Metadata:      metadata,
 		CommandId:     req.CommandId,
 		EventId:       req.EventId,
 		EventData:     eventData,
@@ -137,6 +148,10 @@ func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest)
 	if err != nil {
 		return nil, err
 	}
+	metadata, err := ddd_utils.ToJson(req.Metadata)
+	if err != nil {
+		return nil, err
+	}
 	in := &pb.SaveSnapshotRequest{
 		TenantId:          req.TenantId,
 		AggregateId:       req.AggregateId,
@@ -144,7 +159,7 @@ func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest)
 		AggregateData:     aggregateData,
 		AggregateRevision: req.AggregateRevision,
 		SequenceNumber:    req.SequenceNumber,
-		Metadata:          req.Metadata,
+		Metadata:          metadata,
 	}
 	_, err = c.grpcClient.SaveSnapshot(ctx, in)
 	if err != nil {
@@ -173,3 +188,5 @@ func (c *daprClient) ExistAggregate(ctx context.Context, tenantId string, aggreg
 	}
 	return out.IsExist, nil
 }
+
+

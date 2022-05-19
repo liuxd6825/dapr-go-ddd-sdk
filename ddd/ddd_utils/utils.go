@@ -26,6 +26,16 @@ func NewMapInterface(jsonText string) (map[string]interface{}, error) {
 	return data, nil
 }
 
+func NewMapString(jsonText string) (map[string]string, error) {
+	data := make(map[string]string)
+	err := json.Unmarshal([]byte(jsonText), &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+
 func ToJson(data interface{}) (string, error) {
 	if data == nil {
 		return "", nil

@@ -1,18 +1,49 @@
 package restapp
 
 import (
+	"context"
 	"errors"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"strconv"
 )
 
-func NewListQuery(ctx iris.Context, tenantId string) (*ddd_repository.FindPagingQuery, error) {
-	fields := ctx.URLParamDefault("fields", "")
-	filter := ctx.URLParamDefault("filter", "")
-	sort := ctx.URLParamDefault("sort", "")
-	pageStr := ctx.URLParamDefault("page", "0")
-	sizeStr := ctx.URLParamDefault("size", "20")
+type serverContext struct {
+	ctx iris.Context
+}
+
+func NewContext(irisCtx iris.Context) context.Context {
+	metadata := make(map[string]string, 0)
+	header := irisCtx.Request().Header
+	for k, v := range header {
+		metadata[k] = v[0]
+	}
+	serverCtx := newServerContext(irisCtx)
+	return ddd_context.NewContext(context.Background(), metadata, serverCtx)
+}
+
+func newServerContext(ctx iris.Context) ddd_context.ServerContext {
+	return &serverContext{
+		ctx: ctx,
+	}
+}
+
+func (s *serverContext) SetResponseHeader(name string, value string) {
+	s.ctx.Header(name, value)
+}
+
+func (s *serverContext) URLParamDefault(name, def string) string {
+	return s.ctx.URLParamDefault(name, def)
+}
+
+func NewListQuery(ctx context.Context, tenantId string) (*ddd_repository.FindPagingQuery, error) {
+	svrCtx := ddd_context.GetServerContext(ctx)
+	fields := svrCtx.URLParamDefault("fields", "")
+	filter := svrCtx.URLParamDefault("filter", "")
+	sort := svrCtx.URLParamDefault("sort", "")
+	pageStr := svrCtx.URLParamDefault("page", "0")
+	sizeStr := svrCtx.URLParamDefault("size", "20")
 
 	if len(tenantId) == 0 {
 		return nil, errors.New("tenantId is null")

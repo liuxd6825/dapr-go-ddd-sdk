@@ -1,6 +1,7 @@
 package restapp
 
 import (
+	"context"
 	"errors"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
@@ -21,8 +22,8 @@ type Command interface {
 
 // type GetOneFunc = func(ctx iris.Context) (interface{}, bool, error)
 // type GetFunc = func(ctx iris.Context) (interface{}, error)
-type CmdFunc func() error
-type QueryFunc func() (interface{}, bool, error)
+type CmdFunc func(ctx context.Context) error
+type QueryFunc func(ctx context.Context) (interface{}, bool, error)
 
 func SetErrorNotFond(ctx iris.Context) error {
 	ctx.SetErr(iris.ErrNotFound)
@@ -69,8 +70,8 @@ func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) (err error) {
 	if err = ctx.ReadBody(cmd); err != nil {
 		return err
 	}
-
-	err = fun()
+	restCtx := NewContext(ctx)
+	err = fun(restCtx)
 	if err != nil && !ddd_errors.IsErrorAggregateExists(err) {
 		SetError(ctx, err)
 		return err
@@ -84,8 +85,8 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool
 			err = e
 		}
 	}()
-
-	data, isFound, err = fun()
+	restCtx := NewContext(ctx)
+	data, isFound, err = fun(restCtx)
 	if err != nil {
 		SetError(ctx, err)
 		return nil, isFound, err
@@ -106,8 +107,8 @@ func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, e
 			err = e
 		}
 	}()
-
-	data, isFound, err = fun()
+	restCtx := NewContext(ctx)
+	data, isFound, err = fun(restCtx)
 	if err != nil {
 		SetError(ctx, err)
 		return nil, isFound, err
