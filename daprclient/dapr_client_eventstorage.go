@@ -19,7 +19,13 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 		TenantId:    req.TenantId,
 		AggregateId: req.AggregateId,
 	}
-	out, err := c.grpcClient.LoadEvents(ctx, in)
+	var out *pb.LoadEventResponse
+
+	err := c.tryCall(func() error {
+		var err error
+		out, err = c.grpcClient.LoadEvents(ctx, in)
+		return err
+	}, 3, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +128,12 @@ func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*A
 		PubsubName:    req.PubsubName,
 		Topic:         req.Topic,
 	}
-	_, err = c.grpcClient.ApplyEvent(ctx, in)
+
+	err = c.tryCall(func() error {
+		_, err = c.grpcClient.ApplyEvent(ctx, in)
+		return err
+	}, 3, 1)
+
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +172,11 @@ func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest)
 		SequenceNumber:    req.SequenceNumber,
 		Metadata:          metadata,
 	}
-	_, err = c.grpcClient.SaveSnapshot(ctx, in)
+	err = c.tryCall(func() error {
+		_, err := c.grpcClient.SaveSnapshot(ctx, in)
+		return err
+	}, 3, 1)
+
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +197,13 @@ func (c *daprClient) ExistAggregate(ctx context.Context, tenantId string, aggreg
 		AggregateId: aggregateId,
 	}
 
-	out, err := c.grpcClient.ExistAggregate(ctx, in)
+	var out *pb.ExistAggregateResponse
+	err := c.tryCall(func() error {
+		var err error
+		out, err = c.grpcClient.ExistAggregate(ctx, in)
+		return err
+	}, 3, 1)
+
 	if err != nil {
 		return false, err
 	}

@@ -92,7 +92,6 @@ func NewClient(host string, httpPort int64, grpcPort int64, opts ...Option) (Dap
 }
 
 func newDaprSdkClient(host string, grpcPort int64) (dapr_sdk_client.Client, error) {
-
 	// 三次试错创建daprClient
 	port := strconv.FormatInt(grpcPort, 10)
 	var grpcClient dapr_sdk_client.Client
@@ -118,6 +117,25 @@ func newDaprSdkClient(host string, grpcPort int64) (dapr_sdk_client.Client, erro
 	return grpcClient, nil
 }
 
+func (c *daprClient) tryCall(fun func() error, tryCount int, waitSecond time.Duration) error {
+	var err error
+	for i := 0; i < tryCount; i++ {
+		err = fun()
+		if ddd_errors.IsGrpcConnError(err) {
+			time.Sleep(time.Second * waitSecond)
+			grpcClient, err2 := newDaprSdkClient(c.host, c.grpcPort)
+			if err2 != nil {
+				return err2
+			} else {
+				c.grpcClient = grpcClient
+			}
+			continue
+		}
+		break
+	}
+	return err
+}
+
 func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
 	var err error
 	defer func() {
@@ -136,9 +154,16 @@ func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb 
 			ContentType: "application/json",
 			Data:        reqBytes,
 		}
-		respBytes, err = c.grpcClient.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
+		err = c.tryCall(func() error {
+			respBytes, err = c.grpcClient.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
+			return err
+		}, 3, 1)
+
 	} else {
-		respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
+		err = c.tryCall(func() error {
+			respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
+			return err
+		}, 3, 1)
 	}
 	if err != nil {
 		return nil, ddd_utils.NewAppError(appID, err)

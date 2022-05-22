@@ -64,7 +64,7 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 			}
 		}
 
-		if len(records) >= 3 {
+		if len(records) >= 10 {
 			snapshot := &daprclient.SaveSnapshotRequest{
 				TenantId:          tenantId,
 				AggregateData:     aggregate,
