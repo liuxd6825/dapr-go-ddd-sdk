@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_actor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"reflect"
@@ -14,7 +15,7 @@ import (
 var strEmpty = ""
 
 type EventStorage interface {
-	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error)
+	LoadAggregate(ctx context.Context, tenantId string, aggregate Aggregate) (Aggregate, bool, error)
 	LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventsResponse, error)
 	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
@@ -75,7 +76,7 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 			agg, isFound, err = nil, false, e
 			return agg, err
 		}
-		agg, isFound, err = eventStorage.LoadAggregate(ctx, tenantId, aggregateId, aggregate)
+		agg, isFound, err = eventStorage.LoadAggregate(ctx, tenantId, aggregate)
 		return agg, err
 	})
 	return
@@ -159,6 +160,9 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 		}
 	}
 
+	aggregateId := event.GetAggregateId()
+	aggregateType := aggregate.GetAggregateType()
+
 	logInfo := &applog.LogInfo{
 		TenantId:  aggregate.GetTenantId(),
 		ClassName: "ddd",
@@ -193,6 +197,15 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 		}
 		return nil, nil
 	})
+
+	if client, err := daprclient.GetDaprDDDClient().DaprClient(); err == nil {
+		snapshotClient := ddd_actor.NewAggregateSnapshotClient(client, aggregateType, aggregateId)
+		_, err = snapshotClient.SaveSnapshot(ctx, &ddd_actor.SaveSnapshotRequest{TenantId: event.GetTenantId(), AggregateType: aggregateType, AggregateId: aggregateId})
+		if err != nil {
+			println(err)
+		}
+	}
+
 	return
 }
 

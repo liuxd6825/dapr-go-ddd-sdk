@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 )
 
-func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
+func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
 		return nil, err
 	}
@@ -19,7 +19,7 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 		TenantId:    req.TenantId,
 		AggregateId: req.AggregateId,
 	}
-	out, err := c.grpcClient.LoadEvents(ctx, in)
+	out, err := c.grpcDaprClient.LoadEvents(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 	return resp, nil
 }
 
-func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
+func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
 
 	if err := ddd_utils.IsEmpty(req.CommandId, "CommandId"); err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*A
 		PubsubName:    req.PubsubName,
 		Topic:         req.Topic,
 	}
-	_, err = c.grpcClient.ApplyEvent(ctx, in)
+	_, err = c.grpcDaprClient.ApplyEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*A
 	return resp, nil
 }
 
-func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
+func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest)
 		SequenceNumber:    req.SequenceNumber,
 		Metadata:          metadata,
 	}
-	_, err = c.grpcClient.SaveSnapshot(ctx, in)
+	_, err = c.grpcDaprClient.SaveSnapshot(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest)
 	return resp, nil
 }
 
-func (c *daprClient) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error) {
+func (c *daprDddClient) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error) {
 	if err := ddd_utils.IsEmpty(tenantId, "TenantId"); err != nil {
 		return false, err
 	}
@@ -182,7 +182,7 @@ func (c *daprClient) ExistAggregate(ctx context.Context, tenantId string, aggreg
 		AggregateId: aggregateId,
 	}
 
-	out, err := c.grpcClient.ExistAggregate(ctx, in)
+	out, err := c.grpcDaprClient.ExistAggregate(ctx, in)
 	if err != nil {
 		return false, err
 	}

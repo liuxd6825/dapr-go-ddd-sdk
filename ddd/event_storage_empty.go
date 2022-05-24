@@ -25,7 +25,7 @@ func (s *emptyEventStorage) GetPort() int {
 	return -1
 }
 
-func (s *emptyEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
+func (s *emptyEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
 	return nil, false, errors.New("emptyEventStorage")
 }
 

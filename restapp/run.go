@@ -1,18 +1,19 @@
 package restapp
 
 import (
-	"errors"
 	"fmt"
+	"github.com/dapr/go-sdk/actor"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_actor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 )
 
-const subscribePath = "dapr/subscribe"
+const subscribePath = "dapr/subscribesHandler"
 const eventTypesPath = "dapr/event-types"
 
 var _app *iris.Application
@@ -23,7 +24,7 @@ type StartOptions struct {
 	HttpHost   string
 	HttpPort   int
 	LogLevel   applog.Level
-	DaprClient daprclient.DaprClient
+	DaprClient daprclient.DaprDddClient
 }
 
 type RegisterSubscribe interface {
@@ -66,13 +67,25 @@ type RegisterEventType struct {
 	NewFunc   ddd.NewEventFunc
 }
 
-var _daprClient daprclient.DaprClient
-
-func GetDaprClient() daprclient.DaprClient {
-	return _daprClient
+var EmptyActors = func() *[]actor.Factory {
+	return &[]actor.Factory{}
 }
 
-func RunWithConfig(envType string, configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType) error {
+var DddActors = func() *[]actor.Factory {
+	return &[]actor.Factory{
+		aggregateSnapshotActorFactory,
+	}
+}
+
+func aggregateSnapshotActorFactory() actor.Server {
+	client, err := daprclient.GetDaprDDDClient().DaprClient()
+	if err != nil {
+		panic(err)
+	}
+	return ddd_actor.NewAggregateSnapshotActorService(client)
+}
+
+func RunWithConfig(envType string, configFile string, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) error {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -87,21 +100,21 @@ func RunWithConfig(envType string, configFile string, app *iris.Application, sub
 	if err != nil {
 		panic(err)
 	}
-	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc, eventsFunc)
+	return RubWithEnvConfig(envConfig, app, subsFunc, controllersFunc, eventsFunc, actorsFunc)
 }
 
-func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType) error {
+func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() *[]RegisterSubscribe, controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) error {
 	if !config.Mongo.IsEmpty() {
 		initMongo(&config.Mongo)
 	}
 
 	//创建dapr客户端
-	daprClient, err := daprclient.NewClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
+	daprClient, err := daprclient.NewDaprDddClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {
 		panic(err)
 	}
 
-	_daprClient = daprClient
+	daprclient.SetDaprDddClient(daprClient)
 
 	options := &StartOptions{
 		AppId:      config.App.AppId,
@@ -122,7 +135,7 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 		esMap[""] = eventStorage
 	}
 
-	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc)
+	return Run(options, app, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc, actorsFunc)
 }
 
 //
@@ -138,7 +151,8 @@ func RubWithEnvConfig(config *EnvConfig, app *iris.Application, subsFunc func() 
 // @return error
 //
 func Run(options *StartOptions, app *iris.Application, webRootPath string, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage, eventTypesFunc func() *[]RegisterEventType) error {
+	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage, eventTypesFunc func() *[]RegisterEventType,
+	actorsFunc func() *[]actor.Factory) error {
 
 	_app = app
 	_webRootPath = webRootPath
@@ -146,59 +160,81 @@ func Run(options *StartOptions, app *iris.Application, webRootPath string, subsF
 	ddd.Init(options.AppId)
 	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
 
-	// 注册消息订阅
-	subs := subsFunc()
-	if subs != nil {
-		for _, s := range *subs {
-			if s != nil {
-				if _, err := registerSubscribeHandler(s.GetSubscribes(), s.GetHandler()); err != nil {
-					return err
+	/*	// 注册消息订阅
+		subs := subsFunc()
+		if subs != nil {
+			for _, s := range *subs {
+				if s != nil {
+					if _, err := registerSubscribeHandler(s.GetSubscribes(), s.GetHandler()); err != nil {
+						return err
+					}
 				}
 			}
 		}
-	}
 
-	// 注册控制器
-	controllers := controllersFunc()
-	if controllers != nil {
-		for _, c := range *controllers {
-			if c != nil {
-				registerRestController(webRootPath, c)
+		// 注册控制器
+		controllers := controllersFunc()
+		if controllers != nil {
+			for _, c := range *controllers {
+				if c != nil {
+					registerRestController(webRootPath, c)
+				}
 			}
 		}
-	}
 
-	// 注册领域事件类型
-	eventTypes := eventTypesFunc()
-	if eventTypes != nil {
-		for _, t := range *eventTypes {
-			if err := ddd.RegisterEventType(t.EventType, t.Revision, t.NewFunc); err != nil {
-				return errors.New(fmt.Sprintf("RegisterEventType() error:%s , EventType=%s, Revision=%s", err.Error(), t.EventType, t.Revision))
+		// 注册领域事件类型
+		eventTypes := eventTypesFunc()
+		if eventTypes != nil {
+			for _, t := range *eventTypes {
+				if err := ddd.RegisterEventType(t.EventType, t.Revision, t.NewFunc); err != nil {
+					return errors.New(fmt.Sprintf("RegisterEventType() error:%s , EventType=%s, Revision=%s", err.Error(), t.EventType, t.Revision))
+				}
 			}
 		}
-	}
 
-	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
-	_app.Get(subscribePath, func(context *context.Context) {
-		data := ddd.GetSubscribes()
-		_, _ = context.JSON(data)
-	})
+		// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
+		_app.Get(subscribePath, func(context *context.Context) {
+			data := ddd.GetSubscribes()
+			_, _ = context.JSON(data)
+		})
 
-	// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
-	_app.Get(eventTypesPath, func(context *context.Context) {
-		//_, _ = context.JSON(ddd.RegisterEventType())
-	})
+		// dapr服务通过访问http://locahost:<port>/dapr/subscribe获取订阅的消息
+		_app.Get(eventTypesPath, func(context *context.Context) {
+			//_, _ = context.JSON(ddd.RegisterEventType())
+		})
 
-	// 注册事件存储器
-	if eventStorages != nil {
-		for key, es := range eventStorages {
-			ddd.RegisterEventStorage(key, es)
+		// 注册事件存储器
+		if eventStorages != nil {
+			for key, es := range eventStorages {
+				ddd.RegisterEventStorage(key, es)
+			}
 		}
+		if err := ddd.StartSubscribeHandlers(); err != nil {
+			return err
+		}
+
+		actors := actorsFunc()
+		if actors != nil {
+			for _, f := range *actors {
+				runtime.GetActorRuntimeInstance().RegisterActorFactory(f)
+			}
+		}*/
+
+	serverOptions := &ServerOptions{
+		AppId:          options.AppId,
+		HttpHost:       options.HttpHost,
+		HttpPort:       options.HttpPort,
+		LogLevel:       options.LogLevel,
+		EventTypes:     eventTypesFunc(),
+		EventStorages:  eventStorages,
+		Subscribes:     subsFunc(),
+		Controllers:    controllersFunc(),
+		ActorFactories: actorsFunc(),
+		AuthToken:      "",
+		WebRootPath:    webRootPath,
 	}
-	if err := ddd.StartSubscribeHandlers(); err != nil {
-		return err
-	}
-	if err := app.Run(iris.Addr(fmt.Sprintf("%s:%d", options.HttpHost, options.HttpPort))); err != nil {
+	server := NewServer(options.DaprClient, serverOptions)
+	if err := server.Start(); err != nil {
 		return err
 	}
 	return nil
@@ -261,6 +297,7 @@ func registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd
 			}
 		}()
 		_app.Handle("POST", subscribe.Route, func(c *context.Context) {
+			println(fmt.Sprintf("topic:%s; route:%s;", subscribe.Topic, subscribe.Route))
 			if err = sh.CallQueryEventHandler(c, c); err != nil {
 				c.SetErr(err)
 			}

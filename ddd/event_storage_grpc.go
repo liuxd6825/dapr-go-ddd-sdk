@@ -9,12 +9,12 @@ import (
 )
 
 type grpcEventStorage struct {
-	client     daprclient.DaprClient
+	client     daprclient.DaprDddClient
 	pubsubName string
 	subscribes *[]Subscribe
 }
 
-func NewGrpcEventStorage(client daprclient.DaprClient, options ...func(s EventStorage)) (EventStorage, error) {
+func NewGrpcEventStorage(client daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
 	subscribes = make([]Subscribe, 0)
 	res := &grpcEventStorage{
 		client:     client,
@@ -30,7 +30,10 @@ func (s *grpcEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
+func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
+	aggregateId := aggregate.GetAggregateId()
+	aggregateType := aggregate.GetAggregateType()
+
 	req := &daprclient.LoadEventsRequest{
 		TenantId:    tenantId,
 		AggregateId: aggregateId,
@@ -68,8 +71,8 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 			snapshot := &daprclient.SaveSnapshotRequest{
 				TenantId:          tenantId,
 				AggregateData:     aggregate,
-				AggregateId:       aggregate.GetAggregateId(),
-				AggregateType:     aggregate.GetAggregateType(),
+				AggregateId:       aggregateId,
+				AggregateType:     aggregateType,
 				AggregateRevision: aggregate.GetAggregateRevision(),
 				SequenceNumber:    sequenceNumber,
 			}

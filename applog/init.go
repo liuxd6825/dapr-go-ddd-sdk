@@ -29,11 +29,11 @@ type Event interface {
 //
 // Init
 // @Description: 初始化日期
-// @param daprClient DaprClient
+// @param daprClient DaprDddClient
 // @param aAppId Darp Appliation Id
 // @param level 日志级别
 //
-func Init(daprClient daprclient.DaprClient, aAppId string, level Level) {
+func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
 	log = NewLogger(daprClient)
 	log.SetLevel(level)
 	appId = aAppId

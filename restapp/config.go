@@ -154,7 +154,7 @@ func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
 
 	if envConfig != nil {
 		log.Infoln(fmt.Sprintf("CONFIG envType:%s", envType))
-		log.Infoln(fmt.Sprintf("CONFIG APP   appId:%s,  httpHost:%s,   httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("CONFIG APP   AppId:%s,  httpHost:%s,   httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
 		log.Infoln(fmt.Sprintf("CONFIG DAPR  host:%s,  httpPort:%d,   grpcPort:%d,   pubsubs:%s",
 			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
 		return envConfig, nil
