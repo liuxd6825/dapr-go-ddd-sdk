@@ -18,7 +18,7 @@ import (
 	"net/http"
 )
 
-type ServerOptions struct {
+type ServiceOptions struct {
 	AppId          string
 	HttpHost       string
 	HttpPort       int
@@ -31,7 +31,7 @@ type ServerOptions struct {
 	AuthToken      string
 	WebRootPath    string
 }
-type server struct {
+type service struct {
 	app            *iris.Application
 	appId          string
 	httpHost       string
@@ -47,39 +47,39 @@ type server struct {
 	webRootPath    string
 }
 
-func (s *server) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
+func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
 	panic("implement me")
 }
 
-func (s *server) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
+func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
 	panic("implement me")
 }
 
-func (s *server) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
+func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
 	panic("implement me")
 }
 
-func (s *server) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
+func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
 	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
 }
 
-func (s *server) Stop() error {
+func (s *service) Stop() error {
 	panic("implement me")
 }
 
-func (s *server) GracefulStop() error {
+func (s *service) GracefulStop() error {
 	panic("implement me")
 }
 
-func (s *server) setOptions(w http.ResponseWriter, r *http.Request) {
+func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
 	w.Header().Set("Allow", "POST,OPTIONS")
 }
 
-func NewServer(daprDddClient daprclient.DaprDddClient, opts *ServerOptions) common.Service {
-	return &server{
+func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
+	return &service{
 		httpPort:       opts.HttpPort,
 		httpHost:       opts.HttpHost,
 		appId:          opts.AppId,
@@ -96,7 +96,7 @@ func NewServer(daprDddClient daprclient.DaprDddClient, opts *ServerOptions) comm
 	}
 }
 
-func (s *server) Start() error {
+func (s *service) Start() error {
 	app := s.app
 
 	// register subscribe handler
@@ -138,7 +138,7 @@ func (s *server) Start() error {
 	if s.controllers != nil {
 		for _, c := range *s.controllers {
 			if c != nil {
-				s.registerRestController(s.webRootPath, c)
+				s.registerController(s.webRootPath, c)
 			}
 		}
 	}
@@ -175,7 +175,7 @@ func (s *server) Start() error {
 }
 
 // register actor method invoke handler
-func (s *server) actorMethodInvokeHandler(ctx *context.Context) {
+func (s *service) actorMethodInvokeHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorId := ctx.Params().Get("actorId")
 	methodName := ctx.Params().Get("methodName")
@@ -194,7 +194,7 @@ func (s *server) actorMethodInvokeHandler(ctx *context.Context) {
 }
 
 // register actor reminder invoke handler
-func (s *server) actorReminderInvokeHandler(ctx *context.Context) {
+func (s *service) actorReminderInvokeHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorID := ctx.Params().Get("actorId")
 	reminderName := ctx.Params().Get("reminderName")
@@ -212,7 +212,7 @@ func (s *server) actorReminderInvokeHandler(ctx *context.Context) {
 }
 
 // register actor timer invoke handler
-func (s *server) actorTimerInvokeHandler(ctx *context.Context) {
+func (s *service) actorTimerInvokeHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorID := ctx.Params().Get("actorId")
 	timerName := ctx.Params().Get("timerName")
@@ -230,7 +230,7 @@ func (s *server) actorTimerInvokeHandler(ctx *context.Context) {
 }
 
 // register deactivate actor handler
-func (s *server) actorDeactivateHandler(ctx *context.Context) {
+func (s *service) actorDeactivateHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorID := ctx.Params().Get("actorId")
 	err := runtime.GetActorRuntimeInstance().Deactivate(actorType, actorID)
@@ -245,21 +245,21 @@ func (s *server) actorDeactivateHandler(ctx *context.Context) {
 	ctx.StatusCode(http.StatusOK)
 }
 
-func (s *server) subscribesHandler(ctx *context.Context) {
+func (s *service) subscribesHandler(ctx *context.Context) {
 	data := ddd.GetSubscribes()
 	_, _ = ctx.JSON(data)
 }
 
-func (s *server) eventTypesHandler(context *context.Context) {
+func (s *service) eventTypesHandler(context *context.Context) {
 
 }
 
-func (s *server) healthHandler(context *context.Context) {
+func (s *service) healthHandler(context *context.Context) {
 	context.StatusCode(http.StatusOK)
 }
 
 // register actor config handler
-func (s *server) actorConfigHandler(ctx *context.Context) {
+func (s *service) actorConfigHandler(ctx *context.Context) {
 	data, err := runtime.GetActorRuntimeInstance().GetJSONSerializedConfig()
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
@@ -277,7 +277,7 @@ func (s *server) actorConfigHandler(ctx *context.Context) {
 // @param handlers
 // @return error
 //
-func (s *server) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
+func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
 		err := ddd.RegisterQueryHandler(h)
@@ -295,7 +295,7 @@ func (s *server) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
 //
-func (s *server) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
+func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
 	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
 		defer func() {
 			if e := ddd_errors.GetRecoverError(recover()); e != nil {
@@ -322,7 +322,7 @@ func (s *server) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEven
 // @param relativePath
 // @param configurators
 //
-func (s *server) registerRestController(relativePath string, controllers ...Controller) {
+func (s *service) registerController(relativePath string, controllers ...Controller) {
 	if controllers == nil && len(controllers) == 0 {
 		return
 	}
