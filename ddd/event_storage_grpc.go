@@ -30,8 +30,7 @@ func (s *grpcEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
-	aggregateId := aggregate.GetAggregateId()
+func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
 	aggregateType := aggregate.GetAggregateType()
 
 	req := &daprclient.LoadEventsRequest{

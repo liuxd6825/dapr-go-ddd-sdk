@@ -2,10 +2,10 @@ package ddd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_actor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"reflect"
@@ -15,13 +15,15 @@ import (
 var strEmpty = ""
 
 type EventStorage interface {
-	LoadAggregate(ctx context.Context, tenantId string, aggregate Aggregate) (Aggregate, bool, error)
+	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error)
 	LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventsResponse, error)
 	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
 	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
 	GetPubsubName() string
 }
+
+var snapshotEventsMinCount = 20
 
 type EventStorageOption func(EventStorage)
 
@@ -76,10 +78,72 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 			agg, isFound, err = nil, false, e
 			return agg, err
 		}
-		agg, isFound, err = eventStorage.LoadAggregate(ctx, tenantId, aggregate)
+		agg, isFound, err = eventStorage.LoadAggregate(ctx, tenantId, aggregateId, aggregate)
 		return agg, err
 	})
 	return
+}
+
+type SaveSnapshotOptions struct {
+	eventStorageKey *string
+}
+
+func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStorageKey string) error {
+	aggregate, err := NewAggregate(aggregateType)
+	if err != nil {
+		return err
+	}
+
+	req := &daprclient.LoadEventsRequest{
+		TenantId:    tenantId,
+		AggregateId: aggregateId,
+	}
+	resp, err := LoadEvents(ctx, req, "")
+	if err != nil {
+		return err
+	}
+	if resp.Snapshot == nil && (resp.EventRecords == nil || len(*resp.EventRecords) == 0) {
+		return err
+	}
+
+	if resp.Snapshot != nil {
+		bytes, err := json.Marshal(resp.Snapshot.AggregateData)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(bytes, aggregate)
+		if err != nil {
+			return err
+		}
+	}
+	records := *resp.EventRecords
+	if records != nil && len(records) > snapshotEventsMinCount {
+		sequenceNumber := uint64(0)
+		for _, record := range *resp.EventRecords {
+			sequenceNumber = record.SequenceNumber
+			if err = CallEventHandler(ctx, aggregate, &record); err != nil {
+				return err
+			}
+		}
+
+		snapshot := &daprclient.SaveSnapshotRequest{
+			TenantId:          tenantId,
+			AggregateData:     aggregate,
+			AggregateId:       aggregateId,
+			AggregateType:     aggregateType,
+			AggregateRevision: aggregate.GetAggregateRevision(),
+			SequenceNumber:    sequenceNumber,
+		}
+		eventStorage, err := GetEventStorage(eventStorageKey)
+		if err != nil {
+			return err
+		}
+		_, err = eventStorage.SaveSnapshot(ctx, snapshot)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
 
 //
@@ -99,11 +163,12 @@ func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventSto
 		Message:   fmt.Sprintf("%v", req),
 		Level:     applog.INFO,
 	}
+
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		eventStorage, e := GetEventStorage(eventStorageKey)
 		if e != nil {
 			resp, err = nil, e
-			return resp, err
+			return nil, err
 		}
 		resp, err = eventStorage.LoadEvents(ctx, req)
 		return resp, err
@@ -199,10 +264,10 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 	})
 
 	if client, err := daprclient.GetDaprDDDClient().DaprClient(); err == nil {
-		snapshotClient := ddd_actor.NewAggregateSnapshotClient(client, aggregateType, aggregateId)
-		_, err = snapshotClient.SaveSnapshot(ctx, &ddd_actor.SaveSnapshotRequest{TenantId: event.GetTenantId(), AggregateType: aggregateType, AggregateId: aggregateId})
+		snapshotClient := NewAggregateSnapshotClient(client, aggregateType, aggregateId)
+		_, err = snapshotClient.SaveSnapshot(ctx, &SaveSnapshotRequest{TenantId: event.GetTenantId(), AggregateType: aggregateType, AggregateId: aggregateId})
 		if err != nil {
-			println(err)
+			println(err.Error())
 		}
 	}
 
@@ -268,31 +333,15 @@ func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd Command) e
 // @return error
 //
 func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...LoadAggregateOption) error {
-	rootId := cmd.GetAggregateId().RootId()
-	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), rootId, aggregate, opts...)
+	aggregateId := cmd.GetAggregateId().RootId()
+	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), aggregateId, aggregate, opts...)
 	if err != nil {
 		return err
 	}
 	if !find {
-		return ddd_errors.NewAggregateIdNotFondError(rootId)
+		return ddd_errors.NewAggregateIdNotFondError(aggregateId)
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
-}
-
-func applyEvent(ctx context.Context, req *daprclient.ApplyEventRequest, eventStorageKey string) (*daprclient.ApplyEventsResponse, error) {
-	eventStorage, err := GetEventStorage(eventStorageKey)
-	if err != nil {
-		return nil, err
-	}
-	return eventStorage.ApplyEvent(ctx, req)
-}
-
-func saveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest, eventStorageKey string) (*daprclient.SaveSnapshotResponse, error) {
-	eventStorage, err := GetEventStorage(eventStorageKey)
-	if err != nil {
-		return nil, err
-	}
-	return eventStorage.SaveSnapshot(ctx, req)
 }
 
 //

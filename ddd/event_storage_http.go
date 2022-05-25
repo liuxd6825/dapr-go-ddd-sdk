@@ -40,7 +40,7 @@ func (s *httpEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
+func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggreageId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
 	aggregateId := aggregate.GetAggregateId()
 	aggregateType := aggregate.GetAggregateType()
 	req := &daprclient.LoadEventsRequest{

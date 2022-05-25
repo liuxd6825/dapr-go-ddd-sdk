@@ -24,8 +24,9 @@ type ExistAggregateResponse struct {
 }
 
 type LoadEventsRequest struct {
-	TenantId    string `json:"tenantId"`
-	AggregateId string `json:"AggregateId"`
+	TenantId      string `json:"tenantId"`
+	AggregateId   string `json:"aggregateId"`
+	AggregateType string `json:"aggregateType"`
 }
 
 type LoadEventsResponse struct {
