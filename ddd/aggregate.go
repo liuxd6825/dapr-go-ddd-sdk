@@ -7,10 +7,10 @@ import (
 
 // Aggregate 聚合根接口类
 type Aggregate interface {
-	GetAggregateRevision() string
-	GetAggregateType() string
-	GetAggregateId() string
 	GetTenantId() string
+	GetAggregateId() string
+	GetAggregateType() string
+	GetAggregateVersion() string
 }
 
 type NewAggregateFunc func() Aggregate

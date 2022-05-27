@@ -1,7 +1,6 @@
 package assert
 
 func Nil(v interface{}, opts ...*Options) error {
-
 	options := mergeOptions("assert.Nil() error", opts...)
 	b := v == nil
 	setValue(options, b)

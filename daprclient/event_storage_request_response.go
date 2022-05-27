@@ -3,20 +3,44 @@ package daprclient
 import "encoding/json"
 
 type ApplyEventRequest struct {
-	TenantId      string            `json:"tenantId"`
-	CommandId     string            `json:"commandId"`
-	EventId       string            `json:"eventId"`
-	EventData     interface{}       `json:"eventData"`
-	EventType     string            `json:"eventType"`
-	EventRevision string            `json:"eventRevision"`
-	AggregateId   string            `json:"AggregateId"`
-	AggregateType string            `json:"aggregateType"`
-	Metadata      map[string]string `json:"metadata"`
-	PubsubName    string            `json:"pubsubName"`
-	Topic         string            `json:"topic"`
+	TenantId      string      `json:"tenantId"`
+	AggregateId   string      `json:"aggregateId"`
+	AggregateType string      `json:"aggregateType"`
+	Events        []*EventDto `json:"events"`
 }
 
-type ApplyEventsResponse struct {
+type ApplyEventResponse struct {
+}
+
+type CreateEventRequest struct {
+	TenantId      string      `json:"tenantId"`
+	AggregateId   string      `json:"aggregateId"`
+	AggregateType string      `json:"aggregateType"`
+	Events        []*EventDto `json:"events"`
+}
+
+type CreateEventResponse struct {
+}
+
+type DeleteEventRequest struct {
+	TenantId      string    `json:"tenantId"`
+	AggregateId   string    `json:"aggregateId"`
+	AggregateType string    `json:"aggregateType"`
+	Event         *EventDto `json:"event"`
+}
+
+type DeleteEventResponse struct {
+}
+
+type EventDto struct {
+	EventId      string            `json:"eventId"`
+	CommandId    string            `json:"commandId"`
+	EventData    interface{}       `json:"eventData"`
+	EventType    string            `json:"eventType"`
+	EventVersion string            `json:"eventVersion"`
+	Metadata     map[string]string `json:"metadata"`
+	PubsubName   string            `json:"pubsubName"`
+	Topic        string            `json:"topic"`
 }
 
 type ExistAggregateResponse struct {
@@ -31,7 +55,7 @@ type LoadEventsRequest struct {
 
 type LoadEventsResponse struct {
 	TenantId      string         `json:"tenantId"`
-	AggregateId   string         `json:"AggregateId"`
+	AggregateId   string         `json:"aggregateId"`
 	AggregateType string         `json:"aggregateType"`
 	Snapshot      *Snapshot      `json:"snapshot"`
 	EventRecords  *[]EventRecord `json:"events"`
@@ -48,7 +72,7 @@ type EventRecord struct {
 	EventId        string                 `json:"eventId"`
 	EventData      map[string]interface{} `json:"eventData"`
 	EventType      string                 `json:"eventType"`
-	EventRevision  string                 `json:"eventRevision"`
+	EventVersion   string                 `json:"eventVersion"`
 	SequenceNumber uint64                 `json:"sequenceNumber"`
 }
 
@@ -109,13 +133,13 @@ func (e *EventRecord) SetFields(key string, set func(value interface{})) {
 }
 
 type SaveSnapshotRequest struct {
-	TenantId          string            `json:"tenantId"`
-	AggregateId       string            `json:"AggregateId"`
-	AggregateType     string            `json:"aggregateType"`
-	AggregateData     interface{}       `json:"aggregateData"`
-	AggregateRevision string            `json:"aggregateRevision"`
-	Metadata          map[string]string `json:"metadata"`
-	SequenceNumber    uint64            `json:"sequenceNumber"`
+	TenantId         string            `json:"tenantId"`
+	AggregateId      string            `json:"AggregateId"`
+	AggregateType    string            `json:"aggregateType"`
+	AggregateData    interface{}       `json:"aggregateData"`
+	AggregateVersion string            `json:"aggregateVersion"`
+	Metadata         map[string]string `json:"metadata"`
+	SequenceNumber   uint64            `json:"sequenceNumber"`
 }
 
 type SaveSnapshotResponse struct {

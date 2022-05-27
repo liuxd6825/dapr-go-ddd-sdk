@@ -31,13 +31,12 @@ type DaprDddClient interface {
 	HttpGet(ctx context.Context, url string) *Response
 	HttpPost(ctx context.Context, url string, reqData interface{}) *Response
 	HttpPut(ctx context.Context, url string, reqData interface{}) *Response
-
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
-	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error)
+	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error)
+	CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error)
+	DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error)
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
-	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
-
 	DaprClient() (dapr_sdk_client.Client, error)
 }
 

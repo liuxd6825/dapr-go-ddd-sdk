@@ -24,22 +24,22 @@ func RegisterOptionMarshaler(marshaler JsonMarshaler) RegisterOption {
 	}
 }
 
-func RegisterEventType(eventType string, eventRevision string, newFunc NewEventFunc, options ...RegisterOption) error {
-	if err := assert.NotEmpty(eventType, assert.WidthOptionsError("ddd.RegisterEventType() eventType is nil")); err != nil {
+func RegisterEventType(eventType string, eventVersion string, newFunc NewEventFunc, options ...RegisterOption) error {
+	if err := assert.NotEmpty(eventType, assert.NewOptions("ddd.RegisterEventType() eventType is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotEmpty(eventRevision, assert.WidthOptionsError("ddd.RegisterEventType() eventType is nil")); err != nil {
+	if err := assert.NotEmpty(eventVersion, assert.NewOptions("ddd.RegisterEventType() eventType is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(newFunc, assert.WidthOptionsError("ddd.RegisterEventType() newFunc is nil")); err != nil {
+	if err := assert.NotNil(newFunc, assert.NewOptions("ddd.RegisterEventType() newFunc is nil")); err != nil {
 		return err
 	}
-	return _eventTypeRegistry.add(eventType, eventRevision, newFunc, options...)
+	return _eventTypeRegistry.add(eventType, eventVersion, newFunc, options...)
 }
 
 func NewDomainEvent(record *daprclient.EventRecord) (interface{}, error) {
 	if eventTypes, ok := _eventTypeRegistry.typeMap[record.EventType]; ok {
-		if item, ok := eventTypes.revisionMap[record.EventRevision]; ok {
+		if item, ok := eventTypes.versionMap[record.EventVersion]; ok {
 			event := item.newFunc()
 			var err error
 			if item.marshaler != nil {
@@ -54,14 +54,14 @@ func NewDomainEvent(record *daprclient.EventRecord) (interface{}, error) {
 			return event, nil
 		}
 	}
-	err := errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventRevision))
+	err := errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventVersion))
 	_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
 	return nil, err
 }
 
 func getRegistryItem(eventType, eventRevision string) (*registryItem, error) {
 	if eventTypes, ok := _eventTypeRegistry.typeMap[eventType]; ok {
-		if item, ok := eventTypes.revisionMap[eventRevision]; ok {
+		if item, ok := eventTypes.versionMap[eventRevision]; ok {
 			return item, nil
 		}
 	}
@@ -113,7 +113,7 @@ func newEventTypeRegistry() *eventTypeRegistry {
 // @param options 选项
 // @return error 错误
 //
-func (r *eventTypeRegistry) add(eventType string, revision string, newFunc NewEventFunc, options ...RegisterOption) error {
+func (r *eventTypeRegistry) add(eventType string, version string, newFunc NewEventFunc, options ...RegisterOption) error {
 	opts := &RegisterEventTypeOptions{}
 	for _, item := range options {
 		item(opts)
@@ -121,14 +121,14 @@ func (r *eventTypeRegistry) add(eventType string, revision string, newFunc NewEv
 	eventTypes, ok := r.typeMap[eventType]
 	if !ok {
 		ts := newEventType(eventType)
-		ts.revisionMap[revision] = newRegistryItem(eventType, revision, newFunc, nil)
+		ts.versionMap[version] = newRegistryItem(eventType, version, newFunc, nil)
 		r.typeMap[ts.eventType] = ts
 	} else {
-		_, ok := eventTypes.revisionMap[eventType]
+		_, ok := eventTypes.versionMap[eventType]
 		if !ok {
-			eventTypes.revisionMap[revision] = newRegistryItem(eventType, revision, newFunc, nil)
+			eventTypes.versionMap[version] = newRegistryItem(eventType, version, newFunc, nil)
 		} else {
-			return errors.New(fmt.Sprintf("%s.%s已经存存", eventType, revision))
+			return errors.New(fmt.Sprintf("%s.%s已经存存", eventType, version))
 		}
 	}
 	return nil
@@ -136,14 +136,14 @@ func (r *eventTypeRegistry) add(eventType string, revision string, newFunc NewEv
 
 // 事件类
 type eventTypes struct {
-	eventType   string
-	revisionMap map[string]*registryItem
+	eventType  string
+	versionMap map[string]*registryItem
 }
 
 func newEventType(eventType string) *eventTypes {
 	return &eventTypes{
-		eventType:   eventType,
-		revisionMap: make(map[string]*registryItem),
+		eventType:  eventType,
+		versionMap: make(map[string]*registryItem),
 	}
 }
 

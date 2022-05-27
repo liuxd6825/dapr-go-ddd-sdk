@@ -68,13 +68,13 @@ func DoEventLog(ctx context.Context, structNameFunc func() string, event Event, 
 // @return error
 //
 func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
-	if err := assert.NotNil(info, assert.WidthOptionsError("info is nil")); err != nil {
+	if err := assert.NotNil(info, assert.NewOptions("info is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(ctx, assert.WidthOptionsError("ctx is nil")); err != nil {
+	if err := assert.NotNil(ctx, assert.NewOptions("ctx is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(fun, assert.WidthOptionsError("fun is nil")); err != nil {
+	if err := assert.NotNil(fun, assert.NewOptions("fun is nil")); err != nil {
 		return err
 	}
 	resp, err := fun()

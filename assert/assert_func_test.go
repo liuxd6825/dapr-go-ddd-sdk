@@ -23,11 +23,11 @@ func TestNil(t *testing.T) {
 
 	s1 := "111"
 	s2 := "111"
-	if err := Equal(s1, s1, WidthOptionsError("Equal(s1, s1)")); err != nil {
+	if err := Equal(s1, s1, NewOptions("Equal(s1, s1)")); err != nil {
 		t.Error(err)
 	}
 
-	if err := NotEqual(s1, s2, WidthOptionsError("NotEqual(s1, s2))")); err != nil {
+	if err := NotEqual(s1, s2, NewOptions("NotEqual(s1, s2))")); err != nil {
 		t.Error(err)
 	}
 }

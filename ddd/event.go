@@ -7,7 +7,7 @@ type DomainEvent interface {
 	GetCommandId() string
 	GetEventId() string
 	GetEventType() string
-	GetEventRevision() string
+	GetEventVersion() string
 	GetAggregateId() string
 }
 

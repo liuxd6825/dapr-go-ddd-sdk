@@ -9,7 +9,7 @@ import (
 var _mongodb *ddd_mongodb.MongoDB
 
 func initMongo(appMongoConfig *MongoConfig) {
-	if err := assert.NotNil(appMongoConfig, assert.WidthOptionsError("appMongoConfig is nil")); err != nil {
+	if err := assert.NotNil(appMongoConfig, assert.NewOptions("appMongoConfig is nil")); err != nil {
 		panic(err)
 	}
 

@@ -54,7 +54,7 @@ type Controller interface {
 
 type RegisterEventType struct {
 	EventType string
-	Revision  string
+	Version   string
 	NewFunc   ddd.NewEventFunc
 }
 

@@ -146,8 +146,8 @@ func (s *service) Start() error {
 	// 注册领域事件类型
 	if s.eventTypes != nil {
 		for _, t := range *s.eventTypes {
-			if err := ddd.RegisterEventType(t.EventType, t.Revision, t.NewFunc); err != nil {
-				return errors.New(fmt.Sprintf("RegisterEventType() error:%s , EventType=%s, Revision=%s", err.Error(), t.EventType, t.Revision))
+			if err := ddd.RegisterEventType(t.EventType, t.Version, t.NewFunc); err != nil {
+				return errors.New(fmt.Sprintf("RegisterEventType() error:\"%s\" , EventType=\"%s\", Version=\"%s\"", err.Error(), t.EventType, t.Version))
 			}
 		}
 	}

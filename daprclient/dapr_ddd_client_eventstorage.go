@@ -56,10 +56,10 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 				return nil, err
 			}
 			event := EventRecord{
-				EventId:       item.EventId,
-				EventData:     eventData,
-				EventRevision: item.EventRevision,
-				EventType:     item.EventType,
+				EventId:      item.EventId,
+				EventData:    eventData,
+				EventVersion: item.EventVersion,
+				EventType:    item.EventType,
 			}
 			events = append(events, event)
 		}
@@ -69,65 +69,154 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 	return resp, nil
 }
 
-func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventsResponse, error) {
-
-	if err := ddd_utils.IsEmpty(req.CommandId, "CommandId"); err != nil {
-		return nil, err
-	}
-	if err := ddd_utils.IsEmpty(req.PubsubName, "PubsubName"); err != nil {
-		return nil, err
-	}
-	if err := ddd_utils.IsEmpty(req.EventType, "EventType"); err != nil {
-		return nil, err
-	}
-	if err := ddd_utils.IsEmpty(req.EventId, "EventId"); err != nil {
-		return nil, err
-	}
+func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
 		return nil, err
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.EventRevision, "EventRevision"); err != nil {
+	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.Topic, "Topic"); err != nil {
-		return nil, err
+	if req.Events == nil {
+		return nil, errors.New("req.events cannot be nil")
 	}
-	if req.EventData == nil {
-		return nil, errors.New("EventData cannot be nil.")
-	}
-
-	eventData, err := ddd_utils.ToJson(req.EventData)
-	if err != nil {
-		return nil, err
-	}
-
-	metadata, err := ddd_utils.ToJson(req.Metadata)
+	events, err := c.newEvents(req.Events)
 	if err != nil {
 		return nil, err
 	}
 
 	in := &pb.ApplyEventRequest{
 		TenantId:      req.TenantId,
-		Metadata:      metadata,
-		CommandId:     req.CommandId,
-		EventId:       req.EventId,
-		EventData:     eventData,
-		EventType:     req.EventType,
-		EventRevision: req.EventRevision,
 		AggregateId:   req.AggregateId,
 		AggregateType: req.AggregateType,
-		PubsubName:    req.PubsubName,
-		Topic:         req.Topic,
+		Events:        events,
 	}
 	_, err = c.grpcDaprClient.ApplyEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	resp := &ApplyEventsResponse{}
+	resp := &ApplyEventResponse{}
 	return resp, nil
+}
+
+func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
+	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
+		return nil, err
+	}
+	if req.Events == nil {
+		return nil, errors.New("req.events cannot be nil")
+	}
+	events, err := c.newEvents(req.Events)
+	if err != nil {
+		return nil, err
+	}
+
+	in := &pb.CreateEventRequest{
+		TenantId:      req.TenantId,
+		AggregateId:   req.AggregateId,
+		AggregateType: req.AggregateType,
+		Events:        events,
+	}
+	_, err = c.grpcDaprClient.CreateEvent(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	resp := &CreateEventResponse{}
+	return resp, nil
+}
+
+func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
+	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
+		return nil, err
+	}
+	if req.Event == nil {
+		return nil, errors.New("req.event cannot be nil")
+	}
+	event, err := c.newEvent(req.Event)
+	if err != nil {
+		return nil, err
+	}
+
+	in := &pb.DeleteEventRequest{
+		TenantId:      req.TenantId,
+		AggregateId:   req.AggregateId,
+		AggregateType: req.AggregateType,
+		Event:         event,
+	}
+	_, err = c.grpcDaprClient.DeleteEvent(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	resp := &DeleteEventResponse{}
+	return resp, nil
+}
+
+func (c *daprDddClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
+	var resList []*pb.EventDto
+	for _, e := range events {
+		event, err := c.newEvent(e)
+		if err != nil {
+			return nil, err
+		}
+		resList = append(resList, event)
+	}
+	return resList, nil
+}
+
+func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
+	if err := ddd_utils.IsEmpty(e.CommandId, "CommandId"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(e.PubsubName, "PubsubName"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(e.EventType, "EventType"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(e.EventId, "EventId"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(e.EventVersion, "EventVersion"); err != nil {
+		return nil, err
+	}
+	if err := ddd_utils.IsEmpty(e.Topic, "Topic"); err != nil {
+		return nil, err
+	}
+	eventData, err := ddd_utils.ToJson(e.EventData)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err := ddd_utils.ToJson(e.Metadata)
+	if err != nil {
+		return nil, err
+	}
+
+	event := &pb.EventDto{
+		Metadata:     metadata,
+		CommandId:    e.CommandId,
+		EventId:      e.EventId,
+		EventData:    eventData,
+		EventType:    e.EventType,
+		EventVersion: e.EventVersion,
+		PubsubName:   e.PubsubName,
+		Topic:        e.Topic,
+	}
+	return event, nil
 }
 
 func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
@@ -140,7 +229,7 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateRevision, "AggregateRevision"); err != nil {
+	if err := ddd_utils.IsEmpty(req.AggregateVersion, "AggregateVersion"); err != nil {
 		return nil, err
 	}
 
@@ -153,13 +242,13 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		return nil, err
 	}
 	in := &pb.SaveSnapshotRequest{
-		TenantId:          req.TenantId,
-		AggregateId:       req.AggregateId,
-		AggregateType:     req.AggregateType,
-		AggregateData:     aggregateData,
-		AggregateRevision: req.AggregateRevision,
-		SequenceNumber:    req.SequenceNumber,
-		Metadata:          metadata,
+		TenantId:         req.TenantId,
+		AggregateId:      req.AggregateId,
+		AggregateType:    req.AggregateType,
+		AggregateData:    aggregateData,
+		AggregateVersion: req.AggregateVersion,
+		SequenceNumber:   req.SequenceNumber,
+		Metadata:         metadata,
 	}
 	_, err = c.grpcDaprClient.SaveSnapshot(ctx, in)
 	if err != nil {
@@ -167,24 +256,4 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 	}
 	resp := &SaveSnapshotResponse{}
 	return resp, nil
-}
-
-func (c *daprDddClient) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error) {
-	if err := ddd_utils.IsEmpty(tenantId, "TenantId"); err != nil {
-		return false, err
-	}
-	if err := ddd_utils.IsEmpty(aggregateId, "AggregateId"); err != nil {
-		return false, err
-	}
-
-	in := &pb.ExistAggregateRequest{
-		TenantId:    tenantId,
-		AggregateId: aggregateId,
-	}
-
-	out, err := c.grpcDaprClient.ExistAggregate(ctx, in)
-	if err != nil {
-		return false, err
-	}
-	return out.IsExist, nil
 }
