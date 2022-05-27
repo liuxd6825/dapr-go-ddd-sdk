@@ -85,10 +85,11 @@ type Options struct {
 	value  bool
 }
 
-func WidthOptionsError(error string) *Options {
+func NewOptions(error string) *Options {
 	return NewOptionsBuilder().SetError(error).Build()
 }
-func WidthOptionsKey(key string) *Options {
+
+func NewOptionsKey(key string) *Options {
 	return NewOptionsBuilder().SetKey(key).Build()
 }
 

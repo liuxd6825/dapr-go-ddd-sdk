@@ -24,7 +24,7 @@ func TestEventStorage_LoadEvents(t *testing.T) {
 		TenantId:    "tenant_1",
 		AggregateId: "001",
 	}
-	respData, err := eventStorage.LoadEvents(context.Background(), req)
+	respData, err := eventStorage.LoadEvent(context.Background(), req)
 	if err != nil {
 		panic(err)
 	}

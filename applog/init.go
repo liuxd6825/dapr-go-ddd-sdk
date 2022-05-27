@@ -29,11 +29,11 @@ type Event interface {
 //
 // Init
 // @Description: 初始化日期
-// @param daprClient DaprClient
+// @param daprClient DaprDddClient
 // @param aAppId Darp Appliation Id
 // @param level 日志级别
 //
-func Init(daprClient daprclient.DaprClient, aAppId string, level Level) {
+func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
 	log = NewLogger(daprClient)
 	log.SetLevel(level)
 	appId = aAppId
@@ -68,13 +68,13 @@ func DoEventLog(ctx context.Context, structNameFunc func() string, event Event, 
 // @return error
 //
 func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
-	if err := assert.NotNil(info, assert.WidthOptionsError("info is nil")); err != nil {
+	if err := assert.NotNil(info, assert.NewOptions("info is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(ctx, assert.WidthOptionsError("ctx is nil")); err != nil {
+	if err := assert.NotNil(ctx, assert.NewOptions("ctx is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(fun, assert.WidthOptionsError("fun is nil")); err != nil {
+	if err := assert.NotNil(fun, assert.NewOptions("fun is nil")); err != nil {
 		return err
 	}
 	resp, err := fun()

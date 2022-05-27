@@ -35,7 +35,6 @@ func NewMapString(jsonText string) (map[string]string, error) {
 	return data, nil
 }
 
-
 func ToJson(data interface{}) (string, error) {
 	if data == nil {
 		return "", nil
@@ -48,6 +47,6 @@ func ToJson(data interface{}) (string, error) {
 }
 
 func NewAppError(appID string, err error) error {
-	msg := fmt.Sprintf("AppId is %s , %s", appID, err.Error())
+	msg := fmt.Sprintf("appId is %s , %s", appID, err.Error())
 	return errors.New(msg)
 }

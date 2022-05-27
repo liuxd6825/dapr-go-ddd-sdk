@@ -2,8 +2,10 @@ package ddd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
@@ -15,12 +17,23 @@ var strEmpty = ""
 
 type EventStorage interface {
 	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error)
-	LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
-	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventsResponse, error)
+	LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
+	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventResponse, error)
+	CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error)
+	DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error)
 	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
-	ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (bool, error)
 	GetPubsubName() string
 }
+
+var snapshotEventsMinCount = 20
+
+type CallEventType int
+
+const (
+	EventCreate CallEventType = iota
+	EventApply
+	EventDelete
+)
 
 type EventStorageOption func(EventStorage)
 
@@ -81,6 +94,64 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 	return
 }
 
+func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStorageKey string) error {
+	aggregate, err := NewAggregate(aggregateType)
+	if err != nil {
+		return err
+	}
+
+	req := &daprclient.LoadEventsRequest{
+		TenantId:    tenantId,
+		AggregateId: aggregateId,
+	}
+	resp, err := LoadEvents(ctx, req, "")
+	if err != nil {
+		return err
+	}
+	if resp.Snapshot == nil && (resp.EventRecords == nil || len(*resp.EventRecords) == 0) {
+		return err
+	}
+
+	if resp.Snapshot != nil {
+		bytes, err := json.Marshal(resp.Snapshot.AggregateData)
+		if err != nil {
+			return err
+		}
+		err = json.Unmarshal(bytes, aggregate)
+		if err != nil {
+			return err
+		}
+	}
+	records := *resp.EventRecords
+	if records != nil && len(records) > snapshotEventsMinCount {
+		sequenceNumber := uint64(0)
+		for _, record := range *resp.EventRecords {
+			sequenceNumber = record.SequenceNumber
+			if err = CallEventHandler(ctx, aggregate, &record); err != nil {
+				return err
+			}
+		}
+
+		snapshot := &daprclient.SaveSnapshotRequest{
+			TenantId:         tenantId,
+			AggregateData:    aggregate,
+			AggregateId:      aggregateId,
+			AggregateType:    aggregateType,
+			AggregateVersion: aggregate.GetAggregateVersion(),
+			SequenceNumber:   sequenceNumber,
+		}
+		eventStorage, err := GetEventStorage(eventStorageKey)
+		if err != nil {
+			return err
+		}
+		_, err = eventStorage.SaveSnapshot(ctx, snapshot)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
 //
 // LoadEvents
 // @Description: 获取领域事件
@@ -98,35 +169,36 @@ func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventSto
 		Message:   fmt.Sprintf("%v", req),
 		Level:     applog.INFO,
 	}
+
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		eventStorage, e := GetEventStorage(eventStorageKey)
 		if e != nil {
 			resp, err = nil, e
-			return resp, err
+			return nil, err
 		}
-		resp, err = eventStorage.LoadEvents(ctx, req)
+		resp, err = eventStorage.LoadEvent(ctx, req)
 		return resp, err
 	})
 	return
 }
 
-type ApplyOptions struct {
+type ApplyEventOptions struct {
 	pubsubName      *string
 	metadata        *map[string]string
 	eventStorageKey *string
 }
 
-func (a ApplyOptions) SetPubsubName(pubsubName string) *ApplyOptions {
+func (a ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
 	a.pubsubName = &pubsubName
 	return &a
 }
 
-func (a ApplyOptions) SetEventStorageKey(eventStorageKey string) *ApplyOptions {
+func (a ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEventOptions {
 	a.eventStorageKey = &eventStorageKey
 	return &a
 }
 
-func (a ApplyOptions) SetMetadata(value *map[string]string) *ApplyOptions {
+func (a ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
 	a.metadata = value
 	return &a
 }
@@ -140,9 +212,16 @@ func (a ApplyOptions) SetMetadata(value *map[string]string) *ApplyOptions {
 // @param options
 // @return err
 //
-func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyOptions) (err error) {
+func callDaprEventMethon(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
+	if err := checkEvent(aggregate, event); err != nil {
+		return err
+	}
+	tenantId := event.GetTenantId()
+	aggregateId := event.GetAggregateId()
+	aggregateType := aggregate.GetAggregateType()
+
 	metadata := make(map[string]string)
-	options := &ApplyOptions{
+	options := &ApplyEventOptions{
 		pubsubName:      &strEmpty,
 		metadata:        &metadata,
 		eventStorageKey: &strEmpty,
@@ -154,15 +233,15 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 		if opt.metadata != nil {
 			options.metadata = opt.metadata
 		}
-		if opt.eventStorageKey != nil {
-			options.eventStorageKey = opt.eventStorageKey
+		if opt.pubsubName != nil {
+			options.pubsubName = opt.pubsubName
 		}
 	}
 
 	logInfo := &applog.LogInfo{
 		TenantId:  aggregate.GetTenantId(),
 		ClassName: "ddd",
-		FuncName:  "LoadAggregate",
+		FuncName:  "applyEvent",
 		Message:   fmt.Sprintf("%v", aggregate),
 		Level:     applog.INFO,
 	}
@@ -172,28 +251,133 @@ func Apply(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...
 			err = e
 			return nil, err
 		}
-		req := &daprclient.ApplyEventRequest{
-			TenantId:      event.GetTenantId(),
-			CommandId:     event.GetCommandId(),
-			EventId:       event.GetEventId(),
-			EventRevision: event.GetEventRevision(),
-			EventType:     event.GetEventType(),
-			AggregateId:   event.GetAggregateId(),
-			AggregateType: aggregate.GetAggregateType(),
-			Metadata:      *options.metadata,
-			PubsubName:    *options.pubsubName,
-			EventData:     event,
-			Topic:         event.GetEventType(),
+		applyEvents := []*daprclient.EventDto{
+			&daprclient.EventDto{
+				CommandId:    event.GetCommandId(),
+				EventId:      event.GetEventId(),
+				EventVersion: event.GetEventVersion(),
+				EventType:    event.GetEventType(),
+				Metadata:     *options.metadata,
+				PubsubName:   *options.pubsubName,
+				EventData:    event,
+				Topic:        event.GetEventType(),
+			},
 		}
-		if _, err = eventStorage.ApplyEvent(ctx, req); err != nil {
+		err = nil
+		if callEventType == EventCreate {
+			err = createEvent(ctx, eventStorage, tenantId, aggregateId, aggregateType, applyEvents)
+		} else if callEventType == EventApply {
+			err = applyEvent(ctx, eventStorage, tenantId, aggregateId, aggregateType, applyEvents)
+		} else if callEventType == EventDelete {
+			err = deleteEvent(ctx, eventStorage, tenantId, aggregateId, aggregateType, applyEvents[0])
+		}
+		if err != nil {
 			return nil, err
 		}
-		if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventRevision(), event); err != nil {
+		if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event); err != nil {
 			return nil, err
 		}
 		return nil, nil
 	})
+
+	go func() {
+		_ = callActorSaveSnapshot(ctx, tenantId, aggregateId, aggregateType)
+	}()
+
 	return
+}
+
+func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) error {
+	req := &daprclient.ApplyEventRequest{
+		TenantId:      tenantId,
+		AggregateId:   aggregateId,
+		AggregateType: aggregateType,
+		Events:        events,
+	}
+	_, err := eventStorage.ApplyEvent(ctx, req)
+	return err
+}
+
+func createEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) error {
+	req := &daprclient.CreateEventRequest{
+		TenantId:      tenantId,
+		AggregateId:   aggregateId,
+		AggregateType: aggregateType,
+		Events:        events,
+	}
+	_, err := eventStorage.CreateEvent(ctx, req)
+	return err
+}
+
+func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) error {
+	req := &daprclient.DeleteEventRequest{
+		TenantId:      tenantId,
+		AggregateId:   aggregateId,
+		AggregateType: aggregateType,
+		Event:         event,
+	}
+	_, err := eventStorage.DeleteEvent(ctx, req)
+	return err
+}
+
+func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
+	return callDaprEventMethon(ctx, EventApply, aggregate, event, opts...)
+}
+
+func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
+	return callDaprEventMethon(ctx, EventCreate, aggregate, event, opts...)
+}
+
+func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
+	return callDaprEventMethon(ctx, EventDelete, aggregate, event, opts...)
+}
+
+func checkEvent(aggregate Aggregate, event DomainEvent) error {
+	if err := assert.NotNil(event, assert.NewOptions("event is nil")); err != nil {
+		return err
+	}
+	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
+		return err
+	}
+
+	tenantId := event.GetTenantId()
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return err
+	}
+
+	aggregateId := event.GetAggregateId()
+	if err := assert.NotEmpty(aggregateId, assert.NewOptions("aggregateId is empty")); err != nil {
+		return err
+	}
+
+	aggregateType := aggregate.GetAggregateType()
+	if err := assert.NotEmpty(aggregateType, assert.NewOptions("aggregateType is empty")); err != nil {
+		return err
+	}
+	return nil
+}
+
+//
+//  callActorSaveSnapshot
+//  @Description: 通过调用 actor service 生成聚合快照。
+//  @param ctx
+//  @param tenantId
+//  @param aggregateId
+//  @param aggregateType
+//  @return error
+//
+func callActorSaveSnapshot(ctx context.Context, tenantId, aggregateId, aggregateType string) error {
+	client, err := daprclient.GetDaprDDDClient().DaprClient()
+	if err != nil {
+		return err
+	}
+	snapshotClient := NewAggregateSnapshotClient(client, aggregateType, aggregateId)
+	_, err = snapshotClient.SaveSnapshot(ctx, &SaveSnapshotRequest{
+		TenantId:      tenantId,
+		AggregateType: aggregateType,
+		AggregateId:   aggregateId,
+	})
+	return err
 }
 
 type CreateAggregateOptions struct {
@@ -214,7 +398,6 @@ func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {
 // @return error
 //
 func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...*CreateAggregateOptions) error {
-
 	options := &CreateAggregateOptions{
 		eventStorageKey: &strEmpty,
 	}
@@ -222,18 +405,6 @@ func CreateAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts
 		if item.eventStorageKey != nil {
 			options.eventStorageKey = item.eventStorageKey
 		}
-	}
-	rootId := cmd.GetAggregateId().RootId()
-	eventStorage, err := GetEventStorage(*options.eventStorageKey)
-	if err != nil {
-		return err
-	}
-	ok, err := eventStorage.ExistAggregate(ctx, cmd.GetTenantId(), rootId)
-	if err != nil {
-		return err
-	}
-	if ok {
-		return ddd_errors.NewAggregateIdExistsError(rootId)
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
 }
@@ -255,31 +426,15 @@ func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd Command) e
 // @return error
 //
 func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...LoadAggregateOption) error {
-	rootId := cmd.GetAggregateId().RootId()
-	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), rootId, aggregate, opts...)
+	aggregateId := cmd.GetAggregateId().RootId()
+	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), aggregateId, aggregate, opts...)
 	if err != nil {
 		return err
 	}
 	if !find {
-		return ddd_errors.NewAggregateIdNotFondError(rootId)
+		return ddd_errors.NewAggregateIdNotFondError(aggregateId)
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
-}
-
-func applyEvent(ctx context.Context, req *daprclient.ApplyEventRequest, eventStorageKey string) (*daprclient.ApplyEventsResponse, error) {
-	eventStorage, err := GetEventStorage(eventStorageKey)
-	if err != nil {
-		return nil, err
-	}
-	return eventStorage.ApplyEvent(ctx, req)
-}
-
-func saveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest, eventStorageKey string) (*daprclient.SaveSnapshotResponse, error) {
-	eventStorage, err := GetEventStorage(eventStorageKey)
-	if err != nil {
-		return nil, err
-	}
-	return eventStorage.SaveSnapshot(ctx, req)
 }
 
 //
@@ -296,7 +451,7 @@ func CallEventHandler(ctx context.Context, handler interface{}, record *daprclie
 		_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
 		return err
 	}
-	if err = callEventHandler(ctx, handler, record.EventType, record.EventRevision, event); err != nil {
+	if err = callEventHandler(ctx, handler, record.EventType, record.EventVersion, event); err != nil {
 		_, _ = applog.Error("", "ddd", "CallEventHandler", err.Error())
 	}
 	return err
