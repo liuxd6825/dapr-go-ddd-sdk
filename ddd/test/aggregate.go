@@ -2,8 +2,8 @@ package test
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd"
 )
 
 type TestAggregate struct {
@@ -24,7 +24,7 @@ func (t TestAggregate) CreateDomainEvent(ctx context.Context, eventRecord *daprc
 	return nil
 }
 
-func (t TestAggregate) GetAggregateRevision() string {
+func (t TestAggregate) GetAggregateVersion() string {
 	return "1.0"
 }
 

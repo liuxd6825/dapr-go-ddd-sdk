@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/dapr/dapr-go-ddd-sdk/applog"
+	"github.com/dapr/dapr-go-ddd-sdk/assert"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_context"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"reflect"
 	"strings"
 )
@@ -188,19 +188,25 @@ type ApplyEventOptions struct {
 	eventStorageKey *string
 }
 
-func (a ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
+func (a *ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
 	a.pubsubName = &pubsubName
-	return &a
+	return a
 }
 
-func (a ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEventOptions {
+func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEventOptions {
 	a.eventStorageKey = &eventStorageKey
-	return &a
+	return a
 }
 
-func (a ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
+func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
 	a.metadata = value
-	return &a
+	return a
+}
+
+func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
+	return &ApplyEventOptions{
+		metadata: metadata,
+	}
 }
 
 //
@@ -212,7 +218,7 @@ func (a ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOpti
 // @param options
 // @return err
 //
-func callDaprEventMethon(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
+func callDprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
 	if err := checkEvent(aggregate, event); err != nil {
 		return err
 	}
@@ -321,15 +327,15 @@ func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggre
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
-	return callDaprEventMethon(ctx, EventApply, aggregate, event, opts...)
+	return callDprEventMethod(ctx, EventApply, aggregate, event, opts...)
 }
 
 func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
-	return callDaprEventMethon(ctx, EventCreate, aggregate, event, opts...)
+	return callDprEventMethod(ctx, EventCreate, aggregate, event, opts...)
 }
 
 func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
-	return callDaprEventMethon(ctx, EventDelete, aggregate, event, opts...)
+	return callDprEventMethod(ctx, EventDelete, aggregate, event, opts...)
 }
 
 func checkEvent(aggregate Aggregate, event DomainEvent) error {

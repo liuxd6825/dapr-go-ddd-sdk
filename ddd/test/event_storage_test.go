@@ -3,8 +3,8 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd"
 	"testing"
 	"time"
 )
@@ -36,19 +36,11 @@ func TestEventStorage_LoadEvents(t *testing.T) {
 
 func TestEventStorage_ApplyEvent(t *testing.T) {
 	eventStorage, err := NewEventStorage()
-	id := newId()
+	// id := newId()
 	req := &daprclient.ApplyEventRequest{
 		TenantId:      "tenantId_1",
-		CommandId:     id,
-		EventId:       id,
-		Metadata:      map[string]string{"token": "token", "user": "user"},
-		EventData:     map[string]interface{}{"userId": "001", "userName": "lxd"},
-		EventRevision: "1.0",
-		EventType:     "CreateUserEvent",
 		AggregateId:   "001",
 		AggregateType: "system.user",
-		PubsubName:    "pubsub",
-		Topic:         "topic1",
 	}
 	respData, err := eventStorage.ApplyEvent(context.Background(), req)
 	if err != nil {
@@ -63,13 +55,13 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 func TestEventStorage_SaveSnapshot(t *testing.T) {
 	eventStorage, err := NewEventStorage()
 	req := &daprclient.SaveSnapshotRequest{
-		TenantId:          "tenantId_1",
-		AggregateId:       "aggregateId_001",
-		AggregateType:     "system.user",
-		Metadata:          map[string]interface{}{"token": "token", "user": "user"},
-		AggregateData:     map[string]interface{}{"userId": "001", "userName": "lxd"},
-		AggregateRevision: "1.0",
-		SequenceNumber:    1,
+		TenantId:         "tenantId_1",
+		AggregateId:      "aggregateId_001",
+		AggregateType:    "system.user",
+		Metadata:         map[string]string{"token": "token", "user": "user"},
+		AggregateData:    map[string]interface{}{"userId": "001", "userName": "lxd"},
+		AggregateVersion: "1.0",
+		SequenceNumber:   1,
 	}
 	respData, err := eventStorage.SaveSnapshot(context.Background(), req)
 	if err != nil {
@@ -82,7 +74,11 @@ func TestEventStorage_SaveSnapshot(t *testing.T) {
 }
 
 func NewEventStorage() (ddd.EventStorage, error) {
-	return ddd.NewGrpcEventStorage("localhost", 3500, ddd.PubsubName("pubsub"))
+	daprDddClient, err := daprclient.NewDaprDddClient("localhost", 3500, 0000)
+	if err != nil {
+		return nil, err
+	}
+	return ddd.NewGrpcEventStorage(daprDddClient, ddd.PubsubName("pubsub"))
 }
 
 func newId() string {

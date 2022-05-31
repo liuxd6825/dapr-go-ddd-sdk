@@ -5,9 +5,9 @@ import (
 	"github.com/dapr/go-sdk/actor"
 	"github.com/dapr/go-sdk/service/common"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/dapr/dapr-go-ddd-sdk/applog"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd"
 )
 
 type StartOptions struct {
@@ -62,7 +62,7 @@ var EmptyActors = func() *[]actor.Factory {
 	return &[]actor.Factory{}
 }
 
-var DddActors = func() *[]actor.Factory {
+var Actors = func() *[]actor.Factory {
 	return &[]actor.Factory{
 		aggregateSnapshotActorFactory,
 	}

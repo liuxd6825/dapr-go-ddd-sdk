@@ -3,8 +3,8 @@ package ddd
 import (
 	"context"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/assert"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
 	"io"
 	"net/http"
 )
@@ -71,26 +71,7 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 	if records != nil && len(records) > 0 {
 		for _, record := range *resp.EventRecords {
 			if err = CallEventHandler(ctx, aggregate, &record); err != nil {
-<<<<<<< HEAD
-				return res, find, err
-			}
-		}
-
-		if len(records) >= 10 {
-			snapshot := &daprclient.SaveSnapshotRequest{
-				TenantId:          tenantId,
-				AggregateData:     aggregate,
-				AggregateId:       aggregate.GetAggregateId(),
-				AggregateType:     aggregate.GetAggregateType(),
-				AggregateRevision: aggregate.GetAggregateRevision(),
-				SequenceNumber:    sequenceNumber,
-			}
-			_, err := s.SaveSnapshot(ctx, snapshot)
-			if err != nil {
-				return res, find, err
-=======
 				return nil, false, err
->>>>>>> actor_event_storage
 			}
 		}
 	}

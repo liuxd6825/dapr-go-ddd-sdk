@@ -1,9 +1,9 @@
 package restapp
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/dapr/dapr-go-ddd-sdk/assert"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 )
 
 var _mongodb *ddd_mongodb.MongoDB

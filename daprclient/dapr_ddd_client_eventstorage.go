@@ -3,8 +3,8 @@ package daprclient
 import (
 	"context"
 	"errors"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_utils"
 	pb "github.com/dapr/dapr/pkg/proto/runtime/v1"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 )
 
 func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
@@ -19,7 +19,7 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 		TenantId:    req.TenantId,
 		AggregateId: req.AggregateId,
 	}
-	out, err := c.grpcDaprClient.LoadEvents(ctx, in)
+	out, err := c.grpcClient.LoadEvents(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 		AggregateType: req.AggregateType,
 		Events:        events,
 	}
-	_, err = c.grpcDaprClient.ApplyEvent(ctx, in)
+	_, err = c.grpcClient.ApplyEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest
 		AggregateType: req.AggregateType,
 		Events:        events,
 	}
-	_, err = c.grpcDaprClient.CreateEvent(ctx, in)
+	_, err = c.grpcClient.CreateEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest
 		AggregateType: req.AggregateType,
 		Event:         event,
 	}
-	_, err = c.grpcDaprClient.DeleteEvent(ctx, in)
+	_, err = c.grpcClient.DeleteEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		SequenceNumber:   req.SequenceNumber,
 		Metadata:         metadata,
 	}
-	_, err = c.grpcDaprClient.SaveSnapshot(ctx, in)
+	_, err = c.grpcClient.SaveSnapshot(ctx, in)
 	if err != nil {
 		return nil, err
 	}

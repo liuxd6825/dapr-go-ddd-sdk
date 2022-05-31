@@ -3,7 +3,7 @@ package restapp
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/dapr/dapr-go-ddd-sdk/applog"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"

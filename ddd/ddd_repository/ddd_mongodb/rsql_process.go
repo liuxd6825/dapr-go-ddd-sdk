@@ -2,8 +2,8 @@ package ddd_mongodb
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_utils"
+	"github.com/dapr/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

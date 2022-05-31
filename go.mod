@@ -79,6 +79,6 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
 
-replace github.com/dapr/dapr v1.7.1 => ../../dapr/dapr
+replace github.com/dapr/dapr v1.7.1 => ../dapr
 
-replace github.com/dapr/go-sdk => ../../dapr/go-sdk
+replace github.com/dapr/go-sdk => ../go-sdk

@@ -3,7 +3,7 @@ package ddd
 import (
 	"context"
 	"errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
 )
 
 type emptyEventStorage struct {

@@ -2,7 +2,7 @@ package ddd
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
 )
 
 // Subscribe dapr消息订阅项

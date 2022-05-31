@@ -1,7 +1,7 @@
 package ddd
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"strings"
 )
 

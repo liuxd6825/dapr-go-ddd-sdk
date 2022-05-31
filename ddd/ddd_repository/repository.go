@@ -2,7 +2,7 @@ package ddd_repository
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd"
 )
 
 //

@@ -1,6 +1,6 @@
 package ddd_repository
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+import "github.com/dapr/dapr-go-ddd-sdk/ddd"
 
 //
 // PagingData [T ddd.Entity]

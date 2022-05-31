@@ -2,7 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
