@@ -1,7 +1,7 @@
 package ddd_repository
 
 import (
-	"github.com/dapr/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 )
 
 type FindPagingResult[T ddd.Entity] struct {

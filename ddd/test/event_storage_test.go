@@ -3,8 +3,8 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
-	"github.com/dapr/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"testing"
 	"time"
 )

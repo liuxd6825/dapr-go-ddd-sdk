@@ -1,7 +1,7 @@
 package ddd_mongodb
 
 import (
-	"github.com/dapr/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

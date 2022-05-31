@@ -3,7 +3,7 @@ package applog
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"testing"
 	"time"
 )

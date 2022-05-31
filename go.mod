@@ -3,8 +3,8 @@ module github.com/liuxd6825/dapr-go-ddd-sdk
 go 1.18
 
 require (
-	github.com/dapr/dapr v1.7.1
-	github.com/dapr/go-sdk v1.3.1
+	github.com/liuxd6825/dapr v1.7.1
+	github.com/liuxd6825/go-sdk v1.3.1
 	github.com/google/uuid v1.3.0
 	github.com/kataras/iris/v12 v12.1.8
 	github.com/sirupsen/logrus v1.8.1
@@ -79,6 +79,6 @@ require (
 	gopkg.in/ini.v1 v1.62.0 // indirect
 )
 
-replace github.com/dapr/dapr v1.7.1 => ../dapr
+replace github.com/liuxd6825/dapr v1.7.1 => ../dapr
 
-replace github.com/dapr/go-sdk => ../go-sdk
+replace github.com/liuxd6825/go-sdk => ../go-sdk

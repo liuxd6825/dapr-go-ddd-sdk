@@ -2,9 +2,9 @@ package restapp
 
 import (
 	"context"
-	"github.com/dapr/dapr-go-ddd-sdk/applog"
-	"github.com/dapr/dapr-go-ddd-sdk/ddd"
-	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 )
 
 type BaseQueryHandler struct {

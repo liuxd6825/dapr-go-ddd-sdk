@@ -3,9 +3,9 @@ package ddd
 import (
 	"errors"
 	"fmt"
-	"github.com/dapr/dapr-go-ddd-sdk/applog"
-	"github.com/dapr/dapr-go-ddd-sdk/assert"
-	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 )
 
 type NewEventFunc func() interface{}

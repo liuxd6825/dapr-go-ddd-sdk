@@ -3,8 +3,8 @@ package ddd
 import (
 	"context"
 	"encoding/json"
-	"github.com/dapr/dapr-go-ddd-sdk/assert"
-	"github.com/dapr/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"io"
 	"net/http"
 )

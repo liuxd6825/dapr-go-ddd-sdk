@@ -3,8 +3,8 @@ package ddd_mongodb
 import (
 	"context"
 	"fmt"
-	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_errors"
-	"github.com/dapr/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
 	"testing"
