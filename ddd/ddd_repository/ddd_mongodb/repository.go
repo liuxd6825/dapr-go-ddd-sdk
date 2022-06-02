@@ -3,6 +3,7 @@ package ddd_mongodb
 import (
 	"context"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -66,10 +67,34 @@ func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*
 }
 
 func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	data := map[string]interface{}{
+		IdField: id,
+	}
+	return r.DeleteByMap(ctx, tenantId, data)
+}
+
+func (r *Repository[T]) DeleteAll(ctx context.Context, tenantId string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	data := map[string]interface{}{}
+	return r.DeleteByMap(ctx, tenantId, data)
+}
+
+func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	if err := assert.NotNil(data, assert.NewOptions("data is nil")); err != nil {
+		return ddd_repository.NewSetResult(nil, err)
+	}
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewSetResult(nil, err)
+	}
 	return r.DoSet(func() (T, error) {
 		filter := bson.D{
-			{IdField, id},
 			{TenantIdField, tenantId},
+		}
+		for k, v := range data {
+			e := bson.E{
+				Key:   k,
+				Value: v,
+			}
+			filter = append(filter, e)
 		}
 		deleteOptions := getDeleteOptions(opts...)
 		_, err := r.collection.DeleteOne(ctx, filter, deleteOptions)
@@ -78,12 +103,32 @@ func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id stri
 	})
 }
 
-func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
-	return r.DoFindOne(func() (T, bool, error) {
-		filter := bson.M{
-			IdField:       id,
-			TenantIdField: tenantId,
+func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bson.D {
+	filter := bson.D{
+		{TenantIdField, tenantId},
+	}
+	if filterMap != nil {
+		for k, v := range filterMap {
+			e := bson.E{
+				Key:   k,
+				Value: v,
+			}
+			filter = append(filter, e)
 		}
+	}
+	return filter
+}
+
+func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+	idMap := map[string]interface{}{
+		IdField: id,
+	}
+	return r.FindOneByMap(ctx, tenantId, idMap, opts...)
+}
+
+func (r *Repository[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+	return r.DoFindOne(func() (T, bool, error) {
+		filter := r.NewFilter(tenantId, filterMap)
 		findOneOptions := getFindOneOptions(opts...)
 		data := r.NewEntity()
 		result := r.collection.FindOne(ctx, filter, findOneOptions)
@@ -97,9 +142,9 @@ func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string
 	})
 }
 
-func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Repository[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
 	return r.DoFindList(func() (*[]T, bool, error) {
-		filter := bson.D{{TenantIdField, tenantId}}
+		filter := r.NewFilter(tenantId, filterMap)
 		data := r.NewEntityList()
 		findOptions := getFindOptions(opts...)
 		cursor, err := r.collection.Find(ctx, filter, findOptions)
@@ -109,6 +154,10 @@ func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*d
 		err = cursor.All(ctx, &data)
 		return data, true, err
 	})
+}
+
+func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+	return r.FindListByMap(ctx, tenantId, nil, opts...)
 }
 
 func (r *Repository[T]) FindPaging(ctx context.Context, query *ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
@@ -137,7 +186,6 @@ func (r *Repository[T]) FindPaging(ctx context.Context, query *ddd_repository.Fi
 		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, true, err
 	})
-
 }
 
 func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
