@@ -175,7 +175,7 @@ func (s *service) Start() error {
 }
 
 // register actor method invoke handler
-func (s *service) actorMethodInvokeHandler(ctx context.Context) {
+func (s *service) actorMethodInvokeHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorId := ctx.Params().Get("actorId")
 	methodName := ctx.Params().Get("methodName")
@@ -194,7 +194,7 @@ func (s *service) actorMethodInvokeHandler(ctx context.Context) {
 }
 
 // register actor reminder invoke handler
-func (s *service) actorReminderInvokeHandler(ctx context.Context) {
+func (s *service) actorReminderInvokeHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorID := ctx.Params().Get("actorId")
 	reminderName := ctx.Params().Get("reminderName")
@@ -212,7 +212,7 @@ func (s *service) actorReminderInvokeHandler(ctx context.Context) {
 }
 
 // register actor timer invoke handler
-func (s *service) actorTimerInvokeHandler(ctx context.Context) {
+func (s *service) actorTimerInvokeHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorID := ctx.Params().Get("actorId")
 	timerName := ctx.Params().Get("timerName")
@@ -230,7 +230,7 @@ func (s *service) actorTimerInvokeHandler(ctx context.Context) {
 }
 
 // register deactivate actor handler
-func (s *service) actorDeactivateHandler(ctx context.Context) {
+func (s *service) actorDeactivateHandler(ctx *context.Context) {
 	actorType := ctx.Params().Get("actorType")
 	actorID := ctx.Params().Get("actorId")
 	err := runtime.GetActorRuntimeInstance().Deactivate(actorType, actorID)
@@ -245,21 +245,21 @@ func (s *service) actorDeactivateHandler(ctx context.Context) {
 	ctx.StatusCode(http.StatusOK)
 }
 
-func (s *service) subscribesHandler(ctx context.Context) {
+func (s *service) subscribesHandler(ctx *context.Context) {
 	data := ddd.GetSubscribes()
 	_, _ = ctx.JSON(data)
 }
 
-func (s *service) eventTypesHandler(context context.Context) {
+func (s *service) eventTypesHandler(ctx *context.Context) {
 
 }
 
-func (s *service) healthHandler(context context.Context) {
+func (s *service) healthHandler(context *context.Context) {
 	context.StatusCode(http.StatusOK)
 }
 
 // register actor config handler
-func (s *service) actorConfigHandler(ctx context.Context) {
+func (s *service) actorConfigHandler(ctx *context.Context) {
 	data, err := runtime.GetActorRuntimeInstance().GetJSONSerializedConfig()
 	if err != nil {
 		ctx.StatusCode(http.StatusInternalServerError)
@@ -302,12 +302,9 @@ func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEve
 				err = e
 			}
 		}()
-		s.app.Handle("POST", subscribe.Route, func(ctx context.Context) {
-			subscribeContext := NewSubscribeContext(ctx)
-			c := NewContext(ctx)
-			if err = sh.CallQueryEventHandler(c, subscribeContext); err != nil {
-				ctx.StatusCode(http.StatusInternalServerError)
-				_, _ = ctx.WriteString(err.Error())
+		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
+			if err = sh.CallQueryEventHandler(c, c); err != nil {
+				c.SetErr(err)
 			}
 		})
 		return err
@@ -334,23 +331,4 @@ func (s *service) registerController(relativePath string, controllers ...Control
 		}
 	}
 	mvc.Configure(s.app.Party(relativePath), configurators)
-}
-
-type SubscribeContext struct {
-	ctx context.Context
-}
-
-func NewSubscribeContext(ctx context.Context) *SubscribeContext {
-	return &SubscribeContext{
-		ctx: ctx,
-	}
-}
-
-func (s *SubscribeContext) GetBody() ([]byte, error) {
-	return s.ctx.GetBody()
-}
-
-func (s *SubscribeContext) SetErr(err error) {
-	s.ctx.StatusCode(http.StatusInternalServerError)
-	_, _ = s.ctx.WriteString(err.Error())
 }

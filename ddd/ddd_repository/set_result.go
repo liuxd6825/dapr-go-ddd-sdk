@@ -14,6 +14,12 @@ func NewSetResult[T ddd.Entity](data T, err error) *SetResult[T] {
 	}
 }
 
+func NewSetResultError[T ddd.Entity](err error) *SetResult[T] {
+	return &SetResult[T]{
+		err: err,
+	}
+}
+
 func (s *SetResult[T]) GetError() error {
 	return s.err
 }

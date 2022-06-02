@@ -80,10 +80,10 @@ func (r *Repository[T]) DeleteAll(ctx context.Context, tenantId string, opts ...
 
 func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	if err := assert.NotNil(data, assert.NewOptions("data is nil")); err != nil {
-		return ddd_repository.NewSetResult(nil, err)
+		return ddd_repository.NewSetResultError[T](err)
 	}
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
-		return ddd_repository.NewSetResult(nil, err)
+		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
 		filter := bson.D{
