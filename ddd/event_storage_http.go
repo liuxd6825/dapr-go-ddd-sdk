@@ -115,7 +115,7 @@ func (s *httpEventStorage) LoadEvents(ctx context.Context, req *daprclient.LoadE
 
 func (s *httpEventStorage) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (res *daprclient.ApplyEventResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageEventApply)
-	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
@@ -184,7 +184,13 @@ func (s *httpEventStorage) ExistAggregate(ctx context.Context, tenantId string, 
 }
 
 func (s *httpEventStorage) getBodyBytes(resp *http.Response) ([]byte, error) {
-	defer resp.Body.Close()
 	bytes, err := io.ReadAll(resp.Body)
+	defer func(Body io.ReadCloser) {
+		e := Body.Close()
+		if err != nil {
+			err = e
+		}
+	}(resp.Body)
+
 	return bytes, err
 }

@@ -70,7 +70,7 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 }
 
 func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
@@ -102,7 +102,7 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 }
 
 func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
@@ -134,7 +134,7 @@ func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest
 }
 
 func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
@@ -220,7 +220,7 @@ func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 }
 
 func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {

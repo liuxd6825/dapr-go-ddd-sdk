@@ -3,12 +3,33 @@ package ddd_repository
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"go.mongodb.org/mongo-driver/bson"
 )
+
+type Repository[T ddd.Entity] interface {
+	Insert(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
+	Update(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
+	Delete(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult[T]
+	DeleteById(ctx context.Context, tenantId string, id string, opts ...*SetOptions) *SetResult[T]
+	DeleteAll(ctx context.Context, tenantId string, opts ...*SetOptions) *SetResult[T]
+	DeleteByMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...*SetOptions) *SetResult[T]
+	NewFilter(tenantId string, filterMap map[string]interface{}) bson.D
+	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T]
+	FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*FindOptions) *FindOneResult[T]
+	FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*FindOptions) *FindListResult[T]
+	FindAll(ctx context.Context, tenantId string, opts ...*FindOptions) *FindListResult[T]
+	FindPaging(ctx context.Context, query FindPagingQuery, opts ...*FindOptions) *FindPagingResult[T]
+	DoFilter(tenantId string, filter string, fun func(filter map[string]interface{}) (*FindPagingResult[T], bool, error)) *FindPagingResult[T]
+	DoFindList(fun func() (*[]T, bool, error)) *FindListResult[T]
+	DoFindOne(fun func() (T, bool, error)) *FindOneResult[T]
+	DoSet(fun func() (T, error)) *SetResult[T]
+}
 
 //
 // IRepository
 // @Description: 仓储类接口
 //
+/*
 type IRepository[T ddd.Entity] interface {
 	Insert(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
 	Update(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
@@ -18,14 +39,14 @@ type IRepository[T ddd.Entity] interface {
 
 	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T]
 	FindAll(ctx context.Context, tenantId string, opts ...*FindOptions) *FindListResult[T]
-	FindPaging(ctx context.Context, search *FindPagingQuery, opts ...*FindOptions) *FindPagingResult[T]
+	FindPaging(ctx context.Context, search FindPagingQuery, opts ...*FindOptions) *FindPagingResult[T]
 
 	DoFindOne(fun func() (T, bool, error)) *FindOneResult[T]
 	DoFindList(fun func() (*[]T, bool, error)) *FindListResult[T]
 	DoSet(fun func() (T, error)) *SetResult[T]
 	DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*PagingData[T], bool, error)) *FindPagingResult[T]
 }
-
+*/
 //
 // Repository
 // @Description: 仓储类，
@@ -104,39 +125,6 @@ func (r Repos[T]) Insert(t T) {
 type Pageable struct {
 	PageNum  int `json:"pageNum"`
 	PageSize int `json:"pageSize"`
-}
-
-type FindPagingQuery struct {
-	TenantId string `json:"tenantId"`
-	Fields   string `json:"fields"`
-	// - name=="Kill Bill";year=gt=2003
-	// - name=="Kill Bill" and year>2003
-	// - genres=in=(sci-fi,action);(director=='Christopher Nolan',actor==*Bale);year=ge=2000
-	// - genres=in=(sci-fi,action) and (director=='Christopher Nolan' or actor==*Bale) and year>=2000
-	// - director.lastName==Nolan;year=ge=2000;year=lt=2010
-	// - director.lastName==Nolan and year>=2000 and year<2010
-	// - genres=in=(sci-fi,action);genres=out=(romance,animated,horror),director==Que*Tarantino
-	// - genres=in=(sci-fi,action) and genres=out=(romance,animated,horror) or director==Que*Tarantino
-	// or         : and ('OR' | 'or' and) *
-	// and        : constraint ('AND' | 'and' constraint)*
-	// constraint : group | comparison
-	// group      : '(' or ')'
-	// comparison : identifier comparator arguments
-	// identifier : [a-zA-Z0-9]+('.'[a-zA-Z0-9]+)*
-	// comparator : '==' | '!=' | '==~' | '!=~' | '>' | '>=' | '<' | '<=' | '=in=' | '=out='
-	// arguments  : '(' listValue ')' | value
-	// value      : int | double | string | date | datetime | boolean
-	// listValue  : value(','value)*
-	// int        : [0-9]+
-	// double     : [0-9]+'.'[0-9]*
-	// string     : '"'.*'"' | '\''.*'\''
-	// date       : [0-9]{4}'-'[0-9]{2}'-'\[0-9]{2}
-	// datetime   : date'T'[0-9]{2}':'[0-9]{2}':'[0-9]{2}('Z' | (('+'|'-')[0-9]{2}(':')?[0-9]{2}))?
-	// boolean    : 'true' | 'false'
-	Filter   string `json:"filter"`
-	Sort     string `json:"sort"` // name:desc,id:asc
-	PageNum  int64  `json:"pageNum"`
-	PageSize int64  `json:"pageSize"`
 }
 
 type Option struct {

@@ -37,7 +37,7 @@ func (s *serverContext) URLParamDefault(name, def string) string {
 	return s.ctx.URLParamDefault(name, def)
 }
 
-func NewListQuery(ctx context.Context, tenantId string) (*ddd_repository.FindPagingQuery, error) {
+func NewListQuery(ctx context.Context, tenantId string) (ddd_repository.FindPagingQuery, error) {
 	svrCtx := ddd_context.GetServerContext(ctx)
 	fields := svrCtx.URLParamDefault("fields", "")
 	filter := svrCtx.URLParamDefault("filter", "")
@@ -59,12 +59,11 @@ func NewListQuery(ctx context.Context, tenantId string) (*ddd_repository.FindPag
 		return nil, err
 	}
 
-	return &ddd_repository.FindPagingQuery{
-		TenantId: tenantId,
-		Fields:   fields,
-		Filter:   filter,
-		Sort:     sort,
-		PageNum:  page,
-		PageSize: size,
-	}, nil
+	return ddd_repository.NewFindPagingQuery(
+		tenantId,
+		fields,
+		filter,
+		sort,
+		page,
+		size), nil
 }
