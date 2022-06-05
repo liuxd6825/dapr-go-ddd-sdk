@@ -9,15 +9,100 @@ type FindPagingQuery interface {
 	PageSize() int64
 }
 
-func NewFindPagingQuery(tenantId, fields, filter, sort string, pageNum, pageSize int64) FindPagingQuery {
-	return &findPagingQuery{
-		tenantId: tenantId,
-		filter:   filter,
-		fields:   fields,
-		sort:     sort,
-		pageNum:  pageNum,
-		pageSize: pageSize,
+type FindPagingQueryOptions struct {
+	tenantId *string
+	fields   *string
+	filter   *string
+	sort     *string
+	pageNum  *int64
+	pageSize *int64
+}
+
+func NewFindPagingQueryOptions() *FindPagingQueryOptions {
+	return &FindPagingQueryOptions{}
+}
+
+func NewFindPagingQueryOptionsAll(fields, filter, sort string, pageNum, pageSize int64) *FindPagingQueryOptions {
+	return &FindPagingQueryOptions{
+		filter:   &filter,
+		fields:   &fields,
+		sort:     &sort,
+		pageNum:  &pageNum,
+		pageSize: &pageSize,
 	}
+}
+
+func NewFindPagingQueryOptionsDefault() *FindPagingQueryOptions {
+	fields := ""
+	filter := ""
+	sort := ""
+	pageNum := int64(0)
+	pageSize := int64(20)
+	return &FindPagingQueryOptions{
+		fields:   &fields,
+		filter:   &filter,
+		sort:     &sort,
+		pageNum:  &pageNum,
+		pageSize: &pageSize,
+	}
+}
+
+func (o *FindPagingQueryOptions) SetFields(fields string) *FindPagingQueryOptions {
+	o.fields = &fields
+	return o
+}
+
+func (o *FindPagingQueryOptions) SetFilter(filter string) *FindPagingQueryOptions {
+	o.filter = &filter
+	return o
+}
+
+func (o *FindPagingQueryOptions) SetSort(sort string) *FindPagingQueryOptions {
+	o.sort = &sort
+	return o
+}
+
+func (o *FindPagingQueryOptions) SetPageNum(pageNum int64) *FindPagingQueryOptions {
+	o.pageNum = &pageNum
+	return o
+}
+
+func (o *FindPagingQueryOptions) SetpPageSize(pageSize int64) *FindPagingQueryOptions {
+	o.pageSize = &pageSize
+	return o
+}
+
+func NewFindPagingQuery(tenantId string, options ...*FindPagingQueryOptions) FindPagingQuery {
+	opt := NewFindPagingQueryOptionsDefault()
+	if options != nil {
+		for _, o := range options {
+			if o.sort != nil {
+				opt.sort = o.sort
+			}
+			if o.pageNum != nil {
+				opt.pageNum = o.pageNum
+			}
+			if o.pageSize != nil {
+				opt.pageSize = o.pageSize
+			}
+			if o.fields != nil {
+				opt.fields = o.fields
+			}
+			if o.filter != nil {
+				opt.filter = o.filter
+			}
+		}
+	}
+
+	query := &findPagingQuery{
+		tenantId: tenantId,
+		filter:   *opt.filter,
+		fields:   *opt.fields,
+		sort:     *opt.sort,
+		pageNum:  *opt.pageNum,
+		pageSize: *opt.pageSize,
+	}
+	return query
 }
 
 /*  Filter

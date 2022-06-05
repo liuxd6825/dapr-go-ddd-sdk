@@ -59,11 +59,6 @@ func NewListQuery(ctx context.Context, tenantId string) (ddd_repository.FindPagi
 		return nil, err
 	}
 
-	return ddd_repository.NewFindPagingQuery(
-		tenantId,
-		fields,
-		filter,
-		sort,
-		page,
-		size), nil
+	opts := ddd_repository.NewFindPagingQueryOptionsAll(fields, filter, sort, page, size)
+	return ddd_repository.NewFindPagingQuery(tenantId, opts), nil
 }
