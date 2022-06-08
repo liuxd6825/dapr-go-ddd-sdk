@@ -48,7 +48,6 @@ type service struct {
 	eventTypes     *[]RegisterEventType
 	authToken      string
 	webRootPath    string
-	swaggerDoc     string
 }
 
 func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
@@ -96,7 +95,6 @@ func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) co
 		eventTypes:     opts.EventTypes,
 		authToken:      opts.AuthToken,
 		webRootPath:    opts.WebRootPath,
-		swaggerDoc:     opts.SwaggerDoc,
 		app:            iris.New(),
 	}
 }
