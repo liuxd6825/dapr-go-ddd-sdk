@@ -161,16 +161,16 @@ func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*d
 }
 
 func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
-	return r.DoFilter(query.TenantId(), query.Filter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
+	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		data := r.NewEntityList()
 
 		findOptions := getFindOptions(opts...)
-		if query.PageSize() > 0 {
-			findOptions.SetLimit(query.PageSize())
-			findOptions.SetSkip(query.PageSize() * query.PageNum())
+		if query.GetPageSize() > 0 {
+			findOptions.SetLimit(query.GetPageSize())
+			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
 		}
-		if len(query.Sort()) > 0 {
-			sort, err := r.getSort(query.Sort())
+		if len(query.GetSort()) > 0 {
+			sort, err := r.getSort(query.GetSort())
 			if err != nil {
 				return nil, false, err
 			}

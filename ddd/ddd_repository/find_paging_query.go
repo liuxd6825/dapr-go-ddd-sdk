@@ -1,12 +1,12 @@
 package ddd_repository
 
 type FindPagingQuery interface {
-	TenantId() string
-	Fields() string
-	Filter() string
-	Sort() string
-	PageNum() int64
-	PageSize() int64
+	GetTenantId() string
+	GetFields() string
+	GetFilter() string
+	GetSort() string
+	GetPageNum() int64
+	GetPageSize() int64
 }
 
 type FindPagingQueryOptions struct {
@@ -140,26 +140,26 @@ type findPagingQuery struct {
 	pageSize int64
 }
 
-func (q *findPagingQuery) TenantId() string {
+func (q *findPagingQuery) GetTenantId() string {
 	return q.tenantId
 }
 
-func (q *findPagingQuery) Fields() string {
+func (q *findPagingQuery) GetFields() string {
 	return q.fields
 }
 
-func (q *findPagingQuery) Filter() string {
+func (q *findPagingQuery) GetFilter() string {
 	return q.filter
 }
 
-func (q *findPagingQuery) Sort() string {
+func (q *findPagingQuery) GetSort() string {
 	return q.sort
 }
 
-func (q *findPagingQuery) PageNum() int64 {
+func (q *findPagingQuery) GetPageNum() int64 {
 	return q.pageNum
 }
 
-func (q *findPagingQuery) PageSize() int64 {
+func (q *findPagingQuery) GetPageSize() int64 {
 	return q.pageSize
 }

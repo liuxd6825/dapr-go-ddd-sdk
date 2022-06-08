@@ -21,11 +21,11 @@ func NewFindPagingResult[T ddd.Entity](data *[]T, totalRows int64, query FindPag
 		return &FindPagingResult[T]{
 			Data:       data,
 			TotalRows:  totalRows,
-			TotalPages: getTotalPage(totalRows, query.PageSize()),
-			PageNum:    query.PageNum(),
-			PageSize:   query.PageSize(),
-			Sort:       query.Sort(),
-			Filter:     query.Filter(),
+			TotalPages: getTotalPage(totalRows, query.GetPageSize()),
+			PageNum:    query.GetPageNum(),
+			PageSize:   query.GetPageSize(),
+			Sort:       query.GetSort(),
+			Filter:     query.GetFilter(),
 			IsFound:    totalRows > 0,
 			Error:      err,
 		}

@@ -3,6 +3,8 @@ package restapp
 import (
 	"errors"
 	"fmt"
+	"github.com/iris-contrib/swagger/v12"
+	"github.com/iris-contrib/swagger/v12/swaggerFiles"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/mvc"
@@ -30,6 +32,7 @@ type ServiceOptions struct {
 	EventTypes     *[]RegisterEventType
 	AuthToken      string
 	WebRootPath    string
+	SwaggerDoc     string
 }
 type service struct {
 	app            *iris.Application
@@ -45,6 +48,7 @@ type service struct {
 	eventTypes     *[]RegisterEventType
 	authToken      string
 	webRootPath    string
+	swaggerDoc     string
 }
 
 func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
@@ -92,6 +96,7 @@ func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) co
 		eventTypes:     opts.EventTypes,
 		authToken:      opts.AuthToken,
 		webRootPath:    opts.WebRootPath,
+		swaggerDoc:     opts.SwaggerDoc,
 		app:            iris.New(),
 	}
 }
@@ -122,6 +127,9 @@ func (s *service) Start() error {
 
 	// register deactivate actor handler
 	app.Delete("/actors/{actorType}/{actorId}", s.actorDeactivateHandler)
+
+	// register swagger doc
+	s.registerSwagger()
 
 	// 注册消息订阅
 	if s.subscribes != nil {
@@ -331,4 +339,18 @@ func (s *service) registerController(relativePath string, controllers ...Control
 		}
 	}
 	mvc.Configure(s.app.Party(relativePath), configurators)
+}
+
+//
+// registerSwagger
+// @Description:
+// @receiver s
+//
+func (s *service) registerSwagger() {
+	url := fmt.Sprintf("http://%s:%d/swagger/doc.json", "127.0.0.1", s.httpPort)
+	cfg := &swagger.Config{
+		URL: url,
+	}
+	// use swagger middleware to
+	s.app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(cfg, swaggerFiles.Handler))
 }

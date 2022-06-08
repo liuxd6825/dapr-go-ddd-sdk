@@ -77,7 +77,7 @@ func aggregateSnapshotActorFactory() actor.Server {
 }
 
 func RunWithConfig(envType string, configFile string, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) (common.Service, error) {
+	controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory, swaggerDoc string) (common.Service, error) {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -92,11 +92,11 @@ func RunWithConfig(envType string, configFile string, subsFunc func() *[]Registe
 	if err != nil {
 		panic(err)
 	}
-	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc)
+	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc, swaggerDoc)
 }
 
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) (common.Service, error) {
+	controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory, swaggerDoc string) (common.Service, error) {
 	if !config.Mongo.IsEmpty() {
 		initMongo(&config.Mongo)
 	}
@@ -128,7 +128,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() *[]RegisterSubscribe,
 		esMap[""] = eventStorage
 	}
 
-	return Run(options, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc, actorsFunc)
+	return Run(options, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc, actorsFunc, swaggerDoc)
 }
 
 //
@@ -145,7 +145,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() *[]RegisterSubscribe,
 //
 func Run(options *StartOptions, webRootPath string, subsFunc func() *[]RegisterSubscribe,
 	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage,
-	eventTypesFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) (common.Service, error) {
+	eventTypesFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory, swaggerDoc string) (common.Service, error) {
 
 	fmt.Printf("---------- %s ----------\r\n", options.AppId)
 	ddd.Init(options.AppId)
@@ -163,6 +163,7 @@ func Run(options *StartOptions, webRootPath string, subsFunc func() *[]RegisterS
 		ActorFactories: actorsFunc(),
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
+		SwaggerDoc:     swaggerDoc,
 	}
 	service := NewService(options.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {
