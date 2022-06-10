@@ -258,7 +258,7 @@ func callDprEventMethod(ctx context.Context, callEventType CallEventType, aggreg
 			return nil, err
 		}
 		applyEvents := []*daprclient.EventDto{
-			&daprclient.EventDto{
+			{
 				CommandId:    event.GetCommandId(),
 				EventId:      event.GetEventId(),
 				EventVersion: event.GetEventVersion(),
@@ -351,8 +351,8 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 		return err
 	}
 
-	aggregateId := event.GetAggregateId()
-	if err := assert.NotEmpty(aggregateId, assert.NewOptions("aggregateId is empty")); err != nil {
+	aggId := event.GetAggregateId()
+	if err := assert.NotEmpty(aggId, assert.NewOptions("aggregateId is empty")); err != nil {
 		return err
 	}
 
@@ -432,13 +432,13 @@ func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd Command) e
 // @return error
 //
 func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opts ...LoadAggregateOption) error {
-	aggregateId := cmd.GetAggregateId().RootId()
-	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), aggregateId, aggregate, opts...)
+	aggId := cmd.GetAggregateId().RootId()
+	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), aggId, aggregate, opts...)
 	if err != nil {
 		return err
 	}
 	if !find {
-		return ddd_errors.NewAggregateIdNotFondError(aggregateId)
+		return ddd_errors.NewAggregateIdNotFondError(aggId)
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
 }

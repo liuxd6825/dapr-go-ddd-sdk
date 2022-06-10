@@ -5,12 +5,12 @@ go 1.18
 require (
 	github.com/google/uuid v1.3.0
 	github.com/iris-contrib/swagger/v12 v12.0.1
+	github.com/jinzhu/copier v0.3.5
 	github.com/kataras/iris/v12 v12.2.0-alpha9
 	github.com/liuxd6825/dapr v1.7.1
 	github.com/liuxd6825/go-sdk v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/swaggo/swag v1.8.1
 	go.mongodb.org/mongo-driver v1.9.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
@@ -69,6 +69,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
+	github.com/swaggo/swag v1.8.1 // indirect
 	github.com/tdewolff/minify/v2 v2.10.0 // indirect
 	github.com/tdewolff/parse/v2 v2.5.27 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect

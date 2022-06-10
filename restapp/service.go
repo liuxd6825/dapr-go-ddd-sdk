@@ -345,7 +345,7 @@ func (s *service) registerController(relativePath string, controllers ...Control
 // @receiver s
 //
 func (s *service) registerSwagger() {
-	url := fmt.Sprintf("http://%s:%d/swagger/doc.json", "127.0.0.1", s.httpPort)
+	url := fmt.Sprintf("http://%s:%d/swagger/doc.json", "localhost", s.httpPort)
 	cfg := &swagger.Config{
 		URL: url,
 	}

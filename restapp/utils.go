@@ -3,6 +3,7 @@ package restapp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
@@ -20,8 +21,6 @@ type Command interface {
 	GetTenantId() string
 }
 
-// type GetOneFunc = func(ctx iris.Context) (interface{}, bool, error)
-// type GetFunc = func(ctx iris.Context) (interface{}, error)
 type CmdFunc func(ctx context.Context) error
 type QueryFunc func(ctx context.Context) (interface{}, bool, error)
 
@@ -59,17 +58,21 @@ func SetError(ctx iris.Context, err error) {
 	}
 }
 
-// DoCmd 执行命令
-func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) (err error) {
+//
+// DoCmd
+// @Description: 执行命令
+// @param ctx  上下文
+// @param cmd  命令
+// @param fun  执行方法
+// @return err 错误
+//
+func DoCmd(ctx iris.Context, fun CmdFunc) (err error) {
 	defer func() {
 		if e := ddd_errors.GetRecoverError(recover()); e != nil {
 			err = e
 		}
 	}()
 
-	if err = ctx.ReadBody(cmd); err != nil {
-		return err
-	}
 	restCtx := NewContext(ctx)
 	err = fun(restCtx)
 	if err != nil && !ddd_errors.IsErrorAggregateExists(err) {
@@ -79,6 +82,15 @@ func DoCmd(ctx iris.Context, cmd Command, fun CmdFunc) (err error) {
 	return err
 }
 
+//
+// DoQueryOne
+// @Description: 单条数据查询，当无数据时返回错误。
+// @param ctx 上下文
+// @param fun 执行方法
+// @return data 返回数据
+// @return isFound 是否有数据
+// @return err 错误
+//
 func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	defer func() {
 		if e := ddd_errors.GetRecoverError(recover()); e != nil {
@@ -101,10 +113,20 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool
 	return data, isFound, nil
 }
 
+//
+// DoQuery
+// @Description: 多条数据查询
+// @param ctx 上下文
+// @param fun 执行方法
+// @return data 返回数据
+// @return isFound 是否有数据
+// @return err 错误
+//
 func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	defer func() {
 		if e := ddd_errors.GetRecoverError(recover()); e != nil {
 			err = e
+			SetError(ctx, err)
 		}
 	}()
 	restCtx := NewContext(ctx)
@@ -121,8 +143,12 @@ func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, e
 	return data, isFound, nil
 }
 
+//
+// CmdAndQueryOptions
+// @Description: 命令执行参数
+//
 type CmdAndQueryOptions struct {
-	WaitSecond int
+	WaitSecond int // 超时时间，单位秒
 }
 
 type CmdAndQueryOption func(options *CmdAndQueryOptions)
@@ -134,22 +160,47 @@ func CmdAndQueryOptionWaitSecond(waitSecond int) CmdAndQueryOption {
 }
 
 // DoCmdAndQueryOne 执行命令并返回查询一个数据
-func DoCmdAndQueryOne(ctx iris.Context, subAppId string, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
-	return doCmdAndQuery(ctx, subAppId, true, cmd, cmdFun, queryFun, opts...)
+//
+//  DoCmdAndQueryOne
+//  @Description:  执行命令并返回查询一个数据
+//  @param ctx 上下文
+//  @param queryAppId  查询AppId
+//  @param cmd  命令
+//  @param cmdFun  命令执行方法
+//  @param queryFun 查询执行方法
+//  @param opts 参数
+//  @return interface{} 返回值
+//  @return bool 是否找到数据
+//  @return error 错误
+//
+func DoCmdAndQueryOne(ctx iris.Context, queryAppId string, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
+	return doCmdAndQuery(ctx, queryAppId, true, cmd, cmdFun, queryFun, opts...)
 }
 
-// DoCmdAndQueryList 执行命令并返回查询列表
-func DoCmdAndQueryList(ctx iris.Context, subAppId string, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
-	return doCmdAndQuery(ctx, subAppId, false, cmd, cmdFun, queryFun, opts...)
+//
+// DoCmdAndQueryList
+// @Description:  执行命令并返回查询列表
+// @param ctx 上下文
+// @param queryAppId  查询AppId
+// @param cmd  命令
+// @param cmdFun  命令执行方法
+// @param queryFun 查询执行方法
+// @param opts 参数
+// @return interface{} 返回值
+// @return bool 是否找到数据
+// @return error 错误
+//
+func DoCmdAndQueryList(ctx iris.Context, queryAppId string, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
+	return doCmdAndQuery(ctx, queryAppId, false, cmd, cmdFun, queryFun, opts...)
 }
 
-func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
+func doCmdAndQuery(ctx iris.Context, queryAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
 	options := &CmdAndQueryOptions{WaitSecond: 5}
 	for _, o := range opts {
 		o(options)
 	}
 
-	err := DoCmd(ctx, cmd, cmdFun)
+	err := DoCmd(ctx, cmdFun)
 	isExists := ddd_errors.IsErrorAggregateExists(err)
 	if err != nil && !isExists {
 		SetError(ctx, err)
@@ -160,7 +211,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	// 循环检查EventLog日志是否存在
 	for i := 0; i < options.WaitSecond; i++ {
 		time.Sleep(time.Duration(1) * time.Second)
-		logs, err := applog.GetEventLogByAppIdAndCommandId(cmd.GetTenantId(), subAppId, cmd.GetCommandId())
+		logs, err := applog.GetEventLogByAppIdAndCommandId(cmd.GetTenantId(), queryAppId, cmd.GetCommandId())
 		if err != nil {
 			SetError(ctx, err)
 			return nil, false, err
@@ -174,8 +225,8 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	}
 
 	if isTimeout {
-		err = errors.New("query execution timeout")
-		SetError(ctx, err)
+		msg := fmt.Sprintf("applog.GetEventLogByAppIdAndCommandId() error: queryAppId=%s, commandId=%s, tenantId=%s  execution timeout", queryAppId, cmd.GetCommandId(), cmd.GetTenantId())
+		SetError(ctx, errors.New(msg))
 		return nil, false, err
 	}
 
@@ -192,7 +243,7 @@ func doCmdAndQuery(ctx iris.Context, subAppId string, isGetOne bool, cmd Command
 	return data, isFound, err
 }
 
-func SetData(ctx iris.Context, data interface{}) {
+func SetRestData(ctx iris.Context, data interface{}) {
 	_, err := ctx.JSON(data)
 	if err != nil {
 		SetError(ctx, err)

@@ -5,20 +5,21 @@ type Entity interface {
 	GetId() string
 }
 
-var NilEnity = newNilEnity()
+var NilEntity = newNilEntity()
 
 type EntityList *[]Entity
 
-type nilEnity struct {
+type nilEntity struct {
 }
 
-func (e *nilEnity) GetTenantId() string {
-	return ""
+func newNilEntity() Entity {
+	return &nilEntity{}
 }
-func (e *nilEnity) GetId() string {
+
+func (e *nilEntity) GetTenantId() string {
 	return ""
 }
 
-func newNilEnity() Entity {
-	return &nilEnity{}
+func (e *nilEntity) GetId() string {
+	return ""
 }
