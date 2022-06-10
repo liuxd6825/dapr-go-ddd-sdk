@@ -2,7 +2,10 @@ package mapper
 
 import (
 	"encoding/json"
+	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"testing"
+	"time"
 )
 
 type UserCreateRequest struct {
@@ -68,4 +71,29 @@ func TestAutoMapper(t *testing.T) {
 		t.Error("command.data.id is error")
 	}
 
+}
+
+type DateRequest struct {
+	Date *types.JSONDate
+}
+
+type DateCommand struct {
+	Date time.Time
+}
+
+func TestDateMapper(t *testing.T) {
+	dateValue := types.JSONDate(time.Now())
+	// dateValue := types.DateString("2019-10-10")
+	// dateValue := time.Now()
+	req := DateRequest{
+		Date: &dateValue,
+	}
+	cmd := DateCommand{}
+	if err := Mapper(&req, &cmd); err != nil {
+		t.Error(err)
+	}
+	if cmd.Date.IsZero() {
+		t.Error(errors.New(" date mapper error"))
+	}
+	println(cmd.Date.String())
 }

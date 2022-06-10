@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
@@ -63,6 +62,8 @@ type Config struct {
 	OperationTimeout time.Duration
 	MaxPoolSize      uint64
 }
+
+type ObjectId string
 
 //
 // NewMongoDB
@@ -223,17 +224,4 @@ func getReadConcernObject(cn string) (*readconcern.ReadConcern, error) {
 	}
 
 	return nil, fmt.Errorf("readConcern %s not found", cn)
-}
-
-func GetObjectID(id string) (primitive.ObjectID, error) {
-	objId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return primitive.NilObjectID, err
-	}
-	return objId, nil
-}
-
-func NewObjectID() primitive.ObjectID {
-	objId := primitive.NewObjectID()
-	return objId
 }

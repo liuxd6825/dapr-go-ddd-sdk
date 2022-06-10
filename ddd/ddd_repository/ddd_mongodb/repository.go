@@ -57,7 +57,8 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 		}
 		updateOptions := getUpdateOptions(opts...)
 		filter := bson.D{{IdField, objId}}
-		_, err = r.collection.UpdateOne(ctx, filter, entity, updateOptions)
+		setData := bson.M{"$set": entity}
+		_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
 		return entity, err
 	})
 }

@@ -210,7 +210,7 @@ func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
 }
 
 //
-// Apply
+// callDaprEventMethod
 // @Description: 应用领域事件
 // @param ctx
 // @param aggregate
@@ -218,7 +218,7 @@ func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
 // @param options
 // @return err
 //
-func callDprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
+func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
 	if err := checkEvent(aggregate, event); err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func callDprEventMethod(ctx context.Context, callEventType CallEventType, aggreg
 	logInfo := &applog.LogInfo{
 		TenantId:  aggregate.GetTenantId(),
 		ClassName: "ddd",
-		FuncName:  "applyEvent",
+		FuncName:  "callDaprEventMethod",
 		Message:   fmt.Sprintf("%v", aggregate),
 		Level:     applog.INFO,
 	}
@@ -327,15 +327,15 @@ func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggre
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
-	return callDprEventMethod(ctx, EventApply, aggregate, event, opts...)
+	return callDaprEventMethod(ctx, EventApply, aggregate, event, opts...)
 }
 
 func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
-	return callDprEventMethod(ctx, EventCreate, aggregate, event, opts...)
+	return callDaprEventMethod(ctx, EventCreate, aggregate, event, opts...)
 }
 
 func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
-	return callDprEventMethod(ctx, EventDelete, aggregate, event, opts...)
+	return callDaprEventMethod(ctx, EventDelete, aggregate, event, opts...)
 }
 
 func checkEvent(aggregate Aggregate, event DomainEvent) error {

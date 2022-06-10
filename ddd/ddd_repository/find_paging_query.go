@@ -1,110 +1,3 @@
-package ddd_repository
-
-type FindPagingQuery interface {
-	GetTenantId() string
-	GetFields() string
-	GetFilter() string
-	GetSort() string
-	GetPageNum() int64
-	GetPageSize() int64
-}
-
-type FindPagingQueryOptions struct {
-	tenantId *string
-	fields   *string
-	filter   *string
-	sort     *string
-	pageNum  *int64
-	pageSize *int64
-}
-
-func NewFindPagingQueryOptions() *FindPagingQueryOptions {
-	return &FindPagingQueryOptions{}
-}
-
-func NewFindPagingQueryOptionsAll(fields, filter, sort string, pageNum, pageSize int64) *FindPagingQueryOptions {
-	return &FindPagingQueryOptions{
-		filter:   &filter,
-		fields:   &fields,
-		sort:     &sort,
-		pageNum:  &pageNum,
-		pageSize: &pageSize,
-	}
-}
-
-func NewFindPagingQueryOptionsDefault() *FindPagingQueryOptions {
-	fields := ""
-	filter := ""
-	sort := ""
-	pageNum := int64(0)
-	pageSize := int64(20)
-	return &FindPagingQueryOptions{
-		fields:   &fields,
-		filter:   &filter,
-		sort:     &sort,
-		pageNum:  &pageNum,
-		pageSize: &pageSize,
-	}
-}
-
-func (o *FindPagingQueryOptions) SetFields(fields string) *FindPagingQueryOptions {
-	o.fields = &fields
-	return o
-}
-
-func (o *FindPagingQueryOptions) SetFilter(filter string) *FindPagingQueryOptions {
-	o.filter = &filter
-	return o
-}
-
-func (o *FindPagingQueryOptions) SetSort(sort string) *FindPagingQueryOptions {
-	o.sort = &sort
-	return o
-}
-
-func (o *FindPagingQueryOptions) SetPageNum(pageNum int64) *FindPagingQueryOptions {
-	o.pageNum = &pageNum
-	return o
-}
-
-func (o *FindPagingQueryOptions) SetpPageSize(pageSize int64) *FindPagingQueryOptions {
-	o.pageSize = &pageSize
-	return o
-}
-
-func NewFindPagingQuery(tenantId string, options ...*FindPagingQueryOptions) FindPagingQuery {
-	opt := NewFindPagingQueryOptionsDefault()
-	if options != nil {
-		for _, o := range options {
-			if o.sort != nil {
-				opt.sort = o.sort
-			}
-			if o.pageNum != nil {
-				opt.pageNum = o.pageNum
-			}
-			if o.pageSize != nil {
-				opt.pageSize = o.pageSize
-			}
-			if o.fields != nil {
-				opt.fields = o.fields
-			}
-			if o.filter != nil {
-				opt.filter = o.filter
-			}
-		}
-	}
-
-	query := &findPagingQuery{
-		tenantId: tenantId,
-		filter:   *opt.filter,
-		fields:   *opt.fields,
-		sort:     *opt.sort,
-		pageNum:  *opt.pageNum,
-		pageSize: *opt.pageSize,
-	}
-	return query
-}
-
 /*  Filter
 // - name=="Kill Bill";year=gt=2003
 // - name=="Kill Bill" and year>2003
@@ -131,35 +24,83 @@ func NewFindPagingQuery(tenantId string, options ...*FindPagingQueryOptions) Fin
 // datetime   : date'T'[0-9]{2}':'[0-9]{2}':'[0-9]{2}('Z' | (('+'|'-')[0-9]{2}(':')?[0-9]{2}))?
 // boolean    : 'true' | 'false'
 */
+
+package ddd_repository
+
+type FindPagingQuery interface {
+	GetTenantId() string
+	GetFields() string
+	GetFilter() string
+	GetSort() string
+	GetPageNum() int64
+	GetPageSize() int64
+
+	SetTenantId(string)
+	SetFields(string)
+	SetFilter(string)
+	SetSort(string)
+	SetPageNum(int64)
+	SetPageSize(int64)
+}
+
+func NewFindPagingQuery() FindPagingQuery {
+	query := &findPagingQuery{PageSize: 20}
+	return query
+}
+
 type findPagingQuery struct {
-	tenantId string
-	fields   string
-	filter   string
-	sort     string
-	pageNum  int64
-	pageSize int64
+	TenantId string
+	Fields   string
+	Filter   string
+	Sort     string
+	PageNum  int64
+	PageSize int64
+}
+
+func (q *findPagingQuery) SetTenantId(value string) {
+	q.TenantId = value
+}
+
+func (q *findPagingQuery) SetFields(value string) {
+	q.Fields = value
+}
+
+func (q *findPagingQuery) SetFilter(value string) {
+	q.Filter = value
+}
+
+func (q *findPagingQuery) SetSort(value string) {
+	q.Sort = value
+}
+
+func (q *findPagingQuery) SetPageNum(value int64) {
+	q.PageNum = value
+}
+
+func (q *findPagingQuery) SetPageSize(value int64) {
+	q.PageSize = value
 }
 
 func (q *findPagingQuery) GetTenantId() string {
-	return q.tenantId
+	return q.TenantId
 }
 
 func (q *findPagingQuery) GetFields() string {
-	return q.fields
+	return q.Fields
 }
 
 func (q *findPagingQuery) GetFilter() string {
-	return q.filter
+	return q.Filter
 }
 
 func (q *findPagingQuery) GetSort() string {
-	return q.sort
+	return q.Sort
 }
 
 func (q *findPagingQuery) GetPageNum() int64 {
-	return q.pageNum
+	return q.PageNum
 }
 
 func (q *findPagingQuery) GetPageSize() int64 {
-	return q.pageSize
+	return q.PageSize
 }
