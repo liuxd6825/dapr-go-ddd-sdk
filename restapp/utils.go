@@ -101,16 +101,16 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool
 	data, isFound, err = fun(restCtx)
 	if err != nil {
 		SetError(ctx, err)
-		return nil, isFound, err
+		return nil, false, err
 	}
 	if data == nil || !isFound {
-		return nil, isFound, SetErrorNotFond(ctx)
+		return nil, false, SetErrorNotFond(ctx)
 	}
 	_, err = ctx.JSON(data)
 	if err != nil {
 		return nil, false, err
 	}
-	return data, isFound, nil
+	return data, isFound, err
 }
 
 //
@@ -133,14 +133,14 @@ func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, e
 	data, isFound, err = fun(restCtx)
 	if err != nil {
 		SetError(ctx, err)
-		return nil, isFound, err
+		return data, isFound, err
 	}
 
 	_, err = ctx.JSON(data)
 	if err != nil {
 		return nil, false, err
 	}
-	return data, isFound, nil
+	return data, isFound, err
 }
 
 //
