@@ -17,7 +17,7 @@ type Verify interface {
 //  @return *ddd_errors.VerifyError
 //
 func ValidateCreateCommand(data CreateCommand, verifyError *ddd_errors.VerifyError) *ddd_errors.VerifyError {
-	return validateCommand(data, verifyError)
+	return ValidateCommand(data, verifyError)
 }
 
 //
@@ -28,7 +28,7 @@ func ValidateCreateCommand(data CreateCommand, verifyError *ddd_errors.VerifyErr
 //  @return *ddd_errors.VerifyError
 //
 func ValidateUpdateCommand(data UpdateCommand, verifyError *ddd_errors.VerifyError) *ddd_errors.VerifyError {
-	return validateCommand(data, verifyError)
+	return ValidateCommand(data, verifyError)
 }
 
 //
@@ -39,10 +39,10 @@ func ValidateUpdateCommand(data UpdateCommand, verifyError *ddd_errors.VerifyErr
 //  @return *ddd_errors.VerifyError
 //
 func ValidateDeleteCommand(data DeleteCommand, verifyError *ddd_errors.VerifyError) *ddd_errors.VerifyError {
-	return validateCommand(data, verifyError)
+	return ValidateCommand(data, verifyError)
 }
 
-func validateCommand(data Command, verifyError *ddd_errors.VerifyError) *ddd_errors.VerifyError {
+func ValidateCommand(data Command, verifyError *ddd_errors.VerifyError) *ddd_errors.VerifyError {
 	v := verifyError
 	if v == nil {
 		v = ddd_errors.NewVerifyError()
