@@ -83,7 +83,7 @@ func RunWithConfig(envType string, configFile string, subsFunc func() *[]Registe
 		panic(err)
 	}
 
-	envTypeValue := config.EnvType
+	envTypeValue := config.Env
 	if len(envType) > 0 {
 		envTypeValue = envType
 	}

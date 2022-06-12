@@ -12,11 +12,8 @@ import (
 )
 
 type Config struct {
-	EnvType string                `yaml:"envType"`
-	Test    *EnvConfig            `yaml:"test"`
-	Dev     *EnvConfig            `yaml:"dev"`
-	Prod    *EnvConfig            `yaml:"prod"`
-	Envs    map[string]*EnvConfig `yaml:"envs"`
+	Env  string                `yaml:"env"`
+	Envs map[string]*EnvConfig `yaml:"envs"`
 }
 
 type EnvConfig struct {
