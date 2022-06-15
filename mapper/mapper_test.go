@@ -97,3 +97,25 @@ func TestDateMapper(t *testing.T) {
 	}
 	println(cmd.Date.String())
 }
+
+func TestMapperMask(t *testing.T) {
+	from := UserFields{
+		Id:       "0001",
+		TenantId: "tenantId",
+		UserName: "userName",
+	}
+	to := UserFields{UserName: "userName___"}
+	mask := []string{
+		"Id",
+		"TenantId",
+	}
+	if err := MaskMapper(&from, &to, mask); err != nil {
+		t.Error(err)
+	}
+	if to.UserName != "" {
+		t.Error(errors.New("to.UserName is not null"))
+	}
+	if to.Id == "" {
+		t.Error(errors.New("to.Id is null"))
+	}
+}
