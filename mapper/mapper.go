@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -50,7 +51,7 @@ func MaskMapper(fromObj, toObj interface{}, mask []string) error {
 	if len(mask) > 0 {
 		maskMap := make(map[string]string)
 		for _, key := range mask {
-			maskMap[key] = key
+			maskMap[key] = stringutils.FirstUpper(key)
 		}
 		for key, _ := range fromMap {
 			_, ok := maskMap[key]

@@ -1,4 +1,4 @@
-package stringuilt
+package stringutils
 
 import (
 	"errors"
