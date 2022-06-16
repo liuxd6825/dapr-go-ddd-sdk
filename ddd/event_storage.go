@@ -479,5 +479,10 @@ func getEventMethodName(eventType string, revision string) string {
 	names := strings.Split(eventType, ".")
 	name := names[len(names)-1]
 	ver := strings.Replace(revision, ".", "s", -1)
-	return fmt.Sprintf("On%sV%s", name, ver)
+	if strings.HasPrefix(ver, "v") || strings.HasPrefix(ver, "V") {
+		ver = "V" + ver[1:]
+	} else {
+		ver = "V" + ver
+	}
+	return fmt.Sprintf("On%s%s", name, ver)
 }
