@@ -242,20 +242,22 @@ func writeEventLog(ctx context.Context, tenantId, structName, funcName string, l
 		PubAppId:  pubAppId,
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"id":        uid,
-		"tenantId":  tenantId,
-		"appId":     appId,
-		"class":     structName,
-		"func":      funcName,
-		"level":     level.ToString(),
-		"time":      &timeNow,
-		"status":    true,
-		"message":   message,
-		"eventId":   eventId,
-		"commandId": commandId,
-		"pubAppId":  pubAppId,
-	}).Infoln(fmt.Sprintf("EVENT LOG %s", structName))
+	/*
+		logrus.WithFields(logrus.Fields{
+			"id":        uid,
+			"tenantId":  tenantId,
+			"appId":     appId,
+			"class":     structName,
+			"func":      funcName,
+			"level":     level.ToString(),
+			"time":      &timeNow,
+			"status":    true,
+			"message":   message,
+			"eventId":   eventId,
+			"commandId": commandId,
+			"pubAppId":  pubAppId,
+		}).Infoln(fmt.Sprintf("EVENT LOG %s", structName))
+	*/
 
 	_, err := log.WriteEventLog(ctx, req)
 	return req.Id, err
