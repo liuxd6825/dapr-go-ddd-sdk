@@ -7,9 +7,8 @@ require (
 	github.com/iris-contrib/swagger/v12 v12.0.1
 	github.com/jinzhu/copier v0.3.5
 	github.com/kataras/iris/v12 v12.2.0-alpha9
-	github.com/liuxd6825/dapr v1.7.1-1.0-alpha
-	github.com/liuxd6825/go-sdk v1.7.1-1.0-alpha
-	github.com/mitchellh/mapstructure v1.4.1
+	github.com/liuxd6825/dapr v1.7.1
+	github.com/liuxd6825/go-sdk v0.0.0-00010101000000-000000000000
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.9.1
@@ -99,12 +98,6 @@ require (
 
 replace github.com/liuxd6825/dapr => ../dapr
 
-//replace github.com/liuxd6825/dapr => github.com/liuxd6825/dapr v1.7.1-1.0-alpha
-
 replace github.com/liuxd6825/go-sdk => ../go-sdk
 
-//replace github.com/liuxd6825/go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha
-
 replace github.com/liuxd6825/components-contrib => ../components-contrib
-
-//replace github.com/liuxd6825/components-contrib => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
