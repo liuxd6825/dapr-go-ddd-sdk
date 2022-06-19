@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/mapper"
 )
 
 type Item interface {
@@ -31,7 +30,7 @@ func (t *Items[T]) Add(ctx context.Context, id string, data interface{}) error {
 		return errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
 	}
 	newItem := t.NewItem()
-	err := mapper.Mapper(data, newItem)
+	err := Mapper(data, newItem)
 	if err != nil {
 		m[id] = newItem
 	}
@@ -51,7 +50,7 @@ func (t Items[T]) Update(ctx context.Context, id string, data interface{}, updat
 	if !ok {
 		return nil
 	}
-	return mapper.MaskMapper(data, item, updateMask)
+	return MaskMapper(data, item, updateMask)
 }
 
 //
