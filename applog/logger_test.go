@@ -115,6 +115,11 @@ func TestLogger_AppLog(t *testing.T) {
 	println(getResp)
 }
 
+//
+//  newLogger
+//  @Description:
+//  @return Logger
+//
 func newLogger() Logger {
 	client, _ := daprclient.NewDaprDddClient("", 9001, 9002)
 	logger := NewLogger(client)
