@@ -70,7 +70,7 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[map[string]interface{}]) UpdateMap(ctx context.Context, tenantId string, data map[string]interface{}, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[map[string]interface{}] {
+func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, data map[string]interface{}, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[map[string]interface{}] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[map[string]interface{}](err)
 	}
