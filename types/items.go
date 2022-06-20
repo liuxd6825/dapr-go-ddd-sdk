@@ -10,47 +10,105 @@ type Item interface {
 	GetId() string
 }
 
-type Items[T Item] map[string]T
+type Items[T Item] struct {
+	null    T
+	items   map[string]T
+	newFunc func() interface{}
+}
 
-func (t *Items[T]) NewItem() T {
-	return T{}
+func NewItems[T Item](newFunc func() interface{}) Items[T] {
+	res := Items[T]{}
+	err := res.Init(newFunc)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
+func (t *Items[T]) Init(newFunc func() interface{}) error {
+	t.newFunc = newFunc
+	return nil
+}
+
+func (t *Items[T]) NewItem() (T, error) {
+	item, ok := t.newFunc().(T)
+	if !ok {
+		return nil, fmt.Errorf("types.Items.NewItem() error ")
+	}
+	return item, nil
 }
 
 //
-// Add
+// AddMapper
 // @Description: 添加
 // @param ctx    上下文
 // @param data   更新数据
 // @return error 错误
 //
-func (t *Items[T]) Add(ctx context.Context, id string, data interface{}) error {
-	m := *t
-	_, ok := m[id]
+func (t *Items[T]) AddMapper(ctx context.Context, id string, data interface{}) (T, error) {
+	_, ok := t.items[id]
 	if ok {
-		return errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
+		return nil, errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
 	}
-	newItem := t.NewItem()
-	err := Mapper(data, newItem)
+	newItem, err := t.NewItem()
 	if err != nil {
-		m[id] = newItem
+		return nil, err
 	}
-	return err
+	err = Mapper(data, newItem)
+	if err != nil {
+		t.items[id] = newItem
+	}
+	return newItem, err
 }
 
 //
-// Update
+// AddItem
+// @Description: 添加
+// @param ctx    上下文
+// @param data   更新数据
+// @return error 错误
+//
+func (t *Items[T]) AddItem(ctx context.Context, item T) error {
+	id := item.GetId()
+	_, ok := t.items[id]
+	if ok {
+		return errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
+	}
+	return nil
+}
+
+//
+// UpdateMapper
 // @Description:     更新
 // @param ctx        上下文
 // @param data       更新数据
 // @param updateMask 更新字段项
 // @return error
 //
-func (t Items[T]) Update(ctx context.Context, id string, data interface{}, updateMask []string) error {
-	item, ok := t[id]
+func (t Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}, updateMask []string) (T, error) {
+	item, ok := t.items[id]
 	if !ok {
-		return nil
+		return item, fmt.Errorf("types.Items.UpdateMapper() id %s ", id)
 	}
-	return MaskMapper(data, item, updateMask)
+	err := MaskMapper(data, item, updateMask)
+	return item, err
+}
+
+//
+// UpdateItem
+// @Description: 更新
+// @param ctx    上下文
+// @param data   更新数据
+// @return error 错误
+//
+func (t *Items[T]) UpdateItem(ctx context.Context, item T) error {
+	id := item.GetId()
+	_, ok := t.items[id]
+	if !ok {
+		return errors.New(fmt.Sprintf("types.Items.UpdateItem()  Id \"%s\" 不存在", id))
+	}
+	t.items[id] = item
+	return nil
 }
 
 //
@@ -61,7 +119,7 @@ func (t Items[T]) Update(ctx context.Context, id string, data interface{}, updat
 // @return error 错误
 //
 func (t Items[T]) Delete(ctx context.Context, item T) error {
-	delete(t, item.GetId())
+	delete(t.items, item.GetId())
 	return nil
 }
 
@@ -73,7 +131,7 @@ func (t Items[T]) Delete(ctx context.Context, item T) error {
 // @return error 错误
 //
 func (t Items[T]) DeleteById(ctx context.Context, id string) error {
-	delete(t, id)
+	delete(t.items, id)
 	return nil
 }
 
@@ -94,4 +152,18 @@ func (t Items[T]) DeleteByIds(ctx context.Context, ids ...string) error {
 		}
 	}
 	return nil
+}
+
+func (t Items[T]) ContainsId(id string) bool {
+	_, ok := t.items[id]
+	return ok
+}
+
+func (t Items[T]) Get(id string) (T, bool) {
+	item, ok := t.items[id]
+	return item, ok
+}
+
+func (t Items[T]) MapData() map[string]T {
+	return t.items
 }
