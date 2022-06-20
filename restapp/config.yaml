@@ -1,5 +1,5 @@
-env : dev
-dev :
+env: dev
+dev:
   app:
     id: query-example
     http-port: 9020

@@ -2,8 +2,8 @@
 
 RSQL like parse (I'm not yet implements all tokens).
 
-
 ## Installation:
+
 - `go get github.com/dohrm/go-rsql`
 
 ## Usage:
@@ -24,7 +24,6 @@ func main() {
 }
 
 ```
-
 
 ## Grammar:
 
@@ -47,6 +46,7 @@ datetime   : date'T'[0-9]{2}':'[0-9]{2}':'[0-9]{2}('Z' | (('+'|'-')[0-9]{2}(':')
 boolean    : 'true' | 'false'
 
 ```
+
 Examples :
 
 - `name=='Luke Skywalker' or actor.name=="Mark"`

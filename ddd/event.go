@@ -1,6 +1,9 @@
 package ddd
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 type DomainEvent interface {
 	GetTenantId() string
@@ -9,6 +12,8 @@ type DomainEvent interface {
 	GetEventType() string
 	GetEventVersion() string
 	GetAggregateId() string
+	GetCreatedTime() time.Time
+	GetData() interface{}
 }
 
 type Event interface {

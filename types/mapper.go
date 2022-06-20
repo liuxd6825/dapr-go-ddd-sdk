@@ -1,4 +1,4 @@
-package mapper
+package types
 
 import (
 	"github.com/jinzhu/copier"
@@ -74,7 +74,7 @@ func getOption() *copier.Option {
 }
 func getTypeConverters() []copier.TypeConverter {
 	var typeConverters []copier.TypeConverter
-	typeConverters = append(typeConverters, NewJsonDateConverter().GetTypeConverters()...)
-	typeConverters = append(typeConverters, NewJsonTimeConverter().GetTypeConverters()...)
+	typeConverters = append(typeConverters, newJsonDateConverter().getTypeConverters()...)
+	typeConverters = append(typeConverters, newJsonTimeConverter().getTypeConverters()...)
 	return typeConverters
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
@@ -15,7 +16,7 @@ import (
 
 const (
 	IdField       = "_id"
-	TenantIdField = "tenantId"
+	TenantIdField = "tenant_id"
 )
 
 type Repository[T ddd.Entity] struct {
@@ -43,6 +44,9 @@ func (r *Repository[T]) NewEntityList() *[]T {
 }
 
 func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
 	return r.DoSet(func() (T, error) {
 		_, err := r.collection.InsertOne(ctx, entity, getInsertOneOptions(opts...))
 		return entity, err
@@ -50,6 +54,9 @@ func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repos
 }
 
 func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
 	return r.DoSet(func() (T, error) {
 		objId, err := GetObjectID(entity.GetId())
 		if err != nil {
@@ -61,6 +68,22 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 		_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
 		return entity, err
 	})
+}
+
+func (r *Repository[map[string]interface{}]) UpdateMap(ctx context.Context, tenantId string, data map[string]interface{}, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[map[string]interface{}] {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewSetResultError[map[string]interface{}](err)
+	}
+
+	return r.DoSetMap(func() (map[string]interface{}, error) {
+		filterMap[tenantId] = tenantId
+		updateOptions := getUpdateOptions(opts...)
+		filter := r.NewFilter(tenantId, filterMap)
+		setData := bson.M{"$set": data}
+		_, err := r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+		return data, err
+	})
+
 }
 
 func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
@@ -79,24 +102,15 @@ func (r *Repository[T]) DeleteAll(ctx context.Context, tenantId string, opts ...
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
-	if err := assert.NotNil(data, assert.NewOptions("data is nil")); err != nil {
+func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+	if err := assert.NotNil(filterMap, assert.NewOptions("data is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
-		filter := bson.D{
-			{TenantIdField, tenantId},
-		}
-		for k, v := range data {
-			e := bson.E{
-				Key:   k,
-				Value: v,
-			}
-			filter = append(filter, e)
-		}
+		filter := r.NewFilter(tenantId, filterMap)
 		deleteOptions := getDeleteOptions(opts...)
 		_, err := r.collection.DeleteOne(ctx, filter, deleteOptions)
 		var result T
@@ -109,10 +123,10 @@ func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interfac
 		{TenantIdField, tenantId},
 	}
 	if filterMap != nil {
-		for k, v := range filterMap {
+		for fieldName, fieldValue := range filterMap {
 			e := bson.E{
-				Key:   k,
-				Value: v,
+				Key:   AsFieldName(fieldName),
+				Value: fieldValue,
 			}
 			filter = append(filter, e)
 		}
@@ -162,7 +176,12 @@ func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*d
 }
 
 func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
+
 	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
+		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+			return nil, false, err
+		}
+
 		data := r.NewEntityList()
 
 		findOptions := getFindOptions(opts...)
@@ -190,9 +209,11 @@ func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.Fin
 }
 
 func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
 	p := NewMongoProcess()
-	err := rsql.ParseProcess(filter, p)
-	if err != nil {
+	if err := rsql.ParseProcess(filter, p); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
 	filterData := p.GetFilter(tenantId)
@@ -228,6 +249,11 @@ func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.F
 }
 
 func (r *Repository[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T] {
+	data, err := fun()
+	return ddd_repository.NewSetResult[T](data, err)
+}
+
+func (r *Repository[T]) DoSetMap(fun func() (map[string]interface{}, error)) *ddd_repository.SetResult[map[string]interface{}] {
 	data, err := fun()
 	return ddd_repository.NewSetResult[T](data, err)
 }
@@ -270,4 +296,14 @@ func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
 		res[name] = orderVal
 	}
 	return res, nil
+}
+
+//
+// AsFieldName
+// @Description: 转换为mongodb规范的字段名称
+// @param name
+// @return string
+//
+func AsFieldName(name string) string {
+	return stringutils.SnakeString(name)
 }
