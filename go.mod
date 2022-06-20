@@ -97,10 +97,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-//replace github.com/liuxd6825/dapr v1.7.1-1.0-alpha => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha
-//replace github.com/liuxd6825/go-sdk v1.7.1-1.0-alpha => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha
-//replace github.com/liuxd6825/components-contrib v1.7.1-1.0-alpha => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
+replace github.com/liuxd6825/dapr v1.7.1-1.0-alpha => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha
+replace github.com/liuxd6825/go-sdk v1.7.1-1.0-alpha => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha
+replace github.com/liuxd6825/components-contrib v1.7.1-1.0-alpha => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
 
-replace github.com/liuxd6825/dapr => ../dapr
-replace github.com/liuxd6825/go-sdk => ../go-sdk
-replace github.com/liuxd6825/components-contrib => ../components-contrib
+//replace github.com/liuxd6825/dapr => ../dapr
+//replace github.com/liuxd6825/go-sdk => ../go-sdk
+//replace github.com/liuxd6825/components-contrib => ../components-contrib
