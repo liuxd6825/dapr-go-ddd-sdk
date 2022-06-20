@@ -70,7 +70,7 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, data map[string]interface{}, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[map[string]interface{}] {
+/*func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, data map[string]interface{}, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[map[string]interface{}] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[map[string]interface{}](err)
 	}
@@ -83,9 +83,8 @@ func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, data map
 		_, err := r.collection.UpdateOne(ctx, filter, setData, updateOptions)
 		return data, err
 	})
-
 }
-
+*/
 func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
@@ -253,11 +252,12 @@ func (r *Repository[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T
 	return ddd_repository.NewSetResult[T](data, err)
 }
 
+/*
 func (r *Repository[T]) DoSetMap(fun func() (map[string]interface{}, error)) *ddd_repository.SetResult[map[string]interface{}] {
 	data, err := fun()
 	return ddd_repository.NewSetResult[T](data, err)
 }
-
+*/
 func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
 	if len(sort) == 0 {
 		return nil, nil

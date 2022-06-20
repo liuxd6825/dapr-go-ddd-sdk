@@ -2,7 +2,7 @@ package ddd_repository
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 
-type SetResult[T ddd.Entity] struct {
+type SetResult[T interface{}] struct {
 	err  error
 	data T
 }

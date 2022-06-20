@@ -33,7 +33,7 @@ func (t *Items[T]) Init(newFunc func() interface{}) error {
 func (t *Items[T]) NewItem() (T, error) {
 	item, ok := t.newFunc().(T)
 	if !ok {
-		return nil, fmt.Errorf("types.Items.NewItem() error ")
+		return t.null, fmt.Errorf("types.Items.NewItem() error ")
 	}
 	return item, nil
 }
@@ -48,11 +48,11 @@ func (t *Items[T]) NewItem() (T, error) {
 func (t *Items[T]) AddMapper(ctx context.Context, id string, data interface{}) (T, error) {
 	_, ok := t.items[id]
 	if ok {
-		return nil, errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
+		return t.null, errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
 	}
 	newItem, err := t.NewItem()
 	if err != nil {
-		return nil, err
+		return t.null, err
 	}
 	err = Mapper(data, newItem)
 	if err != nil {
@@ -85,13 +85,13 @@ func (t *Items[T]) AddItem(ctx context.Context, item T) error {
 // @param updateMask 更新字段项
 // @return error
 //
-func (t Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}, updateMask []string) (T, error) {
+func (t Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}, updateMask []string) (T, bool, error) {
 	item, ok := t.items[id]
 	if !ok {
-		return item, fmt.Errorf("types.Items.UpdateMapper() id %s ", id)
+		return item, ok, fmt.Errorf("types.Items.UpdateMapper() id %s ", id)
 	}
 	err := MaskMapper(data, item, updateMask)
-	return item, err
+	return item, ok, err
 }
 
 //
