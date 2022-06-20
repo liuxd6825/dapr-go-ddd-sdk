@@ -116,7 +116,7 @@ func TestLogger_AppLog(t *testing.T) {
 }
 
 func newLogger() Logger {
-	client, _ := daprclient.NewHttpClient("localhost", 9011)
+	client, _ := daprclient.NewDaprDddClient("", 9001, 9002)
 	logger := NewLogger(client)
 	return logger
 }
