@@ -12,7 +12,8 @@ type DomainEvent interface {
 	GetEventType() string
 	GetEventVersion() string
 	GetAggregateId() string
-	GetEventTime() time.Time
+	GetCreatedTime() time.Time
+	GetData() interface{}
 }
 
 type Event interface {
