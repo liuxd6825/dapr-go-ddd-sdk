@@ -123,8 +123,11 @@ func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interfac
 	}
 	if filterMap != nil {
 		for fieldName, fieldValue := range filterMap {
+			if fieldName != IdField {
+				fieldName = AsFieldName(fieldName)
+			}
 			e := bson.E{
-				Key:   AsFieldName(fieldName),
+				Key:   fieldName,
 				Value: fieldValue,
 			}
 			filter = append(filter, e)
@@ -132,7 +135,6 @@ func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interfac
 	}
 	return filter
 }
-
 func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
 	idMap := map[string]interface{}{
 		IdField: id,
