@@ -80,7 +80,7 @@ type DateCommand struct {
 	Date time.Time
 }
 
-func TestDateMapper(t *testing.T) {
+func Test_Mapper_Date(t *testing.T) {
 	dateValue := JSONDate(time.Now())
 	// dateValue := types.DateString("2019-10-10")
 	// dateValue := time.Now()
@@ -97,7 +97,7 @@ func TestDateMapper(t *testing.T) {
 	println(cmd.Date.String())
 }
 
-func TestMapperMask(t *testing.T) {
+func Test_MaskMapper(t *testing.T) {
 	from := UserFields{
 		Id:       "0001",
 		TenantId: "tenantId",
@@ -109,6 +109,25 @@ func TestMapperMask(t *testing.T) {
 		"TenantId",
 	}
 	if err := MaskMapper(&from, &to, mask); err != nil {
+		t.Error(err)
+	}
+	if to.UserName != "" {
+		t.Error(errors.New("to.UserName is not null"))
+	}
+	if to.Id == "" {
+		t.Error(errors.New("to.Id is null"))
+	}
+}
+
+func Test_MaskMapperType(t *testing.T) {
+	from := UserFields{
+		Id:       "0001",
+		TenantId: "tenantId",
+		UserName: "userName",
+	}
+	to := UserFields{UserName: ""}
+	mask := []string{"UserName"}
+	if err := MaskMapperType(&from, &to, mask, MaskTypeExclude); err != nil {
 		t.Error(err)
 	}
 	if to.UserName != "" {
