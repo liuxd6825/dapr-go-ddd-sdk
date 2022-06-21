@@ -6,6 +6,18 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+type MaskType int
+
+const (
+	MaskTypeContain MaskType = iota // 包含字段
+	MaskTypeExclude                 // 排除的字段
+)
+
+type MaskOptions struct {
+	Mask []string
+	Type MaskType
+}
+
 var option *copier.Option
 
 func init() {
@@ -23,15 +35,31 @@ func Mapper(fromObj, toObj interface{}) error {
 	return copier.CopyWithOption(toObj, fromObj, *option)
 }
 
+func MaskMapper(fromObj, toObj interface{}, mask []string) error {
+	options := MaskOptions{
+		Mask: mask,
+		Type: MaskTypeContain,
+	}
+	return MaskMapperOptions(fromObj, toObj, &options)
+}
+
+func MaskMapperType(fromObj, toObj interface{}, mask []string, maskType MaskType) error {
+	options := MaskOptions{
+		Mask: mask,
+		Type: maskType,
+	}
+	return MaskMapperOptions(fromObj, toObj, &options)
+}
+
 //
-// MaskMapper
+// MaskMapperOptions
 // @Description: 根据指定进行属性复制，不支持深度复制
 // @param fromObj 来源
 // @param toObj 目标
 // @param mask 要复制属性列表
 // @return error
 //
-func MaskMapper(fromObj, toObj interface{}, mask []string) error {
+func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 	var fromMap map[string]interface{}
 	var err error
 	switch fromObj.(type) {
@@ -48,21 +76,41 @@ func MaskMapper(fromObj, toObj interface{}, mask []string) error {
 			return err
 		}
 	}
-	if len(mask) > 0 {
+	if options != nil && len(options.Mask) > 0 {
 		maskMap := make(map[string]string)
-		for _, key := range mask {
-			maskMap[key] = stringutils.FirstUpper(key)
+		for _, key := range options.Mask {
+			name := stringutils.FirstUpper(key)
+			maskMap[name] = name
 		}
 		for key, _ := range fromMap {
 			_, ok := maskMap[key]
-			if !ok {
-				delete(fromMap, key)
+			maskType := options.Type
+			switch maskType {
+			case MaskTypeExclude:
+				if ok {
+					delete(fromMap, key)
+				}
+				break
+			case MaskTypeContain:
+				if !ok {
+					delete(fromMap, key)
+				}
+				break
 			}
 		}
 	}
 
-	err = mapstructure.Decode(&fromMap, toObj)
-	return err
+	var metadata *mapstructure.Metadata
+	config := &mapstructure.DecoderConfig{
+		Result:   toObj,
+		Metadata: metadata,
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	return decoder.Decode(fromMap)
 }
 
 func getOption() *copier.Option {
