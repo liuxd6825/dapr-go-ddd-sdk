@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -17,7 +18,7 @@ type Items[T Item] struct {
 }
 
 func NewItems[T Item](newFunc func() interface{}) Items[T] {
-	res := Items[T]{}
+	res := Items[T]{items: make(map[string]T)}
 	err := res.Init(newFunc)
 	if err != nil {
 		panic(err)
@@ -26,6 +27,7 @@ func NewItems[T Item](newFunc func() interface{}) Items[T] {
 }
 
 func (t *Items[T]) Init(newFunc func() interface{}) error {
+	t.items = make(map[string]T)
 	t.newFunc = newFunc
 	return nil
 }
@@ -55,7 +57,7 @@ func (t *Items[T]) AddMapper(ctx context.Context, id string, data interface{}) (
 		return t.null, err
 	}
 	err = Mapper(data, newItem)
-	if err != nil {
+	if err == nil {
 		t.items[id] = newItem
 	}
 	return newItem, err
@@ -85,7 +87,7 @@ func (t *Items[T]) AddItem(ctx context.Context, item T) error {
 // @param updateMask 更新字段项
 // @return error
 //
-func (t Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}, updateMask []string) (T, bool, error) {
+func (t *Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}, updateMask []string) (T, bool, error) {
 	item, ok := t.items[id]
 	if !ok {
 		return item, ok, fmt.Errorf("types.Items.UpdateMapper() id %s ", id)
@@ -118,7 +120,7 @@ func (t *Items[T]) UpdateItem(ctx context.Context, item T) error {
 // @param item   明细对象
 // @return error 错误
 //
-func (t Items[T]) Delete(ctx context.Context, item T) error {
+func (t *Items[T]) Delete(ctx context.Context, item T) error {
 	delete(t.items, item.GetId())
 	return nil
 }
@@ -130,7 +132,7 @@ func (t Items[T]) Delete(ctx context.Context, item T) error {
 // @param id     Id主键
 // @return error 错误
 //
-func (t Items[T]) DeleteById(ctx context.Context, id string) error {
+func (t *Items[T]) DeleteById(ctx context.Context, id string) error {
 	delete(t.items, id)
 	return nil
 }
@@ -143,7 +145,7 @@ func (t Items[T]) DeleteById(ctx context.Context, id string) error {
 // @param id      Id主键
 // @return error  错误m
 //
-func (t Items[T]) DeleteByIds(ctx context.Context, ids ...string) error {
+func (t *Items[T]) DeleteByIds(ctx context.Context, ids ...string) error {
 	if len(ids) > 0 {
 		for _, id := range ids {
 			if err := t.DeleteById(ctx, id); err != nil {
@@ -154,16 +156,20 @@ func (t Items[T]) DeleteByIds(ctx context.Context, ids ...string) error {
 	return nil
 }
 
-func (t Items[T]) ContainsId(id string) bool {
+func (t *Items[T]) ContainsId(id string) bool {
 	_, ok := t.items[id]
 	return ok
 }
 
-func (t Items[T]) Get(id string) (T, bool) {
+func (t *Items[T]) Get(id string) (T, bool) {
 	item, ok := t.items[id]
 	return item, ok
 }
 
-func (t Items[T]) MapData() map[string]T {
+func (t *Items[T]) MapData() map[string]T {
 	return t.items
+}
+
+func (t *Items[T]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.items)
 }
