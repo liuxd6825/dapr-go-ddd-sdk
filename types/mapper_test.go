@@ -137,3 +137,23 @@ func Test_MaskMapperType(t *testing.T) {
 		t.Error(errors.New("to.Id is null"))
 	}
 }
+
+func Test_MaskMapperTypeRemove(t *testing.T) {
+	from := UserFields{
+		Id:       "0001",
+		TenantId: "tenantId",
+		UserName: "userName",
+	}
+	to := UserFields{UserName: ""}
+	mask := []string{"UserName"}
+	remove := []string{"UserName"}
+	if err := MaskMapperRemove(&from, &to, mask, MaskTypeContain, remove); err != nil {
+		t.Error(err)
+	}
+	if to.UserName != "" {
+		t.Error(errors.New("to.UserName is not null"))
+	}
+	if to.Id != "" {
+		t.Error(errors.New("to.Id is not null"))
+	}
+}

@@ -14,8 +14,9 @@ const (
 )
 
 type MaskOptions struct {
-	Mask []string
-	Type MaskType
+	Mask   []string
+	Remove []string
+	Type   MaskType
 }
 
 var option *copier.Option
@@ -51,6 +52,15 @@ func MaskMapperType(fromObj, toObj interface{}, mask []string, maskType MaskType
 	return MaskMapperOptions(fromObj, toObj, &options)
 }
 
+func MaskMapperRemove(fromObj, toObj interface{}, mask []string, maskType MaskType, remove []string) error {
+	options := MaskOptions{
+		Mask:   mask,
+		Type:   maskType,
+		Remove: remove,
+	}
+	return MaskMapperOptions(fromObj, toObj, &options)
+}
+
 //
 // MaskMapperOptions
 // @Description: 根据指定进行属性复制，不支持深度复制
@@ -76,26 +86,39 @@ func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 			return err
 		}
 	}
-	if options != nil && len(options.Mask) > 0 {
-		maskMap := make(map[string]string)
-		for _, key := range options.Mask {
-			name := stringutils.FirstUpper(key)
-			maskMap[name] = name
+	if options != nil {
+		//先删除不需要的属性项
+		if len(options.Remove) > 0 {
+			for _, key := range options.Remove {
+				removeKey := stringutils.FirstUpper(key)
+				delete(fromMap, removeKey)
+			}
 		}
-		for key, _ := range fromMap {
-			_, ok := maskMap[key]
-			maskType := options.Type
-			switch maskType {
-			case MaskTypeExclude:
-				if ok {
-					delete(fromMap, key)
+
+		//处理mask属性项
+		if len(options.Mask) > 0 {
+			maskMap := make(map[string]string)
+			for _, key := range options.Mask {
+				name := stringutils.FirstUpper(key)
+				maskMap[name] = name
+			}
+			for key, _ := range fromMap {
+				_, ok := maskMap[key]
+				maskType := options.Type
+				switch maskType {
+				case MaskTypeExclude:
+					//是排除模式，并且已经找到属性项，则删除
+					if ok {
+						delete(fromMap, key)
+					}
+					break
+				case MaskTypeContain:
+					//是包含模式，并且没有找到属性项，则删除
+					if !ok {
+						delete(fromMap, key)
+					}
+					break
 				}
-				break
-			case MaskTypeContain:
-				if !ok {
-					delete(fromMap, key)
-				}
-				break
 			}
 		}
 	}
