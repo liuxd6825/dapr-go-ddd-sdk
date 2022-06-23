@@ -37,6 +37,7 @@ type DaprDddClient interface {
 	CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error)
 	DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error)
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
+	GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error)
 	DaprClient() (dapr_sdk_client.Client, error)
 }
 

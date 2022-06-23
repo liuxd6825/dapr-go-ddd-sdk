@@ -15,9 +15,9 @@ func Test_Search(t *testing.T) {
 	mongodb, coll := newCollection("test_users")
 	repository := newRepository(mongodb, coll)
 	objId := NewObjectID()
-	id := objId.String()
+	id := string(objId)
 	user := &User{
-		Id:        id,
+		Id:        objId,
 		TenantId:  "001",
 		UserName:  "UserName",
 		UserCode:  "UserCode",
@@ -34,10 +34,9 @@ func Test_Search(t *testing.T) {
 		return err
 	})
 
-	search := &ddd_repository.FindPagingQuery{
-		TenantId: "001",
-		Filter:   fmt.Sprintf("id=='%s'", id),
-	}
+	search := ddd_repository.NewFindPagingQuery()
+	search.SetTenantId("001")
+	search.SetFilter(fmt.Sprintf("id=='%s'", id))
 
 	_ = repository.FindPaging(ctx, search).OnSuccess(func(data *[]*User) error {
 		println(data)
@@ -58,9 +57,8 @@ func TestMongoSession_UseTransaction(t *testing.T) {
 	repository := newRepository(mongodb, coll)
 	err := ddd_repository.StartSession(context.Background(), NewSession(mongodb), func(ctx context.Context) error {
 		for i := 0; i < 5; i++ {
-			id := NewObjectID().String()
 			user := &User{
-				Id:        id,
+				Id:        NewObjectID(),
 				TenantId:  "001",
 				UserName:  "userName" + fmt.Sprint(i),
 				UserCode:  "UserCode",
@@ -105,13 +103,13 @@ func newCollection(name string) (*MongoDB, *mongo.Collection) {
 }
 
 type User struct {
-	Id        string `json:"id" validate:"gt=0" bson:"_id"`
-	TenantId  string `json:"tenantId" validate:"gt=0" bson:"tenantId"`
-	UserCode  string `json:"userCode" validate:"gt=0" bson:"userCode"`
-	UserName  string `json:"userName" validate:"gt=0" bson:"userName"`
-	Email     string `json:"email" validate:"gt=0" bson:"email"`
-	Telephone string `json:"telephone" validate:"gt=0" bson:"telephone"`
-	Address   string `json:"address" validate:"gt=0" bson:"address"`
+	Id        ObjectId `json:"id" validate:"gt=0" bson:"_id"`
+	TenantId  string   `json:"tenantId" validate:"gt=0" bson:"tenantId"`
+	UserCode  string   `json:"userCode" validate:"gt=0" bson:"userCode"`
+	UserName  string   `json:"userName" validate:"gt=0" bson:"userName"`
+	Email     string   `json:"email" validate:"gt=0" bson:"email"`
+	Telephone string   `json:"telephone" validate:"gt=0" bson:"telephone"`
+	Address   string   `json:"address" validate:"gt=0" bson:"address"`
 }
 
 func (u *User) GetTenantId() string {
@@ -119,5 +117,5 @@ func (u *User) GetTenantId() string {
 }
 
 func (u *User) GetId() string {
-	return u.Id
+	return string(u.Id)
 }

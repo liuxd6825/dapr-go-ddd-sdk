@@ -22,6 +22,7 @@ type EventStorage interface {
 	CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error)
 	DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error)
 	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
+	GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error)
 	GetPubsubName() string
 }
 
@@ -257,6 +258,11 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			err = e
 			return nil, err
 		}
+		var relation map[string]string
+		relation, _, err = GetRelation(event.GetData())
+		if err != nil {
+			return nil, err
+		}
 		applyEvents := []*daprclient.EventDto{
 			{
 				CommandId:    event.GetCommandId(),
@@ -266,6 +272,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				Metadata:     *options.metadata,
 				PubsubName:   *options.pubsubName,
 				EventData:    event,
+				Relations:    relation,
 				Topic:        event.GetEventType(),
 			},
 		}
@@ -336,6 +343,14 @@ func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 
 func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (err error) {
 	return callDaprEventMethod(ctx, EventDelete, aggregate, event, opts...)
+}
+
+func GetRelations(ctx context.Context, eventStorageKey string, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
+	eventStorage, err := GetEventStorage(eventStorageKey)
+	if err != nil {
+		return nil, err
+	}
+	return eventStorage.GetRelations(ctx, req)
 }
 
 func checkEvent(aggregate Aggregate, event DomainEvent) error {

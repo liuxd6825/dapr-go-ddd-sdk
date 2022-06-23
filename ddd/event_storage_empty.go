@@ -9,6 +9,11 @@ import (
 type emptyEventStorage struct {
 }
 
+func (s *emptyEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s *emptyEventStorage) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")

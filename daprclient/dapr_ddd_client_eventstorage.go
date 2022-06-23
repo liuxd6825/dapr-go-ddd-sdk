@@ -215,6 +215,7 @@ func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 		EventVersion: e.EventVersion,
 		PubsubName:   e.PubsubName,
 		Topic:        e.Topic,
+		Relations:    e.Relations,
 	}
 	return event, nil
 }
@@ -255,5 +256,39 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		return nil, err
 	}
 	resp := &SaveSnapshotResponse{}
+	return resp, nil
+}
+
+func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error) {
+	in := &pb.GetRelationsRequest{}
+	out, err := c.grpcClient.GetRelations(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	var relations []*Relation
+	for _, item := range out.Data {
+		relation := &Relation{
+			Id:          item.Id,
+			TenantId:    item.TenantId,
+			AggregateId: item.AggregateId,
+			IsDeleted:   item.IsDeleted,
+			TableName:   item.TableName,
+			Items:       item.Items,
+		}
+		relations = append(relations, relation)
+	}
+
+	resp := &GetRelationsResponse{}
+	resp.Sort = out.Sort
+	resp.PageNum = out.PageNum
+	resp.PageSize = out.PageSize
+	resp.Filter = out.Filter
+	resp.Error = out.Error
+	resp.IsFound = out.IsFound
+	resp.TotalRows = out.TotalRows
+	resp.TotalPages = out.TotalPages
+	resp.Data = relations
+
 	return resp, nil
 }

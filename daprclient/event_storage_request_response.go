@@ -41,6 +41,7 @@ type EventDto struct {
 	Metadata     map[string]string `json:"metadata"`
 	PubsubName   string            `json:"pubsubName"`
 	Topic        string            `json:"topic"`
+	Relations    map[string]string `json:"relations"` // 聚合关系
 }
 
 type ExistAggregateResponse struct {
@@ -143,4 +144,34 @@ type SaveSnapshotRequest struct {
 }
 
 type SaveSnapshotResponse struct {
+}
+
+type GetRelationsRequest struct {
+	TenantId      string `json:"tenantId"`
+	AggregateType string `json:"aggregateType"`
+	Filter        string `json:"filter"`
+	Sort          string `json:"sort"`
+	PageNum       uint64 `json:"pageNum"`
+	PageSize      uint64 `json:"pageSize"`
+}
+
+type GetRelationsResponse struct {
+	Data       []*Relation `json:"data"`
+	TotalRows  uint64      `json:"totalRows"`
+	TotalPages uint64      `json:"totalPages"`
+	PageNum    uint64      `json:"pageNum"`
+	PageSize   uint64      `json:"pageSize"`
+	Filter     string      `json:"filter"`
+	Sort       string      `json:"sort"`
+	Error      string      `json:"error"`
+	IsFound    bool        `json:"isFound"`
+}
+
+type Relation struct {
+	Id          string `json:"id"`
+	TenantId    string `json:"tenantId"`
+	TableName   string `json:"tableName"`
+	AggregateId string `json:"aggregateId"`
+	IsDeleted   bool   `json:"isDeleted"`
+	Items       map[string]string
 }

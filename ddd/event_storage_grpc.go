@@ -102,6 +102,9 @@ func (s *grpcEventStorage) DeleteEvent(ctx context.Context, req *daprclient.Dele
 func (s *grpcEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error) {
 	return s.client.SaveSnapshot(ctx, req)
 }
+func (s *grpcEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
+	return s.client.GetRelations(ctx, req)
+}
 
 func (s *grpcEventStorage) getBodyBytes(resp *http.Response) ([]byte, error) {
 	defer resp.Body.Close()

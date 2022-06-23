@@ -29,7 +29,7 @@ func (o *doCommandOption) Merges(opts ...DoCommandOption) {
 		return
 	}
 	for _, opt := range opts {
-		if opt != nil && opt.GetIsValidOnly != nil {
+		if opt != nil && opt.GetIsValidOnly() != nil {
 			o.IsValidOnly = opt.GetIsValidOnly()
 		}
 	}
