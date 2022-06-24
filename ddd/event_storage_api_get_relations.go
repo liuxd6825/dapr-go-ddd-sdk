@@ -16,10 +16,11 @@ type RelationsOptions struct {
 }
 
 type WhereOptions struct {
-	Wheres   map[string]string
-	PageSize *int
-	PageNum  *int
-	Sort     *string
+	EventStorageKey *string
+	Wheres          map[string]string
+	PageSize        *int
+	PageNum         *int
+	Sort            *string
 }
 
 func GetRelationsWhere(ctx context.Context, tenantId, aggregateType string, opts ...WhereOptions) (*daprclient.GetRelationsResponse, error) {
@@ -33,7 +34,7 @@ func GetRelationsWhere(ctx context.Context, tenantId, aggregateType string, opts
 		PageSize:      uint64(options.GetPageSize()),
 		Sort:          options.GetSort(),
 	}
-	return GetRelations(ctx, "", req)
+	return GetRelations(ctx, options.GetEventStorageKey(), req)
 }
 
 func GetRelations(ctx context.Context, eventStorageKey string, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
@@ -114,4 +115,16 @@ func (o *WhereOptions) GetSort() string {
 		return ""
 	}
 	return *o.Sort
+}
+
+func (o *WhereOptions) SetEventStorageKey(v string) *WhereOptions {
+	o.EventStorageKey = &v
+	return o
+}
+
+func (o *WhereOptions) GetEventStorageKey() string {
+	if o.EventStorageKey == nil {
+		return ""
+	}
+	return *o.EventStorageKey
 }
