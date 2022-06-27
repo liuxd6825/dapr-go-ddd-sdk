@@ -6,7 +6,15 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 )
 
-func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStorageKey string) error {
+func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStorageKey string) (resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
+
 	aggregate, err := NewAggregate(aggregateType)
 	if err != nil {
 		return err

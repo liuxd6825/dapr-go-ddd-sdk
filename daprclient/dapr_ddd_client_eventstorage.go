@@ -16,8 +16,9 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 	}
 
 	in := &pb.LoadEventRequest{
-		TenantId:    req.TenantId,
-		AggregateId: req.AggregateId,
+		TenantId:      req.TenantId,
+		AggregateType: req.AggregateType,
+		AggregateId:   req.AggregateId,
 	}
 	out, err := c.grpcClient.LoadEvents(ctx, in)
 	if err != nil {
@@ -25,8 +26,9 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 	}
 
 	resp := &LoadEventsResponse{
-		TenantId:    out.TenantId,
-		AggregateId: out.AggregateId,
+		TenantId:      out.TenantId,
+		AggregateId:   out.AggregateId,
+		AggregateType: out.AggregateType,
 	}
 
 	if out.Snapshot != nil {

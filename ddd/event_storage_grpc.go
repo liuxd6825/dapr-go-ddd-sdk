@@ -31,7 +31,15 @@ func (s *grpcEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error) {
+func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (agg Aggregate, isFound bool, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
+
 	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
 		return nil, false, err
 	}
@@ -45,8 +53,9 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 	}
 
 	req := &daprclient.LoadEventsRequest{
-		TenantId:    tenantId,
-		AggregateId: aggregateId,
+		TenantId:      tenantId,
+		AggregateType: aggregate.GetAggregateType(),
+		AggregateId:   aggregateId,
 	}
 
 	resp, err := s.LoadEvent(ctx, req)
@@ -79,30 +88,72 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 }
 
 func (s *grpcEventStorage) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
 	return s.client.LoadEvents(ctx, req)
 }
 
-func (s *grpcEventStorage) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventResponse, error) {
+func (s *grpcEventStorage) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (res *daprclient.ApplyEventResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
 	s.setEventsPubsubName(req.Events)
 	return s.client.ApplyEvent(ctx, req)
 }
 
-func (s *grpcEventStorage) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error) {
+func (s *grpcEventStorage) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (res *daprclient.CreateEventResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
 	s.setEventsPubsubName(req.Events)
 	return s.client.CreateEvent(ctx, req)
 }
 
-func (s *grpcEventStorage) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error) {
+func (s *grpcEventStorage) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (res *daprclient.DeleteEventResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
 	if req != nil && req.Event != nil && len(req.Event.PubsubName) == 0 {
 		req.Event.PubsubName = s.pubsubName
 	}
 	return s.client.DeleteEvent(ctx, req)
 }
 
-func (s *grpcEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error) {
+func (s *grpcEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (res *daprclient.SaveSnapshotResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
 	return s.client.SaveSnapshot(ctx, req)
 }
-func (s *grpcEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
+func (s *grpcEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (res *daprclient.GetRelationsResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
 	return s.client.GetRelations(ctx, req)
 }
 

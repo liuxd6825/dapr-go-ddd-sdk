@@ -16,7 +16,15 @@ import (
 // @return resp 响应体
 // @return err 错误
 //
-func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventStorageKey string) (resp *daprclient.LoadEventsResponse, err error) {
+func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventStorageKey string) (resp *daprclient.LoadEventsResponse, respErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				respErr = err
+			}
+		}
+	}()
+
 	logInfo := &applog.LogInfo{
 		TenantId:  req.TenantId,
 		ClassName: "ddd",
@@ -28,11 +36,11 @@ func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventSto
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		eventStorage, e := GetEventStorage(eventStorageKey)
 		if e != nil {
-			resp, err = nil, e
-			return nil, err
+			resp, respErr = nil, e
+			return nil, respErr
 		}
-		resp, err = eventStorage.LoadEvent(ctx, req)
-		return resp, err
+		resp, respErr = eventStorage.LoadEvent(ctx, req)
+		return resp, respErr
 	})
 	return
 }
