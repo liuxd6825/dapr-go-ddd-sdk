@@ -16,15 +16,19 @@ type RelationsOptions struct {
 }
 
 type WhereOptions struct {
-	EventStorageKey *string
-	Wheres          map[string]string
-	PageSize        *int
-	PageNum         *int
-	Sort            *string
+	eventStorageKey *string
+	wheres          map[string]string
+	pageSize        *int
+	pageNum         *int
+	sort            *string
 }
 
-func GetRelationsWhere(ctx context.Context, tenantId, aggregateType string, opts ...WhereOptions) (*daprclient.GetRelationsResponse, error) {
-	options := &WhereOptions{}
+func NewWhereOptions() *WhereOptions {
+	return &WhereOptions{wheres: make(map[string]string)}
+}
+
+func HasRelations(ctx context.Context, tenantId, aggregateType string, opts ...*WhereOptions) (bool, uint64, *daprclient.GetRelationsResponse, error) {
+	options := NewWhereOptions()
 	options.Merge(opts...)
 	req := &daprclient.GetRelationsRequest{
 		TenantId:      tenantId,
@@ -34,7 +38,14 @@ func GetRelationsWhere(ctx context.Context, tenantId, aggregateType string, opts
 		PageSize:      uint64(options.GetPageSize()),
 		Sort:          options.GetSort(),
 	}
-	return GetRelations(ctx, options.GetEventStorageKey(), req)
+	resp, err := GetRelations(ctx, options.GetEventStorageKey(), req)
+	return resp.IsFound, resp.TotalRows, resp, err
+}
+
+func HasAggregate(ctx context.Context, tenantId, aggregateType, aggregateId string) (bool, error) {
+	options := NewWhereOptions().AddWhere("AggregateId", aggregateId)
+	ok, _, _, err := HasRelations(ctx, tenantId, aggregateType, options)
+	return ok, err
 }
 
 func GetRelations(ctx context.Context, eventStorageKey string, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
@@ -47,9 +58,9 @@ func GetRelations(ctx context.Context, eventStorageKey string, req *daprclient.G
 
 func (o *WhereOptions) GetFilter() string {
 	filter := ""
-	count := len(o.Wheres)
+	count := len(o.wheres)
 	i := 0
-	for idName, idValue := range o.Wheres {
+	for idName, idValue := range o.wheres {
 		filter = filter + fmt.Sprintf("%s==\"%s\"", idName, idValue)
 		if i < count-1 {
 			filter = filter + " and "
@@ -59,72 +70,80 @@ func (o *WhereOptions) GetFilter() string {
 	return filter
 }
 
-func (o *WhereOptions) Merge(opts ...WhereOptions) {
+func (o *WhereOptions) Merge(opts ...*WhereOptions) {
 	if opts == nil {
 		return
 	}
 	for _, item := range opts {
-		if item.Wheres != nil {
-			for k, v := range item.Wheres {
-				o.Wheres[k] = v
+		if item == nil {
+			continue
+		}
+		if item.wheres != nil {
+			for k, v := range item.wheres {
+				o.wheres[k] = v
 			}
 		}
-		if item.PageSize != nil {
-			o.PageSize = item.PageSize
+		if item.pageSize != nil {
+			o.pageSize = item.pageSize
 		}
-		if item.PageNum != nil {
-			o.PageNum = item.PageNum
+		if item.pageNum != nil {
+			o.pageNum = item.pageNum
 		}
-		if item.Sort != nil {
-			o.Sort = item.Sort
+		if item.sort != nil {
+			o.sort = item.sort
 		}
 	}
 }
 
 func (o *WhereOptions) SetPageSize(v int) *WhereOptions {
-	o.PageSize = &v
+	o.pageSize = &v
 	return o
 }
 
 func (o *WhereOptions) GetPageSize() int {
-	if o.PageSize == nil {
+	if o.pageSize == nil {
 		return 20
 	}
-	return *o.PageSize
+	return *o.pageSize
 }
 
 func (o *WhereOptions) SetPageNum(v int) *WhereOptions {
-	o.PageNum = &v
+	o.pageNum = &v
 	return o
 }
 
 func (o *WhereOptions) GetPageNum() int {
-	if o.PageSize == nil {
+	if o.pageSize == nil {
 		return 0
 	}
-	return *o.PageNum
+	return *o.pageNum
 }
 
 func (o *WhereOptions) SetSort(v string) *WhereOptions {
-	o.Sort = &v
+	o.sort = &v
 	return o
 }
 
 func (o *WhereOptions) GetSort() string {
-	if o.Sort == nil {
+	if o.sort == nil {
 		return ""
 	}
-	return *o.Sort
+	return *o.sort
 }
 
 func (o *WhereOptions) SetEventStorageKey(v string) *WhereOptions {
-	o.EventStorageKey = &v
+	o.eventStorageKey = &v
 	return o
 }
 
 func (o *WhereOptions) GetEventStorageKey() string {
-	if o.EventStorageKey == nil {
+	if o.eventStorageKey == nil {
 		return ""
 	}
-	return *o.EventStorageKey
+	return *o.eventStorageKey
+}
+
+func (o *WhereOptions) AddWhere(idName, idValue string) *WhereOptions {
+	o.wheres[idName] = idValue
+	return o
 }

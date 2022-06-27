@@ -260,23 +260,46 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 }
 
 func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error) {
-	in := &pb.GetRelationsRequest{}
+	if req == nil {
+		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req is nil")
+	}
+	if len(req.TenantId) == 0 {
+		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req.TenantId is nil")
+	}
+	if len(req.AggregateType) == 0 {
+		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req.AggregateType is nil")
+	}
+
+	in := &pb.GetRelationsRequest{
+		TenantId:      req.TenantId,
+		AggregateType: req.AggregateType,
+		Filter:        req.Filter,
+		Sort:          req.Sort,
+		PageNum:       req.PageNum,
+		PageSize:      req.PageSize,
+	}
 	out, err := c.grpcClient.GetRelations(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 
 	var relations []*Relation
-	for _, item := range out.Data {
-		relation := &Relation{
-			Id:          item.Id,
-			TenantId:    item.TenantId,
-			AggregateId: item.AggregateId,
-			IsDeleted:   item.IsDeleted,
-			TableName:   item.TableName,
-			Items:       item.Items,
+	if out != nil && len(out.Data) > 0 {
+		for _, datum := range out.Data {
+			items := datum.Items
+			if items != nil {
+				items = make(map[string]string)
+			}
+			relation := &Relation{
+				Id:          datum.Id,
+				TenantId:    datum.TenantId,
+				AggregateId: datum.AggregateId,
+				IsDeleted:   datum.IsDeleted,
+				TableName:   datum.TableName,
+				Items:       items,
+			}
+			relations = append(relations, relation)
 		}
-		relations = append(relations, relation)
 	}
 
 	resp := &GetRelationsResponse{}

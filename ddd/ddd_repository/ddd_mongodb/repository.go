@@ -8,7 +8,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
@@ -298,14 +297,4 @@ func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
 		res[name] = orderVal
 	}
 	return res, nil
-}
-
-//
-// AsFieldName
-// @Description: 转换为mongodb规范的字段名称
-// @param name
-// @return string
-//
-func AsFieldName(name string) string {
-	return stringutils.SnakeString(name)
 }

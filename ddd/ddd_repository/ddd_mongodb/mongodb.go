@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
@@ -224,4 +225,14 @@ func getReadConcernObject(cn string) (*readconcern.ReadConcern, error) {
 	}
 
 	return nil, fmt.Errorf("readConcern %s not found", cn)
+}
+
+//
+// AsFieldName
+// @Description: 转换为mongodb规范的字段名称
+// @param name
+// @return string
+//
+func AsFieldName(name string) string {
+	return stringutils.SnakeString(name)
 }
