@@ -3,11 +3,12 @@ module github.com/liuxd6825/dapr-go-ddd-sdk
 go 1.18
 
 require (
+	github.com/go-playground/validator/v10 v10.11.0
 	github.com/google/uuid v1.3.0
 	github.com/iris-contrib/swagger/v12 v12.0.1
 	github.com/jinzhu/copier v0.3.5
 	github.com/kataras/iris/v12 v12.2.0-alpha9
-	github.com/liuxd6825/dapr   v1.7.1-1.0-alpha2
+	github.com/liuxd6825/dapr v1.7.1-1.0-alpha2
 	github.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/sirupsen/logrus v1.8.1
@@ -36,6 +37,8 @@ require (
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
+	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
@@ -57,6 +60,7 @@ require (
 	github.com/kataras/sitemap v0.0.5 // indirect
 	github.com/kataras/tunnel v0.0.3 // indirect
 	github.com/klauspost/compress v1.15.0 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mediocregopher/radix/v3 v3.8.0 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.18 // indirect
@@ -98,7 +102,9 @@ require (
 )
 
 replace github.com/liuxd6825/dapr => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha2
+
 replace github.com/liuxd6825/go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
+
 replace github.com/liuxd6825/components-contrib => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
 
 //replace github.com/liuxd6825/dapr => ../dapr
