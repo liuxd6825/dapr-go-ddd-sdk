@@ -76,6 +76,7 @@ func (t *Items[T]) AddItem(ctx context.Context, item T) error {
 	if ok {
 		return errors.New(fmt.Sprintf("新建 Id \"%s\" 已经存在", id))
 	}
+	t.items[id] = item
 	return nil
 }
 
