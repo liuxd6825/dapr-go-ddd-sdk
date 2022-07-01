@@ -52,6 +52,28 @@ func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
+func (r *Repository[T]) InsertMany(ctx context.Context, entitits []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entitits == nil || len(entitits) == 0 {
+		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
+	}
+
+	for _, e := range entitits {
+		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+			return ddd_repository.NewSetManyResultError[T](err)
+		}
+	}
+
+	var docs []interface{}
+	for _, e := range entitits {
+		docs = append(docs, e)
+	}
+
+	return r.DoSetMany(func() ([]T, error) {
+		_, err := r.collection.InsertMany(ctx, docs, getInsertManyOptions(opts...))
+		return entitits, err
+	})
+}
+
 func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
@@ -66,6 +88,53 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 		setData := bson.M{"$set": entity}
 		_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
 		return entity, err
+	})
+}
+
+func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, doc interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	filterMap, err := r.getFilterMap(tenantId, filter)
+	if err != nil {
+		return ddd_repository.NewSetManyResultError[T](err)
+	}
+	return r.DoSetMany(func() ([]T, error) {
+		setData := bson.M{"$set": doc}
+		updateOptions := getUpdateOptions(opts...)
+		_, err = r.collection.UpdateMany(ctx, filterMap, setData, updateOptions)
+		return nil, err
+	})
+}
+
+func (r *Repository[T]) UpdateManyById(ctx context.Context, entitits []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entitits == nil || len(entitits) == 0 {
+		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
+	}
+
+	for _, e := range entitits {
+		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+			return ddd_repository.NewSetManyResultError[T](err)
+		}
+	}
+
+	var docs []interface{}
+	for _, e := range entitits {
+		docs = append(docs, e)
+	}
+
+	return r.DoSetMany(func() ([]T, error) {
+		for _, entity := range entitits {
+			objId, err := GetObjectID(entity.GetId())
+			if err != nil {
+				return nil, err
+			}
+			updateOptions := getUpdateOptions(opts...)
+			filter := bson.D{{IdField, objId}}
+			setData := bson.M{"$set": entity}
+			_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return entitits, nil
 	})
 }
 
@@ -212,11 +281,10 @@ func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[st
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
-	p := NewMongoProcess()
-	if err := rsql.ParseProcess(filter, p); err != nil {
+	filterData, err := r.getFilterMap(tenantId, filter)
+	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
-	filterData := p.GetFilter(tenantId)
 	data, _, err := fun(filterData)
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
@@ -224,6 +292,15 @@ func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[st
 		}
 	}
 	return data
+}
+
+func (r *Repository[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {
+	p := NewMongoProcess()
+	if err := rsql.ParseProcess(rsqlstr, p); err != nil {
+		return nil, err
+	}
+	filterMap := p.GetFilter(tenantId)
+	return filterMap, nil
 }
 
 func (r *Repository[T]) DoFindList(fun func() (*[]T, bool, error)) *ddd_repository.FindListResult[T] {
@@ -251,6 +328,11 @@ func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.F
 func (r *Repository[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T] {
 	data, err := fun()
 	return ddd_repository.NewSetResult[T](data, err)
+}
+
+func (r *Repository[T]) DoSetMany(fun func() ([]T, error)) *ddd_repository.SetManyResult[T] {
+	data, err := fun()
+	return ddd_repository.NewSetManyResult[T](data, err)
 }
 
 /*

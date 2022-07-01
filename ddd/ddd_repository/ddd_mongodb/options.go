@@ -32,3 +32,7 @@ func getUpdateOptions(opts ...*ddd_repository.SetOptions) *options.UpdateOptions
 func getInsertOneOptions(opts ...*ddd_repository.SetOptions) *options.InsertOneOptions {
 	return options.InsertOne()
 }
+
+func getInsertManyOptions(opts ...*ddd_repository.SetOptions) *options.InsertManyOptions {
+	return options.InsertMany()
+}

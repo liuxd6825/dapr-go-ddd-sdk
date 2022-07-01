@@ -82,6 +82,36 @@ func DoCmd(ctx iris.Context, fun CmdFunc) (err error) {
 	return err
 }
 
+func Do(ictx iris.Context, fun func() error) (err error) {
+	defer func() {
+		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			err = e
+			SetError(ictx, err)
+		}
+	}()
+	if fun != nil {
+		if err = fun(); err != nil {
+			SetError(ictx, err)
+		}
+	}
+	return nil
+}
+
+func DoDto[T any](ictx iris.Context, fun func() (T, error)) (dto T, err error) {
+	defer func() {
+		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			err = e
+			SetError(ictx, err)
+		}
+	}()
+	if fun != nil {
+		if dto, err = fun(); err != nil {
+			SetError(ictx, err)
+		}
+	}
+	return dto, err
+}
+
 //
 // DoQueryOne
 // @Description: 单条数据查询，当无数据时返回错误。
