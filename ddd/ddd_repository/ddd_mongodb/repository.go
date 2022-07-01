@@ -52,23 +52,23 @@ func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[T]) InsertMany(ctx context.Context, entitits []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
-	if entitits == nil || len(entitits) == 0 {
+func (r *Repository[T]) InsertMany(ctx context.Context, entitits *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entitits == nil || len(*entitits) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
 	}
 
-	for _, e := range entitits {
+	for _, e := range *entitits {
 		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range entitits {
+	for _, e := range *entitits {
 		docs = append(docs, e)
 	}
 
-	return r.DoSetMany(func() ([]T, error) {
+	return r.DoSetMany(func() (*[]T, error) {
 		_, err := r.collection.InsertMany(ctx, docs, getInsertManyOptions(opts...))
 		return entitits, err
 	})
@@ -91,37 +91,37 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, doc interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
 	filterMap, err := r.getFilterMap(tenantId, filter)
 	if err != nil {
 		return ddd_repository.NewSetManyResultError[T](err)
 	}
-	return r.DoSetMany(func() ([]T, error) {
-		setData := bson.M{"$set": doc}
+	return r.DoSetMany(func() (*[]T, error) {
+		setData := bson.M{"$set": data}
 		updateOptions := getUpdateOptions(opts...)
 		_, err = r.collection.UpdateMany(ctx, filterMap, setData, updateOptions)
 		return nil, err
 	})
 }
 
-func (r *Repository[T]) UpdateManyById(ctx context.Context, entitits []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
-	if entitits == nil || len(entitits) == 0 {
+func (r *Repository[T]) UpdateManyById(ctx context.Context, entitits *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entitits == nil || len(*entitits) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
 	}
 
-	for _, e := range entitits {
+	for _, e := range *entitits {
 		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range entitits {
+	for _, e := range *entitits {
 		docs = append(docs, e)
 	}
 
-	return r.DoSetMany(func() ([]T, error) {
-		for _, entity := range entitits {
+	return r.DoSetMany(func() (*[]T, error) {
+		for _, entity := range *entitits {
 			objId, err := GetObjectID(entity.GetId())
 			if err != nil {
 				return nil, err
@@ -155,6 +155,15 @@ func (r *Repository[T]) UpdateManyById(ctx context.Context, entitits []T, opts .
 */
 func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
+}
+
+func (r *Repository[T]) DeleteByFilter(ctx context.Context, tenantId, filter string) error {
+	if filterMap, err := r.getFilterMap(tenantId, filter); err != nil {
+		return err
+	} else if err := r.DeleteByMap(ctx, tenantId, filterMap).GetError(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
@@ -330,7 +339,7 @@ func (r *Repository[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T
 	return ddd_repository.NewSetResult[T](data, err)
 }
 
-func (r *Repository[T]) DoSetMany(fun func() ([]T, error)) *ddd_repository.SetManyResult[T] {
+func (r *Repository[T]) DoSetMany(fun func() (*[]T, error)) *ddd_repository.SetManyResult[T] {
 	data, err := fun()
 	return ddd_repository.NewSetManyResult[T](data, err)
 }
