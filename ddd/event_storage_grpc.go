@@ -146,6 +146,7 @@ func (s *grpcEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.Sav
 	}()
 	return s.client.SaveSnapshot(ctx, req)
 }
+
 func (s *grpcEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (res *daprclient.GetRelationsResponse, resErr error) {
 	defer func() {
 		if e := recover(); e != nil {

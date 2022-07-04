@@ -10,6 +10,7 @@ type ApplyEventRequest struct {
 }
 
 type ApplyEventResponse struct {
+	IsDuplicateEvent bool `json:"isDuplicateEvent"`
 }
 
 type CreateEventRequest struct {
@@ -20,6 +21,7 @@ type CreateEventRequest struct {
 }
 
 type CreateEventResponse struct {
+	IsDuplicateEvent bool `json:"isDuplicateEvent"`
 }
 
 type DeleteEventRequest struct {
@@ -30,6 +32,7 @@ type DeleteEventRequest struct {
 }
 
 type DeleteEventResponse struct {
+	IsDuplicateEvent bool `json:"isDuplicateEvent"`
 }
 
 type EventDto struct {
