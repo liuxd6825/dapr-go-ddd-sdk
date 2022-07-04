@@ -18,36 +18,6 @@ type EventResult struct {
 	error            error
 }
 
-func NewEventResult(isDuplicateEvent bool, err error) *EventResult {
-	return &EventResult{
-		isDuplicateEvent: isDuplicateEvent,
-		error:            err,
-	}
-}
-func (r *EventResult) IsDuplicateEvent() bool {
-	return r.isDuplicateEvent
-}
-
-func (r *EventResult) GetError() error {
-	return r.error
-}
-
-func (r *EventResult) setError(err error) *EventResult {
-	r.error = err
-	return r
-}
-
-func (r *EventResult) setIsDuplicateEvent(isDuplicateEvent bool) *EventResult {
-	r.isDuplicateEvent = isDuplicateEvent
-	return r
-}
-
-func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
-	return &ApplyEventOptions{
-		metadata: metadata,
-	}
-}
-
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) *EventResult {
 	return callDaprEventMethod(ctx, EventApply, aggregate, event, opts...)
 }
@@ -221,4 +191,34 @@ func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEve
 func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
 	a.metadata = value
 	return a
+}
+
+func NewEventResult(isDuplicateEvent bool, err error) *EventResult {
+	return &EventResult{
+		isDuplicateEvent: isDuplicateEvent,
+		error:            err,
+	}
+}
+func (r *EventResult) IsDuplicateEvent() bool {
+	return r.isDuplicateEvent
+}
+
+func (r *EventResult) GetError() error {
+	return r.error
+}
+
+func (r *EventResult) setError(err error) *EventResult {
+	r.error = err
+	return r
+}
+
+func (r *EventResult) setIsDuplicateEvent(isDuplicateEvent bool) *EventResult {
+	r.isDuplicateEvent = isDuplicateEvent
+	return r
+}
+
+func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
+	return &ApplyEventOptions{
+		metadata: metadata,
+	}
 }
