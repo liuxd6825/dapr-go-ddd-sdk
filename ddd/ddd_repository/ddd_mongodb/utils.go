@@ -7,7 +7,8 @@ import (
 )
 
 func getMongoFieldName(s string) string {
-	if s == "id" {
+	id := stringutils.ToLower(s)
+	if id == "id" || id == "_id" {
 		return IdField
 	}
 	return stringutils.SnakeString(s)

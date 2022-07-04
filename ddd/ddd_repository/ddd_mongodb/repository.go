@@ -156,9 +156,10 @@ func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, m
 			docs = append(docs, e)
 		} else {
 			m := make(map[string]interface{})
-			if err := types.MaskMapper(e, m, mask); err != nil {
+			if err := types.MaskMapper(e, &m, mask); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
 			}
+			m[IdField] = e.GetId()
 			doc := asDocument(m)
 			docs = append(docs, doc)
 		}
