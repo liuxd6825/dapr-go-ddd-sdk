@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
@@ -104,24 +105,24 @@ func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter
 	})
 }
 
-func (r *Repository[T]) UpdateManyById(ctx context.Context, entitits *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
-	if entitits == nil || len(*entitits) == 0 {
-		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
+func (r *Repository[T]) UpdateManyById(ctx context.Context, entities *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entities == nil || len(*entities) == 0 {
+		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
 
-	for _, e := range *entitits {
+	for _, e := range *entities {
 		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range *entitits {
+	for _, e := range *entities {
 		docs = append(docs, e)
 	}
 
 	return r.DoSetMany(func() (*[]T, error) {
-		for _, entity := range *entitits {
+		for _, entity := range *entities {
 			objId, err := GetObjectID(entity.GetId())
 			if err != nil {
 				return nil, err
@@ -134,25 +135,71 @@ func (r *Repository[T]) UpdateManyById(ctx context.Context, entitits *[]T, opts 
 				return nil, err
 			}
 		}
-		return entitits, nil
+		return entities, nil
 	})
 }
 
-/*func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, data map[string]interface{}, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[map[string]interface{}] {
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
-		return ddd_repository.NewSetResultError[map[string]interface{}](err)
+func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, mask []string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entities == nil || len(*entities) == 0 {
+		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
 
-	return r.DoSetMap(func() (map[string]interface{}, error) {
-		filterMap[tenantId] = tenantId
-		updateOptions := getUpdateOptions(opts...)
-		filter := r.NewFilter(tenantId, filterMap)
-		setData := bson.M{"$set": data}
-		_, err := r.collection.UpdateOne(ctx, filter, setData, updateOptions)
-		return data, err
+	for _, e := range *entities {
+		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+			return ddd_repository.NewSetManyResultError[T](err)
+		}
+	}
+
+	var docs []interface{}
+	for _, e := range *entities {
+		if len(mask) == 0 {
+			docs = append(docs, e)
+		} else {
+			m := make(map[string]interface{})
+			if err := types.MaskMapper(e, m, mask); err != nil {
+				return ddd_repository.NewSetManyResultError[T](err)
+			}
+			doc := asDocument(m)
+			docs = append(docs, doc)
+		}
+	}
+
+	return r.DoSetMany(func() (*[]T, error) {
+		for _, doc := range docs {
+			id, err := getDocumentId(doc)
+			if err != nil {
+				return nil, err
+			}
+			updateOptions := getUpdateOptions(opts...)
+			filter := bson.D{{IdField, id}}
+
+			setData := bson.M{"$set": doc}
+			_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+			if err != nil {
+				return nil, err
+			}
+		}
+		return entities, nil
 	})
 }
-*/
+
+func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...*ddd_repository.SetOptions) error {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return err
+	}
+
+	if err := assert.NotNil(filterMap, assert.NewOptions("filterMap is nil")); err != nil {
+		return err
+	}
+
+	filterMap[TenantIdField] = tenantId
+	updateOptions := getUpdateOptions(opts...)
+	filter := r.NewFilter(tenantId, filterMap)
+	setData := bson.M{"$set": data}
+	_, err := r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+	return err
+}
+
 func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
