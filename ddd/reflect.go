@@ -28,11 +28,6 @@ func CallMethod(object interface{}, methodName string, ps ...interface{}) (err e
 		for _, v := range resValues {
 			var err1 error
 			switch v.Interface().(type) {
-			case *EventResult:
-				if eventResult, ok := v.Interface().(*EventResult); ok {
-					err1 = eventResult.GetError()
-				}
-				break
 			case error:
 				if e, ok := v.Interface().(error); ok {
 					err1 = e

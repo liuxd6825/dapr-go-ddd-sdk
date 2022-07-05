@@ -2,7 +2,6 @@ package applog
 
 import (
 	"context"
-	json2 "encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
@@ -77,13 +76,14 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 	if err := assert.NotNil(fun, assert.NewOptions("fun is nil")); err != nil {
 		return err
 	}
-	resp, err := fun()
+	// resp, err := fun()
+	_, err := fun()
 	_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, info.Level, info.Message)
 
-	if log.GetLevel() <= INFO {
+	/*	if log.GetLevel() <= INFO {
 		bs, _ := json2.Marshal(resp)
 		println(fmt.Sprintf("Result:%v \r\n", string(bs)))
-	}
+	}*/
 
 	if err != nil {
 		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, ERROR, err.Error())

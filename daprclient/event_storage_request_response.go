@@ -10,7 +10,7 @@ type ApplyEventRequest struct {
 }
 
 type ApplyEventResponse struct {
-	IsDuplicateEvent bool `json:"isDuplicateEvent"`
+	Headers *ResponseHeaders `json:"headers"`
 }
 
 type CreateEventRequest struct {
@@ -21,7 +21,7 @@ type CreateEventRequest struct {
 }
 
 type CreateEventResponse struct {
-	IsDuplicateEvent bool `json:"isDuplicateEvent"`
+	Headers *ResponseHeaders `json:"headers"`
 }
 
 type DeleteEventRequest struct {
@@ -32,7 +32,7 @@ type DeleteEventRequest struct {
 }
 
 type DeleteEventResponse struct {
-	IsDuplicateEvent bool `json:"isDuplicateEvent"`
+	Headers *ResponseHeaders `json:"headers"`
 }
 
 type EventDto struct {
@@ -48,7 +48,8 @@ type EventDto struct {
 }
 
 type ExistAggregateResponse struct {
-	IsExist bool `json:"isExist"`
+	Headers *ResponseHeaders `json:"headers"`
+	IsExist bool             `json:"isExist"`
 }
 
 type LoadEventsRequest struct {
@@ -58,11 +59,12 @@ type LoadEventsRequest struct {
 }
 
 type LoadEventsResponse struct {
-	TenantId      string         `json:"tenantId"`
-	AggregateId   string         `json:"aggregateId"`
-	AggregateType string         `json:"aggregateType"`
-	Snapshot      *Snapshot      `json:"snapshot"`
-	EventRecords  *[]EventRecord `json:"events"`
+	Headers       *ResponseHeaders `json:"headers"`
+	TenantId      string           `json:"tenantId"`
+	AggregateId   string           `json:"aggregateId"`
+	AggregateType string           `json:"aggregateType"`
+	Snapshot      *Snapshot        `json:"snapshot"`
+	EventRecords  *[]EventRecord   `json:"events"`
 }
 
 type Snapshot struct {
@@ -102,6 +104,7 @@ func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *Eve
 	}
 	return r
 }
+
 func (r *EventRecordJsonMarshalResult) OnError(doError func(err error)) *EventRecordJsonMarshalResult {
 	if r.err != nil {
 		doError(r.err)
@@ -147,6 +150,7 @@ type SaveSnapshotRequest struct {
 }
 
 type SaveSnapshotResponse struct {
+	Headers *ResponseHeaders `json:"headers"`
 }
 
 type GetRelationsRequest struct {
@@ -159,15 +163,16 @@ type GetRelationsRequest struct {
 }
 
 type GetRelationsResponse struct {
-	Data       []*Relation `json:"data"`
-	TotalRows  uint64      `json:"totalRows"`
-	TotalPages uint64      `json:"totalPages"`
-	PageNum    uint64      `json:"pageNum"`
-	PageSize   uint64      `json:"pageSize"`
-	Filter     string      `json:"filter"`
-	Sort       string      `json:"sort"`
-	Error      string      `json:"error"`
-	IsFound    bool        `json:"isFound"`
+	Headers    *ResponseHeaders `json:"headers"`
+	Data       []*Relation      `json:"data"`
+	TotalRows  uint64           `json:"totalRows"`
+	TotalPages uint64           `json:"totalPages"`
+	PageNum    uint64           `json:"pageNum"`
+	PageSize   uint64           `json:"pageSize"`
+	Filter     string           `json:"filter"`
+	Sort       string           `json:"sort"`
+	Error      string           `json:"error"`
+	IsFound    bool             `json:"isFound"`
 }
 
 type Relation struct {
@@ -177,4 +182,45 @@ type Relation struct {
 	AggregateId string `json:"aggregateId"`
 	IsDeleted   bool   `json:"isDeleted"`
 	Items       map[string]string
+}
+
+type ResponseHeaders struct {
+	Values  map[string]string `json:"values"`
+	Status  ResponseStatus    `json:"status"`
+	Message string            `json:"message"`
+}
+
+type ResponseStatus int32
+
+const (
+	ResponseStatusSuccess        ResponseStatus = iota // 执行成功
+	ResponseStatusError                                // 执行错误
+	ResponseStatusEventDuplicate                       // 事件已经存在，被重复执行
+)
+
+func NewResponseHeaders(status ResponseStatus, err error, values map[string]string) *ResponseHeaders {
+	if values == nil {
+		values = make(map[string]string)
+	}
+	if err != nil {
+		return NewResponseHeadersError(err, values)
+	}
+	resp := &ResponseHeaders{
+		Status:  status,
+		Message: "Success",
+		Values:  values,
+	}
+	return resp
+}
+
+func NewResponseHeadersError(err error, values map[string]string) *ResponseHeaders {
+	if values == nil {
+		values = make(map[string]string)
+	}
+	resp := &ResponseHeaders{
+		Status:  ResponseStatusError,
+		Message: err.Error(),
+		Values:  values,
+	}
+	return resp
 }

@@ -67,7 +67,7 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 		}
 	}
 	resp.EventRecords = &events
-
+	resp.Headers = c.newResponseHeaders(out.Headers)
 	return resp, nil
 }
 
@@ -95,11 +95,13 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 		AggregateType: req.AggregateType,
 		Events:        events,
 	}
-	_, err = c.grpcClient.ApplyEvent(ctx, in)
+	out, err := c.grpcClient.ApplyEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	resp := &ApplyEventResponse{}
+	resp := &ApplyEventResponse{
+		Headers: c.newResponseHeaders(out.Headers),
+	}
 	return resp, nil
 }
 
@@ -127,11 +129,14 @@ func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest
 		AggregateType: req.AggregateType,
 		Events:        events,
 	}
-	_, err = c.grpcClient.CreateEvent(ctx, in)
+	out, err := c.grpcClient.CreateEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	resp := &CreateEventResponse{}
+
+	resp := &CreateEventResponse{
+		Headers: c.newResponseHeaders(out.Headers),
+	}
 	return resp, nil
 }
 
@@ -159,11 +164,13 @@ func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest
 		AggregateType: req.AggregateType,
 		Event:         event,
 	}
-	_, err = c.grpcClient.DeleteEvent(ctx, in)
+	out, err := c.grpcClient.DeleteEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	resp := &DeleteEventResponse{}
+	resp := &DeleteEventResponse{
+		Headers: c.newResponseHeaders(out.Headers),
+	}
 	return resp, nil
 }
 
@@ -253,11 +260,13 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		SequenceNumber:   req.SequenceNumber,
 		Metadata:         metadata,
 	}
-	_, err = c.grpcClient.SaveSnapshot(ctx, in)
+	out, err := c.grpcClient.SaveSnapshot(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	resp := &SaveSnapshotResponse{}
+	resp := &SaveSnapshotResponse{
+		Headers: c.newResponseHeaders(out.Headers),
+	}
 	return resp, nil
 }
 
@@ -314,6 +323,27 @@ func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsReque
 	resp.TotalRows = out.TotalRows
 	resp.TotalPages = out.TotalPages
 	resp.Data = relations
+	resp.Headers = c.newResponseHeaders(out.Headers)
 
 	return resp, nil
+}
+
+func (c *daprDddClient) newResponseHeaders(out *pb.ResponseHeaders) *ResponseHeaders {
+	if out == nil {
+		return &ResponseHeaders{
+			Status:  ResponseStatusSuccess,
+			Message: "",
+			Values:  map[string]string{},
+		}
+	}
+	values := out.Values
+	if values == nil {
+		values = map[string]string{}
+	}
+	res := &ResponseHeaders{
+		Status:  ResponseStatus(out.Status),
+		Message: out.Message,
+		Values:  values,
+	}
+	return res
 }

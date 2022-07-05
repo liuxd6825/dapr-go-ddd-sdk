@@ -13,21 +13,28 @@ type ApplyEventOptions struct {
 	eventStorageKey *string
 }
 
-type EventResult struct {
-	isDuplicateEvent bool
-	error            error
+func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.ApplyEventResponse, error) {
+	res, err := callDaprEventMethod(ctx, EventApply, aggregate, event, opts...)
+	if resp, ok := res.(*daprclient.ApplyEventResponse); ok {
+		return resp, err
+	}
+	return nil, err
 }
 
-func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) *EventResult {
-	return callDaprEventMethod(ctx, EventApply, aggregate, event, opts...)
+func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.CreateEventResponse, error) {
+	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, event, opts...)
+	if resp, ok := res.(*daprclient.CreateEventResponse); ok {
+		return resp, err
+	}
+	return nil, err
 }
 
-func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) *EventResult {
-	return callDaprEventMethod(ctx, EventCreate, aggregate, event, opts...)
-}
-
-func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) *EventResult {
-	return callDaprEventMethod(ctx, EventDelete, aggregate, event, opts...)
+func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.DeleteEventResponse, error) {
+	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, event, opts...)
+	if resp, ok := res.(*daprclient.DeleteEventResponse); ok {
+		return resp, err
+	}
+	return nil, err
 }
 
 //
@@ -39,11 +46,11 @@ func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 // @param options
 // @return err
 //
-func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (eventResult *EventResult) {
-	eventResult = &EventResult{}
+func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (any, error) {
 	if err := checkEvent(aggregate, event); err != nil {
-		return eventResult.setError(err)
+		return nil, err
 	}
+
 	tenantId := event.GetTenantId()
 	aggId := event.GetAggregateId()
 	aggType := aggregate.GetAggregateType()
@@ -73,8 +80,10 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		Message:   fmt.Sprintf("%v", aggregate),
 		Level:     applog.INFO,
 	}
+
 	var err error
-	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
+	var res any
+	err = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		var eventStorage EventStorage
 		eventStorage, err = GetEventStorage(*options.eventStorageKey)
 		if err != nil {
@@ -100,29 +109,29 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		}
 		err = nil
 		if callEventType == EventCreate {
-			eventResult = createEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
+			res, err = createEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
 		} else if callEventType == EventApply {
-			eventResult = applyEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
+			res, err = applyEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
 		} else if callEventType == EventDelete {
-			eventResult = deleteEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents[0])
+			res, err = deleteEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents[0])
 		}
-		if eventResult != nil && eventResult.error != nil {
+		if err != nil {
 			return nil, err
 		}
 		if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event); err != nil {
 			return nil, err
 		}
-		return nil, nil
+		return res, nil
 	})
 
 	go func() {
 		_ = callActorSaveSnapshot(ctx, tenantId, aggId, aggType)
 	}()
 
-	return eventResult.setError(err)
+	return res, err
 }
 
-func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) *EventResult {
+func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
 	req := &daprclient.ApplyEventRequest{
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
@@ -130,10 +139,10 @@ func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggreg
 		Events:        events,
 	}
 	resp, err := eventStorage.ApplyEvent(ctx, req)
-	return NewEventResult(resp.IsDuplicateEvent, err)
+	return resp, err
 }
 
-func createEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) *EventResult {
+func createEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.CreateEventResponse, error) {
 	req := &daprclient.CreateEventRequest{
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
@@ -141,10 +150,10 @@ func createEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggre
 		Events:        events,
 	}
 	resp, err := eventStorage.CreateEvent(ctx, req)
-	return NewEventResult(resp.IsDuplicateEvent, err)
+	return resp, err
 }
 
-func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) *EventResult {
+func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) (*daprclient.DeleteEventResponse, error) {
 	req := &daprclient.DeleteEventRequest{
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
@@ -152,7 +161,7 @@ func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggre
 		Event:         event,
 	}
 	resp, err := eventStorage.DeleteEvent(ctx, req)
-	return NewEventResult(resp.IsDuplicateEvent, err)
+	return resp, err
 }
 
 //
@@ -191,30 +200,6 @@ func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEve
 func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
 	a.metadata = value
 	return a
-}
-
-func NewEventResult(isDuplicateEvent bool, err error) *EventResult {
-	return &EventResult{
-		isDuplicateEvent: isDuplicateEvent,
-		error:            err,
-	}
-}
-func (r *EventResult) IsDuplicateEvent() bool {
-	return r.isDuplicateEvent
-}
-
-func (r *EventResult) GetError() error {
-	return r.error
-}
-
-func (r *EventResult) setError(err error) *EventResult {
-	r.error = err
-	return r
-}
-
-func (r *EventResult) setIsDuplicateEvent(isDuplicateEvent bool) *EventResult {
-	r.isDuplicateEvent = isDuplicateEvent
-	return r
 }
 
 func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
