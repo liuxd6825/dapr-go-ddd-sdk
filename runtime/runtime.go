@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/errorutils"
 	"reflect"
 	"runtime"
 )
@@ -38,12 +39,10 @@ func NewSliceItemType(slice interface{}) reflect.Type {
 	return nil
 }
 
-func MappingSlice(sourceSlice interface{}, targetSlice interface{}, setItem func(isource int, source reflect.Value, target reflect.Value) error) (resErr error) {
+func MappingSlice(sourceSlice interface{}, targetSlice interface{}, setItem func(index int, source reflect.Value, target reflect.Value) error) (resErr error) {
 	defer func() {
-		if e := recover(); e != nil {
-			if err, ok := e.(error); ok {
-				resErr = err
-			}
+		if err := errorutils.GetError(recover()); err != nil {
+			resErr = err
 		}
 	}()
 
