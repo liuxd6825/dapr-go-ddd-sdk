@@ -35,16 +35,16 @@ func Test_NewSliceItemType(t *testing.T) {
 	t.Logf("v2:%s", v2.Type().Name())
 }
 
-func Test_SetSlice(t *testing.T) {
-	var list []Element
+func Test_MappingSlice(t *testing.T) {
+	var targetList []Element
 	sourceList := []string{"id1", "id2"}
-	if err := SetSlice(sourceList, list, func(source interface{}, target interface{}) {
-		value := source.(string)
-		targetValue := target.(*Element)
+	if err := MappingSlice(sourceList, targetList, func(source reflect.Value, target reflect.Value) error {
+		value := source.Interface().(string)
+		targetValue := target.Interface().(*Element)
 		targetValue.Id = value
-		//target.FieldByName("Id").SetString(value)
+		return nil
 	}); err != nil {
 		t.Error(err)
 	}
-	println(list)
+	println(targetList)
 }

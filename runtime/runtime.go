@@ -38,7 +38,7 @@ func NewSliceItemType(slice interface{}) reflect.Type {
 	return nil
 }
 
-func SetSlice(sourceSlice interface{}, targetSlice interface{}, setItem func(source interface{}, target interface{})) (resErr error) {
+func MappingSlice(sourceSlice interface{}, targetSlice interface{}, setItem func(source reflect.Value, target reflect.Value) error) (resErr error) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err, ok := e.(error); ok {
@@ -48,12 +48,12 @@ func SetSlice(sourceSlice interface{}, targetSlice interface{}, setItem func(sou
 	}()
 
 	if setItem == nil {
-		return fmt.Errorf("SetSlice(targetSlice, setItem) setItem is nil")
+		return fmt.Errorf("MappingSlice(sourceSlice, targetSlice, setItem) setItem is nil")
 	}
 
 	itemType := NewSliceItemType(targetSlice)
 	if itemType == nil {
-		return fmt.Errorf("SetSlice(targetSlice, setItem) itemType is nil")
+		return fmt.Errorf("MappingSlice(sourceSlice, targetSlice, setItem) itemType is nil")
 	}
 
 	targetSliceValue := reflect.ValueOf(targetSlice)
@@ -76,13 +76,15 @@ func SetSlice(sourceSlice interface{}, targetSlice interface{}, setItem func(sou
 
 	count := sourceSliceValue.Len()
 	for i := 0; i < count; i++ {
-		itemValue := reflect.New(itemType)
+		target := reflect.New(itemType)
 		source := sourceSliceValue.Index(i)
-		setItem(source.Interface(), itemValue.Interface())
+		if err := setItem(source, target); err != nil {
+			return fmt.Errorf("MappingSlice(sourceSlice, targetSlice, setItem) set index %v error: %s", i, err.Error())
+		}
 		if itemType.Kind() == reflect.Ptr {
-			targetSliceValue = reflect.Append(targetSliceValue, itemValue)
+			targetSliceValue = reflect.Append(targetSliceValue, target)
 		} else {
-			targetSliceValue = reflect.Append(targetSliceValue, itemValue.Elem())
+			targetSliceValue = reflect.Append(targetSliceValue, target.Elem())
 		}
 	}
 	return nil
