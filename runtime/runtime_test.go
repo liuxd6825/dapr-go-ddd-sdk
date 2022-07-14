@@ -38,7 +38,7 @@ func Test_NewSliceItemType(t *testing.T) {
 func Test_MappingSlice(t *testing.T) {
 	var targetList []Element
 	sourceList := []string{"id1", "id2"}
-	if err := MappingSlice(sourceList, targetList, func(source reflect.Value, target reflect.Value) error {
+	if err := MappingSlice(sourceList, targetList, func(i int, source reflect.Value, target reflect.Value) error {
 		value := source.Interface().(string)
 		targetValue := target.Interface().(*Element)
 		targetValue.Id = value
