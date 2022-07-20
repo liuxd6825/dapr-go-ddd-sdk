@@ -20,6 +20,11 @@ func RunFuncName(skip int) string {
 	return f.Name()
 }
 
+//
+// NewSliceItemType
+// @Description: 根据给定切片，返回元素的Type
+// @param slice
+// @return reflect.Type
 func NewSliceItemType(slice interface{}) reflect.Type {
 	if slice == nil {
 		return nil
@@ -34,22 +39,27 @@ func NewSliceItemType(slice interface{}) reflect.Type {
 
 	if t.Kind() == reflect.Slice {
 		e := t.Elem()
-		/*		if e.Kind() == reflect.Ptr {
-				e = e.Elem()
-			}*/
 		return e
 	}
 	return nil
 }
 
-func MappingOne(source interface{}, result interface{}, set func(source, target reflect.Value) error) (resErr error) {
+//
+// MappingStruct
+// @Description: 映射结构，将源结构属性映射到目标结构
+// @param source 源结构实例
+// @param result 结果结构实例
+// @param set 设置方法
+// @return resErr 错误
+//
+func MappingStruct(source interface{}, result interface{}, set func(source, target reflect.Value) error) (resErr error) {
 	defer func() {
 		if err := errorutils.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
 	if set == nil {
-		return fmt.Errorf("MappingOne(sourceSlice, targetSlice, setItem) setItem is nil")
+		return fmt.Errorf("MappingStruct(sourceSlice, targetSlice, setItem) setItem is nil")
 	}
 	resultsValue := reflect.ValueOf(result)
 	if resultsValue.Kind() != reflect.Ptr {
@@ -70,13 +80,21 @@ func MappingOne(source interface{}, result interface{}, set func(source, target 
 		return fmt.Errorf("results argument must be a pointer to a struct, but was a pointer to %s", targetValue.Kind())
 	}
 	if err := set(sourceValue, resultsValue); err != nil {
-		return fmt.Errorf("MappingOne(source, result, set) error: %s", err.Error())
+		return fmt.Errorf("MappingStruct(source, result, set) error: %s", err.Error())
 	}
 	resultsValue.Elem().Set(targetValue)
 
 	return nil
 }
 
+//
+// MappingSlice
+// @Description: 映射切片，将源切片元素映射到目标元素上。
+// @param sourceSlice 源切片
+// @param resultSlice  目标切片
+// @param setItem 设置函数
+// @return resErr 返回错误
+//
 func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func(index int, source reflect.Value, target reflect.Value) error) (resErr error) {
 	defer func() {
 		if err := errorutils.GetError(recover()); err != nil {
@@ -131,7 +149,9 @@ func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func
 
 func New(t reflect.Type) reflect.Value {
 	if t.Kind() == reflect.Ptr {
-		return reflect.New(t.Elem())
+		elem := reflect.New(t.Elem())
+		r := reflect.New(t)
+		r.Elem().Set(elem)
 	}
 	return reflect.New(t)
 }

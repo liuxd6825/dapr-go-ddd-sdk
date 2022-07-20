@@ -11,7 +11,18 @@ type FindOneOptions struct {
 }
 
 type SetOptions struct {
-	MaxTime *time.Duration
+	MaxTime      *time.Duration
+	UpdateFields *[]string
+}
+
+func (o *SetOptions) SetMaxTime(t time.Duration) *SetOptions {
+	o.MaxTime = &t
+	return o
+}
+
+func (o *SetOptions) SetUpdateFields(updateFields []string) *SetOptions {
+	o.UpdateFields = &updateFields
+	return o
 }
 
 func MergeFindOptions(opts ...*FindOptions) *FindOptions {
@@ -29,6 +40,9 @@ func MergeSetOptions(opts ...*SetOptions) *SetOptions {
 	for _, o := range opts {
 		if o.MaxTime != nil {
 			res.MaxTime = o.MaxTime
+		}
+		if o.UpdateFields != nil {
+			res.UpdateFields = o.UpdateFields
 		}
 	}
 	return res
