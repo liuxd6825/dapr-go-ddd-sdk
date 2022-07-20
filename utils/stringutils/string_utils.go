@@ -119,6 +119,16 @@ func SnakeString(s string) string {
 }
 
 //
+// EqualFold
+// @Description: 可以检查两个字符串是否相等,同时忽略大小写
+// @param s
+// @param t
+// @return bool
+func EqualFold(s, t string) bool {
+	return strings.EqualFold(s, t)
+}
+
+//
 // MidlineString
 // @Description: 驼峰转中线
 // @param s 要转换的字符串
