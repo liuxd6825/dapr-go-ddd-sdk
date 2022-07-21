@@ -151,7 +151,20 @@ func New(t reflect.Type) reflect.Value {
 	if t.Kind() == reflect.Ptr {
 		elem := reflect.New(t.Elem())
 		r := reflect.New(t)
-		r.Elem().Set(elem)
+		r.Set(elem)
+		return r
 	}
 	return reflect.New(t)
+}
+
+func NewStruct[T interface{}]() interface{} {
+	var t T
+	v := New(reflect.TypeOf(t))
+	return v.Elem().Interface()
+}
+
+func NewSlice[T interface{}]() interface{} {
+	var t T
+	v := New(reflect.TypeOf(t))
+	return v.Elem().Interface()
 }

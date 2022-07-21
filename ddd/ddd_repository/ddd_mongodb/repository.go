@@ -28,15 +28,19 @@ type Repository[T ddd.Entity] struct {
 }
 
 func NewRepository[T ddd.Entity](newFun func() T, mongodb *MongoDB, collection *mongo.Collection) *Repository[T] {
-	return &Repository[T]{
-		newFun:     newFun,
-		collection: collection,
-		mongodb:    mongodb,
-	}
+	r := &Repository[T]{}
+	r.Init(newFun, mongodb, collection)
+	return r
+}
+
+func (r *Repository[T]) Init(newFun func() T, mongodb *MongoDB, collection *mongo.Collection) {
+	r.newFun = newFun
+	r.collection = collection
+	r.mongodb = mongodb
 }
 
 func (r *Repository[T]) NewEntity() T {
-	return r.newFun()
+	return T{}
 }
 
 func (r *Repository[T]) NewEntityList() *[]T {
