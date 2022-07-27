@@ -8,20 +8,26 @@ import (
 )
 
 type CypherBuilder interface {
-	CreateOne(ctx context.Context, data ElementEntity) (string, map[string]any, error)
+	Insert(ctx context.Context, data ElementEntity) (string, map[string]any, error)
+	InsertMany(ctx context.Context, data ElementEntity) (string, error)
+
 	UpdateById(ctx context.Context, data ElementEntity, setFields ...string) (string, map[string]any, error)
+	UpdateManyById(ctx context.Context, list []ElementEntity) (string, error)
+
 	DeleteById(ctx context.Context, data ElementEntity) (string, map[string]any, error)
-	CreateMany(ctx context.Context, data ElementEntity) (string, error)
-	UpdateByIds(ctx context.Context, data ElementEntity) (string, error)
-	DeleteByIds(ctx context.Context, data ElementEntity) (string, error)
+	DeleteManyById(ctx context.Context, tenantId string, id []string) (string, error)
+
 	FindById(ctx context.Context, tenantId, id string) (string, error)
-	FindGraphById(ctx context.Context, data ElementEntity) (string, error)
+	FindByGraphId(ctx context.Context, tenantId, graphId string) (cypher string, resultKeys []string, err error)
+
+	GetLabels() string
 }
 
 type ReflectBuilder struct {
+	labels string
 }
 
-func (r *ReflectBuilder) CreateOne(ctx context.Context, data ElementEntity) (string, map[string]any, error) {
+func (r *ReflectBuilder) Insert(ctx context.Context, data ElementEntity) (string, map[string]any, error) {
 	prosNames, mapData, err := r.getCreateProperties(ctx, data)
 	if err != nil {
 		return "", nil, err
@@ -50,17 +56,17 @@ func (r *ReflectBuilder) DeleteById(ctx context.Context, data ElementEntity) (st
 	return cypher, mapData, err
 }
 
-func (r *ReflectBuilder) CreateMany(ctx context.Context, data ElementEntity) (string, error) {
+func (r *ReflectBuilder) InsertMany(ctx context.Context, data ElementEntity) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *ReflectBuilder) UpdateByIds(ctx context.Context, data ElementEntity) (string, error) {
+func (r *ReflectBuilder) UpdateManyById(ctx context.Context, list []ElementEntity) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *ReflectBuilder) DeleteByIds(ctx context.Context, data ElementEntity) (string, error) {
+func (r *ReflectBuilder) DeleteManyById(ctx context.Context, tenantId string, ids []string) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -69,9 +75,8 @@ func (r *ReflectBuilder) FindById(ctx context.Context, tenantId, id string) (str
 	return fmt.Sprintf("MATCH (n{tenantId:'%v',id:'%v'}) RETURN n", tenantId, id), nil
 }
 
-func (r *ReflectBuilder) FindGraphById(ctx context.Context, data ElementEntity) (string, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *ReflectBuilder) FindByGraphId(ctx context.Context, tenantId string, graphId string) (string, []string, error) {
+	return fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' and n.graphId= '%s'  RETURN n ", r.labels, tenantId, graphId), []string{"n"}, nil
 }
 
 func (r *ReflectBuilder) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
@@ -147,6 +152,20 @@ func (r *ReflectBuilder) getMap(data any) (map[string]interface{}, error) {
 	return mapData, nil
 }
 
-func NewReflectBuilder() CypherBuilder {
-	return &ReflectBuilder{}
+func (r *ReflectBuilder) GetLabels() string {
+	return r.labels
+}
+
+//
+// NewReflectBuilder
+// @Description:
+// @param labels Neo4j标签
+// @return CypherBuilder
+//
+func NewReflectBuilder(labels ...string) CypherBuilder {
+	var s string
+	for _, l := range labels {
+		s = s + ":" + l
+	}
+	return &ReflectBuilder{labels: s}
 }

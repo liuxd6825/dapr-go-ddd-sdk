@@ -5,7 +5,7 @@ import (
 )
 
 type FindPagingResult[T ddd.Entity] struct {
-	Data       *[]T   `json:"data"`
+	Data       []T    `json:"data"`
 	TotalRows  int64  `json:"totalRows"`
 	TotalPages int64  `json:"totalPages"`
 	PageNum    int64  `json:"pageNum"`
@@ -16,7 +16,7 @@ type FindPagingResult[T ddd.Entity] struct {
 	IsFound    bool   `json:"-"`
 }
 
-func NewFindPagingResult[T ddd.Entity](data *[]T, totalRows int64, query FindPagingQuery, err error) *FindPagingResult[T] {
+func NewFindPagingResult[T ddd.Entity](data []T, totalRows int64, query FindPagingQuery, err error) *FindPagingResult[T] {
 	if data != nil && query != nil {
 		return &FindPagingResult[T]{
 			Data:       data,
@@ -66,7 +66,7 @@ func (f *FindPagingResult[T]) GetError() error {
 	return f.Error
 }
 
-func (f *FindPagingResult[T]) GetData() *[]T {
+func (f *FindPagingResult[T]) GetData() []T {
 	return f.Data
 }
 

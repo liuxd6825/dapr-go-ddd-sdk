@@ -9,7 +9,7 @@ import (
 func getMongoFieldName(s string) string {
 	id := stringutils.ToLower(s)
 	if id == "id" || id == "_id" {
-		return IdField
+		return ConstIdField
 	}
 	return stringutils.SnakeString(s)
 }
@@ -31,7 +31,7 @@ func getDocumentId(doc interface{}) (id string, err error) {
 		break
 	case map[string]interface{}:
 		m, _ := doc.(map[string]interface{})
-		if v, ok := m[IdField]; !ok {
+		if v, ok := m[ConstIdField]; !ok {
 			err = errors.New("ddd_mongodb.getDocumentId(doc) err: doc is not have \"_id\" key. ")
 		} else {
 			if s, ok := v.(string); !ok {

@@ -8,19 +8,19 @@ import (
 	"reflect"
 )
 
-type Result struct {
+type Neo4jResult struct {
 	data map[string][]interface{}
 }
 
 type KeyResult[T interface{}] struct {
-	result     *Result
+	result     *Neo4jResult
 	key        string
 	newEntity  func() T
 	list       []T
 	isInitList bool
 }
 
-func NewResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Result {
+func NewNeo4jResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Neo4jResult {
 	mapList := make(map[string][]interface{})
 	init := false
 	for result.Next() {
@@ -46,31 +46,33 @@ func NewResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Result {
 			}
 		}
 	}
-	return &Result{
+	return &Neo4jResult{
 		data: mapList,
 	}
 }
 
-func (r *Result) GetLists(keys []string, list ...interface{}) error {
-	if len(keys) != len(list) {
+func (r *Neo4jResult) GetLists(keys []string, resultList ...interface{}) error {
+	if len(keys) != len(resultList) {
 		return fmt.Errorf("GetLists(keys, list...) keys.length != list.length")
 	}
 	for i, key := range keys {
-		l := list[i]
-		if err := r.GetList(key, l); err != nil {
+		list := resultList[i]
+		if err := r.GetList(key, list); err != nil {
 			return fmt.Errorf("error: GetList(key) by key \"%s\"", err.Error())
 		}
 	}
 	return nil
 }
 
-func (r *Result) GetList(key string, list interface{}) error {
+func (r *Neo4jResult) GetList(key string, list interface{}) error {
 	dataList, ok := r.data[key]
 	if !ok {
 		return fmt.Errorf("GetList(key, list) key \"%s\" not exist ", key)
 	}
 	err := reflectutils.MappingSlice(dataList, list, func(i int, source reflect.Value, target reflect.Value) error {
-		return r.setEntity(source, target)
+		s := source
+		t := target
+		return r.setEntity(s, t)
 	})
 	if err != nil {
 		return err
@@ -79,7 +81,7 @@ func (r *Result) GetList(key string, list interface{}) error {
 	return nil
 }
 
-func (r *Result) GetOne(key string, entity interface{}) error {
+func (r *Neo4jResult) GetOne(key string, entity interface{}) error {
 	var list []any
 	if len(key) == 0 {
 		for _, v := range r.data {
@@ -107,7 +109,7 @@ func (r *Result) GetOne(key string, entity interface{}) error {
 	return nil
 }
 
-func (r *Result) AddEntity(key string, value interface{}) []interface{} {
+func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
 	var list []interface{}
 	if v, ok := r.data[key]; ok {
 		list = v
@@ -119,7 +121,7 @@ func (r *Result) AddEntity(key string, value interface{}) []interface{} {
 	return list
 }
 
-func (r *Result) setEntity(sourceValue reflect.Value, targetValue reflect.Value) error {
+func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.Value) error {
 	source := sourceValue.Interface()
 	target := targetValue.Interface()
 	switch source.(type) {
@@ -145,9 +147,11 @@ func setNode(data interface{}, node neo4j.Node) error {
 	}
 	id, isId := node.Props["id"]
 	tenantId, isTenantId := node.Props["tenantId"]
-	switch data.(type) {
+	v := reflectutils.GetValuePointer(data)
+	element := v.Interface()
+	switch element.(type) {
 	case ElementEntity:
-		n := data.(ElementEntity)
+		n := element.(ElementEntity)
 		n.SetNid(node.Id)
 		n.SetLabels(node.Labels)
 		n.SetNid(node.Id)

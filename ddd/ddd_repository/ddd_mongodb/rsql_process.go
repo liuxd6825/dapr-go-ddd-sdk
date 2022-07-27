@@ -85,19 +85,19 @@ func (m *MongoProcess) GetFilter(tenantId string) map[string]interface{} {
 	m1, ok := data[""]
 	if ok {
 		d1 := m1.(map[string]interface{})
-		d1[TenantIdField] = tenantId
+		d1[ConstTenantIdField] = tenantId
 	} else if len(data) == 0 {
-		data[TenantIdField] = tenantId
+		data[ConstTenantIdField] = tenantId
 	} else {
 		m1, ok := data["$and"]
 		d1, ok := m1.(map[string]interface{})
 		if ok {
-			d1[TenantIdField] = tenantId
+			d1[ConstTenantIdField] = tenantId
 		}
 		d2, ok := m1.([]interface{})
 		if ok {
 			item := ddd_utils.NewMap()
-			item[TenantIdField] = tenantId
+			item[ConstTenantIdField] = tenantId
 			d2 := append(d2, item)
 			data["$and"] = d2
 		}

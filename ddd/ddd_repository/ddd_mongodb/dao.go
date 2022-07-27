@@ -9,45 +9,48 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 )
 
 const (
-	IdField       = "_id"
-	TenantIdField = "tenant_id"
+	ConstIdField       = "_id"
+	ConstTenantIdField = "tenant_id"
 )
 
-type Repository[T ddd.Entity] struct {
+type Dao[T ddd.Entity] struct {
 	entityBuilder *ddd_repository.EntityBuilder[T]
 	collection    *mongo.Collection
 	mongodb       *MongoDB
-	emptyEntity   T
+	null          T
 	newFun        func() T
 }
 
-func NewRepository[T ddd.Entity](newFun func() T, mongodb *MongoDB, collection *mongo.Collection) *Repository[T] {
-	r := &Repository[T]{}
-	r.Init(newFun, mongodb, collection)
+func NewDao[T ddd.Entity](mongodb *MongoDB, collection *mongo.Collection) *Dao[T] {
+	r := &Dao[T]{}
+	r.Init(mongodb, collection)
 	return r
 }
 
-func (r *Repository[T]) Init(newFun func() T, mongodb *MongoDB, collection *mongo.Collection) {
-	r.newFun = newFun
+func (r *Dao[T]) Init(mongodb *MongoDB, collection *mongo.Collection) {
 	r.collection = collection
 	r.mongodb = mongodb
 }
 
-func (r *Repository[T]) NewEntity() T {
-	return r.newFun()
+func (r *Dao[T]) NewEntity() T {
+	v := reflectutils.NewStruct[T]()
+	return v.(T)
 }
 
-func (r *Repository[T]) NewEntityList() *[]T {
-	return &[]T{}
+func (r *Dao[T]) NewEntityList() *[]T {
+	v := reflectutils.NewSlice[[]T]()
+	vList := v.([]T)
+	return &vList
 }
 
-func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -57,29 +60,29 @@ func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[T]) InsertMany(ctx context.Context, entitits *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
-	if entitits == nil || len(*entitits) == 0 {
+func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entitits == nil || len(entitits) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
 	}
 
-	for _, e := range *entitits {
+	for _, e := range entitits {
 		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range *entitits {
+	for _, e := range entitits {
 		docs = append(docs, e)
 	}
 
 	return r.DoSetMany(func() ([]T, error) {
 		_, err := r.collection.InsertMany(ctx, docs, getInsertManyOptions(opts...))
-		return *entitits, err
+		return entitits, err
 	})
 }
 
-func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -89,14 +92,14 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 			return entity, err
 		}
 		updateOptions := getUpdateOptions(opts...)
-		filter := bson.D{{IdField, objId}}
+		filter := bson.D{{ConstIdField, objId}}
 		setData := bson.M{"$set": entity}
 		_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
 		return entity, err
 	})
 }
 
-func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
 	filterMap, err := r.getFilterMap(tenantId, filter)
 	if err != nil {
 		return ddd_repository.NewSetManyResultError[T](err)
@@ -109,53 +112,53 @@ func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter
 	})
 }
 
-func (r *Repository[T]) UpdateManyById(ctx context.Context, entities *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
-	if entities == nil || len(*entities) == 0 {
+func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entities == nil || len(entities) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
 
-	for _, e := range *entities {
+	for _, e := range entities {
 		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range *entities {
+	for _, e := range entities {
 		docs = append(docs, e)
 	}
 
 	return r.DoSetMany(func() ([]T, error) {
-		for _, entity := range *entities {
+		for _, entity := range entities {
 			objId, err := GetObjectID(entity.GetId())
 			if err != nil {
 				return nil, err
 			}
 			updateOptions := getUpdateOptions(opts...)
-			filter := bson.D{{IdField, objId}}
+			filter := bson.D{{ConstIdField, objId}}
 			setData := bson.M{"$set": entity}
 			_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
 			if err != nil {
 				return nil, err
 			}
 		}
-		return *entities, nil
+		return entities, nil
 	})
 }
 
-func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, mask []string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
-	if entities == nil || len(*entities) == 0 {
+func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+	if entities == nil || len(entities) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
 
-	for _, e := range *entities {
+	for _, e := range entities {
 		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range *entities {
+	for _, e := range entities {
 		if len(mask) == 0 {
 			docs = append(docs, e)
 		} else {
@@ -163,7 +166,7 @@ func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, m
 			if err := types.MaskMapper(e, &m, mask); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
 			}
-			m[IdField] = e.GetId()
+			m[ConstIdField] = e.GetId()
 			doc := asDocument(m)
 			docs = append(docs, doc)
 		}
@@ -176,7 +179,7 @@ func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, m
 				return nil, err
 			}
 			updateOptions := getUpdateOptions(opts...)
-			filter := bson.D{{IdField, id}}
+			filter := bson.D{{ConstIdField, id}}
 
 			setData := bson.M{"$set": doc}
 			_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
@@ -184,11 +187,11 @@ func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, m
 				return nil, err
 			}
 		}
-		return *entities, nil
+		return entities, nil
 	})
 }
 
-func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...*ddd_repository.SetOptions) error {
+func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...*ddd_repository.SetOptions) error {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return err
 	}
@@ -197,7 +200,7 @@ func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMa
 		return err
 	}
 
-	filterMap[TenantIdField] = tenantId
+	filterMap[ConstTenantIdField] = tenantId
 	updateOptions := getUpdateOptions(opts...)
 	filter := r.NewFilter(tenantId, filterMap)
 	setData := bson.M{"$set": data}
@@ -205,11 +208,11 @@ func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMa
 	return err
 }
 
-func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
 
-func (r *Repository[T]) DeleteByFilter(ctx context.Context, tenantId, filter string) error {
+func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string) error {
 	if filterMap, err := r.getFilterMap(tenantId, filter); err != nil {
 		return err
 	} else if err := r.DeleteByMap(ctx, tenantId, filterMap).GetError(); err != nil {
@@ -218,19 +221,19 @@ func (r *Repository[T]) DeleteByFilter(ctx context.Context, tenantId, filter str
 	return nil
 }
 
-func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{
-		IdField: id,
+		ConstIdField: id,
 	}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Repository[T]) DeleteAll(ctx context.Context, tenantId string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
 	if err := assert.NotNil(filterMap, assert.NewOptions("data is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -246,13 +249,13 @@ func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, filter
 	})
 }
 
-func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bson.D {
+func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bson.D {
 	filter := bson.D{
-		{TenantIdField, tenantId},
+		{ConstTenantIdField, tenantId},
 	}
 	if filterMap != nil {
 		for fieldName, fieldValue := range filterMap {
-			if fieldName != IdField {
+			if fieldName != ConstIdField {
 				fieldName = AsFieldName(fieldName)
 			}
 			e := bson.E{
@@ -264,30 +267,31 @@ func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interfac
 	}
 	return filter
 }
-func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+func (r *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
 	idMap := map[string]interface{}{
-		IdField: id,
+		ConstIdField: id,
 	}
 	return r.FindOneByMap(ctx, tenantId, idMap, opts...)
 }
 
-func (r *Repository[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+	var null T
 	return r.DoFindOne(func() (T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		findOneOptions := getFindOneOptions(opts...)
 		data := r.NewEntity()
 		result := r.collection.FindOne(ctx, filter, findOneOptions)
 		if result.Err() != nil {
-			return r.emptyEntity, false, result.Err()
+			return null, false, result.Err()
 		}
 		if err := result.Decode(data); err != nil {
-			return r.emptyEntity, false, err
+			return null, false, err
 		}
 		return data, true, nil
 	})
 }
 
-func (r *Repository[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
 	return r.DoFindList(func() ([]T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		data := r.NewEntityList()
@@ -301,12 +305,11 @@ func (r *Repository[T]) FindListByMap(ctx context.Context, tenantId string, filt
 	})
 }
 
-func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
 	return r.FindListByMap(ctx, tenantId, nil, opts...)
 }
 
-func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
-
+func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
 	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
@@ -334,11 +337,11 @@ func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.Fin
 		err = cursor.All(ctx, data)
 		totalRows, err := r.collection.CountDocuments(ctx, filter)
 		findData := ddd_repository.NewFindPagingResult[T](*data, totalRows, query, err)
-		return findData, true, err
+		return findData, totalRows > 0, err
 	})
 }
 
-func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+func (r *Dao[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
@@ -355,7 +358,7 @@ func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[st
 	return data
 }
 
-func (r *Repository[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {
+func (r *Dao[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {
 	p := NewMongoProcess()
 	if err := rsql.ParseProcess(rsqlstr, p); err != nil {
 		return nil, err
@@ -364,7 +367,7 @@ func (r *Repository[T]) getFilterMap(tenantId, rsqlstr string) (map[string]inter
 	return filterMap, nil
 }
 
-func (r *Repository[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindListResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
@@ -375,7 +378,7 @@ func (r *Repository[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repositor
 	return ddd_repository.NewFindListResult[T](data, isFound, err)
 }
 
-func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.FindOneResult[T] {
+func (r *Dao[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.FindOneResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
@@ -386,12 +389,12 @@ func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.F
 	return ddd_repository.NewFindOneResult[T](data, isFound, err)
 }
 
-func (r *Repository[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T] {
 	data, err := fun()
 	return ddd_repository.NewSetResult[T](data, err)
 }
 
-func (r *Repository[T]) DoSetMany(fun func() ([]T, error)) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) DoSetMany(fun func() ([]T, error)) *ddd_repository.SetManyResult[T] {
 	data, err := fun()
 	return ddd_repository.NewSetManyResult[T](data, err)
 }
@@ -402,7 +405,7 @@ func (r *Dao[T]) DoSetMap(fun func() (map[string]interface{}, error)) *ddd_repos
 	return ddd_repository.NewSetResult[T](data, err)
 }
 */
-func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
+func (r *Dao[T]) getSort(sort string) (map[string]interface{}, error) {
 	if len(sort) == 0 {
 		return nil, nil
 	}
@@ -414,7 +417,7 @@ func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
 		name := sortItem[0]
 		name = strings.Trim(name, " ")
 		if name == "id" {
-			name = IdField
+			name = ConstIdField
 		}
 		order := "asc"
 		if len(sortItem) > 1 {

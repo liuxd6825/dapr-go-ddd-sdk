@@ -3,6 +3,7 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"log"
 	"testing"
@@ -15,6 +16,10 @@ type CompanyNode struct {
 	IsVisible bool   `json:"isVisible"`
 	Key       string `json:"key"`
 	Name      string `json:"name"`
+}
+
+func newCompanyNode() ElementEntity {
+	return &CompanyNode{}
 }
 
 type Rel struct {
@@ -53,7 +58,7 @@ func TestGetList(t *testing.T) {
 		log.Println("error connecting to neo4j:", err)
 	}
 
-	repos := NewBaseRepository[*CompanyNode](driver, NewReflectBuilder())
+	repos := NewNeo4jDao[*CompanyNode](driver, NewReflectBuilder("CompanyNode"))
 	cypher := "MATCH (n:graph_T1_N3eb0982799464cf199f2182d130e4a32_company)-[r*0..]->(m) RETURN n, r "
 	if result, err := repos.Query(context.Background(), cypher); err != nil {
 		log.Println("error connecting to neo4j:", err)
@@ -69,27 +74,42 @@ func TestGetList(t *testing.T) {
 }
 
 type CompanyRepository[T interface{ *CompanyNode }] struct {
-	BaseRepository[*CompanyNode]
+	Neo4jDao[*CompanyNode]
 }
 
 func NewCompanyRepository(driver neo4j.Driver) *CompanyRepository[*CompanyNode] {
 	resp := &CompanyRepository[*CompanyNode]{}
-	build := NewReflectBuilder()
+	build := NewReflectBuilder("TestCompanyNode")
 	resp.Init(driver, build)
 	return resp
 }
 
-func Test_Insert(t *testing.T) {
+func TestNeo4JDao_Insert(t *testing.T) {
 	driver, err := CreateDriver(neo4jURL, username, password)
 	defer func(driver neo4j.Driver) {
+		if e := recover(); e != nil {
+			if err := ddd_errors.GetRecoverError(e); err != nil {
+				t.Error(err)
+			}
+		}
 		err = CloseDriver(driver)
 		if err != nil {
 			log.Println("neo4j close error:", err)
 		}
 	}(driver)
+
 	if err != nil {
-		log.Println("error connecting to neo4j:", err)
+		t.Error(err)
+		return
 	}
+
+	repos := NewCompanyRepository(driver)
+	/*	if com, err := repos.NewEntity(); err != nil {
+			t.Error(err)
+			return
+		} else {
+			t.Logf("new %v", com)
+		}*/
 
 	company := &CompanyNode{}
 	company.Id = uuid.New().String()
@@ -99,27 +119,35 @@ func Test_Insert(t *testing.T) {
 	company.CaseId = "caseId001"
 	company.GraphId = "graphId001"
 
-	repos := NewCompanyRepository(driver)
-	err = repos.Insert(context.Background(), company).GetError()
-	if err != nil {
-		t.Error(err)
-	}
+	ctx := context.Background()
 
-	company.Key = "keys"
-	err = repos.Update(context.Background(), company).GetError()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	/*	err = repos.Insert(ctx, company).GetError()
+		if err != nil {
+			t.Error(err)
+		}
 
-	if company, err = repos.FindById(context.Background(), company.TenantId, company.Id); err != nil {
-		t.Error(err)
+		company.Key = "keys"
+		err = repos.Update(ctx, company).GetError()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+
+		if company, err = repos.FindById(ctx, "001", company.Id); err != nil {
+			t.Error(err)
+			return
+		} else {
+			t.Logf("company.id = %v", company.Id)
+		}
+	*/
+	if res := repos.FindByGraphId(ctx, "001", "graphId001"); res.GetError() != nil {
+		t.Error(res.GetError())
 		return
 	} else {
-		t.Logf("company.id = %v", company.Id)
+		t.Logf("graph list = %v ", res.GetData())
 	}
 
-	err = repos.DeleteById(context.Background(), company).GetError()
+	err = repos.DeleteById(ctx, company).GetError()
 	if err != nil {
 		t.Error(err)
 	}

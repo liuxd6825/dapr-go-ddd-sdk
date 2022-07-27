@@ -4,11 +4,11 @@ import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 
 type FindListResult[T ddd.Entity] struct {
 	err     error
-	data    *[]T
+	data    []T
 	isFound bool
 }
 
-func NewFindListResult[T ddd.Entity](data *[]T, isFound bool, err error) *FindListResult[T] {
+func NewFindListResult[T ddd.Entity](data []T, isFound bool, err error) *FindListResult[T] {
 	return &FindListResult[T]{
 		data:    data,
 		isFound: isFound,
@@ -16,11 +16,17 @@ func NewFindListResult[T ddd.Entity](data *[]T, isFound bool, err error) *FindLi
 	}
 }
 
+func NewFindListResultError[T ddd.Entity](err error) *FindListResult[T] {
+	return &FindListResult[T]{
+		err: err,
+	}
+}
+
 func (f *FindListResult[T]) GetError() error {
 	return f.err
 }
 
-func (f *FindListResult[T]) GetData() *[]T {
+func (f *FindListResult[T]) GetData() []T {
 	return f.data
 }
 
@@ -28,7 +34,7 @@ func (f *FindListResult[T]) IsFound() bool {
 	return f.isFound
 }
 
-func (f *FindListResult[T]) Result() (*[]T, bool, error) {
+func (f *FindListResult[T]) Result() ([]T, bool, error) {
 	return f.data, f.isFound, f.err
 }
 
