@@ -1,6 +1,7 @@
 package reflectutils
 
 import (
+	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/errorutils"
 	"reflect"
@@ -25,23 +26,24 @@ func RunFuncName(skip int) string {
 // @Description: 根据给定切片，返回元素的Type
 // @param slice
 // @return reflect.Type
-func NewSliceItemType(slice interface{}) reflect.Type {
+func NewSliceItemType(slice interface{}) (res reflect.Type, resErr error) {
+	defer func() {
+		if err := errorutils.GetError(recover()); err != nil {
+			resErr = err
+		}
+	}()
 	if slice == nil {
-		return nil
+		return nil, errors.New("slice is nil")
 	}
 	t := reflect.TypeOf(slice)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
-	if t.Kind() == reflect.Interface {
-		println("t.Kind() == reflect.Interface ")
+	if t.Kind() != reflect.Slice {
+		return nil, errors.New("slice kind not is reflect.Slice")
 	}
-
-	if t.Kind() == reflect.Slice {
-		e := t.Elem()
-		return e
-	}
-	return nil
+	e := t.Elem()
+	return e, nil
 }
 
 //
@@ -103,12 +105,12 @@ func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func
 	}()
 
 	if setItem == nil {
-		return fmt.Errorf("MappingSlice(sourceSlice, targetSlice, setItem) setItem is nil")
+		return fmt.Errorf("MappingSlice(sourceSlice, resultSlice, setItem) setItem is nil")
 	}
 
 	resultsValue := reflect.ValueOf(resultSlice)
 	if resultsValue.Kind() != reflect.Ptr {
-		return fmt.Errorf("results argument must be a pointer to a slice, but was a %s", resultsValue.Kind())
+		return fmt.Errorf("MappingSlice(sourceSlice, resultSlice, setItem) err: resultSlice must be a pointer to a slice, but was a %s", resultsValue.Kind())
 	}
 
 	sliceVal := resultsValue.Elem()
@@ -147,24 +149,64 @@ func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func
 	return nil
 }
 
-func New(t reflect.Type) reflect.Value {
+func New(t reflect.Type) (res reflect.Value, resErr error) {
+	defer func() {
+		if err := errorutils.GetError(recover()); err != nil {
+			resErr = err
+		}
+	}()
 	if t.Kind() == reflect.Ptr {
 		elem := reflect.New(t.Elem())
-		r := reflect.New(t)
-		r.Set(elem)
-		return r
+		return elem, nil
 	}
-	return reflect.New(t)
+	return reflect.New(t), nil
 }
 
-func NewStruct[T interface{}]() interface{} {
-	var t T
-	v := New(reflect.TypeOf(t))
-	return v.Elem().Interface()
+func NewStruct[T interface{}]() (res T, resErr error) {
+	defer func() {
+		if err := errorutils.GetError(recover()); err != nil {
+			resErr = err
+		}
+	}()
+	var null T
+	v, err := New(reflect.TypeOf(null))
+	if err != nil {
+		return null, err
+	}
+	return v.Interface().(T), nil
 }
 
-func NewSlice[T interface{}]() interface{} {
+//
+// NewSlice
+// @Description: 动态创建切片  NewSlice[[]Object]()
+// @return interface{}
+//
+func NewSlice[T interface{}]() (res T, resErr error) {
+	defer func() {
+		if err := errorutils.GetError(recover()); err != nil {
+			resErr = err
+		}
+	}()
 	var t T
-	v := New(reflect.TypeOf(t))
-	return v.Elem().Interface()
+	v, err := New(reflect.TypeOf(t))
+	if err != nil {
+		return t, err
+	}
+
+	res, _ = v.Elem().Interface().(T)
+	return res, nil
+}
+
+//
+// GetValuePointer
+// @Description: 检查指针层级，只保留最后的指值
+// @param v
+// @return reflect.Value
+//
+func GetValuePointer(data interface{}) reflect.Value {
+	v := reflect.ValueOf(data)
+	for v.Kind() == reflect.Pointer && v.Elem().Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+	return v
 }

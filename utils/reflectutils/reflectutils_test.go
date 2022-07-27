@@ -9,30 +9,66 @@ type Element struct {
 	Id string
 }
 
-func Test_NewSliceItemType(t *testing.T) {
-	var list []Element
+func Test_ReflectUtils(t *testing.T) {
 
-	t1 := NewSliceItemType(list)
-	if t1 == nil {
-		t.Errorf("itemType is nil")
-	}
-	v1 := reflect.New(t1)
-	if v1.Kind() == reflect.Ptr {
-		v1 = v1.Elem()
-	}
-	v1.FieldByName("Id").SetString("1")
-	t.Logf("v1:%s", v1.Type().Name())
+	t.Run("Reflect", func(t *testing.T) {
+		var null *Element
+		t1 := reflect.TypeOf(null)
+		elem := reflect.New(t1.Elem())
+		t.Logf("%v", elem.Interface())
+	})
 
-	t2 := NewSliceItemType(&list)
-	if t2 == nil {
-		t.Errorf("itemType is nil")
-	}
-	v2 := reflect.New(t2)
-	if v2.Kind() == reflect.Ptr {
-		v2 = v2.Elem()
-	}
-	v2.FieldByName("Id").SetString("1")
-	t.Logf("v2:%s", v2.Type().Name())
+	t.Run("NewStruct", func(t *testing.T) {
+		s, err := NewStruct[*Element]()
+		if err != nil {
+			t.Error(err)
+			return
+		} else {
+			s.Id = "1"
+		}
+	})
+
+	t.Run("NewSliceItemType1", func(t *testing.T) {
+		var list []Element
+		t1, err := NewSliceItemType(list)
+		if err != nil {
+			t.Error(err)
+			return
+		} else if t1 == nil {
+			t.Errorf("itemType is nil")
+			return
+		}
+	})
+
+	t.Run("NewSliceItemType2", func(t *testing.T) {
+		var list []Element
+		t2, err := NewSliceItemType(&list)
+		if err != nil {
+			t.Error(err)
+			return
+		} else if t2 == nil {
+			t.Errorf("itemType is nil")
+			return
+		}
+		v2 := reflect.New(t2)
+		if v2.Kind() == reflect.Ptr {
+			v2 = v2.Elem()
+		}
+		v2.FieldByName("Id").SetString("1")
+		t.Logf("v2:%s", v2.Type().Name())
+
+	})
+
+	t.Run("NewSlice", func(t *testing.T) {
+		v3list, err := NewSlice[[]*Element]()
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		v3list = append(v3list, &Element{})
+		t.Logf("list.lenth = %v", len(v3list))
+	})
+
 }
 
 func Test_MappingSlice(t *testing.T) {
