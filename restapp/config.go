@@ -17,10 +17,11 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	App   AppConfig   `yaml:"app"`
-	Log   LogConfig   `yaml:"log"`
-	Dapr  DaprConfig  `yaml:"dapr"`
-	Mongo MongoConfig `yaml:"mongo"`
+	App   AppConfig               `yaml:"app"`
+	Log   LogConfig               `yaml:"log"`
+	Dapr  DaprConfig              `yaml:"dapr"`
+	Mongo map[string]*MongoConfig `yaml:"mongo"`
+	Neo4j map[string]*Neo4jConfig `json:"neo4j"`
 }
 
 func (e *EnvConfig) Init() error {
@@ -158,22 +159,4 @@ func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
 	}
 
 	return nil, NewEnvTypeError(fmt.Sprintf("error config env-type is \"%s\". choose one of: [dev, test, prod]", envType))
-}
-
-type MongoConfig struct {
-	Host         string `yaml:"host"`
-	Database     string `yaml:"dbname"`
-	UserName     string `yaml:"user"`
-	Password     string `yaml:"pwd"`
-	MaxPoolSize  uint64 `yaml:"maxPoolSize"`
-	ReplicaSet   string `yaml:"replicaSet"`
-	WriteConcern string `yaml:"writeConcern"`
-	ReadConcern  string `yaml:"readConcern"`
-}
-
-func (m MongoConfig) IsEmpty() bool {
-	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
-		return true
-	}
-	return false
 }

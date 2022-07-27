@@ -132,6 +132,10 @@ func (m *MongoDB) CreateCollection(collectionName string) error {
 	return m.database.CreateCollection(context.Background(), collectionName, ops)
 }
 
+func (m *MongoDB) Close(ctx context.Context) error {
+	return m.client.Disconnect(ctx)
+}
+
 func (m *MongoDB) Ping() error {
 	if err := m.client.Ping(context.Background(), nil); err != nil {
 		return fmt.Errorf("mongoDB store: error connecting to mongoDB at %s: %s", m.config.Host, err)
