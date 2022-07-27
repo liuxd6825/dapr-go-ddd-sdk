@@ -12,6 +12,7 @@ require (
 	github.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
 	github.com/mitchellh/mapstructure v1.4.1
 	github.com/neo4j/neo4j-go-driver/v4 v4.4.3
+	github.com/orcaman/concurrent-map v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
