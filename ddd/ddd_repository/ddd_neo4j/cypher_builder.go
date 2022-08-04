@@ -3,22 +3,66 @@ package ddd_neo4j
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
 
+type CypherBuilderResult interface {
+	Cypher() string
+	Params() map[string]any
+	ResultKeys() []string
+	ResultOneKey() string
+}
+
+func NewCypherBuilderResult(cypher string, params map[string]any, resultKey []string) CypherBuilderResult {
+	return &cypherBuilderResult{
+		cypher:    cypher,
+		params:    params,
+		resultKey: resultKey,
+	}
+}
+
+type cypherBuilderResult struct {
+	cypher    string
+	params    map[string]any
+	resultKey []string
+}
+
+func (c *cypherBuilderResult) Cypher() string {
+	return c.cypher
+}
+
+func (c *cypherBuilderResult) Params() map[string]any {
+	return c.params
+}
+
+func (c *cypherBuilderResult) ResultKeys() []string {
+	return c.resultKey
+}
+
+func (c *cypherBuilderResult) ResultOneKey() string {
+	if len(c.resultKey) > 0 {
+		return c.resultKey[0]
+	}
+	return ""
+}
+
 type CypherBuilder interface {
-	Insert(ctx context.Context, data ElementEntity) (string, map[string]any, error)
-	InsertMany(ctx context.Context, data ElementEntity) (string, error)
+	Insert(ctx context.Context, data ElementEntity) (CypherBuilderResult, error)
+	InsertMany(ctx context.Context, data []ElementEntity) (CypherBuilderResult, error)
 
-	UpdateById(ctx context.Context, data ElementEntity, setFields ...string) (string, map[string]any, error)
-	UpdateManyById(ctx context.Context, list []ElementEntity) (string, error)
+	Update(ctx context.Context, data ElementEntity, setFields ...string) (CypherBuilderResult, error)
+	UpdateMany(ctx context.Context, list []ElementEntity) (CypherBuilderResult, error)
 
-	DeleteById(ctx context.Context, data ElementEntity) (string, map[string]any, error)
-	DeleteManyById(ctx context.Context, tenantId string, id []string) (string, error)
+	DeleteById(ctx context.Context, tenantId string, id string) (CypherBuilderResult, error)
+	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
+	DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
 
-	FindById(ctx context.Context, tenantId, id string) (string, error)
-	FindByGraphId(ctx context.Context, tenantId, graphId string) (cypher string, resultKeys []string, err error)
+	FindById(ctx context.Context, tenantId, id string) (CypherBuilderResult, error)
+	FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
+	FindByGraphId(ctx context.Context, tenantId, graphId string) (result CypherBuilderResult, err error)
+	FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
 
 	GetLabels() string
 }
@@ -27,56 +71,110 @@ type ReflectBuilder struct {
 	labels string
 }
 
-func (r *ReflectBuilder) Insert(ctx context.Context, data ElementEntity) (string, map[string]any, error) {
-	prosNames, mapData, err := r.getCreateProperties(ctx, data)
+func (r *ReflectBuilder) Insert(ctx context.Context, data ElementEntity) (CypherBuilderResult, error) {
+	props, dataMap, err := r.getCreateProperties(ctx, data)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	labels, _ := r.getLabels(data)
-	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, prosNames)
-	return cypher, mapData, nil
+	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
+	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 
-func (r *ReflectBuilder) UpdateById(ctx context.Context, data ElementEntity, setFields ...string) (string, map[string]any, error) {
+func (r *ReflectBuilder) InsertMany(ctx context.Context, list []ElementEntity) (CypherBuilderResult, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *ReflectBuilder) Update(ctx context.Context, data ElementEntity, setFields ...string) (CypherBuilderResult, error) {
 	prosNames, mapData, err := r.getUpdateProperties(ctx, data, setFields...)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 	cypher := fmt.Sprintf("MATCH (n{id:$id}) SET %s RETURN n ", prosNames)
-	return cypher, mapData, nil
+	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
-func (r *ReflectBuilder) DeleteById(ctx context.Context, data ElementEntity) (string, map[string]any, error) {
+func (r *ReflectBuilder) UpdateMany(ctx context.Context, list []ElementEntity) (CypherBuilderResult, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *ReflectBuilder) Delete(ctx context.Context, data ElementEntity) (CypherBuilderResult, error) {
 	mapData, err := r.getMap(data)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	cypher := fmt.Sprintf("MATCH (n{id:$id}) DETACH DELETE n")
-	return cypher, mapData, err
+	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
-func (r *ReflectBuilder) InsertMany(ctx context.Context, data ElementEntity) (string, error) {
+func (r *ReflectBuilder) DeleteMany(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error) {
+	count := len(ids)
+	if count == 0 {
+		return nil, errors.New("DeleteManyById() ids.length is 0")
+	}
+	var whereIds string
+	for i, id := range ids {
+		whereIds = fmt.Sprintf("%v n.id='%v' ", whereIds, id)
+		if i < count {
+			whereIds += " or "
+		}
+	}
+	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v'}) where %v DELETE n", tenantId, whereIds)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (r *ReflectBuilder) DeleteById(ctx context.Context, tenantId string, id string) (CypherBuilderResult, error) {
+	params := make(map[string]any)
+	params["id"] = id
+	params["tenantId"] = tenantId
+	cypher := fmt.Sprintf("MATCH (n{id:$id, tenantId:$id}) DETACH DELETE n")
+	return NewCypherBuilderResult(cypher, params, nil), nil
+}
+
+func (r *ReflectBuilder) DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error) {
+	count := len(ids)
+	if count == 0 {
+		return nil, errors.New("DeleteByIds() ids.length is 0")
+	}
+	var whereIds string
+	for i, id := range ids {
+		whereIds = fmt.Sprintf("%v n.id='%v' ", whereIds, id)
+		if i < count {
+			whereIds += " or "
+		}
+	}
+	cypher := fmt.Sprintf("MATCH (n %v {tenantId:'%v'}) where %v DELETE n", r.GetLabels(), tenantId, whereIds)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (r *ReflectBuilder) DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error) {
+	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v'}) DELETE n", tenantId)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (r *ReflectBuilder) FindById(ctx context.Context, tenantId, id string) (CypherBuilderResult, error) {
+	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v',id:'%v'}) RETURN n", tenantId, id)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (r *ReflectBuilder) FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *ReflectBuilder) UpdateManyById(ctx context.Context, list []ElementEntity) (string, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *ReflectBuilder) FindByGraphId(ctx context.Context, tenantId string, graphId string) (CypherBuilderResult, error) {
+	var params map[string]any
+	cypher := fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' and n.graphId= '%s'  RETURN n ", r.labels, tenantId, graphId)
+	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
-func (r *ReflectBuilder) DeleteManyById(ctx context.Context, tenantId string, ids []string) (string, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (r *ReflectBuilder) FindById(ctx context.Context, tenantId, id string) (string, error) {
-	return fmt.Sprintf("MATCH (n{tenantId:'%v',id:'%v'}) RETURN n", tenantId, id), nil
-}
-
-func (r *ReflectBuilder) FindByGraphId(ctx context.Context, tenantId string, graphId string) (string, []string, error) {
-	return fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' and n.graphId= '%s'  RETURN n ", r.labels, tenantId, graphId), []string{"n"}, nil
+func (r *ReflectBuilder) FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error) {
+	var params map[string]any
+	cypher := fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' RETURN n ", r.labels, tenantId)
+	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
 func (r *ReflectBuilder) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {

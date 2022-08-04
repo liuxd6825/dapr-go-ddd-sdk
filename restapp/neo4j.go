@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"strings"
 )
@@ -51,7 +51,7 @@ func GetNeo4jByKey(dbKey string) (neo4j.Driver, bool) {
 func CloseAllNeo4j(ctx context.Context) error {
 	c := func(d neo4j.Driver) (err error) {
 		defer func() {
-			err = ddd_errors.GetRecoverError(recover())
+			err = errors.GetRecoverError(recover())
 		}()
 		return d.Close()
 	}

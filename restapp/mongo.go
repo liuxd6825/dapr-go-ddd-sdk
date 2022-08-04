@@ -3,9 +3,9 @@ package restapp
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"strings"
 )
 
@@ -77,7 +77,7 @@ func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
 func CloseMongoDB(ctx context.Context) error {
 	c := func(d *ddd_mongodb.MongoDB) (err error) {
 		defer func() {
-			err = ddd_errors.GetRecoverError(recover())
+			err = errors.GetRecoverError(recover())
 		}()
 		return d.Close(ctx)
 	}

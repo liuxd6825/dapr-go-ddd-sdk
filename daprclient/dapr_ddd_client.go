@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	dapr_sdk_client "github.com/liuxd6825/go-sdk/client"
 	log "github.com/sirupsen/logrus"
 	"net"
@@ -133,7 +133,7 @@ func (c *daprDddClient) tryCall(fun func() error, tryCount int, waitSecond time.
 	var err error
 	for i := 0; i < tryCount; i++ {
 		err = fun()
-		if ddd_errors.IsGrpcConnError(err) {
+		if errors.IsGrpcConnError(err) {
 			time.Sleep(time.Second * waitSecond)
 			grpcClient, err2 := newDaprClient(c.host, c.grpcPort)
 			if err2 != nil {
@@ -151,7 +151,7 @@ func (c *daprDddClient) tryCall(fun func() error, tryCount int, waitSecond time.
 func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
 	var err error
 	defer func() {
-		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 		}
 	}()

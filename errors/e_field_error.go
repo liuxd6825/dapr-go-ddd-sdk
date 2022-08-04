@@ -1,4 +1,4 @@
-package ddd_errors
+package errors
 
 import (
 	"encoding/json"

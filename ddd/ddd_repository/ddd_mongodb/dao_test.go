@@ -2,7 +2,6 @@ package ddd_mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -40,7 +39,7 @@ func TestMapper_Search(t *testing.T) {
 		println(data)
 		return nil
 	}).OnNotFond(func() error {
-		err := ddd_errors.NewNotFondError()
+		err := errors.NewNotFondError()
 		assert.Error(t, err)
 		return err
 	}).OnError(func(err error) error {

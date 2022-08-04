@@ -3,7 +3,6 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"log"
 	"testing"
@@ -88,7 +87,7 @@ func TestNeo4JDao_Insert(t *testing.T) {
 	driver, err := CreateDriver(neo4jURL, username, password)
 	defer func(driver neo4j.Driver) {
 		if e := recover(); e != nil {
-			if err := ddd_errors.GetRecoverError(e); err != nil {
+			if err := errors.GetRecoverError(e); err != nil {
 				t.Error(err)
 			}
 		}

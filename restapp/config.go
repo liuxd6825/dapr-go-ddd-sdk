@@ -1,9 +1,9 @@
 package restapp
 
 import (
-	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -151,9 +151,9 @@ func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("CONFIG envType:%s", envType))
-		log.Infoln(fmt.Sprintf("CONFIG APP   AppId:%s,  httpHost:%s,   httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
-		log.Infoln(fmt.Sprintf("CONFIG DAPR  host:%s,  httpPort:%d,   grpcPort:%d,   pubsubs:%s",
+		log.Infoln(fmt.Sprintf("config  envType:%s", envType))
+		log.Infoln(fmt.Sprintf("config  app   appId:%s,  httpHost:%s,  httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("config  dapr  host:%s,   httpPort:%d,  grpcPort:%d,   pubsubs:%s",
 			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
 		return envConfig, nil
 	}

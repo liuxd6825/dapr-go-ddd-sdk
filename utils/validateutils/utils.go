@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-playground/validator/v10"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
 // use a single instance of Validate, it caches struct info
@@ -43,7 +43,7 @@ func getError(err error) error {
 			fmt.Println(err)
 			return err
 		}
-		verifyError := ddd_errors.NewVerifyError()
+		verifyError := errors.NewVerifyError()
 		for _, err := range err.(validator.ValidationErrors) {
 			verifyError.AppendField(err.Field(), err.Error())
 		}

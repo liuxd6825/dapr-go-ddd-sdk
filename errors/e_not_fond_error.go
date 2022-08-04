@@ -1,4 +1,4 @@
-package ddd_errors
+package errors
 
 type NotFondError struct {
 }

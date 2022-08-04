@@ -3,7 +3,7 @@ package reflectutils
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/errorutils"
+	errors2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"reflect"
 	"runtime"
 )
@@ -28,7 +28,7 @@ func RunFuncName(skip int) string {
 // @return reflect.Type
 func NewSliceItemType(slice interface{}) (res reflect.Type, resErr error) {
 	defer func() {
-		if err := errorutils.GetError(recover()); err != nil {
+		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
@@ -56,7 +56,7 @@ func NewSliceItemType(slice interface{}) (res reflect.Type, resErr error) {
 //
 func MappingStruct(source interface{}, result interface{}, set func(source, target reflect.Value) error) (resErr error) {
 	defer func() {
-		if err := errorutils.GetError(recover()); err != nil {
+		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
@@ -99,7 +99,7 @@ func MappingStruct(source interface{}, result interface{}, set func(source, targ
 //
 func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func(index int, source reflect.Value, target reflect.Value) error) (resErr error) {
 	defer func() {
-		if err := errorutils.GetError(recover()); err != nil {
+		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
@@ -151,7 +151,7 @@ func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func
 
 func New(t reflect.Type) (res reflect.Value, resErr error) {
 	defer func() {
-		if err := errorutils.GetError(recover()); err != nil {
+		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
@@ -164,7 +164,7 @@ func New(t reflect.Type) (res reflect.Value, resErr error) {
 
 func NewStruct[T interface{}]() (res T, resErr error) {
 	defer func() {
-		if err := errorutils.GetError(recover()); err != nil {
+		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
@@ -183,7 +183,7 @@ func NewStruct[T interface{}]() (res T, resErr error) {
 //
 func NewSlice[T interface{}]() (res T, resErr error) {
 	defer func() {
-		if err := errorutils.GetError(recover()); err != nil {
+		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()

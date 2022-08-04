@@ -1,11 +1,21 @@
-package ddd_errors
+package errors
 
-import "strings"
+import (
+	"go.mongodb.org/mongo-driver/mongo"
+	"strings"
+)
 
 const (
 	GrpcConnErrorPrefix = "rpc error: code = Unavailable desc = connection error"
 	GrpcConnErrorSuffix = "connect: connection refused"
 )
+
+func IsErrorMongoNoDocuments(err error) bool {
+	if err == mongo.ErrNoDocuments {
+		return true
+	}
+	return false
+}
 
 //
 // IsGrpcConnError

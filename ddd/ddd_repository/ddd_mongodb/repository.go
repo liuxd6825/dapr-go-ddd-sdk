@@ -2,11 +2,10 @@ package ddd_mongodb
 
 import (
 	"context"
-	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -348,7 +347,7 @@ func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[st
 	}
 	data, _, err := fun(filterData)
 	if err != nil {
-		if ddd_errors.IsErrorMongoNoDocuments(err) {
+		if errors.IsErrorMongoNoDocuments(err) {
 			err = nil
 		}
 	}
@@ -367,7 +366,7 @@ func (r *Repository[T]) getFilterMap(tenantId, rsqlstr string) (map[string]inter
 func (r *Repository[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindListResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
-		if ddd_errors.IsErrorMongoNoDocuments(err) {
+		if errors.IsErrorMongoNoDocuments(err) {
 			isFound = false
 			err = nil
 		}
@@ -378,7 +377,7 @@ func (r *Repository[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repositor
 func (r *Repository[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.FindOneResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
-		if ddd_errors.IsErrorMongoNoDocuments(err) {
+		if errors.IsErrorMongoNoDocuments(err) {
 			isFound = false
 			err = nil
 		}

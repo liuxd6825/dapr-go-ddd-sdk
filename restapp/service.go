@@ -1,7 +1,6 @@
 package restapp
 
 import (
-	"errors"
 	"fmt"
 	"github.com/iris-contrib/swagger/v12"
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
@@ -11,7 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/go-sdk/actor"
 	"github.com/liuxd6825/go-sdk/actor/config"
 	actorErr "github.com/liuxd6825/go-sdk/actor/error"
@@ -304,7 +303,7 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
 	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
 		defer func() {
-			if e := ddd_errors.GetRecoverError(recover()); e != nil {
+			if e := errors.GetRecoverError(recover()); e != nil {
 				err = e
 			}
 		}()

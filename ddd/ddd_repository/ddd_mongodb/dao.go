@@ -2,11 +2,10 @@ package ddd_mongodb
 
 import (
 	"context"
-	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -39,15 +38,12 @@ func (r *Dao[T]) Init(mongodb *MongoDB, collection *mongo.Collection) {
 	r.mongodb = mongodb
 }
 
-func (r *Dao[T]) NewEntity() T {
-	v := reflectutils.NewStruct[T]()
-	return v.(T)
+func (r *Dao[T]) NewEntity() (T, error) {
+	return reflectutils.NewStruct[T]()
 }
 
-func (r *Dao[T]) NewEntityList() *[]T {
-	v := reflectutils.NewSlice[[]T]()
-	vList := v.([]T)
-	return &vList
+func (r *Dao[T]) NewEntityList() ([]T, error) {
+	return reflectutils.NewSlice[[]T]()
 }
 
 func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
@@ -212,7 +208,7 @@ func (r *Dao[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_rep
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
 
-func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string) error {
+func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...*ddd_repository.SetOptions) error {
 	if filterMap, err := r.getFilterMap(tenantId, filter); err != nil {
 		return err
 	} else if err := r.DeleteByMap(ctx, tenantId, filterMap).GetError(); err != nil {
@@ -226,6 +222,10 @@ func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opt
 		ConstIdField: id,
 	}
 	return r.DeleteByMap(ctx, tenantId, data)
+}
+
+func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...*ddd_repository.SetOptions) error {
+	return nil
 }
 
 func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
@@ -274,12 +274,19 @@ func (r *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts 
 	return r.FindOneByMap(ctx, tenantId, idMap, opts...)
 }
 
+func (r *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+	panic("FindByIds")
+}
+
 func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
 	var null T
 	return r.DoFindOne(func() (T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		findOneOptions := getFindOneOptions(opts...)
-		data := r.NewEntity()
+		data, err := r.NewEntity()
+		if err != nil {
+			return null, false, err
+		}
 		result := r.collection.FindOne(ctx, filter, findOneOptions)
 		if result.Err() != nil {
 			return null, false, result.Err()
@@ -294,14 +301,17 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
 	return r.DoFindList(func() ([]T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
-		data := r.NewEntityList()
+		data, err := r.NewEntityList()
+		if err != nil {
+			return nil, false, err
+		}
 		findOptions := getFindOptions(opts...)
 		cursor, err := r.collection.Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
 		err = cursor.All(ctx, data)
-		return *data, true, err
+		return data, true, err
 	})
 }
 
@@ -315,7 +325,10 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 			return nil, false, err
 		}
 
-		data := r.NewEntityList()
+		data, err := r.NewEntityList()
+		if err != nil {
+			return nil, false, err
+		}
 
 		findOptions := getFindOptions(opts...)
 		if query.GetPageSize() > 0 {
@@ -336,7 +349,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 		}
 		err = cursor.All(ctx, data)
 		totalRows, err := r.collection.CountDocuments(ctx, filter)
-		findData := ddd_repository.NewFindPagingResult[T](*data, totalRows, query, err)
+		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, totalRows > 0, err
 	})
 }
@@ -351,7 +364,7 @@ func (r *Dao[T]) DoFilter(tenantId, filter string, fun func(filter map[string]in
 	}
 	data, _, err := fun(filterData)
 	if err != nil {
-		if ddd_errors.IsErrorMongoNoDocuments(err) {
+		if errors.IsErrorMongoNoDocuments(err) {
 			err = nil
 		}
 	}
@@ -370,7 +383,7 @@ func (r *Dao[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{},
 func (r *Dao[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindListResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
-		if ddd_errors.IsErrorMongoNoDocuments(err) {
+		if errors.IsErrorMongoNoDocuments(err) {
 			isFound = false
 			err = nil
 		}
@@ -381,7 +394,7 @@ func (r *Dao[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindL
 func (r *Dao[T]) DoFindOne(fun func() (T, bool, error)) *ddd_repository.FindOneResult[T] {
 	data, isFound, err := fun()
 	if err != nil {
-		if ddd_errors.IsErrorMongoNoDocuments(err) {
+		if errors.IsErrorMongoNoDocuments(err) {
 			isFound = false
 			err = nil
 		}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"reflect"
 )
 
@@ -49,7 +49,7 @@ func CommandAggregate(ctx context.Context, aggregate Aggregate, cmd Command, opt
 		return err
 	}
 	if !find {
-		return ddd_errors.NewAggregateIdNotFondError(aggId)
+		return errors.NewAggregateIdNotFondError(aggId)
 	}
 	return callCommandHandler(ctx, aggregate, cmd)
 }

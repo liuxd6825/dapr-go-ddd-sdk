@@ -1,6 +1,8 @@
-package errorutils
+package errors
 
-import "errors"
+import (
+	"errors"
+)
 
 func GetMessage(e any) (res string, ok bool) {
 	switch e.(type) {
@@ -22,6 +24,25 @@ func GetMessage(e any) (res string, ok bool) {
 }
 
 func GetError(re any) (err error) {
+	err = nil
+	if re != nil {
+		switch re.(type) {
+		case string:
+			{
+				msg, _ := re.(string)
+				err = errors.New(msg)
+			}
+		case error:
+			{
+				e, _ := re.(error)
+				err = e
+			}
+		}
+	}
+	return
+}
+
+func GetRecoverError(re any) (err error) {
 	err = nil
 	if re != nil {
 		switch re.(type) {

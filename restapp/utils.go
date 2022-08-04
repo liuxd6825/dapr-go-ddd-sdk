@@ -2,11 +2,10 @@ package restapp
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"net/http"
 	"time"
 )
@@ -37,7 +36,7 @@ func SetErrorInternalServerError(ctx iris.Context, err error) {
 	ctx.ContentType(ContentTypeTextPlain)
 }
 
-func SetErrorVerifyError(ctx iris.Context, err *ddd_errors.VerifyError) {
+func SetErrorVerifyError(ctx iris.Context, err *errors.VerifyError) {
 	ctx.SetErr(err)
 	ctx.StatusCode(http.StatusInternalServerError)
 	ctx.ContentType(ContentTypeTextPlain)
@@ -45,11 +44,11 @@ func SetErrorVerifyError(ctx iris.Context, err *ddd_errors.VerifyError) {
 
 func SetError(ctx iris.Context, err error) {
 	switch err.(type) {
-	case *ddd_errors.NullError:
+	case *errors.NullError:
 		_ = SetErrorNotFond(ctx)
 		break
-	case *ddd_errors.VerifyError:
-		verr, _ := err.(*ddd_errors.VerifyError)
+	case *errors.VerifyError:
+		verr, _ := err.(*errors.VerifyError)
 		SetErrorVerifyError(ctx, verr)
 		break
 	default:
@@ -68,14 +67,14 @@ func SetError(ctx iris.Context, err error) {
 //
 func DoCmd(ctx iris.Context, fun CmdFunc) (err error) {
 	defer func() {
-		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 		}
 	}()
 
 	restCtx := NewContext(ctx)
 	err = fun(restCtx)
-	if err != nil && !ddd_errors.IsErrorAggregateExists(err) {
+	if err != nil && !errors.IsErrorAggregateExists(err) {
 		SetError(ctx, err)
 		return err
 	}
@@ -84,7 +83,7 @@ func DoCmd(ctx iris.Context, fun CmdFunc) (err error) {
 
 func Do(ictx iris.Context, fun func() error) (err error) {
 	defer func() {
-		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 			SetError(ictx, err)
 		}
@@ -99,7 +98,7 @@ func Do(ictx iris.Context, fun func() error) (err error) {
 
 func DoDto[T any](ictx iris.Context, fun func() (T, error)) (dto T, err error) {
 	defer func() {
-		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 			SetError(ictx, err)
 		}
@@ -123,7 +122,7 @@ func DoDto[T any](ictx iris.Context, fun func() (T, error)) (dto T, err error) {
 //
 func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	defer func() {
-		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 		}
 	}()
@@ -154,7 +153,7 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool
 //
 func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	defer func() {
-		if e := ddd_errors.GetRecoverError(recover()); e != nil {
+		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 			SetError(ctx, err)
 		}
@@ -231,7 +230,7 @@ func doCmdAndQuery(ctx iris.Context, queryAppId string, isGetOne bool, cmd Comma
 	}
 
 	err := DoCmd(ctx, cmdFun)
-	isExists := ddd_errors.IsErrorAggregateExists(err)
+	isExists := errors.IsErrorAggregateExists(err)
 	if err != nil && !isExists {
 		SetError(ctx, err)
 		return nil, false, err
