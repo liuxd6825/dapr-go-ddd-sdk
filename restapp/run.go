@@ -62,8 +62,8 @@ var EmptyActors = func() *[]actor.Factory {
 	return &[]actor.Factory{}
 }
 
-var Actors = func() *[]actor.Factory {
-	return &[]actor.Factory{
+var Actors = func() []actor.Factory {
+	return []actor.Factory{
 		aggregateSnapshotActorFactory,
 	}
 }
@@ -76,8 +76,8 @@ func aggregateSnapshotActorFactory() actor.Server {
 	return ddd.NewAggregateSnapshotActorService(client)
 }
 
-func RunWithConfig(envType string, configFile string, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) (common.Service, error) {
+func RunWithConfig(envType string, configFile string, subsFunc func() []RegisterSubscribe,
+	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -95,8 +95,8 @@ func RunWithConfig(envType string, configFile string, subsFunc func() *[]Registe
 	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc)
 }
 
-func RubWithEnvConfig(config *EnvConfig, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventsFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) (common.Service, error) {
+func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
+	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
 	if len(config.Mongo) > 0 {
 		initMongo(config.Mongo)
 	}
@@ -147,9 +147,9 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() *[]RegisterSubscribe,
 // @param eventTypesFunc
 // @return error
 //
-func Run(options *StartOptions, webRootPath string, subsFunc func() *[]RegisterSubscribe,
-	controllersFunc func() *[]Controller, eventStorages map[string]ddd.EventStorage,
-	eventTypesFunc func() *[]RegisterEventType, actorsFunc func() *[]actor.Factory) (common.Service, error) {
+func Run(options *StartOptions, webRootPath string, subsFunc func() []RegisterSubscribe,
+	controllersFunc func() []Controller, eventStorages map[string]ddd.EventStorage,
+	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
 
 	fmt.Printf("---------- %s ----------\r\n", options.AppId)
 	ddd.Init(options.AppId)

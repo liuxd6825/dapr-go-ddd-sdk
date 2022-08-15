@@ -9,19 +9,18 @@ import (
 type Neo4jSession struct {
 	driver        neo4j.Driver
 	sessionConfig neo4j.SessionConfig
+	isWrite       bool
 }
 
-func NewWriteSession(driver neo4j.Driver) *Neo4jSession {
-	return &Neo4jSession{
-		driver:        driver,
-		sessionConfig: neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite},
+func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
+	sessionConfig := neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead}
+	if isWrite {
+		sessionConfig.AccessMode = neo4j.AccessModeWrite
 	}
-}
-
-func NewReadSession(driver neo4j.Driver) *Neo4jSession {
 	return &Neo4jSession{
 		driver:        driver,
-		sessionConfig: neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead},
+		sessionConfig: sessionConfig,
+		isWrite:       isWrite,
 	}
 }
 
@@ -31,7 +30,7 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 		_ = session.Close()
 	}()
 
-	_, err := session.WriteTransaction(func(tx neo4j.Transaction) (res interface{}, resErr error) {
+	tx := func(tx neo4j.Transaction) (res interface{}, resErr error) {
 		defer func() {
 			if e := recover(); e != nil {
 				if err, ok := e.(error); ok {
@@ -48,6 +47,13 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 			return nil, tx.Rollback()
 		}
 		return nil, tx.Commit()
-	})
+	}
+
+	var err error
+	if r.isWrite {
+		_, err = session.WriteTransaction(tx)
+	} else {
+		_, err = session.ReadTransaction(tx)
+	}
 	return err
 }

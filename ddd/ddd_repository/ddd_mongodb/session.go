@@ -8,10 +8,11 @@ import (
 
 type MongoSession struct {
 	mongodb *MongoDB
+	isWrite bool
 }
 
-func NewSession(db *MongoDB) ddd_repository.Session {
-	return &MongoSession{mongodb: db}
+func NewSession(isWrite bool, db *MongoDB) ddd_repository.Session {
+	return &MongoSession{mongodb: db, isWrite: isWrite}
 }
 
 func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc) error {

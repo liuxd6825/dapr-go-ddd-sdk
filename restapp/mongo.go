@@ -3,7 +3,6 @@ package restapp
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"strings"
@@ -65,10 +64,11 @@ func GetMongoDB() *ddd_mongodb.MongoDB {
 	return _mongoDefault
 }
 
-func NewSession() ddd_repository.Session {
-	return ddd_mongodb.NewSession(_mongoDefault)
+/*
+func NewSession(isWrite bool) ddd_repository.Session {
+	return ddd_mongodb.NewSession(isWrite, _mongoDefault)
 }
-
+*/
 func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
 	d, ok := _mongoDbs[strings.ToLower(dbKey)]
 	return d, ok

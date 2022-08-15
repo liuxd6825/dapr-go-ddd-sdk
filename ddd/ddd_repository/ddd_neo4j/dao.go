@@ -39,6 +39,10 @@ func (r *Neo4jDao[T]) NewEntity() (res T, resErr error) {
 	return reflectutils.NewStruct[T]()
 }
 
+func (r *Neo4jDao[T]) NewEntities() (res []T, resErr error) {
+	return reflectutils.NewSlice[[]T]()
+}
+
 func (r *Neo4jDao[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) (setResult *ddd_repository.SetResult[T]) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -154,14 +158,14 @@ func (r *Neo4jDao[T]) FindByIds(ctx context.Context, tenantId string, ids []stri
 	if err != nil {
 		return null, false, err
 	}
-	entity, err := reflectutils.NewStruct[T]()
+	entities, err := r.NewEntities()
 	if err != nil {
 		return null, false, err
 	}
-	if err := result.GetList(cr.ResultOneKey(), entity); err != nil {
+	if err := result.GetList(cr.ResultOneKey(), entities); err != nil {
 		return null, false, err
 	}
-	return entity, true, nil
+	return entities, true, nil
 }
 
 func (r *Neo4jDao[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {

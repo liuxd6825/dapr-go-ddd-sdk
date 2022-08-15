@@ -89,8 +89,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		if err != nil {
 			return nil, err
 		}
-		var relation map[string]string
-		relation, _, err = GetRelation(event.GetData())
+		relation, _, err := GetRelationByStructure(event.GetData())
 		if err != nil {
 			return nil, err
 		}
@@ -107,7 +106,6 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				Topic:        event.GetEventType(),
 			},
 		}
-		err = nil
 		if callEventType == EventCreate {
 			res, err = createEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
 		} else if callEventType == EventApply {

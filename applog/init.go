@@ -48,12 +48,12 @@ func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
 // @param method 执行函数
 // @return error 错误
 //
-func DoEventLog(ctx context.Context, structNameFunc func() string, event Event, funcName string, fun DoAction) error {
+func DoEventLog(ctx context.Context, structName string, event Event, funcName string, fun DoAction) error {
 	err := fun()
 	if err == nil {
-		_, _ = InfoEvent(event.GetTenantId(), structNameFunc(), funcName, "success", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = InfoEvent(event.GetTenantId(), structName, funcName, "success", event.GetEventId(), event.GetCommandId(), "")
 	} else {
-		_, _ = ErrorEvent(event.GetTenantId(), structNameFunc(), funcName, "error", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, "error", event.GetEventId(), event.GetCommandId(), "")
 	}
 	return nil
 }

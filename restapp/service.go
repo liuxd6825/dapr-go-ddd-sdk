@@ -25,10 +25,10 @@ type ServiceOptions struct {
 	HttpPort       int
 	LogLevel       applog.Level
 	EventStorages  map[string]ddd.EventStorage
-	ActorFactories *[]actor.Factory
-	Subscribes     *[]RegisterSubscribe
-	Controllers    *[]Controller
-	EventTypes     *[]RegisterEventType
+	ActorFactories []actor.Factory
+	Subscribes     []RegisterSubscribe
+	Controllers    []Controller
+	EventTypes     []RegisterEventType
 	AuthToken      string
 	WebRootPath    string
 	SwaggerDoc     string
@@ -41,10 +41,10 @@ type service struct {
 	logLevel       applog.Level
 	daprDddClient  daprclient.DaprDddClient
 	eventStorages  map[string]ddd.EventStorage
-	actorFactories *[]actor.Factory
-	subscribes     *[]RegisterSubscribe
-	controllers    *[]Controller
-	eventTypes     *[]RegisterEventType
+	actorFactories []actor.Factory
+	subscribes     []RegisterSubscribe
+	controllers    []Controller
+	eventTypes     []RegisterEventType
 	authToken      string
 	webRootPath    string
 }
@@ -130,7 +130,7 @@ func (s *service) Start() error {
 
 	// 注册消息订阅
 	if s.subscribes != nil {
-		for _, subscribe := range *s.subscribes {
+		for _, subscribe := range s.subscribes {
 			if subscribe != nil {
 				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler()); err != nil {
 					return err
@@ -141,7 +141,7 @@ func (s *service) Start() error {
 
 	// 注册控制器
 	if s.controllers != nil {
-		for _, c := range *s.controllers {
+		for _, c := range s.controllers {
 			if c != nil {
 				s.registerController(s.webRootPath, c)
 			}
@@ -150,7 +150,7 @@ func (s *service) Start() error {
 
 	// 注册领域事件类型
 	if s.eventTypes != nil {
-		for _, t := range *s.eventTypes {
+		for _, t := range s.eventTypes {
 			if err := ddd.RegisterEventType(t.EventType, t.Version, t.NewFunc); err != nil {
 				return errors.New(fmt.Sprintf("RegisterEventType() error:\"%s\" , EventType=\"%s\", Version=\"%s\"", err.Error(), t.EventType, t.Version))
 			}
@@ -168,7 +168,7 @@ func (s *service) Start() error {
 	}
 
 	if s.actorFactories != nil {
-		for _, f := range *s.actorFactories {
+		for _, f := range s.actorFactories {
 			s.RegisterActorImplFactory(f)
 		}
 	}
