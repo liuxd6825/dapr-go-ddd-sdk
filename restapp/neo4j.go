@@ -26,6 +26,9 @@ func initNeo4j(configs map[string]*Neo4jConfig) {
 	}
 
 	for key, config := range configs {
+		if config.Host == "<no value>" &&  config.Port == "<no value>"{
+			continue
+		}
 		uri := fmt.Sprintf("bolt://%v:%v", config.Host, config.Port)
 		driver, err := neo4j.NewDriver(uri, neo4j.BasicAuth(config.UserName, config.Password, ""))
 		if err != nil {

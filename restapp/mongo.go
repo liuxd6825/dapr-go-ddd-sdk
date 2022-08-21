@@ -29,6 +29,10 @@ func (m MongoConfig) IsEmpty() bool {
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
 var _mongoDefault *ddd_mongodb.MongoDB
 
+func init (){
+	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
+}
+
 func initMongo(appMongoConfigs map[string]*MongoConfig) {
 	if err := assert.NotNil(appMongoConfigs, assert.NewOptions("appMongoConfig is nil")); err != nil {
 		panic(err)

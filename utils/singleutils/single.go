@@ -54,7 +54,7 @@ func Set[T any](new func() T) error {
 	}
 	_, ok := _objects.Get(key)
 	if ok {
-		return fmt.Errorf("singleutils.Set[T](new) \"%s\" key does exist", key)
+		return fmt.Errorf("singleutils.Set[T](new) error: \"%s\" key does exist", key)
 	}
 	s := newSingleton[T](key, new)
 	_objects.Set(key, s)
@@ -67,9 +67,10 @@ func getKey[T any]() (string, error) {
 	if t == nil {
 		return "", fmt.Errorf("getKey[T any]() error: t is interface")
 	}
+	elem := t.Elem()
+	key := fmt.Sprintf("%s.%s", elem.PkgPath(), elem.Name())
 	if t.Kind() == reflect.Pointer {
-		return "*" + t.Elem().Name(), nil
+		key = "*" + key
 	}
-	key := t.Name()
 	return key, nil
 }

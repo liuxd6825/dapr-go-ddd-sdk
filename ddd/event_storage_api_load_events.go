@@ -12,7 +12,7 @@ import (
 // @Description: 获取领域事件
 // @param ctx 上下文
 // @param req 传入参数
-// @param eventStorageKey 事件存储器key
+// @param EventStorageKey 事件存储器key
 // @return resp 响应体
 // @return err 错误
 //

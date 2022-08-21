@@ -20,12 +20,11 @@ type GetIsValidOnly interface {
 	GetIsValidOnly() bool
 }
 
-type NewDomainEventFun interface {
-	NewDomainEvent() DomainEvent
+type IsAggregateCreateCommand interface {
+	IsAggregateCreateCommand()
 }
 
 type Command interface {
-	NewDomainEventFun
 	GetCommandId
 	GetTenant
 	GetAggregateId

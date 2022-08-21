@@ -9,12 +9,21 @@ import (
 type LoadAggregateOptions struct {
 	eventStorageKey string
 }
-type LoadAggregateOption func(*LoadAggregateOptions)
 
-func LoadAggregateKey(eventStorageKey string) LoadAggregateOption {
-	return func(options *LoadAggregateOptions) {
-		options.eventStorageKey = eventStorageKey
+func NewLoadAggregateOptions() *LoadAggregateOptions {
+	return &LoadAggregateOptions{}
+}
+
+func (o *LoadAggregateOptions) SetEventStorageKey(eventStorageKey string) *LoadAggregateOptions {
+	o.eventStorageKey = eventStorageKey
+	return o
+}
+
+func (o *LoadAggregateOptions) Merge(opts ...*LoadAggregateOptions) *LoadAggregateOptions {
+	for _, item := range opts {
+		o.eventStorageKey = item.eventStorageKey
 	}
+	return o
 }
 
 //
@@ -29,7 +38,7 @@ func LoadAggregateKey(eventStorageKey string) LoadAggregateOption {
 // @return isFound 是否找到
 // @return err 错误
 //
-func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate, opts ...LoadAggregateOption) (agg Aggregate, isFound bool, err error) {
+func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate, opts ...*LoadAggregateOptions) (agg Aggregate, isFound bool, err error) {
 	logInfo := &applog.LogInfo{
 		TenantId:  tenantId,
 		ClassName: "ddd",
@@ -38,13 +47,8 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 		Level:     applog.INFO,
 	}
 
+	options := NewLoadAggregateOptions().Merge(opts...)
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
-		options := &LoadAggregateOptions{
-			eventStorageKey: "",
-		}
-		for _, item := range opts {
-			item(options)
-		}
 		eventStorage, e := GetEventStorage(options.eventStorageKey)
 		if e != nil {
 			agg, isFound, err = nil, false, e

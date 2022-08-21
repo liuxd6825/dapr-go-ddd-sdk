@@ -6,11 +6,20 @@ import (
 	"reflect"
 )
 
+//
+// CallMethod
+// @Description: 动态调用方法
+// @param object 被调用的结构
+// @param methodName 方法名称
+// @param ps 参数
+// @return err
+//
 func CallMethod(object interface{}, methodName string, ps ...interface{}) (err error) {
+	if object == nil {
+		return errors.NewMethodCallError("ddd", "CallMethod", "object is nil")
+	}
 	at := reflect.TypeOf(object).Elem()
-	a := reflect.ValueOf(object)
 	typeName := at.Name()
-	method := a.MethodByName(methodName)
 
 	defer func() {
 		if e := recover(); e != nil {
@@ -18,6 +27,9 @@ func CallMethod(object interface{}, methodName string, ps ...interface{}) (err e
 			err = errors.NewMethodCallError(typeName, methodName, message)
 		}
 	}()
+
+	a := reflect.ValueOf(object)
+	method := a.MethodByName(methodName)
 
 	if method.IsValid() {
 		args := make([]reflect.Value, len(ps))
@@ -35,7 +47,7 @@ func CallMethod(object interface{}, methodName string, ps ...interface{}) (err e
 				break
 			}
 			if err1 != nil {
-				return errors.NewMethodCallError(at.Name(), methodName, err.Error())
+				return err1
 			}
 		}
 		return nil

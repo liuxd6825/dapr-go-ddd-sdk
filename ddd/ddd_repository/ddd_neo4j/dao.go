@@ -206,8 +206,8 @@ func (r *Neo4jDao[T]) FindByGraphId(ctx context.Context, tenantId string, graphI
 	return ddd_repository.NewFindListResult[T](entities, len(entities) > 0, err)
 }
 
-/*func (r *Neo4jDao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
-	return r.DoFindList(func() (*[]T, bool, error) {
+func (r *Neo4jDao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+	/*	return r.DoFindList(func() (*[]T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		data := r.NewEntityList()
 		findOptions := getFindOptions(opts...)
@@ -217,8 +217,14 @@ func (r *Neo4jDao[T]) FindByGraphId(ctx context.Context, tenantId string, graphI
 		}
 		err = cursor.All(ctx, data)
 		return data, true, err
-	})
-}*/
+	})*/
+	data, err := r.NewEntities()
+	if err != nil {
+		var null []T
+		return ddd_repository.NewFindListResult[T](null, false, err)
+	}
+	return ddd_repository.NewFindListResult[T](data, true, nil)
+}
 
 func (r *Neo4jDao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...*ddd_repository.SetOptions) (*Neo4jResult, error) {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
