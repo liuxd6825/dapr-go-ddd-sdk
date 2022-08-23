@@ -29,7 +29,7 @@ func (m MongoConfig) IsEmpty() bool {
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
 var _mongoDefault *ddd_mongodb.MongoDB
 
-func init (){
+func init() {
 	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
 }
 

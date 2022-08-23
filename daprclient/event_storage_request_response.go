@@ -85,7 +85,7 @@ type EventRecord struct {
 // NewEventRecordByJsonBytes 通过json反序列化EventRecord
 func NewEventRecordByJsonBytes(data []byte) *EventRecordJsonMarshalResult {
 	eventRecord := &EventRecord{}
-	err := json.Unmarshal(data, &eventRecord)
+	err := json.Unmarshal(data, eventRecord)
 	return &EventRecordJsonMarshalResult{
 		eventRecord: eventRecord,
 		err:         err,

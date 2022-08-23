@@ -20,6 +20,7 @@ type Event interface {
 	GetTenantId() string
 	GetCommandId() string
 	GetEventId() string
+	GetEventType() string
 }
 
 func DoEvent(eventData map[string]interface{}, event interface{}) *DoEventResult {

@@ -2,7 +2,6 @@ package restapp
 
 import (
 	"context"
-	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
@@ -236,7 +235,7 @@ func doCmdAndQuery(ctx iris.Context, queryAppId string, isGetOne bool, cmd Comma
 		return nil, false, err
 	}
 	err = nil
-	isTimeout := true
+	//isTimeout := true
 	// 循环检查EventLog日志是否存在
 	for i := 0; i < options.WaitSecond; i++ {
 		time.Sleep(time.Duration(1) * time.Second)
@@ -248,16 +247,16 @@ func doCmdAndQuery(ctx iris.Context, queryAppId string, isGetOne bool, cmd Comma
 
 		// 循环检查EventLog日志是否存在
 		if len(*logs) > 0 {
-			isTimeout = false
+			// isTimeout = false
 			break
 		}
 	}
 
-	if isTimeout {
+	/*	if isTimeout {
 		msg := fmt.Sprintf("applog.GetEventLogByAppIdAndCommandId() error: queryAppId=%s, commandId=%s, tenantId=%s  execution timeout", queryAppId, cmd.GetCommandId(), cmd.GetTenantId())
 		SetError(ctx, errors.New(msg))
 		return nil, false, err
-	}
+	}*/
 
 	var data interface{}
 	var isFound bool
