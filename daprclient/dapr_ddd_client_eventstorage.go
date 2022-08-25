@@ -297,17 +297,14 @@ func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsReque
 	var relations []*Relation
 	if out != nil && len(out.Data) > 0 {
 		for _, datum := range out.Data {
-			items := datum.Items
-			if items != nil {
-				items = make(map[string]string)
-			}
 			relation := &Relation{
 				Id:          datum.Id,
 				TenantId:    datum.TenantId,
 				AggregateId: datum.AggregateId,
 				IsDeleted:   datum.IsDeleted,
 				TableName:   datum.TableName,
-				Items:       items,
+				RelName:     datum.RelName,
+				RelValue:    datum.RelValue,
 			}
 			relations = append(relations, relation)
 		}

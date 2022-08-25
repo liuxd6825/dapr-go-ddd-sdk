@@ -181,7 +181,8 @@ type Relation struct {
 	TableName   string `json:"tableName"`
 	AggregateId string `json:"aggregateId"`
 	IsDeleted   bool   `json:"isDeleted"`
-	Items       map[string]string
+	RelName     string `json:"relName"`
+	RelValue    string `json:"relValue"`
 }
 
 type ResponseHeaders struct {

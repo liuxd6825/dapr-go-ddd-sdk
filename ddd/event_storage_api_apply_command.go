@@ -22,12 +22,13 @@ func NewApplyCommandOptions() *ApplyCommandOptions {
 	}
 }
 
-func (o *ApplyCommandOptions) Merge(opts ...*ApplyCommandOptions) {
+func (o *ApplyCommandOptions) Merge(opts ...*ApplyCommandOptions) *ApplyCommandOptions {
 	for _, item := range opts {
 		if len(item.EventStorageKey) != 0 {
 			o.EventStorageKey = item.EventStorageKey
 		}
 	}
+	return o
 }
 
 func (o *ApplyCommandOptions) SetEventStorageKey(v string) *ApplyCommandOptions {

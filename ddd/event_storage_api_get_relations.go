@@ -38,7 +38,8 @@ func HasRelations(ctx context.Context, tenantId, aggregateType string, opts ...*
 		PageSize:      uint64(options.GetPageSize()),
 		Sort:          options.GetSort(),
 	}
-	resp, err := GetRelations(ctx, options.GetEventStorageKey(), req)
+
+	resp, err := GetRelations(ctx, req, NewApplyCommandOptions().SetEventStorageKey(options.GetEventStorageKey()))
 	return resp.IsFound, resp.TotalRows, resp, err
 }
 
@@ -48,8 +49,9 @@ func HasAggregate(ctx context.Context, tenantId, aggregateType, aggregateId stri
 	return ok, err
 }
 
-func GetRelations(ctx context.Context, eventStorageKey string, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
-	eventStorage, err := GetEventStorage(eventStorageKey)
+func GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest, opts ...*ApplyCommandOptions) (*daprclient.GetRelationsResponse, error) {
+	opt := NewApplyCommandOptions().Merge(opts...)
+	eventStorage, err := GetEventStorage(opt.EventStorageKey)
 	if err != nil {
 		return nil, err
 	}
