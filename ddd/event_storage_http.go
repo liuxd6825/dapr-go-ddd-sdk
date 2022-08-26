@@ -25,6 +25,11 @@ type httpEventStorage struct {
 	subscribes *[]Subscribe
 }
 
+func (s *httpEventStorage) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s *httpEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
 	//TODO implement me
 	panic("implement me")

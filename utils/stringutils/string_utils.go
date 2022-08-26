@@ -31,6 +31,16 @@ func ValidEmptyStr(v string, msg string) error {
 	return nil
 }
 
+func AsFieldName(s string) string {
+	res := SnakeString(s)
+	res = strings.Replace(res, "._", ".", -1)
+	return res
+}
+
+func Relpace(s string, old string, new string) string {
+	return strings.Replace(s, "._", ".", -1)
+}
+
 //
 // FirstUpper
 // @Description: 字符串首字母大写

@@ -1,6 +1,9 @@
 package daprclient
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 type ApplyEventRequest struct {
 	TenantId      string      `json:"tenantId"`
@@ -189,6 +192,40 @@ type ResponseHeaders struct {
 	Values  map[string]string `json:"values"`
 	Status  ResponseStatus    `json:"status"`
 	Message string            `json:"message"`
+}
+
+type GetEventsRequest struct {
+	TenantId      string `json:"tenantId"`
+	AggregateType string `json:"aggregateType"`
+	Filter        string `json:"filter"`
+	Sort          string `json:"sort"`
+	PageNum       uint64 `json:"pageNum"`
+	PageSize      uint64 `json:"pageSize"`
+}
+
+type GetEventsResponse struct {
+	Headers    *ResponseHeaders `json:"headers"`
+	Data       []*GetEventsItem `json:"data"`
+	TotalRows  uint64           `json:"totalRows"`
+	TotalPages uint64           `json:"totalPages"`
+	PageNum    uint64           `json:"pageNum"`
+	PageSize   uint64           `json:"pageSize"`
+	Filter     string           `json:"filter"`
+	Sort       string           `json:"sort"`
+	Error      string           `json:"error"`
+	IsFound    bool             `json:"isFound"`
+}
+
+type GetEventsItem struct {
+	EventId      string
+	CommandId    string
+	EventData    map[string]interface{}
+	EventType    string
+	EventVersion string
+	EventTime    *time.Time
+	PubsubName   string
+	Topic        string
+	Metadata     map[string]string
 }
 
 type ResponseStatus int32

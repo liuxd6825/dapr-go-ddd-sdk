@@ -5,15 +5,16 @@ import (
 )
 
 type FindPagingResult[T ddd.Entity] struct {
-	Data       []T    `json:"data"`
-	TotalRows  int64  `json:"totalRows"`
-	TotalPages int64  `json:"totalPages"`
-	PageNum    int64  `json:"pageNum"`
-	PageSize   int64  `json:"pageSize"`
-	Filter     string `json:"filter"`
-	Sort       string `json:"sort"`
-	Error      error  `json:"-"`
-	IsFound    bool   `json:"-"`
+	Data        []T    `json:"data"`
+	TotalRows   int64  `json:"totalRows"`
+	TotalPages  int64  `json:"totalPages"`
+	PageNum     int64  `json:"pageNum"`
+	PageSize    int64  `json:"pageSize"`
+	Filter      string `json:"filter"`
+	Sort        string `json:"sort"`
+	Error       error  `json:"-"`
+	IsFound     bool   `json:"-"`
+	IsTotalRows bool   `json:"isTotalRows"`
 }
 
 func NewFindPagingResult[T ddd.Entity](data []T, totalRows int64, query FindPagingQuery, err error) *FindPagingResult[T] {

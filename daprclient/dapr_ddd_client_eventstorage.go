@@ -2,6 +2,7 @@ package daprclient
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
@@ -320,6 +321,71 @@ func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsReque
 	resp.TotalRows = out.TotalRows
 	resp.TotalPages = out.TotalPages
 	resp.Data = relations
+	resp.Headers = c.newResponseHeaders(out.Headers)
+
+	return resp, nil
+}
+
+func (c *daprDddClient) GetEvents(ctx context.Context, req *GetEventsRequest) (*GetEventsResponse, error) {
+	if req == nil {
+		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req is nil")
+	}
+	if len(req.TenantId) == 0 {
+		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req.TenantId is nil")
+	}
+	if len(req.AggregateType) == 0 {
+		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req.AggregateType is nil")
+	}
+
+	in := &pb.GetEventsRequest{
+		TenantId:      req.TenantId,
+		AggregateType: req.AggregateType,
+		Filter:        req.Filter,
+		Sort:          req.Sort,
+		PageNum:       req.PageNum,
+		PageSize:      req.PageSize,
+	}
+	out, err := c.grpcClient.GetEvents(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	var events []*GetEventsItem
+	if out != nil && len(out.Data) > 0 {
+		for _, datum := range out.Data {
+			eventData := map[string]interface{}{}
+			if err := json.Unmarshal([]byte(datum.EventData), &eventData); err != nil {
+				return nil, err
+			}
+			metadata := map[string]string{}
+			if err := json.Unmarshal([]byte(datum.Metadata), &metadata); err != nil {
+				return nil, err
+			}
+			eventItem := &GetEventsItem{
+				EventId:      datum.EventId,
+				CommandId:    datum.CommandId,
+				EventData:    eventData,
+				EventType:    datum.EventType,
+				EventVersion: datum.EventVersion,
+				// EventTime:    datum.EventTime,
+				PubsubName: datum.PubsubName,
+				Topic:      datum.Topic,
+				Metadata:   metadata,
+			}
+			events = append(events, eventItem)
+		}
+	}
+
+	resp := &GetEventsResponse{}
+	resp.Sort = out.Sort
+	resp.PageNum = out.PageNum
+	resp.PageSize = out.PageSize
+	resp.Filter = out.Filter
+	resp.Error = out.Error
+	resp.IsFound = out.IsFound
+	resp.TotalRows = out.TotalRows
+	resp.TotalPages = out.TotalPages
+	resp.Data = events
 	resp.Headers = c.newResponseHeaders(out.Headers)
 
 	return resp, nil

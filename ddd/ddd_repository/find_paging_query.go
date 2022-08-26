@@ -34,6 +34,7 @@ type FindPagingQuery interface {
 	GetSort() string
 	GetPageNum() int64
 	GetPageSize() int64
+	GetIsTotalRows() bool
 
 	SetTenantId(string)
 	SetFields(string)
@@ -41,6 +42,7 @@ type FindPagingQuery interface {
 	SetSort(string)
 	SetPageNum(int64)
 	SetPageSize(int64)
+	SetIsTotalRows(bool)
 }
 
 func NewFindPagingQuery() FindPagingQuery {
@@ -49,12 +51,13 @@ func NewFindPagingQuery() FindPagingQuery {
 }
 
 type findPagingQuery struct {
-	TenantId string
-	Fields   string
-	Filter   string
-	Sort     string
-	PageNum  int64
-	PageSize int64
+	TenantId   string
+	Fields     string
+	Filter     string
+	Sort       string
+	PageNum    int64
+	PageSize   int64
+	IsTotalRow bool
 }
 
 func (q *findPagingQuery) SetTenantId(value string) {
@@ -81,6 +84,10 @@ func (q *findPagingQuery) SetPageSize(value int64) {
 	q.PageSize = value
 }
 
+func (q *findPagingQuery) SetIsTotalRows(val bool) {
+	q.IsTotalRow = val
+}
+
 func (q *findPagingQuery) GetTenantId() string {
 	return q.TenantId
 }
@@ -103,4 +110,8 @@ func (q *findPagingQuery) GetPageNum() int64 {
 
 func (q *findPagingQuery) GetPageSize() int64 {
 	return q.PageSize
+}
+
+func (q *findPagingQuery) GetIsTotalRows() bool {
+	return q.IsTotalRow
 }
