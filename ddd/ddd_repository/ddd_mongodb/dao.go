@@ -46,7 +46,7 @@ func (r *Dao[T]) NewEntityList() ([]T, error) {
 	return reflectutils.NewSlice[[]T]()
 }
 
-func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -56,7 +56,7 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.S
 	})
 }
 
-func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entitits == nil || len(entitits) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
 	}
@@ -78,7 +78,7 @@ func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...*ddd_repo
 	})
 }
 
-func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -95,7 +95,7 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.S
 	})
 }
 
-func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	filterMap, err := r.getFilterMap(tenantId, filter)
 	if err != nil {
 		return ddd_repository.NewSetManyResultError[T](err)
@@ -108,7 +108,7 @@ func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 	})
 }
 
-func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entities == nil || len(entities) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
@@ -142,7 +142,7 @@ func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...*ddd_
 	})
 }
 
-func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entities == nil || len(entities) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
@@ -187,7 +187,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 	})
 }
 
-func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...*ddd_repository.SetOptions) error {
+func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...ddd_repository.Options) error {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return err
 	}
@@ -204,11 +204,11 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[s
 	return err
 }
 
-func (r *Dao[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
 
-func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...*ddd_repository.SetOptions) error {
+func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) error {
 	if filterMap, err := r.getFilterMap(tenantId, filter); err != nil {
 		return err
 	} else if err := r.DeleteByMap(ctx, tenantId, filterMap).GetError(); err != nil {
@@ -217,23 +217,23 @@ func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, op
 	return nil
 }
 
-func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{
 		ConstIdField: id,
 	}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...*ddd_repository.SetOptions) error {
+func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
 	return nil
 }
 
-func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotNil(filterMap, assert.NewOptions("data is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -267,18 +267,18 @@ func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bs
 	}
 	return filter
 }
-func (r *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+func (r *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	idMap := map[string]interface{}{
 		ConstIdField: id,
 	}
 	return r.FindOneByMap(ctx, tenantId, idMap, opts...)
 }
 
-func (r *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	panic("FindByIds")
 }
 
-func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	var null T
 	return r.DoFindOne(func() (T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
@@ -298,7 +298,7 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 	})
 }
 
-func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	return r.DoFindList(func() ([]T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		data, err := r.NewEntityList()
@@ -315,11 +315,11 @@ func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 	})
 }
 
-func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	return r.FindListByMap(ctx, tenantId, nil, opts...)
 }
 
-func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
+func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err

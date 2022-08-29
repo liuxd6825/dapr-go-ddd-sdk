@@ -1,12 +1,6 @@
 package ddd_repository
 
-import (
-	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"go.mongodb.org/mongo-driver/bson"
-)
-
-type Repository[T ddd.Entity] interface {
+/*type Repository[T ddd.Entity] interface {
 	Insert(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
 	Update(ctx context.Context, entity T, opts ...*SetOptions) *SetResult[T]
 	Delete(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult[T]
@@ -23,7 +17,7 @@ type Repository[T ddd.Entity] interface {
 	DoFindList(fun func() (*[]T, bool, error)) *FindListResult[T]
 	DoFindOne(fun func() (T, bool, error)) *FindOneResult[T]
 	DoSet(fun func() (T, error)) *SetResult[T]
-}
+}*/
 
 //
 // IRepository

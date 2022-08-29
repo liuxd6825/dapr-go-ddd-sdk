@@ -46,7 +46,7 @@ func (r *Repository[T]) NewEntityList() *[]T {
 	return &[]T{}
 }
 
-func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -56,7 +56,7 @@ func (r *Repository[T]) Insert(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[T]) InsertMany(ctx context.Context, entitits *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Repository[T]) InsertMany(ctx context.Context, entitits *[]T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entitits == nil || len(*entitits) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
 	}
@@ -78,7 +78,7 @@ func (r *Repository[T]) InsertMany(ctx context.Context, entitits *[]T, opts ...*
 	})
 }
 
-func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -95,7 +95,7 @@ func (r *Repository[T]) Update(ctx context.Context, entity T, opts ...*ddd_repos
 	})
 }
 
-func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	filterMap, err := r.getFilterMap(tenantId, filter)
 	if err != nil {
 		return ddd_repository.NewSetManyResultError[T](err)
@@ -108,7 +108,7 @@ func (r *Repository[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter
 	})
 }
 
-func (r *Repository[T]) UpdateManyById(ctx context.Context, entities *[]T, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Repository[T]) UpdateManyById(ctx context.Context, entities *[]T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entities == nil || len(*entities) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
@@ -142,7 +142,7 @@ func (r *Repository[T]) UpdateManyById(ctx context.Context, entities *[]T, opts 
 	})
 }
 
-func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, mask []string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetManyResult[T] {
+func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entities == nil || len(*entities) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
@@ -187,7 +187,7 @@ func (r *Repository[T]) UpdateManyMaskById(ctx context.Context, entities *[]T, m
 	})
 }
 
-func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...*ddd_repository.SetOptions) error {
+func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...ddd_repository.Options) error {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (r *Repository[T]) UpdateMap(ctx context.Context, tenantId string, filterMa
 	return err
 }
 
-func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Repository[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
 }
 
@@ -217,19 +217,19 @@ func (r *Repository[T]) DeleteByFilter(ctx context.Context, tenantId, filter str
 	return nil
 }
 
-func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Repository[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{
 		IdField: id,
 	}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Repository[T]) DeleteAll(ctx context.Context, tenantId string, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Repository[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.SetOptions) *ddd_repository.SetResult[T] {
+func (r *Repository[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotNil(filterMap, assert.NewOptions("data is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -263,14 +263,14 @@ func (r *Repository[T]) NewFilter(tenantId string, filterMap map[string]interfac
 	}
 	return filter
 }
-func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+func (r *Repository[T]) FindById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	idMap := map[string]interface{}{
 		IdField: id,
 	}
 	return r.FindOneByMap(ctx, tenantId, idMap, opts...)
 }
 
-func (r *Repository[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindOneResult[T] {
+func (r *Repository[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	return r.DoFindOne(func() (T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		findOneOptions := getFindOneOptions(opts...)
@@ -286,7 +286,7 @@ func (r *Repository[T]) FindOneByMap(ctx context.Context, tenantId string, filte
 	})
 }
 
-func (r *Repository[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Repository[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	return r.DoFindList(func() ([]T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		data := r.NewEntityList()
@@ -300,11 +300,11 @@ func (r *Repository[T]) FindListByMap(ctx context.Context, tenantId string, filt
 	})
 }
 
-func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.FindOptions) *ddd_repository.FindListResult[T] {
+func (r *Repository[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	return r.FindListByMap(ctx, tenantId, nil, opts...)
 }
 
-func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...*ddd_repository.FindOptions) *ddd_repository.FindPagingResult[T] {
+func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 
 	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {

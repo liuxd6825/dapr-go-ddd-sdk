@@ -3,6 +3,7 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"log"
 	"testing"
@@ -59,7 +60,7 @@ func TestGetList(t *testing.T) {
 
 	repos := NewNeo4jDao[*CompanyNode](driver, NewReflectBuilder("CompanyNode"))
 	cypher := "MATCH (n:graph_T1_N3eb0982799464cf199f2182d130e4a32_company)-[r*0..]->(m) RETURN n, r "
-	if result, err := repos.Query(context.Background(), cypher); err != nil {
+	if result, err := repos.Query(context.Background(), cypher, nil); err != nil {
 		log.Println("error connecting to neo4j:", err)
 	} else {
 		var comps []CompanyNode
@@ -146,7 +147,7 @@ func TestNeo4JDao_Insert(t *testing.T) {
 		t.Logf("graph list = %v ", res.GetData())
 	}
 
-	err = repos.DeleteById(ctx, company).GetError()
+	err = repos.DeleteById(ctx, company.TenantId, company.Id)
 	if err != nil {
 		t.Error(err)
 	}

@@ -183,7 +183,7 @@ func (r *ReflectBuilder) getCreateProperties(ctx context.Context, data any) (str
 		return "", nil, err
 	}
 	var properties string
-	for k, _ := range mapData {
+	for k := range mapData {
 		properties = fmt.Sprintf(`%s%s:$%s,`, properties, k, k)
 	}
 	if len(properties) > 0 {
@@ -211,7 +211,7 @@ func (r *ReflectBuilder) getUpdatePropertiesByMap(ctx context.Context, mapData m
 		}
 	}
 
-	for k, _ := range mapData {
+	for k := range mapData {
 		if isSetFields {
 			if _, ok := keyFields[strings.ToLower(k)]; ok {
 				properties = fmt.Sprintf(`%sn.%s=$%s,`, properties, k, k)
