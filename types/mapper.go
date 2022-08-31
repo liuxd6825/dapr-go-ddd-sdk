@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/mitchellh/mapstructure"
 )
@@ -82,7 +83,7 @@ func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 		break
 	default:
 		fromMap = make(map[string]interface{})
-		if err = mapstructure.Decode(fromObj, &fromMap); err != nil {
+		if err = maputils.Decode(fromObj, &fromMap); err != nil {
 			return err
 		}
 	}

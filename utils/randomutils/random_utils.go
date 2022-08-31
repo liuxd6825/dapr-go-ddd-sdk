@@ -105,8 +105,8 @@ func IpAddr() string {
 	return ip
 }
 
-// ChinaName 随机生成中文名称
-func ChinaName() string {
+// NameCN 随机生成中文名称
+func NameCN() string {
 	rand.Seed(time.Now().UnixNano())     //设置随机数种子
 	var first string                     //名
 	for i := 0; i <= rand.Intn(1); i++ { //随机产生2位或者3位的名
@@ -114,6 +114,11 @@ func ChinaName() string {
 	}
 	//返回姓名
 	return fmt.Sprintf("%s%s", fmt.Sprint(lastName[rand.Intn(lastNameLen-1)]), first)
+}
+
+// NameEN 随机生成ID
+func NameEN() string {
+	return StringLower(6)
 }
 
 // DateString 随机生成日期字符串

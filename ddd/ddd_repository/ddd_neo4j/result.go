@@ -99,13 +99,32 @@ func (r *Neo4jResult) GetOne(key string, entity interface{}) error {
 	if len(list) != 1 {
 		return fmt.Errorf("GetList(key, list) key \"%s\" entity length != 1  not exist ", key)
 	}
-	err := reflectutils.MappingStruct(list[0], entity, func(source reflect.Value, target reflect.Value) error {
+	node := list[0].(neo4j.Node)
+	err := reflectutils.MappingStruct(node, entity, func(source reflect.Value, target reflect.Value) error {
 		return r.setEntity(source, target)
 	})
+	if e, ok := entity.(ElementEntity); ok {
+		e.SetNid(node.Id)
+		e.SetLabels(node.Labels)
+	}
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func decode(input interface{}, out interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		WeaklyTypedInput: true,
+		Squash:           true,
+		Result:           out,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+	decoder.Decode(input)
 	return nil
 }
 
@@ -142,11 +161,11 @@ func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.V
 }
 
 func setNode(data interface{}, node neo4j.Node) error {
-	if err := mapstructure.Decode(node.Props, data); err != nil {
+	if err := decode(node.Props, data); err != nil {
 		return err
 	}
-	id, isId := node.Props["id"]
-	tenantId, isTenantId := node.Props["tenantId"]
+	id, hasId := node.Props["id"]
+	tenantId, hasTenantId := node.Props["tenantId"]
 	v := reflectutils.GetValuePointer(data)
 	element := v.Interface()
 	switch element.(type) {
@@ -155,10 +174,10 @@ func setNode(data interface{}, node neo4j.Node) error {
 		n.SetNid(node.Id)
 		n.SetLabels(node.Labels)
 		n.SetNid(node.Id)
-		if isId {
+		if hasId {
 			n.SetId(id.(string))
 		}
-		if isTenantId {
+		if hasTenantId {
 			n.SetTenantId(tenantId.(string))
 		}
 	}
@@ -166,7 +185,7 @@ func setNode(data interface{}, node neo4j.Node) error {
 }
 
 func setRelationship(data interface{}, rel neo4j.Relationship) error {
-	if err := mapstructure.Decode(rel.Props, data); err != nil {
+	if err := decode(rel.Props, data); err != nil {
 		return err
 	}
 	if r, ok := data.(RelationshipEntity); ok {
