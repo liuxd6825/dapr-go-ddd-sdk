@@ -2,6 +2,7 @@ package ddd_neo4j
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
@@ -161,7 +162,7 @@ func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.V
 }
 
 func setNode(data interface{}, node neo4j.Node) error {
-	if err := decode(node.Props, data); err != nil {
+	if err := maputils.Decode(node.Props, data); err != nil {
 		return err
 	}
 	id, hasId := node.Props["id"]
