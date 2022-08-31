@@ -158,14 +158,14 @@ func (d *Neo4jDao[T]) FindByIds(ctx context.Context, tenantId string, ids []stri
 	if err != nil {
 		return null, false, err
 	}
-	entities, err := d.NewEntities()
+	list, err := d.NewEntities()
 	if err != nil {
 		return null, false, err
 	}
-	if err := result.GetList(cr.ResultOneKey(), entities); err != nil {
+	if err := result.GetList(cr.ResultOneKey(), &list); err != nil {
 		return null, false, err
 	}
-	return entities, true, nil
+	return list, true, nil
 }
 
 func (d *Neo4jDao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
@@ -181,7 +181,7 @@ func (d *Neo4jDao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
-	if err := result.GetList(cr.ResultOneKey(), list); err != nil {
+	if err := result.GetList(cr.ResultOneKey(), &list); err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
 	return ddd_repository.NewFindListResult[T](list, len(list) > 0, nil)
@@ -196,14 +196,14 @@ func (d *Neo4jDao[T]) FindByGraphId(ctx context.Context, tenantId string, graphI
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
-	entities, err := reflectutils.NewSlice[[]T]()
+	list, err := reflectutils.NewSlice[[]T]()
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
-	if err := result.GetLists(cr.ResultKeys(), &entities); err != nil {
+	if err := result.GetLists(cr.ResultKeys(), &list); err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
-	return ddd_repository.NewFindListResult[T](entities, len(entities) > 0, err)
+	return ddd_repository.NewFindListResult[T](list, len(list) > 0, err)
 }
 
 func (d *Neo4jDao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {

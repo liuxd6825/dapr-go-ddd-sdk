@@ -161,8 +161,12 @@ func (r *ReflectBuilder) FindById(ctx context.Context, tenantId, id string) (Cyp
 }
 
 func (r *ReflectBuilder) FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error) {
-	//TODO implement me
-	panic("implement me")
+	for i, id := range ids {
+		ids[i] = fmt.Sprintf(`'%v'`, id)
+	}
+	idWhere := strings.Join(ids, ",")
+	cypher := fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' and n.id in [%s] RETURN n ", r.labels, tenantId, idWhere)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (r *ReflectBuilder) FindByGraphId(ctx context.Context, tenantId string, graphId string) (CypherBuilderResult, error) {

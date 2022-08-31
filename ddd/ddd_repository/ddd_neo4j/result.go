@@ -66,9 +66,20 @@ func (r *Neo4jResult) GetLists(keys []string, resultList ...interface{}) error {
 }
 
 func (r *Neo4jResult) GetList(key string, list interface{}) error {
-	dataList, ok := r.data[key]
+	var dataList []interface{}
+	var ok bool = false
+	if len(key) == 0 {
+		for _, v := range r.data {
+			dataList = v
+			ok = true
+			break
+		}
+	} else {
+		dataList, ok = r.data[key]
+	}
+
 	if !ok {
-		return fmt.Errorf("GetList(key, list) key \"%s\" not exist ", key)
+		return nil
 	}
 	err := reflectutils.MappingSlice(dataList, list, func(i int, source reflect.Value, target reflect.Value) error {
 		s := source
