@@ -259,12 +259,12 @@ func (r *Repository[T]) DoSetMap(fun func() (map[string]interface{}, error)) *dd
 	return ddd_repository.NewSetResult[T](data, err)
 }
 */
-func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
+func (r *Repository[T]) getSort(sort string) (bson.D, error) {
 	if len(sort) == 0 {
 		return nil, nil
 	}
 	//name:desc,id:asc
-	res := map[string]interface{}{}
+	res := bson.D{}
 	list := strings.Split(sort, ",")
 	for _, s := range list {
 		sortItem := strings.Split(s, ":")
@@ -294,7 +294,8 @@ func (r *Repository[T]) getSort(sort string) (map[string]interface{}, error) {
 		if oerr != nil {
 			return nil, oerr
 		}
-		res[name] = orderVal
+		item := bson.E{name, orderVal}
+		res = append(res, item)
 	}
 	return res, nil
 }
