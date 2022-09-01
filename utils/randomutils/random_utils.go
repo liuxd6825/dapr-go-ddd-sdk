@@ -83,8 +83,18 @@ func Float32() float32 {
 	return rand.Float32()
 }
 
+func PFloat32() *float32 {
+	v := Float32()
+	return &v
+}
+
 func Float64() float64 {
 	return rand.Float64()
+}
+
+func PFloat64() *float64 {
+	v := Float64()
+	return &v
 }
 
 // Email 随机生成英文字符串
@@ -98,11 +108,23 @@ func UUID() string {
 	return uuid.New().String()
 }
 
+// PUUID 随机生成ID
+func PUUID() *string {
+	v := uuid.New().String()
+	return &v
+}
+
 // IpAddr 随机生成IP地址
 func IpAddr() string {
 	rand.Seed(time.Now().Unix())
 	ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
 	return ip
+}
+
+// PIpAddr 随机生成IP地址
+func PIpAddr() *string {
+	v := IpAddr()
+	return &v
 }
 
 // NameCN 随机生成中文名称
@@ -116,9 +138,21 @@ func NameCN() string {
 	return fmt.Sprintf("%s%s", fmt.Sprint(lastName[rand.Intn(lastNameLen-1)]), first)
 }
 
+// PNameCN 随机生成ID
+func PNameCN() *string {
+	v := NameCN()
+	return &v
+}
+
 // NameEN 随机生成ID
 func NameEN() string {
 	return StringLower(6)
+}
+
+// PNameEN 随机生成ID
+func PNameEN() *string {
+	v := NameEN()
+	return &v
 }
 
 // DateString 随机生成日期字符串
@@ -145,9 +179,21 @@ func DateString() string {
 	return fmt.Sprintf("%v-%v-%v", year, month, day)
 }
 
+// PDateString 随机生成日期字符串
+func PDateString() *string {
+	v := DateString()
+	return &v
+}
+
 // TimeString 随机生成时间字符串
 func TimeString() string {
 	return Time().Format("2006-01-02 15:04:05")
+}
+
+// PTimeString 随机生成时间字符串
+func PTimeString() *string {
+	v := TimeString()
+	return &v
 }
 
 func Date() time.Time {
@@ -182,6 +228,15 @@ func Now() time.Time {
 func PNow() *time.Time {
 	t := Now()
 	return &t
+}
+
+func Boolean() bool {
+	return Uint32()%2 == 1
+}
+
+func PBoolean() *bool {
+	p := Uint32()%2 == 1
+	return &p
 }
 
 //
