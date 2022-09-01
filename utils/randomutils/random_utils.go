@@ -156,6 +156,11 @@ func Date() time.Time {
 	return time.Unix(date, 0)
 }
 
+func PDate() *time.Time {
+	pdate := Date()
+	return &pdate
+}
+
 func Time() time.Time {
 	min := time.Date(2000, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
 	max := time.Date(2050, 1, 0, 0, 0, 0, 0, time.UTC).Unix()
@@ -163,6 +168,20 @@ func Time() time.Time {
 
 	sec := rand.Int63n(delta) + min
 	return time.Unix(sec, 0)
+}
+
+func PTime() *time.Time {
+	pdate := Time()
+	return &pdate
+}
+
+func Now() time.Time {
+	return time.Now()
+}
+
+func PNow() *time.Time {
+	t := Now()
+	return &t
 }
 
 //

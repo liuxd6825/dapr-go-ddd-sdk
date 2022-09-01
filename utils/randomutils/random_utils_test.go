@@ -9,7 +9,7 @@ func Test_String(t *testing.T) {
 	t.Logf("StringNumber() : %v", StringNumber(10))
 	t.Logf("StringLower() : %v", StringLower(10))
 	t.Logf("StringUpper() : %v", StringUpper(10))
-	t.Logf("ChinaName() : %v", ChinaName())
+	t.Logf("NameCN() : %v", NameCN())
 	t.Logf("Email() : %v", Email())
 	t.Logf("UUID() : %v", UUID())
 	t.Logf("DateString() : %v ", DateString())
