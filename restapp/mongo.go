@@ -73,6 +73,7 @@ func NewSession(isWrite bool) ddd_repository.Session {
 	return ddd_mongodb.NewSession(isWrite, _mongoDefault)
 }
 */
+
 func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
 	d, ok := _mongoDbs[strings.ToLower(dbKey)]
 	return d, ok

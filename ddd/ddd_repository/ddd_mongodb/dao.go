@@ -347,7 +347,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 		if err != nil {
 			return nil, false, err
 		}
-		err = cursor.All(ctx, data)
+		err = cursor.All(ctx, &data)
 		totalRows, err := r.collection.CountDocuments(ctx, filter)
 		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, totalRows > 0, err
@@ -418,12 +418,27 @@ func (r *Dao[T]) DoSetMap(fun func() (map[string]interface{}, error)) *ddd_repos
 	return ddd_repository.NewSetResult[T](data, err)
 }
 */
-func (r *Dao[T]) getSort(sort string) (map[string]interface{}, error) {
+
+//
+//  getSort
+//  @Description: 返回排序bson.D
+//  @receiver r
+//  @param sort  排序语句 "name:desc,id:asc"
+//  @return bson.D
+//  @return error
+//
+func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 	if len(sort) == 0 {
-		return nil, nil
+		return bson.D{}, nil
 	}
-	//name:desc,id:asc
-	res := map[string]interface{}{}
+	// 输入
+	// name:desc,id:asc
+	// 输出
+	/*	sort := bson.D{
+		bson.E{"update_time", -1},
+		bson.E{"goods_id", -1},
+	}*/
+	res := bson.D{}
 	list := strings.Split(sort, ",")
 	for _, s := range list {
 		sortItem := strings.Split(s, ":")
@@ -453,7 +468,8 @@ func (r *Dao[T]) getSort(sort string) (map[string]interface{}, error) {
 		if oerr != nil {
 			return nil, oerr
 		}
-		res[name] = orderVal
+		item := bson.E{name, orderVal}
+		res = append(res, item)
 	}
 	return res, nil
 }
