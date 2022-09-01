@@ -275,7 +275,9 @@ func (r *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts 
 }
 
 func (r *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	panic("FindByIds")
+	filter := bson.D{}
+	filter = append(filter, bson.E{Key: ConstIdField, Value: bson.M{"$in": ids}})
+	return r.FindListByMap(ctx, tenantId, filter.Map(), opts...)
 }
 
 func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
@@ -310,8 +312,8 @@ func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 		if err != nil {
 			return nil, false, err
 		}
-		err = cursor.All(ctx, data)
-		return data, true, err
+		err = cursor.All(ctx, &data)
+		return data, len(data) > 0, err
 	})
 }
 
