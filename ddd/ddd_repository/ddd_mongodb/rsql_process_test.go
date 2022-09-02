@@ -7,21 +7,30 @@ import (
 )
 
 func Test_Process1(t *testing.T) {
-	process(t, "001", "name=='A' ")
+	if _, err := process(t, "001", "name=='A' "); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestProcess2(t *testing.T) {
-	process(t, "001", "name=='A' and name=='B'")
+	if _, err := process(t, "001", "name=='A' and name=='B'"); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestProcess3(t *testing.T) {
-	process(t, "001", "(name=='A' and name=='B') or (name=='C')")
+	if _, err := process(t, "001", "(name=='A' and name=='B') or (name=='C')"); err != nil {
+		t.Error(err)
+	}
 }
 
-func process(t *testing.T, tenantId string, input string) map[string]interface{} {
+func process(t *testing.T, tenantId string, input string) (map[string]interface{}, error) {
 	p := NewMongoProcess()
 	err := rsql.ParseProcess(input, p)
 	assert.Error(t, err)
-	data := p.GetFilter(tenantId)
-	return data
+	data, err := p.GetFilter(tenantId)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
