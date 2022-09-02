@@ -32,7 +32,7 @@ const (
 func NewMongoProcess() *MongoProcess {
 	m := &MongoProcess{
 		item:    newFilterItem(nil, "$and"),
-		errList: make([]string, 10),
+		errList: make([]string, 0),
 	}
 	m.init()
 	return m
@@ -119,7 +119,7 @@ func (m *MongoProcess) OnEquals(name string, value interface{}, rValue rsql.Valu
 }
 
 func (m *MongoProcess) OnNotEquals(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", getValue(rValue)}})
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", m.getValue(rValue)}})
 }
 
 func (m *MongoProcess) OnLike(name string, value interface{}, rValue rsql.Value) {
@@ -132,23 +132,23 @@ func (m *MongoProcess) OnLike(name string, value interface{}, rValue rsql.Value)
 }
 
 func (m *MongoProcess) OnNotLike(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", getValue(rValue)}})
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
 }
 
 func (m *MongoProcess) OnGreaterThan(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$gt", getValue(rValue)}})
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$gt", m.getValue(rValue)}})
 }
 
 func (m *MongoProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$gte", getValue(rValue)}})
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$gte", m.getValue(rValue)}})
 }
 
 func (m *MongoProcess) OnLessThan(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", getValue(rValue)}})
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
 }
 
 func (m *MongoProcess) OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lte", getValue(rValue)}})
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$lte", m.getValue(rValue)}})
 }
 
 func (m *MongoProcess) OnIn(name string, value interface{}, rValue rsql.Value) {
@@ -174,6 +174,14 @@ func (m *MongoProcess) addError(name string, err error) {
 		msg := fmt.Sprintf("%v %v; ", name, err.Error())
 		m.errList = append(m.errList, msg)
 	}
+}
+
+func (m *MongoProcess) getValue(rValue rsql.Value) interface{} {
+	v, err := getValue(rValue)
+	if err != nil {
+		m.addError(rValue.ValueName(), err)
+	}
+	return v
 }
 
 func (i *filterItem) addChildItem(name string, value interface{}) *filterItem {

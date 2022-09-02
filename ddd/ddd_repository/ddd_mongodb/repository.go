@@ -359,8 +359,8 @@ func (r *Repository[T]) getFilterMap(tenantId, rsqlstr string) (map[string]inter
 	if err := rsql.ParseProcess(rsqlstr, p); err != nil {
 		return nil, err
 	}
-	filterMap := p.GetFilter(tenantId)
-	return filterMap, nil
+	filterMap, err := p.GetFilter(tenantId)
+	return filterMap, err
 }
 
 func (r *Repository[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindListResult[T] {
