@@ -24,6 +24,10 @@ type SessionOptions struct {
 	AccessMode *neo4j.AccessMode
 }
 
+func NewSessionOptions() *SessionOptions {
+	return &SessionOptions{}
+}
+
 func NewNeo4jDao[T ElementEntity](driver neo4j.Driver, builder CypherBuilder) *Neo4jDao[T] {
 	base := &Neo4jDao[T]{}
 	return base.Init(driver, builder)
@@ -308,36 +312,49 @@ func (d *Neo4jDao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transacti
 }
 
 func (d *Neo4jDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	/*	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
+	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func() (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
 
-		data := d.NewEntityList()
-
-		findOptions := getFindOptions(opts...)
-		if query.GetPageSize() > 0 {
-			findOptions.SetLimit(query.GetPageSize())
-			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
-		}
-		if len(query.GetSort()) > 0 {
-			sort, err := d.getSort(query.GetSort())
-			if err != nil {
-				return nil, false, err
-			}
-			findOptions.SetSort(sort)
-		}
-
-		cursor, err := d.collection.Find(ctx, filter, findOptions)
+		cr, err := d.cypherBuilder.FindPaging(ctx, query)
 		if err != nil {
-			return nil, false, err
+			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
-		err = cursor.All(ctx, data)
-		totalRows, err := d.collection.CountDocuments(ctx, filter)
-		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
-		return findData, true, err
-	})*/
-	return nil
+
+		result, err := d.Query(ctx, cr.Cypher(), cr.Params())
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+		}
+
+		list, err := reflectutils.NewSlice[[]T]()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+		}
+
+		if err = result.GetList(cr.ResultOneKey(), &list); err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+		}
+
+		var totalRows int64
+		if query.GetIsTotalRows() {
+			// "MATCH (n)-[r]->() RETURN COUNT(r)"
+		}
+
+		return ddd_repository.NewFindPagingResult[T](list, totalRows, query, nil), true, err
+	})
+}
+
+func (u *Neo4jDao[T]) DoFilter(tenantId, filter string, fun func() (*ddd_repository.FindPagingResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	p := NewRSqlProcess()
+	if err := ParseProcess(filter, p); err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+	data, _, err := fun()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+	return data
 }
 
 func (d *Neo4jDao[T]) NewSetManyResult(result *Neo4jResult, err error) *ddd_repository.SetManyResult[T] {
@@ -349,10 +366,6 @@ func (d *Neo4jDao[T]) NewSetManyResult(result *Neo4jResult, err error) *ddd_repo
 		ddd_repository.NewSetResultError[T](err)
 	}
 	return ddd_repository.NewSetManyResult[T](data, err)
-}
-
-func NewSessionOptions() *SessionOptions {
-	return &SessionOptions{}
 }
 
 func (r *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) {

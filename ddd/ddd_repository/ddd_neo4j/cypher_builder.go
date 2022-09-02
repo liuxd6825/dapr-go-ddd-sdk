@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"strings"
 )
 
@@ -63,6 +64,7 @@ type CypherBuilder interface {
 	FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
 	FindByGraphId(ctx context.Context, tenantId, graphId string) (result CypherBuilderResult, err error)
 	FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
+	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
 
 	GetLabels() string
 }
@@ -181,6 +183,30 @@ func (r *ReflectBuilder) FindAll(ctx context.Context, tenantId string) (CypherBu
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
+func (r *ReflectBuilder) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
+	where, err := getSqlWhere(query.GetTenantId(), query.GetFilter())
+	if err != nil {
+		return nil, err
+	}
+	skip := query.GetPageNum() * query.GetPageSize()
+	pageSize := query.GetPageSize()
+
+	keys := []string{"n"}
+	count := ""
+	if query.GetIsTotalRows() {
+		count = ", count(n) as t "
+		keys = append(keys, "t")
+	}
+
+	order, err := r.getOrder(query.GetSort())
+	if err != nil {
+		return nil, err
+	}
+
+	cypher := fmt.Sprintf("MATCH (n%v) WHERE %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, where, count, order, skip, pageSize)
+	return NewCypherBuilderResult(cypher, nil, keys), nil
+}
+
 func (r *ReflectBuilder) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
 	mapData, err := r.getMap(data)
 	if err != nil {
@@ -256,6 +282,59 @@ func (r *ReflectBuilder) getMap(data any) (map[string]interface{}, error) {
 
 func (r *ReflectBuilder) GetLabels() string {
 	return r.labels
+}
+
+//
+//  getOrder
+//  @Description: 返回排序bson.D
+//  @receiver r
+//  @param sort  排序语句 "name:desc,id:asc"
+//  @return bson.D
+//  @return error
+//
+func (r *ReflectBuilder) getOrder(sort string) (string, error) {
+	if len(sort) == 0 {
+		return "", nil
+	}
+	// 输入
+	// name:desc,id:asc
+	// 输出
+	// order by n.name desc , n.id asc
+	res := " order by "
+	list := strings.Split(sort, ",")
+	for _, s := range list {
+		sortItem := strings.Split(s, ":")
+		orderName := sortItem[0]
+		orderName = strings.Trim(orderName, " ")
+		if orderName == "id" {
+			orderName = "id"
+		}
+		order := "asc"
+		if len(sortItem) > 1 {
+			order = sortItem[1]
+			order = strings.ToLower(order)
+			order = strings.Trim(order, " ")
+		}
+
+		// 其中 1 为升序排列，而-1是用于降序排列.
+		orderVal := "asc"
+		var oerr error
+		switch order {
+		case "asc":
+			orderVal = "asc"
+		case "desc":
+			orderVal = "desc"
+		default:
+			oerr = errors.New("order " + order + " is error")
+		}
+		if oerr != nil {
+			return "", oerr
+		}
+
+		res = fmt.Sprintf("%v n.%v %v,", res, orderName, orderVal)
+	}
+	res = res[0 : len(res)-1]
+	return res, nil
 }
 
 //
