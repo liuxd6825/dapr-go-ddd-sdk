@@ -378,7 +378,10 @@ func (r *Dao[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{},
 	if err := rsql.ParseProcess(rsqlstr, p); err != nil {
 		return nil, err
 	}
-	filterMap := p.GetFilter(tenantId)
+	filterMap, err := p.GetFilter(tenantId)
+	if err != nil {
+		return nil, err
+	}
 	return filterMap, nil
 }
 

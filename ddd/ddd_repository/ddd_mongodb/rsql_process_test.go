@@ -22,6 +22,6 @@ func process(t *testing.T, tenantId string, input string) map[string]interface{}
 	p := NewMongoProcess()
 	err := rsql.ParseProcess(input, p)
 	assert.Error(t, err)
-	data := p.GetFilter(tenantId)
+	data, err := p.GetFilter(tenantId)
 	return data
 }
