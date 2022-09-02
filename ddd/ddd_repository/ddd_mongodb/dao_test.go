@@ -3,6 +3,7 @@ package ddd_mongodb
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
