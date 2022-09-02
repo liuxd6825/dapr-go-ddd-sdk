@@ -59,6 +59,7 @@ type CypherBuilder interface {
 	DeleteById(ctx context.Context, tenantId string, id string) (CypherBuilderResult, error)
 	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
 	DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
+	DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherBuilderResult, error)
 
 	FindById(ctx context.Context, tenantId, id string) (CypherBuilderResult, error)
 	FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
@@ -154,6 +155,15 @@ func (r *ReflectBuilder) DeleteByIds(ctx context.Context, tenantId string, ids [
 
 func (r *ReflectBuilder) DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error) {
 	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v'}) DELETE n", tenantId)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (r *ReflectBuilder) DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherBuilderResult, error) {
+	where, err := getSqlWhere(tenantId, filter)
+	if err != nil {
+		return nil, err
+	}
+	cypher := fmt.Sprintf("MATCH (n%v) WHERE %v DELETE n", r.labels, where)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
