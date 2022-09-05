@@ -19,15 +19,15 @@ type MongoConfig struct {
 	ReadConcern  string `yaml:"readConcern"`
 }
 
+var _mongoDbs map[string]*ddd_mongodb.MongoDB
+var _mongoDefault *ddd_mongodb.MongoDB
+
 func (m MongoConfig) IsEmpty() bool {
 	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
 		return true
 	}
 	return false
 }
-
-var _mongoDbs map[string]*ddd_mongodb.MongoDB
-var _mongoDefault *ddd_mongodb.MongoDB
 
 func init() {
 	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
@@ -67,12 +67,6 @@ func initMongo(appMongoConfigs map[string]*MongoConfig) {
 func GetMongoDB() *ddd_mongodb.MongoDB {
 	return _mongoDefault
 }
-
-/*
-func NewSession(isWrite bool) ddd_repository.Session {
-	return ddd_mongodb.NewSession(isWrite, _mongoDefault)
-}
-*/
 
 func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
 	d, ok := _mongoDbs[strings.ToLower(dbKey)]

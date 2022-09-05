@@ -32,8 +32,12 @@ func ValidEmptyStr(v string, msg string) error {
 }
 
 func AsFieldName(s string) string {
-	res := SnakeString(s)
+	res := strings.Replace(s, " ", "", -1)
+	res = SnakeString(res)
 	res = strings.Replace(res, "._", ".", -1)
+	if strings.HasSuffix(res, "_") {
+		res = res[1:]
+	}
 	return res
 }
 
