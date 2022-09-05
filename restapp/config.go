@@ -24,6 +24,49 @@ type EnvConfig struct {
 	Neo4j map[string]*Neo4jConfig `json:"neo4j"`
 }
 
+type AppConfig struct {
+	AppId    string `yaml:"id"`
+	HttpHost string `yaml:"httpHost"`
+	HttpPort int    `yaml:"httpPort"`
+	RootUrl  string `yaml:"rootUrl"`
+}
+
+type DaprConfig struct {
+	Host     *string  `yaml:"host"`
+	HttpPort *int64   `yaml:"httpPort"`
+	GrpcPort *int64   `yaml:"grpcPort"`
+	Pubsubs  []string `yaml:"pubsubs,flow"`
+}
+
+type LogConfig struct {
+	Level string `yaml:"level"`
+	level applog.Level
+}
+
+func NewConfig() *Config {
+	return &Config{}
+}
+
+func NewConfigByFile(fileName string) (*Config, error) {
+	//rootPath, _ := os.Getwd()
+	//_ = fmt.Sprintf("%s/%s", rootPath, fileName)
+	yamlFile, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+	var config Config
+	err = yaml.Unmarshal(yamlFile, &config)
+	if err != nil {
+		return nil, err
+	}
+	for _, env := range config.Envs {
+		if err := env.Init(); err != nil {
+			return nil, err
+		}
+	}
+	return &config, nil
+}
+
 func (e *EnvConfig) Init() error {
 
 	if len(e.App.HttpHost) == 0 {
@@ -76,20 +119,6 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 	return &value
 }
 
-type AppConfig struct {
-	AppId    string `yaml:"id"`
-	HttpHost string `yaml:"httpHost"`
-	HttpPort int    `yaml:"httpPort"`
-	RootUrl  string `yaml:"rootUrl"`
-}
-
-type DaprConfig struct {
-	Host     *string  `yaml:"host"`
-	HttpPort *int64   `yaml:"httpPort"`
-	GrpcPort *int64   `yaml:"grpcPort"`
-	Pubsubs  []string `yaml:"pubsubs,flow"`
-}
-
 func (d DaprConfig) GetHost() string {
 	if d.Host == nil {
 		return ""
@@ -111,37 +140,8 @@ func (d DaprConfig) GetGrpcPort() int64 {
 	return *d.GrpcPort
 }
 
-type LogConfig struct {
-	Level string `yaml:"level"`
-	level applog.Level
-}
-
 func (l *LogConfig) GetLevel() applog.Level {
 	return l.level
-}
-
-func NewConfig() *Config {
-	return &Config{}
-}
-
-func NewConfigByFile(fileName string) (*Config, error) {
-	//rootPath, _ := os.Getwd()
-	//_ = fmt.Sprintf("%s/%s", rootPath, fileName)
-	yamlFile, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-	var config Config
-	err = yaml.Unmarshal(yamlFile, &config)
-	if err != nil {
-		return nil, err
-	}
-	for _, env := range config.Envs {
-		if err := env.Init(); err != nil {
-			return nil, err
-		}
-	}
-	return &config, nil
 }
 
 func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {

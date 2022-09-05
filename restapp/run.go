@@ -28,21 +28,6 @@ type registerSubscribe struct {
 	handler    ddd.QueryEventHandler
 }
 
-func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler) RegisterSubscribe {
-	return &registerSubscribe{
-		subscribes: subscribes,
-		handler:    handler,
-	}
-}
-
-func (r *registerSubscribe) GetSubscribes() *[]ddd.Subscribe {
-	return r.subscribes
-}
-
-func (r *registerSubscribe) GetHandler() ddd.QueryEventHandler {
-	return r.handler
-}
-
 type RegisterController struct {
 	RelativePath string
 	Controllers  []interface{}
@@ -56,6 +41,21 @@ type RegisterEventType struct {
 	EventType string
 	Version   string
 	NewFunc   ddd.NewEventFunc
+}
+
+func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler) RegisterSubscribe {
+	return &registerSubscribe{
+		subscribes: subscribes,
+		handler:    handler,
+	}
+}
+
+func (r *registerSubscribe) GetSubscribes() *[]ddd.Subscribe {
+	return r.subscribes
+}
+
+func (r *registerSubscribe) GetHandler() ddd.QueryEventHandler {
+	return r.handler
 }
 
 var EmptyActors = func() *[]actor.Factory {

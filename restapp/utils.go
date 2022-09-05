@@ -22,6 +22,16 @@ type Command interface {
 type CmdFunc func(ctx context.Context) error
 type QueryFunc func(ctx context.Context) (interface{}, bool, error)
 
+//
+// CmdAndQueryOptions
+// @Description: 命令执行参数
+//
+type CmdAndQueryOptions struct {
+	WaitSecond int // 超时时间，单位秒
+}
+
+type CmdAndQueryOption func(options *CmdAndQueryOptions)
+
 func SetErrorNotFond(ctx iris.Context) error {
 	ctx.SetErr(iris.ErrNotFound)
 	ctx.StatusCode(http.StatusNotFound)
@@ -170,16 +180,6 @@ func DoQuery(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool, e
 	}
 	return data, isFound, err
 }
-
-//
-// CmdAndQueryOptions
-// @Description: 命令执行参数
-//
-type CmdAndQueryOptions struct {
-	WaitSecond int // 超时时间，单位秒
-}
-
-type CmdAndQueryOption func(options *CmdAndQueryOptions)
 
 func CmdAndQueryOptionWaitSecond(waitSecond int) CmdAndQueryOption {
 	return func(options *CmdAndQueryOptions) {

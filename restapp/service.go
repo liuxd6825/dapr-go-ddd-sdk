@@ -33,6 +33,7 @@ type ServiceOptions struct {
 	WebRootPath    string
 	SwaggerDoc     string
 }
+
 type service struct {
 	app            *iris.Application
 	appId          string
@@ -47,6 +48,24 @@ type service struct {
 	eventTypes     []RegisterEventType
 	authToken      string
 	webRootPath    string
+}
+
+func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
+	return &service{
+		httpPort:       opts.HttpPort,
+		httpHost:       opts.HttpHost,
+		appId:          opts.AppId,
+		logLevel:       opts.LogLevel,
+		daprDddClient:  daprDddClient,
+		eventStorages:  opts.EventStorages,
+		actorFactories: opts.ActorFactories,
+		subscribes:     opts.Subscribes,
+		controllers:    opts.Controllers,
+		eventTypes:     opts.EventTypes,
+		authToken:      opts.AuthToken,
+		webRootPath:    opts.WebRootPath,
+		app:            iris.New(),
+	}
 }
 
 func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
@@ -78,24 +97,6 @@ func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
 	w.Header().Set("Allow", "POST,OPTIONS")
-}
-
-func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
-	return &service{
-		httpPort:       opts.HttpPort,
-		httpHost:       opts.HttpHost,
-		appId:          opts.AppId,
-		logLevel:       opts.LogLevel,
-		daprDddClient:  daprDddClient,
-		eventStorages:  opts.EventStorages,
-		actorFactories: opts.ActorFactories,
-		subscribes:     opts.Subscribes,
-		controllers:    opts.Controllers,
-		eventTypes:     opts.EventTypes,
-		authToken:      opts.AuthToken,
-		webRootPath:    opts.WebRootPath,
-		app:            iris.New(),
-	}
 }
 
 func (s *service) Start() error {
