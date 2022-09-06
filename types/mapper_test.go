@@ -74,18 +74,22 @@ func TestAutoMapper(t *testing.T) {
 
 type DateRequest struct {
 	Date *JSONDate
+	Time *JSONTime
 }
 
 type DateCommand struct {
 	Date time.Time
+	Time time.Time
 }
 
 func Test_Mapper_Date(t *testing.T) {
 	dateValue := JSONDate(time.Now())
+	timeValue := JSONTime(time.Now())
 	// dateValue := types.DateString("2019-10-10")
 	// dateValue := time.Now()
 	req := DateRequest{
 		Date: &dateValue,
+		Time: &timeValue,
 	}
 	cmd := DateCommand{}
 	if err := Mapper(&req, &cmd); err != nil {
@@ -94,7 +98,11 @@ func Test_Mapper_Date(t *testing.T) {
 	if cmd.Date.IsZero() {
 		t.Error(errors.New(" date mapper error"))
 	}
+	if cmd.Time.IsZero() {
+		t.Error(errors.New(" time mapper error"))
+	}
 	println(cmd.Date.String())
+	println(cmd.Time.String())
 }
 
 func Test_MaskMapper(t *testing.T) {
