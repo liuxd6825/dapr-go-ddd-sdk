@@ -216,7 +216,10 @@ func (r *Repository[T]) DoFilter(tenantId, filter string, fun func(filter map[st
 	if err := rsql.ParseProcess(filter, p); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
-	filterData := p.GetFilter(tenantId)
+	filterData, err := p.GetFilter(tenantId)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
 	data, _, err := fun(filterData)
 	if err != nil {
 		if ddd_errors.IsErrorMongoNoDocuments(err) {
