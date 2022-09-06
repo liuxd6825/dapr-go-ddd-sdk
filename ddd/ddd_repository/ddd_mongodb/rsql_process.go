@@ -32,7 +32,7 @@ const (
 func NewMongoProcess() *MongoProcess {
 	m := &MongoProcess{
 		item:    newFilterItem(nil, "$and"),
-		errList: make([]string, 10),
+		errList: make([]string, 0),
 	}
 	m.init()
 	return m
