@@ -22,6 +22,7 @@ type EnvConfig struct {
 	Dapr  DaprConfig              `yaml:"dapr"`
 	Mongo map[string]*MongoConfig `yaml:"mongo"`
 	Neo4j map[string]*Neo4jConfig `json:"neo4j"`
+	Mysql map[string]*MySqlConfig `json:"mysql"`
 }
 
 type AppConfig struct {

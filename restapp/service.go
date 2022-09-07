@@ -69,15 +69,15 @@ func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) co
 }
 
 func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
@@ -85,11 +85,11 @@ func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Optio
 }
 
 func (s *service) Stop() error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) GracefulStop() error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {

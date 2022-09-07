@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"runtime"
 	"strings"
 	"time"
@@ -340,6 +341,9 @@ func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, comman
 //  @return error 错误
 //
 func writeAppLog(ctx context.Context, tenantId, className, funcName string, level Level, message string) (string, error) {
+	if log == nil {
+		return "", errors.New("parameter level is nil")
+	}
 	if level < log.GetLevel() {
 		return "", nil
 	}

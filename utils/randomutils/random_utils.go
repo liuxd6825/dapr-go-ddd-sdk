@@ -3,6 +3,7 @@ package randomutils
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"math/rand"
 	"time"
 )
@@ -192,19 +193,19 @@ func TimeString() string {
 
 // PTimeString 随机生成时间字符串
 func PTimeString() *string {
-	v := TimeString()
-	return &v
+	value := TimeString()
+	return &value
 }
 
 func Date() time.Time {
-	r := Time()
-	date := time.Date(r.Year(), r.Month(), r.Day(), 0, 0, 0, 0, time.UTC).Unix()
+	value := Time()
+	date := time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC).Unix()
 	return time.Unix(date, 0)
 }
 
 func PDate() *time.Time {
-	pdate := Date()
-	return &pdate
+	value := Date()
+	return &value
 }
 
 func Time() time.Time {
@@ -217,8 +218,8 @@ func Time() time.Time {
 }
 
 func PTime() *time.Time {
-	pdate := Time()
-	return &pdate
+	value := Time()
+	return &value
 }
 
 func Now() time.Time {
@@ -226,8 +227,8 @@ func Now() time.Time {
 }
 
 func PNow() *time.Time {
-	t := Now()
-	return &t
+	value := Now()
+	return &value
 }
 
 func Boolean() bool {
@@ -237,6 +238,24 @@ func Boolean() bool {
 func PBoolean() *bool {
 	p := Uint32()%2 == 1
 	return &p
+}
+
+func JsonTime() types.JSONTime {
+	return types.JSONTime(Time())
+}
+
+func PJsonTime() *types.JSONTime {
+	value := JsonTime()
+	return &value
+}
+
+func JsonDate() types.JSONDate {
+	return types.JSONDate(Date())
+}
+
+func PJsonDate() *types.JSONDate {
+	value := JsonDate()
+	return &value
 }
 
 //
@@ -261,7 +280,7 @@ func randomString(size int, kind int) string {
 }
 
 // Options 参数
-type Options struct {
+/*type Options struct {
 	Length  *int
 	MinYear *int
 	MaxYear *int
@@ -327,3 +346,4 @@ func (o *Options) SetMinYear(len int) *Options {
 	o.MinYear = &v
 	return o
 }
+*/
