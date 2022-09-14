@@ -2,6 +2,7 @@ package ddd_neo4j
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -9,6 +10,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"log"
+	"strings"
+	"time"
 )
 
 type Neo4jEntity interface {
@@ -62,7 +65,7 @@ func (d *Neo4jDao[T]) Insert(ctx context.Context, entity T, opts ...ddd_reposito
 	}
 
 	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
-	if err := res.GetOne("", entity); err != nil {
+	if _, err := res.GetOne("", entity); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return ddd_repository.NewSetResult(entity, err)
@@ -80,7 +83,7 @@ func (d *Neo4jDao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_
 func (d *Neo4jDao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	cr, err := d.cypherBuilder.Update(ctx, entity)
 	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
-	if err := res.GetOne("", entity); err != nil {
+	if _, err := res.GetOne("", entity); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return ddd_repository.NewSetResult(entity, err)
@@ -93,7 +96,7 @@ func (d *Neo4jDao[T]) UpdateMany(ctx context.Context, list []T, opts ...ddd_repo
 		} else {
 			if res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
-			} else if err := res.GetOne(cr.ResultKeys()[0], entity); err != nil {
+			} else if _, err := res.GetOne(cr.ResultKeys()[0], entity); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
 			}
 		}
@@ -151,8 +154,10 @@ func (d *Neo4jDao[T]) FindById(ctx context.Context, tenantId, id string, opts ..
 	if err != nil {
 		return null, false, err
 	}
-	if err := result.GetOne("", entity); err != nil {
+	if ok, err := result.GetOne("", entity); err != nil {
 		return null, false, err
+	} else if !ok {
+		return null, false, nil
 	}
 	return entity, true, nil
 }
@@ -174,7 +179,7 @@ func (d *Neo4jDao[T]) FindByIds(ctx context.Context, tenantId string, ids []stri
 	if err := result.GetList(cr.ResultOneKey(), &list); err != nil {
 		return null, false, err
 	}
-	return list, true, nil
+	return list, len(list) > 0, nil
 }
 
 func (d *Neo4jDao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
@@ -216,23 +221,54 @@ func (d *Neo4jDao[T]) FindByGraphId(ctx context.Context, tenantId string, graphI
 }
 
 func (d *Neo4jDao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	/*	return d.DoFindList(func() (*[]T, bool, error) {
-		filter := d.NewFilter(tenantId, filterMap)
-		data := d.NewEntityList()
-		findOptions := getFindOptions(opts...)
-		cursor, err := d.collection.Find(ctx, filter, findOptions)
-		if err != nil {
+	sb := strings.Builder{}
+	for k, v := range filterMap {
+		switch v.(type) {
+		case string:
+			sb.WriteString(fmt.Sprintf("%v=='%v'", k, v))
+		case time.Time:
+			sb.WriteString(fmt.Sprintf("%v=='%v'", k, v))
+		case *time.Time:
+			sb.WriteString(fmt.Sprintf("%v=='%v'", k, v))
+		default:
+			sb.WriteString(fmt.Sprintf("%v==%v", k, v))
+		}
+		sb.WriteString(" and ")
+	}
+	filter := sb.String()
+	if strings.HasSuffix(filter, " and ") {
+		filter = filter[0 : len(filter)-5]
+	}
+	return d.FindByFilter(ctx, tenantId, filter)
+}
+
+func (d *Neo4jDao[T]) FindByFilter(ctx context.Context, tenantId, filter string) *ddd_repository.FindListResult[T] {
+	return d.DoList(ctx, tenantId, filter, func() (*ddd_repository.FindListResult[T], bool, error) {
+		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
-		err = cursor.All(ctx, data)
-		return data, true, err
-	})*/
-	data, err := d.NewEntities()
-	if err != nil {
-		var null []T
-		return ddd_repository.NewFindListResult[T](null, false, err)
-	}
-	return ddd_repository.NewFindListResult[T](data, true, nil)
+
+		cr, err := d.cypherBuilder.GetFilter(ctx, tenantId, filter)
+		if err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+
+		cyhper := cr.Cypher()
+		result, err := d.Query(ctx, cyhper, cr.Params())
+		if err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+
+		list, err := reflectutils.NewSlice[[]T]()
+		if err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+
+		if err = result.GetList(cr.ResultOneKey(), &list); err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+		return ddd_repository.NewFindListResult[T](list, len(list) > 0, err), false, nil
+	})
 }
 
 func (d *Neo4jDao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, error) {
@@ -287,7 +323,10 @@ func (d *Neo4jDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindP
 
 		var totalRows *int64
 		if query.GetIsTotalRows() {
-
+			/*			cr, err := d.cypherBuilder.FindPagingCount(ctx, query)
+						if err = result.GetOne(cr.ResultOneKey(), &list); err != nil {
+							return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+						}*/
 		}
 
 		return ddd_repository.NewFindPagingResult[T](list, totalRows, query, nil), true, err
@@ -302,6 +341,18 @@ func (d *Neo4jDao[T]) DoFilter(tenantId, filter string, fun func() (*ddd_reposit
 	data, _, err := fun()
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+	return data
+}
+
+func (d *Neo4jDao[T]) DoList(ctx context.Context, tenantId string, filter string, fun func() (*ddd_repository.FindListResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	p := NewRSqlProcess()
+	if err := ParseProcess(filter, p); err != nil {
+		return ddd_repository.NewFindListResultError[T](err)
+	}
+	data, _, err := fun()
+	if err != nil {
+		return ddd_repository.NewFindListResultError[T](err)
 	}
 	return data
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type RsqlProcess interface {
@@ -111,8 +110,9 @@ func (p *rsqlProcess) Print() {
 	fmt.Print(p.str)
 }
 
-func getSqlWhere(tenantId, filter string) (string, error) {
+func getSqlWhere(tenantId string, filter string) (string, error) {
 	p := NewRSqlProcess()
+	
 	if err := ParseProcess(filter, p); err != nil {
 		return "", err
 	}
@@ -161,41 +161,41 @@ func parseRSqlProcess(expr rsql.Expression, process rsql.Process) error {
 	case rsql.NotEqualsComparison:
 		ex, _ := expr.(rsql.NotEqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnNotEquals(name, value, ex.Comparison.Val)
 		break
 	case rsql.EqualsComparison:
 		ex, _ := expr.(rsql.EqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnEquals(name, value, ex.Comparison.Val)
 		break
 	case rsql.LikeComparison:
 		ex, _ := expr.(rsql.LikeComparison)
-		name := stringutils.AsFieldName(ex.Comparison.Identifier.Val)
+		name := getFieldName(ex.Comparison.Identifier.Val)
 		value := getValue(ex.Comparison.Val)
 		process.OnLike(name, value, ex.Comparison.Val)
 		break
 	case rsql.NotLikeComparison:
 		ex, _ := expr.(rsql.NotLikeComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnNotLike(name, value, ex.Comparison.Val)
 		break
 	case rsql.GreaterThanComparison:
 		ex, _ := expr.(rsql.GreaterThanComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnGreaterThan(name, value, ex.Comparison.Val)
 		break
 	case rsql.GreaterThanOrEqualsComparison:
 		ex, _ := expr.(rsql.GreaterThanOrEqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnGreaterThanOrEquals(name, value, ex.Comparison.Val)
 		break
@@ -208,21 +208,21 @@ func parseRSqlProcess(expr rsql.Expression, process rsql.Process) error {
 	case rsql.LessThanOrEqualsComparison:
 		ex, _ := expr.(rsql.LessThanOrEqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnLessThanOrEquals(name, value, ex.Comparison.Val)
 		break
 	case rsql.InComparison:
 		ex, _ := expr.(rsql.InComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnIn(name, value, ex.Comparison.Val)
 		break
 	case rsql.NotInComparison:
 		ex, _ := expr.(rsql.NotInComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnNotIn(name, value, ex.Comparison.Val)
 		break
@@ -240,14 +240,18 @@ func getValue(val rsql.Value) interface{} {
 		value = val.(rsql.BooleanValue).Value
 		break
 	case rsql.StringValue:
-		value = fmt.Sprintf(`"%v"`, val.(rsql.StringValue).Value)
+		value = fmt.Sprintf(`'%v'`, val.(rsql.StringValue).Value)
 		break
 	case rsql.DateTimeValue:
-		value = fmt.Sprintf(`"%v"`, val.(rsql.DateTimeValue).Value)
+		value = fmt.Sprintf(`'%v'`, val.(rsql.DateTimeValue).Value)
 		break
 	case rsql.DoubleValue:
 		value = val.(rsql.DoubleValue).Value
 		break
 	}
 	return value
+}
+
+func getFieldName(name string) string {
+	return name
 }

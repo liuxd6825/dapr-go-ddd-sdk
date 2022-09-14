@@ -93,7 +93,7 @@ func (r *Neo4jResult) GetList(key string, list interface{}) error {
 	return nil
 }
 
-func (r *Neo4jResult) GetOne(key string, entity interface{}) error {
+func (r *Neo4jResult) GetOne(key string, entity interface{}) (bool, error) {
 	var list []any
 	if len(key) == 0 {
 		for _, v := range r.data {
@@ -103,13 +103,16 @@ func (r *Neo4jResult) GetOne(key string, entity interface{}) error {
 	} else {
 		neo4jList, ok := r.data[key]
 		if !ok {
-			return fmt.Errorf("GetList(key, list) key \"%s\" not exist ", key)
+			return false, fmt.Errorf("GetOne(key, entity) key \"%s\" not exist ", key)
 		}
 		list = neo4jList
 	}
 
-	if len(list) != 1 {
-		return fmt.Errorf("GetList(key, list) key \"%s\" entity length != 1  not exist ", key)
+	count := len(list)
+	if count == 0 {
+		return false, nil
+	} else if count > 1 {
+		return false, fmt.Errorf("GetList(key, list) key \"%s\" entity length != 1  not exist ", key)
 	}
 	node := list[0].(neo4j.Node)
 	err := reflectutils.MappingStruct(node, entity, func(source reflect.Value, target reflect.Value) error {
@@ -120,10 +123,10 @@ func (r *Neo4jResult) GetOne(key string, entity interface{}) error {
 		e.SetLabels(node.Labels)
 	}
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
 
 func decode(input interface{}, out interface{}) error {

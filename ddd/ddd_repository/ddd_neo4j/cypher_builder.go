@@ -16,18 +16,65 @@ type CypherBuilderResult interface {
 	ResultOneKey() string
 }
 
+type cypherBuilderResult struct {
+	cypher    string
+	params    map[string]any
+	resultKey []string
+}
+
+type CypherBuilder interface {
+	Insert(ctx context.Context, data ElementEntity) (CypherBuilderResult, error)
+	InsertMany(ctx context.Context, data []ElementEntity) (CypherBuilderResult, error)
+
+	Update(ctx context.Context, data ElementEntity, setFields ...string) (CypherBuilderResult, error)
+	UpdateMany(ctx context.Context, list []ElementEntity) (CypherBuilderResult, error)
+
+	DeleteById(ctx context.Context, tenantId string, id string) (CypherBuilderResult, error)
+	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
+	DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
+	DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherBuilderResult, error)
+
+	GetFilter(ctx context.Context, tenantId, filter string) (CypherBuilderResult, error)
+	FindById(ctx context.Context, tenantId, id string) (CypherBuilderResult, error)
+	FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
+	FindByAggregateId(ctx context.Context, tenantId, aggregateName, aggregateId string) (result CypherBuilderResult, err error)
+	FindByGraphId(ctx context.Context, tenantId string, graphId string) (result CypherBuilderResult, err error)
+	FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
+	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
+	FindPagingCount(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
+
+	GetLabels() string
+}
+
+type ReflectBuilder struct {
+	labels string
+}
+
+const (
+	or  = " or "
+	and = " and "
+)
+
+//
+// NewReflectBuilder
+// @Description:
+// @param labels Neo4j标签
+// @return CypherBuilder
+//
+func NewReflectBuilder(labels ...string) CypherBuilder {
+	var s string
+	for _, l := range labels {
+		s = s + ":" + l
+	}
+	return &ReflectBuilder{labels: s}
+}
+
 func NewCypherBuilderResult(cypher string, params map[string]any, resultKey []string) CypherBuilderResult {
 	return &cypherBuilderResult{
 		cypher:    cypher,
 		params:    params,
 		resultKey: resultKey,
 	}
-}
-
-type cypherBuilderResult struct {
-	cypher    string
-	params    map[string]any
-	resultKey []string
 }
 
 func (c *cypherBuilderResult) Cypher() string {
@@ -49,38 +96,12 @@ func (c *cypherBuilderResult) ResultOneKey() string {
 	return ""
 }
 
-type CypherBuilder interface {
-	Insert(ctx context.Context, data ElementEntity) (CypherBuilderResult, error)
-	InsertMany(ctx context.Context, data []ElementEntity) (CypherBuilderResult, error)
-
-	Update(ctx context.Context, data ElementEntity, setFields ...string) (CypherBuilderResult, error)
-	UpdateMany(ctx context.Context, list []ElementEntity) (CypherBuilderResult, error)
-
-	DeleteById(ctx context.Context, tenantId string, id string) (CypherBuilderResult, error)
-	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
-	DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
-	DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherBuilderResult, error)
-
-	FindById(ctx context.Context, tenantId, id string) (CypherBuilderResult, error)
-	FindByIds(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error)
-	FindByGraphId(ctx context.Context, tenantId, graphId string) (result CypherBuilderResult, err error)
-	FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
-	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
-	FindPagingCount(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
-
-	GetLabels() string
-}
-
-type ReflectBuilder struct {
-	labels string
-}
-
 func (r *ReflectBuilder) Insert(ctx context.Context, data ElementEntity) (CypherBuilderResult, error) {
 	props, dataMap, err := r.getCreateProperties(ctx, data)
 	if err != nil {
 		return nil, err
 	}
-	labels, _ := r.getLabels(data)
+	labels := r.GetLabels()
 	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
@@ -110,23 +131,23 @@ func (r *ReflectBuilder) Delete(ctx context.Context, data ElementEntity) (Cypher
 		return nil, err
 	}
 
-	cypher := fmt.Sprintf("MATCH (n{id:$id}) DETACH DELETE n")
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:$tenantId,id:$id}) DETACH DELETE n", r.GetLabels())
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
 func (r *ReflectBuilder) DeleteMany(ctx context.Context, tenantId string, ids []string) (CypherBuilderResult, error) {
 	count := len(ids)
 	if count == 0 {
-		return nil, errors.New("DeleteManyById() ids.length is 0")
+		return nil, errors.New("DeleteMany() ids.length is 0")
 	}
 	var whereIds string
 	for i, id := range ids {
 		whereIds = fmt.Sprintf("%v n.id='%v' ", whereIds, id)
 		if i < count {
-			whereIds += " or "
+			whereIds += or
 		}
 	}
-	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v'}) where %v DELETE n", tenantId, whereIds)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) where %v DELETE n", r.GetLabels(), tenantId, whereIds)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -134,7 +155,7 @@ func (r *ReflectBuilder) DeleteById(ctx context.Context, tenantId string, id str
 	params := make(map[string]any)
 	params["id"] = id
 	params["tenantId"] = tenantId
-	cypher := fmt.Sprintf("MATCH (n{id:$id, tenantId:$id}) DETACH DELETE n")
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) DETACH DELETE n", r.GetLabels(), tenantId, id)
 	return NewCypherBuilderResult(cypher, params, nil), nil
 }
 
@@ -143,19 +164,16 @@ func (r *ReflectBuilder) DeleteByIds(ctx context.Context, tenantId string, ids [
 	if count == 0 {
 		return nil, errors.New("DeleteByIds() ids.length is 0")
 	}
-	var whereIds string
 	for i, id := range ids {
-		whereIds = fmt.Sprintf("%v n.id='%v' ", whereIds, id)
-		if i < count {
-			whereIds += " or "
-		}
+		ids[i] = fmt.Sprintf(`'%v'`, id)
 	}
-	cypher := fmt.Sprintf("MATCH (n %v {tenantId:'%v'}) where %v DELETE n", r.GetLabels(), tenantId, whereIds)
+	idWhere := strings.Join(ids, ",")
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] DETACH DELETE n ", r.GetLabels(), tenantId, idWhere)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (r *ReflectBuilder) DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error) {
-	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v'}) DELETE n", tenantId)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DELETE n", r.GetLabels(), tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -164,12 +182,12 @@ func (r *ReflectBuilder) DeleteByFilter(ctx context.Context, tenantId string, fi
 	if err != nil {
 		return nil, err
 	}
-	cypher := fmt.Sprintf("MATCH (n%v) WHERE %v DELETE n", r.labels, where)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) WHERE (%v) DELETE n", r.labels, tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (r *ReflectBuilder) FindById(ctx context.Context, tenantId, id string) (CypherBuilderResult, error) {
-	cypher := fmt.Sprintf("MATCH (n {tenantId:'%v',id:'%v'}) RETURN n", tenantId, id)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) RETURN n", r.GetLabels(), tenantId, id)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -178,20 +196,38 @@ func (r *ReflectBuilder) FindByIds(ctx context.Context, tenantId string, ids []s
 		ids[i] = fmt.Sprintf(`'%v'`, id)
 	}
 	idWhere := strings.Join(ids, ",")
-	cypher := fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' and n.id in [%s] RETURN n ", r.labels, tenantId, idWhere)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] RETURN n ", r.GetLabels(), tenantId, idWhere)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (r *ReflectBuilder) FindByGraphId(ctx context.Context, tenantId string, graphId string) (CypherBuilderResult, error) {
 	var params map[string]any
-	cypher := fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' and n.graphId= '%s'  RETURN n ", r.labels, tenantId, graphId)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s', graphId:'%s'}) RETURN n ", r.labels, tenantId, graphId)
+	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
+}
+
+func (r *ReflectBuilder) FindByAggregateId(ctx context.Context, tenantId string, aggregateName, aggregateId string) (CypherBuilderResult, error) {
+	var params map[string]any
+	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) WHERE n.%v='%s' RETURN n ", r.GetLabels(), tenantId, aggregateName, aggregateId)
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
 func (r *ReflectBuilder) FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error) {
 	var params map[string]any
-	cypher := fmt.Sprintf("MATCH (n%s) WHERE  n.tenantId = '%s' RETURN n ", r.labels, tenantId)
+	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) RETURN n ", r.GetLabels(), tenantId)
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
+}
+
+func (r *ReflectBuilder) GetFilter(ctx context.Context, tenantId, filter string) (CypherBuilderResult, error) {
+	where, err := getSqlWhere(tenantId, filter)
+	if err != nil {
+		return nil, err
+	}
+	if len(where) > 0 {
+		where = "WHERE " + where
+	}
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n  ", r.labels, tenantId, where)
+	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
 func (r *ReflectBuilder) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, isCount bool) (CypherBuilderResult, error) {
@@ -220,9 +256,9 @@ func (r *ReflectBuilder) findPaging(ctx context.Context, query ddd_repository.Fi
 
 	var cypher string
 	if !isCount {
-		cypher = fmt.Sprintf("MATCH (n%v) %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, where, count, order, skip, pageSize)
+		cypher = fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, query.GetTenantId(), where, count, order, skip, pageSize)
 	} else {
-		cypher = fmt.Sprintf("MATCH (n%v) %v RETURN count(n)", r.labels, where, count, order, skip, pageSize)
+		cypher = fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN count(n)", r.labels, query.GetTenantId(), where, count, order, skip, pageSize)
 	}
 
 	return NewCypherBuilderResult(cypher, nil, keys), nil
@@ -364,18 +400,4 @@ func (r *ReflectBuilder) getOrder(sort string) (string, error) {
 	}
 	res = res[0 : len(res)-1]
 	return res, nil
-}
-
-//
-// NewReflectBuilder
-// @Description:
-// @param labels Neo4j标签
-// @return CypherBuilder
-//
-func NewReflectBuilder(labels ...string) CypherBuilder {
-	var s string
-	for _, l := range labels {
-		s = s + ":" + l
-	}
-	return &ReflectBuilder{labels: s}
 }
