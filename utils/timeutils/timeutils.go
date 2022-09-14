@@ -12,32 +12,22 @@ func Now() time.Time {
 }
 
 func Equal(t1, t2 interface{}) bool {
-	n1 := isNil(t1)
-	n2 := isNil(t2)
-	if n1 && n2 {
-		return true
-	} else if n1 && !n2 {
-		return false
-	} else if !n1 && n2 {
-		return false
-	}
-
 	switch t1.(type) {
 	case time.Time:
 		{
 			v := t1.(time.Time)
-			return equalTime(v, t2)
+			return equalTime(&v, t2)
 		}
 	case *time.Time:
 		{
 			v := t1.(*time.Time)
-			return equalTime(*v, t2)
+			return equalTime(v, t2)
 		}
 	}
 	return false
 }
 
-func equalTime(t1 time.Time, t2 interface{}) bool {
+func equalTime(t1 *time.Time, t2 interface{}) bool {
 	switch t2.(type) {
 	case time.Time:
 		{
@@ -46,8 +36,14 @@ func equalTime(t1 time.Time, t2 interface{}) bool {
 		}
 	case *time.Time:
 		{
-			v := t2.(*time.Time)
-			return t1.Equal(*v)
+			v2 := t2.(*time.Time)
+			if t1 == nil && v2 == nil {
+				return true
+			}
+			if (t1 == nil && v2 != nil) || (t1 != nil && v2 == nil) {
+				return false
+			}
+			return t1.Equal(*v2)
 		}
 	}
 	return false
