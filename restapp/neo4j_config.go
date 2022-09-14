@@ -17,7 +17,7 @@ type Neo4jConfig struct {
 	Password string `yaml:"pwd"`
 }
 
-var _neo4js map[string]neo4j.Driver
+var _neo4js = make(map[string]neo4j.Driver)
 var _neo4jDefault neo4j.Driver
 
 func initNeo4j(configs map[string]*Neo4jConfig) {
@@ -26,7 +26,7 @@ func initNeo4j(configs map[string]*Neo4jConfig) {
 	}
 
 	for key, config := range configs {
-		if config.Host == "<no value>" &&  config.Port == "<no value>"{
+		if config.Host == "<no value>" && config.Port == "<no value>" {
 			continue
 		}
 		uri := fmt.Sprintf("bolt://%v:%v", config.Host, config.Port)

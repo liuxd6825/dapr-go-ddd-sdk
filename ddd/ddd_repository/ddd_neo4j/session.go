@@ -38,15 +38,21 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 				}
 			}
 		}()
+		/*		sessCtx := NewSessionContext(ctx, tx, session)
+				if dbFunc == nil {
+					return nil, nil
+				}
+				err := dbFunc(sessCtx)
+				if err != nil {
+					return nil, tx.Rollback()
+				}
+				return nil, tx.Commit()*/
 		sessCtx := NewSessionContext(ctx, tx, session)
 		if dbFunc == nil {
 			return nil, nil
 		}
 		err := dbFunc(sessCtx)
-		if err != nil {
-			return nil, tx.Rollback()
-		}
-		return nil, tx.Commit()
+		return nil, err
 	}
 
 	var err error
@@ -54,6 +60,9 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 		_, err = session.WriteTransaction(tx)
 	} else {
 		_, err = session.ReadTransaction(tx)
+	}
+	if err != nil {
+		println(err)
 	}
 	return err
 }

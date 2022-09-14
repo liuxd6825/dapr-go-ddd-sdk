@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -51,7 +52,20 @@ func NewConfig() *Config {
 func NewConfigByFile(fileName string) (*Config, error) {
 	//rootPath, _ := os.Getwd()
 	//_ = fmt.Sprintf("%s/%s", rootPath, fileName)
-	yamlFile, err := ioutil.ReadFile(fileName)
+	filename := fileName
+	if strings.HasPrefix(filename, "${search}") {
+		slist := strings.Split(filename, "/")
+		slist = slist[1:]
+		v, ok, err := searchConfigFile(".", slist[0], slist[1])
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return nil, errors.New(fileName)
+		}
+		filename = v
+	}
+	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -160,4 +174,30 @@ func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
 	}
 
 	return nil, NewEnvTypeError(fmt.Sprintf("error config env-type is \"%s\". choose one of: [dev, test, prod]", envType))
+}
+
+func searchConfigFile(path, configName string, fileName string) (string, bool, error) {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return "", false, err
+	}
+	if len(files) <= 0 {
+		return "", false, nil
+	}
+	for _, file := range files {
+		name := file.Name()
+		if file.IsDir() && name == configName {
+			list, err := ioutil.ReadDir(path + "/" + file.Name())
+			if err != nil {
+				return "", false, err
+			}
+			for _, item := range list {
+				if item.Name() == fileName {
+					return fmt.Sprintf("%v/%v/%v", path, file.Name(), item.Name()), true, nil
+				}
+			}
+		}
+	}
+
+	return searchConfigFile(path+"/..", configName, fileName)
 }

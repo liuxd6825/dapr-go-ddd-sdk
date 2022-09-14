@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"go.mongodb.org/mongo-driver/bson/bsoncodec"
+	"go.mongodb.org/mongo-driver/bson/bsonoptions"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+	"reflect"
 	"strconv"
 	"time"
 )
@@ -89,6 +92,7 @@ func NewMongoDB(config *Config) (*MongoDB, error) {
 //  @return error 错误信息
 //
 func (m *MongoDB) init(config *Config) error {
+
 	if config == nil {
 		return errors.New("NewMongoDB() error,config is nil")
 	}
@@ -157,6 +161,7 @@ func getMongoURI(metadata *Config) string {
 }
 
 func getMongoDBClient(config *Config) (*mongo.Client, error) {
+
 	uri := getMongoURI(config)
 
 	// Set client options
@@ -185,6 +190,17 @@ func getMongoDBClient(config *Config) (*mongo.Client, error) {
 	if config.ReplicaSet != "" {
 		opts.SetReplicaSet(config.ReplicaSet)
 	}
+
+	// 解决mongo不是本地时区的问题
+	builder := bsoncodec.NewRegistryBuilder()
+	// 注册默认的编码和解码器
+	bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(builder)
+	bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(builder)
+	// 注册时间解码器
+	tTime := reflect.TypeOf(time.Time{})
+	tCodec := bsoncodec.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
+	registry := builder.RegisterTypeDecoder(tTime, tCodec).Build()
+	opts.SetRegistry(registry)
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {

@@ -270,7 +270,8 @@ func (d *Neo4jDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindP
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
 
-		result, err := d.Query(ctx, cr.Cypher(), cr.Params())
+		cyhper := cr.Cypher()
+		result, err := d.Query(ctx, cyhper, cr.Params())
 		if err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
@@ -284,9 +285,9 @@ func (d *Neo4jDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindP
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
 
-		var totalRows int64
+		var totalRows *int64
 		if query.GetIsTotalRows() {
-			// "MATCH (n)-[r]->() RETURN COUNT(r)"
+
 		}
 
 		return ddd_repository.NewFindPagingResult[T](list, totalRows, query, nil), true, err

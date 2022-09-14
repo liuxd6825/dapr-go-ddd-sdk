@@ -350,9 +350,17 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 			return nil, false, err
 		}
 		err = cursor.All(ctx, &data)
-		totalRows, err := r.collection.CountDocuments(ctx, filter)
+		var totalRows *int64
+		if query.GetIsTotalRows() {
+			total, err := r.collection.CountDocuments(ctx, filter)
+			if err != nil {
+				return nil, false, err
+			}
+			totalRows = &total
+		}
+
 		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
-		return findData, totalRows > 0, err
+		return findData, findData.IsFound, err
 	})
 }
 

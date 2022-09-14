@@ -17,17 +17,22 @@ func NewSession(isWrite bool, db *MongoDB) ddd_repository.Session {
 
 func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc) error {
 	return r.mongodb.client.UseSession(ctx, func(sCtx mongo.SessionContext) error {
-		if err := sCtx.StartTransaction(); err != nil {
-			return err
-		}
-		err := dbFunc(sCtx)
-		if err != nil {
-			if e1 := sCtx.AbortTransaction(sCtx); e1 != nil {
-				err = e1
+		return dbFunc(sCtx)
+		/*
+			if err := sCtx.StartTransaction(); err != nil {
+				return err
 			}
-		} else {
-			err = sCtx.CommitTransaction(sCtx)
-		}
-		return err
+			err := dbFunc(sCtx)
+			if err != nil {
+				if e1 := sCtx.AbortTransaction(sCtx); e1 != nil {
+					err =
+				}
+			} else {
+				err = sCtx.CommitTransaction(sCtx)
+			}
+			if err != nil {
+				println(err)
+			}
+			return err*/
 	})
 }

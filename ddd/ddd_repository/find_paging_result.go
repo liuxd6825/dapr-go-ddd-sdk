@@ -6,8 +6,8 @@ import (
 
 type FindPagingResult[T ddd.Entity] struct {
 	Data        []T    `json:"data"`
-	TotalRows   int64  `json:"totalRows"`
-	TotalPages  int64  `json:"totalPages"`
+	TotalRows   *int64 `json:"totalRows"`
+	TotalPages  *int64 `json:"totalPages"`
 	PageNum     int64  `json:"pageNum"`
 	PageSize    int64  `json:"pageSize"`
 	Filter      string `json:"filter"`
@@ -17,7 +17,7 @@ type FindPagingResult[T ddd.Entity] struct {
 	IsTotalRows bool   `json:"isTotalRows"`
 }
 
-func NewFindPagingResult[T ddd.Entity](data []T, totalRows int64, query FindPagingQuery, err error) *FindPagingResult[T] {
+func NewFindPagingResult[T ddd.Entity](data []T, totalRows *int64, query FindPagingQuery, err error) *FindPagingResult[T] {
 	if data != nil && query != nil {
 		return &FindPagingResult[T]{
 			Data:       data,
@@ -27,14 +27,15 @@ func NewFindPagingResult[T ddd.Entity](data []T, totalRows int64, query FindPagi
 			PageSize:   query.GetPageSize(),
 			Sort:       query.GetSort(),
 			Filter:     query.GetFilter(),
-			IsFound:    totalRows > 0,
+			IsFound:    len(data) > 0,
 			Error:      err,
 		}
 	}
+
 	return &FindPagingResult[T]{
 		Data:       data,
-		TotalRows:  totalRows,
-		TotalPages: 0,
+		TotalRows:  nil,
+		TotalPages: nil,
 		PageNum:    0,
 		PageSize:   0,
 		Sort:       "",
@@ -52,15 +53,19 @@ func NewFindPagingResultWithError[T ddd.Entity](err error) *FindPagingResult[T] 
 	}
 }
 
-func getTotalPage(totalRows int64, pageSize int64) int64 {
-	if pageSize == 0 {
-		return 0
+func getTotalPage(totalRows *int64, pageSize int64) *int64 {
+	if totalRows == nil {
+		return nil
 	}
-	totalPage := totalRows / pageSize
-	if totalRows%pageSize > 1 {
+	if pageSize == 0 {
+		return nil
+	}
+	rows := *totalRows
+	totalPage := rows / pageSize
+	if rows%pageSize > 1 {
 		totalPage++
 	}
-	return totalPage
+	return &totalPage
 }
 
 func (f *FindPagingResult[T]) GetError() error {
@@ -104,11 +109,11 @@ func (f *FindPagingResult[T]) OnSuccess(success OnSuccessList[T]) *FindPagingRes
 	return f
 }
 
-func (f *FindPagingResult[T]) GetTotalRows() int64 {
+func (f *FindPagingResult[T]) GetTotalRows() *int64 {
 	return f.TotalRows
 }
 
-func (f *FindPagingResult[T]) GetTotalPages() int64 {
+func (f *FindPagingResult[T]) GetTotalPages() *int64 {
 	return f.TotalPages
 }
 

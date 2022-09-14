@@ -66,6 +66,7 @@ type CypherBuilder interface {
 	FindByGraphId(ctx context.Context, tenantId, graphId string) (result CypherBuilderResult, err error)
 	FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
 	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
+	FindPagingCount(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
 
 	GetLabels() string
 }
@@ -193,7 +194,7 @@ func (r *ReflectBuilder) FindAll(ctx context.Context, tenantId string) (CypherBu
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
-func (r *ReflectBuilder) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
+func (r *ReflectBuilder) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, isCount bool) (CypherBuilderResult, error) {
 	where, err := getSqlWhere(query.GetTenantId(), query.GetFilter())
 	if err != nil {
 		return nil, err
@@ -213,8 +214,26 @@ func (r *ReflectBuilder) FindPaging(ctx context.Context, query ddd_repository.Fi
 		return nil, err
 	}
 
-	cypher := fmt.Sprintf("MATCH (n%v) WHERE %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, where, count, order, skip, pageSize)
+	if len(where) > 0 {
+		where = fmt.Sprintf("WHERE %v", where)
+	}
+
+	var cypher string
+	if !isCount {
+		cypher = fmt.Sprintf("MATCH (n%v) %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, where, count, order, skip, pageSize)
+	} else {
+		cypher = fmt.Sprintf("MATCH (n%v) %v RETURN count(n)", r.labels, where, count, order, skip, pageSize)
+	}
+
 	return NewCypherBuilderResult(cypher, nil, keys), nil
+}
+
+func (r *ReflectBuilder) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
+	return r.findPaging(ctx, query, false)
+}
+
+func (r *ReflectBuilder) FindPagingCount(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
+	return r.findPaging(ctx, query, true)
 }
 
 func (r *ReflectBuilder) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
