@@ -155,7 +155,7 @@ func (r *Neo4jResult) GetOne(key string, entity interface{}) (bool, error) {
 	err := reflectutils.MappingStruct(node, entity, func(source reflect.Value, target reflect.Value) error {
 		return r.setEntity(source, target)
 	})
-	if e, ok := entity.(ElementEntity); ok {
+	if e, ok := entity.(Node); ok {
 		e.SetNid(node.Id)
 		e.SetLabels(node.Labels)
 	}
@@ -221,8 +221,8 @@ func setNode(data interface{}, node neo4j.Node) error {
 	v := reflectutils.GetValuePointer(data)
 	element := v.Interface()
 	switch element.(type) {
-	case ElementEntity:
-		n := element.(ElementEntity)
+	case Node:
+		n := element.(Node)
 		n.SetNid(node.Id)
 		n.SetLabels(node.Labels)
 		n.SetNid(node.Id)
@@ -240,12 +240,12 @@ func setRelationship(data interface{}, rel neo4j.Relationship) error {
 	if err := decode(rel.Props, data); err != nil {
 		return err
 	}
-	if r, ok := data.(RelationshipEntity); ok {
+	if r, ok := data.(Relation); ok {
 		r.SetNid(rel.Id)
 		r.SetType(rel.Type)
-		r.SetEndId(rel.EndId)
-		r.SetStartId(rel.StartId)
-	} else if e, ok := data.(ElementEntity); ok {
+		r.SetEid(rel.EndId)
+		r.SetSid(rel.StartId)
+	} else if e, ok := data.(Node); ok {
 		e.SetNid(rel.Id)
 	}
 	return nil

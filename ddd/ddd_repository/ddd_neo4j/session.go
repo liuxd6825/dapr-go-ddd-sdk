@@ -12,6 +12,14 @@ type Neo4jSession struct {
 	isWrite       bool
 }
 
+type SessionOptions struct {
+	AccessMode *neo4j.AccessMode
+}
+
+func NewSessionOptions() *SessionOptions {
+	return &SessionOptions{}
+}
+
 func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
 	sessionConfig := neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead}
 	if isWrite {
@@ -65,4 +73,25 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 		println(err)
 	}
 	return err
+}
+
+func (o *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) {
+	o.AccessMode = &accessMode
+}
+
+func (o *SessionOptions) Merge(opts ...*SessionOptions) {
+	for _, o := range opts {
+		if o == nil {
+			continue
+		}
+		if o.AccessMode != nil {
+			o.SetAccessMode(*o.AccessMode)
+		}
+	}
+}
+
+func (o *SessionOptions) setDefault() {
+	if o.AccessMode == nil {
+		o.SetAccessMode(neo4j.AccessModeWrite)
+	}
 }
