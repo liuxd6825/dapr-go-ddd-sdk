@@ -25,11 +25,7 @@ const (
 // @return nodeCypher
 //
 func NewNodeCypher(labels ...string) Cypher {
-	var s string
-	for _, l := range labels {
-		s = s + ":" + l
-	}
-	return &nodeCypher{labels: s}
+	return &nodeCypher{labels: getLabels(labels...)}
 }
 
 func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult, error) {
@@ -38,7 +34,7 @@ func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult
 	if err != nil {
 		return nil, err
 	}
-	labels := c.GetLabels()
+	labels := c.GetLabels("")
 	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
@@ -74,7 +70,7 @@ func (c *nodeCypher) Delete(ctx context.Context, data interface{}) (CypherResult
 		return nil, err
 	}
 
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:$tenantId,id:$id}) DETACH DELETE n", c.GetLabels())
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:$tenantId,id:$id}) DETACH DELETE n", c.GetLabels(""))
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
@@ -90,7 +86,7 @@ func (c *nodeCypher) DeleteMany(ctx context.Context, tenantId string, ids []stri
 			whereIds += or
 		}
 	}
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) where %v DELETE n", c.GetLabels(), tenantId, whereIds)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) where %v DELETE n", c.GetLabels(""), tenantId, whereIds)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -98,7 +94,7 @@ func (c *nodeCypher) DeleteById(ctx context.Context, tenantId string, id string)
 	params := make(map[string]any)
 	params["id"] = id
 	params["tenantId"] = tenantId
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) DETACH DELETE n", c.GetLabels(), tenantId, id)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) DETACH DELETE n", c.GetLabels(""), tenantId, id)
 	return NewCypherBuilderResult(cypher, params, nil), nil
 }
 
@@ -111,12 +107,12 @@ func (c *nodeCypher) DeleteByIds(ctx context.Context, tenantId string, ids []str
 		ids[i] = fmt.Sprintf(`'%v'`, id)
 	}
 	idWhere := strings.Join(ids, ",")
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] DETACH DELETE n ", c.GetLabels(), tenantId, idWhere)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] DETACH DELETE n ", c.GetLabels(""), tenantId, idWhere)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) DeleteAll(ctx context.Context, tenantId string) (CypherResult, error) {
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DETACH DELETE n", c.GetLabels(), tenantId)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DETACH DELETE n", c.GetLabels(""), tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -130,7 +126,7 @@ func (c *nodeCypher) DeleteByFilter(ctx context.Context, tenantId string, filter
 }
 
 func (c *nodeCypher) FindById(ctx context.Context, tenantId, id string) (CypherResult, error) {
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) RETURN n", c.GetLabels(), tenantId, id)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) RETURN n", c.GetLabels(""), tenantId, id)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -139,7 +135,7 @@ func (c *nodeCypher) FindByIds(ctx context.Context, tenantId string, ids []strin
 		ids[i] = fmt.Sprintf(`'%v'`, id)
 	}
 	idWhere := strings.Join(ids, ",")
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] RETURN n ", c.GetLabels(), tenantId, idWhere)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] RETURN n ", c.GetLabels(""), tenantId, idWhere)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -151,13 +147,13 @@ func (c *nodeCypher) FindByGraphId(ctx context.Context, tenantId string, graphId
 
 func (c *nodeCypher) FindByAggregateId(ctx context.Context, tenantId string, aggregateName, aggregateId string) (CypherResult, error) {
 	var params map[string]any
-	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) WHERE n.%v='%s' RETURN n ", c.GetLabels(), tenantId, aggregateName, aggregateId)
+	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) WHERE n.%v='%s' RETURN n ", c.GetLabels(""), tenantId, aggregateName, aggregateId)
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
 func (c *nodeCypher) FindAll(ctx context.Context, tenantId string) (CypherResult, error) {
 	var params map[string]any
-	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) RETURN n ", c.GetLabels(), tenantId)
+	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) RETURN n ", c.GetLabels(""), tenantId)
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
@@ -178,7 +174,7 @@ func (c *nodeCypher) Count(ctx context.Context, tenantId, filter string) (Cypher
 	if err != nil {
 		return nil, err
 	}
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN count(n) as count", c.GetLabels(), tenantId, where)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN count(n) as count", c.GetLabels(""), tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, []string{"count"}), nil
 }
 
@@ -210,7 +206,10 @@ func (c *nodeCypher) FindPaging(ctx context.Context, query ddd_repository.FindPa
 	return NewCypherBuilderResult(cypher, nil, keys), nil
 }
 
-func (c *nodeCypher) GetLabels() string {
+func (c *nodeCypher) GetLabels(label string) string {
+	if len(label) > 0 {
+		return c.labels + ":" + label
+	}
 	return c.labels
 }
 

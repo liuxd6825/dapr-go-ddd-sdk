@@ -130,17 +130,19 @@ func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) 
 // @return bool
 // @return error
 //
-func (r *Neo4jResult) GetOne(key string, entity interface{}) (bool, error) {
+func (r *Neo4jResult) GetOne(dataKey string, entity interface{}) (bool, error) {
 	var list []any
+	key := dataKey
 	if len(key) == 0 {
-		for _, v := range r.data {
+		for k, v := range r.data {
 			list = v
+			key = k
 			break
 		}
 	} else {
 		neo4jList, ok := r.data[key]
 		if !ok {
-			return false, fmt.Errorf("GetOne(key, entity) key \"%s\" not exist ", key)
+			return false, fmt.Errorf("GetOne(dataKey, entity) dataKey \"%s\" not exist ", key)
 		}
 		list = neo4jList
 	}
@@ -149,18 +151,29 @@ func (r *Neo4jResult) GetOne(key string, entity interface{}) (bool, error) {
 	if count == 0 {
 		return false, nil
 	} else if count > 1 {
-		return false, fmt.Errorf("GetList(key, list) key \"%s\" entity length != 1  not exist ", key)
+		return false, fmt.Errorf("GetOne(dataKey, data) dataKey \"%s\" neo4j result %v > 1  not exist ", key, count)
 	}
-	node := list[0].(neo4j.Node)
-	err := reflectutils.MappingStruct(node, entity, func(source reflect.Value, target reflect.Value) error {
+	item := list[0]
+	err := reflectutils.MappingStruct(item, entity, func(source reflect.Value, target reflect.Value) error {
 		return r.setEntity(source, target)
 	})
-	if e, ok := entity.(Node); ok {
-		e.SetNid(node.Id)
-		e.SetLabels(node.Labels)
-	}
 	if err != nil {
 		return false, err
+	}
+	switch entity.(type) {
+	case Node:
+		n := item.(neo4j.Node)
+		node := entity.(Node)
+		node.SetNid(n.Id)
+		node.SetLabels(n.Labels)
+		break
+	case Relation:
+		r := item.(neo4j.Relationship)
+		rel := entity.(Relation)
+		rel.SetNid(r.Id)
+		rel.SetSid(r.StartId)
+		rel.SetEid(r.EndId)
+		break
 	}
 
 	return true, nil
