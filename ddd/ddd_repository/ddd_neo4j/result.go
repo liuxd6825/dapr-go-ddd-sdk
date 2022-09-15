@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"reflect"
+	"strconv"
 )
 
 type Neo4jResult struct {
@@ -93,6 +94,42 @@ func (r *Neo4jResult) GetList(key string, list interface{}) error {
 	return nil
 }
 
+//
+// GetInteger
+// @Description: 获取整数值，如count查询结果；当neo4j结果是列表时，只取第一条；当neo4j没有结果时，返回defaultValue值
+// @receiver r
+// @param  key   数据集Key名称
+// @param  defaultValue 默认值
+// @return int64 total汇总数据量
+// @return error 错误
+//
+func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) {
+	var total int64 = 0
+	dataList, ok := r.data[key]
+	if !ok {
+		return defaultValue, nil
+	}
+	if len(dataList) > 0 {
+		v := dataList[0]
+		s := fmt.Sprintf("%v", v)
+		if count, err := strconv.ParseInt(s, 10, 64); err != nil {
+			return 0, err
+		} else {
+			total = count
+		}
+	}
+	return total, nil
+}
+
+//
+// GetOne
+// @Description:
+// @receiver r
+// @param key
+// @param entity
+// @return bool
+// @return error
+//
 func (r *Neo4jResult) GetOne(key string, entity interface{}) (bool, error) {
 	var list []any
 	if len(key) == 0 {

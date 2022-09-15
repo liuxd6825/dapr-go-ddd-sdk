@@ -317,16 +317,19 @@ func (d *Neo4jDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindP
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
 
-		if err = result.GetList(cr.ResultOneKey(), &list); err != nil {
+		listKey := cr.ResultKeys()[0]
+		if err = result.GetList(listKey, &list); err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
 
 		var totalRows *int64
 		if query.GetIsTotalRows() {
-			/*			cr, err := d.cypherBuilder.FindPagingCount(ctx, query)
-						if err = result.GetOne(cr.ResultOneKey(), &list); err != nil {
-							return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-						}*/
+			totalKey := cr.ResultKeys()[1]
+			total, err := result.GetInteger(totalKey, 0)
+			if err != nil {
+				return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+			}
+			totalRows = &total
 		}
 
 		return ddd_repository.NewFindPagingResult[T](list, totalRows, query, nil), true, err

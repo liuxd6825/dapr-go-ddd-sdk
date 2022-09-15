@@ -41,7 +41,7 @@ type CypherBuilder interface {
 	FindByGraphId(ctx context.Context, tenantId string, graphId string) (result CypherBuilderResult, err error)
 	FindAll(ctx context.Context, tenantId string) (CypherBuilderResult, error)
 	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
-	FindPagingCount(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error)
+	Count(ctx context.Context, tenantId, filter string) (CypherBuilderResult, error)
 
 	GetLabels() string
 }
@@ -173,7 +173,7 @@ func (r *ReflectBuilder) DeleteByIds(ctx context.Context, tenantId string, ids [
 }
 
 func (r *ReflectBuilder) DeleteAll(ctx context.Context, tenantId string) (CypherBuilderResult, error) {
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DELETE n", r.GetLabels(), tenantId)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DETACH DELETE n", r.GetLabels(), tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -182,7 +182,7 @@ func (r *ReflectBuilder) DeleteByFilter(ctx context.Context, tenantId string, fi
 	if err != nil {
 		return nil, err
 	}
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) WHERE (%v) DELETE n", r.labels, tenantId, where)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) WHERE (%v) DETACH DELETE n", r.labels, tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -230,7 +230,16 @@ func (r *ReflectBuilder) GetFilter(ctx context.Context, tenantId, filter string)
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
-func (r *ReflectBuilder) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, isCount bool) (CypherBuilderResult, error) {
+func (r *ReflectBuilder) Count(ctx context.Context, tenantId, fitler string) (CypherBuilderResult, error) {
+	where, err := getSqlWhere(tenantId, fitler)
+	if err != nil {
+		return nil, err
+	}
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN count(n) as count", r.GetLabels(), tenantId, where)
+	return NewCypherBuilderResult(cypher, nil, []string{"count"}), nil
+}
+
+func (r *ReflectBuilder) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
 	where, err := getSqlWhere(query.GetTenantId(), query.GetFilter())
 	if err != nil {
 		return nil, err
@@ -241,8 +250,8 @@ func (r *ReflectBuilder) findPaging(ctx context.Context, query ddd_repository.Fi
 	keys := []string{"n"}
 	count := ""
 	if query.GetIsTotalRows() {
-		count = ", count(n) as t "
-		keys = append(keys, "t")
+		count = ", count(n) as count "
+		keys = append(keys, "count")
 	}
 
 	order, err := r.getOrder(query.GetSort())
@@ -254,22 +263,8 @@ func (r *ReflectBuilder) findPaging(ctx context.Context, query ddd_repository.Fi
 		where = fmt.Sprintf("WHERE %v", where)
 	}
 
-	var cypher string
-	if !isCount {
-		cypher = fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, query.GetTenantId(), where, count, order, skip, pageSize)
-	} else {
-		cypher = fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN count(n)", r.labels, query.GetTenantId(), where, count, order, skip, pageSize)
-	}
-
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n %v %v SKIP %v LIMIT %v ", r.labels, query.GetTenantId(), where, count, order, skip, pageSize)
 	return NewCypherBuilderResult(cypher, nil, keys), nil
-}
-
-func (r *ReflectBuilder) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
-	return r.findPaging(ctx, query, false)
-}
-
-func (r *ReflectBuilder) FindPagingCount(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherBuilderResult, error) {
-	return r.findPaging(ctx, query, true)
 }
 
 func (r *ReflectBuilder) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
