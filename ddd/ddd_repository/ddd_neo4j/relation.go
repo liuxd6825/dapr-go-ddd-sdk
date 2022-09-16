@@ -25,14 +25,14 @@ type Relation interface {
 }
 
 type BaseRelation struct {
-	Id       string `json:"id"`
-	TenantId string `json:"tenantId"`
-	Nid      int64  `json:"-"`
-	Sid      int64  `json:"-"`
-	Eid      int64  `json:"-"`
-	Type     string `json:"type"`
-	StartId  string `json:"startId"`
-	EndId    string `json:"endId"`
+	Id       string `json:"id" bson:"id"`
+	TenantId string `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
+	Nid      int64  `json:"-" bson:"nid" gorm:"-"`
+	Sid      int64  `json:"-" bson:"sid" gorm:"-"`
+	Eid      int64  `json:"-" bson:"eid" gorm:"-"`
+	Type     string `json:"type" bson:"type" gorm:"index:idx_type"`
+	StartId  string `json:"startId" bson:"start_id" gorm:"index:idx_start_id"`
+	EndId    string `json:"endId" bson:"end_id" gorm:"index:idx_end_id"`
 }
 
 func newRelation() Relation {

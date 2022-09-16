@@ -18,10 +18,10 @@ type Node interface {
 }
 
 type BaseNode struct {
-	Id       string   `json:"id"`
-	TenantId string   `json:"tenantId"`
-	Nid      int64    `json:"-"`
-	Labels   []string `json:"labels"`
+	Id       string   `json:"id" bson:"id"`
+	TenantId string   `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
+	Nid      int64    `json:"-" bson:"nid"`
+	Labels   []string `json:"labels" bson:"labels" gorm:"-"`
 }
 
 func newNode() Node {
