@@ -66,26 +66,24 @@ func (r *Neo4jResult) GetLists(keys []string, resultList ...interface{}) error {
 	return nil
 }
 
-func (r *Neo4jResult) GetList(key string, list interface{}) error {
-	var dataList []interface{}
+func (r *Neo4jResult) GetList(key string, targetList interface{}) error {
+	var sourceList []interface{}
 	var ok bool = false
 	if len(key) == 0 {
 		for _, v := range r.data {
-			dataList = v
+			sourceList = v
 			ok = true
 			break
 		}
 	} else {
-		dataList, ok = r.data[key]
+		sourceList, ok = r.data[key]
 	}
 
 	if !ok {
 		return nil
 	}
-	err := reflectutils.MappingSlice(dataList, list, func(i int, source reflect.Value, target reflect.Value) error {
-		s := source
-		t := target
-		return r.setEntity(s, t)
+	err := reflectutils.MappingSlice(sourceList, targetList, func(i int, source reflect.Value, target reflect.Value) error {
+		return r.setEntity(source, target)
 	})
 	if err != nil {
 		return err
@@ -160,22 +158,6 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch entity.(type) {
-	case Node:
-		n := item.(neo4j.Node)
-		node := entity.(Node)
-		node.SetNid(n.Id)
-		node.SetLabels(n.Labels)
-		break
-	case Relation:
-		r := item.(neo4j.Relationship)
-		rel := entity.(Relation)
-		rel.SetNid(r.Id)
-		rel.SetSid(r.StartId)
-		rel.SetEid(r.EndId)
-		break
-	}
-
 	return true, nil
 }
 
@@ -226,11 +208,9 @@ func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.V
 }
 
 func setNode(data interface{}, node neo4j.Node) error {
-	if err := maputils.Decode(node.Props, data); err != nil {
+	if err := maputils.Decode(node.Props, &data); err != nil {
 		return err
 	}
-	id, hasId := node.Props["id"]
-	tenantId, hasTenantId := node.Props["tenantId"]
 	v := reflectutils.GetValuePointer(data)
 	element := v.Interface()
 	switch element.(type) {
@@ -238,11 +218,10 @@ func setNode(data interface{}, node neo4j.Node) error {
 		n := element.(Node)
 		n.SetNid(node.Id)
 		n.SetLabels(node.Labels)
-		n.SetNid(node.Id)
-		if hasId {
+		if id, ok := node.Props["id"]; ok {
 			n.SetId(id.(string))
 		}
-		if hasTenantId {
+		if tenantId, ok := node.Props["tenantId"]; ok {
 			n.SetTenantId(tenantId.(string))
 		}
 	}
@@ -250,16 +229,32 @@ func setNode(data interface{}, node neo4j.Node) error {
 }
 
 func setRelationship(data interface{}, rel neo4j.Relationship) error {
-	if err := decode(rel.Props, data); err != nil {
+	if err := decode(rel.Props, &data); err != nil {
 		return err
 	}
-	if r, ok := data.(Relation); ok {
+	v := reflectutils.GetValuePointer(data)
+	element := v.Interface()
+	if pr, ok := element.(Relation); ok {
+		r := pr
 		r.SetNid(rel.Id)
 		r.SetType(rel.Type)
 		r.SetEid(rel.EndId)
 		r.SetSid(rel.StartId)
-	} else if e, ok := data.(Node); ok {
-		e.SetNid(rel.Id)
+		if id, ok := rel.Props["id"]; ok {
+			r.SetId(id.(string))
+		}
+		if tenantId, ok := rel.Props["tenantId"]; ok {
+			r.SetTenantId(tenantId.(string))
+		}
+	} else if n, ok := data.(Node); ok {
+		n.SetNid(rel.Id)
+	} else {
+		v := reflect.ValueOf(data)
+		if r, ok := v.Elem().Interface().(Relation); ok {
+			println(r)
+		}
+		println("typeName=" + v.Elem().Type().Name())
+		println(data)
 	}
 	return nil
 }

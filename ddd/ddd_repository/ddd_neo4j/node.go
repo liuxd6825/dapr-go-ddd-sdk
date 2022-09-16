@@ -20,7 +20,7 @@ type Node interface {
 type BaseNode struct {
 	Id       string   `json:"id"`
 	TenantId string   `json:"tenantId"`
-	Nid      int64    `json:"nid"`
+	Nid      int64    `json:"-"`
 	Labels   []string `json:"labels"`
 }
 

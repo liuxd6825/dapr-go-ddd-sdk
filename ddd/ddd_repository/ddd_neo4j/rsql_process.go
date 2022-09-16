@@ -112,11 +112,15 @@ func (p *rsqlProcess) Print() {
 
 func getSqlWhere(tenantId string, filter string) (string, error) {
 	p := NewRSqlProcess()
-	
+
 	if err := ParseProcess(filter, p); err != nil {
 		return "", err
 	}
-	return p.GetSqlWhere(tenantId).(string), nil
+	where := p.GetSqlWhere(tenantId).(string)
+	if len(where) > 0 {
+		where = "WHERE " + where
+	}
+	return where, nil
 }
 
 func ParseProcess(input string, process RsqlProcess) error {

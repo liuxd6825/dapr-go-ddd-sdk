@@ -12,8 +12,12 @@ type CompanyRelationDao struct {
 
 type CompanyRelation struct {
 	BaseRelation
-	Name    string
-	Display bool
+	Name    string `json:"name"`
+	Display bool   `json:"display"`
+}
+
+func newRelationItem() Relation {
+	return &CompanyRelation{}
 }
 
 func TestRelationDao(t *testing.T) {
@@ -25,8 +29,8 @@ func TestRelationDao(t *testing.T) {
 	rel := &CompanyRelation{}
 	rel.Id = uuid.New().String()
 	rel.Display = true
-	rel.StartId = "001"
-	rel.EndId = "002"
+	rel.StartId = "111abd9f-5392-4928-bab5-27fd688f4824"
+	rel.EndId = "90a49b8e-953c-4135-9690-f3f4daa54dc6"
 	// rel.Type = "A"
 	rel.TenantId = tenantId
 	rel.Name = "Name"
@@ -46,6 +50,17 @@ func TestRelationDao(t *testing.T) {
 			t.Error("Not Found ")
 		} else {
 			t.Log(v)
+		}
+	})
+
+	t.Run("FindByFilter", func(t *testing.T) {
+		filter := "name=='Name'"
+		if vList, ok, err := dao.FindByFilter(ctx, tenantId, filter).Result(); err != nil {
+			t.Error(err)
+		} else if !ok {
+			t.Log("Not Found ")
+		} else {
+			t.Log(vList)
 		}
 	})
 

@@ -20,20 +20,53 @@ type Entity interface {
 }
 
 type BaseDao[T Entity] struct {
-	driver neo4j.Driver
-	cypher Cypher
+	driver  neo4j.Driver
+	cypher  Cypher
+	newOne  func() T
+	newList func() []T
 }
 
-func (d *BaseDao[T]) init(driver neo4j.Driver, cypher Cypher) {
+type Options[T interface{}] struct {
+	newOne  func() T
+	newList func() []T
+}
+
+func NewOptions[T interface{}](opts ...*Options[T]) *Options[T] {
+	n := &Options[T]{}
+	for _, o := range opts {
+		if o.newList != nil {
+			n.newList = o.newList
+		}
+		if o.newOne != nil {
+			n.newOne = o.newOne
+		}
+	}
+	return n
+}
+
+func (d *BaseDao[T]) init(driver neo4j.Driver, cypher Cypher, opts ...*Options[T]) {
+	o := NewOptions[T](opts...)
 	d.driver = driver
 	d.cypher = cypher
+	if o.newList != nil {
+		d.newList = o.newList
+	}
+	if o.newOne != nil {
+		d.newOne = o.newOne
+	}
 }
 
 func (d *BaseDao[T]) NewEntity() (res T, resErr error) {
+	if d.newOne != nil {
+		return d.newOne(), nil
+	}
 	return reflectutils.NewStruct[T]()
 }
 
 func (d *BaseDao[T]) NewEntities() (res []T, resErr error) {
+	if d.newList != nil {
+		return d.newList(), nil
+	}
 	return reflectutils.NewSlice[[]T]()
 }
 
@@ -240,8 +273,8 @@ func (d *BaseDao[T]) FindByFilter(ctx context.Context, tenantId, filter string) 
 			return ddd_repository.NewFindListResultError[T](err), false, err
 		}
 
-		cyhper := cr.Cypher()
-		result, err := d.Query(ctx, cyhper, cr.Params())
+		cypher := cr.Cypher()
+		result, err := d.Query(ctx, cypher, cr.Params())
 		if err != nil {
 			return ddd_repository.NewFindListResultError[T](err), false, err
 		}
@@ -293,8 +326,8 @@ func (d *BaseDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPa
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
 
-		cyhper := cr.Cypher()
-		result, err := d.Query(ctx, cyhper, cr.Params())
+		cypher := cr.Cypher()
+		result, err := d.Query(ctx, cypher, cr.Params())
 		if err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}

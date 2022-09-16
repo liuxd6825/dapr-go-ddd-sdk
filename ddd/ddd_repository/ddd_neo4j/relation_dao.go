@@ -8,8 +8,8 @@ type RelationDao[T Relation] struct {
 	BaseDao[T]
 }
 
-func NewRelationDao[T Relation](driver neo4j.Driver, cypher Cypher) *RelationDao[T] {
+func NewRelationDao[T Relation](driver neo4j.Driver, cypher Cypher, opts ...*Options[T]) *RelationDao[T] {
 	dao := &RelationDao[T]{}
-	dao.init(driver, cypher)
+	dao.init(driver, cypher, opts...)
 	return dao
 }
