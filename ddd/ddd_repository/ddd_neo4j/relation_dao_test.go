@@ -7,7 +7,7 @@ import (
 )
 
 type CompanyRelationDao struct {
-	RelationDao[*CompanyRelation]
+	Dao[*CompanyRelation]
 }
 
 type CompanyRelation struct {

@@ -1,9 +1,11 @@
 package ddd_neo4j
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-
 type Relation interface {
-	ddd.Entity
+	GetTenantId() string
+	SetTenantId(v string)
+
+	GetId() string
+	SetId(v string)
 
 	SetNid(int64)
 	GetNid() int64
@@ -22,11 +24,15 @@ type Relation interface {
 
 	SetEndId(v string)
 	GetEndId() string
+
+	SetGraphId(v string)
+	GetGraphId() string
 }
 
 type BaseRelation struct {
 	Id       string `json:"id" bson:"id"`
 	TenantId string `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
+	GraphId  string `json:"graphId" bson:"graph_id" gorm:"index:idx_graph_id"`
 	Nid      int64  `json:"-" bson:"nid" gorm:"-"`
 	Sid      int64  `json:"-" bson:"sid" gorm:"-"`
 	Eid      int64  `json:"-" bson:"eid" gorm:"-"`
@@ -39,12 +45,12 @@ func newRelation() Relation {
 	return &BaseRelation{}
 }
 
-func (b *BaseRelation) SetNid(s int64) {
-	b.Nid = s
+func (b *BaseRelation) GetId() string {
+	return b.Id
 }
 
-func (b *BaseRelation) GetNid() int64 {
-	return b.Nid
+func (b *BaseRelation) SetId(v string) {
+	b.Id = v
 }
 
 func (b *BaseRelation) GetTenantId() string {
@@ -55,12 +61,20 @@ func (b *BaseRelation) SetTenantId(v string) {
 	b.TenantId = v
 }
 
-func (b *BaseRelation) GetId() string {
-	return b.Id
+func (b *BaseRelation) SetGraphId(v string) {
+	b.GraphId = v
 }
 
-func (b *BaseRelation) SetId(v string) {
-	b.Id = v
+func (b *BaseRelation) GetGraphId() string {
+	return b.GraphId
+}
+
+func (b *BaseRelation) SetNid(s int64) {
+	b.Nid = s
+}
+
+func (b *BaseRelation) GetNid() int64 {
+	return b.Nid
 }
 
 func (b *BaseRelation) SetType(s string) {

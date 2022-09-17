@@ -35,7 +35,9 @@ func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult
 		return nil, err
 	}
 	labels := c.getLabels("")
-	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
+	labels = fmt.Sprintf("%v:graph_%v:tenant_%v", labels, node.GetGraphId(), node.GetTenantId())
+
+	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels+":", props)
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 

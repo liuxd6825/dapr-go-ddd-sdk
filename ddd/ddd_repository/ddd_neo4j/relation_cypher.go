@@ -99,7 +99,7 @@ func (c *relationCypher) FindByAggregateId(ctx context.Context, tenantId, aggreg
 }
 
 func (c *relationCypher) FindByGraphId(ctx context.Context, tenantId string, graphId string) (result CypherResult, err error) {
-	return c.DeleteByFilter(ctx, tenantId, fmt.Sprintf("graphId=='%v'", graphId))
+	return c.FindByFilter(ctx, tenantId, fmt.Sprintf("graphId=='%v'", graphId))
 }
 
 func (c *relationCypher) FindAll(ctx context.Context, tenantId string) (CypherResult, error) {
@@ -129,6 +129,15 @@ func (c *relationCypher) FindPaging(ctx context.Context, query ddd_repository.Fi
 
 	cypher := fmt.Sprintf("MATCH (a)-(r%v{tenantId:'%v'})->(b) %v RETURN r %v %v SKIP %v LIMIT %v ", c.labels, query.GetTenantId(), where, count, order, skip, pageSize)
 	return NewCypherBuilderResult(cypher, nil, keys), nil
+}
+
+func (c *relationCypher) FindByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
+	where, err := getSqlWhere(tenantId, filter)
+	if err != nil {
+		return nil, err
+	}
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[n%v{tenantId:'%v'}]-(b{tenantId:'%v'}) %v return n `, tenantId, c.getLabels(""), tenantId, tenantId, where)
+	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
 func (c *relationCypher) Count(ctx context.Context, tenantId, filter string) (CypherResult, error) {

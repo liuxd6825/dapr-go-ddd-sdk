@@ -2,13 +2,13 @@ package ddd_repository
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 
-type FindListResult[T ddd.Entity] struct {
+type FindListResult[T interface{}] struct {
 	err     error
 	data    []T
 	isFound bool
 }
 
-func NewFindListResult[T ddd.Entity](data []T, isFound bool, err error) *FindListResult[T] {
+func NewFindListResult[T interface{}](data []T, isFound bool, err error) *FindListResult[T] {
 	return &FindListResult[T]{
 		data:    data,
 		isFound: isFound,

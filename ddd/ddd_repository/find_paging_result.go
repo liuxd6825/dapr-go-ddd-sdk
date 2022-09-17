@@ -4,7 +4,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 )
 
-type FindPagingResult[T ddd.Entity] struct {
+type FindPagingResult[T interface{}] struct {
 	Data        []T    `json:"data"`
 	TotalRows   *int64 `json:"totalRows"`
 	TotalPages  *int64 `json:"totalPages"`
@@ -18,7 +18,7 @@ type FindPagingResult[T ddd.Entity] struct {
 	Error       error  `json:"-"`
 }
 
-type FindPagingResultOptions[T ddd.Entity] struct {
+type FindPagingResultOptions[T interface{}] struct {
 	Data        *[]T
 	TotalRows   int64
 	TotalPages  int64

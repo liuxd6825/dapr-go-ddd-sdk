@@ -1,20 +1,18 @@
 package ddd_repository
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-
 type SetResult[T interface{}] struct {
 	err  error
 	data T
 }
 
-func NewSetResult[T ddd.Entity](data T, err error) *SetResult[T] {
+func NewSetResult[T interface{}](data T, err error) *SetResult[T] {
 	return &SetResult[T]{
 		data: data,
 		err:  err,
 	}
 }
 
-func NewSetResultError[T ddd.Entity](err error) *SetResult[T] {
+func NewSetResultError[T interface{}](err error) *SetResult[T] {
 	return &SetResult[T]{
 		err: err,
 	}

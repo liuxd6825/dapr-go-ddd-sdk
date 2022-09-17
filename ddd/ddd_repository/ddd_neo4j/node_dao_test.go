@@ -90,6 +90,6 @@ func TestGetList(t *testing.T) {
 	}
 }
 
-func NewCompanyNodeDao() *NodeDao[*CompanyNode] {
+func NewCompanyNodeDao() *Dao[*CompanyNode] {
 	return NewNodeDao[*CompanyNode](driver, NewNodeCypher("CompanyNode"))
 }
