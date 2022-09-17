@@ -472,7 +472,7 @@ func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transaction) (
 	}
 
 	if result, ok := res.(*Neo4jResult); ok {
-		return result, err
+		return result, nil
 	}
 
 	return nil, err
@@ -483,8 +483,5 @@ func getLabels(labels ...string) string {
 	for _, l := range labels {
 		s = s + ":" + l
 	}
-	/*	if len(s) > 0 {
-		s = strings.Replace(s, "|", ":", 1)
-	}*/
-	return s
+	return strings.ToLower(s)
 }

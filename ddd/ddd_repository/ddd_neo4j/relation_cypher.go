@@ -27,8 +27,6 @@ func (c *relationCypher) Insert(ctx context.Context, data interface{}) (CypherRe
 	CREATE (a)-[r%v{%v}]->(b)
 	RETURN r`, rel.GetTenantId(), rel.GetTenantId(), rel.GetStartId(), rel.GetEndId(), c.getLabels(rel.GetType()), props)
 
-	println(cypher)
-
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 

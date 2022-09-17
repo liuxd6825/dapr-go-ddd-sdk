@@ -25,7 +25,9 @@ const (
 // @return nodeCypher
 //
 func NewNodeCypher(labels ...string) Cypher {
-	return &nodeCypher{labels: getLabels(labels...)}
+	return &nodeCypher{
+		labels: getLabels(labels...),
+	}
 }
 
 func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult, error) {
@@ -34,10 +36,9 @@ func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult
 	if err != nil {
 		return nil, err
 	}
-	labels := c.getLabels("")
-	labels = fmt.Sprintf("%v:graph_%v:tenant_%v", labels, node.GetGraphId(), node.GetTenantId())
+	labels := c.getLabels("graph_"+node.GetGraphId(), "tenant_"+node.GetTenantId())
 
-	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels+":", props)
+	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 
@@ -167,8 +168,13 @@ func (c *nodeCypher) GetFilter(ctx context.Context, tenantId, filter string) (Cy
 	if len(where) > 0 {
 		where = "WHERE " + where
 	}
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n  ", c.labels, tenantId, where)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n  ", c.getLabels(), tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
+}
+
+func (c *nodeCypher) FindByLabel(ctx context.Context, tenantId string, labels []string) (CypherResult, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (c *nodeCypher) Count(ctx context.Context, tenantId, filter string) (CypherResult, error) {
@@ -208,11 +214,12 @@ func (c *nodeCypher) FindPaging(ctx context.Context, query ddd_repository.FindPa
 	return NewCypherBuilderResult(cypher, nil, keys), nil
 }
 
-func (c *nodeCypher) getLabels(label string) string {
-	if len(label) > 0 {
-		return c.labels + ":" + label
+func (c *nodeCypher) getLabels(labels ...string) string {
+	s := c.labels
+	for _, l := range labels {
+		s = fmt.Sprintf("%v:%v", s, l)
 	}
-	return c.labels
+	return strings.ToLower(s)
 }
 
 //

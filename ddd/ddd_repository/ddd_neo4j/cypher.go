@@ -25,6 +25,4 @@ type Cypher interface {
 	FindAll(ctx context.Context, tenantId string) (CypherResult, error)
 	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherResult, error)
 	Count(ctx context.Context, tenantId, filter string) (CypherResult, error)
-
-	getLabels(label string) string
 }
