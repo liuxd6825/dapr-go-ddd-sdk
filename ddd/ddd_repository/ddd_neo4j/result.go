@@ -22,6 +22,18 @@ type KeyResult[T interface{}] struct {
 	isInitList bool
 }
 
+type Mapping func(sourceValue reflect.Value, targetValue reflect.Value) error
+
+type MappingOptions struct {
+	mapping Mapping
+}
+
+func NewMappingOptions() *MappingOptions {
+	return &MappingOptions{
+		mapping: defaultMapping,
+	}
+}
+
 func NewNeo4jResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Neo4jResult {
 	mapList := make(map[string][]interface{})
 	init := false
@@ -53,20 +65,15 @@ func NewNeo4jResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Neo4j
 	}
 }
 
-func (r *Neo4jResult) GetLists(keys []string, resultList ...interface{}) error {
-	if len(keys) != len(resultList) {
-		return fmt.Errorf("GetLists(keys, list...) keys.length != list.length")
-	}
-	for i, key := range keys {
-		list := resultList[i]
-		if err := r.GetList(key, list); err != nil {
-			return fmt.Errorf("error: GetList(key) by key \"%s\"", err.Error())
-		}
-	}
-	return nil
+func (r *Neo4jResult) GetData(key string) ([]interface{}, bool) {
+	v, ok := r.data[key]
+	return v, ok
 }
 
-func (r *Neo4jResult) GetList(key string, targetList interface{}) error {
+func (r *Neo4jResult) GetList(key string, resultList interface{}, opts ...*MappingOptions) error {
+	options := NewMappingOptions()
+	options.Merge(opts...)
+
 	var sourceList []interface{}
 	var ok bool = false
 	if len(key) == 0 {
@@ -82,8 +89,8 @@ func (r *Neo4jResult) GetList(key string, targetList interface{}) error {
 	if !ok {
 		return nil
 	}
-	err := reflectutils.MappingSlice(sourceList, targetList, func(i int, source reflect.Value, target reflect.Value) error {
-		return r.setEntity(source, target)
+	err := reflectutils.MappingSlice(sourceList, resultList, func(i int, source reflect.Value, target reflect.Value) error {
+		return options.mapping(source, target)
 	})
 	if err != nil {
 		return err
@@ -128,7 +135,10 @@ func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) 
 // @return bool
 // @return error
 //
-func (r *Neo4jResult) GetOne(dataKey string, entity interface{}) (bool, error) {
+func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*MappingOptions) (bool, error) {
+	options := NewMappingOptions()
+	options.Merge(opts...)
+
 	var list []any
 	key := dataKey
 	if len(key) == 0 {
@@ -153,7 +163,7 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}) (bool, error) {
 	}
 	item := list[0]
 	err := reflectutils.MappingStruct(item, entity, func(source reflect.Value, target reflect.Value) error {
-		return r.setEntity(source, target)
+		return options.mapping(source, target)
 	})
 	if err != nil {
 		return false, err
@@ -188,6 +198,43 @@ func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
 }
 
 func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.Value) error {
+	source := sourceValue.Interface()
+	target := targetValue.Interface()
+	switch source.(type) {
+	case neo4j.Node:
+		node := source.(neo4j.Node)
+		if err := setNode(target, node); err != nil {
+			return err
+		}
+		break
+	case neo4j.Relationship:
+		rel := source.(neo4j.Relationship)
+		if err := setRelationship(target, rel); err != nil {
+			return err
+		}
+		break
+	}
+	return nil
+}
+
+func (o *MappingOptions) SetMapping(v Mapping) *MappingOptions {
+	o.mapping = v
+	return o
+}
+
+func (o *MappingOptions) GetMapping() Mapping {
+	return o.mapping
+}
+
+func (o *MappingOptions) Merge(options ...*MappingOptions) {
+	for _, i := range options {
+		if i.mapping != nil {
+			o.mapping = i.mapping
+		}
+	}
+}
+
+func defaultMapping(sourceValue reflect.Value, targetValue reflect.Value) error {
 	source := sourceValue.Interface()
 	target := targetValue.Interface()
 	switch source.(type) {

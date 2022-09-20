@@ -250,7 +250,7 @@ func (d *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repos
 	return ddd_repository.NewFindListResult[T](list, len(list) > 0, nil)
 }
 
-func (d *Dao[T]) FindByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+/*func (d *Dao[T]) FindByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	cr, err := d.cypher.FindByGraphId(ctx, tenantId, graphId)
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
@@ -267,7 +267,7 @@ func (d *Dao[T]) FindByGraphId(ctx context.Context, tenantId string, graphId str
 		return ddd_repository.NewFindListResultError[T](err)
 	}
 	return ddd_repository.NewFindListResult[T](list, len(list) > 0, err)
-}
+}*/
 
 func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	sb := strings.Builder{}

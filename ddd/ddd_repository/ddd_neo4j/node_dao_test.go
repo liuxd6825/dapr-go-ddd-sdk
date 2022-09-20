@@ -31,6 +31,26 @@ func TestNodeDao(t *testing.T) {
 
 	println("id:" + company.Id)
 
+	t.Run("graph", func(t *testing.T) {
+		match := "match  ()-[r:`分公司`|`母公司`]->() return r"
+		if res, err := dao.Query(ctx, match, nil); err != nil {
+			t.Error(err)
+		} else {
+			for k, v := range res.data {
+				t.Logf("key:%v; count:%v", k, len(v))
+			}
+		}
+
+		match = "match (n:`公司`) return n"
+		if res, err := dao.Query(ctx, match, nil); err != nil {
+			t.Error(err)
+		} else {
+			for k, v := range res.data {
+				t.Logf("key:%v; count:%v", k, len(v))
+			}
+		}
+	})
+
 	t.Run("Insert", func(t *testing.T) {
 		if err := dao.Insert(ctx, company).GetError(); err != nil {
 			t.Error(err)
