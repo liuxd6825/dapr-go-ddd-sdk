@@ -284,7 +284,7 @@ func setRelationship(data interface{}, rel neo4j.Relationship) error {
 	if pr, ok := element.(Relation); ok {
 		r := pr
 		r.SetNid(rel.Id)
-		r.SetType(rel.Type)
+		r.SetRelType(rel.Type)
 		r.SetEid(rel.EndId)
 		r.SetSid(rel.StartId)
 		if id, ok := rel.Props["id"]; ok {

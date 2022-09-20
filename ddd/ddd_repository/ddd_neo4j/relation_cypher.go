@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"strings"
 )
 
@@ -21,11 +22,15 @@ func (c *relationCypher) Insert(ctx context.Context, data interface{}) (CypherRe
 	if err != nil {
 		return nil, err
 	}
+	labels := c.getLabels()
+	if labels != rel.GetRelType() {
+		return nil, errors.ErrorOf("insert dao.label: %v ; entity.RelType: %v ", labels, rel.GetRelType())
+	}
 	cypher := fmt.Sprintf(`
 	MATCH (a{tenantId:'%v'}),(b{tenantId:'%v'})
 	WHERE a.id = '%v' AND b.id = '%v'
 	CREATE (a)-[r%v{%v}]->(b)
-	RETURN r`, rel.GetTenantId(), rel.GetTenantId(), rel.GetStartId(), rel.GetEndId(), c.getLabels(rel.GetType()), props)
+	RETURN r`, rel.GetTenantId(), rel.GetTenantId(), rel.GetStartId(), rel.GetEndId(), labels, props)
 
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
@@ -44,7 +49,13 @@ func (c *relationCypher) Update(ctx context.Context, data interface{}, setFields
 	if err != nil {
 		return nil, err
 	}
-	cypher := fmt.Sprintf("MATCH (a)-[r%v{tenantId:'%v',id:'%v'}]-(b) SET %s ", c.getLabels(""), rel.GetTenantId(), rel.GetId(), prosNames)
+
+	labels := c.getLabels()
+	if labels != rel.GetRelType() {
+		return nil, errors.ErrorOf("insert dao.label: %v ; entity.RelType: %v ", labels, rel.GetRelType())
+	}
+
+	cypher := fmt.Sprintf("MATCH (a)-[r%v{tenantId:'%v',id:'%v'}]-(b) SET %s ", c.getLabels(), rel.GetTenantId(), rel.GetId(), prosNames)
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
@@ -57,18 +68,18 @@ func (c *relationCypher) UpdateMany(ctx context.Context, list interface{}) (Cyph
 }
 
 func (c *relationCypher) DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error) {
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v',id:'%v'}]-(b{tenantId:'%v'}) delete r `, tenantId, c.getLabels(""), tenantId, id, tenantId)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v',id:'%v'}]-(b{tenantId:'%v'}) delete r `, tenantId, c.getLabels(), tenantId, id, tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher) DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error) {
 	strIds := getSqlInStr(ids)
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) WHERE r.id in [%v] delete r `, tenantId, c.getLabels(""), tenantId, tenantId, strIds)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) WHERE r.id in [%v] delete r `, tenantId, c.getLabels(), tenantId, tenantId, strIds)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher) DeleteAll(ctx context.Context, tenantId string) (CypherResult, error) {
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) delete r `, tenantId, c.getLabels(""), tenantId, tenantId)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) delete r `, tenantId, c.getLabels(), tenantId, tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -77,18 +88,18 @@ func (c *relationCypher) DeleteByFilter(ctx context.Context, tenantId string, fi
 	if err != nil {
 		return nil, err
 	}
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) %v delete r `, tenantId, c.getLabels(""), tenantId, tenantId, where)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) %v delete r `, tenantId, c.getLabels(), tenantId, tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher) FindById(ctx context.Context, tenantId, id string) (CypherResult, error) {
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v',id:'%v'}]->(b{tenantId:'%v'}) RETURN r `, tenantId, c.getLabels(""), tenantId, id, tenantId)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v',id:'%v'}]->(b{tenantId:'%v'}) RETURN r `, tenantId, c.getLabels(), tenantId, id, tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher) FindByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error) {
 	strIds := getSqlInStr(ids)
-	cypher := fmt.Sprintf("MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) where r.id in [%v] RETURN r", tenantId, c.getLabels(""), tenantId, tenantId, strIds)
+	cypher := fmt.Sprintf("MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]-(b{tenantId:'%v'}) where r.id in [%v] RETURN r", tenantId, c.getLabels(), tenantId, tenantId, strIds)
 	return NewCypherBuilderResult(cypher, nil, []string{"r"}), nil
 }
 
@@ -101,7 +112,7 @@ func (c *relationCypher) FindByGraphId(ctx context.Context, tenantId string, gra
 }
 
 func (c *relationCypher) FindAll(ctx context.Context, tenantId string) (CypherResult, error) {
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]->(b{tenantId:'%v'}) RETURN r `, tenantId, c.getLabels(""), tenantId, tenantId)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[r%v{tenantId:'%v'}]->(b{tenantId:'%v'}) RETURN r `, tenantId, c.getLabels(), tenantId, tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -134,7 +145,7 @@ func (c *relationCypher) FindByFilter(ctx context.Context, tenantId string, filt
 	if err != nil {
 		return nil, err
 	}
-	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[n%v{tenantId:'%v'}]-(b{tenantId:'%v'}) %v return n `, tenantId, c.getLabels(""), tenantId, tenantId, where)
+	cypher := fmt.Sprintf(`MATCH (a{tenantId:'%v'})-[n%v{tenantId:'%v'}]-(b{tenantId:'%v'}) %v return n `, tenantId, c.getLabels(), tenantId, tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
@@ -158,11 +169,14 @@ func (c *relationCypher) GetFilter(ctx context.Context, tenantId, filter string)
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
-func (c *relationCypher) getLabels(label string) string {
-	if len(label) > 0 {
-		return c.labels + ":" + label
+func (c *relationCypher) getLabels(labels ...string) string {
+	res := c.labels
+	for _, l := range labels {
+		if len(l) > 0 {
+			res = res + ":" + l
+		}
 	}
-	return c.labels
+	return res
 }
 
 // getIds 将id数组，转换成sql形式。如：'111','222'。

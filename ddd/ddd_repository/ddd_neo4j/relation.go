@@ -16,8 +16,8 @@ type Relation interface {
 	SetEid(v int64)
 	GetEid() int64
 
-	SetType(string)
-	GetType() string
+	SetRelType(string)
+	GetRelType() string
 
 	SetStartId(string)
 	GetStartId() string
@@ -36,7 +36,7 @@ type BaseRelation struct {
 	Nid      int64  `json:"-" bson:"nid" gorm:"-"`
 	Sid      int64  `json:"-" bson:"sid" gorm:"-"`
 	Eid      int64  `json:"-" bson:"eid" gorm:"-"`
-	Type     string `json:"type" bson:"type" gorm:"index:idx_type"`
+	RelType  string `json:"relType" bson:"rel_type" gorm:"index:idx_rel_type"`
 	StartId  string `json:"startId" bson:"start_id" gorm:"index:idx_start_id"`
 	EndId    string `json:"endId" bson:"end_id" gorm:"index:idx_end_id"`
 }
@@ -77,12 +77,12 @@ func (b *BaseRelation) GetNid() int64 {
 	return b.Nid
 }
 
-func (b *BaseRelation) SetType(s string) {
-	b.Type = s
+func (b *BaseRelation) SetRelType(s string) {
+	b.RelType = s
 }
 
-func (b *BaseRelation) GetType() string {
-	return b.Type
+func (b *BaseRelation) GetRelType() string {
+	return b.RelType
 }
 
 func (b *BaseRelation) SetSid(s int64) {
