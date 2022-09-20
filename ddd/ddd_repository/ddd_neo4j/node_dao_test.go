@@ -102,7 +102,7 @@ func TestGetList(t *testing.T) {
 	} else {
 		var comps []CompanyNode
 		var rels []CompanyRelation
-		if err := result.GetLists([]string{"n", "r"}, &comps, &rels); err != nil {
+		if err := result.GetList("n", &comps); err != nil {
 			t.Error(err)
 			return
 		}
