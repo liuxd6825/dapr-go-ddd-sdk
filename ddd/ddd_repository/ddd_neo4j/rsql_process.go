@@ -28,55 +28,56 @@ type RsqlProcess interface {
 }
 
 type rsqlProcess struct {
-	str string
+	str     string
+	dataKey string
 }
 
-func NewRSqlProcess() RsqlProcess {
-	return &rsqlProcess{}
+func NewRSqlProcess(dataKey string) RsqlProcess {
+	return &rsqlProcess{dataKey: dataKey}
 }
 
 func (p *rsqlProcess) OnNotEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s != (%v)", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s != (%v)", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnLike(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s like (%v)", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s like (%v)", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnNotLike(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s not like %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s not like %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnGreaterThan(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s>%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s>%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s>=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s>=%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnLessThan(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s<%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s<%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s <= %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s <= %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnIn(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s in %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s in %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnNotIn(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s not in %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s not in %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s=%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) NotEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s=%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnAndItem() {
@@ -110,8 +111,8 @@ func (p *rsqlProcess) Print() {
 	fmt.Print(p.str)
 }
 
-func getSqlWhere(tenantId string, filter string) (string, error) {
-	p := NewRSqlProcess()
+func getNeo4jWhere(tenantId string, dataKey string, filter string) (string, error) {
+	p := NewRSqlProcess(dataKey)
 
 	if err := ParseProcess(filter, p); err != nil {
 		return "", err

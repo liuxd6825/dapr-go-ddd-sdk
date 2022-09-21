@@ -67,6 +67,24 @@ func (c *nodeCypher) UpdateMany(ctx context.Context, list interface{}) (CypherRe
 	panic("implement me")
 }
 
+func (c *nodeCypher) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
+	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
+	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(n) create (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", tenantId, id, label)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (c *nodeCypher) UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error) {
+	where, err := getNeo4jWhere(tenantId, "n", filter)
+	if err != nil {
+		return nil, err
+	}
+	setLabels := getLabels(labels...)
+	// 设置标签
+	// match (n:CAR) set n:NEW remove n:CAR
+	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v'}) %v SET n%v ", tenantId, where, setLabels)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
 func (c *nodeCypher) Delete(ctx context.Context, data interface{}) (CypherResult, error) {
 	mapData, err := getMap(data)
 	if err != nil {
@@ -120,11 +138,30 @@ func (c *nodeCypher) DeleteAll(ctx context.Context, tenantId string) (CypherResu
 }
 
 func (c *nodeCypher) DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
 	}
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) WHERE (%v) DETACH DELETE n", c.labels, tenantId, where)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (c *nodeCypher) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
+	// 设置标签
+	// match (n:CAR) set n:NEW remove n:CAR
+	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v',id:'%v'}) REMOVE n:%v ", tenantId, id, label)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (c *nodeCypher) DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error) {
+	where, err := getNeo4jWhere(tenantId, "n", filter)
+	if err != nil {
+		return nil, err
+	}
+	setLabels := getLabels(labels...)
+	// 设置标签
+	// match (n:CAR) set n:NEW remove n:CAR
+	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v'}) %v REMOVE n%v ", tenantId, where, setLabels)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -161,12 +198,9 @@ func (c *nodeCypher) FindAll(ctx context.Context, tenantId string) (CypherResult
 }
 
 func (c *nodeCypher) GetFilter(ctx context.Context, tenantId, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
-	}
-	if len(where) > 0 {
-		where = "WHERE " + where
 	}
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n  ", c.getLabels(), tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
@@ -178,7 +212,7 @@ func (c *nodeCypher) FindByLabel(ctx context.Context, tenantId string, labels []
 }
 
 func (c *nodeCypher) Count(ctx context.Context, tenantId, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +221,7 @@ func (c *nodeCypher) Count(ctx context.Context, tenantId, filter string) (Cypher
 }
 
 func (c *nodeCypher) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherResult, error) {
-	where, err := getSqlWhere(query.GetTenantId(), query.GetFilter())
+	where, err := getNeo4jWhere(query.GetTenantId(), "n", query.GetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +248,7 @@ func (c *nodeCypher) getLabels(labels ...string) string {
 	s := c.labels
 	for _, l := range labels {
 		if len(l) > 0 {
-			s = fmt.Sprintf("%v:%v", s, l)
+			s = fmt.Sprintf("%v:`%v`", s, l)
 		}
 	}
 	if strings.HasSuffix(s, ":") {

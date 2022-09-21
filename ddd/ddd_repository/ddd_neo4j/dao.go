@@ -152,6 +152,61 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, list []T, opts ...ddd_repositor
 	return ddd_repository.NewSetManyResult(list, nil)
 }
 
+func (d *Dao[T]) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) error {
+	cr, err := d.cypher.UpdateLabelById(ctx, tenantId, id, label)
+	if err != nil {
+		return err
+	}
+	if cr == nil {
+		return nil
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) error {
+	cr, err := d.cypher.UpdateLabelByFilter(ctx, tenantId, filter, labels...)
+	if err != nil {
+		return err
+	}
+	if cr == nil {
+		return nil
+	}
+
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) error {
+	cr, err := d.cypher.DeleteLabelById(ctx, tenantId, id, label)
+	if err != nil || cr == nil {
+		return err
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) error {
+	cr, err := d.cypher.DeleteLabelByFilter(ctx, tenantId, filter, labels...)
+	if err != nil || cr == nil {
+		return err
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error {
 	cr, err := d.cypher.DeleteById(ctx, tenantId, id)
 	if err != nil {
@@ -295,7 +350,7 @@ func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 }
 
 func (d *Dao[T]) FindByFilter(ctx context.Context, tenantId, filter string) *ddd_repository.FindListResult[T] {
-	return d.DoList(ctx, tenantId, filter, func() (*ddd_repository.FindListResult[T], bool, error) {
+	return d.DoList(ctx, tenantId, func() (*ddd_repository.FindListResult[T], bool, error) {
 		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
@@ -348,7 +403,7 @@ func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]int
 }
 
 func (d *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func() (*ddd_repository.FindPagingResult[T], bool, error) {
+	return d.DoFilter(ctx, query.GetTenantId(), func() (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
@@ -388,11 +443,7 @@ func (d *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 	})
 }
 
-func (d *Dao[T]) DoFilter(tenantId, filter string, fun func() (*ddd_repository.FindPagingResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	p := NewRSqlProcess()
-	if err := ParseProcess(filter, p); err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+func (d *Dao[T]) DoFilter(ctx context.Context, tenantId string, fun func() (*ddd_repository.FindPagingResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	data, _, err := fun()
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
@@ -400,11 +451,7 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func() (*ddd_repository.F
 	return data
 }
 
-func (d *Dao[T]) DoList(ctx context.Context, tenantId string, filter string, fun func() (*ddd_repository.FindListResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	p := NewRSqlProcess()
-	if err := ParseProcess(filter, p); err != nil {
-		return ddd_repository.NewFindListResultError[T](err)
-	}
+func (d *Dao[T]) DoList(ctx context.Context, tenantId string, fun func() (*ddd_repository.FindListResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	data, _, err := fun()
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)

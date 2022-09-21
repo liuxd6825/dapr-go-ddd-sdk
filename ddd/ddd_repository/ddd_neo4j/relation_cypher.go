@@ -13,10 +13,10 @@ type relationCypher struct {
 }
 
 //
-//  NewRelationCypher
-//  @Description:
-//  @param labels 关系标签，可以为空值；为空：由Relation.GetRelType()决定标签名称
-//  @return Cypher
+// NewRelationCypher
+// @Description:
+// @param labels 关系标签，可以为空值；为空：由Relation.GetRelType()决定标签名称
+// @return Cypher
 //
 func NewRelationCypher(labels string) Cypher {
 	return &relationCypher{
@@ -69,7 +69,7 @@ func (c *relationCypher) Update(ctx context.Context, data interface{}, setFields
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
-func (c *relationCypher) SetLabel(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
+func (c *relationCypher) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
 	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
 	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(n) create (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", tenantId, id, label)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
@@ -81,6 +81,26 @@ func (c *relationCypher) UpdateMany(ctx context.Context, list interface{}) (Cyph
 
 	//TODO implement me
 	panic("implement me")
+}
+
+func (c *relationCypher) UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error) {
+	where, err := getNeo4jWhere(tenantId, "n", filter)
+	if err != nil {
+		return nil, err
+	}
+	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
+	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v'}]-(n) create (n)-[r2:{tenantId:'%v'}]-(m)  %s SET r2=r WITH r DELETE r ", tenantId, tenantId, where)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (c *relationCypher) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
+	// neo4j 不支持删除关系标签
+	return nil, nil
+}
+
+func (c *relationCypher) DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error) {
+	// neo4j 不支持删除关系标签
+	return nil, nil
 }
 
 func (c *relationCypher) DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error) {
@@ -100,7 +120,7 @@ func (c *relationCypher) DeleteAll(ctx context.Context, tenantId string) (Cypher
 }
 
 func (c *relationCypher) DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "r", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +153,7 @@ func (c *relationCypher) FindAll(ctx context.Context, tenantId string) (CypherRe
 }
 
 func (c *relationCypher) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherResult, error) {
-	where, err := getSqlWhere(query.GetTenantId(), query.GetFilter())
+	where, err := getNeo4jWhere(query.GetTenantId(), "r", query.GetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +177,7 @@ func (c *relationCypher) FindPaging(ctx context.Context, query ddd_repository.Fi
 }
 
 func (c *relationCypher) FindByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +186,7 @@ func (c *relationCypher) FindByFilter(ctx context.Context, tenantId string, filt
 }
 
 func (c *relationCypher) Count(ctx context.Context, tenantId, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -176,12 +196,12 @@ func (c *relationCypher) Count(ctx context.Context, tenantId, filter string) (Cy
 }
 
 func (c *relationCypher) GetFilter(ctx context.Context, tenantId, filter string) (CypherResult, error) {
-	where, err := getSqlWhere(tenantId, filter)
+	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
 	}
 
-	cypher := fmt.Sprintf("MATCH (a{tenantId:'%v'})-[n%v]->(b{tenantId:'%v'}) %v RETURN n  ", tenantId, c.labels, tenantId, where)
+	cypher := fmt.Sprintf("MATCH (a{tenantId:'%v'})-[n%v]->(b{tenantId:'%v'}) %v RETURN n  ", tenantId, c.getLabels(""), tenantId, where)
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 

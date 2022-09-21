@@ -12,10 +12,16 @@ type Cypher interface {
 	Update(ctx context.Context, data interface{}, setFields ...string) (CypherResult, error)
 	UpdateMany(ctx context.Context, list interface{}) (CypherResult, error)
 
+	UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)
+	UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error)
+
 	DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error)
 	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error)
 	DeleteAll(ctx context.Context, tenantId string) (CypherResult, error)
 	DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error)
+
+	DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)
+	DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error)
 
 	GetFilter(ctx context.Context, tenantId, filter string) (CypherResult, error)
 	FindById(ctx context.Context, tenantId, id string) (CypherResult, error)
