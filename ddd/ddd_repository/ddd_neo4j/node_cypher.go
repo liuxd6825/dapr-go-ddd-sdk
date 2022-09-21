@@ -51,7 +51,7 @@ func (c *nodeCypher) InsertMany(ctx context.Context, list interface{}) (CypherRe
 }
 
 func (c *nodeCypher) Update(ctx context.Context, data interface{}, setFields ...string) (CypherResult, error) {
-	prosNames, mapData, err := getUpdateProperties(ctx, data, setFields...)
+	prosNames, mapData, err := getUpdateProperties(ctx, data, "n", setFields...)
 	if err != nil {
 		return nil, err
 	}
@@ -291,15 +291,15 @@ func getCreateProperties(ctx context.Context, data any) (string, map[string]any,
 	return properties, mapData, nil
 }
 
-func getUpdateProperties(ctx context.Context, data any, setFields ...string) (string, map[string]any, error) {
+func getUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error) {
 	mapData, err := getMap(data)
 	if err != nil {
 		return "", nil, err
 	}
-	return getUpdatePropertiesByMap(ctx, mapData, setFields...)
+	return getUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
 }
 
-func getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, setFields ...string) (string, map[string]any, error) {
+func getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, setFields ...string) (string, map[string]any, error) {
 	var properties string
 	isSetFields := len(setFields) > 0
 	var keyFields map[string]string
@@ -313,10 +313,10 @@ func getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, setFi
 	for k := range mapData {
 		if isSetFields {
 			if _, ok := keyFields[strings.ToLower(k)]; ok {
-				properties = fmt.Sprintf(`%sn.%s=$%s,`, properties, k, k)
+				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, k, k)
 			}
 		} else {
-			properties = fmt.Sprintf(`%sn.%s=$%s,`, properties, k, k)
+			properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, k, k)
 		}
 	}
 

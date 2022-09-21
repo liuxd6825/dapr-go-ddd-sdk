@@ -50,16 +50,29 @@ func (c *relationCypher) InsertMany(ctx context.Context, list interface{}) (Cyph
 }
 
 func (c *relationCypher) Update(ctx context.Context, data interface{}, setFields ...string) (CypherResult, error) {
+
+	// 只更新关系标签
+	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
+
+	// 更新关系的标签与属性
+	// match(n)-[r:relation{id:'cbc4d7be-43fa-427e-956d-e812b335bc12'}]->(m) create (n)-[r2:relation]->(m) set r2=r, r2.title='title' with r delete r
+
 	rel := data.(Relation)
-	prosNames, mapData, err := getUpdateProperties(ctx, data, setFields...)
+	prosNames, mapData, err := getUpdateProperties(ctx, data, "r", setFields...)
 	if err != nil {
 		return nil, err
 	}
 
 	labels := c.getLabels(rel.GetRelType())
 
-	cypher := fmt.Sprintf("MATCH (a)-[r%v{tenantId:'%v',id:'%v'}]-(b) SET %s ", labels, rel.GetTenantId(), rel.GetId(), prosNames)
+	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(m) CREATE (n)-[r2%s]->(m) SET r2=r, %s ", rel.GetTenantId(), rel.GetId(), labels, prosNames)
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
+}
+
+func (c *relationCypher) SetLabel(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
+	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
+	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(n) create (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", tenantId, id, label)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher) UpdateMany(ctx context.Context, list interface{}) (CypherResult, error) {
@@ -176,7 +189,7 @@ func (c *relationCypher) getLabels(labels string) string {
 	if c.isEmptyLabels && len(labels) == 0 {
 		return ""
 	} else if c.isEmptyLabels {
-		return ":" + labels
+		return fmt.Sprintf(":`%v`", labels)
 	}
 	return c.labels
 }

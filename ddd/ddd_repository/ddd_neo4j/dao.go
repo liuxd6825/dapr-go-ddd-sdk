@@ -128,6 +128,9 @@ func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repos
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	cr, err := d.cypher.Update(ctx, entity)
 	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+	if err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
 	if _, err := res.GetOne("", entity); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
@@ -481,7 +484,9 @@ func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transaction) (
 func getLabels(labels ...string) string {
 	var s string
 	for _, l := range labels {
-		s = s + ":" + l
+		if len(l) > 0 {
+			s = fmt.Sprintf("%v :`%v`", s, l)
+		}
 	}
 	return strings.ToLower(s)
 }
