@@ -27,7 +27,7 @@ func NewRelationCypher(labels string) Cypher {
 
 func (c *relationCypher) Insert(ctx context.Context, data interface{}) (CypherResult, error) {
 	rel := data.(Relation)
-	props, dataMap, err := getCreateProperties(ctx, data)
+	props, dataMap, err := c.getCreateProperties(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -212,6 +212,32 @@ func (c *relationCypher) getLabels(labels string) string {
 		return fmt.Sprintf(":`%v`", labels)
 	}
 	return c.labels
+}
+
+func (c *relationCypher) getCreateProperties(ctx context.Context, data interface{}) (string, map[string]any, error) {
+	mapData, err := getMap(data)
+	if err != nil {
+		return "", nil, err
+	}
+
+	strBuilder := strings.Builder{}
+	for k := range mapData {
+		if k != "properties" {
+			strBuilder.WriteString(fmt.Sprintf(`%s:$%s,`, k, k))
+		}
+	}
+
+	if relation, ok := data.(Relation); ok {
+		for k := range relation.GetProperties() {
+			strBuilder.WriteString(fmt.Sprintf(`prop_%s:$properties.%s,`, k, k))
+		}
+	}
+
+	res := strBuilder.String()
+	if len(res) > 0 {
+		res = res[:len(res)-1]
+	}
+	return res, mapData, nil
 }
 
 // getIds 将id数组，转换成sql形式。如：'111','222'。

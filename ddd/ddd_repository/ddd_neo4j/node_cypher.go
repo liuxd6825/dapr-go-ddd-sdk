@@ -32,11 +32,14 @@ func NewNodeCypher(labels ...string) Cypher {
 
 func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult, error) {
 	node := data.(Node)
-	props, dataMap, err := getCreateProperties(ctx, node)
+	props, dataMap, err := c.getCreateProperties(ctx, node)
 	if err != nil {
 		return nil, err
 	}
-	labels := c.getLabels("graph_"+node.GetGraphId(), "tenant_"+node.GetTenantId())
+	list := node.GetLabels()
+	list = append(list, "graph_"+node.GetGraphId())
+	list = append(list, "tenant_"+node.GetTenantId())
+	labels := c.getLabels(list...)
 
 	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
@@ -257,6 +260,21 @@ func (c *nodeCypher) getLabels(labels ...string) string {
 	return strings.ToLower(s)
 }
 
+func (c *nodeCypher) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
+	mapData, err := getMap(data)
+	if err != nil {
+		return "", nil, err
+	}
+	var properties string
+	for k := range mapData {
+		properties = fmt.Sprintf(`%s%s:$%s,`, properties, k, k)
+	}
+	if len(properties) > 0 {
+		properties = properties[:len(properties)-1]
+	}
+	return properties, mapData, nil
+}
+
 //
 //  getOrder
 //  @Description: 返回排序bson.D
@@ -308,21 +326,6 @@ func getOrder(sort string) (string, error) {
 	}
 	res = res[0 : len(res)-1]
 	return res, nil
-}
-
-func getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
-	mapData, err := getMap(data)
-	if err != nil {
-		return "", nil, err
-	}
-	var properties string
-	for k := range mapData {
-		properties = fmt.Sprintf(`%s%s:$%s,`, properties, k, k)
-	}
-	if len(properties) > 0 {
-		properties = properties[:len(properties)-1]
-	}
-	return properties, mapData, nil
 }
 
 func getUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error) {

@@ -8,6 +8,8 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"reflect"
 	"strconv"
+	"strings"
+	"time"
 )
 
 type Neo4jResult struct {
@@ -171,20 +173,6 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*Mappin
 	return true, nil
 }
 
-func decode(input interface{}, out interface{}) error {
-	config := &mapstructure.DecoderConfig{
-		WeaklyTypedInput: true,
-		Squash:           true,
-		Result:           out,
-	}
-	decoder, err := mapstructure.NewDecoder(config)
-	if err != nil {
-		return err
-	}
-	decoder.Decode(input)
-	return nil
-}
-
 func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
 	var list []interface{}
 	if v, ok := r.data[key]; ok {
@@ -293,6 +281,14 @@ func setRelationship(data interface{}, rel neo4j.Relationship) error {
 		if tenantId, ok := rel.Props["tenantId"]; ok {
 			r.SetTenantId(tenantId.(string))
 		}
+		props := make(map[string]interface{})
+		for k, v := range rel.Props {
+			if strings.HasPrefix(k, "prop_") {
+				key := k[5:]
+				props[key] = v
+			}
+		}
+		r.SetProperties(props)
 	} else if n, ok := data.(Node); ok {
 		n.SetNid(rel.Id)
 	} else {
@@ -304,4 +300,33 @@ func setRelationship(data interface{}, rel neo4j.Relationship) error {
 		println(data)
 	}
 	return nil
+}
+
+func decode(input interface{}, out interface{}) error {
+	config := &mapstructure.DecoderConfig{
+		DecodeHook:       decodeHook,
+		WeaklyTypedInput: true,
+		Squash:           true,
+		Result:           out,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(input)
+	return err
+}
+
+func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (interface{}, error) {
+	if fromType.Kind() == reflect.String {
+		switch toType.Name() {
+		case "Time":
+			sTime := v.(string)
+			res, err := time.Parse(time.RFC3339, sTime)
+			return res, err
+		}
+		return v, nil
+	}
+	return v, nil
 }

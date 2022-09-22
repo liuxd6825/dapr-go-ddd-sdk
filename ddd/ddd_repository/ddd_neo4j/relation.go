@@ -27,18 +27,22 @@ type Relation interface {
 
 	SetGraphId(v string)
 	GetGraphId() string
+
+	SetProperties(v map[string]interface{})
+	GetProperties() map[string]interface{}
 }
 
 type BaseRelation struct {
-	Id       string `json:"id" bson:"id"`
-	TenantId string `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
-	GraphId  string `json:"graphId" bson:"graph_id" gorm:"index:idx_graph_id"`
-	Nid      int64  `json:"-" bson:"nid" gorm:"-"`
-	Sid      int64  `json:"-" bson:"sid" gorm:"-"`
-	Eid      int64  `json:"-" bson:"eid" gorm:"-"`
-	RelType  string `json:"relType" bson:"rel_type" gorm:"index:idx_rel_type"`
-	StartId  string `json:"startId" bson:"start_id" gorm:"index:idx_start_id"`
-	EndId    string `json:"endId" bson:"end_id" gorm:"index:idx_end_id"`
+	Id         string                 `json:"id" bson:"id"`
+	TenantId   string                 `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
+	GraphId    string                 `json:"graphId" bson:"graph_id" gorm:"index:idx_graph_id"`
+	Nid        int64                  `json:"-" bson:"nid" gorm:"-"`
+	Sid        int64                  `json:"-" bson:"sid" gorm:"-"`
+	Eid        int64                  `json:"-" bson:"eid" gorm:"-"`
+	RelType    string                 `json:"relType" bson:"rel_type" gorm:"index:idx_rel_type"`
+	StartId    string                 `json:"startId" bson:"start_id" gorm:"index:idx_start_id"`
+	EndId      string                 `json:"endId" bson:"end_id" gorm:"index:idx_end_id"`
+	Properties map[string]interface{} `json:"properties" bson:"properties"`
 }
 
 func newRelation() Relation {
@@ -115,4 +119,12 @@ func (b *BaseRelation) SetEndId(v string) {
 
 func (b *BaseRelation) GetEndId() string {
 	return b.EndId
+}
+
+func (b *BaseRelation) SetProperties(v map[string]interface{}) {
+	b.Properties = v
+}
+
+func (b *BaseRelation) GetProperties() map[string]interface{} {
+	return b.Properties
 }
