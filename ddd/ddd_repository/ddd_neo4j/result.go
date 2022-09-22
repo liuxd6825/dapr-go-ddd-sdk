@@ -30,6 +30,8 @@ type MappingOptions struct {
 	mapping Mapping
 }
 
+const timeLayout = "2006-01-02 15:04:05Z07:00"
+
 func NewMappingOptions() *MappingOptions {
 	return &MappingOptions{
 		mapping: defaultMapping,
@@ -323,10 +325,13 @@ func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (inte
 		switch toType.Name() {
 		case "Time":
 			sTime := v.(string)
-			res, err := time.Parse(time.RFC3339, sTime)
+			format := timeLayout
+			if strings.Contains(sTime, "T") {
+				format = time.RFC3339
+			}
+			res, err := time.Parse(format, sTime)
 			return res, err
 		}
-		return v, nil
 	}
 	return v, nil
 }

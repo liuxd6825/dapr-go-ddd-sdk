@@ -26,3 +26,18 @@ func Mapper(fromObj, toObj interface{}) error {
 func MaskMapper(fromObj, toObj interface{}, mask []string) error {
 	return types.MaskMapper(fromObj, toObj, mask)
 }
+
+//
+// NewMap
+// @Description:
+// @param formObj
+// @return map[string]interface{}
+// @return error
+//
+func NewMap(formObj interface{}) (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	if err := MaskMapper(formObj, &res, nil); err != nil {
+		return nil, err
+	}
+	return res, nil
+}

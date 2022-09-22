@@ -31,3 +31,19 @@ func TestMapStructure_Decode(t *testing.T) {
 	t.Logf("createdTime = %v", user.CreatedTime)
 	t.Logf("updatedTime = %v", user.UpdatedTime)
 }
+
+func TestMapStructure_NewMap(t *testing.T) {
+	dateTime := time.Now()
+	user := &userView{
+		TenantId:    "test",
+		Remarks:     "remarks",
+		CreatedTime: dateTime,
+		UpdatedTime: &dateTime,
+	}
+	mapData, err := NewMap(user)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(mapData)
+}

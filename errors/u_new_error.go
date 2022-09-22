@@ -6,9 +6,24 @@ import (
 	"runtime"
 )
 
-func New(text string) error {
+func New(formatOrText string, text ...any) error {
 	name := runFuncName(2)
-	return errors.New(fmt.Sprintf("%v() error:%v", name, text))
+	count := len(text)
+	if count == 0 {
+		return errors.New(fmt.Sprintf("%v() error: %v", name, formatOrText))
+	}
+
+	texts := make([]any, count+1)
+	texts[0] = name
+	for i, t := range text {
+		texts[i+1] = t
+	}
+	if len(text) == 1 {
+		return errors.New(fmt.Sprintf("%v() error:%v", name, text))
+	}
+
+	return errors.New(fmt.Sprintf("%v() error: "+formatOrText, texts...))
+
 }
 
 func NewMethod(packName, methodName string, msg string) error {
@@ -16,7 +31,7 @@ func NewMethod(packName, methodName string, msg string) error {
 }
 
 func ErrorOf(format string, args ...any) error {
-	return fmt.Errorf(format, args...)
+	return New(format, args)
 }
 
 func runFuncName(skip int) string {

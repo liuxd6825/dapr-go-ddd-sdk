@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"strings"
 )
 
@@ -26,7 +27,10 @@ func NewRelationCypher(labels string) Cypher {
 }
 
 func (c *relationCypher) Insert(ctx context.Context, data interface{}) (CypherResult, error) {
-	rel := data.(Relation)
+	rel, ok := data.(Relation)
+	if !ok {
+		return nil, errors.ErrorOf(" parameter data is not ddd_neo4j.Relation Type")
+	}
 	props, dataMap, err := c.getCreateProperties(ctx, data)
 	if err != nil {
 		return nil, err
@@ -58,20 +62,23 @@ func (c *relationCypher) Update(ctx context.Context, data interface{}, setFields
 	// match(n)-[r:relation{id:'cbc4d7be-43fa-427e-956d-e812b335bc12'}]->(m) create (n)-[r2:relation]->(m) set r2=r, r2.title='title' with r delete r
 
 	rel := data.(Relation)
-	prosNames, mapData, err := getUpdateProperties(ctx, data, "r", setFields...)
+	prosNames, mapData, err := getUpdateProperties(ctx, data, "r2", setFields...)
 	if err != nil {
 		return nil, err
 	}
 
 	labels := c.getLabels(rel.GetRelType())
+	if len(labels) == 0 {
+		return nil, errors.New("neo4j relation.Type is nil")
+	}
 
-	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(m) CREATE (n)-[r2%s]->(m) SET r2=r, %s ", rel.GetTenantId(), rel.GetId(), labels, prosNames)
+	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]->(m) CREATE (n)-[r2%s]->(m) SET r2=r, %s  WITH r DELETE r ", rel.GetTenantId(), rel.GetId(), labels, prosNames)
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
 func (c *relationCypher) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
 	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
-	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(n) create (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", tenantId, id, label)
+	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]->(n) CREATE (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", tenantId, id, label)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
