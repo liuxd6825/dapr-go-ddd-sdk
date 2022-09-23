@@ -12,6 +12,10 @@ type userView struct {
 	UpdatedTime *time.Time
 }
 
+type Date struct {
+	Value time.Time
+}
+
 func TestMapStructure_Decode(t *testing.T) {
 	user := &userView{}
 	props := map[string]interface{}{
@@ -22,7 +26,7 @@ func TestMapStructure_Decode(t *testing.T) {
 		"updatedTime": "2022-08-31T13:47:36.255551+08:00",
 	}
 
-	if err := Decode(props, user); err != nil {
+	if err := DecodeMap(props, user); err != nil {
 		t.Error(err)
 		return
 	}
@@ -33,17 +37,19 @@ func TestMapStructure_Decode(t *testing.T) {
 }
 
 func TestMapStructure_NewMap(t *testing.T) {
-	dateTime := time.Now()
-	user := &userView{
-		TenantId:    "test",
-		Remarks:     "remarks",
-		CreatedTime: dateTime,
-		UpdatedTime: &dateTime,
+	vTime := time.Now()
+	date := &Date{
+		Value: vTime,
 	}
-	mapData, err := NewMap(user)
+	mapData, err := NewMap(date)
 	if err != nil {
 		t.Error(err)
 		return
+	}
+	if v, ok := mapData["Value"]; ok {
+		if _, ok := v.(time.Time); !ok {
+			t.Error("mapData.Value is not time.Time")
+		}
 	}
 	t.Log(mapData)
 }

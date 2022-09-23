@@ -4,13 +4,14 @@ go 1.18
 
 require (
 	github.com/go-playground/validator/v10 v10.11.0
+	github.com/goccy/go-json v0.9.4
 	github.com/google/uuid v1.3.0
 	github.com/iris-contrib/swagger/v12 v12.0.1
 	github.com/jinzhu/copier v0.3.5
 	github.com/kataras/iris/v12 v12.2.0-alpha9
 	github.com/liuxd6825/dapr v1.7.1-1.0-alpha2
 	github.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
-	github.com/mitchellh/mapstructure v1.4.1
+	//github.com/mitchellh/mapstructure v1.5.0
 	github.com/neo4j/neo4j-go-driver/v4 v4.4.3
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/pkg/errors v0.9.1
@@ -18,7 +19,11 @@ require (
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.9.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gorm.io/driver/mysql v1.3.6
+	gorm.io/gorm v1.23.8
 )
+
+require github.com/mitchellh/mapstructure v1.4.1
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
@@ -42,11 +47,11 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.1.0 // indirect
-	github.com/goccy/go-json v0.9.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
@@ -54,6 +59,8 @@ require (
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible // indirect
 	github.com/iris-contrib/jade v1.1.4 // indirect
 	github.com/iris-contrib/schema v0.0.6 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kataras/blocks v0.0.5 // indirect
