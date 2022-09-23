@@ -26,7 +26,7 @@ func TestMapStructure_Decode(t *testing.T) {
 		"updatedTime": "2022-08-31T13:47:36.255551+08:00",
 	}
 
-	if err := DecodeMap(props, user); err != nil {
+	if err := Decode(props, user); err != nil {
 		t.Error(err)
 		return
 	}
