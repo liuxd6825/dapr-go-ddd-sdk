@@ -38,7 +38,7 @@ func GetInt64(m map[string]interface{}, key string, result *int64, def int64) (b
 	return false, nil
 }
 
-func DecodeMap(input interface{}, out interface{}) error {
+func Decode(input interface{}, out interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		WeaklyTypedInput: true,
 		Squash:           true,
@@ -56,7 +56,7 @@ func DecodeMap(input interface{}, out interface{}) error {
 
 func NewMap(fromObj interface{}) (map[string]interface{}, error) {
 	mapData := make(map[string]interface{})
-	if err := DecodeMap(fromObj, &mapData); err != nil {
+	if err := Decode(fromObj, &mapData); err != nil {
 		return nil, err
 	}
 	return mapData, nil

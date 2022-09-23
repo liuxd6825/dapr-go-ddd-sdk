@@ -2,13 +2,16 @@ package timeutils
 
 import (
 	"reflect"
+	"strings"
 	"time"
 )
 
+const LocalTimeLayout = "2006-01-02 15:04:05"
+
 //
-//  Now
-//  @Description: 获取毫秒值为0的当前时间
-//  @return time.Time
+// Now
+// @Description: 获取毫秒值为0的当前时间
+// @return time.Time
 //
 func Now() time.Time {
 	t := time.Now()
@@ -17,10 +20,10 @@ func Now() time.Time {
 }
 
 //
-//  Time
-//  @Description: 获取毫秒值为0的时间
-//  @param t
-//  @return *time.Time
+// Time
+// @Description: 获取毫秒值为0的时间
+// @param t
+// @return *time.Time
 //
 func Time(t *time.Time) *time.Time {
 	if t == nil {
@@ -28,6 +31,36 @@ func Time(t *time.Time) *time.Time {
 	}
 	v := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), 0, t.Location())
 	return &v
+}
+
+func AnyToTime(data interface{}, defaultValue time.Time) (time.Time, error) {
+	switch data.(type) {
+	case string:
+		return StrToTime(data.(string))
+	case *string:
+		str := data.(*string)
+		if str == nil {
+			return defaultValue, nil
+		}
+		return StrToTime(*str)
+	case float64:
+		return time.Unix(0, int64(data.(float64))*int64(time.Millisecond)), nil
+	case int64:
+		return time.Unix(0, data.(int64)*int64(time.Millisecond)), nil
+	}
+	return defaultValue, nil
+}
+
+func StrToTime(str string) (time.Time, error) {
+	format := LocalTimeLayout
+	if strings.Contains(str, "T") {
+		format = time.RFC3339
+	}
+	res, err := time.Parse(format, str)
+	if err != nil {
+		res, err = time.Parse(time.RFC3339Nano, str)
+	}
+	return res, err
 }
 
 //
