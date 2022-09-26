@@ -16,6 +16,10 @@ type Date struct {
 	Value time.Time
 }
 
+type Int64 struct {
+	Value int64
+}
+
 func TestMapStructure_Decode(t *testing.T) {
 	user := &userView{}
 	props := map[string]interface{}{
@@ -48,6 +52,23 @@ func TestMapStructure_NewMap(t *testing.T) {
 	}
 	if v, ok := mapData["Value"]; ok {
 		if _, ok := v.(time.Time); !ok {
+			t.Error("mapData.Value is not time.Time")
+		}
+	}
+	t.Log(mapData)
+}
+
+func TestMapStructure_NewMap_Int64(t *testing.T) {
+	data := Int64{
+		Value: 10,
+	}
+	mapData, err := NewMap(&data)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if v, ok := mapData["Value"]; ok {
+		if _, ok := v.(int64); !ok {
 			t.Error("mapData.Value is not time.Time")
 		}
 	}

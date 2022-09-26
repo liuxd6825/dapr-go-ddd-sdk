@@ -63,8 +63,6 @@ func NewMap(fromObj interface{}) (map[string]interface{}, error) {
 }
 
 func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (interface{}, error) {
-	println("formType:" + fromType.Elem().Name())
-	println("toType:" + toType.Elem().Name())
 	if fromType.Kind() == reflect.String && toType.Name() == timeTypeName {
 		return timeutils.AnyToTime(v, time.Time{})
 	}
