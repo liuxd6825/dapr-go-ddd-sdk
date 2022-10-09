@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -113,6 +114,11 @@ func UUID() string {
 func PUUID() *string {
 	v := uuid.New().String()
 	return &v
+}
+
+// NewId 新建ID
+func NewId() string {
+	return strings.Replace(uuid.New().String(), "-", "", 0)
 }
 
 // IpAddr 随机生成IP地址
