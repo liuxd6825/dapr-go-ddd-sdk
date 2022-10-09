@@ -24,12 +24,13 @@ type Dao[T ddd.Entity] struct {
 	collection    *mongo.Collection
 	mongodb       *MongoDB
 	null          T
-	newFun        func() T
+	newFun        func() T                                                // 新建实体结构方法
+	initfu        func() (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 }
 
-func NewDao[T ddd.Entity](mongodb *MongoDB, collection *mongo.Collection) *Dao[T] {
+func NewDao[T ddd.Entity](initfu func() (mongodb *MongoDB, collection *mongo.Collection)) *Dao[T] {
 	r := &Dao[T]{}
-	r.Init(mongodb, collection)
+	r.initfu = initfu
 	return r
 }
 
@@ -46,12 +47,20 @@ func (r *Dao[T]) NewEntityList() ([]T, error) {
 	return reflectutils.NewSlice[[]T]()
 }
 
+func (r *Dao[T]) getCollection() *mongo.Collection {
+	if r.collection != nil {
+		return r.collection
+	}
+	r.Init(r.initfu())
+	return r.collection
+}
+
 func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
-		_, err := r.collection.InsertOne(ctx, entity, getInsertOneOptions(opts...))
+		_, err := r.getCollection().InsertOne(ctx, entity, getInsertOneOptions(opts...))
 		return entity, err
 	})
 }
@@ -73,7 +82,7 @@ func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repos
 	}
 
 	return r.DoSetMany(func() ([]T, error) {
-		_, err := r.collection.InsertMany(ctx, docs, getInsertManyOptions(opts...))
+		_, err := r.getCollection().InsertMany(ctx, docs, getInsertManyOptions(opts...))
 		return entitits, err
 	})
 }
@@ -90,7 +99,7 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 		updateOptions := getUpdateOptions(opts...)
 		filter := bson.D{{ConstIdField, objId}}
 		setData := bson.M{"$set": entity}
-		_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+		_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
 		return entity, err
 	})
 }
@@ -103,7 +112,7 @@ func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 	return r.DoSetMany(func() ([]T, error) {
 		setData := bson.M{"$set": data}
 		updateOptions := getUpdateOptions(opts...)
-		_, err = r.collection.UpdateMany(ctx, filterMap, setData, updateOptions)
+		_, err = r.getCollection().UpdateMany(ctx, filterMap, setData, updateOptions)
 		return nil, err
 	})
 }
@@ -133,7 +142,7 @@ func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 			updateOptions := getUpdateOptions(opts...)
 			filter := bson.D{{ConstIdField, objId}}
 			setData := bson.M{"$set": entity}
-			_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+			_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
 			if err != nil {
 				return nil, err
 			}
@@ -178,7 +187,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 			filter := bson.D{{ConstIdField, id}}
 
 			setData := bson.M{"$set": doc}
-			_, err = r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+			_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
 			if err != nil {
 				return nil, err
 			}
@@ -200,7 +209,7 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[s
 	updateOptions := getUpdateOptions(opts...)
 	filter := r.NewFilter(tenantId, filterMap)
 	setData := bson.M{"$set": data}
-	_, err := r.collection.UpdateOne(ctx, filter, setData, updateOptions)
+	_, err := r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
 	return err
 }
 
@@ -243,7 +252,7 @@ func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map
 	return r.DoSet(func() (T, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		deleteOptions := getDeleteOptions(opts...)
-		_, err := r.collection.DeleteOne(ctx, filter, deleteOptions)
+		_, err := r.getCollection().DeleteOne(ctx, filter, deleteOptions)
 		var result T
 		return result, err
 	})
@@ -289,7 +298,7 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 		if err != nil {
 			return null, false, err
 		}
-		result := r.collection.FindOne(ctx, filter, findOneOptions)
+		result := r.getCollection().FindOne(ctx, filter, findOneOptions)
 		if result.Err() != nil {
 			return null, false, result.Err()
 		}
@@ -308,7 +317,7 @@ func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 			return nil, false, err
 		}
 		findOptions := getFindOptions(opts...)
-		cursor, err := r.collection.Find(ctx, filter, findOptions)
+		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -345,14 +354,14 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 			findOptions.SetSort(sort)
 		}
 
-		cursor, err := r.collection.Find(ctx, filter, findOptions)
+		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
 		err = cursor.All(ctx, &data)
 		var totalRows *int64
 		if query.GetIsTotalRows() {
-			total, err := r.collection.CountDocuments(ctx, filter)
+			total, err := r.getCollection().CountDocuments(ctx, filter)
 			if err != nil {
 				return nil, false, err
 			}
