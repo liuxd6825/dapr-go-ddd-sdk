@@ -228,13 +228,30 @@ func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, op
 
 func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	data := map[string]interface{}{
-		ConstIdField: id,
+		ConstIdField:  id,
+		TenantIdField: tenantId,
 	}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
 func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
-	return nil
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return err
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	setResult := r.DoSet(func() (T, error) {
+		var null T
+		filter := bson.D{}
+		filter = append(filter, bson.E{Key: ConstIdField, Value: bson.M{"$in": ids}})
+		filter = append(filter, bson.E{Key: ConstTenantIdField, Value: tenantId})
+		deleteOptions := getDeleteOptions(opts...)
+		_, err := r.getCollection().DeleteMany(ctx, filter, deleteOptions)
+		return null, err
+	})
+	return setResult.GetError()
 }
 
 func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
@@ -243,7 +260,7 @@ func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_rep
 }
 
 func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	if err := assert.NotNil(filterMap, assert.NewOptions("data is nil")); err != nil {
+	if err := assert.NotNil(filterMap, assert.NewOptions("filterMap is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
