@@ -8,9 +8,6 @@ import (
 	"time"
 )
 
-var stringType = reflect.TypeOf("time.Now()")
-var dateType = reflect.TypeOf(time.Now())
-
 const (
 	localTime    = "2006-01-02 15:04:05"
 	timeTypeName = "Time"
@@ -60,6 +57,14 @@ func NewMap(fromObj interface{}) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return mapData, nil
+}
+
+func NewFromStr(v []string) map[string]interface{} {
+	mapData := make(map[string]interface{})
+	for _, item := range v {
+		mapData[item] = item
+	}
+	return mapData
 }
 
 func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (interface{}, error) {
