@@ -1,8 +1,8 @@
 package metadata
 
 import (
+	"fmt"
 	"reflect"
-	"testing"
 )
 
 type Properties interface {
@@ -14,25 +14,33 @@ type properties struct {
 	values map[string]Property
 }
 
+type Options struct {
+	Logger Logger
+}
+
+type Logger func(log string)
+
 const (
 	PropertyName       = "Property"
+	PropertiesName     = "Properties"
 	PkgPath            = "github.com/liuxd6825/dapr-go-ddd-sdk/metadata"
 	DescriptionTagName = "description"
 )
 
-func NewProperties(metadata any, entity any, test *testing.T) (Properties, error) {
+func NewOptions() *Options {
+	o := &Options{}
+	o.Logger = func(str string) {}
+	return o
+}
+
+func NewProperties(metadata any, entity any, ops ...*Options) (Properties, error) {
+	options := NewOptions().Merge(ops...)
+
 	metaType := reflect.TypeOf(metadata)
 	metaValue := reflect.ValueOf(metadata)
 
 	entityType := reflect.TypeOf(entity)
 	entityValue := reflect.ValueOf(entity)
-
-	/*	if metaType.Kind() != reflect.Pointer {
-			return nil, errors.New("metadata is not Pointer ")
-		}
-		if entityType.Kind() != reflect.Pointer {
-			return nil, errors.New("entity is not Pointer ")
-		}*/
 
 	if metaType.Kind() == reflect.Pointer {
 		metaType = metaType.Elem()
@@ -44,35 +52,36 @@ func NewProperties(metadata any, entity any, test *testing.T) (Properties, error
 		entityValue = entityValue.Elem()
 	}
 
+	if props, err := initProperties(metaType, metaValue, entityType, entityValue, options); err != nil {
+		return nil, err
+	} else {
+		return props, nil
+	}
+}
+
+func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType reflect.Type, entityValue reflect.Value, options *Options) (*properties, error) {
 	props := &properties{
 		values: map[string]Property{},
 	}
-
-	if err := initMetadata(metaType, metaValue, entityType, entityValue, test, props); err != nil {
-		return nil, err
-	}
-	return props, nil
-}
-func initMetadata(metaType reflect.Type, metaValue reflect.Value, entityType reflect.Type, entityValue reflect.Value, test *testing.T, props *properties) error {
-
 	// 取得对象的属性
 	for i := 0; i < entityValue.NumField(); i++ {
 		var prop *property
 		entityField := entityType.Field(i)
-		test.Logf("entityField.Name = %v", entityField.Name)
+
+		options.Logger(fmt.Sprintf("entityField.Name = %v", entityField.Name))
 		if entityField.Anonymous {
 			if mt, ok := metaType.FieldByName(entityField.Name + "Metadata"); ok {
-				mv := metaValue.FieldByName(entityField.Name + "Metadata")
 				if et, ok := entityType.FieldByName(entityField.Name); ok {
+					mv := metaValue.FieldByName(entityField.Name + "Metadata")
 					ev := entityValue.FieldByName(entityField.Name)
-					if err := initMetadata(mt.Type, mv, et.Type, ev, test, props); err != nil {
-						return err
+					if sumProps, err := initProperties(mt.Type, mv, et.Type, ev, options); err != nil {
+						return nil, err
+					} else {
+						props.AddProperties(sumProps)
 					}
 				}
 			}
-		}
-		// 如果metadata对象中定义了相同字段
-		if metaField, ok := metaType.FieldByName(entityField.Name); ok {
+		} else if metaField, ok := metaType.FieldByName(entityField.Name); ok {
 			t := metaField.Type
 			if t.Name() == PropertyName && t.PkgPath() == PkgPath {
 				fv := metaValue.FieldByName(metaField.Name)
@@ -84,15 +93,19 @@ func initMetadata(metaType reflect.Type, metaValue reflect.Value, entityType ref
 				} else if v, ok := data.(*property); ok {
 					prop = v
 				}
+				if prop == nil {
+					prop = &property{}
+				}
+				prop.Init(entityField)
+				props.Add(prop)
+			} else if metaField.Type.Name() == PropertiesName && metaField.Type.PkgPath() == PkgPath {
+				v := reflect.ValueOf(props)
+				fv := metaValue.FieldByName(metaField.Name)
+				fv.Set(v)
 			}
 		}
-		if prop == nil {
-			prop = &property{}
-		}
-		prop.Init(entityField)
-		props.Add(prop)
 	}
-	return nil
+	return props, nil
 }
 
 func (m *properties) AddProperties(props Properties) {
@@ -112,4 +125,18 @@ func (m *properties) Add(p Property) {
 func (m *properties) Get(name string) (Property, bool) {
 	p, ok := m.values[name]
 	return p, ok
+}
+
+func (o *Options) SetLogger(logger Logger) *Options {
+	o.Logger = logger
+	return o
+}
+
+func (o *Options) Merge(opts ...*Options) *Options {
+	for _, i := range opts {
+		if i.Logger != nil {
+			o.Logger = i.Logger
+		}
+	}
+	return o
 }

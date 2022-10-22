@@ -1,8 +1,6 @@
 package metadata
 
 import (
-	"fmt"
-	"reflect"
 	"testing"
 )
 
@@ -58,21 +56,15 @@ type BankTableMetadata struct {
 func TestNewProperties(t *testing.T) {
 	m := &BankTableMetadata{}
 	entity := &BankTable{}
-	rValue := reflect.ValueOf(m)
-	rType := reflect.TypeOf(m)
-	for i := 0; i < rType.Elem().NumField(); i++ {
-		fieldName := rType.Elem().Field(i).Name
-		fv := rValue.Elem().FieldByName(fieldName)
-		t.Log(fv.Interface())
-	}
-
-	if prop, err := NewProperties(m, entity, t); err != nil {
+	if _, err := NewProperties(m, entity, newOptions(t)); err != nil {
 		t.Error(err)
 	} else {
-		m.Properties = prop
-		fmt.Println(m.BankBaseMetadata.BankName)
 		for _, p := range m.Properties.Values() {
 			t.Logf("name=%v; jsonName=%v; type=%v; description=%v", p.Name(), p.JsonName(), p.TypeName(), p.Description())
 		}
 	}
+}
+
+func newOptions(t *testing.T) *Options {
+	return NewOptions().SetLogger(func(string2 string) { t.Log(string2) })
 }
