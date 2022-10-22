@@ -1,39 +1,78 @@
 package metadata
 
-import "testing"
+import (
+	"fmt"
+	"reflect"
+	"testing"
+)
 
-type BankTableAggregateMetadata struct {
-	AccountCode Property `json:"accountCode" validate:"-"`        // 账号
-	BankName    Property `json:"bankName" validate:"-"`           // 银行名称
-	CaseId      Property `json:"caseId" validate:"required"`      // 案件ID
-	Columns     Property `json:"columns" copier:"-" validate:"-"` // 扫描列信息
-	EndTime     Property `json:"endTime" validate:"-"`            // 流水结束时间
-	FileId      Property `json:"fileId" validate:"required"`      // 扫描文件ID
-	Id          Property `json:"id" validate:"required"`          // 主键
-	IsDeleted   Property `json:"isDeleted" validate:"-"`          // 已删除
-	Pages       Property `json:"pages" copier:"-" validate:"-"`   // 扫描页,用于管理表中的页数和页顺序
-	Remarks     Property `json:"remarks" validate:"-"`            // 备注
-	StartTime   Property `json:"startTime" validate:"-"`          // 流水开始时间
-	TenantId    Property `json:"tenantId" validate:"required"`    // 租户ID
-	Title       Property `json:"title" validate:"-"`              // 标题
+type BankBase struct {
+	AccountCode string `json:"accountCode" validate:"-" description:"账号"`            // 账号
+	BankName    string `json:"bankName" validate:"-" description:"银行名称"`             // 银行名称
+	CaseId      string `json:"caseId" validate:"required"  description:"案件ID"`       // 案件ID
+	Columns     string `json:"columns" copier:"-" validate:"-"  description:"扫描列信息"` // 扫描列信息
+}
+
+type BankBaseMetadata struct {
+	AccountCode Property `json:"accountCode"` // 账号
+	BankName    Property `json:"bankName"`    // 银行名称
+	CaseId      Property `json:"caseId"`      // 案件ID
+	Columns     Property `json:"columns"`     // 扫描列信息
 	Properties  Properties
 }
 
+type BankTable struct {
+	BankBase
+	EndTime   string `json:"endTime" validate:"-"  description:"流水结束时间"`                     // 流水结束时间
+	FileId    string `json:"fileId" validate:"required" description:"扫描文件ID"`                // 扫描文件ID
+	Id        string `json:"id" validate:"required"  description:"主键"`                       // 主键
+	IsDeleted bool   `json:"isDeleted" validate:"-"  description:"已删除"`                      // 已删除
+	Pages     string `json:"pages" copier:"-" validate:"-"  description:"扫描页,用于管理表中的页数和页顺序"` // 扫描页,用于管理表中的页数和页顺序
+	Remarks   string `json:"remarks" validate:"-"  description:"备注"`                         // 备注
+	StartTime string `json:"startTime" validate:"-" description:"流水开始时间"`                    // 流水开始时间
+	TenantId  string `json:"tenantId" validate:"required" description:"租户ID"`                // 租户ID
+	Title     string `json:"title" validate:"-"  description:"标题"`                           // 标题
+}
+
+type BankTableMetadata struct {
+	BankBaseMetadata
+	Properties  Properties
+	AccountCode Property `json:"accountCode"` // 账号
+	/*
+		BankName    Property `json:"bankName"`    // 银行名称
+		CaseId      Property `json:"caseId"`      // 案件ID
+		Columns     Property `json:"columns"`     // 扫描列信息
+		EndTime     Property `json:"endTime"`     // 流水结束时间
+		FileId      Property `json:"fileId"`      // 扫描文件ID
+		Id          Property `json:"id"`          // 主键
+		IsDeleted   Property `json:"isDeleted"`   // 已删除
+		Pages       Property `json:"pages"`       // 扫描页,用于管理表中的页数和页顺序
+		Remarks     Property `json:"remarks"`     // 备注
+		StartTime   Property `json:"startTime"`   // 流水开始时间
+		TenantId    Property `json:"tenantId"`    // 租户ID
+		Title       Property `json:"title"`       // 标题
+	*/
+
+}
+
 func TestNewProperties(t *testing.T) {
-	m := &BankTableAggregateMetadata{
-		AccountCode: NewProperty("AccountCode", DataTypeStr, "账号"),
-		BankName:    NewProperty("BankName", DataTypeStr, "银行名称"),
-		CaseId:      NewProperty("CaseId", DataTypeStr, "案件ID"),
-		Columns:     NewProperty("Columns", DataTypeStruct, "扫描列信息"),
-		EndTime:     NewProperty("EndTime", DataTypeStr, "流水结束时间"),
-		FileId:      NewProperty("FileId", DataTypeStr, "扫描文件ID"),
-		Id:          NewProperty("Id", DataTypeStr, "主键"),
-		IsDeleted:   NewProperty("IsDeleted", DataTypeBool, "已删除"),
-		Pages:       NewProperty("Pages", DataTypeStruct, "扫描页,用于管理表中的页数和页顺序"),
-		Remarks:     NewProperty("Remarks", DataTypeStr, "备注"),
-		StartTime:   NewProperty("StartTime", DataTypeTime, "流水开始时间"),
-		TenantId:    NewProperty("TenantId", DataTypeStr, "租户ID"),
-		Title:       NewProperty("Title", DataTypeStr, "标题"),
+	m := &BankTableMetadata{}
+	entity := &BankTable{}
+	rValue := reflect.ValueOf(m)
+	rType := reflect.TypeOf(m)
+	for i := 0; i < rType.Elem().NumField(); i++ {
+		fieldName := rType.Elem().Field(i).Name
+		fv := rValue.Elem().FieldByName(fieldName)
+		t.Log(fv.Interface())
 	}
-	m.Properties = NewProperties(*m)
+
+	if prop, err := NewProperties(m, entity, t); err != nil {
+		t.Error(err)
+	} else {
+		m.Properties = prop
+		fmt.Println(m.BankBaseMetadata.BankName)
+		for _, p := range m.Properties.Values() {
+			t.Logf("name=%v; jsonName=%v; type=%v; description=%v", p.Name(), p.JsonName(), p.TypeName(), p.Description())
+		}
+	}
 }

@@ -1,32 +1,56 @@
 package metadata
 
+import "reflect"
+
 type Property interface {
 	Name() string
-	DataType() DataType
+	TypeName() string
+	Description() string
+	JsonName() string
 }
 
 type property struct {
-	name        string
-	dataType    DataType
-	description string
+	FName        string              `json:"name"`
+	FJsonName    string              `json:"jsonName"`
+	FFieldInfo   reflect.StructField `json:"-"`
+	FDescription string              `json:"description"`
 }
 
-func NewProperty(name string, dataType DataType, description string) Property {
-	return &property{
-		name:        name,
-		dataType:    dataType,
-		description: description,
+func NewProperty() Property {
+	return &property{}
+}
+func (p *property) Init(fieldInfo reflect.StructField) Property {
+	p.FFieldInfo = fieldInfo
+	p.FName = fieldInfo.Name
+	if desc := fieldInfo.Tag.Get("description"); desc != "" {
+		p.FDescription = desc
 	}
+	if jsonName := fieldInfo.Tag.Get("json"); jsonName != "" {
+		p.FJsonName = jsonName
+	}
+	return p
 }
 
 func (p *property) Name() string {
-	return p.name
+	return p.FName
 }
 
-func (p *property) DataType() DataType {
-	return p.dataType
+func (p *property) TypeName() string {
+	return p.FFieldInfo.Type.Name()
+}
+
+func (p *property) Type() reflect.Type {
+	return p.FFieldInfo.Type
+}
+
+func (p *property) FieldInfo() reflect.StructField {
+	return p.FFieldInfo
 }
 
 func (p *property) Description() string {
-	return p.description
+	return p.FDescription
+}
+
+func (p *property) JsonName() string {
+	return p.FJsonName
 }
