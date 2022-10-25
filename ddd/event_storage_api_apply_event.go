@@ -11,6 +11,65 @@ type ApplyEventOptions struct {
 	pubsubName      *string
 	metadata        *map[string]string
 	eventStorageKey *string
+	sessionId       *string
+}
+
+func NewApplyEventOptions() *ApplyEventOptions {
+	return &ApplyEventOptions{}
+}
+
+func (a *ApplyEventOptions) Merge(opts ...*ApplyEventOptions) *ApplyEventOptions {
+	for _, opt := range opts {
+		if opt.eventStorageKey != nil {
+			a.eventStorageKey = opt.eventStorageKey
+		}
+		if opt.metadata != nil {
+			a.metadata = opt.metadata
+		}
+		if opt.pubsubName != nil {
+			a.pubsubName = opt.pubsubName
+		}
+		if opt.sessionId != nil {
+			a.sessionId = opt.sessionId
+		}
+	}
+	return a
+}
+
+func (a *ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
+	a.pubsubName = &pubsubName
+	return a
+}
+
+func (a *ApplyEventOptions) GetPubsubName() *string {
+	return a.pubsubName
+}
+
+func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEventOptions {
+	a.eventStorageKey = &eventStorageKey
+	return a
+}
+
+func (a *ApplyEventOptions) GetEventStorageKey() *string {
+	return a.eventStorageKey
+}
+
+func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
+	a.metadata = value
+	return a
+}
+
+func (a *ApplyEventOptions) GetMetadata() *map[string]string {
+	return a.metadata
+}
+
+func (a *ApplyEventOptions) SetSessionId(value string) *ApplyEventOptions {
+	a.sessionId = &value
+	return a
+}
+
+func (a *ApplyEventOptions) GetSessionId() *string {
+	return a.sessionId
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.ApplyEventResponse, error) {
@@ -56,21 +115,11 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	aggType := aggregate.GetAggregateType()
 
 	metadata := make(map[string]string)
-	options := &ApplyEventOptions{
-		pubsubName:      &strEmpty,
-		metadata:        &metadata,
-		eventStorageKey: &strEmpty,
-	}
-	for _, opt := range opts {
-		if opt.eventStorageKey != nil {
-			options.eventStorageKey = opt.eventStorageKey
-		}
-		if opt.metadata != nil {
-			options.metadata = opt.metadata
-		}
-		if opt.pubsubName != nil {
-			options.pubsubName = opt.pubsubName
-		}
+	options := NewApplyEventOptions().SetMetadata(&metadata).Merge(opts...)
+
+	sessionId := ""
+	if options.GetSessionId() != nil {
+		sessionId = *options.GetSessionId()
 	}
 
 	logInfo := &applog.LogInfo{
@@ -95,6 +144,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		}
 		applyEvents := []*daprclient.EventDto{
 			{
+				ApplyType:    callEventType.ToString(),
 				CommandId:    event.GetCommandId(),
 				EventId:      event.GetEventId(),
 				EventVersion: event.GetEventVersion(),
@@ -106,13 +156,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				Topic:        event.GetEventType(),
 			},
 		}
-		if callEventType == EventCreate {
-			res, err = createEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
-		} else if callEventType == EventApply {
-			res, err = applyEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents)
-		} else if callEventType == EventDelete {
-			res, err = deleteEvent(ctx, eventStorage, tenantId, aggId, aggType, applyEvents[0])
-		}
+		res, err = applyEvent(ctx, sessionId, eventStorage, tenantId, aggId, aggType, applyEvents)
 		if err != nil {
 			return nil, err
 		}
@@ -129,8 +173,9 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	return res, err
 }
 
-func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
+func applyEvent(ctx context.Context, sessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
 	req := &daprclient.ApplyEventRequest{
+		SessionId:     sessionId,
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
 		AggregateType: aggregateType,
@@ -140,8 +185,9 @@ func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggreg
 	return resp, err
 }
 
-func createEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.CreateEventResponse, error) {
+/*func createEvent(ctx context.Context, sessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.CreateEventResponse, error) {
 	req := &daprclient.CreateEventRequest{
+
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
 		AggregateType: aggregateType,
@@ -151,7 +197,7 @@ func createEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggre
 	return resp, err
 }
 
-func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) (*daprclient.DeleteEventResponse, error) {
+func deleteEvent(ctx context.Context, sessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) (*daprclient.DeleteEventResponse, error) {
 	req := &daprclient.DeleteEventRequest{
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
@@ -160,7 +206,7 @@ func deleteEvent(ctx context.Context, eventStorage EventStorage, tenantId, aggre
 	}
 	resp, err := eventStorage.DeleteEvent(ctx, req)
 	return resp, err
-}
+}*/
 
 //
 //  callActorSaveSnapshot
@@ -183,25 +229,4 @@ func callActorSaveSnapshot(ctx context.Context, tenantId, aggregateId, aggregate
 		AggregateId:   aggregateId,
 	})
 	return err
-}
-
-func (a *ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
-	a.pubsubName = &pubsubName
-	return a
-}
-
-func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEventOptions {
-	a.eventStorageKey = &eventStorageKey
-	return a
-}
-
-func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
-	a.metadata = value
-	return a
-}
-
-func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
-	return &ApplyEventOptions{
-		metadata: metadata,
-	}
 }

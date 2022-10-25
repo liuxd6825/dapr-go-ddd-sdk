@@ -35,6 +35,18 @@ const (
 
 type EventStorageOption func(EventStorage)
 
+func (t CallEventType) ToString() string {
+	switch t {
+	case EventCreate:
+		return "create"
+	case EventApply:
+		return "apply"
+	case EventDelete:
+		return "delete"
+	}
+	return ""
+}
+
 func PubsubName(pubsubName string) EventStorageOption {
 	return func(es EventStorage) {
 		s, _ := es.(*grpcEventStorage)
