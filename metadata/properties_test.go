@@ -56,7 +56,7 @@ type BankTableMetadata struct {
 func TestNewProperties(t *testing.T) {
 	m := &BankTableMetadata{}
 	entity := &BankTable{}
-	if _, err := NewProperties(m, entity, newOptions(t)); err != nil {
+	if err := InitMetadata(m, entity, newOptions(t)); err != nil {
 		t.Error(err)
 	} else {
 		for _, p := range m.Properties.Values() {

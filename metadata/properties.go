@@ -33,7 +33,7 @@ func NewOptions() *Options {
 	return o
 }
 
-func NewProperties(metadata any, entity any, ops ...*Options) (Properties, error) {
+func InitMetadata(metadata any, entity any, ops ...*Options) error {
 	options := NewOptions().Merge(ops...)
 
 	metaType := reflect.TypeOf(metadata)
@@ -52,11 +52,8 @@ func NewProperties(metadata any, entity any, ops ...*Options) (Properties, error
 		entityValue = entityValue.Elem()
 	}
 
-	if props, err := initProperties(metaType, metaValue, entityType, entityValue, options); err != nil {
-		return nil, err
-	} else {
-		return props, nil
-	}
+	_, err := initProperties(metaType, metaValue, entityType, entityValue, options)
+	return err
 }
 
 func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType reflect.Type, entityValue reflect.Value, options *Options) (*properties, error) {
