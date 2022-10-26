@@ -6,12 +6,17 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
-type sessionKey struct {
+type Session interface {
+	GetSessionId() string
+	GetTenantId() string
 }
 
-type sessionValue struct {
-	sessionId  string
-	eventItems []*eventItem
+type session struct {
+	tenantId  string
+	sessionId string
+}
+
+type sessionKey struct {
 }
 
 type eventItem struct {
@@ -22,73 +27,57 @@ type eventItem struct {
 	opts          []*ApplyEventOptions
 }
 
-func newSession(parent context.Context) (context.Context, *sessionValue) {
-	ctx, _ := context.WithCancel(parent)
-	value := newSessionValue()
-	return context.WithValue(ctx, sessionKey{}, value), value
-}
-
-func newSessionValue() *sessionValue {
-	value := &sessionValue{
-		sessionId:  uuid.New().String(),
-		eventItems: make([]*eventItem, 0),
-	}
-	return value
-}
-
-func getSessionValue(ctx context.Context) (*sessionValue, bool) {
-	value := ctx.Value(sessionKey{})
-	events, ok := value.(*sessionValue)
-	return events, ok
-}
-
-func StartSession(ctx context.Context, do func(sessionCtx context.Context) error) (resErr error) {
+func StartSession(ctx context.Context, tenantId string, do func(ctx context.Context, session Session) error) (resErr error) {
 	defer func() {
 		if err := errors.GetRecoverError(recover()); err != nil {
 			resErr = err
 		}
 	}()
-	sessValue, ok := getSessionValue(ctx)
+	session, ok := getSession(ctx)
 	if !ok {
-		ctx, sessValue = newSession(ctx)
+		ctx, session = newContext(ctx, tenantId)
 	}
-	err := do(ctx)
+	err := do(ctx, session)
 	if err != nil {
-		return sessValue.Rollback()
+		return session.rollback(ctx)
 	}
-	return sessValue.Commit()
+	return session.commit(ctx)
 }
 
-func (b *sessionValue) AddEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, callEventType CallEventType, opts ...*ApplyEventOptions) {
-	if b == nil {
-		return
-	}
-	item := &eventItem{
-		ctx:           ctx,
-		aggregate:     aggregate,
-		event:         event,
-		callEventType: callEventType,
-		opts:          opts,
-	}
-	b.eventItems = append(b.eventItems, item)
+func newContext(parent context.Context, tenantId string) (context.Context, *session) {
+	ctx, _ := context.WithCancel(parent)
+	value := newSession(tenantId)
+	return context.WithValue(ctx, sessionKey{}, value), value
 }
 
-func (b *sessionValue) Commit() error {
-	for _, item := range b.eventItems {
-		_, err := callDaprEventMethod(item.ctx, item.callEventType, item.aggregate, item.event, item.opts...)
-		if err != nil {
-			return err
-		}
+func newSession(tenantId string) *session {
+	value := &session{
+		tenantId:  tenantId,
+		sessionId: uuid.New().String(),
 	}
-	return nil
+	return value
 }
 
-func (b *sessionValue) Rollback() error {
-	for _, item := range b.eventItems {
-		_, err := callDaprEventMethod(item.ctx, item.callEventType, item.aggregate, item.event, item.opts...)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func getSession(ctx context.Context) (*session, bool) {
+	value := ctx.Value(sessionKey{})
+	events, ok := value.(*session)
+	return events, ok
+}
+
+func (b *session) GetTenantId() string {
+	return b.tenantId
+}
+
+func (b *session) GetSessionId() string {
+	return b.sessionId
+}
+
+func (b *session) commit(ctx context.Context) error {
+	_, err := Commit(ctx, b.tenantId, b.sessionId)
+	return err
+}
+
+func (b *session) rollback(ctx context.Context) error {
+	_, err := Rollback(ctx, b.tenantId, b.sessionId)
+	return err
 }

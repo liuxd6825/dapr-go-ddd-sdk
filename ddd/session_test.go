@@ -28,18 +28,18 @@ type TestEvent struct {
 
 func TestNewSession(t *testing.T) {
 	ctx := context.Background()
-	sCtx, _ := newSession(ctx)
-	val, ok := getSessionValue(sCtx)
+	sCtx, _ := newContext(ctx, "test")
+	val, ok := getSession(sCtx)
 	if ok {
 		t.Log(val)
 	} else {
-		t.Error(errors.New("sessionValue is error"))
+		t.Error(errors.New("session is error"))
 	}
 }
 
 func TestStartSession(t *testing.T) {
 	ctx := context.Background()
-	err := StartSession(ctx, func(sCtx context.Context) error {
+	err := StartSession(ctx, "test", func(session SessionContext) error {
 		agg := NewTestAggregate()
 		if _, err := CreateEvent(sCtx, agg, NewCreateEvent(agg.id)); err != nil {
 			return err

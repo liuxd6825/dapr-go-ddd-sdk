@@ -138,7 +138,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		sessionId = *options.GetSessionId()
 	}
 
-	session, ok := getSessionValue(ctx)
+	session, ok := getSession(ctx)
 	if ok && session != nil {
 		sessionId = session.sessionId
 	}
@@ -163,21 +163,29 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		if err != nil {
 			return nil, err
 		}
-		applyEvents := []*daprclient.EventDto{
-			{
-				ApplyType:    callEventType.ToString(),
-				CommandId:    event.GetCommandId(),
-				EventId:      event.GetEventId(),
-				EventVersion: event.GetEventVersion(),
-				EventType:    event.GetEventType(),
-				Metadata:     *options.metadata,
-				PubsubName:   eventStorage.GetPubsubName(),
-				EventData:    event,
-				Relations:    relation,
-				Topic:        event.GetEventType(),
-			},
+
+		eventDto := &daprclient.EventDto{
+			ApplyType:    callEventType.ToString(),
+			CommandId:    event.GetCommandId(),
+			EventId:      event.GetEventId(),
+			EventVersion: event.GetEventVersion(),
+			EventType:    event.GetEventType(),
+			Metadata:     *options.metadata,
+			PubsubName:   eventStorage.GetPubsubName(),
+			EventData:    event,
+			Relations:    relation,
+			Topic:        event.GetEventType(),
+			IsSourcing:   true,
 		}
-		res, err = applyEvent(ctx, sessionId, eventStorage, tenantId, aggId, aggType, applyEvents)
+
+		// 判断是否需要进行"事件溯源"控制
+		if s, ok := event.(IsSourcing); ok {
+			eventDto.IsSourcing = s.GetIsSourcing()
+		}
+
+		applyEvents := []*daprclient.EventDto{eventDto}
+
+		res, err = applyEvent(ctx, eventStorage, tenantId, sessionId, aggId, aggType, applyEvents)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +202,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	return res, err
 }
 
-func applyEvent(ctx context.Context, sessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
+func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, sessionId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
 	req := &daprclient.ApplyEventRequest{
 		SessionId:     sessionId,
 		TenantId:      tenantId,
@@ -203,6 +211,58 @@ func applyEvent(ctx context.Context, sessionId string, eventStorage EventStorage
 		Events:        events,
 	}
 	resp, err := eventStorage.ApplyEvent(ctx, req)
+	return resp, err
+}
+
+func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *daprclient.CommitResponse, resErr error) {
+	defer func() {
+		if e := errors.GetRecoverError(recover()); e != nil {
+			resErr = e
+		}
+	}()
+	req := &daprclient.CommitRequest{
+		TenantId:  tenantId,
+		SessionId: sessionId,
+	}
+
+	metadata := make(map[string]string)
+	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
+
+	eventStorage, err := GetEventStorage(options.GetEventStorageKey())
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := eventStorage.Commit(ctx, req)
+	resp := &daprclient.CommitResponse{
+		Headers: out.Headers,
+	}
+	return resp, err
+}
+
+func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *daprclient.RollbackResponse, resErr error) {
+	defer func() {
+		if e := errors.GetRecoverError(recover()); e != nil {
+			resErr = e
+		}
+	}()
+	req := &daprclient.RollbackRequest{
+		TenantId:  tenantId,
+		SessionId: sessionId,
+	}
+
+	metadata := make(map[string]string)
+	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
+
+	eventStorage, err := GetEventStorage(options.GetEventStorageKey())
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := eventStorage.Rollback(ctx, req)
+	resp := &daprclient.RollbackResponse{
+		Headers: out.Headers,
+	}
 	return resp, err
 }
 

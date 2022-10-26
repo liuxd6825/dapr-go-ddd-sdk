@@ -229,6 +229,7 @@ func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 		PubsubName:   e.PubsubName,
 		Topic:        e.Topic,
 		Relations:    e.Relations,
+		IsSourcing:   e.IsSourcing,
 	}
 	return event, nil
 }

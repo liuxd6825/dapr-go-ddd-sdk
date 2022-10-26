@@ -6,21 +6,25 @@ import (
 )
 
 type DomainEvent interface {
-	GetTenantId() string
-	GetCommandId() string
-	GetEventId() string
-	GetEventType() string
-	GetEventVersion() string
-	GetAggregateId() string
-	GetCreatedTime() time.Time
-	GetData() interface{}
+	GetTenantId() string       // 租户Id
+	GetCommandId() string      // 命令Id
+	GetEventId() string        // 事件Id
+	GetEventType() string      // 事件类型
+	GetEventVersion() string   // 事件版本号
+	GetAggregateId() string    // 聚合根Id
+	GetCreatedTime() time.Time // 创建时间
+	GetData() interface{}      // 事件数据
+}
+
+type IsSourcing interface {
+	GetIsSourcing() bool // 是否需要事件溯源
 }
 
 type Event interface {
-	GetTenantId() string
-	GetCommandId() string
-	GetEventId() string
-	GetEventType() string
+	GetTenantId() string  // 租户Id
+	GetCommandId() string // 命令Id
+	GetEventId() string   // 事件Id
+	GetEventType() string // 事件类型
 }
 
 func DoEvent(eventData map[string]interface{}, event interface{}) *DoEventResult {

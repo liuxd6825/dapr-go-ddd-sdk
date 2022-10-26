@@ -70,6 +70,7 @@ type EventDto struct {
 	PubsubName   string            `json:"pubsubName"`
 	Topic        string            `json:"topic"`
 	Relations    map[string]string `json:"relations"` // 聚合关系
+	IsSourcing   bool              `json:"isSourcing"`
 }
 
 type ExistAggregateResponse struct {
@@ -207,6 +208,7 @@ type GetEventsItem struct {
 	PubsubName   string
 	Topic        string
 	Metadata     map[string]string
+	IsSourcing   bool
 }
 
 type ResponseStatus int64
