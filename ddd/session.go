@@ -2,12 +2,15 @@ package ddd
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
 type sessionKey struct {
 }
 
 type sessionValue struct {
+	sessionId  string
 	eventItems []*eventItem
 }
 
@@ -19,9 +22,18 @@ type eventItem struct {
 	opts          []*ApplyEventOptions
 }
 
-func newSession(parent context.Context) context.Context {
+func newSession(parent context.Context) (context.Context, *sessionValue) {
 	ctx, _ := context.WithCancel(parent)
-	return context.WithValue(ctx, sessionKey{}, &sessionValue{})
+	value := newSessionValue()
+	return context.WithValue(ctx, sessionKey{}, value), value
+}
+
+func newSessionValue() *sessionValue {
+	value := &sessionValue{
+		sessionId:  uuid.New().String(),
+		eventItems: make([]*eventItem, 0),
+	}
+	return value
 }
 
 func getSessionValue(ctx context.Context) (*sessionValue, bool) {
@@ -30,18 +42,21 @@ func getSessionValue(ctx context.Context) (*sessionValue, bool) {
 	return events, ok
 }
 
-func StartSession(ctx context.Context, do func(sessionCtx context.Context) error) error {
-	var sessionCtx context.Context
-	_, ok := getSessionValue(ctx)
-	if !ok {
-		sessionCtx = newSession(ctx)
-	}
-	if err := do(sessionCtx); err != nil {
-		if batch, ok := getSessionValue(sessionCtx); ok {
-			return batch.Commit()
+func StartSession(ctx context.Context, do func(sessionCtx context.Context) error) (resErr error) {
+	defer func() {
+		if err := errors.GetRecoverError(recover()); err != nil {
+			resErr = err
 		}
+	}()
+	sessValue, ok := getSessionValue(ctx)
+	if !ok {
+		ctx, sessValue = newSession(ctx)
 	}
-	return nil
+	err := do(ctx)
+	if err != nil {
+		return sessValue.Rollback()
+	}
+	return sessValue.Commit()
 }
 
 func (b *sessionValue) AddEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, callEventType CallEventType, opts ...*ApplyEventOptions) {
@@ -59,6 +74,16 @@ func (b *sessionValue) AddEvent(ctx context.Context, aggregate Aggregate, event 
 }
 
 func (b *sessionValue) Commit() error {
+	for _, item := range b.eventItems {
+		_, err := callDaprEventMethod(item.ctx, item.callEventType, item.aggregate, item.event, item.opts...)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (b *sessionValue) Rollback() error {
 	for _, item := range b.eventItems {
 		_, err := callDaprEventMethod(item.ctx, item.callEventType, item.aggregate, item.event, item.opts...)
 		if err != nil {

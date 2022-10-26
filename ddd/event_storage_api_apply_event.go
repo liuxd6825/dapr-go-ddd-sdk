@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
 type ApplyEventOptions struct {
@@ -14,7 +15,13 @@ type ApplyEventOptions struct {
 	sessionId       *string
 }
 
-func NewApplyEventOptions() *ApplyEventOptions {
+func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
+	return &ApplyEventOptions{
+		metadata: metadata,
+	}
+}
+
+func NewApplyEventOptionsNil() *ApplyEventOptions {
 	return &ApplyEventOptions{}
 }
 
@@ -50,8 +57,11 @@ func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEve
 	return a
 }
 
-func (a *ApplyEventOptions) GetEventStorageKey() *string {
-	return a.eventStorageKey
+func (a *ApplyEventOptions) GetEventStorageKey() string {
+	if a.eventStorageKey != nil {
+		return *a.eventStorageKey
+	}
+	return ""
 }
 
 func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
@@ -105,7 +115,13 @@ func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 // @param options
 // @return err
 //
-func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (any, error) {
+func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
+	defer func() {
+		if e := errors.GetRecoverError(recover()); e != nil {
+			resErr = e
+		}
+	}()
+
 	if err := checkEvent(aggregate, event); err != nil {
 		return nil, err
 	}
@@ -115,11 +131,16 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	aggType := aggregate.GetAggregateType()
 
 	metadata := make(map[string]string)
-	options := NewApplyEventOptions().SetMetadata(&metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
 
 	sessionId := ""
 	if options.GetSessionId() != nil {
 		sessionId = *options.GetSessionId()
+	}
+
+	session, ok := getSessionValue(ctx)
+	if ok && session != nil {
+		sessionId = session.sessionId
 	}
 
 	logInfo := &applog.LogInfo{
@@ -134,7 +155,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	var res any
 	err = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		var eventStorage EventStorage
-		eventStorage, err = GetEventStorage(*options.eventStorageKey)
+		eventStorage, err = GetEventStorage(options.GetEventStorageKey())
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +171,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				EventVersion: event.GetEventVersion(),
 				EventType:    event.GetEventType(),
 				Metadata:     *options.metadata,
-				PubsubName:   *options.pubsubName,
+				PubsubName:   eventStorage.GetPubsubName(),
 				EventData:    event,
 				Relations:    relation,
 				Topic:        event.GetEventType(),
@@ -217,7 +238,13 @@ func deleteEvent(ctx context.Context, sessionId string, eventStorage EventStorag
 //  @param aggregateType
 //  @return error
 //
-func callActorSaveSnapshot(ctx context.Context, tenantId, aggregateId, aggregateType string) error {
+func callActorSaveSnapshot(ctx context.Context, tenantId, aggregateId, aggregateType string) (resErr error) {
+	defer func() {
+		if e := errors.GetRecoverError(recover()); e != nil {
+			resErr = e
+		}
+	}()
+
 	client, err := daprclient.GetDaprDDDClient().DaprClient()
 	if err != nil {
 		return err

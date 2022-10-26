@@ -5,6 +5,24 @@ import (
 	"time"
 )
 
+type CommitRequest struct {
+	TenantId  string `json:"tenantId"`
+	SessionId string `json:"sessionId"`
+}
+
+type CommitResponse struct {
+	Headers *ResponseHeaders `json:"headers"`
+}
+
+type RollbackRequest struct {
+	TenantId  string `json:"tenantId"`
+	SessionId string `json:"sessionId"`
+}
+
+type RollbackResponse struct {
+	Headers *ResponseHeaders `json:"headers"`
+}
+
 type ApplyEventRequest struct {
 	SessionId     string      `json:"sessionId"`
 	TenantId      string      `json:"tenantId"`
@@ -191,13 +209,17 @@ type GetEventsItem struct {
 	Metadata     map[string]string
 }
 
-type ResponseStatus int32
+type ResponseStatus int64
 
 const (
 	ResponseStatusSuccess        ResponseStatus = iota // 执行成功
 	ResponseStatusError                                // 执行错误
 	ResponseStatusEventDuplicate                       // 事件已经存在，被重复执行
 )
+
+func NewResponseHeadersNil() *ResponseHeaders {
+	return &ResponseHeaders{}
+}
 
 func NewResponseHeaders(status ResponseStatus, err error, values map[string]string) *ResponseHeaders {
 	if values == nil {
@@ -224,6 +246,24 @@ func NewResponseHeadersError(err error, values map[string]string) *ResponseHeade
 		Values:  values,
 	}
 	return resp
+}
+
+func (r *ResponseHeaders) SetError(err error) {
+	if err != nil {
+		r.Message = err.Error()
+	}
+}
+
+func (r *ResponseHeaders) SetMessage(v string) {
+	r.Message = v
+}
+
+func (r *ResponseHeaders) SetStatus(v int32) {
+	r.Status = ResponseStatus(v)
+}
+
+func (r *ResponseHeaders) SetValues(v map[string]string) {
+	r.Values = v
 }
 
 func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *EventRecord) error) *EventRecordJsonMarshalResult {

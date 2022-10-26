@@ -91,6 +91,7 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 	}
 
 	in := &pb.ApplyEventRequest{
+		SessionId:     req.SessionId,
 		TenantId:      req.TenantId,
 		AggregateId:   req.AggregateId,
 		AggregateType: req.AggregateType,
@@ -106,7 +107,7 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 	return resp, nil
 }
 
-func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
+/*func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
@@ -139,9 +140,9 @@ func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest
 		Headers: c.newResponseHeaders(out.Headers),
 	}
 	return resp, nil
-}
+}*/
 
-func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
+/*func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
@@ -174,6 +175,7 @@ func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest
 	}
 	return resp, nil
 }
+*/
 
 func (c *daprDddClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
 	var resList []*pb.EventDto
@@ -217,6 +219,7 @@ func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 	}
 
 	event := &pb.EventDto{
+		ApplyType:    e.ApplyType,
 		Metadata:     metadata,
 		CommandId:    e.CommandId,
 		EventId:      e.EventId,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"io"
 	"net/http"
 )
@@ -33,10 +34,8 @@ func (s *grpcEventStorage) GetPubsubName() string {
 
 func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (agg Aggregate, isFound bool, resErr error) {
 	defer func() {
-		if e := recover(); e != nil {
-			if err, ok := e.(error); ok {
-				resErr = err
-			}
+		if e := errors.GetRecoverError(recover()); e != nil {
+			resErr = e
 		}
 	}()
 
@@ -110,7 +109,31 @@ func (s *grpcEventStorage) ApplyEvent(ctx context.Context, req *daprclient.Apply
 	return s.client.ApplyEvent(ctx, req)
 }
 
-func (s *grpcEventStorage) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (res *daprclient.CreateEventResponse, resErr error) {
+func (s *grpcEventStorage) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
+
+	return s.client.Commit(ctx, req)
+}
+
+func (s *grpcEventStorage) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resErr = err
+			}
+		}
+	}()
+
+	return s.client.Rollback(ctx, req)
+}
+
+/*func (s *grpcEventStorage) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (res *daprclient.CreateEventResponse, resErr error) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err, ok := e.(error); ok {
@@ -120,9 +143,9 @@ func (s *grpcEventStorage) CreateEvent(ctx context.Context, req *daprclient.Crea
 	}()
 	s.setEventsPubsubName(req.Events)
 	return s.client.CreateEvent(ctx, req)
-}
+}*/
 
-func (s *grpcEventStorage) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (res *daprclient.DeleteEventResponse, resErr error) {
+/*func (s *grpcEventStorage) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (res *daprclient.DeleteEventResponse, resErr error) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err, ok := e.(error); ok {
@@ -135,7 +158,7 @@ func (s *grpcEventStorage) DeleteEvent(ctx context.Context, req *daprclient.Dele
 	}
 	return s.client.DeleteEvent(ctx, req)
 }
-
+*/
 func (s *grpcEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (res *daprclient.SaveSnapshotResponse, resErr error) {
 	defer func() {
 		if e := recover(); e != nil {

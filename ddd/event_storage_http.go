@@ -25,6 +25,28 @@ type httpEventStorage struct {
 	subscribes *[]Subscribe
 }
 
+func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
+	subscribes = make([]Subscribe, 0)
+	res := &httpEventStorage{
+		client:     httpClient,
+		subscribes: &subscribes,
+	}
+	for _, option := range options {
+		option(res)
+	}
+	return res, nil
+}
+
+func (s *httpEventStorage) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *httpEventStorage) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s *httpEventStorage) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")
@@ -48,18 +70,6 @@ func (s *httpEventStorage) CreateEvent(ctx context.Context, req *daprclient.Crea
 func (s *httpEventStorage) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error) {
 	//TODO implement me
 	panic("implement me")
-}
-
-func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
-	subscribes = make([]Subscribe, 0)
-	res := &httpEventStorage{
-		client:     httpClient,
-		subscribes: &subscribes,
-	}
-	for _, option := range options {
-		option(res)
-	}
-	return res, nil
 }
 
 func (s *httpEventStorage) GetPubsubName() string {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 	dapr_sdk_client "github.com/liuxd6825/go-sdk/client"
 	log "github.com/sirupsen/logrus"
 	"net"
@@ -34,8 +35,13 @@ type DaprDddClient interface {
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error)
-	CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error)
-	DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error)
+	/*
+		CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error)
+		DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error)
+	*/
+	Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error)
+	Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error)
+
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error)
 	GetEvents(ctx context.Context, req *GetEventsRequest) (*GetEventsResponse, error)
@@ -189,6 +195,38 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 		return response, nil
 	}
 	return nil, nil
+}
+
+func (c *daprDddClient) Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error) {
+	resp := &CommitResponse{}
+	in := &pb.CommitRequest{
+		TenantId:  req.TenantId,
+		SessionId: req.SessionId,
+	}
+	out, err := c.grpcClient.Commit(ctx, in)
+	if out != nil {
+		resp.Headers = NewResponseHeadersNil()
+		resp.Headers.SetStatus(int32(out.Headers.Status))
+		resp.Headers.SetValues(out.Headers.Values)
+		resp.Headers.SetMessage(out.Headers.Message)
+	}
+	return resp, err
+}
+
+func (c *daprDddClient) Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error) {
+	resp := &RollbackResponse{}
+	in := &pb.RollbackRequest{
+		TenantId:  req.TenantId,
+		SessionId: req.SessionId,
+	}
+	out, err := c.grpcClient.Rollback(ctx, in)
+	if out != nil {
+		resp.Headers = NewResponseHeadersNil()
+		resp.Headers.SetStatus(int32(out.Headers.Status))
+		resp.Headers.SetValues(out.Headers.Values)
+		resp.Headers.SetMessage(out.Headers.Message)
+	}
+	return resp, err
 }
 
 func (c *daprDddClient) DaprClient() (dapr_sdk_client.Client, error) {
