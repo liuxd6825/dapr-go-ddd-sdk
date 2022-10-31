@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"reflect"
+	"strings"
 )
 
 type CreateAggregateOptions struct {
@@ -58,6 +59,9 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 	if _, ok := cmd.(IsAggregateCreateCommand); ok {
 		return callCommandHandler(ctx, agg, cmd)
 	}
+	if ok := isAggregateCreateCommand(ctx, agg, cmd); ok {
+		return callCommandHandler(ctx, agg, cmd)
+	}
 
 	loadOpt := NewLoadAggregateOptions().SetEventStorageKey(opt.EventStorageKey)
 	aggId := cmd.GetAggregateId().RootId()
@@ -69,6 +73,17 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 		return errors.NewAggregateIdNotFondError(aggId)
 	}
 	return callCommandHandler(ctx, agg, cmd)
+}
+
+func isAggregateCreateCommand(ctx context.Context, aggregate Aggregate, cmd Command) bool {
+	aggName := reflect.TypeOf(aggregate).Name()
+	cmdName := reflect.TypeOf(cmd).Name()
+	isAgg := strings.HasPrefix(aggName, cmdName)
+	isCreate := strings.HasSuffix("CreateCommand", cmdName)
+	if isAgg && isCreate {
+		return true
+	}
+	return false
 }
 
 func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {
