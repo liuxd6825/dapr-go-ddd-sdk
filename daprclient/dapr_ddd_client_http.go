@@ -52,6 +52,20 @@ func (c *daprDddClient) HttpPut(ctx context.Context, url string, reqData interfa
 	return NewResponse(bs, err)
 }
 
+func (c *daprDddClient) HttpDelete(ctx context.Context, url string, reqData interface{}) *Response {
+	httpUrl := c.getFullUrl(url)
+	jsonData, err := json.Marshal(reqData)
+	resp, err := c.httpClient.Post(httpUrl, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return NewResponse(nil, err)
+	}
+	bs, err := c.getBodyBytes(resp)
+	if resp.StatusCode != http.StatusOK {
+		return NewResponse(nil, errors.New(string(bs)))
+	}
+	return NewResponse(bs, err)
+}
+
 func (c *daprDddClient) getFullUrl(url string) string {
 	res := fmt.Sprintf("%s://%s:%d", Protocol, c.host, c.httpPort)
 	if strings.HasPrefix(url, "/") {

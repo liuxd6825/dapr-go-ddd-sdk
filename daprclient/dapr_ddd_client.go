@@ -29,10 +29,10 @@ type DaprHttpOptions struct {
 }
 
 type DaprDddClient interface {
-	/*	HttpGet(ctx context.Context, url string) *Response
-		HttpPost(ctx context.Context, url string, reqData interface{}) *Response
-		HttpPut(ctx context.Context, url string, reqData interface{}) *Response
-		HttpDelete(ctx context.Context, url string, reqData interface{}) *Response*/
+	HttpGet(ctx context.Context, url string) *Response
+	HttpPost(ctx context.Context, url string, reqData interface{}) *Response
+	HttpPut(ctx context.Context, url string, reqData interface{}) *Response
+	HttpDelete(ctx context.Context, url string, reqData interface{}) *Response
 
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
