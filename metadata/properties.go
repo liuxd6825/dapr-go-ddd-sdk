@@ -111,6 +111,16 @@ func (m *properties) AddProperties(props Properties) {
 	}
 }
 
+func (m *properties) GetNames() []string {
+	names := make([]string, len(m.values))
+	i := 0
+	for _, v := range m.values {
+		names[i] = v.Name()
+		i++
+	}
+	return names
+}
+
 func (m *properties) Values() map[string]Property {
 	return m.values
 }

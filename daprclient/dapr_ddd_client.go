@@ -29,9 +29,11 @@ type DaprHttpOptions struct {
 }
 
 type DaprDddClient interface {
-	HttpGet(ctx context.Context, url string) *Response
-	HttpPost(ctx context.Context, url string, reqData interface{}) *Response
-	HttpPut(ctx context.Context, url string, reqData interface{}) *Response
+	/*	HttpGet(ctx context.Context, url string) *Response
+		HttpPost(ctx context.Context, url string, reqData interface{}) *Response
+		HttpPut(ctx context.Context, url string, reqData interface{}) *Response
+		HttpDelete(ctx context.Context, url string, reqData interface{}) *Response*/
+
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error)
@@ -165,8 +167,8 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 	var respBytes []byte
 
 	if request != nil {
-		reqBytes, err := json.Marshal(request)
-		if err != nil {
+		reqBytes, err1 := json.Marshal(request)
+		if err1 != nil {
 			return nil, ddd_utils.NewAppError(appID, err)
 		}
 		content := &dapr_sdk_client.DataContent{
