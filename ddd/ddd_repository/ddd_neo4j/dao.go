@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -92,6 +93,35 @@ func (d *Dao[T]) NewEntities() (res []T, resErr error) {
 	return reflectutils.NewSlice[[]T]()
 }
 
+func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err := errors.GetRecoverError(e); err != nil {
+				setResult = ddd_repository.NewSetResultError[T](err)
+			}
+		}
+	}()
+	for _, item := range data.Items() {
+		statue := item.Statue()
+		entity := item.Data().(T)
+		var err error
+		switch statue {
+		case ddd.DataStatueCreate:
+			err = d.Insert(ctx, entity, opts...).GetError()
+		case ddd.DataStatueUpdate:
+			err = d.Update(ctx, entity, opts...).GetError()
+		case ddd.DataStatueDelete:
+			err = d.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
+		case ddd.DataStatueCreateOrUpdate:
+			err = d.InsertOrUpdate(ctx, entity, opts...).GetError()
+		}
+		if err != nil {
+			return ddd_repository.NewSetResultError[T](err)
+		}
+	}
+	return ddd_repository.NewSetResultError[T](nil)
+}
+
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -106,11 +136,8 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 		return ddd_repository.NewSetResultError[T](err)
 	}
 
-	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+	_, err = d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
 	if err != nil {
-		return ddd_repository.NewSetResultError[T](err)
-	}
-	if _, err := res.GetOne("", entity); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return ddd_repository.NewSetResult(entity, err)
@@ -119,6 +146,36 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	for _, e := range entities {
 		if err := d.Insert(ctx, e, opts...).GetError(); err != nil {
+			return ddd_repository.NewSetManyResultError[T](err)
+		}
+	}
+	return ddd_repository.NewSetManyResult[T](entities, nil)
+}
+
+func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err := errors.GetRecoverError(e); err != nil {
+				setResult = ddd_repository.NewSetResultError[T](err)
+			}
+		}
+	}()
+
+	cr, err := d.cypher.InsertOrUpdate(ctx, entity)
+	if err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
+
+	_, err = d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+	if err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
+	return ddd_repository.NewSetResult(entity, err)
+}
+
+func (d *Dao[T]) InsertOrUpdateMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+	for _, e := range entities {
+		if err := d.InsertOrUpdate(ctx, e, opts...).GetError(); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}

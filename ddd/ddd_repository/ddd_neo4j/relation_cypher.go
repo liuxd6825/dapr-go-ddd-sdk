@@ -45,6 +45,22 @@ func (c *relationCypher) Insert(ctx context.Context, data interface{}) (CypherRe
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 
+func (c *relationCypher) InsertOrUpdate(ctx context.Context, data interface{}) (CypherResult, error) {
+	rel, ok := data.(Relation)
+	if !ok {
+		return nil, errors.ErrorOf(" parameter data is not ddd_neo4j.Relation Type")
+	}
+	props, dataMap, err := c.getCreateProperties(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	labels := c.getLabels(rel.GetRelType())
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("MATCH (s{id:'%v'}), (e{id:'%v'})", rel.GetStartId(), rel.GetEndId()))
+	sb.WriteString(fmt.Sprintf("MERGE (s)-[r:%v{%v}]->(e)", labels, props))
+	return NewCypherBuilderResult(sb.String(), dataMap, nil), nil
+}
+
 func (c *relationCypher) InsertMany(ctx context.Context, list interface{}) (CypherResult, error) {
 	rels := list.([]Relation)
 	println(rels)

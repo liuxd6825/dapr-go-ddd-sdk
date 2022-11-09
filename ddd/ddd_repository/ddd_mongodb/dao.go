@@ -55,6 +55,65 @@ func (r *Dao[T]) getCollection() *mongo.Collection {
 	return r.collection
 }
 
+func (r *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err := errors.GetRecoverError(e); err != nil {
+				setResult = ddd_repository.NewSetResultError[T](err)
+			}
+		}
+	}()
+	for _, item := range data.Items() {
+		statue := item.Statue()
+		entity := item.Data().(T)
+		var err error
+		switch statue {
+		case ddd.DataStatueCreate:
+			err = r.Insert(ctx, entity, opts...).GetError()
+		case ddd.DataStatueUpdate:
+			err = r.Update(ctx, entity, opts...).GetError()
+		case ddd.DataStatueDelete:
+			err = r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...).GetError()
+		case ddd.DataStatueCreateOrUpdate:
+			err = r.InsertOrUpdate(ctx, entity, opts...).GetError()
+		}
+		if err != nil {
+			return ddd_repository.NewSetResultError[T](err)
+		}
+	}
+	return ddd_repository.NewSetResultError[T](nil)
+}
+
+func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
+	return r.DoSet(func() (T, error) {
+		filter := r.NewFilter(entity.GetTenantId(), map[string]interface{}{"id": entity.GetId()})
+		findOneOptions := getFindOneOptions(opts...)
+		isFound := true
+
+		if err := r.getCollection().FindOne(ctx, filter, findOneOptions).Err(); err != nil {
+			if err == mongo.ErrNoDocuments {
+				// 没有找到，设置 isFound 状态
+				isFound = false
+			} else {
+				var null T
+				return null, err
+			}
+		}
+
+		// 是否找到数据
+		if isFound {
+			return r.updateById(ctx, entity, opts...)
+		} else {
+			_, err := r.getCollection().InsertOne(ctx, entity, getInsertOneOptions(opts...))
+			return entity, err
+		}
+	})
+	return ddd_repository.NewSetResultError[T](nil)
+}
+
 func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
@@ -92,16 +151,20 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
-		objId, err := GetObjectID(entity.GetId())
-		if err != nil {
-			return entity, err
-		}
-		updateOptions := getUpdateOptions(opts...)
-		filter := bson.D{{ConstIdField, objId}}
-		setData := bson.M{"$set": entity}
-		_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
-		return entity, err
+		return r.updateById(ctx, entity, opts...)
 	})
+}
+
+func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repository.Options) (T, error) {
+	objId, err := GetObjectID(entity.GetId())
+	if err != nil {
+		return entity, err
+	}
+	updateOptions := getUpdateOptions(opts...)
+	filter := bson.D{{ConstIdField, objId}}
+	setData := bson.M{"$set": entity}
+	_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
+	return entity, err
 }
 
 func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
@@ -279,6 +342,7 @@ func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bs
 	filter := bson.D{
 		{ConstTenantIdField, tenantId},
 	}
+	//filter := bson.D{{"name", "Bagels N Buns"}}
 	if filterMap != nil {
 		for fieldName, fieldValue := range filterMap {
 			if fieldName != ConstIdField {
@@ -328,18 +392,28 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 
 func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	return r.DoFindList(func() ([]T, bool, error) {
+		var list []T
 		filter := r.NewFilter(tenantId, filterMap)
-		data, err := r.NewEntityList()
-		if err != nil {
-			return nil, false, err
-		}
 		findOptions := getFindOptions(opts...)
 		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
-		err = cursor.All(ctx, &data)
-		return data, len(data) > 0, err
+		err = cursor.All(ctx, &list)
+		return list, len(list) > 0, err
+	})
+}
+
+func (r *Dao[T]) FindFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	return r.DoList(tenantId, filter, func(filterMap map[string]interface{}) ([]T, bool, error) {
+		var list []T
+		findOptions := getFindOptions(opts...)
+		cursor, err := r.getCollection().Find(ctx, filterMap, findOptions)
+		if err != nil {
+			return nil, false, err
+		}
+		err = cursor.All(ctx, &list)
+		return list, len(list) > 0, err
 	})
 }
 
@@ -388,6 +462,23 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, findData.IsFound, err
 	})
+}
+
+func (r *Dao[T]) DoList(tenantId, filter string, fun func(filter map[string]interface{}) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return ddd_repository.NewFindListResultError[T](err)
+	}
+	filterData, err := r.getFilterMap(tenantId, filter)
+	if err != nil {
+		return ddd_repository.NewFindListResultError[T](err)
+	}
+	data, ok, err := fun(filterData)
+	if err != nil {
+		if errors.IsErrorMongoNoDocuments(err) {
+			err = nil
+		}
+	}
+	return ddd_repository.NewFindListResult(data, ok, err)
 }
 
 func (r *Dao[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {

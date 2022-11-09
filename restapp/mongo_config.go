@@ -13,10 +13,10 @@ type MongoConfig struct {
 	Database     string `yaml:"dbname"`
 	UserName     string `yaml:"user"`
 	Password     string `yaml:"pwd"`
-	MaxPoolSize  uint64 `yaml:"maxPoolSize"`
 	ReplicaSet   string `yaml:"replicaSet"`
 	WriteConcern string `yaml:"writeConcern"`
 	ReadConcern  string `yaml:"readConcern"`
+	Options      string `yaml:"options"`
 }
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
@@ -47,10 +47,9 @@ func initMongo(appMongoConfigs map[string]*MongoConfig) {
 			DatabaseName: c.Database,
 			UserName:     c.UserName,
 			Password:     c.Password,
-			MaxPoolSize:  c.MaxPoolSize,
-			ReplicaSet:   c.ReplicaSet,
 			WriteConcern: c.WriteConcern,
 			ReadConcern:  c.ReadConcern,
+			Options:      c.Options,
 		}
 		mongodb, err := ddd_mongodb.NewMongoDB(config)
 		if err != nil {

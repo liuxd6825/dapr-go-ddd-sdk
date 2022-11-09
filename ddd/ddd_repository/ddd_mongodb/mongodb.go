@@ -35,7 +35,7 @@ const (
 	defaultTimeout = 5 * time.Second
 
 	// mongodb://<UserName>:<Password@<Host>/<database><Params>
-	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s%s"
+	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s?%s"
 
 	// mongodb://<Host>/<database><Params>
 	connectionURIFormat = "mongodb://%s/%s%s"
@@ -61,10 +61,8 @@ type Config struct {
 	server           string
 	WriteConcern     string
 	ReadConcern      string
-	Params           string
-	ReplicaSet       string
+	Options          string
 	OperationTimeout time.Duration
-	MaxPoolSize      uint64
 }
 
 type ObjectId string
@@ -150,25 +148,23 @@ func (m *MongoDB) Ping() error {
 
 func getMongoURI(metadata *Config) string {
 	if len(metadata.server) != 0 {
-		return fmt.Sprintf(connectionURIFormatWithSrv, metadata.server, metadata.Params)
+		return fmt.Sprintf(connectionURIFormatWithSrv, metadata.server, metadata.Options)
 	}
-
 	if metadata.UserName != "" && metadata.Password != "" {
-		return fmt.Sprintf(connectionURIFormatWithAuthentication, metadata.UserName, metadata.Password, metadata.Host, metadata.DatabaseName, metadata.Params)
+		return fmt.Sprintf(connectionURIFormatWithAuthentication, metadata.UserName, metadata.Password, metadata.Host, metadata.DatabaseName, metadata.Options)
 	}
-
-	return fmt.Sprintf(connectionURIFormat, metadata.Host, metadata.DatabaseName, metadata.Params)
+	return fmt.Sprintf(connectionURIFormat, metadata.Host, metadata.DatabaseName, metadata.Options)
 }
 
 func getMongoDBClient(config *Config) (*mongo.Client, error) {
 
 	uri := getMongoURI(config)
-
+	fmt.Println(uri)
 	// Set client options
 	opts := options.Client().ApplyURI(uri)
-	if len(config.ReplicaSet) != 0 {
+	/*	if len(config.ReplicaSet) != 0 {
 		opts = opts.SetReplicaSet(config.ReplicaSet)
-	}
+	}*/
 
 	// Connect to MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), config.OperationTimeout)
@@ -181,15 +177,15 @@ func getMongoDBClient(config *Config) (*mongo.Client, error) {
 		opts.SetAppName(mongoLog)
 	}
 
-	maxPoolSize := config.MaxPoolSize
-	if maxPoolSize < 1 {
-		maxPoolSize = 20
-	}
-	opts.SetMaxPoolSize(maxPoolSize)
+	/*	maxPoolSize := config.MaxPoolSize
+		if maxPoolSize < 1 {
+			maxPoolSize = 20
+		}
+		opts.SetMaxPoolSize(maxPoolSize)*/
 
-	if config.ReplicaSet != "" {
+	/*	if config.ReplicaSet != "" {
 		opts.SetReplicaSet(config.ReplicaSet)
-	}
+	}*/
 
 	// 解决mongo不是本地时区的问题
 	builder := bsoncodec.NewRegistryBuilder()
@@ -204,7 +200,7 @@ func getMongoDBClient(config *Config) (*mongo.Client, error) {
 
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(fmt.Sprintf("%v uri:%v", err.Error(), uri))
 	}
 
 	return client, nil

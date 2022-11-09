@@ -76,14 +76,14 @@ func TestNodeDao(t *testing.T) {
 		}
 	})
 
-	t.Run("FindByGraphId", func(t *testing.T) {
-		if res := dao.FindByGraphId(ctx, tenantId, "graphId001"); res.GetError() != nil {
+	/*	t.Run("FindByGraphId", func(t *testing.T) {
+		if res := dao.find(ctx, tenantId, "graphId001"); res.GetError() != nil {
 			t.Error(res.GetError())
 			return
 		} else {
 			t.Logf("graph list = %v ", res.GetData())
 		}
-	})
+	})*/
 
 	/*	t.Run("DeleteById", func(t *testing.T) {
 			if err := dao.DeleteById(ctx, tenantId, company.Id); err != nil {

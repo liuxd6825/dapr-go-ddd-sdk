@@ -56,9 +56,6 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 	opt := NewApplyCommandOptions()
 	opt.Merge(opts...)
 
-	if _, ok := cmd.(IsAggregateCreateCommand); ok {
-		return callCommandHandler(ctx, agg, cmd)
-	}
 	if ok := isAggregateCreateCommand(ctx, agg, cmd); ok {
 		return callCommandHandler(ctx, agg, cmd)
 	}
@@ -76,14 +73,29 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 }
 
 func isAggregateCreateCommand(ctx context.Context, aggregate Aggregate, cmd Command) bool {
-	aggName := reflect.TypeOf(aggregate).Name()
-	cmdName := reflect.TypeOf(cmd).Name()
+	if _, ok := cmd.(IsAggregateCreateCommand); ok {
+		return true
+	}
+
+	aggName := typeOf(aggregate).Name()
+	cmdName := typeOf(cmd).Name()
 	isAgg := strings.HasPrefix(aggName, cmdName)
 	isCreate := strings.HasSuffix("CreateCommand", cmdName)
 	if isAgg && isCreate {
 		return true
 	}
 	return false
+}
+
+func typeOf(obj interface{}) reflect.Type {
+	t := reflect.TypeOf(obj)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+	}
+	return t
 }
 
 func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {

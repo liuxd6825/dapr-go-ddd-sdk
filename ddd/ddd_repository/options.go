@@ -5,14 +5,29 @@ import "time"
 type Options interface {
 	GetTimeout() *time.Duration
 	SetTimeout(v *time.Duration) Options
+
 	GetUpdateFields() *[]string
 	SetUpdateFields(*[]string) Options
+
+	GetSort() *string
+	SetSort(*string) Options
+
 	Merge(opts ...Options) Options
 }
 
 type options struct {
+	sort         *string
 	timeout      *time.Duration
 	updateFields *[]string
+}
+
+func (o *options) GetSort() *string {
+	return o.sort
+}
+
+func (o *options) SetSort(s *string) Options {
+	o.sort = s
+	return o
 }
 
 func NewOptions() Options {

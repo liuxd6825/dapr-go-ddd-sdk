@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"reflect"
 	"strings"
 )
 
@@ -45,12 +46,47 @@ func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 
-func (c *nodeCypher) InsertMany(ctx context.Context, list interface{}) (CypherResult, error) {
-	nodes := list.([]Node)
-	println(nodes)
+func (c *nodeCypher) InsertOrUpdate(ctx context.Context, data interface{}) (CypherResult, error) {
+	node := data.(Node)
+	props, dataMap, err := getUpdateProperties(ctx, node, "n")
+	if err != nil {
+		return nil, err
+	}
+	list := node.GetLabels()
+	list = append(list, "graph_"+node.GetGraphId())
+	list = append(list, "tenant_"+node.GetTenantId())
+	labels := c.getLabels(list...)
 
-	//TODO implement me
-	panic("implement me")
+	cypher := fmt.Sprintf("MERGE (n%s{id:'%v'}) ON CREATE SET %v ON MATCH SET %v RETURN n ", labels, node.GetId(), props, props)
+	return NewCypherBuilderResult(cypher, dataMap, []string{"n"}), nil
+}
+
+func (c *nodeCypher) InsertMany(ctx context.Context, list interface{}) (CypherResult, error) {
+	/*`	CREATE (:pig{name:"猪爷爷",age:6}),
+	(:pig{name:"猪奶奶",age:4}),
+	(:pig{name:"猪爸爸",age:3}),
+	(:pig{name:"猪妈妈",age:1})`*/
+	cyphers := &strings.Builder{}
+	cyphers.WriteString("CREATE ")
+	vList := reflect.ValueOf(list)
+	count := vList.Len()
+	for i := 0; i < count; i++ {
+		node := vList.Index(i).Interface().(Node)
+		props, _, err := c.getCreateProperties(ctx, node)
+		if err != nil {
+			return nil, err
+		}
+		label := node.GetLabels()
+		label = append(label, "graph_"+node.GetGraphId())
+		label = append(label, "tenant_"+node.GetTenantId())
+		labels := c.getLabels(label...)
+		cypher := fmt.Sprintf(" (n%s{%s}) ", labels, props)
+		cyphers.WriteString(cypher)
+		if i != count {
+			cyphers.WriteString(",")
+		}
+	}
+	return NewCypherBuilderResult(cyphers.String(), nil, nil), nil
 }
 
 func (c *nodeCypher) Update(ctx context.Context, data interface{}, setFields ...string) (CypherResult, error) {

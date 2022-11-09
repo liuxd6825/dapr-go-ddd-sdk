@@ -79,7 +79,7 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 	if records != nil && len(records) > 0 {
 		for _, record := range *resp.EventRecords {
 			if err = CallEventHandler(ctx, aggregate, &record); err != nil {
-				return nil, false, err
+				return nil, false, errors.New("CallEventHandler(agg, record) eventType:%v, error:%v", record.EventType, err.Error())
 			}
 		}
 	}

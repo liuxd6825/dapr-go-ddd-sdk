@@ -21,6 +21,7 @@ func NewSessionOptions() *SessionOptions {
 }
 
 func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
+
 	sessionConfig := neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead}
 	if isWrite {
 		sessionConfig.AccessMode = neo4j.AccessModeWrite

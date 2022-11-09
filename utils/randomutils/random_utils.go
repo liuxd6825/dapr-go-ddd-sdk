@@ -91,7 +91,7 @@ func PFloat32() *float32 {
 }
 
 func Float64() float64 {
-	return rand.Float64()
+	return float64(rand.Int63n(3)) + rand.NormFloat64()
 }
 
 func PFloat64() *float64 {

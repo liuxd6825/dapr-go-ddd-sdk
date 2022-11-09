@@ -9,6 +9,8 @@ type Cypher interface {
 	Insert(ctx context.Context, data interface{}) (CypherResult, error)
 	InsertMany(ctx context.Context, list interface{}) (CypherResult, error)
 
+	InsertOrUpdate(ctx context.Context, data interface{}) (CypherResult, error)
+
 	Update(ctx context.Context, data interface{}, setFields ...string) (CypherResult, error)
 	UpdateMany(ctx context.Context, list interface{}) (CypherResult, error)
 

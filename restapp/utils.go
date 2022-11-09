@@ -146,6 +146,7 @@ func DoQueryOne(ctx iris.Context, fun QueryFunc) (data interface{}, isFound bool
 	}
 	_, err = ctx.JSON(data)
 	if err != nil {
+		SetError(ctx, err)
 		return nil, false, err
 	}
 	return data, isFound, err
