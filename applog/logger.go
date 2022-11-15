@@ -87,6 +87,7 @@ type Logger interface {
 	SetLevel(level Level)
 	GetLevel() Level
 }
+
 type WriteEventLogRequest struct {
 	Id       string     `json:"id"`
 	TenantId string     `json:"tenantId"`

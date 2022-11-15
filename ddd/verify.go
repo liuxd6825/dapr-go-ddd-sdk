@@ -47,7 +47,7 @@ func ValidateCommand(data Command, verifyError *errors.VerifyError) *errors.Veri
 	if v == nil {
 		v = errors.NewVerifyError()
 	}
-	if tenantId, ok := data.(GetTenant); ok {
+	if tenantId, ok := data.(GetTenantId); ok {
 		validateId("tenantId", tenantId.GetTenantId(), v)
 	}
 	if commandId, ok := data.(GetCommandId); ok {

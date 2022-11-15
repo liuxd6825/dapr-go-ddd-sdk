@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/go-sdk/actor"
 	"github.com/liuxd6825/go-sdk/actor/config"
 	actorErr "github.com/liuxd6825/go-sdk/actor/error"
@@ -309,7 +310,8 @@ func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEve
 			}
 		}()
 		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
-			if err = sh.CallQueryEventHandler(c, c); err != nil {
+			ctx := logs.NewContext(c, _logger)
+			if err = sh.CallQueryEventHandler(ctx, c); err != nil {
 				c.SetErr(err)
 			}
 		})

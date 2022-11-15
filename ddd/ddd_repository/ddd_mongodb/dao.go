@@ -338,22 +338,34 @@ func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map
 	})
 }
 
-func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bson.D {
-	filter := bson.D{
-		{ConstTenantIdField, tenantId},
+func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bson.M {
+	/*	conditions := bson.M{"name": bson.M{"$regex": "me"},
+		"$or": []bson.M{
+			bson.M{"repair": bson.M{"$eq": "ac"}},
+		},
+		"$and": []bson.M{
+			bson.M{"repair": bson.M{"$eq": "tv"}},
+			bson.M{"phone": bson.M{"$gte": 1091, "$lte": 1100}},
+		}}
+	*/
+
+	if filterMap == nil || len(filterMap) == 0 {
+		return bson.M{ConstTenantIdField: bson.M{"$eq": tenantId}}
 	}
+
+	ands := make([]bson.M, 1)
+	ands[0] = bson.M{ConstTenantIdField: bson.M{"$eq": tenantId}}
+
 	//filter := bson.D{{"name", "Bagels N Buns"}}
-	if filterMap != nil {
-		for fieldName, fieldValue := range filterMap {
-			if fieldName != ConstIdField {
-				fieldName = AsFieldName(fieldName)
-			}
-			e := bson.E{
-				Key:   fieldName,
-				Value: fieldValue,
-			}
-			filter = append(filter, e)
+	for fieldName, fieldValue := range filterMap {
+		if fieldName != ConstIdField {
+			fieldName = AsFieldName(fieldName)
 		}
+		item := bson.M{fieldName: bson.M{"$eq": fieldValue}}
+		ands = append(ands, item)
+	}
+	filter := bson.M{
+		"$and": ands,
 	}
 	return filter
 }

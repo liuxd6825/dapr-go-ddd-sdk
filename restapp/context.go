@@ -4,20 +4,22 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 type serverContext struct {
 	ctx iris.Context
 }
 
-func NewContext(irisCtx iris.Context) context.Context {
+func NewContext(ictx iris.Context) context.Context {
 	metadata := make(map[string]string, 0)
-	header := irisCtx.Request().Header
+	header := ictx.Request().Header
 	for k, v := range header {
 		metadata[k] = v[0]
 	}
-	serverCtx := newServerContext(irisCtx)
-	return ddd_context.NewContext(context.Background(), metadata, serverCtx)
+	serverCtx := newServerContext(ictx)
+	loggerCtx := logs.NewContext(ictx, _logger)
+	return ddd_context.NewContext(loggerCtx, metadata, serverCtx)
 }
 
 func newServerContext(ctx iris.Context) ddd_context.ServerContext {

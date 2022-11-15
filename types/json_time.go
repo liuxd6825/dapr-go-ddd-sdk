@@ -4,11 +4,35 @@ import "time"
 
 type JSONTime time.Time
 
+type JSONTimeOption struct {
+	time *time.Time
+}
+
 var (
 	timeJSONFormat = "2006-01-02 15:04:05"
 )
 
-func NewJSONTime() *JSONTime {
+func NewJSONTime(value ...*time.Time) *JSONTime {
+	var v JSONTime
+	if len(value) == 0 {
+		v = JSONTime(time.Now())
+	} else {
+		t := *value[0]
+		v = JSONTime(t)
+	}
+	return &v
+}
+
+func AsJSONTime(value *time.Time) *JSONTime {
+	if value == nil {
+		return nil
+	}
+	t := *value
+	v := JSONTime(t)
+	return &v
+}
+
+func Now() *JSONTime {
 	v := JSONTime(time.Now())
 	return &v
 }

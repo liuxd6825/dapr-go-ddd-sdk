@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"testing"
 	"time"
 )
@@ -120,7 +121,7 @@ func TestLogger_AppLog(t *testing.T) {
 //  @Description:
 //  @return Logger
 //
-func newLogger() Logger {
+func newLogger() logs.Logger {
 	client, _ := daprclient.NewDaprDddClient("", 9001, 9002)
 	logger := NewLogger(client)
 	return logger
