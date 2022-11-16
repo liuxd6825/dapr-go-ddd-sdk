@@ -9,6 +9,10 @@ import (
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 	dapr_sdk_client "github.com/liuxd6825/go-sdk/client"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/status"
+	"strings"
+
+	// "google.golang.org/grpc/internal/status"
 	"net"
 	"net/http"
 	"strconv"
@@ -177,13 +181,13 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 		}
 		err = c.tryCall(func() error {
 			respBytes, err = c.grpcClient.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
-			return err
+			return c.getError(err)
 		}, 3, 1)
 
 	} else {
 		err = c.tryCall(func() error {
 			respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
-			return err
+			return c.getError(err)
 		}, 3, 1)
 	}
 	if err != nil {
@@ -198,7 +202,25 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 	}
 	return nil, nil
 }
-
+func (c *daprDddClient) getError(err error) error {
+	if err == nil {
+		return err
+	}
+	st, ok := status.FromError(err)
+	if ok {
+		msg := ""
+		details := st.Proto().GetDetails()
+		if len(details) > 0 {
+			for _, item := range details {
+				value := string(item.Value)
+				value = strings.ReplaceAll(value, "\n", "")
+				msg = msg + value + "\n"
+			}
+			return errors.New(msg)
+		}
+	}
+	return err
+}
 func (c *daprDddClient) Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error) {
 	resp := &CommitResponse{}
 	in := &pb.CommitRequest{

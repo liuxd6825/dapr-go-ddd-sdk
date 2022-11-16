@@ -1,9 +1,12 @@
 package ddd
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"strings"
 )
+
+var _validate = validator.New()
 
 type Verify interface {
 	Validate() error
@@ -57,6 +60,18 @@ func ValidateCommand(data Command, verifyError *errors.VerifyError) *errors.Veri
 		validateId("aggregateId", aggId.GetAggregateId().RootId(), v)
 	}
 	return v
+}
+
+func Validate(data any) error {
+	err := _validate.Struct(data)
+	if list, ok := err.(validator.ValidationErrors); ok {
+		v := errors.NewVerifyError()
+		for _, item := range list {
+			v.AppendField(item.StructNamespace(), item.Tag())
+		}
+		return v
+	}
+	return err
 }
 
 func validateId(fieldName, idValue string, verifyError *errors.VerifyError) {
