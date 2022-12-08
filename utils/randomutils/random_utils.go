@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"math"
 	"math/rand"
 	"strings"
 	"time"
+
+	crypto "crypto/rand"
+	"math/big"
 )
 
 var lastName = []string{
@@ -50,57 +54,96 @@ var lastNameLen = len(lastName)
 var firstNameLen = len(firstName)
 
 func StringNumber(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 0)
 }
 
 func StringLower(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 1)
 }
 
 func StringUpper(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 2)
 }
 
 func String(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 2)
 }
 
 func Int() int {
-	return rand.Intn(100)
+	v := RangeRand(0, 1000)
+	return int(v)
+}
+
+func IntMax(max int) int {
+	v := RangeRand(0, int64(max-1))
+	return int(v)
 }
 
 func Int64() int64 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Int63n(100000)
 }
 
+func Int64Max(max int64) int64 {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Int63n(max)
+}
+
 func Uint32() uint32 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Uint32()
 }
 
 func Uint64() uint64 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Uint64()
 }
 
 func Float32() float32 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Float32()
 }
 
 func PFloat32() *float32 {
+	rand.Seed(time.Now().UnixNano())
 	v := Float32()
 	return &v
 }
 
 func Float64() float64 {
-	return float64(rand.Int63n(3)) + rand.NormFloat64()
+	rand.Seed(time.Now().Unix())
+	v := float64(RangeRand(0, 1000)) + float64(RangeRand(0, 100))/100
+	return v
+}
+
+// 生成区间[-m, n]的安全随机数
+func RangeRand(min, max int64) int64 {
+	if min > max {
+		panic("the min is greater than max!")
+	}
+	if min < 0 {
+		f64Min := math.Abs(float64(min))
+		i64Min := int64(f64Min)
+		result, _ := crypto.Int(crypto.Reader, big.NewInt(max+1+i64Min))
+		return result.Int64() - i64Min
+	}
+	result, _ := crypto.Int(crypto.Reader, big.NewInt(max-min+1))
+	return min + result.Int64()
 }
 
 func PFloat64() *float64 {
+	rand.Seed(time.Now().UnixNano())
 	v := Float64()
 	return &v
 }
 
 // Email 随机生成英文字符串
 func Email() string {
+	rand.Seed(time.Now().UnixNano())
 	name := StringLower(8)
 	return fmt.Sprintf("%v@163.com", name)
 }
@@ -123,7 +166,7 @@ func NewId() string {
 
 // IpAddr 随机生成IP地址
 func IpAddr() string {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
 	return ip
 }
@@ -164,7 +207,7 @@ func PNameEN() *string {
 
 // DateString 随机生成日期字符串
 func DateString() string {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	max := 2099
 	min := 2000
 	year := rand.Intn(max-min) + min

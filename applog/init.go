@@ -54,7 +54,7 @@ func DoEventLog(ctx context.Context, structName string, event Event, funcName st
 	if err == nil {
 		_, _ = InfoEvent(event.GetTenantId(), structName, funcName, "success", event.GetEventId(), event.GetCommandId(), "")
 	} else {
-		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, "error", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, err.Error(), event.GetEventId(), event.GetCommandId(), "")
 	}
 	return nil
 }

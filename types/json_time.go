@@ -68,3 +68,7 @@ func (t *JSONTime) String() string {
 	}
 	return time.Time(*t).Format(timeJSONFormat)
 }
+
+func (t *JSONTime) IsNil() bool{
+	return t==nil
+}

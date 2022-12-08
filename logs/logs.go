@@ -59,140 +59,162 @@ func GetLogger(ctx context.Context) Logger {
 
 func Trace(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Trace(args)
+		l.Trace(args...)
 	}
 }
+
 func Debug(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Debug(args)
+		l.Debug(args...)
 	}
 }
+
 func Print(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Print(args)
+		l.Print(args...)
 	}
 }
+
 func Info(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Info(args)
+		l.Info(args...)
 	}
 }
+
 func Warn(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warn(args)
+		l.Warn(args...)
 	}
 }
+
 func Warning(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warning(args)
+		l.Warning(args...)
 	}
 }
+
 func Error(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Error(args)
+		l.Error(args...)
 	}
 }
+
 func Panic(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Panic(args)
+		l.Panic(args...)
 	}
 }
+
 func Fatal(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Fatal(args)
+		l.Fatal(args...)
 	}
 }
+
 func Tracef(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Tracef(format, args)
+		l.Tracef(format, args...)
 	}
 }
 
 func Debugf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Debugf(format, args)
+		l.Debugf(format, args...)
 	}
 }
+
 func Printf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Printf(format, args)
+		l.Printf(format, args...)
 	}
 }
+
 func Infof(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Printf(format, args)
+		l.Infof(format, args...)
 	}
 }
+
 func Warnf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warnf(format, args)
+		l.Warnf(format, args...)
 	}
 }
+
 func Warningf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warningf(format, args)
+		l.Warningf(format, args...)
 	}
 }
+
 func Errorf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Errorf(format, args)
+		l.Errorf(format, args...)
 	}
 }
 
 func Panicf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Panicf(format, args)
+		l.Panicf(format, args...)
 	}
 }
+
 func Fatalf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Fatalf(format, args)
+		l.Fatalf(format, args...)
 	}
 }
+
 func Traceln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Traceln(args)
+		l.Traceln(args...)
 	}
 }
-func Debugln(ctx context.Context, format string, args ...interface{}) {
+func Debugln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Debugln(format, args)
+		l.Debugln(args...)
 	}
 }
+
 func Println(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Println(args)
+		l.Println(args...)
 	}
 }
+
 func Infoln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Infoln(args)
+		l.Infoln(args...)
 	}
 }
+
 func Warnln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warnln(args)
+		l.Warnln(args...)
 	}
 }
+
 func Warningln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warnln(args)
+		l.Warnln(args...)
 	}
 }
+
 func Errorln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Errorln(args)
+		l.Errorln(args...)
 	}
 }
 
 func Panicln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Panicln(args)
+		l.Panicln(args...)
 	}
 }
+
 func Fatalln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Fatalln(args)
+		l.Fatalln(args...)
 	}
 }
 
