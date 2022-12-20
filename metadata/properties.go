@@ -5,6 +5,10 @@ import (
 	"reflect"
 )
 
+type Medadata interface {
+	SetProperties(v *Properties)
+	GetProperties() *Properties
+}
 type Properties interface {
 	Values() map[string]Property
 	Get(name string) (Property, bool)
@@ -24,7 +28,9 @@ const (
 	PropertyName       = "Property"
 	PropertiesName     = "Properties"
 	PkgPath            = "github.com/liuxd6825/dapr-go-ddd-sdk/metadata"
+	JsonTagName = "json"
 	DescriptionTagName = "description"
+	DescTagName ="desc"
 )
 
 func NewOptions() *Options {
@@ -52,11 +58,14 @@ func InitMetadata(metadata any, entity any, ops ...*Options) error {
 		entityValue = entityValue.Elem()
 	}
 
-	_, err := initProperties(metaType, metaValue, entityType, entityValue, options)
+	pros, err := initProperties(metaType, metaValue, entityType, entityValue, options)
+	if set , ok := metadata.(Metadata); ok {
+		set.SetProperties(pros)
+	}
 	return err
 }
 
-func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType reflect.Type, entityValue reflect.Value, options *Options) (*properties, error) {
+func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType reflect.Type, entityValue reflect.Value, options *Options) (Properties, error) {
 	props := &properties{
 		values: map[string]Property{},
 	}
@@ -65,6 +74,7 @@ func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType r
 		var prop *property
 		entityField := entityType.Field(i)
 
+		fmt.Println(entityField.Name)
 		options.Logger(fmt.Sprintf("entityField.Name = %v", entityField.Name))
 		if entityField.Anonymous {
 			if mt, ok := metaType.FieldByName(entityField.Name + "Metadata"); ok {
@@ -99,6 +109,21 @@ func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType r
 				v := reflect.ValueOf(props)
 				fv := metaValue.FieldByName(metaField.Name)
 				fv.Set(v)
+			} else  {
+				fv := metaValue.FieldByName(metaField.Name)
+				data := fv.Interface()
+				if data == nil {
+					prop = &property{}
+					value := reflect.ValueOf(prop)
+					fv.Set(value)
+				} else if v, ok := data.(*property); ok {
+					prop = v
+				}
+				if prop == nil {
+					prop = &property{}
+				}
+				prop.Init(entityField)
+				props.Add(prop)
 			}
 		}
 	}
@@ -120,19 +145,20 @@ func (m *properties) GetNames() []string {
 	}
 	return names
 }
+func (m *properties) Get(name string) (Property, bool) {
+	p, ok := m.values[name]
+	return p, ok
+}
 
 func (m *properties) Values() map[string]Property {
 	return m.values
 }
 
+
 func (m *properties) Add(p Property) {
 	m.values[p.Name()] = p
 }
 
-func (m *properties) Get(name string) (Property, bool) {
-	p, ok := m.values[name]
-	return p, ok
-}
 
 func (o *Options) SetLogger(logger Logger) *Options {
 	o.Logger = logger
