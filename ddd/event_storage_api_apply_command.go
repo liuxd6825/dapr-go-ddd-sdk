@@ -46,7 +46,7 @@ func (o *ApplyCommandOptions) SetEventStorageKey(v string) *ApplyCommandOptions 
 // @param opts
 // @return error
 //
-func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*ApplyCommandOptions) (err error) {
+func ApplyCommand(ctx context.Context, agg any, cmd Command, opts ...*ApplyCommandOptions) (err error) {
 	if agg == nil {
 		return errors.ErrorOf("ApplyCommand(ctx, agg, cmd) error: agg is nil")
 	}
@@ -72,7 +72,7 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 	return callCommandHandler(ctx, agg, cmd)
 }
 
-func isAggregateCreateCommand(ctx context.Context, aggregate Aggregate, cmd Command) bool {
+func isAggregateCreateCommand(ctx context.Context, aggregate any, cmd Command) bool {
 	if _, ok := cmd.(IsAggregateCreateCommand); ok {
 		return true
 	}
@@ -102,7 +102,7 @@ func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {
 	o.eventStorageKey = &eventStorageKey
 }
 
-func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd Command) error {
+func callCommandHandler(ctx context.Context, aggregate any, cmd Command) error {
 	cmdTypeName := reflect.ValueOf(cmd).Elem().Type().Name()
 	methodName := fmt.Sprintf("%s", cmdTypeName)
 	metadata := ddd_context.GetMetadataContext(ctx)

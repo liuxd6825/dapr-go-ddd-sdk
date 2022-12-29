@@ -21,7 +21,7 @@ func newSingleton[T any](key string, newFun func() T) *item[T] {
 	}
 }
 
-func Get[T any]() (T, error) {
+func Get[T any](new func() T) (T, error) {
 	var null T
 	key, err := getKey[T]()
 	if err != nil {
@@ -29,7 +29,12 @@ func Get[T any]() (T, error) {
 	}
 	v, ok := _objects.Get(key)
 	if !ok {
-
+		if new != nil {
+			Set[T](new)
+			v, ok = _objects.Get(key)
+		}
+	}
+	if !ok {
 		return null, fmt.Errorf("singleutils.Get[T]() \"%s\" key does not exist", key)
 	}
 	s, _ := v.(*item[T])
@@ -39,8 +44,8 @@ func Get[T any]() (T, error) {
 	return s.instance, nil
 }
 
-func GetObject[T any]() T {
-	v, err := Get[T]()
+func GetObject[T any](new func() T) T {
+	v, err := Get[T](new)
 	if err != nil {
 		panic(err)
 	}

@@ -76,7 +76,7 @@ func (s *httpEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error) {
+func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error) {
 	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
 		return nil, false, err
 	}
@@ -91,7 +91,7 @@ func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 		TenantId:    tenantId,
 		AggregateId: aggregateId,
 	}
-
+	agg := aggregate.(Aggregate)
 	resp, err := s.LoadEvents(ctx, req)
 	if err != nil {
 		return nil, false, err
@@ -118,7 +118,7 @@ func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 			}
 		}
 	}
-	return aggregate, true, nil
+	return agg, true, nil
 }
 
 func (s *httpEventStorage) LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {

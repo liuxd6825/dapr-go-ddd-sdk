@@ -38,7 +38,7 @@ func (o *LoadAggregateOptions) Merge(opts ...*LoadAggregateOptions) *LoadAggrega
 // @return isFound 是否找到
 // @return err 错误
 //
-func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate, opts ...*LoadAggregateOptions) (agg Aggregate, isFound bool, err error) {
+func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any, opts ...*LoadAggregateOptions) (agg Aggregate, isFound bool, err error) {
 	logInfo := &applog.LogInfo{
 		TenantId:  tenantId,
 		ClassName: "ddd",

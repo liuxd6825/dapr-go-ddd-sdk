@@ -32,7 +32,12 @@ func (s *grpcEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (agg Aggregate, isFound bool, resErr error) {
+func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (agg Aggregate, isFound bool, resErr error) {
+	a, ok := aggregate.(Aggregate)
+	if !ok {
+		return nil, false, errors.New("aggregate is not ddd.Aggregate interface")
+	}
+
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			resErr = e
@@ -53,7 +58,7 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 
 	req := &daprclient.LoadEventsRequest{
 		TenantId:      tenantId,
-		AggregateType: aggregate.GetAggregateType(),
+		AggregateType: a.GetAggregateType(),
 		AggregateId:   aggregateId,
 	}
 
@@ -83,7 +88,7 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 			}
 		}
 	}
-	return aggregate, true, err
+	return a, true, err
 }
 
 func (s *grpcEventStorage) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {
