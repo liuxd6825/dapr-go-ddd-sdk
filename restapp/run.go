@@ -2,6 +2,7 @@ package restapp
 
 import (
 	"fmt"
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
@@ -35,6 +36,10 @@ type RegisterController struct {
 
 type Controller interface {
 	BeforeActivation(b mvc.BeforeActivation)
+}
+
+type RegisterHandler interface {
+	RegisterHandler(app *iris.Application)
 }
 
 type RegisterEventType struct {

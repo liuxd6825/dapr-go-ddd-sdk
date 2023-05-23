@@ -69,6 +69,10 @@ func NewNeo4jResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Neo4j
 	}
 }
 
+func (r *Neo4jResult) Data() map[string][]interface{} {
+	return r.data
+}
+
 func (r *Neo4jResult) GetData(key string) ([]interface{}, bool) {
 	v, ok := r.data[key]
 	return v, ok

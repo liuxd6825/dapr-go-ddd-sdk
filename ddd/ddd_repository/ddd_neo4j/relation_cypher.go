@@ -183,20 +183,23 @@ func (c *relationCypher) FindPaging(ctx context.Context, query ddd_repository.Fi
 	skip := query.GetPageNum() * query.GetPageSize()
 	pageSize := query.GetPageSize()
 
+	/*
 	keys := []string{"n"}
 	count := ""
 	if query.GetIsTotalRows() {
 		count = ", count(n) as count "
 		keys = append(keys, "count")
-	}
+	}*/
+	keys := []string{"r", "count"}
 
 	order, err := getOrder(query.GetSort())
 	if err != nil {
 		return nil, err
 	}
 
-	cypher := fmt.Sprintf("MATCH (a)-(r%v{tenantId:'%v'})->(b) %v RETURN r %v %v SKIP %v LIMIT %v ", c.labels, query.GetTenantId(), where, count, order, skip, pageSize)
-	return NewCypherBuilderResult(cypher, nil, keys), nil
+	cypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN r %s SKIP %v LIMIT %v ", c.labels, query.GetTenantId(), where,  order, skip, pageSize)
+	countCypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN count(r) as count  ", c.labels, query.GetTenantId(), where)
+	return NewCypherBuilderResult(cypher, nil, keys, NewCypherResultOptions().SetCountCypher(countCypher)), nil
 }
 
 func (c *relationCypher) FindByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error) {

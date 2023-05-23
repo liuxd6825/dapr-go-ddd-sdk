@@ -338,6 +338,11 @@ func (s *service) registerController(relativePath string, controllers ...Control
 			app.Handle(c)
 		}
 	}
+	for _, c := range controllers {
+		if reg, ok := c.(RegisterHandler); ok {
+			reg.RegisterHandler(s.app)
+		}
+	}
 	mvc.Configure(s.app.Party(relativePath), configurators)
 }
 

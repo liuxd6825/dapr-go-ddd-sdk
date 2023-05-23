@@ -39,7 +39,7 @@ func TestNewSession(t *testing.T) {
 
 func TestStartSession(t *testing.T) {
 	ctx := context.Background()
-	err := StartSession(ctx, "test", func(session SessionContext) error {
+	err := StartSession(ctx, "test", func(sCtx context.Context, session Session) error {
 		agg := NewTestAggregate()
 		if _, err := CreateEvent(sCtx, agg, NewCreateEvent(agg.id)); err != nil {
 			return err

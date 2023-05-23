@@ -143,6 +143,8 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
+			SetError(ictx, err)
+			logs.Error(ctx, err)
 		}
 	}()
 

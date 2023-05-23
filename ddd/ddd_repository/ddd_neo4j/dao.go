@@ -461,7 +461,7 @@ func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]int
 
 func (d *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	return d.DoFilter(ctx, query.GetTenantId(), func() (*ddd_repository.FindPagingResult[T], bool, error) {
-		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("TenantId cannot be empty")); err != nil {
 			return nil, false, err
 		}
 
@@ -488,6 +488,8 @@ func (d *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 
 		var totalRows *int64
 		if query.GetIsTotalRows() {
+			countCypher := cr.GetCountCypher()
+			result, err := d.Query(ctx, countCypher, cr.Params())
 			totalKey := cr.ResultKeys()[1]
 			total, err := result.GetInteger(totalKey, 0)
 			if err != nil {

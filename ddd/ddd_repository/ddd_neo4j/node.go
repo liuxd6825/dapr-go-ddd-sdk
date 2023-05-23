@@ -65,6 +65,6 @@ func (b *BaseNode) GetLabels() []string {
 	return b.Labels
 }
 
-func (b *BaseNode) SetLabels(v []string) {
+func (b *BaseNode) SetLabels(v []string ) {
 	b.Labels = v
 }

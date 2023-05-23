@@ -39,7 +39,10 @@ func StartSession(ctx context.Context, tenantId string, do func(ctx context.Cont
 	}
 	err := do(ctx, session)
 	if err != nil {
-		return session.rollback(ctx)
+		if e := session.rollback(ctx); e != nil {
+			return errors.ErrorOf("事件回滚失败,详细:%s。回滚原因:%s", e.Error(), err.Error())
+		}
+		return err
 	}
 	return session.commit(ctx)
 }
