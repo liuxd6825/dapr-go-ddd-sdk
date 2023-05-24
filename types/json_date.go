@@ -33,3 +33,11 @@ func (t JSONDate) MarshalJSON() ([]byte, error) {
 func (t JSONDate) String() string {
 	return time.Time(t).Format(dateJSONFormat)
 }
+
+func (t *JSONDate) ToTime() *time.Time {
+	if t == nil {
+		return nil
+	}
+	v := time.Time(*t)
+	return &v
+}

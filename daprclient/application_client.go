@@ -27,6 +27,7 @@ const (
 	MethodTypePost
 	MethodTypePut
 	MethodTypeDelete
+	MethodTypePatch
 )
 
 func NewApplicationClient(cmd *AppConfig, query *AppConfig) *ApplicationClient {
@@ -157,6 +158,8 @@ func (m MethodType) ToString() string {
 		return "put"
 	case MethodTypeDelete:
 		return "delete"
+	case MethodTypePatch:
+		return "patch"
 	}
 	return ""
 }
