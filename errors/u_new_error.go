@@ -4,26 +4,40 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"strings"
 )
 
+type Errors struct {
+	Details []error `json:"details"`
+}
+
+func (e *Errors) Error() string {
+	sb := strings.Builder{}
+	for _, er := range e.Details {
+		if er != nil {
+			sb.WriteString(er.Error())
+			sb.WriteString(";")
+		}
+	}
+	return sb.String()
+}
+
 func New(formatOrText string, text ...any) error {
-	name := runFuncName(2)
+	//funName := runFuncName(2)
 	count := len(text)
 	if count == 0 {
-		return errors.New(fmt.Sprintf("%v() error: %v", name, formatOrText))
+		return errors.New(formatOrText)
 	}
 
-	texts := make([]any, count+1)
-	texts[0] = name
-	for i, t := range text {
-		texts[i+1] = t
-	}
-	if len(text) == 1 {
-		return errors.New(fmt.Sprintf("%v() error:%v", name, text))
-	}
+	str := fmt.Sprintf(formatOrText, text...)
+	return errors.New(str)
 
-	return errors.New(fmt.Sprintf("%v() error: "+formatOrText, texts...))
+}
 
+func News(errs ...error) error {
+	return &Errors{
+		Details: errs,
+	}
 }
 
 func NewMethod(packName, methodName string, msg string) error {

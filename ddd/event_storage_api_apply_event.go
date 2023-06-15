@@ -9,10 +9,11 @@ import (
 )
 
 type ApplyEventOptions struct {
-	pubsubName      *string
-	metadata        *map[string]string
-	eventStorageKey *string
-	sessionId       *string
+	pubsubName       *string
+	metadata         *map[string]string
+	eventStorageKey  *string
+	sessionId        *string
+	closeEventSource *bool
 }
 
 func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
@@ -23,6 +24,11 @@ func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
 
 func NewApplyEventOptionsNil() *ApplyEventOptions {
 	return &ApplyEventOptions{}
+}
+
+func OptionCloseEventSource() *ApplyEventOptions {
+	t := true
+	return &ApplyEventOptions{closeEventSource: &t}
 }
 
 func (a *ApplyEventOptions) Merge(opts ...*ApplyEventOptions) *ApplyEventOptions {
@@ -39,8 +45,20 @@ func (a *ApplyEventOptions) Merge(opts ...*ApplyEventOptions) *ApplyEventOptions
 		if opt.sessionId != nil {
 			a.sessionId = opt.sessionId
 		}
+		if opt.closeEventSource != nil {
+			a.closeEventSource = opt.closeEventSource
+		}
 	}
 	return a
+}
+
+func (a *ApplyEventOptions) SetCloseEventSource(v bool) *ApplyEventOptions {
+	a.closeEventSource = &v
+	return a
+}
+
+func (a *ApplyEventOptions) GetCloseEventSource() *bool {
+	return a.closeEventSource
 }
 
 func (a *ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
@@ -83,7 +101,15 @@ func (a *ApplyEventOptions) GetSessionId() *string {
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.ApplyEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventApply, aggregate, event, opts...)
+	res, err := callDaprEventMethod(ctx, EventApply, aggregate, []DomainEvent{event}, opts...)
+	if resp, ok := res.(*daprclient.ApplyEventResponse); ok {
+		return resp, err
+	}
+	return nil, err
+}
+
+func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*daprclient.ApplyEventResponse, error) {
+	res, err := callDaprEventMethod(ctx, EventApply, aggregate, events, opts...)
 	if resp, ok := res.(*daprclient.ApplyEventResponse); ok {
 		return resp, err
 	}
@@ -91,7 +117,15 @@ func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opt
 }
 
 func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.CreateEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, event, opts...)
+	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, []DomainEvent{event}, opts...)
+	if resp, ok := res.(*daprclient.CreateEventResponse); ok {
+		return resp, err
+	}
+	return nil, err
+}
+
+func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*daprclient.CreateEventResponse, error) {
+	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, events, opts...)
 	if resp, ok := res.(*daprclient.CreateEventResponse); ok {
 		return resp, err
 	}
@@ -99,7 +133,15 @@ func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 }
 
 func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.DeleteEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, event, opts...)
+	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, []DomainEvent{event}, opts...)
+	if resp, ok := res.(*daprclient.DeleteEventResponse); ok {
+		return resp, err
+	}
+	return nil, err
+}
+
+func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*daprclient.DeleteEventResponse, error) {
+	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, events, opts...)
 	if resp, ok := res.(*daprclient.DeleteEventResponse); ok {
 		return resp, err
 	}
@@ -115,23 +157,25 @@ func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 // @param options
 // @return err
 //
-func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
+func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			resErr = e
 		}
 	}()
 
-	if err := checkEvent(aggregate, event); err != nil {
-		return nil, err
-	}
-
-	tenantId := event.GetTenantId()
-	aggId := event.GetAggregateId()
-	aggType := aggregate.GetAggregateType()
-
 	metadata := make(map[string]string)
 	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
+
+	for _, event := range events {
+		if err := checkEvent(aggregate, event); err != nil {
+			return nil, err
+		}
+	}
+
+	tenantId := aggregate.GetTenantId()
+	aggId := aggregate.GetAggregateId()
+	aggType := aggregate.GetAggregateType()
 
 	sessionId := ""
 	if options.GetSessionId() != nil {
@@ -155,42 +199,54 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	var res any
 	err = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		var eventStorage EventStorage
+		applyEvents := make([]*daprclient.EventDto, 0)
+
 		eventStorage, err = GetEventStorage(options.GetEventStorageKey())
 		if err != nil {
 			return nil, err
 		}
-		relation, _, err := GetRelationByStructure(event.GetData())
-		if err != nil {
-			return nil, err
-		}
 
-		eventDto := &daprclient.EventDto{
-			ApplyType:    callEventType.ToString(),
-			CommandId:    event.GetCommandId(),
-			EventId:      event.GetEventId(),
-			EventVersion: event.GetEventVersion(),
-			EventType:    event.GetEventType(),
-			Metadata:     *options.metadata,
-			PubsubName:   eventStorage.GetPubsubName(),
-			EventData:    event,
-			Relations:    relation,
-			Topic:        event.GetEventType(),
-			IsSourcing:   true,
-		}
-
+		isSourcing := true
 		// 判断是否需要进行"事件溯源"控制
-		if s, ok := event.(IsSourcing); ok {
-			eventDto.IsSourcing = s.GetIsSourcing()
+		if options.closeEventSource != nil {
+			closeEs := *options.closeEventSource
+			isSourcing = !closeEs
 		}
 
-		applyEvents := []*daprclient.EventDto{eventDto}
+		for _, event := range events {
+			relation, _, err := GetRelationByStructure(event.GetData())
+			if err != nil {
+				return nil, err
+			}
+
+			eventDto := &daprclient.EventDto{
+				ApplyType:    callEventType.ToString(),
+				CommandId:    event.GetCommandId(),
+				EventId:      event.GetEventId(),
+				EventVersion: event.GetEventVersion(),
+				EventType:    event.GetEventType(),
+				Metadata:     *options.metadata,
+				PubsubName:   eventStorage.GetPubsubName(),
+				EventData:    event,
+				Relations:    relation,
+				Topic:        event.GetEventType(),
+				IsSourcing:   isSourcing,
+			}
+
+			applyEvents = append(applyEvents, eventDto)
+		}
 
 		res, err = applyEvent(ctx, eventStorage, tenantId, sessionId, aggId, aggType, applyEvents)
 		if err != nil {
 			return nil, err
 		}
-		if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event); err != nil {
-			return nil, err
+
+		if isSourcing {
+			for _, event := range events {
+				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event); err != nil {
+					return nil, err
+				}
+			}
 		}
 		return res, nil
 	})

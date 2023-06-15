@@ -115,11 +115,11 @@ func RunWithConfig(envType string, configFile string, subsFunc func() []Register
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
 	if len(config.Mongo) > 0 {
-		initMongo(config.Mongo)
+		InitMongo(config.Mongo)
 	}
 
 	if len(config.Neo4j) > 0 {
-		initNeo4j(config.Neo4j)
+		InitNeo4j(config.Neo4j)
 	}
 
 	//创建dapr客户端

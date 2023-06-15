@@ -33,7 +33,7 @@ func init() {
 	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
 }
 
-func initMongo(appMongoConfigs map[string]*MongoConfig) {
+func InitMongo(appMongoConfigs map[string]*MongoConfig) {
 	if err := assert.NotNil(appMongoConfigs, assert.NewOptions("appMongoConfig is nil")); err != nil {
 		panic(err)
 	}

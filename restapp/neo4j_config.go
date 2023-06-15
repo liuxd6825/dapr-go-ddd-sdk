@@ -20,7 +20,7 @@ type Neo4jConfig struct {
 var _neo4js = make(map[string]neo4j.Driver)
 var _neo4jDefault neo4j.Driver
 
-func initNeo4j(configs map[string]*Neo4jConfig) {
+func InitNeo4j(configs map[string]*Neo4jConfig) {
 	if err := assert.NotNil(configs, assert.NewOptions("config is nil")); err != nil {
 		panic(err)
 	}

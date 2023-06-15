@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
+	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -433,7 +434,7 @@ func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repos
 	return r.FindListByMap(ctx, tenantId, nil, opts...)
 }
 
-func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
@@ -461,6 +462,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 		if err != nil {
 			return nil, false, err
 		}
+
 		err = cursor.All(ctx, &data)
 		var totalRows *int64
 		if query.GetIsTotalRows() {
@@ -474,6 +476,194 @@ func (r *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPaging
 		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, findData.IsFound, err
 	})
+}
+
+func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	var err error
+	findOptions := getFindOptions(opts...)
+	queryGroup := NewQueryGroup(query)
+
+	g, err := queryGroup.GetGroup()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	gpFilter, err := queryGroup.GetGroupPagingBsonFilter()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	gFilter, err := queryGroup.GetGroupExpandGroupNoPagingBsonFilter()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	gFilter1, err := queryGroup.GetGroupNoPagingFilter()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	filter, err := queryGroup.GetFilter()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	gSort, err := queryGroup.GetBsonFilterSort()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	sort, err := queryGroup.GetFilterSort()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	data, err := r.NewEntityList()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	coll := r.getCollection()
+	var findData *ddd_repository.FindPagingResult[T]
+	var cur *mongo.Cursor
+	///var curt *mongo.Cursor
+	var errt error
+	var totalRows int64
+
+	isGroup := queryGroup.IsGroup()
+	isPaging := queryGroup.IsPaging()
+	isLeaf := queryGroup.IsLeaf()
+
+	if isGroup {
+		if isPaging {
+			pipeline := mongo.Pipeline{}
+			if gpFilter != nil && len(gpFilter) > 0 {
+				pipeline = append(pipeline, gpFilter)
+			}
+			if g != nil && len(g) > 0 {
+				pipeline = append(pipeline, g)
+			}
+			if sort != nil && len(sort) > 0 {
+				pipeline = append(pipeline, sort)
+			}
+
+			skip := query.GetPageSize() * query.GetPageNum()
+			pipeline = append(pipeline, bson.D{{"$skip", skip}})
+
+			limit := query.GetPageSize()
+			pipeline = append(pipeline, bson.D{{"$limit", limit}})
+
+			cur, err = coll.Aggregate(ctx, pipeline)
+			if err == nil {
+				totalRows = int64(cur.RemainingBatchLength())
+			}
+		} else if !isLeaf {
+			pipeline := mongo.Pipeline{}
+			if gFilter != nil && len(gFilter) > 0 {
+				pipeline = append(pipeline, gFilter)
+			}
+			if g != nil && len(g) > 0 {
+				pipeline = append(pipeline, g)
+			}
+			if gSort != nil && len(gSort) > 0 {
+				pipeline = append(pipeline, gSort)
+			}
+			if cur, err = coll.Aggregate(ctx, pipeline); err == nil {
+				totalRows = int64(cur.RemainingBatchLength())
+			}
+		} else if isLeaf {
+			findOptions.SetSort(sort)
+			cur, err = coll.Find(ctx, gFilter1, findOptions)
+			if err == nil {
+				totalRows, errt = coll.CountDocuments(ctx, gFilter1)
+			}
+		}
+	} else if !isGroup {
+		findOptions.SetSort(sort)
+		if query.GetPageSize() > 0 {
+			findOptions.SetLimit(query.GetPageSize())
+			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
+		}
+		cur, err = coll.Find(ctx, filter, findOptions)
+		if query.GetIsTotalRows() {
+			totalRows, errt = coll.CountDocuments(ctx, filter)
+		}
+	}
+	if err != nil || errt != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err, errt)
+	}
+
+	err = cur.All(ctx, &data)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
+
+	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, query, err)
+	// 进行汇总计算
+	if len(query.GetValueCols()) > 0 {
+		sumData, _, err := r.Sum(ctx, query, opts...)
+		findData.SetSum(true, sumData, err)
+	}
+	return findData
+}
+
+func (r Dao[T]) Sum(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
+	if len(query.GetValueCols()) == 0 {
+		return nil, false, nil
+	}
+
+	p := NewMongoProcess()
+	if err := rsql.ParseProcess(query.GetFilter(), p); err != nil {
+		return nil, false, err
+	}
+	filterMap, err := p.GetFilter(query.GetTenantId())
+	if err != nil {
+		return nil, false, err
+	}
+
+	return r.sum(ctx, filterMap, query.GetValueCols(), opts...)
+}
+
+func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) ([]T, bool, error) {
+	coll := r.getCollection()
+	data, err := r.NewEntityList()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
+	}
+	var cur *mongo.Cursor
+	summaryMap := make(map[string]interface{})
+	summaryMap["_id"] = "total"
+	for _, col := range valueCols {
+		field := utils.SnakeString(col.Field)
+		aggFunc := utils.SnakeString(col.AggFunc.Name())
+		summaryMap[field] = map[string]interface{}{"$" + aggFunc: "$" + field}
+	}
+
+	pipeline := mongo.Pipeline{}
+	if filterMap != nil {
+		pipeline = append(pipeline, bson.D{{"$match", filterMap}})
+	}
+	if summaryMap != nil {
+		pipeline = append(pipeline, bson.D{{"$group", summaryMap}})
+	}
+	cur, err = coll.Aggregate(ctx, pipeline)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
+	}
+	err = cur.All(ctx, &data)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
+	}
+	return data, true, nil
+
+}
+
+func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData map[string]any, opts ...ddd_repository.Options) (int64, error) {
+	total, err := r.getCollection().CountDocuments(ctx, filterData)
+	if err != nil {
+		return 0, err
+	}
+	return total, err
 }
 
 func (r *Dao[T]) DoList(tenantId, filter string, fun func(filter map[string]interface{}) ([]T, bool, error)) *ddd_repository.FindListResult[T] {

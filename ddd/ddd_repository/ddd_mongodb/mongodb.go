@@ -67,6 +67,10 @@ type Config struct {
 
 type ObjectId string
 
+func (i ObjectId) String() string {
+	return string(i)
+}
+
 //
 // NewMongoDB
 // @Description:  新建MongoDB

@@ -17,7 +17,7 @@ func Test_Search(t *testing.T) {
 	objId := NewObjectID()
 	id := string(objId)
 	user := &User{
-		Id:        objId,
+		Id:        id,
 		TenantId:  "001",
 		UserName:  "UserName",
 		UserCode:  "UserCode",
@@ -55,10 +55,10 @@ func Test_Search(t *testing.T) {
 func TestMongoSession_UseTransaction(t *testing.T) {
 	mongodb, coll := newCollection("test_users")
 	repository := newRepository(mongodb, coll)
-	err := ddd_repository.StartSession(context.Background(), NewSession(mongodb), func(ctx context.Context) error {
+	err := ddd_repository.StartSession(context.Background(), NewSession(true, mongodb), func(ctx context.Context) error {
 		for i := 0; i < 5; i++ {
 			user := &User{
-				Id:        NewObjectID(),
+				Id:        NewObjectID().String(),
 				TenantId:  "001",
 				UserName:  "userName" + fmt.Sprint(i),
 				UserCode:  "UserCode",
@@ -88,10 +88,11 @@ func newRepository(mongodb *MongoDB, coll *mongo.Collection) *Repository[*User] 
 
 func newCollection(name string) (*MongoDB, *mongo.Collection) {
 	config := &Config{
-		Host:         "192.168.64.8:27019",
-		DatabaseName: "query-example",
-		UserName:     "query-example",
+		Host:         "192.168.64.8:27018,192.168.64.8:27019,192.168.64.8:27020",
+		DatabaseName: "duxm_fund_record_service_cmd_db",
+		UserName:     "fund_record_cmd",
 		Password:     "123456",
+		Options:      "replicaSet=mongors",
 	}
 	mongodb, err := NewMongoDB(config)
 	if err != nil {
@@ -103,13 +104,13 @@ func newCollection(name string) (*MongoDB, *mongo.Collection) {
 }
 
 type User struct {
-	Id        ObjectId `json:"id" validate:"gt=0" bson:"_id"`
-	TenantId  string   `json:"tenantId" validate:"gt=0" bson:"tenant_id"`
-	UserCode  string   `json:"userCode" validate:"gt=0" bson:"user_code"`
-	UserName  string   `json:"userName" validate:"gt=0" bson:"user_name"`
-	Email     string   `json:"email" validate:"gt=0" bson:"email"`
-	Telephone string   `json:"telephone" validate:"gt=0" bson:"telephone"`
-	Address   string   `json:"address" validate:"gt=0" bson:"address"`
+	Id        string `json:"id" validate:"gt=0" bson:"_id"`
+	TenantId  string `json:"tenantId" validate:"gt=0" bson:"tenant_id"`
+	UserCode  string `json:"userCode" validate:"gt=0" bson:"user_code"`
+	UserName  string `json:"userName" validate:"gt=0" bson:"user_name"`
+	Email     string `json:"email" validate:"gt=0" bson:"email"`
+	Telephone string `json:"telephone" validate:"gt=0" bson:"telephone"`
+	Address   string `json:"address" validate:"gt=0" bson:"address"`
 }
 
 func (u *User) GetTenantId() string {
@@ -118,4 +119,12 @@ func (u *User) GetTenantId() string {
 
 func (u *User) GetId() string {
 	return string(u.Id)
+}
+
+func (u *User) SetTenantId(v string) {
+	u.TenantId = v
+}
+
+func (u *User) SetId(v string) {
+	u.Id = v
 }

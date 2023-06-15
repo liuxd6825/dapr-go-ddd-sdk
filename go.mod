@@ -23,7 +23,11 @@ require (
 	gorm.io/gorm v1.23.8
 )
 
-require github.com/mitchellh/mapstructure v1.4.1
+require (
+	github.com/liuxd6825/components-contrib v1.7.1-1.0-alaph2
+	github.com/mitchellh/mapstructure v1.4.1
+	google.golang.org/grpc v1.40.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.0.0 // indirect
@@ -86,8 +90,8 @@ require (
 	github.com/swaggo/swag v1.8.1 // indirect
 	github.com/tdewolff/minify/v2 v2.10.0 // indirect
 	github.com/tdewolff/parse/v2 v2.5.27 // indirect
-	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasthttp v1.31.1-0.20211216042702-258a4c17b4f4 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -104,7 +108,6 @@ require (
 	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
-	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

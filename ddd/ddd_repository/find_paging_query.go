@@ -27,6 +27,8 @@
 
 package ddd_repository
 
+import "github.com/liuxd6825/dapr-go-ddd-sdk/types"
+
 type FindPagingQuery interface {
 	GetTenantId() string
 	GetFields() string
@@ -35,6 +37,9 @@ type FindPagingQuery interface {
 	GetPageNum() int64
 	GetPageSize() int64
 	GetIsTotalRows() bool
+	GetRowGroupCols() []*GroupCol
+	GetValueCols() []*ValueCol
+	GetGroupKeys() []any
 
 	SetTenantId(string)
 	SetFields(string)
@@ -43,75 +48,163 @@ type FindPagingQuery interface {
 	SetPageNum(int64)
 	SetPageSize(int64)
 	SetIsTotalRows(bool)
+	SetGroupCols([]*GroupCol)
+	SetValueCols([]*ValueCol)
+	SetGroupKeys([]any)
+}
+
+type GroupCol struct {
+	Field    string         `json:"field"`
+	DataType types.DataType `json:"dataType"`
+}
+
+type AggFunc string
+
+const (
+	SumAggFunc AggFunc = "sum"
+)
+
+func (f AggFunc) Name() string {
+	return string(f)
+}
+
+type ValueCol struct {
+	AggFunc AggFunc `json:"aggFunc"`
+	Field   string  `json:"field"`
+}
+
+type FindPagingQueryObj struct {
+	TenantId   string      `json:"tenantId"`
+	Fields     string      `json:"fields"`
+	Filter     string      `json:"filter"`
+	Sort       string      `json:"sort"`
+	PageNum    int64       `json:"pageNum"`
+	PageSize   int64       `json:"pageSize"`
+	IsTotalRow bool        `json:"isTotalRow"`
+	GroupCols  []*GroupCol `json:"groupCols"`
+	GroupKeys  []any       `json:"groupKeys"`
+	ValueCols  []*ValueCol `json:"valueCols"`
+}
+
+type GroupCols struct {
+	cols []*GroupCol
+}
+
+type ValueCols struct {
+	cols []*ValueCol
 }
 
 func NewFindPagingQuery() FindPagingQuery {
-	query := &findPagingQuery{PageSize: 20}
+	query := &FindPagingQueryObj{PageSize: 20}
 	return query
 }
 
-type findPagingQuery struct {
-	TenantId   string
-	Fields     string
-	Filter     string
-	Sort       string
-	PageNum    int64
-	PageSize   int64
-	IsTotalRow bool
+func NewGroupCols() *GroupCols {
+	return &GroupCols{
+		cols: make([]*GroupCol, 0),
+	}
 }
 
-func (q *findPagingQuery) SetTenantId(value string) {
+func NewValueCols() *ValueCols {
+	return &ValueCols{
+		cols: make([]*ValueCol, 0),
+	}
+}
+
+func (s *GroupCols) Add(field string, dataType types.DataType) *GroupCols {
+	s.cols = append(s.cols, &GroupCol{Field: field, DataType: dataType})
+	return s
+}
+
+func (s *GroupCols) Cols() []*GroupCol {
+	return s.cols
+}
+
+func (s *ValueCols) Add(field string, aggFunc AggFunc) *ValueCols {
+	s.cols = append(s.cols, &ValueCol{Field: field, AggFunc: aggFunc})
+	return s
+}
+
+func (s *ValueCols) Cols() []*ValueCol {
+	return s.cols
+}
+
+func (q *FindPagingQueryObj) SetTenantId(value string) {
 	q.TenantId = value
 }
 
-func (q *findPagingQuery) SetFields(value string) {
+func (q *FindPagingQueryObj) SetFields(value string) {
 	q.Fields = value
 }
 
-func (q *findPagingQuery) SetFilter(value string) {
+func (q *FindPagingQueryObj) SetFilter(value string) {
 	q.Filter = value
 }
 
-func (q *findPagingQuery) SetSort(value string) {
+func (q *FindPagingQueryObj) SetSort(value string) {
 	q.Sort = value
 }
 
-func (q *findPagingQuery) SetPageNum(value int64) {
+func (q *FindPagingQueryObj) SetPageNum(value int64) {
 	q.PageNum = value
 }
 
-func (q *findPagingQuery) SetPageSize(value int64) {
+func (q *FindPagingQueryObj) SetPageSize(value int64) {
 	q.PageSize = value
 }
 
-func (q *findPagingQuery) SetIsTotalRows(val bool) {
+func (q *FindPagingQueryObj) SetIsTotalRows(val bool) {
 	q.IsTotalRow = val
 }
 
-func (q *findPagingQuery) GetTenantId() string {
+func (q *FindPagingQueryObj) SetGroupCols(value []*GroupCol) {
+	q.GroupCols = value
+}
+
+func (q *FindPagingQueryObj) SetValueCols(value []*ValueCol) {
+	q.ValueCols = value
+}
+
+func (q *FindPagingQueryObj) SetGroupKeys(val []any) {
+	q.GroupKeys = val
+}
+
+func (q *FindPagingQueryObj) GetTenantId() string {
 	return q.TenantId
 }
 
-func (q *findPagingQuery) GetFields() string {
+func (q *FindPagingQueryObj) GetFields() string {
 	return q.Fields
 }
 
-func (q *findPagingQuery) GetFilter() string {
+func (q *FindPagingQueryObj) GetFilter() string {
 	return q.Filter
 }
 
-func (q *findPagingQuery) GetSort() string {
+func (q *FindPagingQueryObj) GetSort() string {
 	return q.Sort
 }
 
-func (q *findPagingQuery) GetPageNum() int64 {
+func (q *FindPagingQueryObj) GetPageNum() int64 {
 	return q.PageNum
 }
 
-func (q *findPagingQuery) GetPageSize() int64 {
+func (q *FindPagingQueryObj) GetPageSize() int64 {
 	return q.PageSize
 }
 
-func (q *findPagingQuery) GetIsTotalRows() bool {
+func (q *FindPagingQueryObj) GetIsTotalRows() bool {
 	return q.IsTotalRow
+}
+
+func (q *FindPagingQueryObj) GetRowGroupCols() []*GroupCol {
+	return q.GroupCols
+}
+
+func (q *FindPagingQueryObj) GetValueCols() []*ValueCol {
+	return q.ValueCols
+}
+
+func (q *FindPagingQueryObj) GetGroupKeys() []any {
+	return q.GroupKeys
 }

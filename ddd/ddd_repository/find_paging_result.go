@@ -2,10 +2,12 @@ package ddd_repository
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
 type FindPagingResult[T interface{}] struct {
 	Data        []T    `json:"data"`
+	SumData     []T    `json:"sumData"`
 	TotalRows   *int64 `json:"totalRows"`
 	TotalPages  *int64 `json:"totalPages"`
 	PageNum     int64  `json:"pageNum"`
@@ -15,11 +17,13 @@ type FindPagingResult[T interface{}] struct {
 	Sort        string `json:"sort"`
 	IsFound     bool   `json:"isFound"`
 	IsTotalRows bool   `json:"isTotalRows"`
+	IsSum       bool   `json:"isSum"`
 	Error       error  `json:"-"`
 }
 
 type FindPagingResultOptions[T interface{}] struct {
 	Data        *[]T
+	SumData     *[]T
 	TotalRows   int64
 	TotalPages  int64
 	PageNum     int64
@@ -29,7 +33,17 @@ type FindPagingResultOptions[T interface{}] struct {
 	Sort        string
 	IsFound     bool
 	IsTotalRows bool
+	IsSum       bool
 	Error       error
+}
+
+func NewFindPagingSumResult[T ddd.Entity](data []T, sumData []T, totalRows *int64, query FindPagingQuery, err error, sumErr error) *FindPagingResult[T] {
+	res := NewFindPagingResult(data, totalRows, query, err)
+	res.SumData = sumData
+	if err == nil && sumErr != nil {
+		res.Error = sumErr
+	}
+	return res
 }
 
 func NewFindPagingResult[T ddd.Entity](data []T, totalRows *int64, query FindPagingQuery, err error) *FindPagingResult[T] {
@@ -68,16 +82,19 @@ func NewFindPagingResultOptions[T ddd.Entity]() *FindPagingResultOptions[T] {
 	return &FindPagingResultOptions[T]{}
 }
 
-func NewFindPagingResultWithError[T ddd.Entity](err error) *FindPagingResult[T] {
+func NewFindPagingResultWithError[T ddd.Entity](err ...error) *FindPagingResult[T] {
 	return &FindPagingResult[T]{
 		Data:    nil,
 		IsFound: false,
-		Error:   err,
+		Error:   errors.News(err...),
 	}
 }
 
 func (f *FindPagingResult[T]) GetData() []T {
 	return f.Data
+}
+func (f *FindPagingResult[T]) GetSumData() []T {
+	return f.SumData
 }
 
 func (f *FindPagingResult[T]) GetAnyData() any {
@@ -124,8 +141,21 @@ func (f *FindPagingResult[T]) GetError() error {
 	return f.Error
 }
 
+func (f *FindPagingResult[T]) SetSum(isSum bool, sumData []T, err error) *FindPagingResult[T] {
+	f.IsSum = isSum
+	f.SumData = sumData
+	if f.Error == nil && err != nil {
+		f.Error = err
+	}
+	return f
+}
+
 func (f *FindPagingResult[T]) Result() (*FindPagingResult[T], bool, error) {
 	return f, f.IsFound, f.Error
+}
+
+func (f *FindPagingResult[T]) DataResult() ([]T, bool, error) {
+	return f.Data, f.IsFound, f.Error
 }
 
 func (f *FindPagingResult[T]) OnError(onErr OnError) *FindPagingResult[T] {
