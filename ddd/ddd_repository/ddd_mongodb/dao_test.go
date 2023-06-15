@@ -22,7 +22,7 @@ func TestMapper_Search(t *testing.T) {
 	qry.SetTenantId("test")
 	qry.SetPageSize(20)
 	qry.SetGroupCols(ddd_repository.NewGroupCols().Add("name", types.DataTypeString).Add("oppName", types.DataTypeString).Cols())
-	qry.SetValueCols(ddd_repository.NewValueCols().Add("amount", ddd_repository.SumAggFunc).Cols())
+	qry.SetValueCols(ddd_repository.NewValueCols().Add("amount", ddd_repository.AggFuncCount).Cols())
 	qry.SetGroupKeys([]any{"梁瑞梅"})
 
 	res := mapper.FindPaging(ctx, qry)

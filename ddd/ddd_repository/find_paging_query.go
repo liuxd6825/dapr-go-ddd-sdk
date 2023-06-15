@@ -61,7 +61,14 @@ type GroupCol struct {
 type AggFunc string
 
 const (
-	SumAggFunc AggFunc = "sum"
+	AggFuncSum   AggFunc = "sum"
+	AggFuncCount AggFunc = "count"
+	AggFuncAvg   AggFunc = "avg"
+	AggFuncFirst AggFunc = "first"
+	AggFuncLast  AggFunc = "last"
+	AggFuncMax   AggFunc = "max"
+	AggFuncMin   AggFunc = "min"
+	AggFuncZero  AggFunc = "zero"
 )
 
 func (f AggFunc) Name() string {
