@@ -34,10 +34,23 @@ func (t JSONDate) String() string {
 	return time.Time(t).Format(dateJSONFormat)
 }
 
-func (t *JSONDate) ToTime() *time.Time {
-	if t == nil {
+func (t *JSONDate) PTime() *time.Time{
+	if t==nil{
 		return nil
 	}
 	v := time.Time(*t)
 	return &v
 }
+
+func (t *JSONDate) Time() time.Time{
+	if t==nil{
+		return time.Time{}
+	}
+	v := time.Time(*t)
+	return v
+}
+
+func (t *JSONDate) IsNil() bool{
+	return t==nil
+}
+

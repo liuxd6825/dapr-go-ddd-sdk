@@ -87,7 +87,7 @@ type FindPagingQueryObj struct {
 	Sort       string      `json:"sort"`
 	PageNum    int64       `json:"pageNum"`
 	PageSize   int64       `json:"pageSize"`
-	IsTotalRow bool        `json:"isTotalRow"`
+	IsTotalRows bool        `json:"isTotalRows"`
 	GroupCols  []*GroupCol `json:"groupCols"`
 	GroupKeys  []any       `json:"groupKeys"`
 	ValueCols  []*ValueCol `json:"valueCols"`
@@ -161,7 +161,7 @@ func (q *FindPagingQueryObj) SetPageSize(value int64) {
 }
 
 func (q *FindPagingQueryObj) SetIsTotalRows(val bool) {
-	q.IsTotalRow = val
+	q.IsTotalRows = val
 }
 
 func (q *FindPagingQueryObj) SetGroupCols(value []*GroupCol) {
@@ -201,7 +201,7 @@ func (q *FindPagingQueryObj) GetPageSize() int64 {
 }
 
 func (q *FindPagingQueryObj) GetIsTotalRows() bool {
-	return q.IsTotalRow
+	return q.IsTotalRows
 }
 
 func (q *FindPagingQueryObj) GetRowGroupCols() []*GroupCol {

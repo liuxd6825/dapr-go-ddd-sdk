@@ -50,14 +50,16 @@ func (c *relationCypher) InsertOrUpdate(ctx context.Context, data interface{}) (
 	if !ok {
 		return nil, errors.ErrorOf(" parameter data is not ddd_neo4j.Relation Type")
 	}
-	props, dataMap, err := c.getCreateProperties(ctx, data)
+	props, dataMap, err := c.getSetFields(ctx, "r", data)
 	if err != nil {
 		return nil, err
 	}
 	labels := c.getLabels(rel.GetRelType())
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("MATCH (s{id:'%v'}), (e{id:'%v'})", rel.GetStartId(), rel.GetEndId()))
-	sb.WriteString(fmt.Sprintf("MERGE (s)-[r:%v{%v}]->(e)", labels, props))
+	sb.WriteString(fmt.Sprintf("MATCH (s{id:'%v'}), (e{id:'%v'}) ", rel.GetStartId(), rel.GetEndId()))
+	sb.WriteString(fmt.Sprintf("MERGE (s)-[r%v{id:'%v'}]->(e) ", labels, rel.GetId()))
+	sb.WriteString(fmt.Sprintf("ON CREATE SET %s ", props))
+	sb.WriteString(fmt.Sprintf("ON MATCH  SET %s ", props))
 	return NewCypherBuilderResult(sb.String(), dataMap, nil), nil
 }
 
@@ -197,8 +199,8 @@ func (c *relationCypher) FindPaging(ctx context.Context, query ddd_repository.Fi
 		return nil, err
 	}
 
-	cypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN r %s SKIP %v LIMIT %v ", c.labels, query.GetTenantId(), where,  order, skip, pageSize)
-	countCypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN count(r) as count  ", c.labels, query.GetTenantId(), where)
+	cypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN r %s SKIP %v LIMIT %v ", c.getLabels(c.labels), query.GetTenantId(), where,  order, skip, pageSize)
+	countCypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN count(r) as count  ", c.getLabels( c.labels), query.GetTenantId(), where)
 	return NewCypherBuilderResult(cypher, nil, keys, NewCypherResultOptions().SetCountCypher(countCypher)), nil
 }
 
@@ -255,7 +257,33 @@ func (c *relationCypher) getCreateProperties(ctx context.Context, data interface
 
 	if relation, ok := data.(Relation); ok {
 		for k := range relation.GetProperties() {
-			strBuilder.WriteString(fmt.Sprintf(`prop_%s:$properties.%s,`, k, k))
+			strBuilder.WriteString(fmt.Sprintf(`%s:$properties.%s,`, k, k))
+		}
+	}
+
+	res := strBuilder.String()
+	if len(res) > 0 {
+		res = res[:len(res)-1]
+	}
+	return res, mapData, nil
+}
+
+func (c *relationCypher) getSetFields(ctx context.Context, resName string, data interface{}) (string, map[string]any, error) {
+	mapData, err := getMap(data)
+	if err != nil {
+		return "", nil, err
+	}
+
+	strBuilder := strings.Builder{}
+	for k := range mapData {
+		if k != "properties" {
+			strBuilder.WriteString(fmt.Sprintf(`%s.%s=$%s,`, resName, k, k))
+		}
+	}
+
+	if relation, ok := data.(Relation); ok {
+		for k := range relation.GetProperties() {
+			strBuilder.WriteString(fmt.Sprintf(`%s.%s=$properties.%s,`, resName,k, k))
 		}
 	}
 

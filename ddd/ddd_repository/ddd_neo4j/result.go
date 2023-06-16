@@ -287,14 +287,7 @@ func setRelationship(data interface{}, rel neo4j.Relationship) error {
 		if tenantId, ok := rel.Props["tenantId"]; ok {
 			r.SetTenantId(tenantId.(string))
 		}
-		props := make(map[string]interface{})
-		for k, v := range rel.Props {
-			if strings.HasPrefix(k, "prop_") {
-				key := k[5:]
-				props[key] = v
-			}
-		}
-		r.SetProperties(props)
+		r.SetProperties(rel.Props)
 	} else if n, ok := data.(Node); ok {
 		n.SetNid(rel.Id)
 	} else {
@@ -302,8 +295,6 @@ func setRelationship(data interface{}, rel neo4j.Relationship) error {
 		if r, ok := v.Elem().Interface().(Relation); ok {
 			println(r)
 		}
-		println("typeName=" + v.Elem().Type().Name())
-		println(data)
 	}
 	return nil
 }
