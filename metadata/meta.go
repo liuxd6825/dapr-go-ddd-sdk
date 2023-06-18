@@ -56,7 +56,6 @@ type Queries = map[string]Query
 //
 type Model struct {
 	Base
-	LibId   string  `json:"libId,omitempty" bson:"lib_id"`
 	Fields  Fields  `json:"fields,omitempty" bson:"fields"`
 	Tables  Tables  `json:"tables,omitempty" bson:"tables"`
 	Forms   Forms   `json:"forms,omitempty" bson:"forms"`
@@ -122,7 +121,7 @@ type Column struct {
 	AllowEdit       bool `json:"allowEdit,omitempty" bson:"allow_edit"`
 	AllowSort       bool `json:"allowSort,omitempty" bson:"allow_sort"`
 	AllowHeaderEdit bool `json:"allowHeaderEdit,omitempty" bson:"allow_header_edit"`
-	AllowFilter     bool `json:"allowFilter,omitempty" bson:"allowFilter"`
+	AllowFilter     bool `json:"allowFilter,omitempty" bson:"allow_filter"`
 	AllowReorder    bool `json:"allowReorder,omitempty" bson:"allow_reorder"`
 	AllowResize     bool `json:"allowResize,omitempty" bson:"allow_resize"`
 	AllowNull       bool `json:"allowNull,omitempty" bson:"allow_null"`
@@ -178,10 +177,10 @@ type FormItem struct {
 	Field         string `json:"field,omitempty" bson:"field"`
 	IsEdit        bool   `json:"isEdit,omitempty" bson:"is_edit"`
 	Editor        string `json:"editor,omitempty" bson:"editor"`
-	EditorOptions any    `json:"editorOptions,omitempty" bson:"editor_options"`
+	EditorOptions string `json:"editorOptions,omitempty" bson:"editor_options"`
 	Cols          int64  `json:"cols,omitempty" bson:"cols"`
 	Rows          int64  `json:"rows,omitempty" bson:"rows"`
 	MaxValue      int64  `json:"maxValue,omitempty" bson:"max_value"`
 	MinValue      int64  `json:"minValue,omitempty" bson:"min_value"`
-	Script        any    `json:"script,omitempty" bson:"script"`
+	Script        string `json:"script,omitempty" bson:"script"`
 }

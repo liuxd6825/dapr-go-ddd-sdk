@@ -65,9 +65,10 @@ func NewFindPagingResult[T ddd.Entity](data []T, totalRows *int64, query FindPag
 	}
 	if totalRows != nil {
 		res.TotalRows = totalRows
-		res.TotalPages = getTotalPage(totalRows, query.GetPageSize())
 	}
+
 	if query != nil {
+		res.TotalPages = getTotalPage(totalRows, query.GetPageSize())
 		res.PageNum = query.GetPageNum()
 		res.PageSize = query.GetPageSize()
 		res.Sort = query.GetSort()

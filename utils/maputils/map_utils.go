@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	localTime    = "2006-01-02 15:04:05"
-	timeTypeName = "Time"
+	localTime        = "2006-01-02 15:04:05"
+	timeTypeName     = "Time"
+	jsonTimeTypeName = "JSONTime"
 )
 
 func GetString(m map[string]interface{}, key string, result *string, def string) (bool, error) {
@@ -69,6 +70,8 @@ func NewFromStr(v []string) map[string]interface{} {
 
 func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (interface{}, error) {
 	if fromType.Kind() == reflect.String && toType.Name() == timeTypeName {
+		return timeutils.AnyToTime(v, time.Time{})
+	} else if fromType.Kind() == reflect.String && toType.Name() == jsonTimeTypeName {
 		return timeutils.AnyToTime(v, time.Time{})
 	}
 	return v, nil
