@@ -163,7 +163,7 @@ func getMongoURI(metadata *Config) string {
 func getMongoDBClient(config *Config) (*mongo.Client, error) {
 
 	uri := getMongoURI(config)
-	fmt.Println(uri)
+	//fmt.Println(uri)
 	// Set client options
 	opts := options.Client().ApplyURI(uri)
 	/*	if len(config.ReplicaSet) != 0 {

@@ -320,7 +320,6 @@ func decode(input interface{}, out interface{}) error {
 
 func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (interface{}, error) {
 	if toType == jsonTimeType {
-		fmt.Println(fromType.Name())
 		switch fromType.Name() {
 		case "string":
 			sTime := v.(string)

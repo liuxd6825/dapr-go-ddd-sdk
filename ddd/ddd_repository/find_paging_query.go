@@ -80,17 +80,17 @@ type ValueCol struct {
 	Field   string  `json:"field"`
 }
 
-type FindPagingQueryObj struct {
-	TenantId   string      `json:"tenantId"`
-	Fields     string      `json:"fields"`
-	Filter     string      `json:"filter"`
-	Sort       string      `json:"sort"`
-	PageNum    int64       `json:"pageNum"`
-	PageSize   int64       `json:"pageSize"`
+type FindPagingQueryRequest struct {
+	TenantId    string      `json:"tenantId"`
+	Fields      string      `json:"fields"`
+	Filter      string      `json:"filter"`
+	Sort        string      `json:"sort"`
+	PageNum     int64       `json:"pageNum"`
+	PageSize    int64       `json:"pageSize"`
 	IsTotalRows bool        `json:"isTotalRows"`
-	GroupCols  []*GroupCol `json:"groupCols"`
-	GroupKeys  []any       `json:"groupKeys"`
-	ValueCols  []*ValueCol `json:"valueCols"`
+	GroupCols   []*GroupCol `json:"groupCols"`
+	GroupKeys   []any       `json:"groupKeys"`
+	ValueCols   []*ValueCol `json:"valueCols"`
 }
 
 type GroupCols struct {
@@ -102,7 +102,7 @@ type ValueCols struct {
 }
 
 func NewFindPagingQuery() FindPagingQuery {
-	query := &FindPagingQueryObj{PageSize: 20}
+	query := &FindPagingQueryRequest{PageSize: 20}
 	return query
 }
 
@@ -136,82 +136,82 @@ func (s *ValueCols) Cols() []*ValueCol {
 	return s.cols
 }
 
-func (q *FindPagingQueryObj) SetTenantId(value string) {
+func (q *FindPagingQueryRequest) SetTenantId(value string) {
 	q.TenantId = value
 }
 
-func (q *FindPagingQueryObj) SetFields(value string) {
+func (q *FindPagingQueryRequest) SetFields(value string) {
 	q.Fields = value
 }
 
-func (q *FindPagingQueryObj) SetFilter(value string) {
+func (q *FindPagingQueryRequest) SetFilter(value string) {
 	q.Filter = value
 }
 
-func (q *FindPagingQueryObj) SetSort(value string) {
+func (q *FindPagingQueryRequest) SetSort(value string) {
 	q.Sort = value
 }
 
-func (q *FindPagingQueryObj) SetPageNum(value int64) {
+func (q *FindPagingQueryRequest) SetPageNum(value int64) {
 	q.PageNum = value
 }
 
-func (q *FindPagingQueryObj) SetPageSize(value int64) {
+func (q *FindPagingQueryRequest) SetPageSize(value int64) {
 	q.PageSize = value
 }
 
-func (q *FindPagingQueryObj) SetIsTotalRows(val bool) {
+func (q *FindPagingQueryRequest) SetIsTotalRows(val bool) {
 	q.IsTotalRows = val
 }
 
-func (q *FindPagingQueryObj) SetGroupCols(value []*GroupCol) {
+func (q *FindPagingQueryRequest) SetGroupCols(value []*GroupCol) {
 	q.GroupCols = value
 }
 
-func (q *FindPagingQueryObj) SetValueCols(value []*ValueCol) {
+func (q *FindPagingQueryRequest) SetValueCols(value []*ValueCol) {
 	q.ValueCols = value
 }
 
-func (q *FindPagingQueryObj) SetGroupKeys(val []any) {
+func (q *FindPagingQueryRequest) SetGroupKeys(val []any) {
 	q.GroupKeys = val
 }
 
-func (q *FindPagingQueryObj) GetTenantId() string {
+func (q *FindPagingQueryRequest) GetTenantId() string {
 	return q.TenantId
 }
 
-func (q *FindPagingQueryObj) GetFields() string {
+func (q *FindPagingQueryRequest) GetFields() string {
 	return q.Fields
 }
 
-func (q *FindPagingQueryObj) GetFilter() string {
+func (q *FindPagingQueryRequest) GetFilter() string {
 	return q.Filter
 }
 
-func (q *FindPagingQueryObj) GetSort() string {
+func (q *FindPagingQueryRequest) GetSort() string {
 	return q.Sort
 }
 
-func (q *FindPagingQueryObj) GetPageNum() int64 {
+func (q *FindPagingQueryRequest) GetPageNum() int64 {
 	return q.PageNum
 }
 
-func (q *FindPagingQueryObj) GetPageSize() int64 {
+func (q *FindPagingQueryRequest) GetPageSize() int64 {
 	return q.PageSize
 }
 
-func (q *FindPagingQueryObj) GetIsTotalRows() bool {
+func (q *FindPagingQueryRequest) GetIsTotalRows() bool {
 	return q.IsTotalRows
 }
 
-func (q *FindPagingQueryObj) GetRowGroupCols() []*GroupCol {
+func (q *FindPagingQueryRequest) GetRowGroupCols() []*GroupCol {
 	return q.GroupCols
 }
 
-func (q *FindPagingQueryObj) GetValueCols() []*ValueCol {
+func (q *FindPagingQueryRequest) GetValueCols() []*ValueCol {
 	return q.ValueCols
 }
 
-func (q *FindPagingQueryObj) GetGroupKeys() []any {
+func (q *FindPagingQueryRequest) GetGroupKeys() []any {
 	return q.GroupKeys
 }

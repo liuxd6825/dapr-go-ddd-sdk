@@ -58,7 +58,7 @@ func ExampleDecode_errors() {
 		panic("should have an error")
 	}
 
-	fmt.Println(err.Error())
+	//fmt.Println(err.Error())
 	// Output:
 	// 5 error(s) decoding:
 	//

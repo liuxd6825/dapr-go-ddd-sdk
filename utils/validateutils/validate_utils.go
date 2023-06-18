@@ -2,7 +2,6 @@ package validateutils
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-playground/validator/v10"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
@@ -40,7 +39,7 @@ func getContext(ctx context.Context) context.Context {
 func getError(err error) error {
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-			fmt.Println(err)
+			//fmt.Println(err)
 			return err
 		}
 		verifyError := errors.NewVerifyError()
