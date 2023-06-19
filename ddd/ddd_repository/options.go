@@ -12,6 +12,10 @@ type Options interface {
 	GetSort() *string
 	SetSort(*string) Options
 
+	GetUpsert() *bool
+	SetUpsert(v bool) Options
+	SetUpsertIsNull() Options
+
 	Merge(opts ...Options) Options
 }
 
@@ -19,6 +23,21 @@ type options struct {
 	sort         *string
 	timeout      *time.Duration
 	updateFields *[]string
+	upsert       *bool
+}
+
+func (o *options) SetUpsertIsNull() Options {
+	o.upsert = nil
+	return o
+}
+
+func (o *options) GetUpsert() *bool {
+	return o.upsert
+}
+
+func (o *options) SetUpsert(v bool) Options {
+	o.upsert = &v
+	return o
 }
 
 func (o *options) GetSort() *string {
@@ -38,13 +57,13 @@ func (o *options) GetTimeout() *time.Duration {
 	return o.timeout
 }
 
-func (o *options) GetUpdateFields() *[]string {
-	return o.updateFields
-}
-
 func (o *options) SetTimeout(t *time.Duration) Options {
 	o.timeout = t
 	return o
+}
+
+func (o *options) GetUpdateFields() *[]string {
+	return o.updateFields
 }
 
 func (o *options) SetUpdateFields(updateFields *[]string) Options {

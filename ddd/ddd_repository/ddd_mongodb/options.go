@@ -25,8 +25,13 @@ func getFindOneOptions(opts ...ddd_repository.Options) *options.FindOneOptions {
 }
 
 func getUpdateOptions(opts ...ddd_repository.Options) *options.UpdateOptions {
-	updateOptions := &options.UpdateOptions{}
-	return updateOptions
+	opt := &options.UpdateOptions{}
+	for _, o := range opts {
+		if o.GetUpsert() != nil {
+			opt.Upsert = o.GetUpsert()
+		}
+	}
+	return opt
 }
 
 func getInsertOneOptions(opts ...ddd_repository.Options) *options.InsertOneOptions {

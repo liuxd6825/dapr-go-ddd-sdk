@@ -37,7 +37,7 @@ type FindPagingQuery interface {
 	GetPageNum() int64
 	GetPageSize() int64
 	GetIsTotalRows() bool
-	GetRowGroupCols() []*GroupCol
+	GetGroupCols() []*GroupCol
 	GetValueCols() []*ValueCol
 	GetGroupKeys() []any
 
@@ -204,14 +204,14 @@ func (q *FindPagingQueryRequest) GetIsTotalRows() bool {
 	return q.IsTotalRows
 }
 
-func (q *FindPagingQueryRequest) GetRowGroupCols() []*GroupCol {
-	return q.GroupCols
-}
-
 func (q *FindPagingQueryRequest) GetValueCols() []*ValueCol {
 	return q.ValueCols
 }
 
 func (q *FindPagingQueryRequest) GetGroupKeys() []any {
 	return q.GroupKeys
+}
+
+func (q *FindPagingQueryRequest) GetGroupCols() []*GroupCol {
+	return q.GroupCols
 }

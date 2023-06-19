@@ -177,30 +177,20 @@ func (c *relationCypher) FindAll(ctx context.Context, tenantId string) (CypherRe
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
-func (c *relationCypher) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherResult, error) {
-	where, err := getNeo4jWhere(query.GetTenantId(), "r", query.GetFilter())
+func (c *relationCypher) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery) (CypherResult, error) {
+	where, err := getNeo4jWhere(qry.GetTenantId(), "r", qry.GetFilter())
 	if err != nil {
 		return nil, err
 	}
-	skip := query.GetPageNum() * query.GetPageSize()
-	pageSize := query.GetPageSize()
-
-	/*
-	keys := []string{"n"}
-	count := ""
-	if query.GetIsTotalRows() {
-		count = ", count(n) as count "
-		keys = append(keys, "count")
-	}*/
+	skip := qry.GetPageNum() * qry.GetPageSize()
+	pageSize := qry.GetPageSize()
 	keys := []string{"r", "count"}
-
-	order, err := getOrder(query.GetSort())
+	order, err := getOrder(qry.GetSort())
 	if err != nil {
 		return nil, err
 	}
-
-	cypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN r %s SKIP %v LIMIT %v ", c.getLabels(c.labels), query.GetTenantId(), where,  order, skip, pageSize)
-	countCypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN count(r) as count  ", c.getLabels( c.labels), query.GetTenantId(), where)
+	cypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN r %s SKIP %v LIMIT %v ", c.getLabels(c.labels), qry.GetTenantId(), where, order, skip, pageSize)
+	countCypher := fmt.Sprintf("MATCH ()-[r%v{tenantId:'%v'}]->() %v RETURN count(r) as count  ", c.getLabels(c.labels), qry.GetTenantId(), where)
 	return NewCypherBuilderResult(cypher, nil, keys, NewCypherResultOptions().SetCountCypher(countCypher)), nil
 }
 
@@ -283,7 +273,7 @@ func (c *relationCypher) getSetFields(ctx context.Context, resName string, data 
 
 	if relation, ok := data.(Relation); ok {
 		for k := range relation.GetProperties() {
-			strBuilder.WriteString(fmt.Sprintf(`%s.%s=$properties.%s,`, resName,k, k))
+			strBuilder.WriteString(fmt.Sprintf(`%s.%s=$properties.%s,`, resName, k, k))
 		}
 	}
 

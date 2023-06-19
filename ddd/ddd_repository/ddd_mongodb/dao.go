@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
@@ -198,17 +199,25 @@ func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 	}
 
 	return r.DoSetMany(func() ([]T, error) {
+		opt := getUpdateOptions(opts...)
 		for _, entity := range entities {
 			objId, err := GetObjectID(entity.GetId())
 			if err != nil {
 				return nil, err
 			}
-			updateOptions := getUpdateOptions(opts...)
+
 			filter := bson.D{{ConstIdField, objId}}
 			setData := bson.M{"$set": entity}
-			_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
+			result, err := r.getCollection().UpdateOne(ctx, filter, setData, opt)
 			if err != nil {
 				return nil, err
+			}
+			if result.MatchedCount != 0 {
+				fmt.Println("matched and replaced an existing document")
+
+			}
+			if result.UpsertedCount != 0 {
+				fmt.Printf("inserted a new document with ID %v\n", result.UpsertedID)
 			}
 		}
 		return entities, nil

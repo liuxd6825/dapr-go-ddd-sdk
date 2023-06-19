@@ -23,7 +23,7 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 	baseGroup := &QueryGroup{
 		TenantId:     qry.GetTenantId(),
 		Filter:       qry.GetFilter(),
-		RowGroupCols: qry.GetRowGroupCols(),
+		RowGroupCols: qry.GetGroupCols(),
 		ValueCols:    qry.GetValueCols(),
 		GroupKeys:    qry.GetGroupKeys(),
 		Sort:         qry.GetSort(),
