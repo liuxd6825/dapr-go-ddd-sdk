@@ -64,7 +64,7 @@ func (s *grpcEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 
 	resp, err := s.LoadEvent(ctx, req)
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.New("grpcEventStorage.LoadEvent() error:%s", err.Error())
 	}
 	if resp.Snapshot == nil && (resp.EventRecords == nil || len(*resp.EventRecords) == 0) {
 		return nil, false, err

@@ -56,7 +56,7 @@ func DoEventLog(ctx context.Context, structName string, event Event, funcName st
 	} else {
 		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, err.Error(), event.GetEventId(), event.GetCommandId(), "")
 	}
-	return nil
+	return err
 }
 
 //

@@ -206,11 +206,11 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			return nil, err
 		}
 
-		isSourcing := true
+		defaultIsSourcing := true
 		// 判断是否需要进行"事件溯源"控制
 		if options.closeEventSource != nil {
 			closeEs := *options.closeEventSource
-			isSourcing = !closeEs
+			defaultIsSourcing = !closeEs
 		}
 
 		for _, event := range events {
@@ -218,7 +218,10 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			if err != nil {
 				return nil, err
 			}
-
+			isSourcing := defaultIsSourcing
+			if e, ok := event.(IsSourcing); ok {
+				isSourcing = e.GetIsSourcing()
+			}
 			eventDto := &daprclient.EventDto{
 				ApplyType:    callEventType.ToString(),
 				CommandId:    event.GetCommandId(),
@@ -232,7 +235,6 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				Topic:        event.GetEventType(),
 				IsSourcing:   isSourcing,
 			}
-
 			applyEvents = append(applyEvents, eventDto)
 		}
 
@@ -241,7 +243,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			return nil, err
 		}
 
-		if isSourcing {
+		if defaultIsSourcing {
 			for _, event := range events {
 				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event); err != nil {
 					return nil, err

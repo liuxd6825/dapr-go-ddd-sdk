@@ -2,7 +2,6 @@ package ddd_mongodb
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
@@ -126,6 +125,15 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 	})
 }
 
+func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) error {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return err
+	}
+	data["tenant_id"] = tenantId
+	_, err := r.getCollection().InsertOne(ctx, data, getInsertOneOptions(opts...))
+	return err
+}
+
 func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entitits == nil || len(entitits) == 0 {
 		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
@@ -208,16 +216,9 @@ func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 
 			filter := bson.D{{ConstIdField, objId}}
 			setData := bson.M{"$set": entity}
-			result, err := r.getCollection().UpdateOne(ctx, filter, setData, opt)
+			_, err = r.getCollection().UpdateOne(ctx, filter, setData, opt)
 			if err != nil {
 				return nil, err
-			}
-			if result.MatchedCount != 0 {
-				fmt.Println("matched and replaced an existing document")
-
-			}
-			if result.UpsertedCount != 0 {
-				fmt.Printf("inserted a new document with ID %v\n", result.UpsertedID)
 			}
 		}
 		return entities, nil
@@ -269,7 +270,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 	})
 }
 
-func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data map[string]interface{}, opts ...ddd_repository.Options) error {
+func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data any, opts ...ddd_repository.Options) error {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return err
 	}
@@ -278,11 +279,10 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[s
 		return err
 	}
 
-	filterMap[ConstTenantIdField] = tenantId
+	//filterMap[ConstTenantIdField] = tenantId
 	updateOptions := getUpdateOptions(opts...)
 	filter := r.NewFilter(tenantId, filterMap)
-	setData := bson.M{"$set": data}
-	_, err := r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
+	_, err := r.getCollection().UpdateOne(ctx, filter, data, updateOptions)
 	return err
 }
 
