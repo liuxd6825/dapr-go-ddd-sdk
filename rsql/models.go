@@ -90,3 +90,11 @@ func (InComparison) ExpressionName() string { return "=in=" }
 type NotInComparison struct{ Comparison }
 
 func (NotInComparison) ExpressionName() string { return "=out=" }
+
+type ContainsComparison struct{ Comparison }
+
+func (ContainsComparison) ExpressionName() string { return "=contains=" }
+
+type NotContainsComparison struct{ Comparison }
+
+func (NotContainsComparison) ExpressionName() string { return "=!contains=" }

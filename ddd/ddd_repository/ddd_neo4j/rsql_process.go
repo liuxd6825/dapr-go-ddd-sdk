@@ -23,6 +23,9 @@ type RsqlProcess interface {
 	OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value)
 	OnIn(name string, value interface{}, rValue rsql.Value)
 	OnNotIn(name string, value interface{}, rValue rsql.Value)
+	OnContains(name string, value interface{}, rValue rsql.Value)
+	OnNotContains(name string, value interface{}, rValue rsql.Value)
+
 	GetSqlWhere(tenantId string) interface{}
 	GetFilter(tenantId string) interface{}
 }
@@ -78,6 +81,16 @@ func (p *rsqlProcess) OnEquals(name string, value interface{}, rValue rsql.Value
 
 func (p *rsqlProcess) NotEquals(name string, value interface{}, rValue rsql.Value) {
 	p.str = fmt.Sprintf("%s %s.%s=%v", p.str, p.dataKey, name, value)
+}
+
+func (r *rsqlProcess) OnContains(name string, value interface{}, rValue rsql.Value) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *rsqlProcess) OnNotContains(name string, value interface{}, rValue rsql.Value) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (p *rsqlProcess) OnAndItem() {

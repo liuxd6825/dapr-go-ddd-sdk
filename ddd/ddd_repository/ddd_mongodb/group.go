@@ -93,9 +93,7 @@ func (b *QueryGroup) GetGroup() (bson.D, error) {
 		return nil, nil
 	}
 
-	//gMap := make(map[string]interface{})
-
-	gSubMap := make(map[string]interface{})
+	gSubMap := make(map[string]any)
 	groupIndex := 0
 	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.RowGroupCols) {
 		groupIndex = len(b.GroupKeys)
@@ -106,15 +104,17 @@ func (b *QueryGroup) GetGroup() (bson.D, error) {
 		col := b.RowGroupCols[i]
 		var newId interface{} = map[string]interface{}{"$toString": "$" + utils.SnakeString(col.Field)}
 		if col.DataType.IsDateTime() || col.DataType.IsDate() {
-			newId = map[string]interface{}{"$dateToString": map[string]any{"date": "$" + utils.SnakeString(col.Field)}}
+			newId = map[string]any{"$dateToString": map[string]any{"date": "$" + utils.SnakeString(col.Field)}}
 		}
-		if i != 0 {
+		if i == 0 {
+			ids = append(ids, newId)
+		} else {
 			ids = append(ids, "_")
+			ids = append(ids, newId)
 		}
-		ids = append(ids, newId)
 	}
 
-	gSubMap["_id"] = map[string]interface{}{"$concat": ids}
+	gSubMap["_id"] = map[string]any{"$concat": ids}
 	field := utils.SnakeString(b.RowGroupCols[groupIndex].Field)
 	gSubMap[field] = map[string]any{"$max": "$" + field}
 
@@ -124,9 +124,9 @@ func (b *QueryGroup) GetGroup() (bson.D, error) {
 		}
 	}
 
-	group := bson.D{
-		{"$group", gSubMap},
-	}
+	group := bson.D{{
+		"$group", gSubMap,
+	}}
 
 	return group, nil
 }

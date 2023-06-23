@@ -173,6 +173,10 @@ func comparison(tokens *iterator) (Expression, error) {
 		return nil, err
 	}
 	switch comparator.Type { // TODO Manage that directly to Tokens.
+	case NotContainsToken:
+		return NotContainsComparison{Comparison{id, args}}, nil
+	case ContainsToken:
+		return ContainsComparison{Comparison{id, args}}, nil
 	case EqualsToken:
 		return EqualsComparison{Comparison{id, args}}, nil
 	case NotEqualsToken:

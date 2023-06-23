@@ -166,14 +166,9 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 }
 
 func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repository.Options) (T, error) {
-	objId, err := GetObjectID(entity.GetId())
-	if err != nil {
-		return entity, err
-	}
-	updateOptions := getUpdateOptions(opts...)
-	filter := bson.D{{ConstIdField, objId}}
+	opt := getUpdateOptions(opts...)
 	setData := bson.M{"$set": entity}
-	_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
+	_, err := r.getCollection().UpdateByID(ctx, entity.GetId(), setData, opt)
 	return entity, err
 }
 
@@ -192,32 +187,19 @@ func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 
 func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	if entities == nil || len(entities) == 0 {
-		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
+		return ddd_repository.NewSetManyResult[T](entities, nil)
 	}
 
-	for _, e := range entities {
-		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
-			return ddd_repository.NewSetManyResultError[T](err)
-		}
-	}
-
-	var docs []interface{}
-	for _, e := range entities {
-		docs = append(docs, e)
-	}
+	/*
+		for _, e := range entities {
+			if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+				return ddd_repository.NewSetManyResultError[T](err)
+			}
+		}*/
 
 	return r.DoSetMany(func() ([]T, error) {
-		opt := getUpdateOptions(opts...)
 		for _, entity := range entities {
-			objId, err := GetObjectID(entity.GetId())
-			if err != nil {
-				return nil, err
-			}
-
-			filter := bson.D{{ConstIdField, objId}}
-			setData := bson.M{"$set": entity}
-			_, err = r.getCollection().UpdateOne(ctx, filter, setData, opt)
-			if err != nil {
+			if _, err := r.updateById(ctx, entity, opts...); err != nil {
 				return nil, err
 			}
 		}
@@ -616,6 +598,15 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 	return findData
 }
 
+func (r *Dao[T]) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}) error {
+	cur, err := r.getCollection().Aggregate(ctx, pipeline)
+	if err != nil {
+		return err
+	}
+	err = cur.All(ctx, data)
+	return err
+}
+
 func (r Dao[T]) Sum(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
 	if len(query.GetValueCols()) == 0 {
 		return nil, false, nil
@@ -707,6 +698,10 @@ func (r *Dao[T]) DoFilter(tenantId, filter string, fun func(filter map[string]in
 		}
 	}
 	return data
+}
+
+func (r *Dao[T]) GetFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {
+	return r.getFilterMap(tenantId, rsqlstr)
 }
 
 func (r *Dao[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {

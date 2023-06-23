@@ -3,6 +3,7 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
@@ -21,7 +22,6 @@ func NewSessionOptions() *SessionOptions {
 }
 
 func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
-
 	sessionConfig := neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead}
 	if isWrite {
 		sessionConfig.AccessMode = neo4j.AccessModeWrite
@@ -71,7 +71,7 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 		_, err = session.ReadTransaction(tx)
 	}
 	if err != nil {
-		println(err)
+		logs.Error(ctx, err)
 	}
 	return err
 }

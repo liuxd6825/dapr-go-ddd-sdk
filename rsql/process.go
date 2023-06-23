@@ -22,6 +22,8 @@ type Process interface {
 	OnLessThanOrEquals(name string, value interface{}, rValue Value)
 	OnIn(name string, value interface{}, rValue Value)
 	OnNotIn(name string, value interface{}, rValue Value)
+	OnContains(name string, value interface{}, rValue Value)
+	OnNotContains(name string, value interface{}, rValue Value)
 }
 
 type process struct {
@@ -70,6 +72,14 @@ func (p *process) OnEquals(name string, value interface{}, rValue Value) {
 
 func (p *process) NotEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s=%v", p.str, name, value)
+}
+
+func (p *process) OnContains(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s like (%v)", p.str, name, value)
+}
+
+func (p *process) OnNotContains(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s not like (%v)", p.str, name, value)
 }
 
 func (p *process) OnAndItem() {
@@ -193,6 +203,16 @@ func parseProcess(expr Expression, process Process) error {
 		value := getValue(ex.Comparison.Val)
 		process.OnNotIn(name, value, ex.Comparison.Val)
 		break
+	case ContainsComparison:
+		ex, _ := expr.(ContainsComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnContains(name, value, ex.Comparison.Val)
+	case NotContainsComparison:
+		ex, _ := expr.(NotContainsComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnNotContains(name, value, ex.Comparison.Val)
 	}
 	return nil
 }

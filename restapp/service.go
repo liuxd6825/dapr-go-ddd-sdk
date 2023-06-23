@@ -103,6 +103,7 @@ func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
 func (s *service) Start() error {
 	app := s.app
 
+	//app.Use(GlobalJsonSerialization)
 	// register subscribe handler
 	app.Get("dapr/subscribe", s.subscribesHandler)
 

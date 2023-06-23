@@ -27,7 +27,10 @@
 
 package ddd_repository
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/types"
+import (
+	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+)
 
 type FindPagingQuery interface {
 	GetTenantId() string
@@ -99,6 +102,39 @@ type GroupCols struct {
 
 type ValueCols struct {
 	cols []*ValueCol
+}
+
+func NewGroupColsByJson(jsonText string) ([]*GroupCol, error) {
+	list := make([]*GroupCol, 0)
+	if len(jsonText) > 0 {
+		if err := json.Unmarshal([]byte(jsonText), &list); err != nil {
+			return nil, err
+		}
+
+	}
+	return list, nil
+}
+
+func NewValueColsByJson(jsonText string) ([]*ValueCol, error) {
+	list := make([]*ValueCol, 0)
+	if len(jsonText) > 0 {
+		if err := json.Unmarshal([]byte(jsonText), &list); err != nil {
+			return nil, err
+		}
+
+	}
+	return list, nil
+}
+
+func NewGroupKeysByJson(jsonText string) ([]any, error) {
+	list := make([]any, 0)
+	if len(jsonText) > 0 {
+		if err := json.Unmarshal([]byte(jsonText), &list); err != nil {
+			return nil, err
+		}
+
+	}
+	return list, nil
 }
 
 func NewFindPagingQuery() FindPagingQuery {

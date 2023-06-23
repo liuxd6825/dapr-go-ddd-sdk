@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -69,6 +70,17 @@ type ObjectId string
 
 func (i ObjectId) String() string {
 	return string(i)
+}
+
+//
+//  ServerCount
+//  @Description: 获取服务器的数量
+//  @receiver c
+//  @return int
+//
+func (c *Config) ServerCount() int {
+	list := strings.Split(c.Host, ",")
+	return len(list)
 }
 
 //

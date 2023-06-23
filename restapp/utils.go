@@ -15,6 +15,29 @@ const (
 	ContentTypeTextPlain       = "text/plain"
 )
 
+type JsonTimeSerializer struct {
+}
+
+func (j *JsonTimeSerializer) Serialize(v interface{}) ([]byte, error) {
+	t, ok := v.(*time.Time)
+	if !ok {
+		return nil, errors.New("invalid type")
+	}
+	return []byte(t.Format("2006-01-02 15:04:05")), nil
+}
+
+func myHandler(ctx iris.Context) {
+	type MyData struct {
+		Time time.Time `json:"time" serializer:"customTime"`
+		// other fields
+	}
+	data := MyData{
+		Time: time.Now(),
+		// other fields
+	}
+	ctx.JSON(data)
+}
+
 type Command interface {
 	GetCommandId() string
 	GetTenantId() string

@@ -20,6 +20,8 @@ const (
 	RightParenToken      = TokenType("RightParenToken")
 	OrToken              = TokenType("OrToken")
 	AndToken             = TokenType("AndToken")
+	ContainsToken        = TokenType("ContainsToken")
+	NotContainsToken     = TokenType("NotContainsToken")
 	EqualsToken          = TokenType("EqualsToken")
 	NotEqualsToken       = TokenType("NotEqualsToken")
 	LikeToken            = TokenType("LikeToken")
@@ -31,7 +33,8 @@ const (
 	InToken              = TokenType("InToken")
 	NotInToken           = TokenType("NotInToken")
 	CommaToken           = TokenType("CommaToken")
-	EOFToken             = TokenType("EOFToken")
+
+	EOFToken = TokenType("EOFToken")
 )
 
 type Token struct {
@@ -261,6 +264,10 @@ func (t *Lexer) processReserved() Token {
 		return t.generateToken(InToken, idx+4)
 	} else if t.isString(idx, "=out=") {
 		return t.generateToken(NotInToken, idx+5)
+	} else if t.isString(idx, "=contains=") {
+		return t.generateToken(ContainsToken, idx+10)
+	} else if t.isString(idx, "=!contains=") {
+		return t.generateToken(NotContainsToken, idx+11)
 	}
 	return unknownToken()
 }
