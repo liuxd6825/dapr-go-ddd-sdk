@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	ContentTypeApplicationJson = "application/json"
-	ContentTypeTextPlain       = "text/plain"
+	ContentTypeApplicationJson = iris_context.ContentJSONHeaderValue
+	ContentTypeTextPlain       = iris_context.ContentTextHeaderValue
 )
 
 type JsonTimeSerializer struct {
@@ -78,6 +78,8 @@ func SetErrorVerifyError(ctx iris.Context, err *errors.VerifyError) {
 }
 
 func SetError(ctx iris.Context, err error) {
+	logs.Error(ctx, err)
+
 	switch err.(type) {
 	case *errors.NullError:
 		_ = SetErrorNotFond(ctx)
@@ -130,25 +132,22 @@ func Do(ictx iris.Context, fun func() error) (err error) {
 	if fun != nil {
 		if err = fun(); err != nil {
 			SetError(ictx, err)
-			logs.Error(ctx, err)
 		}
 	}
 	return nil
 }
 
-func DoDto[T any](ictx iris.Context, fun func() (T, error)) (dto T, err error) {
+func DoDto[T any](ictx iris.Context, fun func(ctx context.Context) (T, error)) (dto T, err error) {
 	ctx := NewContext(ictx)
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 			SetError(ictx, err)
-			logs.Error(ctx, err)
 		}
 	}()
 	if fun != nil {
-		if dto, err = fun(); err != nil {
+		if dto, err = fun(ctx); err != nil {
 			SetError(ictx, err)
-			logs.Error(ctx, err)
 		}
 	}
 	return dto, err
@@ -169,23 +168,20 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
 			SetError(ictx, err)
-			logs.Error(ctx, err)
 		}
 	}()
 
 	data, isFound, err = fun(ctx)
 	if err != nil {
 		SetError(ictx, err)
-		logs.Error(ctx, err)
 		return nil, false, err
 	}
 	if data == nil || !isFound {
 		return nil, false, SetErrorNotFond(ictx)
 	}
-	_, err = ictx.JSON(data)
+	SetJson(ictx, data)
 	if err != nil {
 		SetError(ictx, err)
-		logs.Error(ctx, err)
 		return nil, false, err
 	}
 	return data, isFound, err
@@ -205,7 +201,6 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, 
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
-			logs.Error(ctx, err)
 			SetError(ictx, err)
 		}
 	}()
@@ -213,15 +208,11 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, 
 	data, isFound, err = fun(ctx)
 	if err != nil {
 		SetError(ictx, err)
-		logs.Error(ctx, err)
 		return data, isFound, err
 	}
-	bs, err := jsonutils.CustomJson.Marshal(data)
-	if err != nil {
-		return nil, false, err
-	}
-	ictx.ContentType(iris_context.ContentJSONHeaderValue)
-	_, err = ictx.Write(bs)
+
+	SetJson(ictx, data)
+
 	if err != nil {
 		return nil, false, err
 	}
@@ -318,10 +309,18 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 	return data, isFound, err
 }
 
-func SetRestData(ictx iris.Context, data interface{}) {
-	_, err := ictx.JSON(data)
+func SetJson(ictx iris.Context, data interface{}) error {
+	bs, err := jsonutils.CustomJson.Marshal(data)
 	if err != nil {
 		SetError(ictx, err)
-		return
+		return err
 	}
+
+	if _, err = ictx.Write(bs); err != nil {
+		SetError(ictx, err)
+		return err
+	}
+
+	ictx.ContentType(iris_context.ContentJSONHeaderValue)
+	return nil
 }

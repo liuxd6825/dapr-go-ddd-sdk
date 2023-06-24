@@ -7,6 +7,11 @@ import (
 	"unsafe"
 )
 
+const (
+	fDatetime = "datetime"
+	fDate     = "date"
+)
+
 var CustomJson = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func init() {
@@ -34,12 +39,12 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 
 		formatTag := binding.Field.Tag().Get("time_format")
 		if len(formatTag) == 0 {
-			formatTag = "sql_datetime"
+			formatTag = fDatetime
 		}
 		timeFormat := formatTag
-		if timeFormat == "sql_datetime" {
+		if timeFormat == fDatetime {
 			timeFormat = "2006-01-02 15:04:05"
-		} else if timeFormat == "sql_date" {
+		} else if timeFormat == fDate {
 			timeFormat = "2006-01-02"
 		}
 
@@ -58,7 +63,7 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 
 		var isSnap bool
 		snapTag := binding.Field.Tag().Get("time_snap")
-		if snapTag == "" && (formatTag == "sql_datetime" || formatTag == "sql_date") {
+		if snapTag == "" && (formatTag == fDatetime || formatTag == fDate) {
 			isSnap = true
 		} else {
 			isSnap, _ = strconv.ParseBool(binding.Field.Tag().Get("time_snap"))
@@ -72,7 +77,8 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 
 			var format string
 			if timeFormat == "" {
-				format = time.RFC3339Nano
+				// format = time.RFC3339Nano
+				format = "2006-01-02 15:04:05"
 			} else {
 				format = timeFormat
 			}
@@ -88,9 +94,9 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 			if tp != nil {
 				lt := tp.In(locale)
 				str := lt.Format(format)
-				if formatTag == "sql_date" && (str == "0000-01-01" || (isSnap && lt.Unix() <= 0)) {
+				if formatTag == fDate && (str == "0000-01-01" || (isSnap && lt.Unix() <= 0)) {
 					str = "0000-00-00"
-				} else if formatTag == "sql_datetime" && (str == "0000-01-01 00:00:00" || (isSnap && lt.Unix() <= 0)) {
+				} else if formatTag == fDatetime && (str == "0000-01-01 00:00:00" || (isSnap && lt.Unix() <= 0)) {
 					str = "0000-00-00 00:00:00"
 				}
 				stream.WriteString(str)
