@@ -24,6 +24,7 @@ require (
 )
 
 require (
+	github.com/json-iterator/go v1.1.12
 	github.com/liuxd6825/components-contrib v1.7.1-1.0-alaph2
 	github.com/mitchellh/mapstructure v1.4.1
 	google.golang.org/grpc v1.40.0
@@ -66,7 +67,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kataras/blocks v0.0.5 // indirect
 	github.com/kataras/golog v0.1.7 // indirect
 	github.com/kataras/neffos v0.0.19 // indirect

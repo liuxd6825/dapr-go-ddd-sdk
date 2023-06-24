@@ -3,9 +3,11 @@ package restapp
 import (
 	"context"
 	"github.com/kataras/iris/v12"
+	iris_context "github.com/kataras/iris/v12/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"net/http"
 	"time"
 )
@@ -214,8 +216,12 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, 
 		logs.Error(ctx, err)
 		return data, isFound, err
 	}
-
-	_, err = ictx.JSON(data)
+	bs, err := jsonutils.CustomJson.Marshal(data)
+	if err != nil {
+		return nil, false, err
+	}
+	ictx.ContentType(iris_context.ContentJSONHeaderValue)
+	_, err = ictx.Write(bs)
 	if err != nil {
 		return nil, false, err
 	}

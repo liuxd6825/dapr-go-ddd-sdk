@@ -175,8 +175,8 @@ func (s *service) Start() error {
 			s.RegisterActorImplFactory(f)
 		}
 	}
-
-	if err := app.Run(iris.Addr(fmt.Sprintf("%s:%d", s.httpHost, s.httpPort))); err != nil {
+	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
+	if err := app.Run(iris.Addr(addr)); err != nil {
 		return err
 	}
 	return nil
