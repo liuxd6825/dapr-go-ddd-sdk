@@ -2,7 +2,6 @@ package jsonutils
 
 import (
 	"github.com/json-iterator/go"
-	"strconv"
 	"time"
 	"unsafe"
 )
@@ -49,26 +48,26 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 		}
 
 		locale := time.Local
-		if isUTC, _ := strconv.ParseBool(binding.Field.Tag().Get("time_utc")); isUTC {
-			locale = time.UTC
-		}
-		if locTag := binding.Field.Tag().Get("time_location"); locTag != "" {
-			loc, err := time.LoadLocation(locTag)
-			if err != nil {
-				typeErr = err
-			} else {
-				locale = loc
+		/*	if isUTC, _ := strconv.ParseBool(binding.Field.Tag().Get("time_utc")); isUTC {
+				locale = time.UTC
 			}
-		}
+			if locTag := binding.Field.Tag().Get("time_location"); locTag != "" {
+				loc, err := time.LoadLocation(locTag)
+				if err != nil {
+					typeErr = err
+				} else {
+					locale = loc
+				}
+			}
 
-		var isSnap bool
-		snapTag := binding.Field.Tag().Get("time_snap")
-		if snapTag == "" && (formatTag == fDatetime || formatTag == fDate) {
-			isSnap = true
-		} else {
-			isSnap, _ = strconv.ParseBool(binding.Field.Tag().Get("time_snap"))
-		}
-
+			var isSnap bool
+			snapTag := binding.Field.Tag().Get("time_snap")
+			if snapTag == "" && (formatTag == fDatetime || formatTag == fDate) {
+				isSnap = true
+			} else {
+				isSnap, _ = strconv.ParseBool(binding.Field.Tag().Get("time_snap"))
+			}
+		*/
 		binding.Encoder = &funcEncoder{fun: func(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 			if typeErr != nil {
 				stream.Error = typeErr
@@ -94,14 +93,14 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 			if tp != nil {
 				lt := tp.In(locale)
 				str := lt.Format(format)
-				if formatTag == fDate && (str == "0000-01-01" || (isSnap && lt.Unix() <= 0)) {
+				if formatTag == fDate && (str == "0000-01-01" || (lt.Unix() <= 0)) {
 					str = "0000-00-00"
-				} else if formatTag == fDatetime && (str == "0000-01-01 00:00:00" || (isSnap && lt.Unix() <= 0)) {
+				} else if formatTag == fDatetime && (str == "0000-01-01 00:00:00" || (lt.Unix() <= 0)) {
 					str = "0000-00-00 00:00:00"
 				}
 				stream.WriteString(str)
 			} else {
-				stream.Write([]byte("null"))
+				_, _ = stream.Write([]byte("null"))
 			}
 		}}
 
