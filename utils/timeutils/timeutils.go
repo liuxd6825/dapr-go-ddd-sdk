@@ -1,12 +1,18 @@
 package timeutils
 
 import (
+	"errors"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
 
-const LocalTimeLayout = "2006-01-02 15:04:05"
+const LocalTimeLayoutLine = "2006-01-02 15:04:05"
+const LocalTimeLayoutSlash = "2006/01/02 15:04:05"
+
+const LocalDateLayoutLine = "2006-01-02"
+const LocalDateLayoutSlash = "2006/01/02"
 
 //
 // Now
@@ -36,13 +42,13 @@ func Time(t *time.Time) *time.Time {
 func AnyToTime(data interface{}, defaultValue time.Time) (time.Time, error) {
 	switch data.(type) {
 	case string:
-		return StrToTime(data.(string))
+		return StrToDateTime(data.(string))
 	case *string:
 		str := data.(*string)
 		if str == nil {
 			return defaultValue, nil
 		}
-		return StrToTime(*str)
+		return StrToDateTime(*str)
 	case float64:
 		return time.Unix(0, int64(data.(float64))*int64(time.Millisecond)), nil
 	case int64:
@@ -51,16 +57,102 @@ func AnyToTime(data interface{}, defaultValue time.Time) (time.Time, error) {
 	return defaultValue, nil
 }
 
-func StrToTime(str string) (time.Time, error) {
-	format := LocalTimeLayout
-	if strings.Contains(str, "T") {
-		format = time.RFC3339
+func StrToDateTime(str string) (time.Time, error) {
+	format := LocalTimeLayoutLine
+	if len(str) <= 10 {
+		var err error
+		str, err = asDateString(str)
+		if err != nil {
+			return time.Time{}, nil
+		}
+		format = LocalDateLayoutLine
+
+	} else {
+		if strings.Contains(str, "T") {
+			format = time.RFC3339
+		} else if strings.Contains(str, "-") {
+			format = LocalTimeLayoutLine
+		} else if strings.Contains(str, "/") {
+			format = LocalTimeLayoutSlash
+		} else if strings.Contains(str, "Z") {
+			format = time.RFC3339Nano
+		}
 	}
 	res, err := time.Parse(format, str)
-	if err != nil {
-		res, err = time.Parse(time.RFC3339Nano, str)
-	}
 	return res, err
+}
+
+func asDateString(str string) (string, error) {
+	sep := ""
+	if strings.Contains(str, "-") {
+		sep = "-"
+	} else if strings.Contains(str, "/") {
+		sep = "/"
+	}
+	s := strings.Split(str, sep)
+	if len(s) != 3 {
+		return "", errors.New("error")
+	}
+	if len(s[1]) == 1 {
+		s[1] = "0" + s[1]
+	}
+	if len(s[2]) == 1 && len(s[0]) == 4 {
+		s[2] = "0" + s[2]
+	}
+	return s[0] + "-" + s[1] + "-" + s[2], nil
+}
+
+func StrToTimePart(str string) (time.Time, error) {
+	tNil := time.Time{}
+	if len(str) == 8 {
+		h, err := subToInt(str, 0, 2)
+		if err != nil {
+			return tNil, err
+		}
+		m, err := subToInt(str, 2, 4)
+		if err != nil {
+			return tNil, err
+		}
+		s, err := subToInt(str, 4, 6)
+		if err != nil {
+			return tNil, err
+		}
+		ns, err := subToInt(str, 6, 8)
+		if err != nil {
+			return tNil, err
+		}
+
+		now := time.Now()
+		return time.Date(now.Year(), now.Month(), now.Day(), h, m, s, ns*10000000, time.Local), nil
+	}
+	return tNil, errors.New(str + " is error time.")
+}
+
+func subToInt(str string, index int, last int) (int, error) {
+	v := str[index:last]
+	i, err := strconv.ParseInt(v, 10, 8)
+	return int(i), err
+}
+
+//
+// ToDateTime
+// @Description:
+// @param dateStr
+// @param timeStr
+// @return *time.Time
+//
+func ToDateTime(dateStr string, timeStr string) time.Time {
+	tstr := strings.ToLower(timeStr)
+	d, err := StrToDateTime(dateStr)
+	if err != nil {
+		return time.Time{}
+	}
+	t, err := StrToTimePart(tstr)
+	if err != nil {
+		return time.Time{}
+	}
+	res := time.Date(d.Year(), d.Month(), d.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
+	return res
 }
 
 //

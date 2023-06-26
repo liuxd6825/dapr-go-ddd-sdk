@@ -211,9 +211,9 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, 
 		return data, isFound, err
 	}
 
-	SetJson(ictx, data)
-
+	err = SetJson(ictx, data)
 	if err != nil {
+		SetError(ictx, err)
 		return nil, false, err
 	}
 	return data, isFound, err

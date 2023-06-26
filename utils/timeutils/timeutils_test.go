@@ -2,9 +2,18 @@ package timeutils
 
 import (
 	"errors"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
+
+func TestStrToDateTime(t *testing.T) {
+	dstr := "2021-08-18 00:00:00"
+	tstr := "23595969"
+	dt := time.Date(2021, 8, 18, 23, 59, 59, 690000000, time.Local)
+	v := ToDateTime(dstr, tstr)
+	assert.Equal(t, *v, dt)
+}
 
 func TestEqual(t *testing.T) {
 	t1 := time.Now()
