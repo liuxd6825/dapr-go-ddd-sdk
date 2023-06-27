@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/script"
 	"github.com/tealeg/xlsx"
+	"strings"
 
 	"io"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -66,9 +66,24 @@ func ReadBytes(bytes []byte, sheetName string, temp *Template) (*DataTable, erro
 					cell := excelRow.Cells[col]
 					if cell != nil {
 						cellValue := cell.String()
-						if cell.Type() == xlsx.CellTypeNumeric && strings.Index(cell.String(), "-") > 0 {
-							t := getExcelDate(cell.Value)
-							cellValue = t.Format("2006-01-02")
+
+						if isTime(cell) {
+							t, err := cell.GetTime(false)
+							if err != nil {
+								t = getExcelDate(cell.Value)
+							}
+
+							switch mapColumn.DataType {
+							case Date:
+								cellValue = t.Format("2006-01-02")
+								break
+							case Time:
+								cellValue = t.Format("2006-01-02 15:04:05.000")
+								break
+							default:
+								cellValue = t.Format("2006-01-02 15:04:05.000")
+								break
+							}
 						}
 						rowCells[mapColumn.Key] = &DataCell{
 							Key:    mapColumn.Key,
@@ -147,7 +162,15 @@ func ReadBytes(bytes []byte, sheetName string, temp *Template) (*DataTable, erro
 	}
 	return table, nil
 }
-
+func isTime(cell *xlsx.Cell) bool {
+	if cell.IsTime() || cell.Type() == xlsx.CellTypeDate {
+		return true
+	}
+	if cell.Type() == xlsx.CellTypeNumeric && strings.Contains(cell.NumFmt, "yy") {
+		return true
+	}
+	return false
+}
 func getSheet(file *xlsx.File, sheetName string) (*xlsx.Sheet, error) {
 	var sheet *xlsx.Sheet
 	if len(sheetName) == 0 {

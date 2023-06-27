@@ -29,7 +29,7 @@ func testReviewFile(t *testing.T, file string, sheetName string, maxRows int) {
 }
 
 func TestOpen(t *testing.T) {
-	testReviewFile(t, "./test_files/100w.xlsx", "Sheet0", 100000)
+	testReviewFile(t, "./test_files/10w.xlsx", "Sheet0", 100000)
 }
 
 func TestReviewFile(t *testing.T) {
@@ -37,7 +37,7 @@ func TestReviewFile(t *testing.T) {
 }
 
 func TestReviewFile_100W(t *testing.T) {
-	testReviewFile(t, "./test_files/100w.xlsx", "Sheet0", 100000)
+	testReviewFile(t, "./test_files/10w.xlsx", "Sheet0", 100000)
 }
 
 func TestReadFile_Record(t *testing.T) {

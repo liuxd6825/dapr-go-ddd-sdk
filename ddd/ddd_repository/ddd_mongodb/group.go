@@ -131,56 +131,29 @@ func (b *QueryGroup) GetGroup() (bson.D, error) {
 	return group, nil
 }
 
-//
-// GetGroupPagingBsonFilter
-// @Description: 分组分页过滤器
-// @receiver b
-// @return bson.D
-// @return error
-//
-func (b *QueryGroup) GetGroupPagingBsonFilter() (bson.D, error) {
-	match, err := b.GetFilter()
-	if match != nil {
-		return bson.D{{"$match", match}}, err
-	}
-	return nil, err
-}
+func (b *QueryGroup) GetTotalGroup() (bson.D, error) {
+	projectMap := make(map[string]interface{})
+	projectMap["_id"] = "null"
+	pushMap := make(map[string]interface{})
+	pushMap["_id"] = "$_id"
 
-//
-// GetGroupExpandGroupNoPagingBsonFilter
-// @Description: 分组展开组不分页过滤器
-// @receiver b
-// @return bson.D
-// @return error
-//
-func (b *QueryGroup) GetGroupExpandGroupNoPagingBsonFilter() (bson.D, error) {
-	mMatch, err := b.GetFilter()
-	if err != nil {
-		return nil, err
+	groupIndex := 0
+	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.RowGroupCols) {
+		groupIndex = len(b.GroupKeys)
 	}
-
-	if mMatch == nil {
-		mMatch = make(map[string]any)
+	if b.RowGroupCols != nil && len(b.RowGroupCols) > 0 {
+		pushMap[utils.SnakeString(b.RowGroupCols[groupIndex].Field)] = "$" + utils.SnakeString(b.RowGroupCols[groupIndex].Field)
 	}
-
-	if b.GroupKeys != nil && len(b.GroupKeys) > 0 {
-		subMap, ok := mMatch["$and"]
-		if !ok {
-			subMap = make([]interface{}, 0)
+	if b.ValueCols != nil && len(b.ValueCols) > 0 {
+		for _, col := range b.ValueCols {
+			pushMap[utils.SnakeString(col.Field)] = "$" + utils.SnakeString(col.Field)
 		}
-		val, _ := subMap.([]interface{})
-		for i := 0; i < len(b.GroupKeys); i++ {
-			f := b.RowGroupCols[i]
-			if f.DataType.IsDate() || f.DataType.IsDateTime() {
-				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toDate(b.GroupKeys[i])})
-			} else {
-				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): b.GroupKeys[i]})
-			}
-		}
-		mMatch["$and"] = val
 	}
-	match := bson.D{{"$match", mMatch}}
-	return match, nil
+	projectMap["data"] = map[string]interface{}{
+		"$push": pushMap,
+	}
+	projectMap["total_rows"] = map[string]interface{}{"$sum": 1}
+	return bson.D{{"$group", projectMap}}, nil
 }
 
 //
@@ -208,7 +181,7 @@ func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 // @return map[string]interface{}
 // @return error
 //
-func (b *QueryGroup) GetGroupNoPagingFilter() (map[string]interface{}, error) {
+func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 	mMatch, err := b.GetFilter()
 	if err != nil {
 		return nil, err
