@@ -2,7 +2,6 @@ package ddd_mongodb
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
@@ -13,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"strings"
 )
 
@@ -28,6 +28,39 @@ type Dao[T ddd.Entity] struct {
 	null          T
 	newFun        func() T                                                // 新建实体结构方法
 	initfu        func() (mongodb *MongoDB, collection *mongo.Collection) // 初始化
+}
+
+type BulkWriteResult struct {
+	InsertedCount int64
+	MatchedCount  int64
+	ModifiedCount int64
+	DeletedCount  int64
+	UpsertedCount int64
+	UpsertedIDs   map[int64]interface{}
+	isEmpity      bool
+}
+
+func NewBulkWriteResult(bulkRes *BulkWriteResult) {
+	res := &BulkWriteResult{isEmpity: true}
+	if bulkRes != nil {
+		res.InsertedCount = bulkRes.InsertedCount
+		res.MatchedCount = bulkRes.MatchedCount
+		res.ModifiedCount = bulkRes.ModifiedCount
+		res.DeletedCount = bulkRes.DeletedCount
+		res.UpsertedCount = bulkRes.UpsertedCount
+		res.UpsertedIDs = bulkRes.UpsertedIDs
+		res.isEmpity = false
+	}
+	if res.UpsertedIDs == nil {
+		res.UpsertedIDs = map[int64]interface{}{}
+	}
+}
+
+func (r *BulkWriteResult) IsEmptiy() bool {
+	if r == nil {
+		return true
+	}
+	return r.isEmpity
 }
 
 func NewDao[T ddd.Entity](initfu func() (mongodb *MongoDB, collection *mongo.Collection)) *Dao[T] {
@@ -170,6 +203,9 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repositor
 	opt := getUpdateOptions(opts...)
 	setData := bson.M{"$set": entity}
 	_, err := r.getCollection().UpdateByID(ctx, entity.GetId(), setData, opt)
+	if err != nil {
+		return entity, err
+	}
 	return entity, err
 }
 
@@ -206,6 +242,26 @@ func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 		}
 		return entities, nil
 	})
+}
+
+func (r *Dao[T]) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...ddd_repository.Options) (*BulkWriteResult, error) {
+	if len(models) == 0 {
+		return &BulkWriteResult{}, nil
+	}
+	opt := &options.BulkWriteOptions{}
+	bulkRes, err := r.getCollection().BulkWrite(ctx, models, opt)
+	if err != nil {
+		return nil, err
+	}
+	res := &BulkWriteResult{
+		InsertedCount: bulkRes.InsertedCount,
+		MatchedCount:  bulkRes.MatchedCount,
+		ModifiedCount: bulkRes.ModifiedCount,
+		DeletedCount:  bulkRes.DeletedCount,
+		UpsertedCount: bulkRes.UpsertedCount,
+		UpsertedIDs:   bulkRes.UpsertedIDs,
+	}
+	return res, err
 }
 
 func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
@@ -252,22 +308,27 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 		return entities, nil
 	})
 }
-
 func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data any, opts ...ddd_repository.Options) error {
+	_, err := r.UpdateMapAndGetCount(ctx, tenantId, filterMap, data, opts...)
+	return err
+}
+
+func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filterMap map[string]any, data any, opts ...ddd_repository.Options) (int64, error) {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := assert.NotNil(filterMap, assert.NewOptions("filterMap is nil")); err != nil {
-		return err
+		return 0, err
 	}
 
-	//filterMap[ConstTenantIdField] = tenantId
 	updateOptions := getUpdateOptions(opts...)
 	filter := r.NewFilter(tenantId, filterMap)
 	res, err := r.getCollection().UpdateOne(ctx, filter, data, updateOptions)
-	fmt.Println(res)
-	return err
+	if err != nil {
+		return 0, err
+	}
+	return res.UpsertedCount, nil
 }
 
 func (r *Dao[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {

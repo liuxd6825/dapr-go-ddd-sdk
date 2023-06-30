@@ -93,19 +93,19 @@ func aggregateSnapshotActorFactory() actor.Server {
 	return ddd.NewAggregateSnapshotActorService(client)
 }
 
-func RunWithConfig(envType string, configFile string, subsFunc func() []RegisterSubscribe,
+func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
 	}
 
-	envTypeValue := config.Env
-	if len(envType) > 0 {
-		envTypeValue = envType
+	env := config.Env
+	if len(setEnv) > 0 {
+		env = setEnv
 	}
 
-	envConfig, err := config.GetEnvConfig(envTypeValue)
+	envConfig, err := config.GetEnvConfig(env)
 	if err != nil {
 		panic(err)
 	}

@@ -253,9 +253,14 @@ func (s *service) actorDeactivateHandler(ctx *context.Context) {
 	ctx.StatusCode(http.StatusOK)
 }
 
-func (s *service) subscribesHandler(ctx *context.Context) {
-	data := ddd.GetSubscribes()
-	_, _ = ctx.JSON(data)
+func (s *service) subscribesHandler(ictx *context.Context) {
+	subscribes := ddd.GetSubscribes()
+	_, _ = ictx.JSON(subscribes)
+
+	ctx := NewContext(ictx)
+	for _, s := range subscribes {
+		logs.Infof(ctx, "subscribe  pubsubName:%s,  topic:%s,  route:%s,  metadata:%s", s.PubsubName, s.Topic, s.Route, s.Metadata)
+	}
 }
 
 func (s *service) eventTypesHandler(ctx *context.Context) {

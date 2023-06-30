@@ -159,21 +159,21 @@ func (l *LogConfig) GetLevel() applog.Level {
 	return l.level
 }
 
-func (c *Config) GetEnvConfig(envType string) (*EnvConfig, error) {
-	envConfig, ok := c.Envs[envType]
+func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
+	envConfig, ok := c.Envs[env]
 	if !ok {
-		return nil, errors.New("not found env: " + envType)
+		return nil, errors.New("not found env: " + env)
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("config  envType:%s", envType))
-		log.Infoln(fmt.Sprintf("config  app   appId:%s,  httpHost:%s,  httpPort:%d,   rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
-		log.Infoln(fmt.Sprintf("config  dapr  host:%s,   httpPort:%d,  grpcPort:%d,   pubsubs:%s",
+		log.Infoln(fmt.Sprintf("config env:%s", env))
+		log.Infoln(fmt.Sprintf("config app appId:%s, httpHost:%s, httpPort:%d, rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("config dapr host:%s,  httpPort:%d, grpcPort:%d, pubsubs:%s",
 			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
 		return envConfig, nil
 	}
 
-	return nil, NewEnvTypeError(fmt.Sprintf("error config env-type is \"%s\". choose one of: [dev, test, prod]", envType))
+	return nil, NewEnvTypeError(fmt.Sprintf("error config env is \"%s\". choose one of: [dev, test, prod]", env))
 }
 
 func searchConfigFile(path, configName string, fileName string) (string, bool, error) {

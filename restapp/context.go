@@ -12,14 +12,20 @@ type serverContext struct {
 }
 
 func NewContext(ictx iris.Context) context.Context {
-	metadata := make(map[string]string, 0)
-	header := ictx.Request().Header
-	for k, v := range header {
-		metadata[k] = v[0]
-	}
-	serverCtx := newServerContext(ictx)
 	loggerCtx := logs.NewContext(ictx, _logger)
+	metadata := make(map[string]string, 0)
+	serverCtx := newServerContext(ictx)
+	if ictx != nil {
+		header := ictx.Request().Header
+		for k, v := range header {
+			metadata[k] = v[0]
+		}
+	}
 	return ddd_context.NewContext(loggerCtx, metadata, serverCtx)
+}
+
+func NewLoggerContext(ctx context.Context) context.Context {
+	return logs.NewContext(ctx, _logger)
 }
 
 func newServerContext(ctx iris.Context) ddd_context.ServerContext {

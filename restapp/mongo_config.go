@@ -9,14 +9,15 @@ import (
 )
 
 type MongoConfig struct {
-	Host         string `yaml:"host"`
-	Database     string `yaml:"dbname"`
-	UserName     string `yaml:"user"`
-	Password     string `yaml:"pwd"`
-	ReplicaSet   string `yaml:"replicaSet"`
-	WriteConcern string `yaml:"writeConcern"`
-	ReadConcern  string `yaml:"readConcern"`
-	Options      string `yaml:"options"`
+	Host             string `yaml:"host"`
+	Database         string `yaml:"dbname"`
+	UserName         string `yaml:"user"`
+	Password         string `yaml:"pwd"`
+	ReplicaSet       string `yaml:"replicaSet"`
+	WriteConcern     string `yaml:"writeConcern"`
+	ReadConcern      string `yaml:"readConcern"`
+	Options          string `yaml:"options"`
+	OperationTimeout int64  `yaml:"operationTimeout"`
 }
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB

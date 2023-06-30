@@ -27,7 +27,7 @@ const (
 	server                 = "server"
 	writeConcern           = "writeConcern"
 	readConcern            = "readConcern"
-	operationTimeout       = "OperationTimeout"
+	operationTimeout       = "operationTimeout"
 	params                 = "Params"
 	id                     = "_id"
 	value                  = "value"
@@ -73,10 +73,10 @@ func (i ObjectId) String() string {
 }
 
 //
-//  ServerCount
-//  @Description: 获取服务器的数量
-//  @receiver c
-//  @return int
+// ServerCount
+// @Description: 获取服务器的数量
+// @receiver c
+// @return int
 //
 func (c *Config) ServerCount() int {
 	list := strings.Split(c.Host, ",")
@@ -111,7 +111,9 @@ func (m *MongoDB) init(config *Config) error {
 		return errors.New("NewMongoDB() error,config is nil")
 	}
 
-	m.operationTimeout = config.OperationTimeout
+	if config.OperationTimeout == 0 {
+		config.OperationTimeout = defaultTimeout
+	}
 
 	client, err := getMongoDBClient(config)
 	if err != nil {

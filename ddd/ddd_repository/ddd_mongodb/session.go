@@ -5,6 +5,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 )
 
 type MongoSession struct {
@@ -17,7 +19,11 @@ func NewSession(isWrite bool, db *MongoDB) ddd_repository.Session {
 }
 
 func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc) error {
-	err := r.mongodb.client.UseSession(ctx, func(sCtx mongo.SessionContext) error {
+	commitTime := 20 * time.Second
+	opt := &options.SessionOptions{
+		DefaultMaxCommitTime: &commitTime,
+	}
+	err := r.mongodb.client.UseSessionWithOptions(ctx, opt, func(sCtx mongo.SessionContext) error {
 		serverCount := r.mongodb.config.ServerCount()
 		if serverCount == 1 {
 			return dbFunc(sCtx)
@@ -26,21 +32,20 @@ func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 				return err
 			}
 			err := dbFunc(sCtx)
+			var tranErr error
 			if err != nil {
-				if e1 := sCtx.AbortTransaction(sCtx); e1 != nil {
-					err = e1
-				}
+				tranErr = sCtx.AbortTransaction(ctx)
 			} else {
-				err = sCtx.CommitTransaction(sCtx)
+				tranErr = sCtx.CommitTransaction(ctx)
 			}
-			if err != nil {
-				println(err)
+			if err == nil {
+				return tranErr
 			}
 			return err
 		}
 	})
 	if err != nil {
-		logs.Error(ctx, err)
+		logs.Error(ctx, err.Error())
 	}
 	return err
 }

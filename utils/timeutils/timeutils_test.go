@@ -12,7 +12,7 @@ func TestStrToDateTime(t *testing.T) {
 	tstr := "23595969"
 	dt := time.Date(2021, 8, 18, 23, 59, 59, 690000000, time.Local)
 	v := ToDateTime(dstr, tstr)
-	assert.Equal(t, *v, dt)
+	assert.Equal(t, v, dt)
 }
 
 func TestEqual(t *testing.T) {
