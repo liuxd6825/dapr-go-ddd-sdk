@@ -29,7 +29,9 @@ package ddd_repository
 
 import (
 	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"strings"
 )
 
 type FindPagingQuery interface {
@@ -94,6 +96,74 @@ type FindPagingQueryRequest struct {
 	GroupCols   []*GroupCol `json:"groupCols"`
 	GroupKeys   []any       `json:"groupKeys"`
 	ValueCols   []*ValueCol `json:"valueCols"`
+}
+
+type FindPagingQueryDTO struct {
+	TenantId    string `json:"tenantId"`
+	Fields      string `json:"fields"`
+	Filter      string `json:"filter"`
+	Sort        string `json:"sort"`
+	PageNum     int64  `json:"pageNum"`
+	PageSize    int64  `json:"pageSize"`
+	IsTotalRows bool   `json:"isTotalRows"`
+	GroupCols   string `json:"groupCols"`
+	GroupKeys   string `json:"groupKeys"`
+	ValueCols   string `json:"valueCols"`
+}
+
+func (d *FindPagingQueryDTO) NewFindPagingQueryRequest() *FindPagingQueryRequest {
+	r := &FindPagingQueryRequest{}
+	if d == nil {
+		return r
+	}
+	r.PageNum = d.PageNum
+	r.PageSize = d.PageSize
+	r.Fields = d.Fields
+	r.TenantId = d.TenantId
+	r.Sort = d.Sort
+	r.IsTotalRows = d.IsTotalRows
+	r.ValueCols = d.newValueCols(d.ValueCols)
+	r.GroupCols = d.newGroupCols(d.GroupCols)
+	r.GroupKeys = d.newGroupKeys(d.GroupKeys)
+	return r
+}
+
+func (d *FindPagingQueryDTO) newGroupKeys(s string) []any {
+	res := make([]any, 0)
+	if len(s) == 0 {
+		return res
+	}
+	list := strings.Split(s, ",")
+	for _, key := range list {
+		res = append(res, key)
+	}
+	return res
+}
+
+func (d *FindPagingQueryDTO) newGroupCols(s string) []*GroupCol {
+	res := make([]*GroupCol, 0)
+	maps := RSqlKeyValueToMap(s)
+	for k, v := range maps {
+		col := &GroupCol{
+			Field:    k,
+			DataType: types.DataType(v),
+		}
+		res = append(res, col)
+	}
+	return res
+}
+
+func (d *FindPagingQueryDTO) newValueCols(s string) []*ValueCol {
+	res := make([]*ValueCol, 0)
+	maps := RSqlKeyValueToMap(s)
+	for k, v := range maps {
+		col := &ValueCol{
+			Field:   k,
+			AggFunc: AggFunc(v),
+		}
+		res = append(res, col)
+	}
+	return res
 }
 
 type GroupCols struct {
@@ -250,4 +320,16 @@ func (q *FindPagingQueryRequest) GetGroupKeys() []any {
 
 func (q *FindPagingQueryRequest) GetGroupCols() []*GroupCol {
 	return q.GroupCols
+}
+
+//
+// Validate
+// @Description: 命令数据验证
+//
+func (q *FindPagingQueryRequest) Validate() error {
+	ve := errors.NewVerifyError()
+	if len(q.TenantId) == 0 {
+		ve.AppendField("TenantId", "不能为空")
+	}
+	return ve.GetError()
 }

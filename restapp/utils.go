@@ -77,19 +77,22 @@ func SetErrorVerifyError(ctx iris.Context, err *errors.VerifyError) {
 	ctx.ContentType(ContentTypeTextPlain)
 }
 
-func SetError(ctx iris.Context, err error) {
+func SetError(ctx context.Context, err error) {
 	logs.Error(ctx, err)
-
+	ictx := GetIrisContext(ctx)
+	if ictx == nil {
+		return
+	}
 	switch err.(type) {
 	case *errors.NullError:
-		_ = SetErrorNotFond(ctx)
+		_ = SetErrorNotFond(ictx)
 		break
 	case *errors.VerifyError:
 		verr, _ := err.(*errors.VerifyError)
-		SetErrorVerifyError(ctx, verr)
+		SetErrorVerifyError(ictx, verr)
 		break
 	default:
-		SetErrorInternalServerError(ctx, err)
+		SetErrorInternalServerError(ictx, err)
 		break
 	}
 }
@@ -167,13 +170,13 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
-			SetError(ictx, err)
+			SetError(ctx, err)
 		}
 	}()
 
 	data, isFound, err = fun(ctx)
 	if err != nil {
-		SetError(ictx, err)
+		SetError(ctx, err)
 		return nil, false, err
 	}
 	if data == nil || !isFound {
@@ -181,7 +184,7 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 	}
 	SetJson(ictx, data)
 	if err != nil {
-		SetError(ictx, err)
+		SetError(ctx, err)
 		return nil, false, err
 	}
 	return data, isFound, err
@@ -201,19 +204,19 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, 
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
-			SetError(ictx, err)
+			SetError(ctx, err)
 		}
 	}()
 
 	data, isFound, err = fun(ctx)
 	if err != nil {
-		SetError(ictx, err)
+		SetError(ctx, err)
 		return data, isFound, err
 	}
 
 	err = SetJson(ictx, data)
 	if err != nil {
-		SetError(ictx, err)
+		SetError(ctx, err)
 		return nil, false, err
 	}
 	return data, isFound, err
@@ -261,6 +264,7 @@ func DoCmdAndQueryList(ictx iris.Context, queryAppId string, cmd Command, cmdFun
 }
 
 func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
+	ctx := NewContext(ictx)
 	options := &CmdAndQueryOptions{WaitSecond: 5}
 	for _, o := range opts {
 		o(options)
@@ -269,7 +273,7 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 	err := DoCmd(ictx, cmdFun)
 	isExists := errors.IsErrorAggregateExists(err)
 	if err != nil && !isExists {
-		SetError(ictx, err)
+		SetError(ctx, err)
 		return nil, false, err
 	}
 	err = nil
@@ -279,7 +283,7 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 		time.Sleep(time.Duration(1) * time.Second)
 		logs, err := applog.GetEventLogByAppIdAndCommandId(cmd.GetTenantId(), queryAppId, cmd.GetCommandId())
 		if err != nil {
-			SetError(ictx, err)
+			SetError(ctx, err)
 			return nil, false, err
 		}
 
@@ -292,7 +296,7 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 
 	/*	if isTimeout {
 		msg := fmt.Sprintf("applog.GetEventLogByAppIdAndCommandId() error: queryAppId=%s, commandId=%s, tenantId=%s  execution timeout", queryAppId, cmd.GetCommandId(), cmd.GetTenantId())
-		SetError(ictx, errors.New(msg))
+		SetError(ctx, errors.New(msg))
 		return nil, false, err
 	}*/
 
@@ -304,7 +308,7 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 		data, isFound, err = DoQuery(ictx, queryFun)
 	}
 	if err != nil {
-		SetError(ictx, err)
+		SetError(ctx, err)
 	}
 	return data, isFound, err
 }
