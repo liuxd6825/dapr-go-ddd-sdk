@@ -174,7 +174,7 @@ func isTime(cell *xlsx.Cell) bool {
 func getSheet(file *xlsx.File, sheetName string) (*xlsx.Sheet, error) {
 	var sheet *xlsx.Sheet
 	if len(sheetName) == 0 {
-		if len(file.Sheets) == 1 {
+		if len(file.Sheets) > 0 {
 			sheet = file.Sheets[0]
 		} else {
 			return nil, errors.New("sheetName is empty")
@@ -226,7 +226,7 @@ func getExcelDate(excelStr string) time.Time {
 	//return eTime.Add(time.Second * time.Duration(days*86400))
 }
 
-func ReviewFile(fileName string, sheetName string, maxRows int) (*Review, error) {
+func ReviewFile(fileName string, sheetName string, maxRows int64) (*Review, error) {
 	bytes, err := readFile(fileName)
 	if err != nil {
 		return nil, err
@@ -234,7 +234,7 @@ func ReviewFile(fileName string, sheetName string, maxRows int) (*Review, error)
 	return ReadBytesToMap(bytes, sheetName, maxRows)
 }
 
-func ReadBytesToMap(bytes []byte, sheetName string, maxRows int) (*Review, error) {
+func ReadBytesToMap(bytes []byte, sheetName string, maxRows int64) (*Review, error) {
 	f, err := xlsx.OpenBinary(bytes)
 	if err != nil {
 		return nil, err
@@ -255,12 +255,14 @@ func ReadBytesToMap(bytes []byte, sheetName string, maxRows int) (*Review, error
 		row := sheet.Row(rIdx)
 		item := ReviewItem{}
 		item["$row"] = strconv.FormatInt(int64(rIdx), 10)
-		for cIdx := 0; cIdx < len(sheet.Cols); cIdx++ {
+		for cIdx := 0; cIdx < len(row.Cells); cIdx++ {
 			key := GetCellLabel(cIdx + 1)
-			item[key] = row.Cells[cIdx].String()
+			if cell := row.Cells[cIdx]; cell != nil {
+				item[key] = row.Cells[cIdx].String()
+			}
 		}
 		review.AddItems(item)
-		if maxRows > 0 && rIdx > maxRows {
+		if maxRows > 0 && int64(rIdx) > maxRows {
 			break
 		}
 	}

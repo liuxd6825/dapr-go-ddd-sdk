@@ -24,6 +24,7 @@ type EnvConfig struct {
 	Mongo map[string]*MongoConfig `yaml:"mongo"`
 	Neo4j map[string]*Neo4jConfig `json:"neo4j"`
 	Mysql map[string]*MySqlConfig `json:"mysql"`
+	Minio map[string]*MinioConfig `yaml:"minio"`
 }
 
 type AppConfig struct {

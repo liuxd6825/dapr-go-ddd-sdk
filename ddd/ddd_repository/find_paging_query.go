@@ -118,6 +118,7 @@ func (d *FindPagingQueryDTO) NewFindPagingQueryRequest() *FindPagingQueryRequest
 	}
 	r.PageNum = d.PageNum
 	r.PageSize = d.PageSize
+	r.Filter = d.Filter
 	r.Fields = d.Fields
 	r.TenantId = d.TenantId
 	r.Sort = d.Sort

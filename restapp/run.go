@@ -122,6 +122,12 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		InitNeo4j(config.Neo4j)
 	}
 
+	if len(config.Minio) > 0 {
+		if err := InitMinio(config.Minio); err != nil {
+			return nil, err
+		}
+	}
+
 	//创建dapr客户端
 	daprClient, err := daprclient.NewDaprDddClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {

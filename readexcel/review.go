@@ -1,8 +1,8 @@
 package readexcel
 
 type Review struct {
-	Columns []string
-	Items   []ReviewItem
+	Columns []string     `json:"columns"`
+	Items   []ReviewItem `json:"items"`
 }
 
 type ReviewItem = map[string]string
