@@ -104,9 +104,9 @@ func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Optio
 			MaxIdleConns:           options.MaxIdleConns,
 			MaxIdleConnsPerHost:    options.MaxIdleConnsPerHost,
 			IdleConnTimeout:        time.Second * time.Duration(options.IdleConnTimeout),
-			MaxResponseHeaderBytes: 80,
-			WriteBufferSize:        40,
-			ReadBufferSize:         40,
+			MaxResponseHeaderBytes: 1024,
+			WriteBufferSize:        1024 * 80,
+			ReadBufferSize:         1024 * 80,
 		},
 	}
 
