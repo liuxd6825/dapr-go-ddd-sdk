@@ -1,6 +1,7 @@
 package readexcel
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/script"
@@ -14,19 +15,19 @@ import (
 )
 
 func ReadFile(fileName string, sheetName string, temp *Template) (*DataTable, error) {
-	bytes, err := readFile(fileName)
+	bs, err := readFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	return ReadBytes(bytes, sheetName, temp)
+	return ReadBytes(bytes.NewBuffer(bs), sheetName, temp)
 }
 
-func ReadBytes(bytes []byte, sheetName string, temp *Template) (*DataTable, error) {
+func ReadBytes(buffer *bytes.Buffer, sheetName string, temp *Template) (*DataTable, error) {
 	if err := temp.Init(); err != nil {
 		return nil, err
 	}
 
-	f, err := xlsx.OpenBinary(bytes)
+	f, err := xlsx.OpenBinary(buffer.Bytes())
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +255,7 @@ func ReadBytesToMap(bytes []byte, sheetName string, maxRows int64) (*Review, err
 	for rIdx := 0; rIdx < sheet.MaxRow; rIdx++ {
 		row := sheet.Row(rIdx)
 		item := ReviewItem{}
-		item["$row"] = strconv.FormatInt(int64(rIdx), 10)
+		item["$row"] = rIdx
 		for cIdx := 0; cIdx < len(row.Cells); cIdx++ {
 			key := GetCellLabel(cIdx + 1)
 			if cell := row.Cells[cIdx]; cell != nil {

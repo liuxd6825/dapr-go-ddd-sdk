@@ -334,3 +334,24 @@ func (q *FindPagingQueryRequest) Validate() error {
 	}
 	return ve.GetError()
 }
+
+type FindByIdRequest struct {
+	TenantId string `json:"tenantId"`
+	Id       string `json:"id"`
+}
+
+func (r *FindByIdRequest) GetTenantId() string {
+	return r.TenantId
+}
+
+func (r *FindByIdRequest) GetId() string {
+	return r.Id
+}
+
+type FindByAllRequest struct {
+	TenantId string `json:"tenantId"`
+}
+
+func (r *FindByAllRequest) GetTenantId() string {
+	return r.TenantId
+}

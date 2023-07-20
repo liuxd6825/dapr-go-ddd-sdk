@@ -97,13 +97,13 @@ type Replace struct {
 	New string `json:"new"`
 }
 
-func NewField(name string, title string, dataType DataType, keys ...string) *Field {
+func NewField(name string, title string, dataType DataType, allowNull bool, keys ...string) *Field {
 	return &Field{
 		Name:      name,
 		Title:     title,
 		DataType:  dataType,
 		Size:      0,
-		AllowNull: true,
+		AllowNull: allowNull,
 		Validator: "",
 		MapKeys:   keys,
 	}
@@ -161,8 +161,7 @@ const (
 // @Description: 映射规则
 //
 type MapColumn struct {
-	Key string `json:"key"`
-	//colNum   int64    `json:"colNum"`
+	Key      string   `json:"key"`
 	Label    string   `json:"colLabel"`
 	DataType DataType `json:"dataType"`
 	Script   string   `json:"script"`
@@ -232,14 +231,23 @@ func (t *Template) Init() error {
 	t.constsMap = make(map[string]*Const)
 	t.columnsMap = make(map[string]*MapColumn)
 	for _, field := range t.Fields {
-		t.fieldsMap[field.Name] = field
+		if field != nil {
+			t.fieldsMap[field.Name] = field
+		}
+
 	}
 	for _, con := range t.Consts {
-		t.constsMap[con.Key] = con
+		if con != nil {
+			t.constsMap[con.Key] = con
+		}
 	}
 	for _, row := range t.Heads {
-		for _, col := range row.Columns {
-			t.columnsMap[col.Key] = col
+		if len(row.Columns) > 0 {
+			for _, col := range row.Columns {
+				if col != nil {
+					t.columnsMap[col.Key] = col
+				}
+			}
 		}
 	}
 	return nil

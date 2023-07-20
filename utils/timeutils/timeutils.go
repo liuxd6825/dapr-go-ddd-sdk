@@ -24,6 +24,10 @@ func Now() time.Time {
 	v := Time(&t)
 	return *v
 }
+func PNow() *time.Time {
+	t := time.Now()
+	return &t
+}
 
 //
 // Time

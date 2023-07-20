@@ -40,7 +40,7 @@ func Mapper(fromObj, toObj interface{}) error {
 func MaskMapper(fromObj, toObj interface{}, mask []string) error {
 	options := MaskOptions{
 		Mask: mask,
-		Type: MaskTypeContain,
+		Type: MaskTypeExclude,
 	}
 	return MaskMapperOptions(fromObj, toObj, &options)
 }

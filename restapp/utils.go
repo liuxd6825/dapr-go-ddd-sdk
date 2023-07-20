@@ -79,7 +79,11 @@ func SetErrorVerifyError(ctx iris.Context, err *errors.VerifyError) {
 
 func SetError(ctx context.Context, err error) {
 	logs.Error(ctx, err)
-	ictx := GetIrisContext(ctx)
+
+	ictx, ok := ctx.(iris.Context)
+	if !ok {
+		ictx = GetIrisContext(ctx)
+	}
 	if ictx == nil {
 		return
 	}
@@ -110,6 +114,7 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
+			SetError(ctx, err)
 			logs.Error(ctx, err)
 		}
 	}()
@@ -118,7 +123,7 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 		logs.Error(ctx, err)
 	}
 	if err != nil && !errors.IsErrorAggregateExists(err) {
-		SetError(ictx, err)
+		SetError(ctx, err)
 		return err
 	}
 	return err
@@ -134,7 +139,7 @@ func Do(ictx iris.Context, fun func() error) (err error) {
 	}()
 	if fun != nil {
 		if err = fun(); err != nil {
-			SetError(ictx, err)
+			SetError(ctx, err)
 		}
 	}
 	return nil

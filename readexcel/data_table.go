@@ -78,6 +78,10 @@ func NewDataCell(key string, value string, rowNum int64, colNum int64, errs []st
 
 func (r *DataRow) GetString(temp *Template, fieldKey string, setFunc func(v string), errFunc func(err ...error)) {
 	f := temp.GetField(fieldKey)
+	if f == nil && setFunc != nil {
+		setFunc("")
+		return
+	}
 	value, err := ValueToString(r.Values[fieldKey], "", f.GetReplace()...)
 	if err != nil {
 		errFunc(err)
@@ -88,6 +92,10 @@ func (r *DataRow) GetString(temp *Template, fieldKey string, setFunc func(v stri
 
 func (r *DataRow) GetFloat(temp *Template, fieldKey string, setFunc func(v *float64), errFunc func(err ...error)) {
 	f := temp.GetField(fieldKey)
+	if f == nil && setFunc != nil {
+		setFunc(nil)
+		return
+	}
 	value, err := ValueToFloat(r.Values[fieldKey], f.DefFloat)
 	if err != nil {
 		errFunc(err)
@@ -98,6 +106,10 @@ func (r *DataRow) GetFloat(temp *Template, fieldKey string, setFunc func(v *floa
 
 func (r *DataRow) GetDate(temp *Template, fieldKey string, setFunc func(v *time.Time), errFunc func(err ...error)) {
 	f := temp.GetField(fieldKey)
+	if f == nil && setFunc != nil {
+		setFunc(nil)
+		return
+	}
 	value, err := ValueToDate(r.Values[fieldKey], f.GetDefTime(), f.GetReplace()...)
 	if err != nil {
 		errFunc(err)

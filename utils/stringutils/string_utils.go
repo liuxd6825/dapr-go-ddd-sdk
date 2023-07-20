@@ -222,3 +222,11 @@ func Plural(str string) string {
 func Singular(str string) string {
 	return inflection.Singular(MidlineString(str))
 }
+
+func PStrList(s ...string) *[]string {
+	var res []string
+	for _, item := range s {
+		res = append(res, item)
+	}
+	return &res
+}

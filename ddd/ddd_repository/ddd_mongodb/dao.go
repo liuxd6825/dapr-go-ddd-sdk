@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -167,9 +168,11 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 }
 
 func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repository.Options) (T, error) {
-	opt := getUpdateOptions(opts...)
-	setData := bson.M{"$set": entity}
-	_, err := r.getCollection().UpdateByID(ctx, entity.GetId(), setData, opt)
+	opt := ddd_repository.NewOptions(opts...)
+	data := r.getUpdateData(entity, opt)
+	uopt := getUpdateOptions(opts...)
+	setData := bson.M{"$set": data}
+	_, err := r.getCollection().UpdateByID(ctx, entity.GetId(), setData, uopt)
 	if err != nil {
 		return entity, err
 	}
@@ -282,23 +285,61 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 		return entities, nil
 	})
 }
-func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, data any, opts ...ddd_repository.Options) error {
-	_, err := r.UpdateMapAndGetCount(ctx, tenantId, filterMap, data, opts...)
+
+func (r *Dao[T]) getUpdateData(data any, opt ddd_repository.Options) any {
+	if opt == nil {
+		return data
+	}
+	mask := opt.GetUpdateMask()
+	updatefields := opt.GetUpdateFields()
+	if (mask == nil || len(*mask) == 0) && (updatefields == nil || len(*updatefields) == 0) {
+		return data
+	}
+	m := make(map[string]any)
+
+	maskType := types.MaskTypeContain
+	if mask != nil {
+		maskType = types.MaskTypeExclude
+	}
+	if err := types.MaskMapperType(data, &m, *mask, maskType); err != nil {
+		return ddd_repository.NewSetManyResultError[T](err)
+	}
+	m = maputils.MapToSnakeKey(m)
+	if idVal, ok := m["id"]; ok {
+		m["_id"] = idVal
+		delete(m, "id")
+	}
+	return m
+}
+
+func (r *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, data any, opts ...ddd_repository.Options) error {
+	filter := bson.M{"tenant_id": tenantId, "_id": id}
+	_, err := r.UpdateMapAndGetCount(ctx, tenantId, filter, data, opts...)
 	return err
 }
 
-func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filterMap map[string]any, data any, opts ...ddd_repository.Options) (int64, error) {
+func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) error {
+	_, err := r.UpdateMapAndGetCount(ctx, tenantId, filter, data, opts...)
+	return err
+}
+
+func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) (int64, error) {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return 0, err
 	}
 
-	if err := assert.NotNil(filterMap, assert.NewOptions("filterMap is nil")); err != nil {
+	if err := assert.NotNil(filter, assert.NewOptions("filterMap is nil")); err != nil {
 		return 0, err
 	}
 
 	updateOptions := getUpdateOptions(opts...)
-	filter := r.NewFilter(tenantId, filterMap)
-	res, err := r.getCollection().UpdateOne(ctx, filter, data, updateOptions)
+	var f any
+	if v, ok := filter.(map[string]any); ok {
+		f = r.NewFilter(tenantId, v)
+	} else {
+		f = filter
+	}
+	res, err := r.getCollection().UpdateOne(ctx, f, data, updateOptions)
 	if err != nil {
 		return 0, err
 	}

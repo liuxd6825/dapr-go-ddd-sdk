@@ -3,6 +3,7 @@ package maputils
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"reflect"
 	"time"
@@ -13,6 +14,15 @@ const (
 	timeTypeName     = "Time"
 	jsonTimeTypeName = "JSONTime"
 )
+
+func MapToSnakeKey(data map[string]any) map[string]any {
+	m := make(map[string]any)
+	for k, v := range data {
+		key := stringutils.SnakeString(k)
+		m[key] = v
+	}
+	return m
+}
 
 func GetString(m map[string]interface{}, key string, result *string, def string) (bool, error) {
 	if v, ok := m[key]; ok {
@@ -51,11 +61,29 @@ func Decode(input interface{}, out interface{}) error {
 
 	return decoder.Decode(input)
 }
-
-func NewMap(fromObj interface{}) (map[string]interface{}, error) {
-	mapData := make(map[string]interface{})
+func NewMap(fromObj any) (map[string]any, error) {
+	mapData := make(map[string]any)
 	if err := Decode(fromObj, &mapData); err != nil {
 		return nil, err
+	}
+	return mapData, nil
+}
+
+func NewMapWithOptions(fromObj any, mask []string, snakeKey bool) (map[string]any, error) {
+	mapData := make(map[string]any)
+	if err := Decode(fromObj, &mapData); err != nil {
+		return nil, err
+	}
+	for _, key := range mask {
+		delete(mapData, key)
+	}
+	if snakeKey {
+		data := make(map[string]any)
+		for k, v := range mapData {
+			key := stringutils.SnakeString(k)
+			data[key] = v
+		}
+		return data, nil
 	}
 	return mapData, nil
 }

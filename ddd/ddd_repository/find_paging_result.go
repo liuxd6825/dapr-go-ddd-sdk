@@ -5,7 +5,21 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
-type FindPagingResult[T interface{}] struct {
+// FindPagingResultDTO 分页查询结果
+type FindPagingResultDTO struct {
+	TotalRows   *int64 `json:"totalRows,omitempty"`  // 总记录数
+	TotalPages  *int64 `json:"totalPages,omitempty"` // 总页数
+	PageNum     int64  `json:"pageNum"`              // 当前页号
+	PageSize    int64  `json:"pageSize"`             // 页大小
+	Filter      string `json:"filter"`               // RSQL过滤条件
+	Fields      string `json:"fields"`               // 字段值，多个用逗号分隔
+	Sort        string `json:"sort"`                 // 排序条件
+	Error       error  `json:"error"`                // 错误
+	IsFound     bool   `json:"isFound"`              // 是否找到数据
+	IsTotalRows bool   `json:"isTotalRows"`          // 是否统计总记录数
+}
+
+type FindPagingResult[T any] struct {
 	Data        []T    `json:"data"`
 	SumData     []T    `json:"sumData"`
 	TotalRows   *int64 `json:"totalRows"`

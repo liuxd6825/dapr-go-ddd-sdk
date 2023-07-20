@@ -1,6 +1,7 @@
 package readexcel
 
 import (
+	"bytes"
 	"context"
 )
 
@@ -20,23 +21,23 @@ type Batching struct {
 	RowTotal   int64 `json:"rowTotal"`
 }
 
-func ReadFileToEntity[T any](ctx context.Context, fileName string, sheetName string, temp *Template,
+func ReadFileToEntity[T any](ctx context.Context, fileName string, sheetName string, temp *Template, isView bool,
 	newItem func(ctx context.Context, row *DataRow, temp *Template) (T, error),
 	batchFunc func(ctx context.Context, list []T, paging Batching) error, opts ...*Options) (*DataTable, error) {
-	bytes, err := readFile(fileName)
+	bs, err := readFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	return ReadByteToEntity(ctx, bytes, sheetName, temp, newItem, batchFunc, opts...)
+	return ReadByteToEntity(ctx, bytes.NewBuffer(bs), sheetName, temp, isView, newItem, batchFunc, opts...)
 }
 
-func ReadByteToEntity[T any](ctx context.Context, bytes []byte, sheetName string, temp *Template,
+func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template, isView bool,
 	newItem func(ctx context.Context, row *DataRow, temp *Template) (T, error),
 	batchFunc func(ctx context.Context, list []T, paging Batching) error, opts ...*Options) (*DataTable, error) {
 
 	opt := NewOptions(opts...)
 
-	table, err := ReadBytes(bytes, sheetName, temp)
+	table, err := ReadBytes(buffer, sheetName, temp)
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +66,9 @@ func ReadByteToEntity[T any](ctx context.Context, bytes []byte, sheetName string
 		if int64(len(list)) == opt.BatchSize || int64(i) == rowTotal-1 {
 			if err := batchFunc(ctx, list, paging); err != nil {
 				return nil, err
+			}
+			if isView {
+				break
 			}
 			list = make([]T, 0)
 			paging.BatchIndex++

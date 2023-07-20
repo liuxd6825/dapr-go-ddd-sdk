@@ -5,7 +5,7 @@ type Review struct {
 	Items   []ReviewItem `json:"items"`
 }
 
-type ReviewItem = map[string]string
+type ReviewItem = map[string]any
 
 func (r *Review) AddItems(item ...ReviewItem) {
 	r.Items = append(r.Items, item...)
