@@ -33,17 +33,17 @@ type Options interface {
 	// @Description: 更新数据时， 只更新的字段
 	// @return *[]string
 	//
-	GetUpdateFields() *[]string
-	SetUpdateFields(*[]string) Options
+	GetUpdateFields() []string
+	SetUpdateFields([]string) Options
 
 	//
 	// GetUpdateMask
 	// @Description: 更新数据时，跳过不更新的字段名
 	// @return []string
 	//
-	GetUpdateMask() *[]string
-	SetUpdateMask(v *[]string) Options
-	SetUpdateMaskByDefault() Options
+	GetUpdateCancel() []string
+	SetUpdateCancel(v []string) Options
+	SetUpdateCancelByDefault() Options
 
 	Merge(opts ...Options) Options
 }
@@ -51,53 +51,16 @@ type Options interface {
 type options struct {
 	sort         *string
 	timeout      *time.Duration
-	updateFields *[]string
+	updateFields []string
+	updateCancel []string
 	upsert       *bool
-	updateMask   *[]string
-}
-
-func (o *options) SetUpdateMaskByDefault() Options {
-	o.updateMask = &[]string{"CreatedTime", "CreatorId", "CreatorName", "Id"}
-	return o
-}
-
-func (o *options) SetUpdateMask(v *[]string) Options {
-	o.updateMask = v
-	return o
-}
-
-func (o *options) GetUpdateMask() *[]string {
-	return o.updateMask
-}
-
-func (o *options) SetUpsertIsNull() Options {
-	o.upsert = nil
-	return o
-}
-
-func (o *options) GetUpsert() *bool {
-	return o.upsert
-}
-
-func (o *options) SetUpsert(v bool) Options {
-	o.upsert = &v
-	return o
-}
-
-func (o *options) GetSort() *string {
-	return o.sort
-}
-
-func (o *options) SetSort(s *string) Options {
-	o.sort = s
-	return o
 }
 
 func NewOptions(o ...Options) Options {
 	res := &options{}
 	for _, item := range o {
-		if item.GetUpdateMask() != nil {
-			res.updateMask = item.GetUpdateMask()
+		if item.GetUpdateCancel() != nil {
+			res.updateCancel = item.GetUpdateCancel()
 		}
 		if item.GetTimeout() != nil {
 			res.timeout = item.GetTimeout()
@@ -124,18 +87,55 @@ func (o *options) SetTimeout(t *time.Duration) Options {
 	return o
 }
 
-func (o *options) GetUpdateFields() *[]string {
+func (o *options) GetUpdateFields() []string {
 	return o.updateFields
 }
 
-func (o *options) SetUpdateFields(updateFields *[]string) Options {
+func (o *options) SetUpdateFields(updateFields []string) Options {
 	o.updateFields = updateFields
+	return o
+}
+
+func (o *options) SetUpdateCancelByDefault() Options {
+	o.updateCancel = []string{"CreatedTime", "CreatorId", "CreatorName", "Id"}
+	return o
+}
+
+func (o *options) SetUpdateCancel(v []string) Options {
+	o.updateCancel = v
+	return o
+}
+
+func (o *options) GetUpdateCancel() []string {
+	return o.updateCancel
+}
+
+func (o *options) SetUpsertIsNull() Options {
+	o.upsert = nil
+	return o
+}
+
+func (o *options) GetUpsert() *bool {
+	return o.upsert
+}
+
+func (o *options) SetUpsert(v bool) Options {
+	o.upsert = &v
+	return o
+}
+
+func (o *options) GetSort() *string {
+	return o.sort
+}
+
+func (o *options) SetSort(s *string) Options {
+	o.sort = s
 	return o
 }
 
 func (o *options) Merge(opts ...Options) Options {
 	res := &options{}
-	var updateMask []string
+	var updateCancel []string
 	for _, o := range opts {
 		if o.GetSort() != nil {
 			res.SetSort(o.GetSort())
@@ -146,16 +146,16 @@ func (o *options) Merge(opts ...Options) Options {
 		if o.GetUpdateFields() != nil {
 			res.SetUpdateFields(o.GetUpdateFields())
 		}
-		if o.GetUpdateMask() != nil {
-			if updateMask == nil {
-				updateMask = make([]string, 0)
+		if o.GetUpdateCancel() != nil {
+			if updateCancel == nil {
+				updateCancel = make([]string, 0)
 			}
-			mask := *o.GetUpdateMask()
+			mask := o.GetUpdateCancel()
 			for _, v := range mask {
-				updateMask = append(updateMask, v)
+				updateCancel = append(updateCancel, v)
 			}
 		}
 	}
-	res.SetUpdateMask(&updateMask)
+	res.SetUpdateCancel(updateCancel)
 	return res
 }

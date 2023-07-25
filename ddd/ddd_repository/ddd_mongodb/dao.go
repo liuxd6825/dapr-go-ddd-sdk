@@ -290,18 +290,20 @@ func (r *Dao[T]) getUpdateData(data any, opt ddd_repository.Options) any {
 	if opt == nil {
 		return data
 	}
-	mask := opt.GetUpdateMask()
-	updatefields := opt.GetUpdateFields()
-	if (mask == nil || len(*mask) == 0) && (updatefields == nil || len(*updatefields) == 0) {
+	updateCancel := opt.GetUpdateCancel()
+	updateFields := opt.GetUpdateFields()
+	if (updateCancel == nil || len(updateCancel) == 0) && (updateFields == nil || len(updateFields) == 0) {
 		return data
 	}
 	m := make(map[string]any)
 
 	maskType := types.MaskTypeContain
-	if mask != nil {
+	mask := updateFields
+	if updateCancel != nil {
 		maskType = types.MaskTypeExclude
+		mask = updateCancel
 	}
-	if err := types.MaskMapperType(data, &m, *mask, maskType); err != nil {
+	if err := types.MaskMapperType(data, &m, mask, maskType); err != nil {
 		return ddd_repository.NewSetManyResultError[T](err)
 	}
 	m = maputils.MapToSnakeKey(m)

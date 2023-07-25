@@ -22,6 +22,8 @@ const (
 	AndToken             = TokenType("AndToken")
 	ContainsToken        = TokenType("ContainsToken")
 	NotContainsToken     = TokenType("NotContainsToken")
+	IsNullToken          = TokenType("IsNullToken")
+	NotIsNullToken       = TokenType("NotIsNullToken")
 	EqualsToken          = TokenType("EqualsToken")
 	NotEqualsToken       = TokenType("NotEqualsToken")
 	LikeToken            = TokenType("LikeToken")
@@ -33,8 +35,9 @@ const (
 	InToken              = TokenType("InToken")
 	NotInToken           = TokenType("NotInToken")
 	CommaToken           = TokenType("CommaToken")
-
-	EOFToken = TokenType("EOFToken")
+	StartToken           = TokenType("StartToken")
+	EndToken             = TokenType("EndToken")
+	EOFToken             = TokenType("EOFToken")
 )
 
 type Token struct {
@@ -244,12 +247,8 @@ func (t *Lexer) processReserved() Token {
 		return t.generateToken(RightParenToken, idx+1)
 	} else if t.isString(idx, ",") {
 		return t.generateToken(CommaToken, idx+1)
-	} else if t.isString(idx, "!=~") {
-		return t.generateToken(NotLikeToken, idx+3)
 	} else if t.isString(idx, "!=") {
 		return t.generateToken(NotEqualsToken, idx+2)
-	} else if t.isString(idx, "==~") {
-		return t.generateToken(LikeToken, idx+3)
 	} else if t.isString(idx, "==") {
 		return t.generateToken(EqualsToken, idx+2)
 	} else if t.isString(idx, ">=") {
@@ -268,6 +267,20 @@ func (t *Lexer) processReserved() Token {
 		return t.generateToken(ContainsToken, idx+10)
 	} else if t.isString(idx, "=!contains=") {
 		return t.generateToken(NotContainsToken, idx+11)
+	} else if t.isString(idx, "==~") || t.isString(idx, "~==") {
+		return t.generateToken(LikeToken, idx+3)
+	} else if t.isString(idx, "~=") || t.isString(idx, "=~") {
+		return t.generateToken(LikeToken, idx+2)
+	} else if t.isString(idx, "!=~") || t.isString(idx, "!~=") {
+		return t.generateToken(NotLikeToken, idx+3)
+	} else if t.isString(idx, "=null=") {
+		return t.generateToken(IsNullToken, idx+6)
+	} else if t.isString(idx, "=!null=") {
+		return t.generateToken(NotIsNullToken, idx+7)
+	} else if t.isString(idx, "=start=") {
+		return t.generateToken(IsNullToken, idx+7)
+	} else if t.isString(idx, "=end=") {
+		return t.generateToken(NotIsNullToken, idx+5)
 	}
 	return unknownToken()
 }

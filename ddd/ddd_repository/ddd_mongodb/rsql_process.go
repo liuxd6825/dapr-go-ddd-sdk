@@ -181,6 +181,22 @@ func (m *MongoProcess) OnNotContains(name string, value interface{}, rValue rsql
 	m.current.addChildItem(AsFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
 }
 
+func (m *MongoProcess) OnIsNull(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$in", []interface{}{nil}}})
+}
+
+func (m *MongoProcess) OnNotIsNull(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *MongoProcess) OnStart(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *MongoProcess) OnEnd(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
 func (m *MongoProcess) addError(name string, err error) {
 	if err != nil {
 		msg := fmt.Sprintf("%v %v; ", name, err.Error())

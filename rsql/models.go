@@ -98,3 +98,19 @@ func (ContainsComparison) ExpressionName() string { return "=contains=" }
 type NotContainsComparison struct{ Comparison }
 
 func (NotContainsComparison) ExpressionName() string { return "=!contains=" }
+
+type IsNullComparison struct{ Comparison }
+
+func (IsNullComparison) ExpressionName() string { return "=null=" }
+
+type NotIsNullComparison struct{ Comparison }
+
+func (NotIsNullComparison) ExpressionName() string { return "=!null=" }
+
+type StartComparison struct{ Comparison }
+
+func (StartComparison) ExpressionName() string { return "=start=" }
+
+type EndComparison struct{ Comparison }
+
+func (EndComparison) ExpressionName() string { return "=end=" }

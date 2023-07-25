@@ -48,14 +48,8 @@ type RegisterEventType struct {
 	NewFunc   ddd.NewEventFunc
 }
 
-var EmptyActors = func() *[]actor.Factory {
-	return &[]actor.Factory{}
-}
-
-var Actors = func() []actor.Factory {
-	return []actor.Factory{
-		aggregateSnapshotActorFactory,
-	}
+var _actorsFactory []actor.Factory = []actor.Factory{
+	aggregateSnapshotActorFactory,
 }
 
 func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler) RegisterSubscribe {
@@ -83,6 +77,14 @@ func (r *RegisterEventType) GetVersion() string {
 
 func (r *RegisterEventType) GetNewFunc() ddd.NewEventFunc {
 	return r.NewFunc
+}
+
+func RegisterActor(actorServer actor.Server) {
+	_actorsFactory = append(_actorsFactory, func() actor.Server { return actorServer })
+}
+
+func GetActors() []actor.Factory {
+	return _actorsFactory
 }
 
 func aggregateSnapshotActorFactory() actor.Server {
