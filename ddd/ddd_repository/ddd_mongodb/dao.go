@@ -404,7 +404,7 @@ func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map
 	return r.DoSet(func() (T, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		deleteOptions := getDeleteOptions(opts...)
-		_, err := r.getCollection().DeleteOne(ctx, filter, deleteOptions)
+		_, err := r.getCollection().DeleteMany(ctx, filter, deleteOptions)
 		var result T
 		return result, err
 	})
@@ -906,7 +906,7 @@ func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*
 
 }
 
-func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData map[string]any, opts ...ddd_repository.Options) (int64, error) {
+func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
 	total, err := r.getCollection().CountDocuments(ctx, filterData)
 	if err != nil {
 		return 0, err
