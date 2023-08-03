@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
+	"go.mongodb.org/mongo-driver/bson"
 	"reflect"
 	"time"
 )
@@ -19,7 +20,13 @@ func MapToSnakeKey(data map[string]any) map[string]any {
 	m := make(map[string]any)
 	for k, v := range data {
 		key := stringutils.SnakeString(k)
-		m[key] = v
+		if mv, ok := v.(map[string]any); ok {
+			m[key] = MapToSnakeKey(mv)
+		} else if mv, ok := v.(bson.M); ok {
+			m[key] = MapToSnakeKey(mv)
+		} else {
+			m[key] = v
+		}
 	}
 	return m
 }
@@ -74,9 +81,21 @@ func NewMapWithOptions(fromObj any, mask []string, snakeKey bool) (map[string]an
 	if err := Decode(fromObj, &mapData); err != nil {
 		return nil, err
 	}
-	for _, key := range mask {
-		delete(mapData, key)
+
+	/*
+		for _, key := range mask {
+			delete(mapData, key)
+		}*/
+
+	if len(mask) > 0 {
+		maskMap := map[string]any{}
+		for _, key := range mask {
+			key = stringutils.CamelString(key)
+			maskMap[key] = mapData[key]
+		}
+		mapData = maskMap
 	}
+
 	if snakeKey {
 		data := make(map[string]any)
 		for k, v := range mapData {

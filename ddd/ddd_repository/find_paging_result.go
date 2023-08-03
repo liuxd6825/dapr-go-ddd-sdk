@@ -99,15 +99,28 @@ func NewFindPagingResultOptions[T ddd.Entity]() *FindPagingResultOptions[T] {
 
 func NewFindPagingResultWithError[T ddd.Entity](err ...error) *FindPagingResult[T] {
 	return &FindPagingResult[T]{
-		Data:    nil,
+		Data:    []T{},
 		IsFound: false,
 		Error:   errors.News(err...),
 	}
 }
 
+func (f *FindPagingResult[T]) GetDataLength() int64 {
+	var data []T = f.Data
+	v := len(data)
+	return int64(v)
+}
+
+func (f *FindPagingResult[T]) GetSumDataLength() int64 {
+	var data []T = f.SumData
+	v := len(data)
+	return int64(v)
+}
+
 func (f *FindPagingResult[T]) GetData() []T {
 	return f.Data
 }
+
 func (f *FindPagingResult[T]) GetSumData() []T {
 	return f.SumData
 }

@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
@@ -179,16 +180,18 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repositor
 	return entity, err
 }
 
-func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
 	filterMap, err := r.getFilterMap(tenantId, filter)
 	if err != nil {
-		return ddd_repository.NewSetManyResultError[T](err)
+		return ddd_repository.NewSetManyCountResultError(err)
 	}
-	return r.DoSetMany(func() ([]T, error) {
-		setData := bson.M{"$set": data}
+	opt := ddd_repository.NewOptions(opts...)
+	return r.DoSetManyCount(func() (*mongo.UpdateResult, error) {
+		mdata := r.getUpdateData(data, opt)
+		setData := bson.M{"$set": mdata}
 		updateOptions := getUpdateOptions(opts...)
-		_, err = r.getCollection().UpdateMany(ctx, filterMap, setData, updateOptions)
-		return nil, err
+		res, err := r.getCollection().UpdateMany(ctx, filterMap, setData, updateOptions)
+		return res, err
 	})
 }
 
@@ -286,14 +289,20 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 	})
 }
 
-func (r *Dao[T]) getUpdateData(data any, opt ddd_repository.Options) any {
-	if opt == nil {
+func (r *Dao[T]) getUpdateData(data any, opts ...ddd_repository.Options) any {
+	if opts == nil {
 		return data
 	}
+	opt := ddd_repository.NewOptions(opts...)
 	updateCancel := opt.GetUpdateCancel()
 	updateFields := opt.GetUpdateFields()
 	if (updateCancel == nil || len(updateCancel) == 0) && (updateFields == nil || len(updateFields) == 0) {
-		return data
+		if m, ok := data.(map[string]any); ok {
+			return r.getMap(m)
+		} else {
+			return data
+		}
+
 	}
 	m := make(map[string]any)
 
@@ -306,6 +315,11 @@ func (r *Dao[T]) getUpdateData(data any, opt ddd_repository.Options) any {
 	if err := types.MaskMapperType(data, &m, mask, maskType); err != nil {
 		return ddd_repository.NewSetManyResultError[T](err)
 	}
+	m = r.getMap(m)
+	return m
+}
+
+func (r *Dao[T]) getMap(m map[string]any) map[string]any {
 	m = maputils.MapToSnakeKey(m)
 	if idVal, ok := m["id"]; ok {
 		m["_id"] = idVal
@@ -314,10 +328,30 @@ func (r *Dao[T]) getUpdateData(data any, opt ddd_repository.Options) any {
 	return m
 }
 
-func (r *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, data any, opts ...ddd_repository.Options) error {
+func (r *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) error {
 	filter := bson.M{"tenant_id": tenantId, "_id": id}
-	_, err := r.UpdateMapAndGetCount(ctx, tenantId, filter, data, opts...)
+	m := r.getMap(data)
+	_, err := r.UpdateMapAndGetCount(ctx, tenantId, filter, m, opts...)
 	return err
+}
+
+func (r *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (T, error) {
+	var null T
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return null, err
+	}
+
+	if err := assert.NotEmpty(id, assert.NewOptions("id is empty")); err != nil {
+		return null, err
+	}
+	filter := bson.M{"tenant_id": tenantId, "_id": id}
+	udpate := r.getMap(data)
+	_, err := r.getCollection().UpdateOne(ctx, filter, udpate)
+	if err != nil {
+		return null, err
+	}
+	find := r.FindById(ctx, tenantId, id, opts...)
+	return find.GetData(), find.GetError()
 }
 
 func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) error {
@@ -341,7 +375,7 @@ func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	} else {
 		f = filter
 	}
-	res, err := r.getCollection().UpdateOne(ctx, f, data, updateOptions)
+	res, err := r.getCollection().UpdateOne(ctx, f, bson.M{"$set": data}, updateOptions)
 	if err != nil {
 		return 0, err
 	}
@@ -488,8 +522,21 @@ func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 	})
 }
 
-func (r *Dao[T]) FindFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	return r.DoList(tenantId, filter, func(filterMap map[string]interface{}) ([]T, bool, error) {
+func (r *Dao[T]) FindListByBsonM(ctx context.Context, tenantId string, filter bson.M, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	return r.DoFindList(func() ([]T, bool, error) {
+		var list []T
+		findOptions := getFindOptions(opts...)
+		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
+		if err != nil {
+			return nil, false, err
+		}
+		err = cursor.All(ctx, &list)
+		return list, len(list) > 0, err
+	})
+}
+
+func (r *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	return r.DoList(tenantId, rsql, func(filterMap map[string]interface{}) ([]T, bool, error) {
 		var list []T
 		findOptions := getFindOptions(opts...)
 		cursor, err := r.getCollection().Find(ctx, filterMap, findOptions)
@@ -780,20 +827,20 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 		}
 	}
 	if !isGroup || isLeaf {
-		_filter := make(map[string]interface{})
+		f := make(map[string]interface{})
 		if isLeaf {
-			_filter = filter1
+			f = filter1
 		} else {
-			_filter = filter
+			f = filter
 		}
 		findOptions.SetSort(sort)
 		if query.GetPageSize() > 0 {
 			findOptions.SetLimit(query.GetPageSize())
 			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
 		}
-		cur, err = coll.Find(ctx, _filter, findOptions)
+		cur, err = coll.Find(ctx, f, findOptions)
 		if query.GetIsTotalRows() {
-			totalRows, errt = coll.CountDocuments(ctx, _filter)
+			totalRows, errt = coll.CountDocuments(ctx, f)
 		}
 	}
 	if err != nil || errt != nil {
@@ -801,17 +848,17 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 	}
 
 	if isGroup && !isLeaf {
-		_data := make([]struct {
+		d := make([]struct {
 			Data      []T   `json:"data" bson:"data"`
 			TotalRows int64 `json:"totalRows" bson:"total_rows"`
 		}, 0)
-		err = cur.All(ctx, &_data)
+		err = cur.All(ctx, &d)
 		if err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
-		if _data != nil && len(_data) == 1 {
-			data = _data[0].Data
-			totalRows = _data[0].TotalRows
+		if d != nil && len(d) == 1 {
+			data = d[0].Data
+			totalRows = d[0].TotalRows
 		}
 	} else {
 		err = cur.All(ctx, &data)
@@ -819,12 +866,17 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
 	}
-
+	if data == nil {
+		data = []T{}
+	}
 	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, query, err)
 	// 进行汇总计算
 	if len(query.GetValueCols()) > 0 {
 		sumData, _, err := r.Sum(ctx, query, opts...)
 		findData.SetSum(true, sumData, err)
+	} else {
+		sumData := []T{}
+		findData.SetSum(false, sumData, err)
 	}
 	return findData
 }
@@ -861,7 +913,14 @@ func (r Dao[T]) Sum(ctx context.Context, query ddd_repository.FindPagingQuery, o
 	}
 
 	p := NewMongoProcess()
-	if err := rsql.ParseProcess(query.GetFilter(), p); err != nil {
+	filter := query.GetFilter()
+	mustFilter := query.GetMustFilter()
+	if len(filter) > 0 && len(mustFilter) > 0 {
+		filter = fmt.Sprintf("(%s) and (%s)", filter, mustFilter)
+	} else if len(mustFilter) > 0 {
+		filter = mustFilter
+	}
+	if err := rsql.ParseProcess(filter, p); err != nil {
 		return nil, false, err
 	}
 	filterMap, err := p.GetFilter(query.GetTenantId())
@@ -914,11 +973,20 @@ func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any,
 	return total, err
 }
 
-func (r *Dao[T]) DoList(tenantId, filter string, fun func(filter map[string]interface{}) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
+	f, err := r.getFilterMap(tenantId, rsql)
+	total, err := r.getCollection().CountDocuments(ctx, f)
+	if err != nil {
+		return 0, err
+	}
+	return total, err
+}
+
+func (r *Dao[T]) DoList(tenantId, rsql string, fun func(filter map[string]interface{}) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
-	filterData, err := r.getFilterMap(tenantId, filter)
+	filterData, err := r.getFilterMap(tenantId, rsql)
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
@@ -931,11 +999,11 @@ func (r *Dao[T]) DoList(tenantId, filter string, fun func(filter map[string]inte
 	return ddd_repository.NewFindListResult(data, ok, err)
 }
 
-func (r *Dao[T]) DoFilter(tenantId, filter string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+func (r *Dao[T]) DoFilter(tenantId, rsql string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
-	filterData, err := r.getFilterMap(tenantId, filter)
+	filterData, err := r.getFilterMap(tenantId, rsql)
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
@@ -994,6 +1062,11 @@ func (r *Dao[T]) DoSet(fun func() (T, error)) *ddd_repository.SetResult[T] {
 func (r *Dao[T]) DoSetMany(fun func() ([]T, error)) *ddd_repository.SetManyResult[T] {
 	data, err := fun()
 	return ddd_repository.NewSetManyResult[T](data, err)
+}
+
+func (r *Dao[T]) DoSetManyCount(fun func() (*mongo.UpdateResult, error)) *ddd_repository.SetManyCountResult {
+	res, err := fun()
+	return ddd_repository.NewSetManyCountResult(res, err)
 }
 
 /*

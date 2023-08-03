@@ -2,6 +2,7 @@ package ddd_mongodb
 
 import (
 	"errors"
+	"fmt"
 	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
@@ -20,9 +21,19 @@ type QueryGroup struct {
 }
 
 func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
+	f1 := qry.GetFilter()
+	f2 := qry.GetMustFilter()
+	filter := ""
+	if len(f1) > 0 && len(f2) > 0 {
+		filter = fmt.Sprintf("(%s) and (%s)", f1, f2)
+	} else if len(f1) > 0 {
+		filter = f1
+	} else if len(f2) > 0 {
+		filter = f2
+	}
 	baseGroup := &QueryGroup{
 		TenantId:     qry.GetTenantId(),
-		Filter:       qry.GetFilter(),
+		Filter:       filter,
 		RowGroupCols: qry.GetGroupCols(),
 		ValueCols:    qry.GetValueCols(),
 		GroupKeys:    qry.GetGroupKeys(),

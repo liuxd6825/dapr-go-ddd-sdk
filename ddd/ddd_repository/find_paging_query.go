@@ -36,31 +36,78 @@ import (
 
 type FindPagingQuery interface {
 	GetTenantId() string
-	GetFields() string
-	GetFilter() string
-	GetSort() string
-	GetPageNum() int64
-	GetPageSize() int64
-	GetIsTotalRows() bool
-	GetGroupCols() []*GroupCol
-	GetValueCols() []*ValueCol
-	GetGroupKeys() []any
-
 	SetTenantId(string)
+
+	GetFields() string
 	SetFields(string)
+
+	GetFilter() string
 	SetFilter(string)
+
+	GetMustFilter() string
+	SetMustFilter(string)
+
+	GetSort() string
 	SetSort(string)
+
+	GetPageNum() int64
 	SetPageNum(int64)
+
+	GetPageSize() int64
 	SetPageSize(int64)
+
+	GetIsTotalRows() bool
 	SetIsTotalRows(bool)
+
+	GetGroupCols() []*GroupCol
 	SetGroupCols([]*GroupCol)
+
+	GetValueCols() []*ValueCol
 	SetValueCols([]*ValueCol)
+
+	GetGroupKeys() []any
 	SetGroupKeys([]any)
 }
 
 type GroupCol struct {
 	Field    string         `json:"field"`
 	DataType types.DataType `json:"dataType"`
+}
+
+type FindPagingQueryRequest struct {
+	TenantId    string      `json:"tenantId"`
+	Fields      string      `json:"fields"`
+	Filter      string      `json:"filter"`
+	MustFilter  string      `json:"-"`
+	Sort        string      `json:"sort"`
+	PageNum     int64       `json:"pageNum"`
+	PageSize    int64       `json:"pageSize"`
+	IsTotalRows bool        `json:"isTotalRows"`
+	GroupCols   []*GroupCol `json:"groupCols"`
+	GroupKeys   []any       `json:"groupKeys"`
+	ValueCols   []*ValueCol `json:"valueCols"`
+}
+
+type FindPagingQueryDTO struct {
+	TenantId    string `json:"tenantId"`
+	Fields      string `json:"fields"`
+	Filter      string `json:"filter"`
+	Sort        string `json:"sort"`
+	PageNum     int64  `json:"pageNum"`
+	PageSize    int64  `json:"pageSize"`
+	IsTotalRows bool   `json:"isTotalRows"`
+	GroupCols   string `json:"groupCols"`
+	GroupKeys   string `json:"groupKeys"`
+	ValueCols   string `json:"valueCols"`
+}
+
+type FindByIdRequest struct {
+	TenantId string `json:"tenantId"`
+	Id       string `json:"id"`
+}
+
+type FindByAllRequest struct {
+	TenantId string `json:"tenantId"`
 }
 
 type AggFunc string
@@ -85,30 +132,12 @@ type ValueCol struct {
 	Field   string  `json:"field"`
 }
 
-type FindPagingQueryRequest struct {
-	TenantId    string      `json:"tenantId"`
-	Fields      string      `json:"fields"`
-	Filter      string      `json:"filter"`
-	Sort        string      `json:"sort"`
-	PageNum     int64       `json:"pageNum"`
-	PageSize    int64       `json:"pageSize"`
-	IsTotalRows bool        `json:"isTotalRows"`
-	GroupCols   []*GroupCol `json:"groupCols"`
-	GroupKeys   []any       `json:"groupKeys"`
-	ValueCols   []*ValueCol `json:"valueCols"`
+type GroupCols struct {
+	cols []*GroupCol
 }
 
-type FindPagingQueryDTO struct {
-	TenantId    string `json:"tenantId"`
-	Fields      string `json:"fields"`
-	Filter      string `json:"filter"`
-	Sort        string `json:"sort"`
-	PageNum     int64  `json:"pageNum"`
-	PageSize    int64  `json:"pageSize"`
-	IsTotalRows bool   `json:"isTotalRows"`
-	GroupCols   string `json:"groupCols"`
-	GroupKeys   string `json:"groupKeys"`
-	ValueCols   string `json:"valueCols"`
+type ValueCols struct {
+	cols []*ValueCol
 }
 
 func (d *FindPagingQueryDTO) NewFindPagingQueryRequest() *FindPagingQueryRequest {
@@ -165,14 +194,6 @@ func (d *FindPagingQueryDTO) newValueCols(s string) []*ValueCol {
 		res = append(res, col)
 	}
 	return res
-}
-
-type GroupCols struct {
-	cols []*GroupCol
-}
-
-type ValueCols struct {
-	cols []*ValueCol
 }
 
 func NewGroupColsByJson(jsonText string) ([]*GroupCol, error) {
@@ -243,28 +264,63 @@ func (s *ValueCols) Cols() []*ValueCol {
 	return s.cols
 }
 
+func (q *FindPagingQueryRequest) GetTenantId() string {
+	return q.TenantId
+}
+
 func (q *FindPagingQueryRequest) SetTenantId(value string) {
 	q.TenantId = value
+}
+
+func (q *FindPagingQueryRequest) GetFields() string {
+	return q.Fields
 }
 
 func (q *FindPagingQueryRequest) SetFields(value string) {
 	q.Fields = value
 }
 
+func (q *FindPagingQueryRequest) GetFilter() string {
+	return q.Filter
+}
+
 func (q *FindPagingQueryRequest) SetFilter(value string) {
 	q.Filter = value
+}
+
+func (q *FindPagingQueryRequest) GetSort() string {
+	return q.Sort
 }
 
 func (q *FindPagingQueryRequest) SetSort(value string) {
 	q.Sort = value
 }
 
+func (q *FindPagingQueryRequest) GetPageNum() int64 {
+	return q.PageNum
+}
 func (q *FindPagingQueryRequest) SetPageNum(value int64) {
 	q.PageNum = value
 }
 
+func (q *FindPagingQueryRequest) GetPageSize() int64 {
+	return q.PageSize
+}
+
 func (q *FindPagingQueryRequest) SetPageSize(value int64) {
 	q.PageSize = value
+}
+
+func (q *FindPagingQueryRequest) GetMustFilter() string {
+	return q.MustFilter
+}
+
+func (q *FindPagingQueryRequest) SetMustFilter(value string) {
+	q.MustFilter = value
+}
+
+func (q *FindPagingQueryRequest) GetIsTotalRows() bool {
+	return q.IsTotalRows
 }
 
 func (q *FindPagingQueryRequest) SetIsTotalRows(val bool) {
@@ -281,34 +337,6 @@ func (q *FindPagingQueryRequest) SetValueCols(value []*ValueCol) {
 
 func (q *FindPagingQueryRequest) SetGroupKeys(val []any) {
 	q.GroupKeys = val
-}
-
-func (q *FindPagingQueryRequest) GetTenantId() string {
-	return q.TenantId
-}
-
-func (q *FindPagingQueryRequest) GetFields() string {
-	return q.Fields
-}
-
-func (q *FindPagingQueryRequest) GetFilter() string {
-	return q.Filter
-}
-
-func (q *FindPagingQueryRequest) GetSort() string {
-	return q.Sort
-}
-
-func (q *FindPagingQueryRequest) GetPageNum() int64 {
-	return q.PageNum
-}
-
-func (q *FindPagingQueryRequest) GetPageSize() int64 {
-	return q.PageSize
-}
-
-func (q *FindPagingQueryRequest) GetIsTotalRows() bool {
-	return q.IsTotalRows
 }
 
 func (q *FindPagingQueryRequest) GetValueCols() []*ValueCol {
@@ -335,21 +363,12 @@ func (q *FindPagingQueryRequest) Validate() error {
 	return ve.GetError()
 }
 
-type FindByIdRequest struct {
-	TenantId string `json:"tenantId"`
-	Id       string `json:"id"`
-}
-
 func (r *FindByIdRequest) GetTenantId() string {
 	return r.TenantId
 }
 
 func (r *FindByIdRequest) GetId() string {
 	return r.Id
-}
-
-type FindByAllRequest struct {
-	TenantId string `json:"tenantId"`
 }
 
 func (r *FindByAllRequest) GetTenantId() string {
