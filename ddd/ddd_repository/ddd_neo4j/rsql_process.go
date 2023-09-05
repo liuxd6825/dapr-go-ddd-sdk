@@ -28,6 +28,12 @@ type RsqlProcess interface {
 
 	GetSqlWhere(tenantId string) interface{}
 	GetFilter(tenantId string) interface{}
+
+	OnIsNull(name string, value interface{}, rValue rsql.Value)
+	OnNotIsNull(name string, value interface{}, rValue rsql.Value)
+	OnStart(name string, value interface{}, rValue rsql.Value)
+	OnEnd(name string, value interface{}, rValue rsql.Value)
+
 }
 
 type rsqlProcess struct {
@@ -83,15 +89,30 @@ func (p *rsqlProcess) NotEquals(name string, value interface{}, rValue rsql.Valu
 	p.str = fmt.Sprintf("%s %s.%s=%v", p.str, p.dataKey, name, value)
 }
 
-func (r *rsqlProcess) OnContains(name string, value interface{}, rValue rsql.Value) {
-	//TODO implement me
-	panic("implement me")
+func (p *rsqlProcess) OnContains(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s like '*%v'", p.str, p.dataKey, name, value)
 }
 
-func (r *rsqlProcess) OnNotContains(name string, value interface{}, rValue rsql.Value) {
-	//TODO implement me
-	panic("implement me")
+func (p *rsqlProcess) OnNotContains(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s not like '*%v*'", p.str, p.dataKey, name, value)
 }
+
+func (p *rsqlProcess) OnIsNull(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s is null", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnNotIsNull(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s is not null", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnStart(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s like '*%s", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnEnd(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s like '%s*", p.str, p.dataKey, name, value)
+}
+
 
 func (p *rsqlProcess) OnAndItem() {
 	p.str = fmt.Sprintf("%s and ", p.str)

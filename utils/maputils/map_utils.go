@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type JsonTime interface {
+	PTime() *time.Time
+	Time() time.Time
+}
+
 const (
 	localTime        = "2006-01-02 15:04:05"
 	timeTypeName     = "Time"
@@ -100,7 +105,12 @@ func NewMapWithOptions(fromObj any, mask []string, snakeKey bool) (map[string]an
 		data := make(map[string]any)
 		for k, v := range mapData {
 			key := stringutils.SnakeString(k)
-			data[key] = v
+			if vTime, ok := v.(JsonTime); ok {
+				data[key] = vTime.PTime()
+			} else {
+				data[key] = v
+			}
+
 		}
 		return data, nil
 	}

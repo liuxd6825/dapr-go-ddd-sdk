@@ -118,6 +118,7 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 			logs.Error(ctx, err)
 		}
 	}()
+
 	err = fun(ctx)
 	if err != nil {
 		logs.Error(ctx, err)
@@ -319,7 +320,7 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 }
 
 func SetJson(ictx iris.Context, data interface{}) error {
-	bs, err := jsonutils.CustomJson.Marshal(data)
+	bs, err := WriteJSON(data)
 	if err != nil {
 		SetError(ictx, err)
 		return err
@@ -332,4 +333,16 @@ func SetJson(ictx iris.Context, data interface{}) error {
 
 	ictx.ContentType(iris_context.ContentJSONHeaderValue)
 	return nil
+}
+
+func ReadJSON(ictx iris.Context, obj any) error {
+	data, err := ictx.GetBody()
+	if err != nil {
+		return err
+	}
+	return jsonutils.CustomJson.Unmarshal(data, obj)
+}
+
+func WriteJSON(data any) ([]byte, error) {
+	return jsonutils.CustomJson.Marshal(data)
 }

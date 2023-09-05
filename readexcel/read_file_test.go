@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func testReviewFile(t *testing.T, file string, sheetName string, maxRows int) {
+func testReviewFile(t *testing.T, file string, sheetName string, maxRows int64) {
 	review, err := ReviewFile(file, sheetName, maxRows)
 	h := ""
 	for i := 0; i < len(review.Columns); i++ {

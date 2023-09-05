@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const LocalTimeLayoutLine = "2006-01-02 15:04:05"
@@ -79,9 +80,17 @@ func replace(s string, old string, new string) string {
 	return strings.ReplaceAll(s, old, new)
 }
 
-func toDateTime(dateStr, timeStr string) string {
-	v := timeutils.ToDateTime(dateStr, timeStr)
-	return v.Format(LocalTimeLayoutLine)
+func toDateTime(value ...string) string {
+	res := time.Time{}
+	count := len(value)
+	if count == 1 {
+		if v, err := timeutils.AnyToTime(value[0], time.Time{}); err == nil {
+			res = v
+		}
+	} else if count > 1 {
+		res = timeutils.ToDateTime(value[0], value[1])
+	}
+	return res.Format(LocalTimeLayoutLine)
 }
 
 func toFloat(val any) float64 {
@@ -144,10 +153,7 @@ func isMinus(val any) bool {
 //
 func payout(val any) float64 {
 	v := toFloat(val)
-	if v > 0 {
-		return 0
-	}
-	return abs(v)
+	return 0 - abs(v)
 }
 
 //
@@ -158,10 +164,7 @@ func payout(val any) float64 {
 //
 func income(val any) float64 {
 	v := toFloat(val)
-	if v < 0 {
-		return 0
-	}
-	return v
+	return abs(v)
 }
 
 //

@@ -61,8 +61,16 @@ func AnyToTime(data interface{}, defaultValue time.Time) (time.Time, error) {
 	return defaultValue, nil
 }
 
+// 20180313114933
+
+/**/
 func StrToDateTime(str string) (time.Time, error) {
 	format := LocalTimeLayoutLine
+	if len(str) == 14 {
+		if res, err := NumStrToDate(str); err == nil {
+			return res, nil
+		}
+	}
 	if len(str) <= 10 {
 		var err error
 		str, err = asDateString(str)
@@ -106,22 +114,58 @@ func asDateString(str string) (string, error) {
 	return s[0] + "-" + s[1] + "-" + s[2], nil
 }
 
+func NumStrToDate(str string) (t time.Time, err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			err = e.(error)
+		}
+	}()
+	if _, err := strconv.ParseInt(str, 10, 64); err != nil {
+		return time.Time{}, err
+	}
+	year, err := subToInt(str, 0, 3)
+	if err != nil {
+		return time.Time{}, err
+	}
+	month, err := subToInt(str, 4, 5)
+	if err != nil {
+		return time.Time{}, err
+	}
+	day, err := subToInt(str, 6, 7)
+	if err != nil {
+		return time.Time{}, err
+	}
+	h, err := subToInt(str, 8, 9)
+	if err != nil {
+		return time.Time{}, err
+	}
+	m, err := subToInt(str, 10, 11)
+	if err != nil {
+		return time.Time{}, err
+	}
+	s, err := subToInt(str, 12, 13)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Date(year, time.Month(month), day, h, m, s, 0, time.Local), nil
+}
+
 func StrToTimePart(str string) (time.Time, error) {
 	tNil := time.Time{}
 	if len(str) == 8 {
-		h, err := subToInt(str, 0, 2)
+		h, err := subToInt(str, 0, 1)
 		if err != nil {
 			return tNil, err
 		}
-		m, err := subToInt(str, 2, 4)
+		m, err := subToInt(str, 2, 3)
 		if err != nil {
 			return tNil, err
 		}
-		s, err := subToInt(str, 4, 6)
+		s, err := subToInt(str, 4, 5)
 		if err != nil {
 			return tNil, err
 		}
-		ns, err := subToInt(str, 6, 8)
+		ns, err := subToInt(str, 6, 7)
 		if err != nil {
 			return tNil, err
 		}
@@ -133,8 +177,8 @@ func StrToTimePart(str string) (time.Time, error) {
 }
 
 func subToInt(str string, index int, last int) (int, error) {
-	v := str[index:last]
-	i, err := strconv.ParseInt(v, 10, 8)
+	v := str[index : last+1]
+	i, err := strconv.ParseInt(v, 10, 64)
 	return int(i), err
 }
 

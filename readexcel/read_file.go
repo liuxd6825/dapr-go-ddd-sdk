@@ -163,6 +163,19 @@ func ReadBytes(buffer *bytes.Buffer, sheetName string, temp *Template) (*DataTab
 	}
 	return table, nil
 }
+
+func GetSheetNames(buffer *bytes.Buffer) ([]string, error) {
+	f, err := xlsx.OpenBinary(buffer.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, s := range f.Sheets {
+		names = append(names, s.Name)
+	}
+	return names, nil
+}
+
 func isTime(cell *xlsx.Cell) bool {
 	if cell.IsTime() || cell.Type() == xlsx.CellTypeDate {
 		return true
@@ -172,6 +185,7 @@ func isTime(cell *xlsx.Cell) bool {
 	}
 	return false
 }
+
 func getSheet(file *xlsx.File, sheetName string) (*xlsx.Sheet, error) {
 	var sheet *xlsx.Sheet
 	if len(sheetName) == 0 {
@@ -252,6 +266,10 @@ func ReadBytesToMap(bytes []byte, sheetName string, maxRows int64) (*Review, err
 	for c := 0; c < len(sheet.Cols); c++ {
 		review.AddColumns(GetCellLabel(c + 1))
 	}
+	for _, s := range f.Sheets {
+		review.AddSheetName(Sheet{Name: s.Name, MaxCol: s.MaxCol, MaxRow: s.MaxRow})
+	}
+	review.OpenSheet = sheet.Name
 	for rIdx := 0; rIdx < sheet.MaxRow; rIdx++ {
 		row := sheet.Row(rIdx)
 		item := ReviewItem{}

@@ -296,6 +296,7 @@ func (r *Dao[T]) getUpdateData(data any, opts ...ddd_repository.Options) any {
 	opt := ddd_repository.NewOptions(opts...)
 	updateCancel := opt.GetUpdateCancel()
 	updateFields := opt.GetUpdateFields()
+
 	if (updateCancel == nil || len(updateCancel) == 0) && (updateFields == nil || len(updateFields) == 0) {
 		if m, ok := data.(map[string]any); ok {
 			return r.getMap(m)
@@ -308,6 +309,7 @@ func (r *Dao[T]) getUpdateData(data any, opts ...ddd_repository.Options) any {
 
 	maskType := types.MaskTypeContain
 	mask := updateFields
+	mask = append(mask, "UpdatedTime", "UpdaterId", "UpdaterName")
 	if updateCancel != nil {
 		maskType = types.MaskTypeExclude
 		mask = updateCancel
@@ -375,7 +377,7 @@ func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	} else {
 		f = filter
 	}
-	res, err := r.getCollection().UpdateOne(ctx, f, bson.M{"$set": data}, updateOptions)
+	res, err := r.getCollection().UpdateOne(ctx, f, data, updateOptions)
 	if err != nil {
 		return 0, err
 	}
