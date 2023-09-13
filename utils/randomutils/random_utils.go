@@ -2,11 +2,10 @@ package randomutils
 
 import (
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"math"
 	"math/rand"
-	"strings"
 	"time"
 
 	crypto "crypto/rand"
@@ -150,18 +149,18 @@ func Email() string {
 
 // UUID 随机生成ID
 func UUID() string {
-	return uuid.New().String()
+	return idutils.NewId()
 }
 
 // PUUID 随机生成ID
 func PUUID() *string {
-	v := uuid.New().String()
+	v := UUID()
 	return &v
 }
 
 // NewId 新建ID
 func NewId() string {
-	return strings.Replace(uuid.New().String(), "-", "", 0)
+	return UUID()
 }
 
 // IpAddr 随机生成IP地址

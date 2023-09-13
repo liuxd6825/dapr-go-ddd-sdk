@@ -5,6 +5,8 @@ import (
 )
 
 func TestNewId(t *testing.T) {
-	id := NewId()
-	t.Log(id)
+	for i := 0; i < 100; i++ {
+		id := NewId()
+		t.Log(id, " = ", len(id))
+	}
 }
