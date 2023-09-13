@@ -20,7 +20,7 @@ func newRuntime() (*goja.Runtime, error) {
 	if err := vm.Set("replace", replace); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("替换", replace); err != nil {
+	if err := vm.Set("文字替换", replace); err != nil {
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func newRuntime() (*goja.Runtime, error) {
 	if err := vm.Set("abs", abs); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("取绝对值", abs); err != nil {
+	if err := vm.Set("绝对值", abs); err != nil {
 		return nil, err
 	}
 
@@ -73,7 +73,21 @@ func newRuntime() (*goja.Runtime, error) {
 		return nil, err
 	}
 
+	if err := vm.Set("isNull", isNull); err != nil {
+		return nil, err
+	}
+	if err := vm.Set("为空", income); err != nil {
+		return nil, err
+	}
+
 	return vm, nil
+}
+
+func isNull(s string, def string) string {
+	if len(s) == 0 {
+		return def
+	}
+	return s
 }
 
 func replace(s string, old string, new string) string {

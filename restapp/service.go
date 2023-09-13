@@ -197,6 +197,7 @@ func (s *service) actorMethodInvokeHandler(ctx *context.Context) {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return
 	}
+
 	ctx.StatusCode(http.StatusOK)
 	_, _ = ctx.Write(rspData)
 }
