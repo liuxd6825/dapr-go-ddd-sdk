@@ -38,7 +38,7 @@ func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult
 		return nil, err
 	}
 	list := node.GetLabels()
-	list = append(list, "graph_"+node.GetGraphId())
+	list = append(list, "case_"+node.GetCaseId())
 	list = append(list, "tenant_"+node.GetTenantId())
 	labels := c.getLabels(list...)
 
@@ -53,7 +53,7 @@ func (c *nodeCypher) InsertOrUpdate(ctx context.Context, data interface{}) (Cyph
 		return nil, err
 	}
 	list := node.GetLabels()
-	list = append(list, "graph_"+node.GetGraphId())
+	list = append(list, "case_"+node.GetCaseId())
 	list = append(list, "tenant_"+node.GetTenantId())
 	labels := c.getLabels(list...)
 
@@ -77,7 +77,7 @@ func (c *nodeCypher) InsertMany(ctx context.Context, list interface{}) (CypherRe
 			return nil, err
 		}
 		label := node.GetLabels()
-		label = append(label, "graph_"+node.GetGraphId())
+		label = append(label, "case_"+node.GetCaseId())
 		label = append(label, "tenant_"+node.GetTenantId())
 		labels := c.getLabels(label...)
 		cypher := fmt.Sprintf(" (n%s{%s}) ", labels, props)
@@ -171,6 +171,21 @@ func (c *nodeCypher) DeleteByIds(ctx context.Context, tenantId string, ids []str
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
+func (c *nodeCypher) DeleteByCaseId(ctx context.Context, tenantId string, caseId string) (CypherResult, error) {
+	cypher := fmt.Sprintf("MATCH (n%v) DETACH DELETE n", c.getLabels("case_"+caseId, "tenant_"+tenantId))
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (c *nodeCypher) DeleteByTenantId(ctx context.Context, tenantId string) (CypherResult, error) {
+	cypher := fmt.Sprintf("MATCH (n%v) DETACH DELETE n", c.getLabels("tenant_"+tenantId))
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
+func (c *nodeCypher) DeleteByLabels(ctx context.Context, tenantId string, label ...string) (CypherResult, error) {
+	cypher := fmt.Sprintf("MATCH (n%v) DETACH DELETE n", c.getLabels(label...))
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
 func (c *nodeCypher) DeleteAll(ctx context.Context, tenantId string) (CypherResult, error) {
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DETACH DELETE n", c.getLabels(), tenantId)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
@@ -218,9 +233,9 @@ func (c *nodeCypher) FindByIds(ctx context.Context, tenantId string, ids []strin
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
-func (c *nodeCypher) FindByGraphId(ctx context.Context, tenantId string, graphId string) (CypherResult, error) {
+func (c *nodeCypher) FindByCaseId(ctx context.Context, tenantId string, caseId string) (CypherResult, error) {
 	var params map[string]any
-	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s', graphId:'%s'}) RETURN n ", c.labels, tenantId, graphId)
+	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s', caseId:'%s'}) RETURN n ", c.labels, tenantId, caseId)
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 

@@ -21,7 +21,9 @@ type Cypher interface {
 	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error)
 	DeleteAll(ctx context.Context, tenantId string) (CypherResult, error)
 	DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error)
-
+	DeleteByTenantId(ctx context.Context, tenantId string) (CypherResult, error)
+	DeleteByLabels(ctx context.Context, tenantId string, label ...string) (CypherResult, error)
+	
 	DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)
 	DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error)
 
@@ -29,7 +31,7 @@ type Cypher interface {
 	FindById(ctx context.Context, tenantId, id string) (CypherResult, error)
 	FindByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error)
 	FindByAggregateId(ctx context.Context, tenantId, aggregateName, aggregateId string) (result CypherResult, err error)
-	FindByGraphId(ctx context.Context, tenantId string, graphId string) (result CypherResult, err error)
+	FindByCaseId(ctx context.Context, tenantId string, caseId string) (result CypherResult, err error)
 	FindAll(ctx context.Context, tenantId string) (CypherResult, error)
 	FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery) (CypherResult, error)
 	Count(ctx context.Context, tenantId, filter string) (CypherResult, error)

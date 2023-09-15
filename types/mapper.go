@@ -15,9 +15,10 @@ const (
 )
 
 type MaskOptions struct {
-	Mask   []string
-	Remove []string
-	Type   MaskType
+	Mask    []string
+	Remove  []string
+	Type    MaskType
+	TagName string // golang struct field标签名称 默认为map
 }
 
 var option *copier.Option
@@ -128,6 +129,7 @@ func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 	config := &mapstructure.DecoderConfig{
 		Result:   toObj,
 		Metadata: metadata,
+		TagName:  options.GetTagName(),
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)
@@ -135,6 +137,31 @@ func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 		return err
 	}
 	return decoder.Decode(fromMap)
+}
+
+func NewMap(fromObj any) (map[string]any, error) {
+	var toObj = make(map[string]any)
+	var metadata *mapstructure.Metadata
+	config := &mapstructure.DecoderConfig{
+		Result:   &toObj,
+		Metadata: metadata,
+		TagName:  "map",
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return nil, err
+	}
+	err = decoder.Decode(fromObj)
+	return toObj, err
+}
+
+func (o *MaskOptions) GetTagName() string {
+	tagName := "map"
+	if o != nil && len(o.TagName) > 0 {
+		tagName = o.TagName
+	}
+	return tagName
 }
 
 func getOption() *copier.Option {

@@ -304,6 +304,19 @@ func (d *Dao[T]) DeleteByGraphId(ctx context.Context, tenantId string, graphId s
 	return d.DeleteByFilter(ctx, tenantId, fmt.Sprintf("graphId=='%v'", graphId))
 }
 
+func (d *Dao[T]) DeleteByCaseId(ctx context.Context, tenantId string, caseId string, opts ...ddd_repository.Options) error {
+	return d.DeleteByFilter(ctx, tenantId, fmt.Sprintf("caseId=='%v'", caseId))
+}
+
+func (d *Dao[T]) DeleteByTenantId(ctx context.Context, tenantId string, opts ...ddd_repository.Options) error {
+	cr, err := d.cypher.DeleteByTenantId(ctx, tenantId)
+	if err != nil {
+		return err
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+	return err
+}
+
 func (d *Dao[T]) FindById(ctx context.Context, tenantId, id string, opts ...ddd_repository.Options) (T, bool, error) {
 	var null T
 	cr, err := d.cypher.FindById(ctx, tenantId, id)
@@ -459,44 +472,44 @@ func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]int
 	return resultData, err
 }
 
-func (d *Dao[T]) FindPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string,isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T]{
+func (d *Dao[T]) FindPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string, isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	return d.DoFilter(ctx, tenantId, func() (*ddd_repository.FindPagingResult[T], bool, error) {
-		return  d.findPagingByCypher(ctx, tenantId, cypher,  pageNum, pageSize, resultKey, isTotalRows, params, opts...)
+		return d.findPagingByCypher(ctx, tenantId, cypher, pageNum, pageSize, resultKey, isTotalRows, params, opts...)
 	})
 }
 
-func (d *Dao[T]) findPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string,isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) (*ddd_repository.FindPagingResult[T], bool, error) {
-		if err := assert.NotEmpty(tenantId, assert.NewOptions("TenantId cannot be empty")); err != nil {
-			return nil, false, err
-		}
-		result, err := d.Query(ctx, cypher+" RETURN "+resultKey, params)
+func (d *Dao[T]) findPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string, isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) (*ddd_repository.FindPagingResult[T], bool, error) {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("TenantId cannot be empty")); err != nil {
+		return nil, false, err
+	}
+	result, err := d.Query(ctx, cypher+" RETURN "+resultKey, params)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+	}
+
+	list, err := reflectutils.NewSlice[[]T]()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+	}
+
+	if err = result.GetList(resultKey, &list); err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+	}
+
+	var totalRows *int64
+	if isTotalRows {
+		totalKey := "count"
+		countCypher := cypher + fmt.Sprintf(" RETURN count(%s) as %s ", resultKey, totalKey)
+		result, err := d.Query(ctx, countCypher, params)
+		total, err := result.GetInteger(totalKey, 0)
 		if err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
+		totalRows = &total
+	}
 
-		list, err := reflectutils.NewSlice[[]T]()
-		if err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-		}
-
-		if err = result.GetList(resultKey, &list); err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-		}
-
-		var totalRows *int64
-		if isTotalRows {
-			totalKey := "count"
-			countCypher := cypher + fmt.Sprintf(" RETURN count(%s) as %s ",resultKey, totalKey)
-			result, err := d.Query(ctx, countCypher, params)
-			total, err := result.GetInteger(totalKey, 0)
-			if err != nil {
-				return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-			}
-			totalRows = &total
-		}
-
-		res:= ddd_repository.NewFindPagingResult[T](list, totalRows, nil, nil)
-		return res, true, err
+	res := ddd_repository.NewFindPagingResult[T](list, totalRows, nil, nil)
+	return res, true, err
 }
 
 func (d *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {

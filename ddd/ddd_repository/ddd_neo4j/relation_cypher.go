@@ -128,6 +128,16 @@ func (c *relationCypher) DeleteLabelByFilter(ctx context.Context, tenantId strin
 	return nil, nil
 }
 
+func (c *relationCypher) DeleteByLabels(ctx context.Context, tenantId string, label ...string) (CypherResult, error) {
+	// neo4j 不支持删除关系标签
+	return nil, nil
+}
+
+func (c *relationCypher) DeleteByTenantId(ctx context.Context, tenantId string) (CypherResult, error) {
+	cypher := fmt.Sprintf(`MATCH (a)-[r{tenantId:'%v',id:'%v'}]-(b) delete r `, tenantId)
+	return NewCypherBuilderResult(cypher, nil, nil), nil
+}
+
 func (c *relationCypher) DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error) {
 	cypher := fmt.Sprintf(`MATCH (a)-[r{tenantId:'%v',id:'%v'}]-(b) delete r `, tenantId, id)
 	return NewCypherBuilderResult(cypher, nil, nil), nil
@@ -170,6 +180,10 @@ func (c *relationCypher) FindByAggregateId(ctx context.Context, tenantId, aggreg
 
 func (c *relationCypher) FindByGraphId(ctx context.Context, tenantId string, graphId string) (result CypherResult, err error) {
 	return c.FindByFilter(ctx, tenantId, fmt.Sprintf("graphId=='%v'", graphId))
+}
+
+func (c *relationCypher) FindByCaseId(ctx context.Context, tenantId string, caseId string) (result CypherResult, err error) {
+	return c.FindByFilter(ctx, tenantId, fmt.Sprintf("caseId=='%v'", caseId))
 }
 
 func (c *relationCypher) FindAll(ctx context.Context, tenantId string) (CypherResult, error) {

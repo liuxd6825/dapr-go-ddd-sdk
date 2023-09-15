@@ -13,15 +13,16 @@ type Node interface {
 	GetLabels() []string
 	SetLabels([]string)
 
-	SetGraphId(v string)
-	GetGraphId() string
+	SetCaseId(v string)
+	GetCaseId() string
 }
 
 type BaseNode struct {
 	Id       string   `json:"id" bson:"id"`
-	TenantId string   `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
-	GraphId  string   `json:"graphId" bson:"graph_id" gorm:"index:idx_graph_id"`
 	Nid      int64    `json:"-" bson:"nid"`
+	TenantId string   `json:"tenantId" bson:"tenant_id" gorm:"index:idx_tenant_id"`
+	CaseId   string   `json:"caseId" bson:"case_id" gorm:"index:idx_case_id"`
+	GraphId  string   `json:"graphId" bson:"graph_id" gorm:"index:idx_graph_id"`
 	Labels   []string `json:"labels" bson:"labels" gorm:"-"`
 }
 
@@ -45,12 +46,12 @@ func (b *BaseNode) SetTenantId(s string) {
 	b.TenantId = s
 }
 
-func (b *BaseNode) SetGraphId(v string) {
-	b.GraphId = v
+func (b *BaseNode) SetCaseId(v string) {
+	b.CaseId = v
 }
 
-func (b *BaseNode) GetGraphId() string {
-	return b.GraphId
+func (b *BaseNode) GetCaseId() string {
+	return b.CaseId
 }
 
 func (b *BaseNode) GetNid() int64 {
@@ -65,6 +66,6 @@ func (b *BaseNode) GetLabels() []string {
 	return b.Labels
 }
 
-func (b *BaseNode) SetLabels(v []string ) {
+func (b *BaseNode) SetLabels(v []string) {
 	b.Labels = v
 }
