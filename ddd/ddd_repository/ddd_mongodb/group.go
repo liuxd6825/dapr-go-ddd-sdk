@@ -23,14 +23,12 @@ type QueryGroup struct {
 func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
-	filter := ""
-	if len(f1) > 0 && len(f2) > 0 {
-		filter = fmt.Sprintf("(%s) and (%s)", f1, f2)
-	} else if len(f1) > 0 {
-		filter = f1
-	} else if len(f2) > 0 {
-		filter = f2
+	f3 := ""
+	mustWhere, ok := qry.(ddd_repository.FindPagingQueryMustWhere)
+	if ok {
+		f3 = mustWhere.GetMustWhere()
 	}
+	filter := getRsqlAnds(f1, f2, f3)
 	baseGroup := &QueryGroup{
 		TenantId:     qry.GetTenantId(),
 		Filter:       filter,
@@ -315,4 +313,23 @@ func toDate(v interface{}) time.Time {
 	loc, _ := time.LoadLocation("Local")      //重要：获取时区
 	theTime, _ := time.ParseInLocation(timeLayout, _v, loc)
 	return theTime
+}
+
+func getRsqlAnds(s ...string) string {
+	res := ""
+	for _, item := range s {
+		res = getRsqlAnd(res, item)
+	}
+	return res
+}
+
+func getRsqlAnd(s1 string, s2 string) string {
+	b1 := len(s1) > 0
+	b2 := len(s2) > 0
+	if b1 && b2 {
+		return fmt.Sprintf("(%s) and (%s)", s1, s2)
+	} else if b1 {
+		return s1
+	}
+	return s2
 }

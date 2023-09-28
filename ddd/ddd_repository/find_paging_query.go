@@ -88,10 +88,15 @@ type FindPagingQueryRequest struct {
 	ValueCols   []*ValueCol `json:"valueCols"`
 }
 
+type FindPagingQueryMustWhere interface {
+	GetMustWhere() string
+}
+
 type FindPagingQueryDTO struct {
 	TenantId    string `json:"tenantId"`
 	Fields      string `json:"fields"`
 	Filter      string `json:"filter"`
+	MustFilter  string `json:"mustFilter"`
 	Sort        string `json:"sort"`
 	PageNum     int64  `json:"pageNum"`
 	PageSize    int64  `json:"pageSize"`
@@ -148,6 +153,7 @@ func (d *FindPagingQueryDTO) NewFindPagingQueryRequest() *FindPagingQueryRequest
 	r.PageNum = d.PageNum
 	r.PageSize = d.PageSize
 	r.Filter = d.Filter
+	r.MustFilter = d.MustFilter
 	r.Fields = d.Fields
 	r.TenantId = d.TenantId
 	r.Sort = d.Sort

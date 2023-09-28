@@ -728,10 +728,10 @@ func (r Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPaging
 	return findData
 }
 */
-func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	var err error
 	findOptions := getFindOptions(opts...)
-	queryGroup := NewQueryGroup(query)
+	queryGroup := NewQueryGroup(qry)
 
 	g, err := queryGroup.GetGroup()
 	if err != nil {
@@ -811,7 +811,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 			pipeline = append(pipeline, bson.D{{
 				"$project", map[string]interface{}{
 					"_id":        "$_id",
-					"data":       map[string]interface{}{"$slice": []interface{}{"$data", query.GetPageSize() * query.GetPageNum(), query.GetPageSize()}},
+					"data":       map[string]interface{}{"$slice": []interface{}{"$data", qry.GetPageSize() * qry.GetPageNum(), qry.GetPageSize()}},
 					"total_rows": "$total_rows",
 				},
 			}})
@@ -836,12 +836,12 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 			f = filter
 		}
 		findOptions.SetSort(sort)
-		if query.GetPageSize() > 0 {
-			findOptions.SetLimit(query.GetPageSize())
-			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
+		if qry.GetPageSize() > 0 {
+			findOptions.SetLimit(qry.GetPageSize())
+			findOptions.SetSkip(qry.GetPageSize() * qry.GetPageNum())
 		}
 		cur, err = coll.Find(ctx, f, findOptions)
-		if query.GetIsTotalRows() {
+		if qry.GetIsTotalRows() {
 			totalRows, errt = coll.CountDocuments(ctx, f)
 		}
 	}
@@ -871,10 +871,10 @@ func (r Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQ
 	if data == nil {
 		data = []T{}
 	}
-	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, query, err)
+	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, qry, err)
 	// 进行汇总计算
-	if len(query.GetValueCols()) > 0 {
-		sumData, _, err := r.Sum(ctx, query, opts...)
+	if len(qry.GetValueCols()) > 0 {
+		sumData, _, err := r.Sum(ctx, qry, opts...)
 		findData.SetSum(true, sumData, err)
 	} else {
 		sumData := []T{}
