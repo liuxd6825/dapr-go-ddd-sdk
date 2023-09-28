@@ -184,7 +184,7 @@ func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 }
 
 //
-// GetGroupNoPagingFilter
+// GetGroupExpandFilter
 // @Description: 分组不分页，即分组全部展开时过滤器
 // @receiver b
 // @return map[string]interface{}
