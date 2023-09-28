@@ -1,26 +1,36 @@
 package ddd_repository
 
-type FindByIdQuery interface {
-	TenantId() string
-	Id() string
+type IFindByIdQuery interface {
+	GetId() string
+	SetId(val string) FindByIdQuery
+
+	GetTenantId() string
+	SetTenantId(val string) FindByIdQuery
 }
 
-type findByIdQuery struct {
-	tenantId string
-	id       string
+type FindByIdQuery struct {
+	TenantId string `json:"tenantId" bson:"tenant_id"`
+	Id       string `json:"id" bson:"id"`
 }
 
-func NewFindByIdQuery(tenantId, id string) FindByIdQuery {
-	return &findByIdQuery{
-		tenantId: tenantId,
-		id:       id,
-	}
+func NewFindByIdQuery() *FindByIdQuery {
+	return &FindByIdQuery{}
 }
 
-func (q *findByIdQuery) TenantId() string {
-	return q.tenantId
+func (q *FindByIdQuery) GetId() string {
+	return q.Id
 }
 
-func (q *findByIdQuery) Id() string {
-	return q.id
+func (q *FindByIdQuery) SetId(val string) *FindByIdQuery {
+	q.Id = val
+	return q
+}
+
+func (q *FindByIdQuery) GetTenantId() string {
+	return q.TenantId
+}
+
+func (q *FindByIdQuery) SetTenantId(val string) *FindByIdQuery {
+	q.TenantId = val
+	return q
 }

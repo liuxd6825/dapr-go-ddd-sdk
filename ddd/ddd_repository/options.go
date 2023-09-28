@@ -37,7 +37,7 @@ type Options interface {
 	SetUpdateFields([]string) Options
 
 	//
-	// GetUpdateMask
+	// GetUpdateCancel
 	// @Description: 更新数据时，跳过不更新的字段名
 	// @return []string
 	//
@@ -48,7 +48,7 @@ type Options interface {
 	Merge(opts ...Options) Options
 }
 
-type options struct {
+type RepositoryOptions struct {
 	sort         *string
 	timeout      *time.Duration
 	updateFields []string
@@ -57,7 +57,7 @@ type options struct {
 }
 
 func NewOptions(o ...Options) Options {
-	res := &options{}
+	res := &RepositoryOptions{}
 	for _, item := range o {
 		if item.GetUpdateCancel() != nil {
 			res.updateCancel = item.GetUpdateCancel()
@@ -78,63 +78,63 @@ func NewOptions(o ...Options) Options {
 	return res
 }
 
-func (o *options) GetTimeout() *time.Duration {
+func (o *RepositoryOptions) GetTimeout() *time.Duration {
 	return o.timeout
 }
 
-func (o *options) SetTimeout(t *time.Duration) Options {
+func (o *RepositoryOptions) SetTimeout(t *time.Duration) Options {
 	o.timeout = t
 	return o
 }
 
-func (o *options) GetUpdateFields() []string {
+func (o *RepositoryOptions) GetUpdateFields() []string {
 	return o.updateFields
 }
 
-func (o *options) SetUpdateFields(updateFields []string) Options {
+func (o *RepositoryOptions) SetUpdateFields(updateFields []string) Options {
 	o.updateFields = updateFields
 	return o
 }
 
-func (o *options) SetUpdateCancelByDefault() Options {
+func (o *RepositoryOptions) SetUpdateCancelByDefault() Options {
 	o.updateCancel = []string{"CreatedTime", "CreatorId", "CreatorName", "Id"}
 	return o
 }
 
-func (o *options) SetUpdateCancel(v []string) Options {
+func (o *RepositoryOptions) SetUpdateCancel(v []string) Options {
 	o.updateCancel = v
 	return o
 }
 
-func (o *options) GetUpdateCancel() []string {
+func (o *RepositoryOptions) GetUpdateCancel() []string {
 	return o.updateCancel
 }
 
-func (o *options) SetUpsertIsNull() Options {
+func (o *RepositoryOptions) SetUpsertIsNull() Options {
 	o.upsert = nil
 	return o
 }
 
-func (o *options) GetUpsert() *bool {
+func (o *RepositoryOptions) GetUpsert() *bool {
 	return o.upsert
 }
 
-func (o *options) SetUpsert(v bool) Options {
+func (o *RepositoryOptions) SetUpsert(v bool) Options {
 	o.upsert = &v
 	return o
 }
 
-func (o *options) GetSort() *string {
+func (o *RepositoryOptions) GetSort() *string {
 	return o.sort
 }
 
-func (o *options) SetSort(s *string) Options {
+func (o *RepositoryOptions) SetSort(s *string) Options {
 	o.sort = s
 	return o
 }
 
-func (o *options) Merge(opts ...Options) Options {
-	res := &options{}
+func (o *RepositoryOptions) Merge(opts ...Options) Options {
+	res := &RepositoryOptions{}
 	var updateCancel []string
 	for _, o := range opts {
 		if o.GetSort() != nil {

@@ -86,13 +86,6 @@ func (d *Dao[T]) NewEntity() (res T, resErr error) {
 	return reflectutils.NewStruct[T]()
 }
 
-func (d *Dao[T]) NewEntities() (res []T, resErr error) {
-	if d.newList != nil {
-		return d.newList(), nil
-	}
-	return reflectutils.NewSlice[[]T]()
-}
-
 func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -349,7 +342,7 @@ func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, o
 	if err != nil {
 		return null, false, err
 	}
-	list, err := d.NewEntities()
+	list, err := reflectutils.NewSlice[[]T]()
 	if err != nil {
 		return null, false, err
 	}

@@ -127,7 +127,10 @@ func (m *MongoProcess) OnLike(name string, value interface{}, rValue rsql.Value)
 	if err != nil {
 		m.addError(name, err)
 	}
+
 	pattern := fmt.Sprintf("%s", value)
+	pattern = strings.ReplaceAll(pattern, "*", "")
+
 	m.current.addChildItem(AsFieldName(name), primitive.Regex{Pattern: pattern, Options: "im"})
 }
 

@@ -27,14 +27,14 @@ func newRuntime() (*goja.Runtime, error) {
 	if err := vm.Set("toDateTime", toDateTime); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("转时间", toDateTime); err != nil {
+	if err := vm.Set("取时间", toDateTime); err != nil {
 		return nil, err
 	}
 
 	if err := vm.Set("abs", abs); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("绝对值", abs); err != nil {
+	if err := vm.Set("取绝对值", abs); err != nil {
 		return nil, err
 	}
 
@@ -48,7 +48,7 @@ func newRuntime() (*goja.Runtime, error) {
 	if err := vm.Set("payout", payout); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("取支付金额", payout); err != nil {
+	if err := vm.Set("取支出金额", payout); err != nil {
 		return nil, err
 	}
 
@@ -69,21 +69,21 @@ func newRuntime() (*goja.Runtime, error) {
 	if err := vm.Set("toFloat", toFloat); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("转浮点值", income); err != nil {
+	if err := vm.Set("取浮点值", toFloat); err != nil {
 		return nil, err
 	}
 
-	if err := vm.Set("isNull", isNull); err != nil {
+	if err := vm.Set("toString", toString); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("为空", income); err != nil {
+	if err := vm.Set("取文本", toString); err != nil {
 		return nil, err
 	}
 
 	return vm, nil
 }
 
-func isNull(s string, def string) string {
+func toString(s string, def string) string {
 	if len(s) == 0 {
 		return def
 	}
@@ -161,7 +161,7 @@ func isMinus(val any) bool {
 
 //
 //  payout
-//  @Description: 取得支付金额
+//  @Description: 取得支出金额
 //  @param val
 //  @return float64
 //
