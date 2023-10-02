@@ -51,7 +51,7 @@ func (r *Dao[T]) NewEntityList() ([]T, error) {
 	return reflectutils.NewSlice[[]T]()
 }
 
-func (r *Dao[T]) getCollection() *mongo.Collection {
+func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
 	if r.collection != nil {
 		return r.collection
 	}
@@ -97,7 +97,7 @@ func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repos
 		findOneOptions := getFindOneOptions(opts...)
 		isFound := true
 
-		if err := r.getCollection().FindOne(ctx, filter, findOneOptions).Err(); err != nil {
+		if err := r.getCollection(ctx).FindOne(ctx, filter, findOneOptions).Err(); err != nil {
 			if err == mongo.ErrNoDocuments {
 				// 没有找到，设置 isFound 状态
 				isFound = false
@@ -111,7 +111,7 @@ func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repos
 		if isFound {
 			return r.updateById(ctx, entity, opts...)
 		} else {
-			_, err := r.getCollection().InsertOne(ctx, entity, getInsertOneOptions(opts...))
+			_, err := r.getCollection(ctx).InsertOne(ctx, entity, getInsertOneOptions(opts...))
 			return entity, err
 		}
 	})
@@ -123,7 +123,7 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
-		_, err := r.getCollection().InsertOne(ctx, entity, getInsertOneOptions(opts...))
+		_, err := r.getCollection(ctx).InsertOne(ctx, entity, getInsertOneOptions(opts...))
 		return entity, err
 	})
 }
@@ -133,7 +133,7 @@ func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 		return err
 	}
 	data["tenant_id"] = tenantId
-	_, err := r.getCollection().InsertOne(ctx, data, getInsertOneOptions(opts...))
+	_, err := r.getCollection(ctx).InsertOne(ctx, data, getInsertOneOptions(opts...))
 	return err
 }
 
@@ -154,7 +154,7 @@ func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repos
 	}
 
 	return r.DoSetMany(func() ([]T, error) {
-		_, err := r.getCollection().InsertMany(ctx, docs, getInsertManyOptions(opts...))
+		_, err := r.getCollection(ctx).InsertMany(ctx, docs, getInsertManyOptions(opts...))
 		return entitits, err
 	})
 }
@@ -173,7 +173,7 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repositor
 	data := r.getUpdateData(entity, opt)
 	uopt := getUpdateOptions(opts...)
 	setData := bson.M{"$set": data}
-	_, err := r.getCollection().UpdateByID(ctx, entity.GetId(), setData, uopt)
+	_, err := r.getCollection(ctx).UpdateByID(ctx, entity.GetId(), setData, uopt)
 	if err != nil {
 		return entity, err
 	}
@@ -190,7 +190,7 @@ func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 		mdata := r.getUpdateData(data, opt)
 		setData := bson.M{"$set": mdata}
 		updateOptions := getUpdateOptions(opts...)
-		res, err := r.getCollection().UpdateMany(ctx, filterMap, setData, updateOptions)
+		res, err := r.getCollection(ctx).UpdateMany(ctx, filterMap, setData, updateOptions)
 		return res, err
 	})
 }
@@ -218,7 +218,7 @@ func (r *Dao[T]) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts 
 		return &ddd_repository.BulkWriteResult{}, nil
 	}
 	opt := &options.BulkWriteOptions{}
-	bulkRes, err := r.getCollection().BulkWrite(ctx, models, opt)
+	bulkRes, err := r.getCollection(ctx).BulkWrite(ctx, models, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +280,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 			filter := bson.D{{ConstIdField, id}}
 
 			setData := bson.M{"$set": doc}
-			_, err = r.getCollection().UpdateOne(ctx, filter, setData, updateOptions)
+			_, err = r.getCollection(ctx).UpdateOne(ctx, filter, setData, updateOptions)
 			if err != nil {
 				return nil, err
 			}
@@ -348,7 +348,7 @@ func (r *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id s
 	}
 	filter := bson.M{"tenant_id": tenantId, "_id": id}
 	udpate := r.getMap(data)
-	_, err := r.getCollection().UpdateOne(ctx, filter, udpate)
+	_, err := r.getCollection(ctx).UpdateOne(ctx, filter, udpate)
 	if err != nil {
 		return null, err
 	}
@@ -377,7 +377,7 @@ func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	} else {
 		f = filter
 	}
-	res, err := r.getCollection().UpdateOne(ctx, f, data, updateOptions)
+	res, err := r.getCollection(ctx).UpdateOne(ctx, f, data, updateOptions)
 	if err != nil {
 		return 0, err
 	}
@@ -419,7 +419,7 @@ func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string,
 		filter = append(filter, bson.E{Key: ConstIdField, Value: bson.M{"$in": ids}})
 		filter = append(filter, bson.E{Key: ConstTenantIdField, Value: tenantId})
 		deleteOptions := getDeleteOptions(opts...)
-		_, err := r.getCollection().DeleteMany(ctx, filter, deleteOptions)
+		_, err := r.getCollection(ctx).DeleteMany(ctx, filter, deleteOptions)
 		return null, err
 	})
 	return setResult.GetError()
@@ -440,7 +440,7 @@ func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map
 	return r.DoSet(func() (T, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		deleteOptions := getDeleteOptions(opts...)
-		_, err := r.getCollection().DeleteMany(ctx, filter, deleteOptions)
+		_, err := r.getCollection(ctx).DeleteMany(ctx, filter, deleteOptions)
 		var result T
 		return result, err
 	})
@@ -499,7 +499,7 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 		if err != nil {
 			return null, false, err
 		}
-		result := r.getCollection().FindOne(ctx, filter, findOneOptions)
+		result := r.getCollection(ctx).FindOne(ctx, filter, findOneOptions)
 		if result.Err() != nil {
 			return null, false, result.Err()
 		}
@@ -515,7 +515,7 @@ func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 		var list []T
 		filter := r.NewFilter(tenantId, filterMap)
 		findOptions := getFindOptions(opts...)
-		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
+		cursor, err := r.getCollection(ctx).Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -528,7 +528,7 @@ func (r *Dao[T]) FindListByBsonM(ctx context.Context, tenantId string, filter bs
 	return r.DoFindList(func() ([]T, bool, error) {
 		var list []T
 		findOptions := getFindOptions(opts...)
-		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
+		cursor, err := r.getCollection(ctx).Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -541,7 +541,7 @@ func (r *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rsql string, o
 	return r.DoList(tenantId, rsql, func(filterMap map[string]interface{}) ([]T, bool, error) {
 		var list []T
 		findOptions := getFindOptions(opts...)
-		cursor, err := r.getCollection().Find(ctx, filterMap, findOptions)
+		cursor, err := r.getCollection(ctx).Find(ctx, filterMap, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -578,7 +578,7 @@ func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			findOptions.SetSort(sort)
 		}
 
-		cursor, err := r.getCollection().Find(ctx, filter, findOptions)
+		cursor, err := r.getCollection(ctx).Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -586,7 +586,7 @@ func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		err = cursor.All(ctx, &data)
 		var totalRows *int64
 		if query.GetIsTotalRows() {
-			total, err := r.getCollection().CountDocuments(ctx, filter)
+			total, err := r.getCollection(ctx).CountDocuments(ctx, filter)
 			if err != nil {
 				return nil, false, err
 			}
@@ -644,7 +644,7 @@ func (r Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPaging
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
 
-	coll := r.getCollection()
+	coll := r.getCollection(ctx)
 	var findData *ddd_repository.FindPagingResult[T]
 	var cur *mongo.Cursor
 	///var curt *mongo.Cursor
@@ -728,7 +728,15 @@ func (r Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPaging
 	return findData
 }
 */
-func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (result *ddd_repository.FindPagingResult[T]) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				result = ddd_repository.NewFindPagingResultWithError[T](err)
+			}
+		}
+	}()
+
 	var err error
 	findOptions := getFindOptions(opts...)
 	queryGroup := NewQueryGroup(qry)
@@ -783,7 +791,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
 
-	coll := r.getCollection()
+	coll := r.getCollection(ctx)
 	var findData *ddd_repository.FindPagingResult[T]
 	var cur *mongo.Cursor
 	///var curt *mongo.Cursor
@@ -885,7 +893,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 
 func (r *Dao[T]) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}, opts ...ddd_repository.Options) error {
 	options := getAggregateOptions(opts...)
-	cur, err := r.getCollection().Aggregate(ctx, pipeline, options)
+	cur, err := r.getCollection(ctx).Aggregate(ctx, pipeline, options)
 	if err != nil {
 		return err
 	}
@@ -905,7 +913,7 @@ func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCol
 		pipeline = append(pipeline, bson.D{{"$match", filterMap}})
 	}
 	pipeline = append(pipeline, bson.D{{"$out", toCollectionName}})
-	_, err = r.getCollection().Aggregate(ctx, pipeline, options)
+	_, err = r.getCollection(ctx).Aggregate(ctx, pipeline, options)
 	return err
 }
 
@@ -934,7 +942,7 @@ func (r Dao[T]) Sum(ctx context.Context, query ddd_repository.FindPagingQuery, o
 }
 
 func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) ([]T, bool, error) {
-	coll := r.getCollection()
+	coll := r.getCollection(ctx)
 	data, err := r.NewEntityList()
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
@@ -968,7 +976,7 @@ func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*
 }
 
 func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
-	total, err := r.getCollection().CountDocuments(ctx, filterData)
+	total, err := r.getCollection(ctx).CountDocuments(ctx, filterData)
 	if err != nil {
 		return 0, err
 	}
@@ -977,7 +985,7 @@ func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any,
 
 func (r *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
 	f, err := r.getFilterMap(tenantId, rsql)
-	total, err := r.getCollection().CountDocuments(ctx, f)
+	total, err := r.getCollection(ctx).CountDocuments(ctx, f)
 	if err != nil {
 		return 0, err
 	}

@@ -333,7 +333,7 @@ func (r *Repository[T]) FindPaging(ctx context.Context, query ddd_repository.Fin
 		err = cursor.All(ctx, data)
 		totalRows, err := r.collection.CountDocuments(ctx, filter)
 		findData := ddd_repository.NewFindPagingResult[T](*data, &totalRows, query, err)
-		return findData, true, err
+		return findData, findData.GetIsFound(), err
 	})
 }
 
