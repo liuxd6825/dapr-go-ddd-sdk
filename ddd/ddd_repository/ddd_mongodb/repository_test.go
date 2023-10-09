@@ -102,8 +102,8 @@ func newRepository(mongodb *MongoDB, coll *mongo.Collection) *Repository[*User] 
 func newCollection(name string) (*MongoDB, *mongo.Collection) {
 	config := &Config{
 		Host:         "122.143.11.104:27018,122.143.11.104:27019,122.143.11.104:27020",
-		DatabaseName: "duxm_fund_record_service_cmd_db",
-		UserName:     "fund_record",
+		DatabaseName: "unit_test",
+		UserName:     "test",
 		Password:     "123456",
 		Options:      "replicaSet=mongors",
 	}

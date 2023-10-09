@@ -35,6 +35,19 @@ func TestMapper_Search(t *testing.T) {
 
 }
 
+func TestDao_CreateIndexes(t *testing.T) {
+	ctx := context.Background()
+	mdb, coll := newCollection("test_create_index")
+	mapper := NewDao[*Index](func() (mongodb *MongoDB, collection *mongo.Collection) {
+		return mdb, coll
+	})
+
+	err := mapper.CreateIndexes(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func logObject(t *testing.T, label string, obj any) {
 	jsonText, err := json.Marshal(obj)
 	if err != nil {
@@ -43,8 +56,18 @@ func logObject(t *testing.T, label string, obj any) {
 	t.Log(label, string(jsonText))
 }
 
+type Index struct {
+	Id        string `bson:"_id" `
+	TenantId  string
+	Name      string `bson:"name" index:"" `
+	Asc       int64  `bson:"asc" index:" asc"`
+	Desc      int64  `bson:"desc" index:" desc "`
+	Unique    string `index:"unique"`
+	AscUnique string `bson:"asc_unique" index:"asc, unique "`
+}
+
 type Record struct {
-	Id     string `json:"id,omitempty"  bson:"_id"   validate:"required"  description:"id"` // 行Id
+	Id     string `json:"id,omitempty"  bson:"_id"  index:""  validate:"required"  description:"id"` // 行Id
 	RowNum int64  `json:"rowNum,omitempty" bson:"rowNum" description:"租户标识"`
 
 	TenantId string   `json:"tenantId,omitempty" bson:"tenant_id" description:"租户标识"`
@@ -90,6 +113,22 @@ func (u *Record) SetTenantId(v string) {
 }
 
 func (u *Record) GetId() string {
+	return string(u.Id)
+}
+
+func (u *Index) SetId(v string) {
+	u.Id = v
+}
+
+func (u *Index) GetTenantId() string {
+	return u.TenantId
+}
+
+func (u *Index) SetTenantId(v string) {
+	u.TenantId = v
+}
+
+func (u *Index) GetId() string {
 	return string(u.Id)
 }
 

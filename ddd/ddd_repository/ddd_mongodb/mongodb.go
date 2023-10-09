@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonoptions"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -145,6 +146,29 @@ func (m *MongoDB) init(config *Config) error {
 
 func (m *MongoDB) GetCollection(collectionName string) *mongo.Collection {
 	return m.database.Collection(collectionName, m.collectionOptions)
+}
+
+func (m *MongoDB) Name() string {
+	return m.database.Name()
+}
+
+func (m *MongoDB) Drop(ctx context.Context) error {
+	return m.database.Drop(ctx)
+}
+
+func (m *MongoDB) GetCollectionNames(ctx context.Context) ([]string, error) {
+	return m.database.ListCollectionNames(ctx, bson.D{})
+}
+
+func (m *MongoDB) ExistCollection(ctx context.Context, name any) (bool, error) {
+	names, err := m.database.ListCollectionNames(ctx, bson.D{{"name", name}})
+	if err != nil {
+		return false, err
+	}
+	if len(names) == 1 {
+		return true, err
+	}
+	return false, err
 }
 
 func (m *MongoDB) CreateCollection(collectionName string) error {

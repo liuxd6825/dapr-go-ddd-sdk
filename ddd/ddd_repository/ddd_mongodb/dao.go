@@ -12,9 +12,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
+	"reflect"
 	"strings"
 )
 
@@ -30,17 +33,163 @@ type Dao[T ddd.Entity] struct {
 	null          T
 	newFun        func() T                                                // 新建实体结构方法
 	initfu        func() (mongodb *MongoDB, collection *mongo.Collection) // 初始化
+	options       *Options
 }
 
-func NewDao[T ddd.Entity](initfu func() (mongodb *MongoDB, collection *mongo.Collection)) *Dao[T] {
+type Options struct {
+	autoCreateCollection *bool // 自动建表
+	autoCreateIndex      *bool // 自动建索引
+}
+
+func NewOptions(opts ...*Options) *Options {
+	o := &Options{}
+	for _, item := range opts {
+		if item == nil {
+			continue
+		}
+		if item.autoCreateCollection != nil {
+			o.autoCreateCollection = item.autoCreateCollection
+		}
+		if item.autoCreateIndex != nil {
+			o.autoCreateIndex = item.autoCreateIndex
+		}
+	}
+	return o
+}
+
+func NewDao[T ddd.Entity](initfu func() (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options) *Dao[T] {
 	r := &Dao[T]{}
 	r.initfu = initfu
+	r.options = NewOptions(opts...)
 	return r
 }
 
-func (r *Dao[T]) Init(mongodb *MongoDB, collection *mongo.Collection) {
+func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.Collection) error {
 	r.mongodb = mongodb
 	r.collection = collection
+
+	if r.options.GetAutoCreateCollection() {
+		find, err := mongodb.ExistCollection(ctx, collection.Name())
+		if err != nil {
+			return err
+		}
+
+		if !find {
+			if err := mongodb.CreateCollection(collection.Name()); err != nil {
+				return err
+			}
+			if r.options.GetAutoCreateIndex() {
+				if err := r.CreateIndexes(ctx); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+//
+// CreateIndexes
+//  @Description: 根据index标签创建数据库索引。index:asc,desc,unique
+//  示例
+//  type Index struct {
+//	    Id        string `bson:"_id" `
+//	    TenantId  string
+//	    Name      string `bson:"name" index:"" `
+//	    Asc       int64  `bson:"asc" index:" asc"`
+//	    Desc      int64  `bson:"desc" index:" desc "`
+//	    Unique    string `index:"unique"`
+//	    AscUnique string `bson:"asc_unique" index:"asc, unique "`
+//   }
+//  @receiver r
+//  @param ctx  上下文
+//  @return error 错误
+//
+func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
+	e, err := r.NewEntity()
+	if err != nil {
+		return err
+	}
+	t := reflect.TypeOf(e)
+	elem := t.Elem()
+	var models []mongo.IndexModel
+	for i := 0; i < elem.NumField(); i++ {
+		f := elem.Field(i)
+
+		isCreate := false   //是否创建索引
+		isUnique := false   //是否唯一
+		var order int32 = 1 // 排序规则 -1:降序； 1:升序
+
+		if strings.Contains(string(f.Tag), " index:") {
+			isCreate = true
+		}
+
+		indexTag := f.Tag.Get("index")
+		indexTag = strings.Trim(indexTag, " ")
+		if len(indexTag) > 0 {
+			isCreate = true
+			if strings.Contains(indexTag, ",") {
+				values := strings.Split(indexTag, ",")
+				for _, key := range values {
+					switch strings.Trim(key, " ") {
+					case "unique":
+						isUnique = true
+						break
+					case "asc":
+						order = 1
+						break
+					case "desc":
+						order = 0
+						break
+					}
+				}
+			} else {
+				indexTag = strings.ToLower(strings.Trim(indexTag, " "))
+				switch indexTag {
+				case "unique":
+					isUnique = true
+					break
+				case "asc":
+					order = 1
+					break
+				case "desc":
+					order = -1
+					break
+				}
+			}
+		} else if !isCreate {
+			gormTag := f.Tag.Get("gorm")
+			if strings.Contains(gormTag, "index:") {
+				isCreate = true
+			}
+		}
+
+		if isCreate {
+			name := f.Tag.Get("bson")
+			if len(name) == 0 {
+				name = stringutils.SnakeString(f.Name)
+			}
+			model := mongo.IndexModel{
+				Keys:    bsonx.Doc{{Key: name, Value: bsonx.Int32(order)}},
+				Options: options.Index().SetUnique(isUnique).SetName(name + "_idx"),
+			}
+			models = append(models, model)
+		}
+	}
+
+	if len(models) == 0 {
+		return nil
+	}
+
+	col := r.getCollection(ctx)
+	_, err = col.Indexes().DropAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = col.Indexes().CreateMany(ctx, models)
+
+	return err
 }
 
 func (r *Dao[T]) NewEntity() (T, error) {
@@ -57,7 +206,9 @@ func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
 	}
 	if r != nil && r.initfu != nil {
 		mongodb, coll := r.initfu()
-		r.Init(mongodb, coll)
+		if err := r.Init(ctx, mongodb, coll); err != nil {
+			panic(err)
+		}
 	}
 	return r.collection
 }
@@ -1142,4 +1293,30 @@ func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 		res = append(res, item)
 	}
 	return res, nil
+}
+
+func (o *Options) SetAutoCreateCollection(v bool) *Options {
+	o.autoCreateCollection = &v
+	return o
+}
+
+func (o *Options) SetAutoCreateIndex(v bool) *Options {
+	o.autoCreateIndex = &v
+	return o
+}
+
+func (o *Options) GetAutoCreateCollection() bool {
+	if o == nil || o.autoCreateCollection == nil {
+		return false
+	}
+	v := o.autoCreateCollection
+	return *v
+}
+
+func (o *Options) GetAutoCreateIndex() bool {
+	if o == nil || o.autoCreateIndex == nil {
+		return false
+	}
+	v := o.autoCreateIndex
+	return *v
 }
