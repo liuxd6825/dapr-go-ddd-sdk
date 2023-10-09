@@ -39,8 +39,8 @@ func NewDao[T ddd.Entity](initfu func() (mongodb *MongoDB, collection *mongo.Col
 }
 
 func (r *Dao[T]) Init(mongodb *MongoDB, collection *mongo.Collection) {
-	r.collection = collection
 	r.mongodb = mongodb
+	r.collection = collection
 }
 
 func (r *Dao[T]) NewEntity() (T, error) {
@@ -55,7 +55,10 @@ func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
 	if r.collection != nil {
 		return r.collection
 	}
-	r.Init(r.initfu())
+	if r != nil && r.initfu != nil {
+		mongodb, coll := r.initfu()
+		r.Init(mongodb, coll)
+	}
 	return r.collection
 }
 
