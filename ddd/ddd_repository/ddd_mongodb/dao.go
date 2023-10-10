@@ -2,7 +2,6 @@ package ddd_mongodb
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
@@ -1071,28 +1070,31 @@ func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCol
 	return err
 }
 
-func (r Dao[T]) Sum(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
-	if len(query.GetValueCols()) == 0 {
+func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
+	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
 	}
 
 	p := NewMongoProcess()
-	filter := query.GetFilter()
-	mustFilter := query.GetMustFilter()
-	if len(filter) > 0 && len(mustFilter) > 0 {
-		filter = fmt.Sprintf("(%s) and (%s)", filter, mustFilter)
-	} else if len(mustFilter) > 0 {
-		filter = mustFilter
+
+	f1 := qry.GetFilter()
+	f2 := qry.GetMustFilter()
+	f3 := ""
+	mustWhere, ok := qry.(ddd_repository.FindPagingQueryMustWhere)
+	if ok {
+		f3 = mustWhere.GetMustWhere()
 	}
+	filter := getRsqlAnds(f1, f2, f3)
+
 	if err := rsql.ParseProcess(filter, p); err != nil {
 		return nil, false, err
 	}
-	filterMap, err := p.GetFilter(query.GetTenantId())
+	filterMap, err := p.GetFilter(qry.GetTenantId())
 	if err != nil {
 		return nil, false, err
 	}
 
-	return r.sum(ctx, filterMap, query.GetValueCols(), opts...)
+	return r.sum(ctx, filterMap, qry.GetValueCols(), opts...)
 }
 
 func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) ([]T, bool, error) {
