@@ -30,8 +30,8 @@ type Dao[T ddd.Entity] struct {
 	collection    *mongo.Collection
 	mongodb       *MongoDB
 	null          T
-	newFun        func() T                                                // 新建实体结构方法
-	initfu        func() (mongodb *MongoDB, collection *mongo.Collection) // 初始化
+	newFun        func() T                                                                   // 新建实体结构方法
+	initfu        func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 	options       *Options
 }
 
@@ -56,7 +56,7 @@ func NewOptions(opts ...*Options) *Options {
 	return o
 }
 
-func NewDao[T ddd.Entity](initfu func() (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options) *Dao[T] {
+func NewDao[T ddd.Entity](initfu func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options) *Dao[T] {
 	r := &Dao[T]{}
 	r.initfu = initfu
 	r.options = NewOptions(opts...)
@@ -200,14 +200,9 @@ func (r *Dao[T]) NewEntityList() ([]T, error) {
 }
 
 func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
-	if r.collection != nil {
-		return r.collection
-	}
-	if r != nil && r.initfu != nil {
-		mongodb, coll := r.initfu()
-		if err := r.Init(ctx, mongodb, coll); err != nil {
-			panic(err)
-		}
+	mongodb, coll := r.initfu(ctx)
+	if err := r.Init(ctx, mongodb, coll); err != nil {
+		panic(err)
 	}
 	return r.collection
 }
@@ -731,6 +726,10 @@ func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			findOptions.SetSort(sort)
 		}
 
+		if projection := r.getFindOptionsProjection(query); projection != nil {
+			findOptions.SetProjection(projection)
+		}
+
 		cursor, err := r.getCollection(ctx).Find(ctx, filter, findOptions)
 		if err != nil {
 			return nil, false, err
@@ -749,6 +748,19 @@ func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
 		return findData, findData.IsFound, err
 	})
+}
+
+func (r *Dao[T]) getFindOptionsProjection(query ddd_repository.FindPagingQuery) bson.D {
+	var projection bson.D
+	if len(query.GetFields()) > 0 {
+		fields := strings.Split(query.GetFields(), ",")
+		projection = bson.D{}
+		for _, f := range fields {
+			key := stringutils.SnakeString(strings.Trim(f, " "))
+			projection = append(projection, bson.E{Key: key, Value: 1})
+		}
+	}
+	return projection
 }
 
 /*
@@ -892,6 +904,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 
 	var err error
 	findOptions := getFindOptions(opts...)
+
 	queryGroup := NewQueryGroup(qry)
 
 	g, err := queryGroup.GetGroup()
@@ -1001,6 +1014,10 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 			findOptions.SetLimit(qry.GetPageSize())
 			findOptions.SetSkip(qry.GetPageSize() * qry.GetPageNum())
 		}
+		if projection := r.getFindOptionsProjection(qry); projection != nil {
+			findOptions.SetProjection(projection)
+		}
+
 		cur, err = coll.Find(ctx, f, findOptions)
 		if qry.GetIsTotalRows() {
 			totalRows, errt = coll.CountDocuments(ctx, f)
@@ -1042,6 +1059,13 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 		findData.SetSum(false, sumData, err)
 	}
 	return findData
+}
+
+func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	if !qry.AllowTotalRows {
+		qry.SetIsTotalRows(false)
+	}
+	return r.FindPaging(ctx, qry, opts...)
 }
 
 func (r *Dao[T]) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}, opts ...ddd_repository.Options) error {

@@ -68,6 +68,23 @@ func (a *RestAssembler) AssFindAllRequest(ictx iris.Context) (*ddd_query.FindAll
 	}, nil
 }
 
+func (a *RestAssembler) AssFindAutoCompleteRequest(ictx iris.Context) (*ddd_query.FindAutocompleteQuery, error) {
+	fqry, err := a.AssFindPagingRequest(ictx)
+	if err != nil {
+		return nil, err
+	}
+	caseId := ictx.URLParamDefault("caseId", "")
+	field := ictx.URLParamDefault("field", "")
+	value := ictx.URLParamDefault("value", "")
+	qry := &ddd_query.FindAutocompleteQuery{
+		FindPagingQuery: fqry,
+		CaseId:          caseId,
+		Field:           field,
+		Value:           value,
+	}
+	return qry, err
+}
+
 func (a *RestAssembler) AssFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
 	tenantId, err := a.GetTenantId(ictx)
 	if err != nil {

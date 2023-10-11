@@ -76,7 +76,7 @@ type GroupCol struct {
 
 type FindPagingQueryRequest struct {
 	TenantId    string      `json:"tenantId"`
-	Fields      string      `json:"fields"`
+	Fields      string      `json:"fields"` // 以逗号分隔多个字段
 	Filter      string      `json:"filter"`
 	MustFilter  string      `json:"-"`
 	Sort        string      `json:"sort"`
