@@ -12,12 +12,12 @@ import (
 )
 
 type QueryGroup struct {
-	TenantId     string
-	Filter       string
-	RowGroupCols []*ddd_repository.GroupCol
-	ValueCols    []*ddd_repository.ValueCol
-	GroupKeys    []any
-	Sort         string
+	TenantId  string
+	Filter    string
+	GroupCols []*ddd_repository.GroupCol
+	ValueCols []*ddd_repository.ValueCol
+	GroupKeys []any
+	Sort      string
 }
 
 func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
@@ -30,12 +30,12 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 	}
 	filter := getRsqlAnds(f1, f2, f3)
 	baseGroup := &QueryGroup{
-		TenantId:     qry.GetTenantId(),
-		Filter:       filter,
-		RowGroupCols: qry.GetGroupCols(),
-		ValueCols:    qry.GetValueCols(),
-		GroupKeys:    qry.GetGroupKeys(),
-		Sort:         qry.GetSort(),
+		TenantId:  qry.GetTenantId(),
+		Filter:    filter,
+		GroupCols: qry.GetGroupCols(),
+		GroupKeys: qry.GetGroupKeys(),
+		ValueCols: qry.GetValueCols(),
+		Sort:      qry.GetSort(),
 	}
 	return baseGroup
 }
@@ -64,7 +64,7 @@ func (b *QueryGroup) IsPaging() bool {
 // @return bool
 //
 func (b *QueryGroup) IsGroup() bool {
-	if b.RowGroupCols == nil || len(b.RowGroupCols) == 0 {
+	if b.GroupCols == nil || len(b.GroupCols) == 0 {
 		return false
 	}
 	return true
@@ -84,7 +84,7 @@ func (b *QueryGroup) IsExpand() bool {
 }
 
 func (b *QueryGroup) IsLeaf() bool {
-	if b.IsGroup() && b.IsExpand() && len(b.RowGroupCols) == len(b.GroupKeys) {
+	if b.IsGroup() && b.IsExpand() && len(b.GroupCols) == len(b.GroupKeys) {
 		return true
 	}
 	return false
@@ -98,19 +98,19 @@ func (b *QueryGroup) IsLeaf() bool {
 // @return error
 //
 func (b *QueryGroup) GetGroup() (bson.D, error) {
-	if b.RowGroupCols == nil || len(b.RowGroupCols) == 0 {
+	if b.GroupCols == nil || len(b.GroupCols) == 0 {
 		return nil, nil
 	}
 
 	gSubMap := make(map[string]any)
 	groupIndex := 0
-	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.RowGroupCols) {
+	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.GroupCols) {
 		groupIndex = len(b.GroupKeys)
 	}
 
 	ids := make([]any, 0)
 	for i := 0; i <= groupIndex; i++ {
-		col := b.RowGroupCols[i]
+		col := b.GroupCols[i]
 		var newId interface{} = map[string]interface{}{"$toString": "$" + utils.SnakeString(col.Field)}
 		if col.DataType.IsDateTime() || col.DataType.IsDate() {
 			newId = map[string]any{"$dateToString": map[string]any{"date": "$" + utils.SnakeString(col.Field)}}
@@ -124,7 +124,7 @@ func (b *QueryGroup) GetGroup() (bson.D, error) {
 	}
 
 	gSubMap["_id"] = map[string]any{"$concat": ids}
-	field := utils.SnakeString(b.RowGroupCols[groupIndex].Field)
+	field := utils.SnakeString(b.GroupCols[groupIndex].Field)
 	gSubMap[field] = map[string]any{"$max": "$" + field}
 
 	if b.ValueCols != nil && len(b.ValueCols) > 0 {
@@ -147,11 +147,11 @@ func (b *QueryGroup) GetTotalGroup() (bson.D, error) {
 	pushMap["_id"] = "$_id"
 
 	groupIndex := 0
-	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.RowGroupCols) {
+	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.GroupCols) {
 		groupIndex = len(b.GroupKeys)
 	}
-	if b.RowGroupCols != nil && len(b.RowGroupCols) > 0 {
-		pushMap[utils.SnakeString(b.RowGroupCols[groupIndex].Field)] = "$" + utils.SnakeString(b.RowGroupCols[groupIndex].Field)
+	if b.GroupCols != nil && len(b.GroupCols) > 0 {
+		pushMap[utils.SnakeString(b.GroupCols[groupIndex].Field)] = "$" + utils.SnakeString(b.GroupCols[groupIndex].Field)
 	}
 	if b.ValueCols != nil && len(b.ValueCols) > 0 {
 		for _, col := range b.ValueCols {
@@ -207,7 +207,7 @@ func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 		}
 		val, _ := subMap.([]interface{})
 		for i := 0; i < len(b.GroupKeys); i++ {
-			f := b.RowGroupCols[i]
+			f := b.GroupCols[i]
 			if f.DataType.IsDate() || f.DataType.IsDateTime() {
 				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toDate(b.GroupKeys[i])})
 			} else {
@@ -282,7 +282,7 @@ func (b *QueryGroup) GetBsonFilterSort() (bson.D, error) {
 			if flag {
 				break
 			}
-			for _, _rowGroupCol := range b.RowGroupCols {
+			for _, _rowGroupCol := range b.GroupCols {
 				if strings.Contains(s, _rowGroupCol.Field) {
 					flag = true
 					break
@@ -291,7 +291,7 @@ func (b *QueryGroup) GetBsonFilterSort() (bson.D, error) {
 		}
 	}
 	if (len(b.Sort) == 0 || !flag) && b.IsGroup() {
-		for _, _rowGroupCol := range b.RowGroupCols {
+		for _, _rowGroupCol := range b.GroupCols {
 			_sort = append(_sort, bson.E{Key: utils.SnakeString(_rowGroupCol.Field), Value: 1})
 		}
 	}

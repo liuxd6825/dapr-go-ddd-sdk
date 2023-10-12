@@ -917,21 +917,6 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
 
-	//gpFilter, err := queryGroup.GetGroupPagingBsonFilter()
-	//if err != nil {
-	//	return ddd_repository.NewFindPagingResultWithError[T](err)
-	//}
-	//
-	//gFilter, err := queryGroup.GetGroupExpandGroupNoPagingBsonFilter()
-	//if err != nil {
-	//	return ddd_repository.NewFindPagingResultWithError[T](err)
-	//}
-	//
-	//gFilter1, err := queryGroup.GetGroupNoPagingFilter()
-	//if err != nil {
-	//	return ddd_repository.NewFindPagingResultWithError[T](err)
-	//}
-
 	filter, err := queryGroup.GetFilter()
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
@@ -960,12 +945,10 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 	coll := r.getCollection(ctx)
 	var findData *ddd_repository.FindPagingResult[T]
 	var cur *mongo.Cursor
-	///var curt *mongo.Cursor
 	var errt error
 	var totalRows int64
 
 	isGroup := queryGroup.IsGroup()
-	//isPaging := queryGroup.IsPaging()
 	isLeaf := queryGroup.IsLeaf()
 
 	if isGroup {
@@ -989,17 +972,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 					"total_rows": "$total_rows",
 				},
 			}})
-
-			//skip := query.GetPageSize() * query.GetPageNum()
-			//pipeline = append(pipeline, bson.D{{"$skip", skip}})
-			//
-			//limit := query.GetPageSize()
-			//pipeline = append(pipeline, bson.D{{"$limit", limit}})
-
 			cur, err = coll.Aggregate(ctx, pipeline)
-			//if err == nil {
-			//	totalRows = int64(cur.RemainingBatchLength())
-			//}
 		}
 	}
 	if !isGroup || isLeaf {
@@ -1046,6 +1019,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
 	}
+
 	if data == nil {
 		data = []T{}
 	}
@@ -1061,11 +1035,41 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 	return findData
 }
 
-func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	if !qry.AllowTotalRows {
-		qry.SetIsTotalRows(false)
+func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry ddd_repository.FindAutoCompleteQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	f := ddd_repository.NewFindPagingQuery()
+	groupCols := []*ddd_repository.GroupCol{
+		{Field: qry.GetField(), DataType: types.DataTypeString},
 	}
-	return r.FindPaging(ctx, qry, opts...)
+
+	f.SetGroupCols(groupCols)
+	f.SetTenantId(qry.GetTenantId())
+	f.SetFields(qry.GetFields())
+	f.SetFilter(qry.GetFilter())
+	f.SetMustFilter(qry.GetMustWhere())
+
+	f.SetPageNum(qry.GetPageNum())
+	f.SetPageSize(qry.GetPageSize())
+	f.SetSort(qry.GetSort())
+	f.SetIsTotalRows(false)
+
+	return r.FindPaging(ctx, f, opts...)
+}
+
+func (r *Dao[T]) FindDistinct(ctx context.Context, qry ddd_repository.FindDistinctQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	f := ddd_repository.NewFindPagingQuery()
+
+	f.SetGroupCols(qry.GetGroupCols())
+	f.SetTenantId(qry.GetTenantId())
+	f.SetFields(qry.GetFields())
+	f.SetFilter(qry.GetFilter())
+	f.SetMustFilter(qry.GetMustWhere())
+
+	f.SetPageNum(qry.GetPageNum())
+	f.SetPageSize(qry.GetPageSize())
+	f.SetSort(qry.GetSort())
+	f.SetIsTotalRows(false)
+
+	return r.FindPaging(ctx, f, opts...)
 }
 
 func (r *Dao[T]) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}, opts ...ddd_repository.Options) error {

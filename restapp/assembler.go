@@ -68,21 +68,42 @@ func (a *RestAssembler) AssFindAllRequest(ictx iris.Context) (*ddd_query.FindAll
 	}, nil
 }
 
-func (a *RestAssembler) AssFindAutoCompleteRequest(ictx iris.Context) (*ddd_query.FindAutocompleteQuery, error) {
-	fqry, err := a.AssFindPagingRequest(ictx)
+func (a *RestAssembler) AssFindAutoCompleteRequest(ictx iris.Context) (ddd_query.FindAutoCompleteQuery, error) {
+	var err error
+	dto := ddd_repository.NewFindAutoCompleteQueryDTO()
+
+	dto.Field = ictx.URLParamDefault("field", "")
+	dto.Value = ictx.URLParamDefault("value", "")
+
+	dto.CaseId = ictx.URLParamDefault("caseId", "")
+	dto.PageNum = ictx.URLParamInt64Default("page-num", 0)
+	dto.PageSize = ictx.URLParamInt64Default("page-size", 20)
+	dto.Filter = ictx.URLParamDefault("filter", "")
+	dto.Sort = ictx.URLParamDefault("sort", "")
+	dto.Fields = ictx.URLParamDefault("fields", "")
+
+	dto.TenantId, err = a.GetTenantId(ictx)
 	if err != nil {
 		return nil, err
 	}
-	caseId := ictx.URLParamDefault("caseId", "")
-	field := ictx.URLParamDefault("field", "")
-	value := ictx.URLParamDefault("value", "")
-	qry := &ddd_query.FindAutocompleteQuery{
-		FindPagingQuery: fqry,
-		CaseId:          caseId,
-		Field:           field,
-		Value:           value,
-	}
-	return qry, err
+
+	return dto.GetQuery(), err
+}
+
+func (a *RestAssembler) AssDistinctRequest(ictx iris.Context) (ddd_query.FindDistinctQuery, error) {
+	var err error
+	dto := ddd_repository.NewFindDistinctQueryDTO()
+
+	dto.CaseId = ictx.URLParamDefault("caseId", "")
+	dto.PageNum = ictx.URLParamInt64Default("page-num", 0)
+	dto.PageSize = ictx.URLParamInt64Default("page-size", 20)
+	dto.Filter = ictx.URLParamDefault("filter", "")
+	dto.Sort = ictx.URLParamDefault("sort", "")
+	dto.Fields = ictx.URLParamDefault("fields", "")
+	dto.GroupCols = ictx.URLParamDefault("group-cols", "")
+	dto.TenantId, err = a.GetTenantId(ictx)
+
+	return dto.GetQuery(), err
 }
 
 func (a *RestAssembler) AssFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {

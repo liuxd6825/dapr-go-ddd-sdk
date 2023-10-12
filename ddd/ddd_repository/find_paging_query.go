@@ -28,7 +28,6 @@
 package ddd_repository
 
 import (
-	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"strings"
@@ -145,6 +144,44 @@ type ValueCols struct {
 	cols []*ValueCol
 }
 
+func NewFindPagingQuery() FindPagingQuery {
+	query := &FindPagingQueryRequest{PageSize: 20}
+	return query
+}
+
+func NewFindPagingQueryDTO() *FindPagingQueryDTO {
+	return &FindPagingQueryDTO{}
+}
+
+func NewGroupCols(s string) *GroupCols {
+	groupCols := &GroupCols{
+		cols: make([]*GroupCol, 0),
+	}
+	if len(s) > 0 {
+		cols := make([]*GroupCol, 0)
+		maps := RSqlKeyValueToMap(s)
+		for k, v := range maps {
+			col := &GroupCol{
+				Field:    k,
+				DataType: types.DataType(v),
+			}
+			cols = append(cols, col)
+		}
+		groupCols.cols = cols
+	}
+	return groupCols
+}
+
+func NewValueCols() *ValueCols {
+	return &ValueCols{
+		cols: make([]*ValueCol, 0),
+	}
+}
+
+func (d *FindPagingQueryDTO) NewQuery() FindPagingQuery {
+	return d.NewFindPagingQueryRequest()
+}
+
 func (d *FindPagingQueryDTO) NewFindPagingQueryRequest() *FindPagingQueryRequest {
 	r := &FindPagingQueryRequest{}
 	if d == nil {
@@ -200,56 +237,6 @@ func (d *FindPagingQueryDTO) newValueCols(s string) []*ValueCol {
 		res = append(res, col)
 	}
 	return res
-}
-
-func NewGroupColsByJson(jsonText string) ([]*GroupCol, error) {
-	list := make([]*GroupCol, 0)
-	if len(jsonText) > 0 {
-		if err := json.Unmarshal([]byte(jsonText), &list); err != nil {
-			return nil, err
-		}
-
-	}
-	return list, nil
-}
-
-func NewValueColsByJson(jsonText string) ([]*ValueCol, error) {
-	list := make([]*ValueCol, 0)
-	if len(jsonText) > 0 {
-		if err := json.Unmarshal([]byte(jsonText), &list); err != nil {
-			return nil, err
-		}
-
-	}
-	return list, nil
-}
-
-func NewGroupKeysByJson(jsonText string) ([]any, error) {
-	list := make([]any, 0)
-	if len(jsonText) > 0 {
-		if err := json.Unmarshal([]byte(jsonText), &list); err != nil {
-			return nil, err
-		}
-
-	}
-	return list, nil
-}
-
-func NewFindPagingQuery() FindPagingQuery {
-	query := &FindPagingQueryRequest{PageSize: 20}
-	return query
-}
-
-func NewGroupCols() *GroupCols {
-	return &GroupCols{
-		cols: make([]*GroupCol, 0),
-	}
-}
-
-func NewValueCols() *ValueCols {
-	return &ValueCols{
-		cols: make([]*ValueCol, 0),
-	}
 }
 
 func (s *GroupCols) Add(field string, dataType types.DataType) *GroupCols {
