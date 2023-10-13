@@ -66,24 +66,25 @@ func NewDao[T ddd.Entity](initfu func(ctx context.Context) (mongodb *MongoDB, co
 func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.Collection) error {
 	r.mongodb = mongodb
 	r.collection = collection
-
-	if r.options.GetAutoCreateCollection() {
-		find, err := mongodb.ExistCollection(ctx, collection.Name())
-		if err != nil {
-			return err
-		}
-
-		if !find {
-			if err := mongodb.CreateCollection(collection.Name()); err != nil {
+	/*
+		if r.options.GetAutoCreateCollection() {
+			find, err := mongodb.ExistCollection(ctx, collection.Name())
+			if err != nil {
 				return err
 			}
-			if r.options.GetAutoCreateIndex() {
-				if err := r.CreateIndexes(ctx); err != nil {
+
+			if !find {
+				if err := mongodb.CreateCollection(collection.Name()); err != nil {
 					return err
+				}
+				if r.options.GetAutoCreateIndex() {
+					if err := r.CreateIndexes(ctx); err != nil {
+						return err
+					}
 				}
 			}
 		}
-	}
+	*/
 	return nil
 }
 
