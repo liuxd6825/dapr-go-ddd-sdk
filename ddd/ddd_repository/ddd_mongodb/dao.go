@@ -68,13 +68,13 @@ func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.C
 	r.collection = collection
 	/*
 		if r.options.GetAutoCreateCollection() {
-			find, err := mongodb.ExistCollection(ctx, collection.Name())
+			find, err := mongodb.ExistCollection(ctx, collection.TableName())
 			if err != nil {
 				return err
 			}
 
 			if !find {
-				if err := mongodb.CreateCollection(collection.Name()); err != nil {
+				if err := mongodb.CreateCollection(collection.TableName()); err != nil {
 					return err
 				}
 				if r.options.GetAutoCreateIndex() {
@@ -95,7 +95,7 @@ func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.C
 //  type Index struct {
 //	    Id        string `bson:"_id" `
 //	    TenantId  string
-//	    Name      string `bson:"name" index:"" `
+//	    TableName      string `bson:"name" index:"" `
 //	    Asc       int64  `bson:"asc" index:" asc"`
 //	    Desc      int64  `bson:"desc" index:" desc "`
 //	    Unique    string `index:"unique"`

@@ -142,7 +142,7 @@ func newRecordTemp() (*Template, error) {
 	fields := []*Field{
 		NewField("Iden", "标识", String),
 		NewField("Acct", "账号", String).SetMapKeys("Acct"),
-		NewField("Name", "名称", String).SetMapKeys("Name"),
+		NewField("TableName", "名称", String).SetMapKeys("TableName"),
 		NewField("AcctType", "账号类型", String),
 		NewField("BankName", "开户行", String).SetMapKeys("BankName"),
 		NewField("Balance", "余额", String).SetMapKeys("Balance"),
@@ -172,7 +172,7 @@ func newRecordTemp() (*Template, error) {
 			Columns: []*MapColumn{
 				{Key: "Date", Label: "A"}, // 交易时间
 				{Key: "Acct", Label: "B"}, // 我方账号
-				{Key: "Name", Label: "C"},
+				{Key: "TableName", Label: "C"},
 				{Key: "BankName", Label: "D"},
 				{Key: "OppAcct", Label: "E"},
 				{Key: "OppName", Label: "F"},

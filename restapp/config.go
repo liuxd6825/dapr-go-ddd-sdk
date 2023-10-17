@@ -18,6 +18,7 @@ type Config struct {
 }
 
 type EnvConfig struct {
+	Name  string                  `yaml:"-"`
 	App   AppConfig               `yaml:"app"`
 	Log   LogConfig               `yaml:"log"`
 	Dapr  DaprConfig              `yaml:"dapr"`
@@ -75,16 +76,16 @@ func NewConfigByFile(fileName string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, env := range config.Envs {
-		if err := env.Init(); err != nil {
+	for name, env := range config.Envs {
+		if err := env.Init(name); err != nil {
 			return nil, err
 		}
 	}
 	return &config, nil
 }
 
-func (e *EnvConfig) Init() error {
-
+func (e *EnvConfig) Init(name string) error {
+	e.Name = name
 	if len(e.App.HttpHost) == 0 {
 		e.App.HttpHost = "0.0.0.0"
 	}

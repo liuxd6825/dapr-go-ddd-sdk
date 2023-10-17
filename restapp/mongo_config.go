@@ -22,6 +22,7 @@ type MongoConfig struct {
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
 var _mongoDefault *ddd_mongodb.MongoDB
+var _initMongo bool = false
 
 func (m MongoConfig) IsEmpty() bool {
 	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
@@ -35,6 +36,10 @@ func init() {
 }
 
 func InitMongo(appMongoConfigs map[string]*MongoConfig) {
+	if _initMongo {
+		return
+	}
+	_initMongo = true
 	if err := assert.NotNil(appMongoConfigs, assert.NewOptions("appMongoConfig is nil")); err != nil {
 		panic(err)
 	}

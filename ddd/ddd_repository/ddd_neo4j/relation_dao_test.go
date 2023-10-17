@@ -33,7 +33,7 @@ func TestRelationDao(t *testing.T) {
 	rel.EndId = "90a49b8e-953c-4135-9690-f3f4daa54dc6"
 	// rel.Type = "A"
 	rel.TenantId = tenantId
-	rel.Name = "Name"
+	rel.Name = "TableName"
 
 	t.Run("Insert", func(t *testing.T) {
 		if res, err := dao.Insert(ctx, rel).Result(); err != nil {
@@ -54,7 +54,7 @@ func TestRelationDao(t *testing.T) {
 	})
 
 	t.Run("FindByFilter", func(t *testing.T) {
-		filter := "name=='Name'"
+		filter := "name=='TableName'"
 		if vList, ok, err := dao.FindByFilter(ctx, tenantId, filter).Result(); err != nil {
 			t.Error(err)
 		} else if !ok {

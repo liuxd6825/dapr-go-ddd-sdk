@@ -32,7 +32,7 @@ func ExampleDecode() {
 
 	fmt.Printf("%#v", result)
 	// Output:
-	// mapstructure.Person{Name:"Mitchell", Age:91, Emails:[]string{"one", "two", "three"}, Extra:map[string]string{"twitter":"mitchellh"}}
+	// mapstructure.Person{TableName:"Mitchell", Age:91, Emails:[]string{"one", "two", "three"}, Extra:map[string]string{"twitter":"mitchellh"}}
 }
 
 func ExampleDecode_errors() {
@@ -66,7 +66,7 @@ func ExampleDecode_errors() {
 	// * 'Emails[0]' expected type 'string', got unconvertible type 'int', value: '1'
 	// * 'Emails[1]' expected type 'string', got unconvertible type 'int', value: '2'
 	// * 'Emails[2]' expected type 'string', got unconvertible type 'int', value: '3'
-	// * 'Name' expected type 'string', got unconvertible type 'int', value: '123'
+	// * 'TableName' expected type 'string', got unconvertible type 'int', value: '123'
 }
 
 func ExampleDecode_metadata() {
@@ -141,7 +141,7 @@ func ExampleDecode_weaklyTypedInput() {
 	}
 
 	fmt.Printf("%#v", result)
-	// Output: mapstructure.Person{Name:"123", Age:42, Emails:[]string{}}
+	// Output: mapstructure.Person{TableName:"123", Age:42, Emails:[]string{}}
 }
 
 func ExampleDecode_tags() {
@@ -165,7 +165,7 @@ func ExampleDecode_tags() {
 
 	fmt.Printf("%#v", result)
 	// Output:
-	// mapstructure.Person{Name:"Mitchell", Age:91}
+	// mapstructure.Person{TableName:"Mitchell", Age:91}
 }
 
 func ExampleDecode_embeddedStruct() {
@@ -225,7 +225,7 @@ func ExampleDecode_remainingData() {
 
 	fmt.Printf("%#v", result)
 	// Output:
-	// mapstructure.Person{Name:"Mitchell", Age:91, Other:map[string]interface {}{"email":"mitchell@example.com"}}
+	// mapstructure.Person{TableName:"Mitchell", Age:91, Other:map[string]interface {}{"email":"mitchell@example.com"}}
 }
 
 func ExampleDecode_omitempty() {

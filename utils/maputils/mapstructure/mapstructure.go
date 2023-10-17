@@ -41,7 +41,7 @@
 // mapstructure:
 //
 //     type Person struct {
-//         Name string
+//         TableName string
 //     }
 //
 //     type Friend struct {
@@ -75,7 +75,7 @@
 // When decoding from a struct to a map, the squash tag squashes the struct
 // fields into a single map. Using the example structs from above:
 //
-//     Friend{Person: Person{Name: "alice"}}
+//     Friend{Person: Person{TableName: "alice"}}
 //
 // Will be decoded into a map:
 //
@@ -99,7 +99,7 @@
 // See example below:
 //
 //     type Friend struct {
-//         Name  string
+//         TableName  string
 //         Other map[string]interface{} `mapstructure:",remain"`
 //     }
 //

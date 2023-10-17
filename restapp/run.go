@@ -11,12 +11,18 @@ import (
 	"github.com/liuxd6825/go-sdk/service/common"
 )
 
-type StartOptions struct {
+type RunConfig struct {
 	AppId      string
 	HttpHost   string
 	HttpPort   int
 	LogLevel   applog.Level
 	DaprClient daprclient.DaprDddClient
+}
+
+type RunOptions struct {
+	tables *Tables
+	initDb *bool
+	prefix *string
 }
 
 type RegisterSubscribe interface {
@@ -50,6 +56,24 @@ type RegisterEventType struct {
 
 var _actorsFactory []actor.Factory = []actor.Factory{
 	aggregateSnapshotActorFactory,
+}
+
+func NewRunOptions(opts ...*RunOptions) *RunOptions {
+	o := &RunOptions{
+		tables: nil,
+	}
+	for _, item := range opts {
+		if item.tables != nil {
+			o.tables = item.tables
+		}
+		if item.initDb != nil {
+			o.initDb = item.initDb
+		}
+		if item.prefix != nil {
+			o.prefix = item.prefix
+		}
+	}
+	return o
 }
 
 func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler) RegisterSubscribe {
@@ -96,7 +120,9 @@ func aggregateSnapshotActorFactory() actor.Server {
 }
 
 func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
+	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory,
+	options ...*RunOptions) (common.Service, error) {
+
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		panic(err)
@@ -111,11 +137,11 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 	if err != nil {
 		panic(err)
 	}
-	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc)
+	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
 
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
+	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory, options ...*RunOptions) (common.Service, error) {
 	if len(config.Mongo) > 0 {
 		InitMongo(config.Mongo)
 	}
@@ -130,6 +156,15 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		}
 	}
 
+	opt := NewRunOptions(options...)
+	if opt.GetInit() {
+		var err error
+		if opt.tables != nil {
+			err = InitDb(opt.tables, config, opt.GetPrefix())
+		}
+		return nil, err
+	}
+
 	//创建dapr客户端
 	daprClient, err := daprclient.NewDaprDddClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {
@@ -138,7 +173,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 
 	daprclient.SetDaprDddClient(daprClient)
 
-	options := &StartOptions{
+	runCfg := &RunConfig{
 		AppId:      config.App.AppId,
 		HttpHost:   config.App.HttpHost,
 		HttpPort:   config.App.HttpPort,
@@ -157,7 +192,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		esMap[""] = eventStorage
 	}
 
-	return Run(options, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc, actorsFunc)
+	return Run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc, actorsFunc, options...)
 }
 
 //
@@ -172,19 +207,20 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 // @param eventTypesFunc
 // @return error
 //
-func Run(options *StartOptions, webRootPath string, subsFunc func() []RegisterSubscribe,
+func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventStorages map[string]ddd.EventStorage,
-	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.Factory) (common.Service, error) {
+	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.Factory,
+	runOptions ...*RunOptions) (common.Service, error) {
 
-	fmt.Printf("---------- %s ----------\r\n", options.AppId)
-	ddd.Init(options.AppId)
-	applog.Init(options.DaprClient, options.AppId, options.LogLevel)
+	fmt.Printf("---------- %s ----------\r\n", runCfg.AppId)
+	ddd.Init(runCfg.AppId)
+	applog.Init(runCfg.DaprClient, runCfg.AppId, runCfg.LogLevel)
 
 	serverOptions := &ServiceOptions{
-		AppId:          options.AppId,
-		HttpHost:       options.HttpHost,
-		HttpPort:       options.HttpPort,
-		LogLevel:       options.LogLevel,
+		AppId:          runCfg.AppId,
+		HttpHost:       runCfg.HttpHost,
+		HttpPort:       runCfg.HttpPort,
+		LogLevel:       runCfg.LogLevel,
 		EventTypes:     eventTypesFunc(),
 		EventStorages:  eventStorages,
 		Subscribes:     subsFunc(),
@@ -193,9 +229,42 @@ func Run(options *StartOptions, webRootPath string, subsFunc func() []RegisterSu
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
 	}
-	service := NewService(options.DaprClient, serverOptions)
+	service := NewService(runCfg.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {
 		return service, err
 	}
 	return service, nil
+}
+
+func (o *RunOptions) GetInit() bool {
+	if o.initDb == nil {
+		return false
+	}
+	return *o.initDb
+}
+
+func (o *RunOptions) SetInit(v bool) *RunOptions {
+	o.initDb = &v
+	return o
+}
+
+func (o *RunOptions) SetPrefix(v string) *RunOptions {
+	o.prefix = &v
+	return o
+}
+
+func (o *RunOptions) GetPrefix() string {
+	if o.prefix == nil {
+		return ""
+	}
+	return *o.prefix
+}
+
+func (o *RunOptions) SetTable(v *Tables) *RunOptions {
+	o.tables = v
+	return o
+}
+
+func (o *RunOptions) GetTable() *Tables {
+	return o.tables
 }

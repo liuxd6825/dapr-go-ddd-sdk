@@ -74,8 +74,8 @@ func initProperties(metaType reflect.Type, metaValue reflect.Value, entityType r
 		var prop *property
 		entityField := entityType.Field(i)
 
-		//fmt.Println(entityField.Name)
-		options.Logger(fmt.Sprintf("entityField.Name = %v", entityField.Name))
+		//fmt.Println(entityField.TableName)
+		options.Logger(fmt.Sprintf("entityField.TableName = %v", entityField.Name))
 		if entityField.Anonymous {
 			if mt, ok := metaType.FieldByName(entityField.Name + "Metadata"); ok {
 				if et, ok := entityType.FieldByName(entityField.Name); ok {
