@@ -22,14 +22,14 @@ const (
 type httpEventStorage struct {
 	client     daprclient.DaprDddClient
 	pubsubName string
-	subscribes *[]Subscribe
+	subscribes []*Subscribe
 }
 
 func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
-	subscribes = make([]Subscribe, 0)
+	subscribes = make([]*Subscribe, 0)
 	res := &httpEventStorage{
 		client:     httpClient,
-		subscribes: &subscribes,
+		subscribes: subscribes,
 	}
 	for _, option := range options {
 		option(res)

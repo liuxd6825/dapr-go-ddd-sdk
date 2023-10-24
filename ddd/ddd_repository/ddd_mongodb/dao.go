@@ -906,7 +906,10 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 	var err error
 	findOptions := getFindOptions(opts...)
 
-	queryGroup := NewQueryGroup(qry)
+	queryGroup, err := NewQueryGroup(qry)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err)
+	}
 
 	g, err := queryGroup.GetGroup()
 	if err != nil {
@@ -1104,6 +1107,7 @@ func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, opt
 		return nil, false, nil
 	}
 
+	var err error
 	p := NewMongoProcess()
 
 	f1 := qry.GetFilter()
@@ -1111,7 +1115,10 @@ func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, opt
 	f3 := ""
 	mustWhere, ok := qry.(ddd_repository.FindPagingQueryMustWhere)
 	if ok {
-		f3 = mustWhere.GetMustWhere()
+		f3, err = mustWhere.GetMustWhere()
+		if err != nil {
+			return nil, false, err
+		}
 	}
 	filter := getRsqlAnds(f1, f2, f3)
 

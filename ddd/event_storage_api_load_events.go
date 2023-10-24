@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 //
@@ -30,7 +31,7 @@ func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventSto
 		ClassName: "ddd",
 		FuncName:  "LoadAggregate",
 		Message:   fmt.Sprintf("%v", req),
-		Level:     applog.INFO,
+		Level:     logs.InfoLevel,
 	}
 
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {

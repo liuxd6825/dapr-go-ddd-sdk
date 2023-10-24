@@ -3,6 +3,7 @@ package ddd
 import (
 	"context"
 	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/go-sdk/actor"
 	dapr "github.com/liuxd6825/go-sdk/client"
 	"log"
@@ -23,8 +24,10 @@ func (s *AggregateSnapshotActorService) Type() string {
 }
 
 func (s *AggregateSnapshotActorService) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
-	logger.Println("AggregateSnapshotActorService.SaveSnapshot()")
-	logger.Println(json.Marshal(req))
+	logs.Debugf(ctx, "AggregateSnapshotActorService.SaveSnapshot() req=%v", func() any {
+		bs, _ := json.Marshal(req)
+		return string(bs)
+	})
 
 	if err := SaveSnapshot(ctx, req.TenantId, req.AggregateType, req.AggregateId, req.EventStorageKey); err != nil {
 		return nil, err

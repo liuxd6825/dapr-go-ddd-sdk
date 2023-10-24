@@ -146,7 +146,7 @@ func (t *Lexer) processOperator() Token {
 
 func (t *Lexer) processNumber() Token {
 	idx := t.pos
-	if t.isDigit(idx) {
+	if t.isDigit(idx) || (t.charAt(idx) == '-' && t.isDigit(idx+1)) {
 		typ := IntegerToken
 		idx++
 		process := func() {

@@ -15,7 +15,7 @@ func InitDbWithConfig(envName string, prefix string, config *Config, tables *Tab
 		return err
 	}
 
-	InitMongo(env.Mongo)
+	InitMongo(env.App.AppId, env.Mongo)
 	return InitDb(tables, env, prefix)
 }
 

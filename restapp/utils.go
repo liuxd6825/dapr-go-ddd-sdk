@@ -205,7 +205,8 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 // @return isFound 是否有数据
 // @return err 错误
 //
-func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
+func DoQuery(ictx iris.Context, fun QueryFunc) (data any, isFound bool, err error) {
+
 	ctx := NewContext(ictx)
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
@@ -214,7 +215,11 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, 
 		}
 	}()
 
-	data, isFound, err = fun(ctx)
+	_ = logs.DebugStart(ctx, func() error {
+		data, isFound, err = fun(ctx)
+		return err
+	}, "uri=%v; params=%v;", ictx.FullRequestURI(), ictx.Params())
+
 	if err != nil {
 		SetError(ctx, err)
 		return data, isFound, err

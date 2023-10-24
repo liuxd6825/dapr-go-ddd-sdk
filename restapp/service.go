@@ -135,7 +135,7 @@ func (s *service) Start() error {
 	if s.subscribes != nil {
 		for _, subscribe := range s.subscribes {
 			if subscribe != nil {
-				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler()); err != nil {
+				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler(), subscribe.GetInterceptor()); err != nil {
 					return err
 				}
 			}
@@ -309,8 +309,8 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
 //
-func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
-	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
+func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
+	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
 			if e := errors.GetRecoverError(recover()); e != nil {
 				err = e
@@ -318,12 +318,14 @@ func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEve
 		}()
 		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
 			ctx := logs.NewContext(c, _logger)
-			if err = sh.CallQueryEventHandler(ctx, c); err != nil {
+			if err = sh.Handler(ctx, c); err != nil {
 				c.SetErr(err)
 			}
 		})
 		return err
-	})
+	}
+
+	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, subscribesHandler, interceptors)
 	if err := ddd.RegisterQueryHandler(handler); err != nil {
 		return nil, err
 	}

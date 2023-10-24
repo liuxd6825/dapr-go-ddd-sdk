@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/go-sdk/actor"
 	"github.com/liuxd6825/go-sdk/service/common"
 )
@@ -23,16 +24,19 @@ type RunOptions struct {
 	tables *Tables
 	initDb *bool
 	prefix *string
+	level  *logs.Level
 }
 
 type RegisterSubscribe interface {
-	GetSubscribes() *[]ddd.Subscribe
+	GetSubscribes() []*ddd.Subscribe
 	GetHandler() ddd.QueryEventHandler
+	GetInterceptor() []ddd.SubscribeInterceptorFunc
 }
 
 type registerSubscribe struct {
-	subscribes *[]ddd.Subscribe
-	handler    ddd.QueryEventHandler
+	subscribes   []*ddd.Subscribe
+	handler      ddd.QueryEventHandler
+	interceptors []ddd.SubscribeInterceptorFunc
 }
 
 type RegisterController struct {
@@ -76,14 +80,53 @@ func NewRunOptions(opts ...*RunOptions) *RunOptions {
 	return o
 }
 
-func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler) RegisterSubscribe {
+type RegisterSubscribeOptions struct {
+	interceptors []ddd.SubscribeInterceptorFunc
+}
+
+func (o *RegisterSubscribeOptions) SetInterceptors(v []ddd.SubscribeInterceptorFunc) *RegisterSubscribeOptions {
+	o.interceptors = v
+	return o
+}
+
+var _subscribeInterceptor []ddd.SubscribeInterceptorFunc
+
+func RegisterSubscribeInterceptor(items ...ddd.SubscribeInterceptorFunc) {
+	_subscribeInterceptor = append(_subscribeInterceptor, items...)
+}
+
+func NewRegisterSubscribeOptions(opts ...*RegisterSubscribeOptions) *RegisterSubscribeOptions {
+	o := &RegisterSubscribeOptions{}
+	for _, item := range opts {
+		if item.interceptors != nil {
+			o.interceptors = item.interceptors
+		}
+	}
+	return o
+}
+
+func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler, options ...*RegisterSubscribeOptions) RegisterSubscribe {
+	var subs []*ddd.Subscribe
+	if subscribes != nil {
+		list := *subscribes
+		for i, _ := range list {
+			subs = append(subs, &list[i])
+		}
+	}
+
+	opt := NewRegisterSubscribeOptions(options...)
 	return &registerSubscribe{
-		subscribes: subscribes,
-		handler:    handler,
+		subscribes:   subs,
+		handler:      handler,
+		interceptors: opt.interceptors,
 	}
 }
 
-func (r *registerSubscribe) GetSubscribes() *[]ddd.Subscribe {
+func (r *registerSubscribe) GetInterceptor() []ddd.SubscribeInterceptorFunc {
+	return r.interceptors
+}
+
+func (r *registerSubscribe) GetSubscribes() []*ddd.Subscribe {
 	return r.subscribes
 }
 
@@ -143,7 +186,7 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory, options ...*RunOptions) (common.Service, error) {
 	if len(config.Mongo) > 0 {
-		InitMongo(config.Mongo)
+		InitMongo(config.App.AppId, config.Mongo)
 	}
 
 	if len(config.Neo4j) > 0 {
@@ -164,7 +207,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		}
 		return nil, err
 	}
-
+	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)
 	//创建dapr客户端
 	daprClient, err := daprclient.NewDaprDddClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {
@@ -212,15 +255,18 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.Factory,
 	runOptions ...*RunOptions) (common.Service, error) {
 
-	fmt.Printf("---------- %s ----------\r\n", runCfg.AppId)
+	opt := NewRunOptions(runOptions...)
 	ddd.Init(runCfg.AppId)
 	applog.Init(runCfg.DaprClient, runCfg.AppId, runCfg.LogLevel)
-
+	level := runCfg.LogLevel
+	if opt.level != nil {
+		level = *opt.level
+	}
 	serverOptions := &ServiceOptions{
 		AppId:          runCfg.AppId,
 		HttpHost:       runCfg.HttpHost,
 		HttpPort:       runCfg.HttpPort,
-		LogLevel:       runCfg.LogLevel,
+		LogLevel:       level,
 		EventTypes:     eventTypesFunc(),
 		EventStorages:  eventStorages,
 		Subscribes:     subsFunc(),
@@ -236,6 +282,11 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 	return service, nil
 }
 
+func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
+	o.SetPrefix(flag.Prefix).SetInit(flag.Init).SetLevel(flag.Level)
+	return o
+}
+
 func (o *RunOptions) GetInit() bool {
 	if o.initDb == nil {
 		return false
@@ -245,6 +296,15 @@ func (o *RunOptions) GetInit() bool {
 
 func (o *RunOptions) SetInit(v bool) *RunOptions {
 	o.initDb = &v
+	return o
+}
+
+func (o *RunOptions) GetLevel() *logs.Level {
+	return o.level
+}
+
+func (o *RunOptions) SetLevel(v *logs.Level) *RunOptions {
+	o.level = v
 	return o
 }
 

@@ -88,7 +88,7 @@ type FindPagingQueryRequest struct {
 }
 
 type FindPagingQueryMustWhere interface {
-	GetMustWhere() string
+	GetMustWhere() (string, error)
 }
 
 type FindPagingQueryDTO struct {

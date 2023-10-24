@@ -2,14 +2,17 @@ package logs
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 type LogFunction logrus.LogFunction
 
 type Fields map[string]interface{}
 
+// Logger 日志借口类
 type Logger interface {
 	Trace(args ...interface{})
 	Debug(args ...interface{})
@@ -38,7 +41,45 @@ type Logger interface {
 	Errorln(args ...interface{})
 	Panicln(args ...interface{})
 	Fatalln(args ...interface{})
+
+	SetLevel(level Level)
+	GetLevel() Level
+
+	//WithField(key string, value interface{}) Entry
 }
+
+type Entry interface {
+	//WithField(key string, value interface{}) Entry
+}
+
+// ArgFunc 异步参数方法，当符合当前日志级别时调用
+type ArgFunc = func() any
+
+// Level 日志级别
+type Level = logrus.Level
+
+// These are the different logging levels. You can set the logging level to log
+// on your instance of logger, obtained with `logrus.New()`.
+const (
+	// PanicLevel level, highest level of severity. Logs and then calls panic with the
+	// message passed to Debug, Info, ...
+	PanicLevel = logrus.PanicLevel
+	// FatalLevel level. Logs and then calls `logger.Exit(1)`. It will exit even if the
+	// logging level is set to Panic.
+	FatalLevel = logrus.FatalLevel
+	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
+	// Commonly used for hooks to send errors to an error tracking service.
+	ErrorLevel = logrus.ErrorLevel
+	// WarnLevel level. Non-critical entries that deserve eyes.
+	WarnLevel = logrus.WarnLevel
+	// InfoLevel level. General operational entries about what's going on inside the
+	// application.
+	InfoLevel = logrus.InfoLevel
+	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
+	DebugLevel = logrus.DebugLevel
+	// TraceLevel level. Designates finer-grained informational events than the Debug.
+	TraceLevel = logrus.TraceLevel
+)
 
 type loggerKey struct {
 }
@@ -57,167 +98,284 @@ func GetLogger(ctx context.Context) Logger {
 	return nil
 }
 
+func getArgs(args ...any) []any {
+	var res []any
+	for _, arg := range args {
+		if fun, ok := arg.(ArgFunc); ok {
+			res = append(res, fun())
+		} else {
+			res = append(res, arg)
+		}
+	}
+	return res
+}
+
+func isLevel(logger Logger, lvl Level) bool {
+	if logger.GetLevel() >= lvl {
+		return true
+	}
+	return false
+}
+
+// SetLevel sets the logger level.
+func SetLevel(ctx context.Context, level Level) {
+	l := GetLogger(ctx)
+	if l != nil {
+		l.SetLevel(level)
+	}
+}
+
+// GetLevel returns the logger level.
+func GetLevel(ctx context.Context) (bool, Level) {
+	l := GetLogger(ctx)
+	if l != nil {
+		return true, l.GetLevel()
+	}
+	return false, PanicLevel
+}
+
 func Trace(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Trace(args...)
+		if isLevel(l, TraceLevel) {
+			l.Trace(getArgs(getArgs(args...)...))
+		}
 	}
 }
 
 func Debug(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Debug(args...)
+		if isLevel(l, DebugLevel) {
+			l.Debug(getArgs(getArgs(args...)...))
+		}
 	}
 }
 
 func Print(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Print(args...)
+		l.Print(getArgs(getArgs(args...)...))
 	}
 }
 
 func Info(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Info(args...)
+		if isLevel(l, InfoLevel) {
+			l.Info(getArgs(getArgs(args...)...))
+		}
 	}
 }
 
 func Warn(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warn(args...)
+		if isLevel(l, WarnLevel) {
+			l.Warn(getArgs(getArgs(args...)...))
+		}
 	}
 }
 
 func Warning(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warning(args...)
+		if isLevel(l, WarnLevel) {
+			l.Warning(getArgs(args...)...)
+		}
 	}
 }
 
 func Error(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Error(args...)
+		if isLevel(l, ErrorLevel) {
+			l.Error(getArgs(args...)...)
+		}
 	}
 }
 
 func Panic(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Panic(args...)
+		if isLevel(l, PanicLevel) {
+			l.Panic(getArgs(args...)...)
+		}
 	}
 }
 
 func Fatal(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Fatal(args...)
+		if isLevel(l, FatalLevel) {
+			l.Fatal(getArgs(args...)...)
+		}
 	}
 }
 
-func Tracef(ctx context.Context, format string, args ...interface{}) {
+func Tracef(ctx context.Context, format string, args ...any) {
 	if l := GetLogger(ctx); l != nil {
-		l.Tracef(format, args...)
+		if isLevel(l, TraceLevel) {
+			l.Tracef(format, getArgs(args...)...)
+		}
 	}
 }
 
-func Debugf(ctx context.Context, format string, args ...interface{}) {
+func Debugf(ctx context.Context, format string, args ...any) {
 	if l := GetLogger(ctx); l != nil {
-		l.Debugf(format, args...)
+		if isLevel(l, DebugLevel) {
+			l.Debugf(format, getArgs(args...)...)
+		}
 	}
+}
+
+func DebugStart(ctx context.Context, fun func() error, format string, args ...any) error {
+	if l := GetLogger(ctx); l != nil {
+		if isLevel(l, DebugLevel) {
+			logId := idutils.NewId()
+			l.Debugf("start="+logId+"; "+format, getArgs(args...)...)
+			st := time.Now()
+			err := fun()
+			et := time.Now()
+			ut := et.Sub(st)
+			var as []any
+			as = append(as, args...)
+			as = append(as, ut)
+			if err != nil {
+				as = append(as, err.Error())
+				l.Debugf("end="+logId+"; "+format+"; useTime=%v; error=%s,", getArgs(as...)...)
+				return err
+			}
+			l.Debugf("end="+logId+"; "+format+"; useTime=%v", getArgs(as...)...)
+			return nil
+		}
+	}
+	return nil
 }
 
 func Printf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Printf(format, args...)
+		l.Printf(format, getArgs(args...)...)
 	}
 }
 
 func Infof(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Infof(format, args...)
+		if isLevel(l, DebugLevel) {
+			l.Infof(format, getArgs(args...)...)
+		}
 	}
 }
 
 func Warnf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warnf(format, args...)
+		if isLevel(l, WarnLevel) {
+			l.Warnf(format, getArgs(args...)...)
+		}
 	}
 }
 
 func Warningf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warningf(format, args...)
+		if isLevel(l, WarnLevel) {
+			l.Warningf(format, args...)
+		}
 	}
 }
 
 func Errorf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Errorf(format, args...)
+		if isLevel(l, ErrorLevel) {
+			l.Errorf(format, getArgs(args...)...)
+		}
 	}
 }
 
 func Panicf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Panicf(format, args...)
+		if isLevel(l, PanicLevel) {
+			l.Panicf(format, getArgs(args...)...)
+		}
 	}
 }
 
 func Fatalf(ctx context.Context, format string, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Fatalf(format, args...)
+		if isLevel(l, FatalLevel) {
+			l.Fatalf(format, getArgs(args...)...)
+		}
 	}
 }
 
 func Traceln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Traceln(args...)
+		if isLevel(l, TraceLevel) {
+			l.Traceln(getArgs(args...)...)
+		}
 	}
 }
 func Debugln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Debugln(args...)
+		if isLevel(l, DebugLevel) {
+			l.Debugln(getArgs(args...)...)
+		}
 	}
 }
 
 func Println(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Println(args...)
+		l.Println(getArgs(args...)...)
 	}
 }
 
 func Infoln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Infoln(args...)
+		if isLevel(l, InfoLevel) {
+			l.Infoln(getArgs(args...)...)
+		}
 	}
 }
 
 func Warnln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warnln(args...)
+		if isLevel(l, WarnLevel) {
+			l.Warnln(getArgs(args...)...)
+		}
 	}
 }
 
 func Warningln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Warnln(args...)
+		if isLevel(l, WarnLevel) {
+			l.Warnln(getArgs(args...)...)
+		}
 	}
 }
 
 func Errorln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Errorln(args...)
+		if isLevel(l, ErrorLevel) {
+			l.Errorln(getArgs(args...)...)
+		}
 	}
 }
 
 func Panicln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Panicln(args...)
+		if isLevel(l, PanicLevel) {
+			l.Panicln(getArgs(args...)...)
+		}
 	}
 }
 
 func Fatalln(ctx context.Context, args ...interface{}) {
 	if l := GetLogger(ctx); l != nil {
-		l.Fatalln(args...)
+		if isLevel(l, FatalLevel) {
+			l.Fatalln(getArgs(args...)...)
+		}
 	}
 }
 
-func DebugEvent(ctx context.Context, event ddd.Event, funcName string) {
-	Debugf(ctx, `eventId:'%v',eventType:'%v', tenantId:'%v', commandId:'%v', funcName:'%v'`, event.GetEventId(), event.GetEventType(), event.GetTenantId(), event.GetCommandId(), funcName)
+func DebugEvent(ctx context.Context, event any, funcName string) {
+	eventFunc := func() any {
+		data, _ := json.Marshal(event)
+		return string(data)
+	}
+	Debugf(ctx, `event:%v, funcName:'%v'`, eventFunc, funcName)
+}
+
+func ParseLevel(lvl string) (Level, error) {
+	l, err := logrus.ParseLevel(lvl)
+	return l, err
 }

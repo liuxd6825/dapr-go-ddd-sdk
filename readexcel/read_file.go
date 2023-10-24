@@ -2,8 +2,10 @@ package readexcel
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/script"
 	"github.com/tealeg/xlsx"
 	"strings"
@@ -14,15 +16,28 @@ import (
 	"time"
 )
 
-func ReadFile(fileName string, sheetName string, temp *Template) (*DataTable, error) {
+type FieldError struct {
+	Field string `json:"field"`
+	Msg   string `json:"msg"`
+}
+
+func NewFieldError(field string, error string) error {
+	return &FieldError{field, error}
+}
+
+func (e *FieldError) Error() string {
+	return fmt.Sprintf("field:%s, error:%s", e.Field, e.Msg)
+}
+
+func ReadFile(ctx context.Context, fileName string, sheetName string, temp *Template) (*DataTable, error) {
 	bs, err := readFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	return ReadBytes(bytes.NewBuffer(bs), sheetName, temp)
+	return ReadBytes(ctx, bytes.NewBuffer(bs), sheetName, temp)
 }
 
-func ReadBytes(buffer *bytes.Buffer, sheetName string, temp *Template) (*DataTable, error) {
+func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template) (*DataTable, error) {
 	if err := temp.Init(); err != nil {
 		return nil, err
 	}
@@ -133,8 +148,9 @@ func ReadBytes(buffer *bytes.Buffer, sheetName string, temp *Template) (*DataTab
 				}
 				value = s
 			} else if value, err = script.RunScript(runtime, cellValues, &field.Script); err != nil {
-				dataRow.AddValue(field.Name, nil)
+				dataRow.AddValue(field.Name, err.Error())
 				dataRow.AddError(field.Name, err)
+				logs.Errorf(ctx, "readexcel.ReadBytes() sheetName:%s, row:%v, fieldName:%s, script:%s; error:%s； ", sheetName, iRow, field.Name, field.Script, err.Error())
 				continue
 			}
 

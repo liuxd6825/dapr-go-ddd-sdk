@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -91,7 +92,7 @@ func (e *EnvConfig) Init(name string) error {
 	}
 
 	if e.Log.Level != "" {
-		l, err := applog.NewLevel(e.Log.Level)
+		l, err := logs.ParseLevel(e.Log.Level)
 		if err != nil {
 			return err
 		}
@@ -168,9 +169,9 @@ func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("config env:%s", env))
-		log.Infoln(fmt.Sprintf("config app appId:%s, httpHost:%s, httpPort:%d, rootUrl:%s", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
-		log.Infoln(fmt.Sprintf("config dapr host:%s,  httpPort:%d, grpcPort:%d, pubsubs:%s",
+		log.Infoln(fmt.Sprintf("config env=%s;", env))
+		log.Infoln(fmt.Sprintf("config app    appId=%s; httpHost=%s; httpPort=%d; rootUrl=%s;", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("config dapr   host=%s; httpPort=%d; grpcPort=%d; pubsubs=%s;",
 			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
 		return envConfig, nil
 	}

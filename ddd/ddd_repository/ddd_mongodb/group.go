@@ -20,13 +20,17 @@ type QueryGroup struct {
 	Sort      string
 }
 
-func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
+func NewQueryGroup(qry ddd_repository.FindPagingQuery) (*QueryGroup, error) {
+	var err error
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
 	f3 := ""
 	mustWhere, ok := qry.(ddd_repository.FindPagingQueryMustWhere)
 	if ok {
-		f3 = mustWhere.GetMustWhere()
+		f3, err = mustWhere.GetMustWhere()
+		if err != nil {
+			return nil, err
+		}
 	}
 	filter := getRsqlAnds(f1, f2, f3)
 	baseGroup := &QueryGroup{
@@ -37,7 +41,7 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 		ValueCols: qry.GetValueCols(),
 		Sort:      qry.GetSort(),
 	}
-	return baseGroup
+	return baseGroup, nil
 }
 
 //

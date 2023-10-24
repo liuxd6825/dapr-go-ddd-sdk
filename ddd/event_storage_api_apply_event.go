@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 type ApplyEventOptions struct {
@@ -192,7 +193,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		ClassName: "ddd",
 		FuncName:  "callDaprEventMethod",
 		Message:   fmt.Sprintf("%v", aggregate),
-		Level:     applog.INFO,
+		Level:     logs.InfoLevel,
 	}
 
 	var err error

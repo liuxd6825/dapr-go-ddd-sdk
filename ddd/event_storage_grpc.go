@@ -13,14 +13,14 @@ import (
 type grpcEventStorage struct {
 	client     daprclient.DaprDddClient
 	pubsubName string
-	subscribes *[]Subscribe
+	subscribes []*Subscribe
 }
 
 func NewGrpcEventStorage(client daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
-	subscribes = make([]Subscribe, 0)
+	subscribes = make([]*Subscribe, 0)
 	res := &grpcEventStorage{
 		client:     client,
-		subscribes: &subscribes,
+		subscribes: subscribes,
 	}
 	for _, option := range options {
 		option(res)

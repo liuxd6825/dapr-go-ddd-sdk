@@ -19,3 +19,7 @@ func InitLogs() *logrus.Logger {
 	})
 	return _logger
 }
+
+func GetLogger() *logrus.Logger {
+	return _logger
+}

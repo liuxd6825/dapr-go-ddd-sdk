@@ -32,14 +32,10 @@ func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 				return err
 			}
 			err := dbFunc(sCtx)
-			var tranErr error
 			if err != nil {
-				tranErr = sCtx.AbortTransaction(ctx)
+				err = sCtx.AbortTransaction(ctx)
 			} else {
-				tranErr = sCtx.CommitTransaction(ctx)
-			}
-			if err == nil {
-				return tranErr
+				err = sCtx.CommitTransaction(ctx)
 			}
 			return err
 		}

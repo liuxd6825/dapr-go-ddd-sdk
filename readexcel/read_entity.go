@@ -37,7 +37,7 @@ func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetNam
 
 	opt := NewOptions(opts...)
 
-	table, err := ReadBytes(buffer, sheetName, temp)
+	table, err := ReadBytes(ctx, buffer, sheetName, temp)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +57,8 @@ func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetNam
 		RowTotal:   rowTotal,
 	}
 
-	for i, row := range table.Rows {
-		item, err := newItem(ctx, row, temp)
+	for i, dataRow := range table.Rows {
+		item, err := newItem(ctx, dataRow, temp)
 		if err != nil {
 			return nil, err
 		}

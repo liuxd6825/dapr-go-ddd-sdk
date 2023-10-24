@@ -80,17 +80,23 @@ func NewMap(fromObj any) (map[string]any, error) {
 	}
 	return mapData, nil
 }
+func NewMapSnakeKey(fromObj any) (map[string]any, error) {
+	return NewMapWithOptions(fromObj, nil, true)
+}
+
+func NewMapJsonKey(fromObj any) (map[string]any, error) {
+	return NewMapWith(fromObj, nil, false, true)
+}
 
 func NewMapWithOptions(fromObj any, mask []string, snakeKey bool) (map[string]any, error) {
+	return NewMapWith(fromObj, mask, snakeKey, false)
+}
+
+func NewMapWith(fromObj any, mask []string, snakeKey bool, jsonKey bool) (map[string]any, error) {
 	mapData := make(map[string]any)
 	if err := Decode(fromObj, &mapData); err != nil {
 		return nil, err
 	}
-
-	/*
-		for _, key := range mask {
-			delete(mapData, key)
-		}*/
 
 	if len(mask) > 0 {
 		maskMap := map[string]any{}
@@ -101,16 +107,17 @@ func NewMapWithOptions(fromObj any, mask []string, snakeKey bool) (map[string]an
 		mapData = maskMap
 	}
 
-	if snakeKey {
+	if snakeKey || jsonKey {
 		data := make(map[string]any)
 		for k, v := range mapData {
-			key := stringutils.SnakeString(k)
-			if vTime, ok := v.(JsonTime); ok {
-				data[key] = vTime.PTime()
-			} else {
-				data[key] = v
+			key := k
+			if snakeKey {
+				key = stringutils.SnakeString(key)
 			}
-
+			if jsonKey {
+				key = stringutils.FirstLower(key)
+			}
+			data[key] = v
 		}
 		return data, nil
 	}

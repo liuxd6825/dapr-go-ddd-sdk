@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 type LoadAggregateOptions struct {
@@ -44,7 +45,7 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 		ClassName: "ddd",
 		FuncName:  "LoadAggregate",
 		Message:   fmt.Sprintf("aggregateId=%s", aggregateId),
-		Level:     applog.INFO,
+		Level:     logs.InfoLevel,
 	}
 
 	options := NewLoadAggregateOptions().Merge(opts...)

@@ -107,6 +107,9 @@ func (a *RestAssembler) AssDistinctRequest(ictx iris.Context) (ddd_query.FindDis
 }
 
 func (a *RestAssembler) AssFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
+	return a.assFindPagingRequest(ictx)
+}
+func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
 	tenantId, err := a.GetTenantId(ictx)
 	if err != nil {
 		return nil, err
@@ -140,6 +143,18 @@ func (a *RestAssembler) AssFindPagingRequest(ictx iris.Context) (*ddd_query.Find
 	}
 
 	return req.NewFindPagingQueryRequest(), nil
+}
+
+func (a *RestAssembler) AssFindPagingByCaseIdRequest(ictx iris.Context) (*ddd_query.FindPagingByCaseIdQuery, error) {
+	paging, err := a.assFindPagingRequest(ictx)
+	if err != nil {
+		return nil, err
+	}
+	caseId, err := a.GetCaseId(ictx)
+	if err != nil {
+		return nil, err
+	}
+	return ddd_query.NewFindPagingByCaseIdQuery(paging, caseId), nil
 }
 
 func (a *RestAssembler) GetTenantId(ictx iris.Context) (string, error) {
