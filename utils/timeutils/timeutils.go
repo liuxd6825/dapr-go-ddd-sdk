@@ -2,6 +2,7 @@ package timeutils
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -95,6 +96,12 @@ func StrToDateTime(str string) (time.Time, error) {
 }
 
 func asDateString(str string) (string, error) {
+	if len(str) == 8 {
+		y := str[0:4]
+		m := str[4:6]
+		d := str[6:8]
+		return fmt.Sprintf("%s-%s-%s", y, m, d), nil
+	}
 	sep := ""
 	if strings.Contains(str, "-") {
 		sep = "-"
@@ -150,26 +157,34 @@ func NumStrToDate(str string) (t time.Time, err error) {
 	return time.Date(year, time.Month(month), day, h, m, s, 0, time.Local), nil
 }
 
-func StrToTimePart(str string) (time.Time, error) {
+func StrToTimePart(v string) (time.Time, error) {
 	tNil := time.Time{}
-	if len(str) == 8 {
-		h, err := subToInt(str, 0, 1)
-		if err != nil {
-			return tNil, err
-		}
-		m, err := subToInt(str, 2, 3)
-		if err != nil {
-			return tNil, err
-		}
-		s, err := subToInt(str, 4, 5)
-		if err != nil {
-			return tNil, err
-		}
-		ns, err := subToInt(str, 6, 7)
-		if err != nil {
-			return tNil, err
-		}
+	rs := []string{"-", ".", ":", " ", ",", "_", "%"}
+	str := v
+	for _, r := range rs {
+		str = strings.Replace(str, r, "", -1)
+	}
 
+	var h, m, s, ns int
+	var err error
+	count := len(str)
+	if count >= 6 {
+		h, err = subToInt(str, 0, 1)
+		if err != nil {
+			return tNil, err
+		}
+		m, err = subToInt(str, 2, 3)
+		if err != nil {
+			return tNil, err
+		}
+		s, err = subToInt(str, 4, 5)
+		if err != nil {
+			return tNil, err
+		}
+		ns, err = subToInt(str, 6, count-6)
+		if err != nil {
+			return tNil, err
+		}
 		now := time.Now()
 		return time.Date(now.Year(), now.Month(), now.Day(), h, m, s, ns*10000000, time.Local), nil
 	}
@@ -177,7 +192,13 @@ func StrToTimePart(str string) (time.Time, error) {
 }
 
 func subToInt(str string, index int, last int) (int, error) {
+	if last == 0 {
+		return 0, nil
+	}
 	v := str[index : last+1]
+	if v == "" {
+		return 0, nil
+	}
 	i, err := strconv.ParseInt(v, 10, 64)
 	return int(i), err
 }
@@ -189,18 +210,18 @@ func subToInt(str string, index int, last int) (int, error) {
 // @param timeStr
 // @return *time.Time
 //
-func ToDateTime(dateStr string, timeStr string) time.Time {
+func ToDateTime(dateStr string, timeStr string) (time.Time, error) {
 	tstr := strings.ToLower(timeStr)
 	d, err := StrToDateTime(dateStr)
 	if err != nil {
-		return time.Time{}
+		return time.Time{}, err
 	}
 	t, err := StrToTimePart(tstr)
 	if err != nil {
-		return time.Time{}
+		return time.Time{}, err
 	}
 	res := time.Date(d.Year(), d.Month(), d.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
-	return res
+	return res, nil
 }
 
 //

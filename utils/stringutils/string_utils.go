@@ -2,6 +2,7 @@ package stringutils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/inflection"
 	"strconv"
 	"strings"
@@ -236,4 +237,14 @@ func P2Str(p *string) string {
 		return ""
 	}
 	return *p
+}
+
+func AnyToString(v any) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return fmt.Sprintf("%v", v)
 }

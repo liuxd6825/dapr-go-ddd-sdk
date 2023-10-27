@@ -94,15 +94,24 @@ func replace(s string, old string, new string) string {
 	return strings.ReplaceAll(s, old, new)
 }
 
-func toDateTime(value ...string) string {
+func toDateTime(value ...string) (resText string) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err, ok := e.(error); ok {
+				resText = err.Error()
+			}
+		}
+	}()
+	var err error
 	res := time.Time{}
 	count := len(value)
 	if count == 1 {
-		if v, err := timeutils.AnyToTime(value[0], time.Time{}); err == nil {
-			res = v
-		}
+		res, err = timeutils.AnyToTime(value[0], time.Time{})
 	} else if count > 1 {
-		res = timeutils.ToDateTime(value[0], value[1])
+		res, err = timeutils.ToDateTime(value[0], value[1])
+	}
+	if err != nil {
+		return err.Error()
 	}
 	return res.Format(LocalTimeLayoutLine)
 }

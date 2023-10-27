@@ -1,8 +1,10 @@
 package readexcel
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -19,7 +21,7 @@ func testReviewFile(t *testing.T, file string, sheetName string, maxRows int64) 
 		s := ""
 		for i := 0; i < len(review.Columns); i++ {
 			key := review.Columns[i]
-			s += item[key] + ","
+			s += stringutils.AnyToString(item[key]) + ","
 		}
 		t.Log(s)
 	}
@@ -46,7 +48,8 @@ func TestReadFile_Record(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if table, err := ReadFile("./test_files/record.xlsx", "Sheet2", tmp); err != nil {
+	ctx := context.Background()
+	if table, err := ReadFile(ctx, "./test_files/record.xlsx", "Sheet2", tmp); err != nil {
 		t.Error(err)
 	} else {
 		for _, row := range table.Rows {
@@ -67,7 +70,7 @@ func TestReadFile_70W(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if table, err := ReadFile("./test_files/70w.xlsx", "Sheet1", tmp); err != nil {
+	if table, err := ReadFile(context.Background(), "./test_files/70w.xlsx", "Sheet1", tmp); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(len(table.Rows))
@@ -110,14 +113,14 @@ func TestGetCellLabel(t *testing.T) {
 
 func new70wTemp() (*Template, error) {
 	fields := []*Field{
-		NewField("f1", "商户名称", String).SetMapKeys("商户名称"),
-		NewField("f2", "商户编号", String).SetMapKeys("商户编号"),
-		NewField("f3", "交易账号", String).SetMapKeys("交易账号"),
-		NewField("f4", "交易户名", String).SetMapKeys("交易户名"),
-		NewField("f5", "交易账户开户银行", String).SetMapKeys("交易账户开户银行"),
-		NewField("f6", "交易日期", String).SetMapKeys("交易日期"),
-		NewField("f7", "交易类型", String).SetMapKeys("交易类型"),
-		NewField("f8", "交易金额", String).SetMapKeys("交易金额"),
+		NewField("f1", "商户名称", String, true).SetMapKeys("商户名称"),
+		NewField("f2", "商户编号", String, true).SetMapKeys("商户编号"),
+		NewField("f3", "交易账号", String, true).SetMapKeys("交易账号"),
+		NewField("f4", "交易户名", String, true).SetMapKeys("交易户名"),
+		NewField("f5", "交易账户开户银行", String, true).SetMapKeys("交易账户开户银行"),
+		NewField("f6", "交易日期", String, true).SetMapKeys("交易日期"),
+		NewField("f7", "交易类型", String, true).SetMapKeys("交易类型"),
+		NewField("f8", "交易金额", String, true).SetMapKeys("交易金额"),
 	}
 
 	heads := []*MapHead{
@@ -140,30 +143,30 @@ func new70wTemp() (*Template, error) {
 
 func newRecordTemp() (*Template, error) {
 	fields := []*Field{
-		NewField("Iden", "标识", String),
-		NewField("Acct", "账号", String).SetMapKeys("Acct"),
-		NewField("TableName", "名称", String).SetMapKeys("TableName"),
-		NewField("AcctType", "账号类型", String),
-		NewField("BankName", "开户行", String).SetMapKeys("BankName"),
-		NewField("Balance", "余额", String).SetMapKeys("Balance"),
-		NewField("Category", "类别", String),
+		NewField("Iden", "标识", String, true),
+		NewField("Acct", "账号", String, true).SetMapKeys("Acct"),
+		NewField("TableName", "名称", String, true).SetMapKeys("TableName"),
+		NewField("AcctType", "账号类型", String, true),
+		NewField("BankName", "开户行", String, true).SetMapKeys("BankName"),
+		NewField("Balance", "余额", String, true).SetMapKeys("Balance"),
+		NewField("Category", "类别", String, true),
 
-		NewField("OppAcct", "对方账号", String).SetMapKeys("OppAcct"),
-		NewField("OppAcctType", "对方账号类型", String),
-		NewField("OppCategory", "对方类别", String),
-		NewField("OppIden", "对方标识", String),
-		NewField("OppBankName", "对方开户行", String).SetMapKeys("OppBankName"),
-		NewField("OppName", "对方名称", String).SetMapKeys("OppName"),
+		NewField("OppAcct", "对方账号", String, true).SetMapKeys("OppAcct"),
+		NewField("OppAcctType", "对方账号类型", String, true),
+		NewField("OppCategory", "对方类别", String, true),
+		NewField("OppIden", "对方标识", String, true),
+		NewField("OppBankName", "对方开户行", String, true).SetMapKeys("OppBankName"),
+		NewField("OppName", "对方名称", String, true).SetMapKeys("OppName"),
 
-		NewField("Amount", "交易金额", Money).SetMapKeys("Income", "Payout").SetScript(`Income!='0.00'?Income:Payout`),
-		NewField("Date", "交易时间", DateTime).SetMapKeys("Date"),
-		NewField("Notes", "交易备注", String).SetMapKeys("Summary", "Purpose", "Remarks"),
-		NewField("Place", "交易地点", String),
-		NewField("Ccy", "交易币种", String), //.SetDefault(DefaultValue("RMB")),
+		NewField("Amount", "交易金额", Money, true).SetMapKeys("Income", "Payout").SetScript(`Income!='0.00'?Income:Payout`),
+		NewField("Date", "交易时间", DateTime, true).SetMapKeys("Date"),
+		NewField("Notes", "交易备注", String, true).SetMapKeys("Summary", "Purpose", "Remarks"),
+		NewField("Place", "交易地点", String, true),
+		NewField("Ccy", "交易币种", String, true), //.SetDefault(DefaultValue("RMB")),
 
-		NewField("Serial", "流水号", String),
-		NewField("Income", "收入金额", String).SetMapKeys("Income"),
-		NewField("Payout", "支出金额", String).SetMapKeys("Payout"),
+		NewField("Serial", "流水号", String, true),
+		NewField("Income", "收入金额", String, true).SetMapKeys("Income"),
+		NewField("Payout", "支出金额", String, true).SetMapKeys("Payout"),
 	}
 
 	heads := []*MapHead{
