@@ -286,3 +286,17 @@ func isNil(i interface{}) bool {
 	}
 	return false
 }
+
+func ToTimeString(date *time.Time) string {
+	if date == nil {
+		return ""
+	}
+	return date.Format(LocalTimeLayoutLine)
+}
+
+func ToDateString(date *time.Time) string {
+	if date == nil {
+		return ""
+	}
+	return date.Format(LocalDateLayoutLine)
+}
