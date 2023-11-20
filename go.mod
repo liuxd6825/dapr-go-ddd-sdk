@@ -130,6 +130,6 @@ require (
 
 replace github.com/liuxd6825/dapr => ../dapr
 
-replace github.com/liuxd6825/go-sdk => ../go-sdk
+replace github.com/liuxd6825/go-sdk => ../dapr-1.12/go-sdk
 
-replace github.com/liuxd6825/components-contrib => ../components-contrib
+replace github.com/liuxd6825/components-contrib => ../dapr-1.12/components-contrib
