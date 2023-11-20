@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"reflect"
 	"strings"
 )
@@ -169,7 +168,7 @@ func (m *MongoManager) createIndexes(ctx context.Context, table *Table, coll *mo
 				name = name + "_"
 				if _, ok := m.findIndex(indexes, name); !ok {
 					model := mongo.IndexModel{
-						Keys:    bsonx.Doc{{Key: name, Value: bsonx.Int32(order)}},
+						Keys:    bson.D{{Key: name, Value: order}},
 						Options: options.Index().SetUnique(isUnique).SetName(name),
 					}
 					models = append(models, model)

@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"testing"
 	"time"
 )
@@ -107,7 +108,9 @@ func newCollection(name string) (*MongoDB, *mongo.Collection) {
 		Password:     "123456",
 		Options:      "replicaSet=mongors",
 	}
-	mongodb, err := NewMongoDB(config)
+	mongodb, err := NewMongoDB(config, func(options *options.ClientOptions) error {
+		return nil
+	})
 	if err != nil {
 		panic(err)
 	}
