@@ -2,7 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
+	"github.com/liuxd6825/dapr-components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -15,7 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"reflect"
 	"strings"
 )
@@ -88,23 +87,22 @@ func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.C
 	return nil
 }
 
-//
 // CreateIndexes
-//  @Description: 根据index标签创建数据库索引。index:asc,desc,unique
-//  示例
-//  type Index struct {
-//	    Id        string `bson:"_id" `
-//	    TenantId  string
-//	    TableName      string `bson:"name" index:"" `
-//	    Asc       int64  `bson:"asc" index:" asc"`
-//	    Desc      int64  `bson:"desc" index:" desc "`
-//	    Unique    string `index:"unique"`
-//	    AscUnique string `bson:"asc_unique" index:"asc, unique "`
-//   }
-//  @receiver r
-//  @param ctx  上下文
-//  @return error 错误
 //
+//	 @Description: 根据index标签创建数据库索引。index:asc,desc,unique
+//	 示例
+//	 type Index struct {
+//		    Id        string `bson:"_id" `
+//		    TenantId  string
+//		    TableName      string `bson:"name" index:"" `
+//		    Asc       int64  `bson:"asc" index:" asc"`
+//		    Desc      int64  `bson:"desc" index:" desc "`
+//		    Unique    string `index:"unique"`
+//		    AscUnique string `bson:"asc_unique" index:"asc, unique "`
+//	  }
+//	 @receiver r
+//	 @param ctx  上下文
+//	 @return error 错误
 func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
 	e, err := r.NewEntity()
 	if err != nil {
@@ -170,7 +168,7 @@ func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
 				name = stringutils.SnakeString(f.Name)
 			}
 			model := mongo.IndexModel{
-				Keys:    bsonx.Doc{{Key: name, Value: bsonx.Int32(order)}},
+				Keys:    bson.D{{Key: name, Value: order}},
 				Options: options.Index().SetUnique(isUnique).SetName(name + "_idx"),
 			}
 			models = append(models, model)
@@ -765,134 +763,134 @@ func (r *Dao[T]) getFindOptionsProjection(query ddd_repository.FindPagingQuery) 
 }
 
 /*
-func (r Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	var err error
-	findOptions := getFindOptions(opts...)
-	queryGroup := NewQueryGroup(query)
+	func (r Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+		var err error
+		findOptions := getFindOptions(opts...)
+		queryGroup := NewQueryGroup(query)
 
-	g, err := queryGroup.GetGroup()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		g, err := queryGroup.GetGroup()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	gpFilter, err := queryGroup.GetGroupPagingBsonFilter()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		gpFilter, err := queryGroup.GetGroupPagingBsonFilter()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	gFilter, err := queryGroup.GetGroupExpandGroupNoPagingBsonFilter()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		gFilter, err := queryGroup.GetGroupExpandGroupNoPagingBsonFilter()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	gFilter1, err := queryGroup.GetGroupNoPagingFilter()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		gFilter1, err := queryGroup.GetGroupNoPagingFilter()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	filter, err := queryGroup.GetFilter()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		filter, err := queryGroup.GetFilter()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	gSort, err := queryGroup.GetBsonFilterSort()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		gSort, err := queryGroup.GetBsonFilterSort()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	sort, err := queryGroup.GetFilterSort()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		sort, err := queryGroup.GetFilterSort()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	data, err := r.NewEntityList()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
+		data, err := r.NewEntityList()
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
 
-	coll := r.getCollection(ctx)
-	var findData *ddd_repository.FindPagingResult[T]
-	var cur *mongo.Cursor
-	///var curt *mongo.Cursor
-	var errt error
-	var totalRows int64
+		coll := r.getCollection(ctx)
+		var findData *ddd_repository.FindPagingResult[T]
+		var cur *mongo.Cursor
+		///var curt *mongo.Cursor
+		var errt error
+		var totalRows int64
 
-	isGroup := queryGroup.IsGroup()
-	isPaging := queryGroup.IsPaging()
-	isLeaf := queryGroup.IsLeaf()
+		isGroup := queryGroup.IsGroup()
+		isPaging := queryGroup.IsPaging()
+		isLeaf := queryGroup.IsLeaf()
 
-	if isGroup {
-		if isPaging {
-			pipeline := mongo.Pipeline{}
-			if gpFilter != nil && len(gpFilter) > 0 {
-				pipeline = append(pipeline, gpFilter)
+		if isGroup {
+			if isPaging {
+				pipeline := mongo.Pipeline{}
+				if gpFilter != nil && len(gpFilter) > 0 {
+					pipeline = append(pipeline, gpFilter)
+				}
+				if g != nil && len(g) > 0 {
+					pipeline = append(pipeline, g)
+				}
+				if sort != nil && len(sort) > 0 {
+					pipeline = append(pipeline, sort)
+				}
+
+				skip := query.GetPageSize() * query.GetPageNum()
+				pipeline = append(pipeline, bson.D{{"$skip", skip}})
+
+				limit := query.GetPageSize()
+				pipeline = append(pipeline, bson.D{{"$limit", limit}})
+
+				cur, err = coll.Aggregate(ctx, pipeline)
+				if err == nil {
+					totalRows = int64(cur.RemainingBatchLength())
+				}
+			} else if !isLeaf {
+				pipeline := mongo.Pipeline{}
+				if gFilter != nil && len(gFilter) > 0 {
+					pipeline = append(pipeline, gFilter)
+				}
+				if g != nil && len(g) > 0 {
+					pipeline = append(pipeline, g)
+				}
+				if gSort != nil && len(gSort) > 0 {
+					pipeline = append(pipeline, gSort)
+				}
+				if cur, err = coll.Aggregate(ctx, pipeline); err == nil {
+					totalRows = int64(cur.RemainingBatchLength())
+				}
+			} else if isLeaf {
+				findOptions.SetSort(sort)
+				cur, err = coll.Find(ctx, gFilter1, findOptions)
+				if err == nil {
+					totalRows, errt = coll.CountDocuments(ctx, gFilter1)
+				}
 			}
-			if g != nil && len(g) > 0 {
-				pipeline = append(pipeline, g)
-			}
-			if sort != nil && len(sort) > 0 {
-				pipeline = append(pipeline, sort)
-			}
-
-			skip := query.GetPageSize() * query.GetPageNum()
-			pipeline = append(pipeline, bson.D{{"$skip", skip}})
-
-			limit := query.GetPageSize()
-			pipeline = append(pipeline, bson.D{{"$limit", limit}})
-
-			cur, err = coll.Aggregate(ctx, pipeline)
-			if err == nil {
-				totalRows = int64(cur.RemainingBatchLength())
-			}
-		} else if !isLeaf {
-			pipeline := mongo.Pipeline{}
-			if gFilter != nil && len(gFilter) > 0 {
-				pipeline = append(pipeline, gFilter)
-			}
-			if g != nil && len(g) > 0 {
-				pipeline = append(pipeline, g)
-			}
-			if gSort != nil && len(gSort) > 0 {
-				pipeline = append(pipeline, gSort)
-			}
-			if cur, err = coll.Aggregate(ctx, pipeline); err == nil {
-				totalRows = int64(cur.RemainingBatchLength())
-			}
-		} else if isLeaf {
+		} else if !isGroup {
 			findOptions.SetSort(sort)
-			cur, err = coll.Find(ctx, gFilter1, findOptions)
-			if err == nil {
-				totalRows, errt = coll.CountDocuments(ctx, gFilter1)
+			if query.GetPageSize() > 0 {
+				findOptions.SetLimit(query.GetPageSize())
+				findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
+			}
+			cur, err = coll.Find(ctx, filter, findOptions)
+			if query.GetIsTotalRows() {
+				totalRows, errt = coll.CountDocuments(ctx, filter)
 			}
 		}
-	} else if !isGroup {
-		findOptions.SetSort(sort)
-		if query.GetPageSize() > 0 {
-			findOptions.SetLimit(query.GetPageSize())
-			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
+		if err != nil || errt != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err, errt)
 		}
-		cur, err = coll.Find(ctx, filter, findOptions)
-		if query.GetIsTotalRows() {
-			totalRows, errt = coll.CountDocuments(ctx, filter)
+
+		err = cur.All(ctx, &data)
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
-	}
-	if err != nil || errt != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err, errt)
-	}
 
-	err = cur.All(ctx, &data)
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
+		findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, query, err)
+		// 进行汇总计算
+		if len(query.GetValueCols()) > 0 {
+			sumData, _, err := r.Sum(ctx, query, opts...)
+			findData.SetSum(true, sumData, err)
+		}
+		return findData
 	}
-
-	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, query, err)
-	// 进行汇总计算
-	if len(query.GetValueCols()) > 0 {
-		sumData, _, err := r.Sum(ctx, query, opts...)
-		findData.SetSum(true, sumData, err)
-	}
-	return findData
-}
 */
 func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (result *ddd_repository.FindPagingResult[T]) {
 	defer func() {
@@ -1278,14 +1276,12 @@ func (r *Dao[T]) DoSetMap(fun func() (map[string]interface{}, error)) *ddd_repos
 }
 */
 
-//
-//  getSort
-//  @Description: 返回排序bson.D
-//  @receiver r
-//  @param sort  排序语句 "name:desc,id:asc"
-//  @return bson.D
-//  @return error
-//
+// getSort
+// @Description: 返回排序bson.D
+// @receiver r
+// @param sort  排序语句 "name:desc,id:asc"
+// @return bson.D
+// @return error
 func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 	if len(sort) == 0 {
 		return bson.D{}, nil

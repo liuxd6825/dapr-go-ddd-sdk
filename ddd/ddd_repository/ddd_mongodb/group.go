@@ -3,7 +3,7 @@ package ddd_mongodb
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/components-contrib/liuxd/common/utils"
+	"github.com/liuxd6825/dapr-components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"
@@ -44,12 +44,10 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) (*QueryGroup, error) {
 	return baseGroup, nil
 }
 
-//
 // IsPaging
 // @Description:
 // @receiver b
 // @return bool
-//
 func (b *QueryGroup) IsPaging() bool {
 	if !b.IsGroup() {
 		return true
@@ -61,12 +59,10 @@ func (b *QueryGroup) IsPaging() bool {
 	return false
 }
 
-//
 // IsGroup
 // @Description:
 // @receiver b
 // @return bool
-//
 func (b *QueryGroup) IsGroup() bool {
 	if b.GroupCols == nil || len(b.GroupCols) == 0 {
 		return false
@@ -74,12 +70,10 @@ func (b *QueryGroup) IsGroup() bool {
 	return true
 }
 
-//
 // IsExpand
 // @Description: 分组是否展开
 // @receiver b
 // @return bool
-//
 func (b *QueryGroup) IsExpand() bool {
 	if b.GroupKeys == nil || len(b.GroupKeys) == 0 {
 		return false
@@ -94,13 +88,11 @@ func (b *QueryGroup) IsLeaf() bool {
 	return false
 }
 
-//
 // GetGroup
 // @Description:
 // @receiver b
 // @return bson.D
 // @return error
-//
 func (b *QueryGroup) GetGroup() (bson.D, error) {
 	if b.GroupCols == nil || len(b.GroupCols) == 0 {
 		return nil, nil
@@ -169,13 +161,11 @@ func (b *QueryGroup) GetTotalGroup() (bson.D, error) {
 	return bson.D{{"$group", projectMap}}, nil
 }
 
-//
 // GetFilter
 // @Description: 不分组分页条件，即原始网格数据
 // @receiver b
 // @return map[string]interface{}
 // @return error
-//
 func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 	if b.Filter == "" {
 		return nil, nil
@@ -187,13 +177,11 @@ func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 	return p.GetFilter(b.TenantId)
 }
 
-//
 // GetGroupExpandFilter
 // @Description: 分组不分页，即分组全部展开时过滤器
 // @receiver b
 // @return map[string]interface{}
 // @return error
-//
 func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 	mMatch, err := b.GetFilter()
 	if err != nil {
@@ -223,13 +211,11 @@ func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 	return mMatch, nil
 }
 
-//
 // GetFilterSort
 // @Description:
 // @receiver b
 // @return bson.D
 // @return error
-//
 func (b *QueryGroup) GetFilterSort() (bson.D, error) {
 	if len(b.Sort) == 0 {
 		return bson.D{}, nil

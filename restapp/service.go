@@ -2,9 +2,7 @@ package restapp
 
 import (
 	"fmt"
-	"github.com/iris-contrib/swagger/v12"
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
-	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
@@ -12,11 +10,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/go-sdk/actor"
-	"github.com/liuxd6825/go-sdk/actor/config"
-	actorErr "github.com/liuxd6825/go-sdk/actor/error"
-	"github.com/liuxd6825/go-sdk/actor/runtime"
-	"github.com/liuxd6825/go-sdk/service/common"
+	"github.com/liuxd6825/dapr-go-sdk/actor"
+	"github.com/liuxd6825/dapr-go-sdk/actor/config"
+	actorErr "github.com/liuxd6825/dapr-go-sdk/actor/error"
+	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
+	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
 )
 
@@ -285,12 +283,10 @@ func (s *service) actorConfigHandler(ctx *context.Context) {
 	}
 }
 
-//
 // registerQueryHandler
 // @Description: 注册领域事件控制器
 // @param handlers
 // @return error
-//
 func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
@@ -302,13 +298,11 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	return nil
 }
 
-//
 // registerSubscribeHandler
 // @Description: 新建领域事件控制器
 // @param subscribes
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
-//
 func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
 	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
@@ -332,12 +326,10 @@ func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEve
 	return handler, nil
 }
 
-//
 // RegisterRestController
 // @Description: 注册UserInterface层Controller
 // @param relativePath
 // @param configurators
-//
 func (s *service) registerController(relativePath string, controllers ...Controller) {
 	if controllers == nil && len(controllers) == 0 {
 		return
@@ -355,11 +347,9 @@ func (s *service) registerController(relativePath string, controllers ...Control
 	mvc.Configure(s.app.Party(relativePath), configurators)
 }
 
-//
 // registerSwagger
 // @Description:
 // @receiver s
-//
 func (s *service) registerSwagger() {
 	url := fmt.Sprintf("http://%s:%d/swagger/doc.json", "localhost", s.httpPort)
 	cfg := &swagger.Config{

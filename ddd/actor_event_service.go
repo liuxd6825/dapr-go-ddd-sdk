@@ -1,8 +1,8 @@
 package ddd
 
 import (
-	"github.com/liuxd6825/go-sdk/actor"
-	dapr "github.com/liuxd6825/go-sdk/client"
+	"github.com/liuxd6825/dapr-go-sdk/actor"
+	dapr "github.com/liuxd6825/dapr-go-sdk/client"
 )
 
 const eventActorType = "ddd.EventActorType"

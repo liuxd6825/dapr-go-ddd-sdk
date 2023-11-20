@@ -13,7 +13,7 @@ import (
 func TestMapper_Search(t *testing.T) {
 	ctx := context.Background()
 	mdb, coll := newCollection("record_ie")
-	mapper := NewDao[*Record](func() (mongodb *MongoDB, collection *mongo.Collection) {
+	mapper := NewDao[*Record](func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) {
 		return mdb, coll
 	})
 
@@ -21,7 +21,7 @@ func TestMapper_Search(t *testing.T) {
 	qry.SetFilter("name=='梁瑞梅' and batch_id=='bd82aaf8-1654-4680-ba29-4e16eb66c29f'")
 	qry.SetTenantId("test")
 	qry.SetPageSize(20)
-	qry.SetGroupCols(ddd_repository.NewGroupCols().Add("name", types.DataTypeString).Add("oppName", types.DataTypeString).Cols())
+	qry.SetGroupCols(ddd_repository.NewGroupCols("").Add("name", types.DataTypeString).Add("oppName", types.DataTypeString).Cols())
 	qry.SetValueCols(ddd_repository.NewValueCols().Add("amount", ddd_repository.AggFuncSum).Cols())
 	qry.SetGroupKeys([]any{"梁瑞梅"})
 
@@ -38,7 +38,7 @@ func TestMapper_Search(t *testing.T) {
 func TestDao_CreateIndexes(t *testing.T) {
 	ctx := context.Background()
 	mdb, coll := newCollection("test_create_index")
-	mapper := NewDao[*Index](func() (mongodb *MongoDB, collection *mongo.Collection) {
+	mapper := NewDao[*Index](func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) {
 		return mdb, coll
 	})
 

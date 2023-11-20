@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	daprsdkclient "github.com/liuxd6825/dapr-go-sdk/client"
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
-	dapr_sdk_client "github.com/liuxd6825/go-sdk/client"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"strings"
@@ -51,7 +51,7 @@ type DaprDddClient interface {
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error)
 	GetEvents(ctx context.Context, req *GetEventsRequest) (*GetEventsResponse, error)
-	DaprClient() (dapr_sdk_client.Client, error)
+	DaprClient() (daprsdkclient.Client, error)
 }
 
 var _daprClient DaprDddClient
@@ -69,7 +69,7 @@ type daprDddClient struct {
 	httpPort   int64
 	grpcPort   int64
 	httpClient *http.Client
-	grpcClient dapr_sdk_client.Client
+	grpcClient daprsdkclient.Client
 }
 
 type Option func(options *DaprHttpOptions)
@@ -119,16 +119,16 @@ func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Optio
 	}, nil
 }
 
-func newDaprClient(host string, grpcPort int64) (dapr_sdk_client.Client, error) {
+func newDaprClient(host string, grpcPort int64) (daprsdkclient.Client, error) {
 	// 三次试错创建daprClient
 	port := strconv.FormatInt(grpcPort, 10)
-	var grpcClient dapr_sdk_client.Client
+	var grpcClient daprsdkclient.Client
 	var err error
 	var waitSecond time.Duration = 5
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	for i := 0; i < 4; i++ {
-		if grpcClient, err = dapr_sdk_client.NewClientWithAddress(addr); err != nil {
+		if grpcClient, err = daprsdkclient.NewClientWithAddress(addr); err != nil {
 			log.Infoln(fmt.Sprintf("dapr client connection error, address=%s", addr), err)
 			continue
 		}
@@ -178,7 +178,7 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 		if err1 != nil {
 			return nil, ddd_utils.NewAppError(appID, err)
 		}
-		content := &dapr_sdk_client.DataContent{
+		content := &daprsdkclient.DataContent{
 			ContentType: "application/json",
 			Data:        reqBytes,
 		}
@@ -256,6 +256,6 @@ func (c *daprDddClient) Rollback(ctx context.Context, req *RollbackRequest) (*Ro
 	return resp, err
 }
 
-func (c *daprDddClient) DaprClient() (dapr_sdk_client.Client, error) {
+func (c *daprDddClient) DaprClient() (daprsdkclient.Client, error) {
 	return c.grpcClient, nil
 }

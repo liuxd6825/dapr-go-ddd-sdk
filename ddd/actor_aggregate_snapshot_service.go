@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/go-sdk/actor"
-	dapr "github.com/liuxd6825/go-sdk/client"
+	"github.com/liuxd6825/dapr-go-sdk/actor"
+	dapr "github.com/liuxd6825/dapr-go-sdk/client"
 	"log"
 	"os"
 )
