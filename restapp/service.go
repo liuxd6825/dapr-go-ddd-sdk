@@ -2,7 +2,9 @@ package restapp
 
 import (
 	"fmt"
+	"github.com/iris-contrib/swagger/v12"
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
@@ -47,6 +49,14 @@ type service struct {
 	eventTypes     []RegisterEventType
 	authToken      string
 	webRootPath    string
+}
+
+func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandler) error {
+	return nil
+}
+
+func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
+
 }
 
 func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
@@ -254,7 +264,7 @@ func (s *service) actorDeactivateHandler(ctx *context.Context) {
 
 func (s *service) subscribesHandler(ictx *context.Context) {
 	subscribes := ddd.GetSubscribes()
-	_, _ = ictx.JSON(subscribes)
+	_ = ictx.JSON(subscribes)
 
 	ctx := NewContext(ictx)
 	for _, s := range subscribes {
