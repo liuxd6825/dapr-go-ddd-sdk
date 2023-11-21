@@ -5,7 +5,12 @@ import (
 	"time"
 )
 
+type BaseRequest struct {
+	SpecName string `json:"specName"`
+}
+
 type CommitRequest struct {
+	BaseRequest
 	TenantId  string `json:"tenantId"`
 	SessionId string `json:"sessionId"`
 }
@@ -15,6 +20,7 @@ type CommitResponse struct {
 }
 
 type RollbackRequest struct {
+	BaseRequest
 	TenantId  string `json:"tenantId"`
 	SessionId string `json:"sessionId"`
 }
@@ -24,6 +30,7 @@ type RollbackResponse struct {
 }
 
 type ApplyEventRequest struct {
+	BaseRequest
 	SessionId     string      `json:"sessionId"`
 	TenantId      string      `json:"tenantId"`
 	AggregateId   string      `json:"aggregateId"`
@@ -36,6 +43,7 @@ type ApplyEventResponse struct {
 }
 
 type CreateEventRequest struct {
+	BaseRequest
 	SessionId     string      `json:"sessionId"`
 	TenantId      string      `json:"tenantId"`
 	AggregateId   string      `json:"aggregateId"`
@@ -48,6 +56,7 @@ type CreateEventResponse struct {
 }
 
 type DeleteEventRequest struct {
+	BaseRequest
 	SessionId     string    `json:"sessionId"`
 	TenantId      string    `json:"tenantId"`
 	AggregateId   string    `json:"aggregateId"`
@@ -79,6 +88,7 @@ type ExistAggregateResponse struct {
 }
 
 type LoadEventsRequest struct {
+	BaseRequest
 	TenantId      string `json:"tenantId"`
 	AggregateId   string `json:"aggregateId"`
 	AggregateType string `json:"aggregateType"`
@@ -125,6 +135,7 @@ type EventRecordJsonMarshalResult struct {
 }
 
 type SaveSnapshotRequest struct {
+	BaseRequest
 	TenantId         string            `json:"tenantId"`
 	AggregateId      string            `json:"AggregateId"`
 	AggregateType    string            `json:"aggregateType"`
@@ -139,6 +150,7 @@ type SaveSnapshotResponse struct {
 }
 
 type GetRelationsRequest struct {
+	BaseRequest
 	TenantId      string `json:"tenantId"`
 	AggregateType string `json:"aggregateType"`
 	Filter        string `json:"filter"`
@@ -177,6 +189,7 @@ type ResponseHeaders struct {
 }
 
 type GetEventsRequest struct {
+	BaseRequest
 	TenantId      string `json:"tenantId"`
 	AggregateType string `json:"aggregateType"`
 	Filter        string `json:"filter"`

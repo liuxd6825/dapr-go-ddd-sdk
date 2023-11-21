@@ -16,12 +16,13 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 		return nil, err
 	}
 
-	in := &pb.LoadEventRequest{
+	in := &pb.LoadDomainEventRequest{
 		TenantId:      req.TenantId,
 		AggregateType: req.AggregateType,
 		AggregateId:   req.AggregateId,
+		Headers:       newRequstHeaders(&req.BaseRequest),
 	}
-	out, err := c.grpcClient.LoadEvents(ctx, in)
+	out, err := c.grpcClient.LoadDomainEvents(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -90,14 +91,16 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 		return nil, err
 	}
 
-	in := &pb.ApplyEventRequest{
+	in := &pb.ApplyDomainEventRequest{
 		SessionId:     req.SessionId,
 		TenantId:      req.TenantId,
 		AggregateId:   req.AggregateId,
 		AggregateType: req.AggregateType,
 		Events:        events,
+		Headers:       newRequstHeaders(&req.BaseRequest),
 	}
-	out, err := c.grpcClient.ApplyEvent(ctx, in)
+
+	out, err := c.grpcClient.ApplyDomainEvent(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +108,13 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 		Headers: c.newResponseHeaders(out.Headers),
 	}
 	return resp, nil
+}
+
+func newRequstHeaders(request *BaseRequest) *pb.RequestHeaders {
+	return &pb.RequestHeaders{
+		SpecName: request.SpecName,
+		Values:   nil,
+	}
 }
 
 /*func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
@@ -256,7 +266,7 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 	if err != nil {
 		return nil, err
 	}
-	in := &pb.SaveSnapshotRequest{
+	in := &pb.SaveDomainEventSnapshotRequest{
 		TenantId:         req.TenantId,
 		AggregateId:      req.AggregateId,
 		AggregateType:    req.AggregateType,
@@ -264,8 +274,10 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		AggregateVersion: req.AggregateVersion,
 		SequenceNumber:   req.SequenceNumber,
 		Metadata:         metadata,
+		Headers:          newRequstHeaders(&req.BaseRequest),
 	}
-	out, err := c.grpcClient.SaveSnapshot(ctx, in)
+
+	out, err := c.grpcClient.SaveDomainEventSnapshot(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -286,15 +298,17 @@ func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsReque
 		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req.AggregateType is nil")
 	}
 
-	in := &pb.GetRelationsRequest{
+	in := &pb.GetDomainEventRelationsRequest{
 		TenantId:      req.TenantId,
 		AggregateType: req.AggregateType,
 		Filter:        req.Filter,
 		Sort:          req.Sort,
 		PageNum:       req.PageNum,
 		PageSize:      req.PageSize,
+		Headers:       newRequstHeaders(&req.BaseRequest),
 	}
-	out, err := c.grpcClient.GetRelations(ctx, in)
+
+	out, err := c.grpcClient.GetDomainEventRelations(ctx, in)
 	if err != nil {
 		return nil, err
 	}
@@ -341,15 +355,17 @@ func (c *daprDddClient) GetEvents(ctx context.Context, req *GetEventsRequest) (*
 		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req.AggregateType is nil")
 	}
 
-	in := &pb.GetEventsRequest{
+	in := &pb.GetDomainEventsRequest{
 		TenantId:      req.TenantId,
 		AggregateType: req.AggregateType,
 		Filter:        req.Filter,
 		Sort:          req.Sort,
 		PageNum:       req.PageNum,
 		PageSize:      req.PageSize,
+		Headers:       newRequstHeaders(&req.BaseRequest),
 	}
-	out, err := c.grpcClient.GetEvents(ctx, in)
+
+	out, err := c.grpcClient.GetDomainEvents(ctx, in)
 	if err != nil {
 		return nil, err
 	}

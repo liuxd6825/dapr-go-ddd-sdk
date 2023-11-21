@@ -3,6 +3,7 @@ package timeutils
 import (
 	"errors"
 	"fmt"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,11 +16,9 @@ const LocalTimeLayoutSlash = "2006/01/02 15:04:05"
 const LocalDateLayoutLine = "2006-01-02"
 const LocalDateLayoutSlash = "2006/01/02"
 
-//
 // Now
 // @Description: 获取毫秒值为0的当前时间
 // @return time.Time
-//
 func Now() time.Time {
 	t := time.Now()
 	v := Time(&t)
@@ -30,12 +29,10 @@ func PNow() *time.Time {
 	return &t
 }
 
-//
 // Time
 // @Description: 获取毫秒值为0的时间
 // @param t
 // @return *time.Time
-//
 func Time(t *time.Time) *time.Time {
 	if t == nil {
 		return t
@@ -203,13 +200,11 @@ func subToInt(str string, index int, last int) (int, error) {
 	return int(i), err
 }
 
-//
 // ToDateTime
 // @Description:
 // @param dateStr
 // @param timeStr
 // @return *time.Time
-//
 func ToDateTime(dateStr string, timeStr string) (time.Time, error) {
 	tstr := strings.ToLower(timeStr)
 	d, err := StrToDateTime(dateStr)
@@ -224,13 +219,11 @@ func ToDateTime(dateStr string, timeStr string) (time.Time, error) {
 	return res, nil
 }
 
-//
 // Equal
 // @Description: 对比时间，精确到秒，忽略毫秒；可以解决mongo时间精度与time.Now不同。
 // @param t1  nil/time.Time/*time.Time
 // @param t2  nil/time.Time/*time.Time
 // @return bool 是否相等
-//
 func Equal(t1, t2 interface{}) bool {
 	switch t1.(type) {
 	case time.Time:
@@ -299,4 +292,16 @@ func ToDateString(date *time.Time) string {
 		return ""
 	}
 	return date.Format(LocalDateLayoutLine)
+}
+
+func AsTimestamp(t *time.Time) *timestamppb.Timestamp {
+	timestamp := &timestamppb.Timestamp{
+		Seconds: t.Unix(),
+		Nanos:   int32(t.Nanosecond()),
+	}
+	return timestamp
+}
+
+func ToPTime(t time.Time) *time.Time {
+	return &t
 }
