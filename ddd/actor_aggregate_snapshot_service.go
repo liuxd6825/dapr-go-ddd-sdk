@@ -19,6 +19,16 @@ type AggregateSnapshotActorService struct {
 	daprClient dapr.Client
 }
 
+type AggregateSnapshotActorServiceContext struct {
+	*actor.ServerImplBaseCtx
+}
+
+func NewAggregateSnapshotActorService(daprClient dapr.Client) *AggregateSnapshotActorService {
+	return &AggregateSnapshotActorService{
+		daprClient: daprClient,
+	}
+}
+
 func (s *AggregateSnapshotActorService) Type() string {
 	return aggregateSnapshotActorType
 }
@@ -35,8 +45,12 @@ func (s *AggregateSnapshotActorService) SaveSnapshot(ctx context.Context, req *S
 	return &SaveSnapshotResponse{}, nil
 }
 
-func NewAggregateSnapshotActorService(daprClient dapr.Client) *AggregateSnapshotActorService {
-	return &AggregateSnapshotActorService{
-		daprClient: daprClient,
+func (s *AggregateSnapshotActorService) WithContext() actor.ServerContext {
+	return &AggregateSnapshotActorServiceContext{
+		ServerImplBaseCtx: s.ServerImplBase.WithContext(),
 	}
+}
+
+func (c *AggregateSnapshotActorServiceContext) Type() string {
+	return aggregateSnapshotActorType
 }
