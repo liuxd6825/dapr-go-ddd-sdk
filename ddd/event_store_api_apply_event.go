@@ -11,13 +11,13 @@ import (
 
 type ApplyEventOptions struct {
 	pubsubName       *string
-	metadata         *map[string]string
-	eventStorageKey  *string
+	eventStoreName   *string
+	metadata         map[string]string
 	sessionId        *string
 	closeEventSource *bool
 }
 
-func NewApplyEventOptions(metadata *map[string]string) *ApplyEventOptions {
+func NewApplyEventOptions(metadata map[string]string) *ApplyEventOptions {
 	return &ApplyEventOptions{
 		metadata: metadata,
 	}
@@ -34,8 +34,8 @@ func OptionCloseEventSource() *ApplyEventOptions {
 
 func (a *ApplyEventOptions) Merge(opts ...*ApplyEventOptions) *ApplyEventOptions {
 	for _, opt := range opts {
-		if opt.eventStorageKey != nil {
-			a.eventStorageKey = opt.eventStorageKey
+		if opt.eventStoreName != nil {
+			a.eventStoreName = opt.eventStoreName
 		}
 		if opt.metadata != nil {
 			a.metadata = opt.metadata
@@ -71,24 +71,24 @@ func (a *ApplyEventOptions) GetPubsubName() *string {
 	return a.pubsubName
 }
 
-func (a *ApplyEventOptions) SetEventStorageKey(eventStorageKey string) *ApplyEventOptions {
-	a.eventStorageKey = &eventStorageKey
+func (a *ApplyEventOptions) SetEventStoreKey(eventStoreName string) *ApplyEventOptions {
+	a.eventStoreName = &eventStoreName
 	return a
 }
 
-func (a *ApplyEventOptions) GetEventStorageKey() string {
-	if a.eventStorageKey != nil {
-		return *a.eventStorageKey
+func (a *ApplyEventOptions) GetEventStoreName() string {
+	if a.eventStoreName != nil {
+		return *a.eventStoreName
 	}
 	return ""
 }
 
-func (a *ApplyEventOptions) SetMetadata(value *map[string]string) *ApplyEventOptions {
+func (a *ApplyEventOptions) SetMetadata(value map[string]string) *ApplyEventOptions {
 	a.metadata = value
 	return a
 }
 
-func (a *ApplyEventOptions) GetMetadata() *map[string]string {
+func (a *ApplyEventOptions) GetMetadata() map[string]string {
 	return a.metadata
 }
 
@@ -149,7 +149,6 @@ func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent
 	return nil, err
 }
 
-//
 // callDaprEventMethod
 // @Description: 应用领域事件
 // @param ctx
@@ -157,16 +156,13 @@ func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent
 // @param event
 // @param options
 // @return err
-//
 func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			resErr = e
-		}
+		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 
 	metadata := make(map[string]string)
-	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadata(metadata).Merge(opts...)
 
 	for _, event := range events {
 		if err := checkEvent(aggregate, event); err != nil {
@@ -177,6 +173,20 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	tenantId := aggregate.GetTenantId()
 	aggId := aggregate.GetAggregateId()
 	aggType := aggregate.GetAggregateType()
+
+	errs := errors.NewErrors()
+	if len(tenantId) == 0 {
+		errs.AddString("tenantId is empty")
+	}
+	if len(aggId) == 0 {
+		errs.AddString("aggregateId is empty")
+	}
+	if len(aggType) == 0 {
+		errs.AddString("aggregateType is empty")
+	}
+	if !errs.IsEmpty() {
+		return nil, errs
+	}
 
 	sessionId := ""
 	if options.GetSessionId() != nil {
@@ -199,12 +209,17 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	var err error
 	var res any
 	err = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
-		var eventStorage EventStorage
+		var eventStore EventStore
 		applyEvents := make([]*daprclient.EventDto, 0)
 
-		eventStorage, err = GetEventStorage(options.GetEventStorageKey())
+		eventStore, err = GetEventStore(options.GetEventStoreName())
 		if err != nil {
 			return nil, err
+		}
+
+		pubsubName := eventStore.GetPubsubName()
+		if val := options.GetPubsubName(); val != nil {
+			pubsubName = *val
 		}
 
 		defaultIsSourcing := true
@@ -229,8 +244,8 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				EventId:      event.GetEventId(),
 				EventVersion: event.GetEventVersion(),
 				EventType:    event.GetEventType(),
-				Metadata:     *options.metadata,
-				PubsubName:   eventStorage.GetPubsubName(),
+				Metadata:     options.metadata,
+				PubsubName:   pubsubName,
 				EventData:    event,
 				Relations:    relation,
 				Topic:        event.GetEventType(),
@@ -239,7 +254,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			applyEvents = append(applyEvents, eventDto)
 		}
 
-		res, err = applyEvent(ctx, eventStorage, tenantId, sessionId, aggId, aggType, applyEvents)
+		res, err = applyEvent(ctx, eventStore, tenantId, sessionId, aggId, aggType, applyEvents)
 		if err != nil {
 			return nil, err
 		}
@@ -261,7 +276,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	return res, err
 }
 
-func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, sessionId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
+func applyEvent(ctx context.Context, eventStorage EventStore, tenantId, sessionId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
 	req := &daprclient.ApplyEventRequest{
 		SessionId:     sessionId,
 		TenantId:      tenantId,
@@ -275,9 +290,7 @@ func applyEvent(ctx context.Context, eventStorage EventStorage, tenantId, sessio
 
 func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *daprclient.CommitResponse, resErr error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			resErr = e
-		}
+		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 	req := &daprclient.CommitRequest{
 		TenantId:  tenantId,
@@ -285,9 +298,9 @@ func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*App
 	}
 
 	metadata := make(map[string]string)
-	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadata(metadata).Merge(opts...)
 
-	eventStorage, err := GetEventStorage(options.GetEventStorageKey())
+	eventStorage, err := GetEventStore(options.GetEventStoreName())
 	if err != nil {
 		return nil, err
 	}
@@ -301,9 +314,7 @@ func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*App
 
 func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *daprclient.RollbackResponse, resErr error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			resErr = e
-		}
+		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 	req := &daprclient.RollbackRequest{
 		TenantId:  tenantId,
@@ -311,9 +322,9 @@ func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*A
 	}
 
 	metadata := make(map[string]string)
-	options := NewApplyEventOptionsNil().SetMetadata(&metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadata(metadata).Merge(opts...)
 
-	eventStorage, err := GetEventStorage(options.GetEventStorageKey())
+	eventStorage, err := GetEventStore(options.GetEventStoreName())
 	if err != nil {
 		return nil, err
 	}
@@ -348,20 +359,16 @@ func deleteEvent(ctx context.Context, sessionId string, eventStorage EventStorag
 	return resp, err
 }*/
 
-//
-//  callActorSaveSnapshot
-//  @Description: 通过调用 actor service 生成聚合快照。
-//  @param ctx
-//  @param tenantId
-//  @param aggregateId
-//  @param aggregateType
-//  @return error
-//
+// callActorSaveSnapshot
+// @Description: 通过调用 actor service 生成聚合快照。
+// @param ctx
+// @param tenantId
+// @param aggregateId
+// @param aggregateType
+// @return error
 func callActorSaveSnapshot(ctx context.Context, tenantId, aggregateId, aggregateType string) (resErr error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			resErr = e
-		}
+		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 
 	client, err := daprclient.GetDaprDDDClient().DaprClient()

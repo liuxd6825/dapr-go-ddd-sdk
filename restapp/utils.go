@@ -107,18 +107,15 @@ func SetError(ctx context.Context, err error) {
 // @return err 错误
 func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 	ctx := NewContext(ictx)
+
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
+		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
 			logs.Error(ctx, err)
 		}
 	}()
 
 	err = fun(ctx)
-	if err != nil {
-		logs.Error(ctx, err)
-	}
 	if err != nil && !errors.IsErrorAggregateExists(err) {
 		SetError(ctx, err)
 		return err
@@ -129,8 +126,7 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 func Do(ictx iris.Context, fun func() error) (err error) {
 	ctx := NewContext(ictx)
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
+		if err = errors.GetRecoverError(err, recover()); err != nil {
 			logs.Error(ctx, err)
 		}
 	}()
@@ -145,8 +141,7 @@ func Do(ictx iris.Context, fun func() error) (err error) {
 func DoDto[T any](ictx iris.Context, fun func(ctx context.Context) (T, error)) (dto T, err error) {
 	ctx := NewContext(ictx)
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
+		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ictx, err)
 		}
 	}()
@@ -168,8 +163,7 @@ func DoDto[T any](ictx iris.Context, fun func(ctx context.Context) (T, error)) (
 func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
 	ctx := NewContext(ictx)
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
+		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
 		}
 	}()
@@ -211,8 +205,7 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data any, isFound bool, err erro
 	}()
 
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
+		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
 		}
 	}()

@@ -37,10 +37,15 @@ type AppConfig struct {
 }
 
 type DaprConfig struct {
-	Host     *string  `yaml:"host"`
-	HttpPort *int64   `yaml:"httpPort"`
-	GrpcPort *int64   `yaml:"grpcPort"`
-	Pubsubs  []string `yaml:"pubsubs,flow"`
+	Host        *string                `yaml:"host"`
+	HttpPort    *int64                 `yaml:"httpPort"`
+	GrpcPort    *int64                 `yaml:"grpcPort"`
+	EventStores map[string]*EventStore `yaml:"eventStores"`
+}
+
+type EventStore struct {
+	CompName   string `yaml:"name"`   // Dapr EventStarge 组件名称
+	PubsubName string `yaml:"pubsub"` // Dapr Pubsub 组件名称
 }
 
 type LogConfig struct {
@@ -114,6 +119,17 @@ func (e *EnvConfig) Init(name string) error {
 		e.Dapr.GrpcPort = e.GetEnvInt("DAPR_GRPC_PORT", &value)
 	}
 
+	if len(e.Dapr.EventStores) > 0 {
+		for compName, es := range e.Dapr.EventStores {
+			if es.CompName == "" {
+				es.CompName = compName
+			}
+			if len(es.PubsubName) == 0 {
+				return errors.ErrorOf("config env:%s  Dapr.EventStores.%s pubsub is null", name, compName)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -169,10 +185,10 @@ func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("config env=%s;", env))
-		log.Infoln(fmt.Sprintf("config app    appId=%s; httpHost=%s; httpPort=%d; rootUrl=%s;", envConfig.App.AppId, envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
-		log.Infoln(fmt.Sprintf("config dapr   host=%s; httpPort=%d; grpcPort=%d; pubsubs=%s;",
-			envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), envConfig.Dapr.Pubsubs))
+		log.Infoln(fmt.Sprintf("ctype=app; appId=%s; env=%s;", envConfig.App.AppId, env))
+		log.Infoln(fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
+		log.Infoln(fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort()))
+		log.Infoln(fmt.Sprintf("ctype=eventStores; length=%v;", len(envConfig.Dapr.EventStores)))
 		return envConfig, nil
 	}
 

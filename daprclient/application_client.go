@@ -117,9 +117,7 @@ func (s *ApplicationClient) QueryByIds(ctx context.Context, tenantId string, ids
 
 func (s *ApplicationClient) QueryData(ctx context.Context, tenantId, methodName string, request interface{}, response interface{}) (isFound bool, err error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
-		}
+		err = errors.GetRecoverError(err, recover())
 	}()
 	_, err = s.InvokeService(ctx, s.query, tenantId, methodName, MethodTypeGet, request, response)
 	if err == nil {
@@ -140,9 +138,7 @@ func (s *ApplicationClient) getMethodName(methodName string, params ...string) (
 
 func (s *ApplicationClient) InvokeService(ctx context.Context, config *AppConfig, tenantId, methodName string, methodType MethodType, request interface{}, response interface{}) (res any, err error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
-		}
+		err = errors.GetRecoverError(err, recover())
 	}()
 	methodNameUrl := fmt.Sprintf("/api/%s/tenants/%s/%s%s", config.ApiVersion, tenantId, config.ResourceName, methodName)
 	return GetDaprDDDClient().InvokeService(ctx, config.AppId, methodNameUrl, methodType.ToString(), request, response)

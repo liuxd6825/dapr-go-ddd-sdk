@@ -19,15 +19,15 @@ const (
 	ApiEventStorageLoadEvents     = "/v1.0/event-storage/events/%s/%s"
 )
 
-type httpEventStorage struct {
+type httpEventStore struct {
 	client     daprclient.DaprDddClient
 	pubsubName string
 	subscribes []*Subscribe
 }
 
-func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
+func NewHttpEventStore(httpClient daprclient.DaprDddClient, options ...func(s EventStore)) (EventStore, error) {
 	subscribes = make([]*Subscribe, 0)
-	res := &httpEventStorage{
+	res := &httpEventStore{
 		client:     httpClient,
 		subscribes: subscribes,
 	}
@@ -37,46 +37,46 @@ func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s 
 	return res, nil
 }
 
-func (s *httpEventStorage) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+func (s *httpEventStore) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+func (s *httpEventStore) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
+func (s *httpEventStore) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
+func (s *httpEventStore) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error) {
+func (s *httpEventStore) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error) {
+func (s *httpEventStore) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error) {
+func (s *httpEventStore) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStorage) GetPubsubName() string {
+func (s *httpEventStore) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error) {
+func (s *httpEventStore) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error) {
 	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
 		return nil, false, err
 	}
@@ -121,7 +121,7 @@ func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 	return agg, true, nil
 }
 
-func (s *httpEventStorage) LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {
+func (s *httpEventStore) LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageLoadEvents, req.TenantId, req.AggregateId)
 	data := &daprclient.LoadEventsResponse{}
 	s.client.HttpGet(ctx, url).OnSuccess(data, func() error {
@@ -133,7 +133,7 @@ func (s *httpEventStorage) LoadEvents(ctx context.Context, req *daprclient.LoadE
 	return
 }
 
-func (s *httpEventStorage) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (res *daprclient.ApplyEventResponse, resErr error) {
+func (s *httpEventStore) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (res *daprclient.ApplyEventResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageEventApply)
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (s *httpEventStorage) ApplyEvent(ctx context.Context, req *daprclient.Apply
 	return
 }
 
-func (s *httpEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (res *daprclient.SaveSnapshotResponse, resErr error) {
+func (s *httpEventStore) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (res *daprclient.SaveSnapshotResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageSnapshotSave)
 	data := &daprclient.SaveSnapshotResponse{}
 	s.client.HttpPost(ctx, url, req).OnSuccess(data, func() error {
@@ -190,7 +190,7 @@ func (s *httpEventStorage) SaveSnapshot(ctx context.Context, req *daprclient.Sav
 	return
 }
 
-func (s *httpEventStorage) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (isFind bool, resErr error) {
+func (s *httpEventStore) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (isFind bool, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageExistAggregate, tenantId, aggregateId)
 	data := &daprclient.ExistAggregateResponse{}
 	isFind = false
@@ -203,7 +203,7 @@ func (s *httpEventStorage) ExistAggregate(ctx context.Context, tenantId string, 
 	return
 }
 
-func (s *httpEventStorage) getBodyBytes(resp *http.Response) ([]byte, error) {
+func (s *httpEventStore) getBodyBytes(resp *http.Response) ([]byte, error) {
 	bytes, err := io.ReadAll(resp.Body)
 	defer func(Body io.ReadCloser) {
 		e := Body.Close()

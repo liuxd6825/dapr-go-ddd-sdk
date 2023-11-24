@@ -207,17 +207,15 @@ func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
 }
 
 func (r *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	var err error
 	defer func() {
-		if e := recover(); e != nil {
-			if err := errors.GetRecoverError(e); err != nil {
-				setResult = ddd_repository.NewSetResultError[T](err)
-			}
+		if err = errors.GetRecoverError(err, recover()); err != nil {
+			setResult = ddd_repository.NewSetResultError[T](err)
 		}
 	}()
 	for _, item := range data.Items() {
 		statue := item.Statue()
 		entity := item.Data().(T)
-		var err error
 		switch statue {
 		case ddd.DataStatueCreate:
 			err = r.Insert(ctx, entity, opts...).GetError()

@@ -29,7 +29,7 @@ func NewGetEventsWhereOptions() *GetEventsWhereOptions {
 
 func GetEvents(ctx context.Context, req *daprclient.GetEventsRequest, opts ...*ApplyCommandOptions) (*daprclient.GetEventsResponse, error) {
 	opt := NewApplyCommandOptions().Merge(opts...)
-	eventStorage, err := GetEventStorage(opt.EventStorageKey)
+	eventStorage, err := GetEventStore(opt.EventStorageKey)
 	if err != nil {
 		return nil, err
 	}

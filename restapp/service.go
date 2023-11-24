@@ -25,7 +25,7 @@ type ServiceOptions struct {
 	HttpHost       string
 	HttpPort       int
 	LogLevel       applog.Level
-	EventStorages  map[string]ddd.EventStorage
+	EventStores    map[string]ddd.EventStore
 	ActorFactories []actor.Factory
 	Subscribes     []RegisterSubscribe
 	Controllers    []Controller
@@ -36,19 +36,20 @@ type ServiceOptions struct {
 }
 
 type service struct {
-	app            *iris.Application
-	appId          string
-	httpHost       string
-	httpPort       int
-	logLevel       applog.Level
-	daprDddClient  daprclient.DaprDddClient
-	eventStorages  map[string]ddd.EventStorage
-	actorFactories []actor.Factory
-	subscribes     []RegisterSubscribe
-	controllers    []Controller
-	eventTypes     []RegisterEventType
-	authToken      string
-	webRootPath    string
+	app                         *iris.Application
+	appId                       string
+	httpHost                    string
+	httpPort                    int
+	logLevel                    applog.Level
+	daprDddClient               daprclient.DaprDddClient
+	eventStores                 map[string]ddd.EventStore
+	actorFactories              []actor.Factory
+	subscribes                  []RegisterSubscribe
+	controllers                 []Controller
+	eventTypes                  []RegisterEventType
+	authToken                   string
+	webRootPath                 string
+	eventStoreDefaultPubsubName string // 默认事件存储器的名称
 }
 
 func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandler) error {
@@ -60,20 +61,27 @@ func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts .
 }
 
 func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
+	eventStoreDefaultPubsubName := ""
+	es, ok := opts.EventStores[""]
+	if ok {
+		eventStoreDefaultPubsubName = es.GetPubsubName()
+	}
+
 	return &service{
-		httpPort:       opts.HttpPort,
-		httpHost:       opts.HttpHost,
-		appId:          opts.AppId,
-		logLevel:       opts.LogLevel,
-		daprDddClient:  daprDddClient,
-		eventStorages:  opts.EventStorages,
-		actorFactories: opts.ActorFactories,
-		subscribes:     opts.Subscribes,
-		controllers:    opts.Controllers,
-		eventTypes:     opts.EventTypes,
-		authToken:      opts.AuthToken,
-		webRootPath:    opts.WebRootPath,
-		app:            iris.New(),
+		httpPort:                    opts.HttpPort,
+		httpHost:                    opts.HttpHost,
+		appId:                       opts.AppId,
+		logLevel:                    opts.LogLevel,
+		daprDddClient:               daprDddClient,
+		eventStores:                 opts.EventStores,
+		actorFactories:              opts.ActorFactories,
+		subscribes:                  opts.Subscribes,
+		controllers:                 opts.Controllers,
+		eventTypes:                  opts.EventTypes,
+		authToken:                   opts.AuthToken,
+		webRootPath:                 opts.WebRootPath,
+		eventStoreDefaultPubsubName: eventStoreDefaultPubsubName,
+		app:                         iris.New(),
 	}
 }
 
@@ -169,9 +177,9 @@ func (s *service) Start() error {
 	}
 
 	// 注册事件存储器
-	if s.eventStorages != nil {
-		for key, es := range s.eventStorages {
-			ddd.RegisterEventStorage(key, es)
+	if s.eventStores != nil {
+		for key, es := range s.eventStores {
+			ddd.RegisterEventStore(key, es)
 		}
 	}
 	if err := ddd.StartSubscribeHandlers(); err != nil {
@@ -300,7 +308,7 @@ func (s *service) actorConfigHandler(ctx *context.Context) {
 func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
-		err := ddd.RegisterQueryHandler(h)
+		err := ddd.RegisterQueryHandler(h, s.eventStoreDefaultPubsubName)
 		if err != nil {
 			return err
 		}
@@ -316,9 +324,7 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
 	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
-			if e := errors.GetRecoverError(recover()); e != nil {
-				err = e
-			}
+			err = errors.GetRecoverError(err, recover())
 		}()
 		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
 			ctx := logs.NewContext(c, _logger)
@@ -330,7 +336,7 @@ func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEve
 	}
 
 	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, subscribesHandler, interceptors)
-	if err := ddd.RegisterQueryHandler(handler); err != nil {
+	if err := ddd.RegisterQueryHandler(handler, s.eventStoreDefaultPubsubName); err != nil {
 		return nil, err
 	}
 	return handler, nil

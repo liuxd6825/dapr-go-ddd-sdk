@@ -11,13 +11,11 @@ import (
 
 var strEmpty = ""
 
-type EventStorage interface {
+type EventStore interface {
 	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error)
 	LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
 	GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventResponse, error)
-	//CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error)
-	//DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error)
 	Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error)
 	Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error)
 	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
@@ -35,7 +33,7 @@ const (
 	EventDelete
 )
 
-type EventStorageOption func(EventStorage)
+type EventStoreOption func(EventStore)
 
 func (t CallEventType) ToString() string {
 	switch t {
@@ -49,9 +47,9 @@ func (t CallEventType) ToString() string {
 	return ""
 }
 
-func PubsubName(pubsubName string) EventStorageOption {
-	return func(es EventStorage) {
-		s, _ := es.(*grpcEventStorage)
+func PubsubName(pubsubName string) EventStoreOption {
+	return func(es EventStore) {
+		s, _ := es.(*grpcEventStore)
 		s.pubsubName = pubsubName
 	}
 }
@@ -81,14 +79,12 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 	return nil
 }
 
-//
 // CallEventHandler
 // @Description: 调用领域事件监听器
 // @param ctx
 // @param handler
 // @param record
 // @return error
-//
 func CallEventHandler(ctx context.Context, handler interface{}, record *daprclient.EventRecord) error {
 	event, err := NewDomainEvent(record)
 	if err != nil {
@@ -106,13 +102,11 @@ func callEventHandler(ctx context.Context, handler interface{}, eventType string
 	return CallMethod(handler, methodName, ctx, event)
 }
 
-//
-//  getEventMethodName
-//  @Description: 根据事件类型名称获取接受事件方法名称
-//  @param eventType
-//  @param revision
-//  @return string
-//
+// getEventMethodName
+// @Description: 根据事件类型名称获取接受事件方法名称
+// @param eventType
+// @param revision
+// @return string
 func getEventMethodName(eventType string, revision string) string {
 	names := strings.Split(eventType, ".")
 	name := names[len(names)-1]

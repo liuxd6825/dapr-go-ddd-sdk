@@ -60,7 +60,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 			AggregateVersion: aggregate.GetAggregateVersion(),
 			SequenceNumber:   sequenceNumber,
 		}
-		eventStorage, err := GetEventStorage(eventStorageKey)
+		eventStorage, err := GetEventStore(eventStorageKey)
 		if err != nil {
 			return err
 		}

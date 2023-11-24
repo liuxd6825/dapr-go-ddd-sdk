@@ -224,18 +224,32 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		DaprClient: daprClient,
 	}
 
-	//创建dapr事件存储器
-	esMap := make(map[string]ddd.EventStorage)
-	for _, pubsubName := range config.Dapr.Pubsubs {
-		eventStorage, err := ddd.NewGrpcEventStorage(daprClient, ddd.PubsubName(pubsubName))
-		if err != nil {
-			panic(err)
-		}
-		esMap[pubsubName] = eventStorage
-		esMap[""] = eventStorage
-	}
+	eventStoresMap := newEventStores(&config.Dapr, daprClient)
 
-	return Run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, esMap, eventsFunc, actorsFunc, options...)
+	return Run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventStoresMap, eventsFunc, actorsFunc, options...)
+}
+
+func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {
+	//创建dapr事件存储器
+	eventStoresMap := make(map[string]ddd.EventStore)
+	esMap := cfg.EventStores
+	if len(esMap) == 0 {
+		panic("config eventStores is empity")
+	} else {
+		var defEs ddd.EventStore
+		for _, item := range esMap {
+			eventStorage, err := ddd.NewGrpcEventStore(item.CompName, item.PubsubName, client)
+			if err != nil {
+				panic(err)
+			}
+			eventStoresMap[item.CompName] = eventStorage
+			if defEs == nil {
+				defEs = eventStorage
+			}
+		}
+		eventStoresMap[""] = defEs
+	}
+	return eventStoresMap
 }
 
 // Run
@@ -249,7 +263,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 // @param eventTypesFunc
 // @return error
 func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventStorages map[string]ddd.EventStorage,
+	controllersFunc func() []Controller, eventStores map[string]ddd.EventStore,
 	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.Factory,
 	runOptions ...*RunOptions) (common.Service, error) {
 
@@ -266,7 +280,7 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		HttpPort:       runCfg.HttpPort,
 		LogLevel:       level,
 		EventTypes:     eventTypesFunc(),
-		EventStorages:  eventStorages,
+		EventStores:    eventStores,
 		Subscribes:     subsFunc(),
 		Controllers:    controllersFunc(),
 		ActorFactories: actorsFunc(),

@@ -78,7 +78,7 @@ func NewEventStorage() (ddd.EventStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return ddd.NewGrpcEventStorage(daprDddClient, ddd.PubsubName("pubsub"))
+	return ddd.NewGrpcEventStore(daprDddClient, ddd.PubsubName("pubsub"))
 }
 
 func newId() string {

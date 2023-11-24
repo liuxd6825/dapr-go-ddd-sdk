@@ -3,8 +3,8 @@ package daprclient
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 )
 
@@ -17,10 +17,11 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 	}
 
 	in := &pb.LoadDomainEventRequest{
+		CompName:      req.CompName,
 		TenantId:      req.TenantId,
 		AggregateType: req.AggregateType,
 		AggregateId:   req.AggregateId,
-		Headers:       newRequstHeaders(&req.BaseRequest),
+		Headers:       newRequstHeaders(&req.Headers),
 	}
 	out, err := c.grpcClient.LoadDomainEvents(ctx, in)
 	if err != nil {
@@ -74,17 +75,24 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 }
 
 func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error) {
+	errs := errors.NewErrors()
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
-		return nil, err
+		errs.AddError(err)
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
-		return nil, err
+		errs.AddError(err)
 	}
 	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
-		return nil, err
+		errs.AddError(err)
+	}
+	if err := ddd_utils.IsEmpty(req.CompName, "CompName"); err != nil {
+		errs.AddError(err)
 	}
 	if req.Events == nil {
-		return nil, errors.New("req.events cannot be nil")
+		errs.AddError(errors.New("req.events cannot be nil"))
+	}
+	if !errs.IsEmpty() {
+		return nil, errs.NewError()
 	}
 	events, err := c.newEvents(req.Events)
 	if err != nil {
@@ -92,12 +100,13 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 	}
 
 	in := &pb.ApplyDomainEventRequest{
+		CompName:      req.CompName,
 		SessionId:     req.SessionId,
 		TenantId:      req.TenantId,
 		AggregateId:   req.AggregateId,
 		AggregateType: req.AggregateType,
 		Events:        events,
-		Headers:       newRequstHeaders(&req.BaseRequest),
+		Headers:       newRequstHeaders(&req.Headers),
 	}
 
 	out, err := c.grpcClient.ApplyDomainEvent(ctx, in)
@@ -110,10 +119,13 @@ func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) 
 	return resp, nil
 }
 
-func newRequstHeaders(request *BaseRequest) *pb.RequestHeaders {
+func newRequstHeaders(request *RequestHeader) *pb.RequestHeaders {
+	var values map[string]string
+	if request == nil {
+		values = request.Values
+	}
 	return &pb.RequestHeaders{
-		SpecName: request.SpecName,
-		Values:   nil,
+		Values: values,
 	}
 }
 
@@ -267,6 +279,7 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		return nil, err
 	}
 	in := &pb.SaveDomainEventSnapshotRequest{
+		CompName:         req.CompName,
 		TenantId:         req.TenantId,
 		AggregateId:      req.AggregateId,
 		AggregateType:    req.AggregateType,
@@ -274,7 +287,7 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 		AggregateVersion: req.AggregateVersion,
 		SequenceNumber:   req.SequenceNumber,
 		Metadata:         metadata,
-		Headers:          newRequstHeaders(&req.BaseRequest),
+		Headers:          newRequstHeaders(&req.Headers),
 	}
 
 	out, err := c.grpcClient.SaveDomainEventSnapshot(ctx, in)
@@ -299,13 +312,14 @@ func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsReque
 	}
 
 	in := &pb.GetDomainEventRelationsRequest{
+		CompName:      req.CompName,
 		TenantId:      req.TenantId,
 		AggregateType: req.AggregateType,
 		Filter:        req.Filter,
 		Sort:          req.Sort,
 		PageNum:       req.PageNum,
 		PageSize:      req.PageSize,
-		Headers:       newRequstHeaders(&req.BaseRequest),
+		Headers:       newRequstHeaders(&req.Headers),
 	}
 
 	out, err := c.grpcClient.GetDomainEventRelations(ctx, in)
@@ -356,13 +370,14 @@ func (c *daprDddClient) GetEvents(ctx context.Context, req *GetEventsRequest) (*
 	}
 
 	in := &pb.GetDomainEventsRequest{
+		CompName:      req.CompName,
 		TenantId:      req.TenantId,
 		AggregateType: req.AggregateType,
 		Filter:        req.Filter,
 		Sort:          req.Sort,
 		PageNum:       req.PageNum,
 		PageSize:      req.PageSize,
-		Headers:       newRequstHeaders(&req.BaseRequest),
+		Headers:       newRequstHeaders(&req.Headers),
 	}
 
 	out, err := c.grpcClient.GetDomainEvents(ctx, in)

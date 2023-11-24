@@ -8,16 +8,17 @@ import (
 )
 
 type WriteEventLogRequest struct {
-	BaseRequest
-	Id       string     `json:"id"`
-	TenantId string     `json:"tenantId"`
-	AppId    string     `json:"appId"`
-	Class    string     `json:"class"`
-	Func     string     `json:"func"`
-	Level    string     `json:"level"`
-	Time     *time.Time `json:"time"`
-	Status   bool       `json:"status"`
-	Message  string     `json:"message"`
+	Headers  RequestHeader `json:"headers"`
+	CompName string        `json:"compName"`
+	Id       string        `json:"id"`
+	TenantId string        `json:"tenantId"`
+	AppId    string        `json:"appId"`
+	Class    string        `json:"class"`
+	Func     string        `json:"func"`
+	Level    string        `json:"level"`
+	Time     *time.Time    `json:"time"`
+	Status   bool          `json:"status"`
+	Message  string        `json:"message"`
 
 	PubAppId string `json:"pubAppId"`
 	EventId  string `json:"eventId"`
@@ -29,16 +30,17 @@ type WriteEventLogResponse struct {
 }
 
 type UpdateEventLogRequest struct {
-	BaseRequest
-	Id       string     `json:"id"`
-	TenantId string     `json:"tenantId"`
-	AppId    string     `json:"appId"`
-	Class    string     `json:"class"`
-	Func     string     `json:"func"`
-	Level    string     `json:"level"`
-	Time     *time.Time `json:"time"`
-	Status   bool       `json:"status"`
-	Message  string     `json:"message"`
+	Headers  RequestHeader `json:"headers"`
+	CompName string        `json:"compName"`
+	Id       string        `json:"id"`
+	TenantId string        `json:"tenantId"`
+	AppId    string        `json:"appId"`
+	Class    string        `json:"class"`
+	Func     string        `json:"func"`
+	Level    string        `json:"level"`
+	Time     *time.Time    `json:"time"`
+	Status   bool          `json:"status"`
+	Message  string        `json:"message"`
 
 	PubAppId  string `json:"pubAppId"`
 	EventId   string `json:"eventId"`
@@ -51,10 +53,11 @@ type UpdateEventLogResponse struct {
 // GetLogByCommandId
 
 type GetEventLogByCommandIdRequest struct {
-	BaseRequest
-	TenantId  string `json:"tenantId"`
-	AppId     string `json:"appId"`
-	CommandId string `json:"commandId"`
+	Headers   RequestHeader `json:"headers"`
+	CompName  string        `json:"compName"`
+	TenantId  string        `json:"tenantId"`
+	AppId     string        `json:"appId"`
+	CommandId string        `json:"commandId"`
 }
 
 type GetEventLogByCommandIdResponse struct {
@@ -80,32 +83,34 @@ type EventLogDto struct {
 //
 
 type WriteAppLogRequest struct {
-	BaseRequest
-	Id       string     `json:"id"`
-	TenantId string     `json:"tenantId"`
-	AppId    string     `json:"appId"`
-	Class    string     `json:"class"`
-	Func     string     `json:"func"`
-	Level    string     `json:"level"`
-	Time     *time.Time `json:"time"`
-	Status   bool       `json:"status"`
-	Message  string     `json:"message"`
+	Headers  RequestHeader `json:"headers"`
+	CompName string        `json:"compName"`
+	Id       string        `json:"id"`
+	TenantId string        `json:"tenantId"`
+	AppId    string        `json:"appId"`
+	Class    string        `json:"class"`
+	Func     string        `json:"func"`
+	Level    string        `json:"level"`
+	Time     *time.Time    `json:"time"`
+	Status   bool          `json:"status"`
+	Message  string        `json:"message"`
 }
 
 type WriteAppLogResponse struct {
 }
 
 type UpdateAppLogRequest struct {
-	BaseRequest
-	Id       string     `json:"id"`
-	TenantId string     `json:"tenantId"`
-	AppId    string     `json:"appId"`
-	Class    string     `json:"class"`
-	Func     string     `json:"func"`
-	Level    string     `json:"level"`
-	Time     *time.Time `json:"time"`
-	Status   bool       `json:"status"`
-	Message  string     `json:"message"`
+	Headers  RequestHeader `json:"headers"`
+	CompName string        `json:"compName"`
+	Id       string        `json:"id"`
+	TenantId string        `json:"tenantId"`
+	AppId    string        `json:"appId"`
+	Class    string        `json:"class"`
+	Func     string        `json:"func"`
+	Level    string        `json:"level"`
+	Time     *time.Time    `json:"time"`
+	Status   bool          `json:"status"`
+	Message  string        `json:"message"`
 }
 
 type UpdateAppLogResponse struct {
@@ -114,9 +119,10 @@ type UpdateAppLogResponse struct {
 // GetLogByCommandId
 
 type GetAppLogByIdRequest struct {
-	BaseRequest
-	TenantId string `json:"tenantId"`
-	Id       string `json:"id"`
+	Headers  RequestHeader `json:"headers"`
+	CompName string        `json:"compName"`
+	TenantId string        `json:"tenantId"`
+	Id       string        `json:"id"`
 }
 
 type GetAppLogByIdResponse struct {
@@ -133,7 +139,7 @@ type GetAppLogByIdResponse struct {
 
 func (c *daprDddClient) WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (resp *WriteEventLogResponse, resErr error) {
 	request := &pb.WriteAppEventLogRequest{
-		Headers:  newRequstHeaders(&req.BaseRequest),
+		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
 		Id:       req.Id,
 		AppId:    req.AppId,
@@ -158,7 +164,7 @@ func (c *daprDddClient) WriteEventLog(ctx context.Context, req *WriteEventLogReq
 
 func (c *daprDddClient) UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (resp *UpdateEventLogResponse, resErr error) {
 	request := &pb.UpdateAppEventLogRequest{
-		Headers:  newRequstHeaders(&req.BaseRequest),
+		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
 		Id:       req.Id,
 		AppId:    req.AppId,
@@ -185,7 +191,7 @@ func (c *daprDddClient) UpdateEventLog(ctx context.Context, req *UpdateEventLogR
 
 func (c *daprDddClient) GetEventLogByCommandId(ctx context.Context, req *GetEventLogByCommandIdRequest) (resp *GetEventLogByCommandIdResponse, resErr error) {
 	request := &pb.GetAppEventLogByCommandIdRequest{
-		Headers:   newRequstHeaders(&req.BaseRequest),
+		Headers:   newRequstHeaders(&req.Headers),
 		TenantId:  req.TenantId,
 		AppId:     req.AppId,
 		CommandId: req.CommandId,
@@ -222,7 +228,7 @@ func (c *daprDddClient) GetEventLogByCommandId(ctx context.Context, req *GetEven
 
 func (c *daprDddClient) WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error) {
 	request := &pb.WriteAppLogRequest{
-		Headers:  newRequstHeaders(&req.BaseRequest),
+		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
 		Id:       req.Id,
 		AppId:    req.AppId,
@@ -243,7 +249,7 @@ func (c *daprDddClient) WriteAppLog(ctx context.Context, req *WriteAppLogRequest
 
 func (c *daprDddClient) UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error) {
 	request := &pb.UpdateAppLogRequest{
-		Headers:  newRequstHeaders(&req.BaseRequest),
+		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
 		Id:       req.Id,
 		AppId:    req.AppId,
@@ -264,7 +270,7 @@ func (c *daprDddClient) UpdateAppLog(ctx context.Context, req *UpdateAppLogReque
 
 func (c *daprDddClient) GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error) {
 	request := &pb.GetAppLogByIdRequest{
-		Headers:  newRequstHeaders(&req.BaseRequest),
+		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
 		Id:       req.Id,
 	}

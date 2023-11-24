@@ -29,9 +29,7 @@ type eventItem struct {
 
 func StartSession(ctx context.Context, tenantId string, do func(ctx context.Context, session Session) error) (resErr error) {
 	defer func() {
-		if err := errors.GetRecoverError(recover()); err != nil {
-			resErr = err
-		}
+		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 	session, ok := getSession(ctx)
 	if !ok {

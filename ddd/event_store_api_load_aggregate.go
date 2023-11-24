@@ -27,7 +27,6 @@ func (o *LoadAggregateOptions) Merge(opts ...*LoadAggregateOptions) *LoadAggrega
 	return o
 }
 
-//
 // LoadAggregate
 // @Description: 加载聚合根
 // @param ctx 上下文
@@ -38,7 +37,6 @@ func (o *LoadAggregateOptions) Merge(opts ...*LoadAggregateOptions) *LoadAggrega
 // @return agg    聚合根对象
 // @return isFound 是否找到
 // @return err 错误
-//
 func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any, opts ...*LoadAggregateOptions) (agg Aggregate, isFound bool, err error) {
 	logInfo := &applog.LogInfo{
 		TenantId:  tenantId,
@@ -50,7 +48,7 @@ func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, agg
 
 	options := NewLoadAggregateOptions().Merge(opts...)
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
-		eventStorage, e := GetEventStorage(options.eventStorageKey)
+		eventStorage, e := GetEventStore(options.eventStorageKey)
 		if e != nil {
 			agg, isFound, err = nil, false, e
 			return agg, err

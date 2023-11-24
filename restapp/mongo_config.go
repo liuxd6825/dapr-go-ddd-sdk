@@ -142,7 +142,7 @@ func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
 func CloseMongoDB(ctx context.Context) error {
 	c := func(d *ddd_mongodb.MongoDB) (err error) {
 		defer func() {
-			err = errors.GetRecoverError(recover())
+			err = errors.GetRecoverError(err, recover())
 		}()
 		return d.Close(ctx)
 	}

@@ -5,14 +5,15 @@ import (
 	"time"
 )
 
-type BaseRequest struct {
-	SpecName string `json:"specName"`
+type RequestHeader struct {
+	Values map[string]string `json:"values"`
 }
 
 type CommitRequest struct {
-	BaseRequest
-	TenantId  string `json:"tenantId"`
-	SessionId string `json:"sessionId"`
+	Headers   RequestHeader `json:"headers"`
+	CompName  string        `json:"compName"`
+	TenantId  string        `json:"tenantId"`
+	SessionId string        `json:"sessionId"`
 }
 
 type CommitResponse struct {
@@ -20,9 +21,10 @@ type CommitResponse struct {
 }
 
 type RollbackRequest struct {
-	BaseRequest
-	TenantId  string `json:"tenantId"`
-	SessionId string `json:"sessionId"`
+	Headers   RequestHeader `json:"headers"`
+	CompName  string        `json:"compName"`
+	TenantId  string        `json:"tenantId"`
+	SessionId string        `json:"sessionId"`
 }
 
 type RollbackResponse struct {
@@ -30,12 +32,13 @@ type RollbackResponse struct {
 }
 
 type ApplyEventRequest struct {
-	BaseRequest
-	SessionId     string      `json:"sessionId"`
-	TenantId      string      `json:"tenantId"`
-	AggregateId   string      `json:"aggregateId"`
-	AggregateType string      `json:"aggregateType"`
-	Events        []*EventDto `json:"events"`
+	Headers       RequestHeader `json:"headers"`
+	CompName      string        `json:"compName"`
+	SessionId     string        `json:"sessionId"`
+	TenantId      string        `json:"tenantId"`
+	AggregateId   string        `json:"aggregateId"`
+	AggregateType string        `json:"aggregateType"`
+	Events        []*EventDto   `json:"events"`
 }
 
 type ApplyEventResponse struct {
@@ -43,12 +46,13 @@ type ApplyEventResponse struct {
 }
 
 type CreateEventRequest struct {
-	BaseRequest
-	SessionId     string      `json:"sessionId"`
-	TenantId      string      `json:"tenantId"`
-	AggregateId   string      `json:"aggregateId"`
-	AggregateType string      `json:"aggregateType"`
-	Events        []*EventDto `json:"events"`
+	Headers       RequestHeader `json:"headers"`
+	CompName      string        `json:"compName"`
+	SessionId     string        `json:"sessionId"`
+	TenantId      string        `json:"tenantId"`
+	AggregateId   string        `json:"aggregateId"`
+	AggregateType string        `json:"aggregateType"`
+	Events        []*EventDto   `json:"events"`
 }
 
 type CreateEventResponse struct {
@@ -56,12 +60,13 @@ type CreateEventResponse struct {
 }
 
 type DeleteEventRequest struct {
-	BaseRequest
-	SessionId     string    `json:"sessionId"`
-	TenantId      string    `json:"tenantId"`
-	AggregateId   string    `json:"aggregateId"`
-	AggregateType string    `json:"aggregateType"`
-	Event         *EventDto `json:"event"`
+	Headers       RequestHeader `json:"headers"`
+	CompName      string        `json:"compName"`
+	SessionId     string        `json:"sessionId"`
+	TenantId      string        `json:"tenantId"`
+	AggregateId   string        `json:"aggregateId"`
+	AggregateType string        `json:"aggregateType"`
+	Event         *EventDto     `json:"event"`
 }
 
 type DeleteEventResponse struct {
@@ -88,10 +93,11 @@ type ExistAggregateResponse struct {
 }
 
 type LoadEventsRequest struct {
-	BaseRequest
-	TenantId      string `json:"tenantId"`
-	AggregateId   string `json:"aggregateId"`
-	AggregateType string `json:"aggregateType"`
+	Headers       RequestHeader `json:"headers"`
+	CompName      string        `json:"compName"`
+	TenantId      string        `json:"tenantId"`
+	AggregateId   string        `json:"aggregateId"`
+	AggregateType string        `json:"aggregateType"`
 }
 
 type LoadEventsResponse struct {
@@ -135,7 +141,8 @@ type EventRecordJsonMarshalResult struct {
 }
 
 type SaveSnapshotRequest struct {
-	BaseRequest
+	Headers          RequestHeader     `json:"headers"`
+	CompName         string            `json:"compName"`
 	TenantId         string            `json:"tenantId"`
 	AggregateId      string            `json:"AggregateId"`
 	AggregateType    string            `json:"aggregateType"`
@@ -150,13 +157,14 @@ type SaveSnapshotResponse struct {
 }
 
 type GetRelationsRequest struct {
-	BaseRequest
-	TenantId      string `json:"tenantId"`
-	AggregateType string `json:"aggregateType"`
-	Filter        string `json:"filter"`
-	Sort          string `json:"sort"`
-	PageNum       uint64 `json:"pageNum"`
-	PageSize      uint64 `json:"pageSize"`
+	Headers       RequestHeader `json:"headers"`
+	CompName      string        `json:"compName"`
+	TenantId      string        `json:"tenantId"`
+	AggregateType string        `json:"aggregateType"`
+	Filter        string        `json:"filter"`
+	Sort          string        `json:"sort"`
+	PageNum       uint64        `json:"pageNum"`
+	PageSize      uint64        `json:"pageSize"`
 }
 
 type GetRelationsResponse struct {
@@ -189,13 +197,14 @@ type ResponseHeaders struct {
 }
 
 type GetEventsRequest struct {
-	BaseRequest
-	TenantId      string `json:"tenantId"`
-	AggregateType string `json:"aggregateType"`
-	Filter        string `json:"filter"`
-	Sort          string `json:"sort"`
-	PageNum       uint64 `json:"pageNum"`
-	PageSize      uint64 `json:"pageSize"`
+	Headers       RequestHeader `json:"headers"`
+	CompName      string        `json:"compName"`
+	TenantId      string        `json:"tenantId"`
+	AggregateType string        `json:"aggregateType"`
+	Filter        string        `json:"filter"`
+	Sort          string        `json:"sort"`
+	PageNum       uint64        `json:"pageNum"`
+	PageSize      uint64        `json:"pageSize"`
 }
 
 type GetEventsResponse struct {

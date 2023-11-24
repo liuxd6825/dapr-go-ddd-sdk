@@ -54,7 +54,7 @@ func GetNeo4jByKey(dbKey string) (neo4j.Driver, bool) {
 func CloseAllNeo4j(ctx context.Context) error {
 	c := func(d neo4j.Driver) (err error) {
 		defer func() {
-			err = errors.GetRecoverError(recover())
+			err = errors.GetRecoverError(err, recover())
 		}()
 		return d.Close()
 	}

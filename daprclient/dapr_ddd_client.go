@@ -48,10 +48,6 @@ type DaprDddClient interface {
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error)
-	/*
-		CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error)
-		DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error)
-	*/
 	Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error)
 	Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error)
 
@@ -171,15 +167,12 @@ func (c *daprDddClient) tryCall(fun func() error, tryCount int, waitSecond time.
 	return err
 }
 
-func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
-	var err error
+func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (res interface{}, err error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
-		}
+		err = errors.GetRecoverError(err, recover())
 	}()
-	var respBytes []byte
 
+	var respBytes []byte
 	if request != nil {
 		reqBytes, err1 := json.Marshal(request)
 		if err1 != nil {

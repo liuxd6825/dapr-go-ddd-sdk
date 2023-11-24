@@ -65,7 +65,7 @@ func GetMySqlByKey(dbKey string) (*gorm.DB, bool) {
 func CloseAllMySql(ctx context.Context) error {
 	c := func(d *gorm.DB) (err error) {
 		defer func() {
-			err = errors.GetRecoverError(recover())
+			err = errors.GetRecoverError(err, recover())
 		}()
 		return err
 	}

@@ -8,18 +8,55 @@ import (
 )
 
 type Errors struct {
-	Details []error `json:"details"`
+	details []error `json:"details"`
+}
+
+func NewErrors() *Errors {
+	return &Errors{
+		details: make([]error, 0),
+	}
 }
 
 func (e *Errors) Error() string {
 	sb := strings.Builder{}
-	for _, er := range e.Details {
+	for _, er := range e.details {
 		if er != nil {
 			sb.WriteString(er.Error())
 			sb.WriteString(";")
 		}
 	}
 	return sb.String()
+}
+
+func (e *Errors) AddError(err error) {
+	e.details = append(e.details, err)
+}
+
+func (e *Errors) AddString(str string) {
+	e.AddError(errors.New(str))
+}
+
+func (e *Errors) AddFormat(format string, obj ...any) {
+	e.AddError(errors.New(fmt.Sprintf(format, obj...)))
+}
+
+func (e *Errors) Len() int {
+	return len(e.details)
+}
+
+func (e *Errors) IsEmpty() bool {
+	return len(e.details) == 0
+}
+
+func (e *Errors) List() []error {
+	return e.details
+}
+
+func (e *Errors) NewError() error {
+	if len(e.details) == 0 {
+		return nil
+	}
+	return errors.New(e.Error())
 }
 
 func New(formatOrText string, text ...any) error {
@@ -36,7 +73,7 @@ func New(formatOrText string, text ...any) error {
 
 func News(errs ...error) error {
 	return &Errors{
-		Details: errs,
+		details: errs,
 	}
 }
 
@@ -45,7 +82,7 @@ func NewMethod(packName, methodName string, msg string) error {
 }
 
 func ErrorOf(format string, args ...any) error {
-	return New(format, args)
+	return New(format, args...)
 }
 
 func runFuncName(skip int) string {

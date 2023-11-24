@@ -8,7 +8,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
-//
 // LoadEvents
 // @Description: 获取领域事件
 // @param ctx 上下文
@@ -16,7 +15,6 @@ import (
 // @param EventStorageKey 事件存储器key
 // @return resp 响应体
 // @return err 错误
-//
 func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventStorageKey string) (resp *daprclient.LoadEventsResponse, respErr error) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -35,7 +33,7 @@ func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventSto
 	}
 
 	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
-		eventStorage, e := GetEventStorage(eventStorageKey)
+		eventStorage, e := GetEventStore(eventStorageKey)
 		if e != nil {
 			resp, respErr = nil, e
 			return nil, respErr
