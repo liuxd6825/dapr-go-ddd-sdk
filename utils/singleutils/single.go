@@ -21,6 +21,7 @@ func newSingleton[T any](key string, newFun func() T) *item[T] {
 	}
 }
 
+// Deprecated: use Create instead.
 func Get[T any](new ...func() T) (T, error) {
 	var null T
 	key, err := getKey[T]()
@@ -44,6 +45,7 @@ func Get[T any](new ...func() T) (T, error) {
 	return s.instance, nil
 }
 
+// Deprecated: use Create instead.
 func GetSet[T any](new func() T) T {
 	v, err := Get[T](new)
 	if err != nil {
@@ -52,6 +54,7 @@ func GetSet[T any](new func() T) T {
 	return v
 }
 
+// Deprecated: use Create instead.
 func GetObject[T any]() T {
 	v, err := Get[T]()
 	if err != nil {
@@ -60,6 +63,7 @@ func GetObject[T any]() T {
 	return v
 }
 
+// Deprecated: use Create instead.
 func Set[T any](new func() T) error {
 	key, err := getKey[T]()
 	if err != nil {
@@ -74,6 +78,7 @@ func Set[T any](new func() T) error {
 	return nil
 }
 
+// Deprecated: use Create instead.
 func getKey[T any]() (string, error) {
 	var null T
 	t := reflect.TypeOf(null)

@@ -8,15 +8,21 @@ type GORMManager struct {
 }
 
 func (m *GORMManager) Create(ctx context.Context, table *Table, env *EnvConfig, options *CreateOptions) {
-	//TODO implement me
-	panic("implement me")
+
 }
 
 func (m *GORMManager) Update(ctx context.Context, table *Table, env *EnvConfig, options *UpdateOptions) {
-	//TODO implement me
-	panic("implement me")
+
+}
+
+func (m *GORMManager) GetInitScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) string {
+	return ""
 }
 
 func NewGormManager() DbManager {
+	return &GORMManager{}
+}
+
+func NewGormScriptManager() DbScriptManager {
 	return &GORMManager{}
 }

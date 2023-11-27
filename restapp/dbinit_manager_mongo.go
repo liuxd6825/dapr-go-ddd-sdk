@@ -21,6 +21,123 @@ func NewMongoManager() DbManager {
 	return &MongoManager{}
 }
 
+func NewMongoScriptManager() DbScriptManager {
+	return &MongoManager{}
+}
+
+func (m *MongoManager) GetInitScript(ctx context.Context, dbKey string, tables []*Table, env *EnvConfig, options *CreateOptions) string {
+	cfg := env.Mongo[dbKey]
+	user := cfg.UserName
+	pwd := cfg.Password
+	dbName := cfg.Database
+	dbscript := fmt.Sprintf(`
+db.createUser({
+	user:"%s",
+	pwd:"%s",
+	roles:[
+		{role:"userAdmin",db:"%s"},
+		{role:"dbAdmin",db:"%s"},
+		{role:"readWrite",db:"%s"}
+	]
+}); \r\n`, user, pwd, dbName, dbName, dbName)
+
+	sb := strings.Builder{}
+	sb.WriteString(dbscript)
+	for _, table := range tables {
+		sb.WriteString(m.getTableScript(ctx, env, dbKey, table, options))
+	}
+	return sb.String()
+}
+
+func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbKey string, table *Table, options *CreateOptions) string {
+	opt := options
+	if opt == nil {
+		opt = NewCreateOptions()
+	}
+	collName := options.Prefix + table.TableName
+	sb := strings.Builder{}
+
+	sb.WriteString(fmt.Sprintf("use %s \r\n", dbKey))
+	sb.WriteString(fmt.Sprintf("db.createCollection(\"%s\") \r\n", collName))
+
+	e := table.Object
+	t := reflect.TypeOf(e)
+	elem := t.Elem()
+
+	for i := 0; i < elem.NumField(); i++ {
+		f := elem.Field(i)
+
+		isCreate := false   //是否创建索引
+		isUnique := false   //是否唯一
+		var order int32 = 1 // 排序规则 -1:降序； 1:升序
+
+		if strings.Contains(string(f.Tag), " index:") {
+			isCreate = true
+		}
+
+		indexTag := f.Tag.Get("index")
+		indexTag = strings.Trim(indexTag, " ")
+		if len(indexTag) > 0 {
+			isCreate = true
+			if strings.Contains(indexTag, ",") {
+				values := strings.Split(indexTag, ",")
+				for _, key := range values {
+					switch strings.Trim(key, " ") {
+					case "unique":
+						isUnique = true
+						break
+					case "asc":
+						order = 1
+						break
+					case "desc":
+						order = 0
+						break
+					}
+				}
+			} else {
+				indexTag = strings.ToLower(strings.Trim(indexTag, " "))
+				switch indexTag {
+				case "unique":
+					isUnique = true
+					break
+				case "asc":
+					order = 1
+					break
+				case "desc":
+					order = -1
+					break
+				}
+			}
+		} else if !isCreate {
+			gormTag := f.Tag.Get("gorm")
+			if strings.Contains(gormTag, "index:") {
+				isCreate = true
+			}
+		}
+
+		desc := f.Tag.Get("desc")
+		if len(desc) == 0 {
+			desc = f.Name
+		}
+
+		if isCreate {
+			name := f.Tag.Get("bson")
+			if len(name) == 0 {
+				name = stringutils.SnakeString(f.Name)
+			}
+			if name != "_id" { //主键不需要创建
+				name = name + "_"
+				sb.WriteString(fmt.Sprintf("db.%v.createIndex({\"%s\":%v,\"description\":%v})", collName, name, order, desc))
+				if isUnique {
+					sb.WriteString(fmt.Sprintf(",{unique:true}"))
+				}
+				sb.WriteString("} \r\n")
+			}
+		}
+	}
+	return sb.String()
+}
+
 func (m *MongoManager) Create(ctx context.Context, table *Table, env *EnvConfig, options *CreateOptions) {
 	opt := options
 	if opt == nil {

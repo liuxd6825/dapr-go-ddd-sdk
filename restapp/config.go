@@ -37,10 +37,11 @@ type AppConfig struct {
 }
 
 type DaprConfig struct {
-	Host        *string                `yaml:"host"`
-	HttpPort    *int64                 `yaml:"httpPort"`
-	GrpcPort    *int64                 `yaml:"grpcPort"`
-	EventStores map[string]*EventStore `yaml:"eventStores"`
+	Host               *string                `yaml:"host"`
+	HttpPort           *int64                 `yaml:"httpPort"`
+	GrpcPort           *int64                 `yaml:"grpcPort"`
+	MaxCallRecvMsgSize *int64                 `yaml:"maxCallRecvMsgSize"`
+	EventStores        map[string]*EventStore `yaml:"eventStores"`
 }
 
 type EventStore struct {

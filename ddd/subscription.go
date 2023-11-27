@@ -109,15 +109,14 @@ func (h *subscribeHandler) Handler(ctx context.Context, sctx SubscribeContext) e
 	}).GetError()
 }
 
-//
 // interceptor
-//  @Description: 消息拦截器
-//  @receiver h
-//  @param ctx 上下文
-//  @param sctx dapr消息上下文
-//  @return bool true:已拦截不需要后续处理。
-//  @return error 错误
 //
+//	@Description: 消息拦截器
+//	@receiver h
+//	@param ctx 上下文
+//	@param sctx dapr消息上下文
+//	@return bool true:已拦截不需要后续处理。
+//	@return error 错误
 func (h *subscribeHandler) interceptor(ctx context.Context, sctx SubscribeContext) (cancel bool, err error) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -132,11 +131,13 @@ func (h *subscribeHandler) interceptor(ctx context.Context, sctx SubscribeContex
 	if ok {
 		cancel, err = interceptor.Interceptor(ctx, sctx)
 	}
-	for _, item := range h.interceptors {
-		if c, e := item(ctx, sctx); c {
-			cancel = true
-		} else if e != nil {
+	if h.interceptors != nil {
+		for _, item := range h.interceptors {
+			if c, e := item(ctx, sctx); c {
+				cancel = true
+			} else if e != nil {
 
+			}
 		}
 	}
 	return

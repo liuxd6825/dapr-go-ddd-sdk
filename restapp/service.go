@@ -57,7 +57,11 @@ func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandle
 }
 
 func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
+	runtime.GetActorRuntimeInstance().RegisterActorFactoryContext(f, opts...)
+}
 
+func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
+	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
 }
 
 func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
@@ -95,10 +99,6 @@ func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.Topic
 
 func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
 	return nil
-}
-
-func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
-	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
 }
 
 func (s *service) Stop() error {

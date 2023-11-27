@@ -87,17 +87,16 @@ func (d *Dao[T]) NewEntity() (res T, resErr error) {
 }
 
 func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	var err error
 	defer func() {
-		if e := recover(); e != nil {
-			if err := errors.GetRecoverError(e); err != nil {
-				setResult = ddd_repository.NewSetResultError[T](err)
-			}
+		if err = errors.GetRecoverError(err, recover()); err != nil {
+			setResult = ddd_repository.NewSetResultError[T](err)
 		}
 	}()
+
 	for _, item := range data.Items() {
 		statue := item.Statue()
 		entity := item.Data().(T)
-		var err error
 		switch statue {
 		case ddd.DataStatueCreate:
 			err = d.Insert(ctx, entity, opts...).GetError()
@@ -116,16 +115,18 @@ func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_rep
 }
 
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	var err error
 	defer func() {
 		if e := recover(); e != nil {
-			if err := errors.GetRecoverError(e); err != nil {
+			if err = errors.GetRecoverError(err, e); err != nil {
 				setResult = ddd_repository.NewSetResultError[T](err)
 			}
 		}
 	}()
 
-	cr, err := d.cypher.Insert(ctx, entity)
-	if err != nil {
+	cr, err1 := d.cypher.Insert(ctx, entity)
+	if err1 != nil {
+		err = err1
 		return ddd_repository.NewSetResultError[T](err)
 	}
 
@@ -146,16 +147,16 @@ func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repos
 }
 
 func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	var err error
 	defer func() {
-		if e := recover(); e != nil {
-			if err := errors.GetRecoverError(e); err != nil {
-				setResult = ddd_repository.NewSetResultError[T](err)
-			}
+		if err = errors.GetRecoverError(err, recover()); err != nil {
+			setResult = ddd_repository.NewSetResultError[T](err)
 		}
 	}()
 
-	cr, err := d.cypher.InsertOrUpdate(ctx, entity)
-	if err != nil {
+	cr, err1 := d.cypher.InsertOrUpdate(ctx, entity)
+	if err1 != nil {
+		err = err1
 		return ddd_repository.NewSetResultError[T](err)
 	}
 

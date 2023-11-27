@@ -86,13 +86,13 @@ func newHttpOptions() *DaprHttpOptions {
 	return options
 }
 
-func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Option) (DaprDddClient, error) {
+func NewDaprDddClient(ctx context.Context, host string, httpPort int64, grpcPort int64, opts ...Option) (DaprDddClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)
 	}
 
-	grpcClient, err := newDaprClient(host, grpcPort)
+	grpcClient, err := newDaprClient(ctx, host, grpcPort)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Optio
 	}, nil
 }
 
-func newDaprClient(host string, grpcPort int64) (daprsdkclient.Client, error) {
+func newDaprClient(ctx context.Context, host string, grpcPort int64) (daprsdkclient.Client, error) {
 	// 三次试错创建daprClient
 	port := strconv.FormatInt(grpcPort, 10)
 	var grpcClient daprsdkclient.Client
@@ -131,7 +131,7 @@ func newDaprClient(host string, grpcPort int64) (daprsdkclient.Client, error) {
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	for i := 0; i < 4; i++ {
-		if grpcClient, err = daprsdkclient.NewClientWithAddress(addr); err != nil {
+		if grpcClient, err = daprsdkclient.NewClientWithAddressContext(ctx, addr); err != nil {
 			log.Infoln(fmt.Sprintf("dapr client connection error, address=%s", addr), err)
 			continue
 		}
@@ -148,13 +148,13 @@ func newDaprClient(host string, grpcPort int64) (daprsdkclient.Client, error) {
 	return grpcClient, nil
 }
 
-func (c *daprDddClient) tryCall(fun func() error, tryCount int, waitSecond time.Duration) error {
+func (c *daprDddClient) tryCall(ctx context.Context, fun func() error, tryCount int, waitSecond time.Duration) error {
 	var err error
 	for i := 0; i < tryCount; i++ {
 		err = fun()
 		if errors.IsGrpcConnError(err) {
 			time.Sleep(time.Second * waitSecond)
-			grpcClient, err2 := newDaprClient(c.host, c.grpcPort)
+			grpcClient, err2 := newDaprClient(ctx, c.host, c.grpcPort)
 			if err2 != nil {
 				return err2
 			} else {
@@ -182,13 +182,13 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 			ContentType: "application/json",
 			Data:        reqBytes,
 		}
-		err = c.tryCall(func() error {
+		err = c.tryCall(ctx, func() error {
 			respBytes, err = c.grpcClient.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
 			return c.getError(err)
 		}, 3, 1)
 
 	} else {
-		err = c.tryCall(func() error {
+		err = c.tryCall(ctx, func() error {
 			respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
 			return c.getError(err)
 		}, 3, 1)

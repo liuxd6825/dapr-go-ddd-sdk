@@ -1,6 +1,7 @@
 package restapp
 
 import (
+	"context"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
@@ -13,18 +14,23 @@ import (
 )
 
 type RunConfig struct {
-	AppId      string
-	HttpHost   string
-	HttpPort   int
-	LogLevel   applog.Level
-	DaprClient daprclient.DaprDddClient
+	AppId                  string
+	HttpHost               string
+	HttpPort               int
+	LogLevel               applog.Level
+	DaprMaxCallRecvMsgSize *int64
+	DaprClient             daprclient.DaprDddClient
 }
 
 type RunOptions struct {
-	tables *Tables
-	initDb *bool
-	prefix *string
-	level  *logs.Level
+	tables   *Tables
+	initDb   *bool
+	dbScript *bool
+	prefix   *string
+	dbKey    *string
+	file     *string
+	dbkey    *string
+	level    *logs.Level
 }
 
 type RegisterSubscribe interface {
@@ -200,16 +206,24 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	}
 
 	opt := NewRunOptions(options...)
-	if opt.GetInit() {
+	if opt.GetInitDb() {
 		var err error
 		if opt.tables != nil {
-			err = InitDb(opt.tables, config, opt.GetPrefix())
+			err = InitDb(opt.GetDbKey(), opt.tables, config, opt.GetPrefix())
 		}
 		return nil, err
 	}
-	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)
+
+	if opt.GetDbScript() {
+		var err error
+		if opt.tables != nil {
+			err = InitDbScript(opt.GetDbKey(), opt.tables, config, opt.GetPrefix())
+		}
+		return nil, err
+	}
+
 	//创建dapr客户端
-	daprClient, err := daprclient.NewDaprDddClient(config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
+	daprClient, err := daprclient.NewDaprDddClient(context.Background(), config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {
 		panic(err)
 	}
@@ -217,15 +231,17 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	daprclient.SetDaprDddClient(daprClient)
 
 	runCfg := &RunConfig{
-		AppId:      config.App.AppId,
-		HttpHost:   config.App.HttpHost,
-		HttpPort:   config.App.HttpPort,
-		LogLevel:   config.Log.GetLevel(),
-		DaprClient: daprClient,
+		AppId:                  config.App.AppId,
+		HttpHost:               config.App.HttpHost,
+		HttpPort:               config.App.HttpPort,
+		LogLevel:               config.Log.GetLevel(),
+		DaprMaxCallRecvMsgSize: config.Dapr.MaxCallRecvMsgSize,
+		DaprClient:             daprClient,
 	}
 
 	eventStoresMap := newEventStores(&config.Dapr, daprClient)
 
+	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)
 	return Run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventStoresMap, eventsFunc, actorsFunc, options...)
 }
 
@@ -287,6 +303,7 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
 	}
+
 	service := NewService(runCfg.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {
 		return service, err
@@ -295,18 +312,25 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 }
 
 func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
-	o.SetPrefix(flag.Prefix).SetInit(flag.Init).SetLevel(flag.Level)
+	o.SetPrefix(flag.Prefix).SetInitDb(flag.InitDb).SetLevel(flag.Level)
 	return o
 }
 
-func (o *RunOptions) GetInit() bool {
+func (o *RunOptions) GetInitDb() bool {
 	if o.initDb == nil {
 		return false
 	}
 	return *o.initDb
 }
 
-func (o *RunOptions) SetInit(v bool) *RunOptions {
+func (o *RunOptions) GetDbScript() bool {
+	if o.dbScript == nil {
+		return false
+	}
+	return *o.dbScript
+}
+
+func (o *RunOptions) SetInitDb(v bool) *RunOptions {
 	o.initDb = &v
 	return o
 }
@@ -339,4 +363,25 @@ func (o *RunOptions) SetTable(v *Tables) *RunOptions {
 
 func (o *RunOptions) GetTable() *Tables {
 	return o.tables
+}
+
+func (o *RunOptions) SetFile(v *string) *RunOptions {
+	o.file = v
+	return o
+}
+
+func (o *RunOptions) GetFile() string {
+	return *o.file
+}
+
+func (o *RunOptions) SetDbKey(v *string) *RunOptions {
+	o.dbkey = v
+	return o
+}
+
+func (o *RunOptions) GetDbKey() string {
+	if o.dbkey == nil {
+		return ""
+	}
+	return *o.dbkey
 }

@@ -10,6 +10,10 @@ type DbManager interface {
 	Update(ctx context.Context, table *Table, env *EnvConfig, options *UpdateOptions)
 }
 
+type DbScriptManager interface {
+	GetInitScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) string
+}
+
 type InitOptions struct {
 }
 
