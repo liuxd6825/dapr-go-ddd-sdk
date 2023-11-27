@@ -12,12 +12,14 @@ import (
 var strEmpty = ""
 
 type EventStorage interface {
-	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error)
+	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error)
 	LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
 	GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventResponse, error)
-	CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error)
-	DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error)
+	//CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error)
+	//DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error)
+	Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error)
+	Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error)
 	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
 	GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error)
 	GetPubsubName() string
@@ -34,6 +36,18 @@ const (
 )
 
 type EventStorageOption func(EventStorage)
+
+func (t CallEventType) ToString() string {
+	switch t {
+	case EventCreate:
+		return "create"
+	case EventApply:
+		return "apply"
+	case EventDelete:
+		return "delete"
+	}
+	return ""
+}
 
 func PubsubName(pubsubName string) EventStorageOption {
 	return func(es EventStorage) {

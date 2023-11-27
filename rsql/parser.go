@@ -173,6 +173,10 @@ func comparison(tokens *iterator) (Expression, error) {
 		return nil, err
 	}
 	switch comparator.Type { // TODO Manage that directly to Tokens.
+	case NotContainsToken:
+		return NotContainsComparison{Comparison{id, args}}, nil
+	case ContainsToken:
+		return ContainsComparison{Comparison{id, args}}, nil
 	case EqualsToken:
 		return EqualsComparison{Comparison{id, args}}, nil
 	case NotEqualsToken:
@@ -207,7 +211,16 @@ func comparison(tokens *iterator) (Expression, error) {
 			lv = tmp
 		}
 		return NotInComparison{Comparison{id, lv}}, nil
+	case NotIsNullToken:
+		return NotIsNullComparison{Comparison{id, args}}, nil
+	case IsNullToken:
+		return IsNullComparison{Comparison{id, args}}, nil
+	case StartToken:
+		return StartComparison{Comparison{id, args}}, nil
+	case EndToken:
+		return EndComparison{Comparison{id, args}}, nil
 	}
+
 	return nil, fmt.Errorf("'comparator not managed for expression")
 }
 

@@ -9,6 +9,16 @@ import (
 type emptyEventStorage struct {
 }
 
+func (s *emptyEventStorage) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *emptyEventStorage) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (s *emptyEventStorage) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")
@@ -50,7 +60,7 @@ func (s *emptyEventStorage) GetPort() int {
 	return -1
 }
 
-func (s *emptyEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (res Aggregate, find bool, err error) {
+func (s *emptyEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (res Aggregate, find bool, err error) {
 	return nil, false, errors.New("emptyEventStorage")
 }
 

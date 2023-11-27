@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"runtime"
 	"strings"
 	"time"
@@ -53,9 +55,9 @@ func DoEventLog(ctx context.Context, structName string, event Event, funcName st
 	if err == nil {
 		_, _ = InfoEvent(event.GetTenantId(), structName, funcName, "success", event.GetEventId(), event.GetCommandId(), "")
 	} else {
-		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, "error", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, err.Error(), event.GetEventId(), event.GetCommandId(), "")
 	}
-	return nil
+	return err
 }
 
 //
@@ -86,7 +88,7 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 	}*/
 
 	if err != nil {
-		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, ERROR, err.Error())
+		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, logs.ErrorLevel, err.Error())
 	}
 	return err
 }
@@ -102,7 +104,7 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 // @return error
 //
 func Debug(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, DEBUG, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.DebugLevel, message)
 }
 
 //
@@ -116,7 +118,7 @@ func Debug(tenantId, className, funcName, message string) (string, error) {
 // @return error
 //
 func Info(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, INFO, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.InfoLevel, message)
 }
 
 //
@@ -130,7 +132,7 @@ func Info(tenantId, className, funcName, message string) (string, error) {
 //  @return error
 //
 func Warn(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, WARN, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.WarnLevel, message)
 }
 
 //
@@ -144,7 +146,7 @@ func Warn(tenantId, className, funcName, message string) (string, error) {
 //  @return error
 //
 func Error(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, ERROR, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.ErrorLevel, message)
 }
 
 //
@@ -158,7 +160,7 @@ func Error(tenantId, className, funcName, message string) (string, error) {
 //  @return error
 //
 func Fatal(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, FATAL, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.FatalLevel, message)
 }
 
 //
@@ -175,7 +177,7 @@ func Fatal(tenantId, className, funcName, message string) (string, error) {
 //  @return error
 //
 func InfoEvent(tenantId, structName, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, structName, funcName, INFO, message, eventId, commandId, pubAppId, false)
+	return writeEventLog(context.Background(), tenantId, structName, funcName, logs.InfoLevel, message, eventId, commandId, pubAppId, false)
 }
 
 //
@@ -192,7 +194,7 @@ func InfoEvent(tenantId, structName, funcName, message, eventId, commandId, pubA
 //  @return error
 //
 func ErrorEvent(tenantId, className, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, className, funcName, ERROR, message, eventId, commandId, pubAppId, false)
+	return writeEventLog(context.Background(), tenantId, className, funcName, logs.ErrorLevel, message, eventId, commandId, pubAppId, false)
 }
 
 //
@@ -233,7 +235,7 @@ func writeEventLog(ctx context.Context, tenantId, structName, funcName string, l
 		AppId:     appId,
 		Class:     structName,
 		Func:      funcName,
-		Level:     level.ToString(),
+		Level:     level.String(),
 		Time:      &timeNow,
 		Status:    true,
 		Message:   message,
@@ -287,7 +289,7 @@ func updateEventLog(ctx context.Context, tenantId, id, className, funcName strin
 		AppId:    appId,
 		Class:    className,
 		Func:     funcName,
-		Level:    level.ToString(),
+		Level:    level.String(),
 		Time:     &timeNow,
 		Status:   true,
 		Message:  message,
@@ -340,6 +342,9 @@ func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, comman
 //  @return error 错误
 //
 func writeAppLog(ctx context.Context, tenantId, className, funcName string, level Level, message string) (string, error) {
+	if log == nil {
+		return "", errors.New("parameter level is nil")
+	}
 	if level < log.GetLevel() {
 		return "", nil
 	}
@@ -352,7 +357,7 @@ func writeAppLog(ctx context.Context, tenantId, className, funcName string, leve
 		AppId:    appId,
 		Class:    className,
 		Func:     funcName,
-		Level:    level.ToString(),
+		Level:    level.String(),
 		Time:     &timeNow,
 		Status:   true,
 		Message:  message,
@@ -364,7 +369,7 @@ func writeAppLog(ctx context.Context, tenantId, className, funcName string, leve
 		"appId":    appId,
 		"class":    className,
 		"func":     funcName,
-		"level":    level.ToString(),
+		"level":    level.String(),
 		"time":     &timeNow,
 		"status":   true,
 		"message":  message,
@@ -397,7 +402,7 @@ func updateAppLog(ctx context.Context, tenantId, id, className, funcName string,
 		AppId:    appId,
 		Class:    className,
 		Func:     funcName,
-		Level:    level.ToString(),
+		Level:    level.String(),
 		Time:     &timeNow,
 		Status:   true,
 		Message:  message,

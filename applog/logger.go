@@ -2,9 +2,7 @@ package applog
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"time"
 )
 
@@ -18,8 +16,9 @@ const (
 	ApiGetAppLogById = "v1.0/logger/app-log/tenant-id/%s/id/%s"
 )
 
-type Level int
+type Level = logs.Level
 
+/*
 const (
 	TRACE Level = iota
 	DEBUG
@@ -74,7 +73,7 @@ func NewLevel(name string) (Level, error) {
 	}
 	return DEBUG, errors.New(fmt.Sprintf("%s as applog.Level error", name))
 }
-
+*/
 type Logger interface {
 	WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (*WriteEventLogResponse, error)
 	UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (*UpdateEventLogResponse, error)
@@ -87,6 +86,7 @@ type Logger interface {
 	SetLevel(level Level)
 	GetLevel() Level
 }
+
 type WriteEventLogRequest struct {
 	Id       string     `json:"id"`
 	TenantId string     `json:"tenantId"`

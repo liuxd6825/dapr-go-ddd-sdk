@@ -5,7 +5,26 @@ import (
 	"time"
 )
 
+type CommitRequest struct {
+	TenantId  string `json:"tenantId"`
+	SessionId string `json:"sessionId"`
+}
+
+type CommitResponse struct {
+	Headers *ResponseHeaders `json:"headers"`
+}
+
+type RollbackRequest struct {
+	TenantId  string `json:"tenantId"`
+	SessionId string `json:"sessionId"`
+}
+
+type RollbackResponse struct {
+	Headers *ResponseHeaders `json:"headers"`
+}
+
 type ApplyEventRequest struct {
+	SessionId     string      `json:"sessionId"`
 	TenantId      string      `json:"tenantId"`
 	AggregateId   string      `json:"aggregateId"`
 	AggregateType string      `json:"aggregateType"`
@@ -17,6 +36,7 @@ type ApplyEventResponse struct {
 }
 
 type CreateEventRequest struct {
+	SessionId     string      `json:"sessionId"`
 	TenantId      string      `json:"tenantId"`
 	AggregateId   string      `json:"aggregateId"`
 	AggregateType string      `json:"aggregateType"`
@@ -28,6 +48,7 @@ type CreateEventResponse struct {
 }
 
 type DeleteEventRequest struct {
+	SessionId     string    `json:"sessionId"`
 	TenantId      string    `json:"tenantId"`
 	AggregateId   string    `json:"aggregateId"`
 	AggregateType string    `json:"aggregateType"`
@@ -39,6 +60,7 @@ type DeleteEventResponse struct {
 }
 
 type EventDto struct {
+	ApplyType    string            `json:"applyType"`
 	EventId      string            `json:"eventId"`
 	CommandId    string            `json:"commandId"`
 	EventData    interface{}       `json:"eventData"`
@@ -48,6 +70,7 @@ type EventDto struct {
 	PubsubName   string            `json:"pubsubName"`
 	Topic        string            `json:"topic"`
 	Relations    map[string]string `json:"relations"` // 聚合关系
+	IsSourcing   bool              `json:"isSourcing"`
 }
 
 type ExistAggregateResponse struct {
@@ -99,47 +122,6 @@ func NewEventRecordByJsonBytes(data []byte) *EventRecordJsonMarshalResult {
 type EventRecordJsonMarshalResult struct {
 	eventRecord *EventRecord
 	err         error
-}
-
-func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *EventRecord) error) *EventRecordJsonMarshalResult {
-	if r.err == nil {
-		r.err = doSuccess(r.eventRecord)
-	}
-	return r
-}
-
-func (r *EventRecordJsonMarshalResult) OnError(doError func(err error)) *EventRecordJsonMarshalResult {
-	if r.err != nil {
-		doError(r.err)
-	}
-	return r
-}
-
-func (r *EventRecordJsonMarshalResult) GetError() error {
-	return r.err
-}
-
-func (r *EventRecordJsonMarshalResult) GetEventRecord() *EventRecord {
-	return r.eventRecord
-}
-
-func (e *EventRecord) Marshal(domainEvent interface{}) error {
-	jsonEvent, err := json.Marshal(e.EventData)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(jsonEvent, domainEvent)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *EventRecord) SetFields(key string, set func(value interface{})) {
-	v, ok := e.EventData[key]
-	if ok {
-		set(v)
-	}
 }
 
 type SaveSnapshotRequest struct {
@@ -226,15 +208,20 @@ type GetEventsItem struct {
 	PubsubName   string
 	Topic        string
 	Metadata     map[string]string
+	IsSourcing   bool
 }
 
-type ResponseStatus int32
+type ResponseStatus int64
 
 const (
 	ResponseStatusSuccess        ResponseStatus = iota // 执行成功
 	ResponseStatusError                                // 执行错误
 	ResponseStatusEventDuplicate                       // 事件已经存在，被重复执行
 )
+
+func NewResponseHeadersNil() *ResponseHeaders {
+	return &ResponseHeaders{}
+}
 
 func NewResponseHeaders(status ResponseStatus, err error, values map[string]string) *ResponseHeaders {
 	if values == nil {
@@ -261,4 +248,63 @@ func NewResponseHeadersError(err error, values map[string]string) *ResponseHeade
 		Values:  values,
 	}
 	return resp
+}
+
+func (r *ResponseHeaders) SetError(err error) {
+	if err != nil {
+		r.Message = err.Error()
+	}
+}
+
+func (r *ResponseHeaders) SetMessage(v string) {
+	r.Message = v
+}
+
+func (r *ResponseHeaders) SetStatus(v int32) {
+	r.Status = ResponseStatus(v)
+}
+
+func (r *ResponseHeaders) SetValues(v map[string]string) {
+	r.Values = v
+}
+
+func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *EventRecord) error) *EventRecordJsonMarshalResult {
+	if r.err == nil {
+		r.err = doSuccess(r.eventRecord)
+	}
+	return r
+}
+
+func (r *EventRecordJsonMarshalResult) OnError(doError func(err error)) *EventRecordJsonMarshalResult {
+	if r.err != nil {
+		doError(r.err)
+	}
+	return r
+}
+
+func (r *EventRecordJsonMarshalResult) GetError() error {
+	return r.err
+}
+
+func (r *EventRecordJsonMarshalResult) GetEventRecord() *EventRecord {
+	return r.eventRecord
+}
+
+func (e *EventRecord) Marshal(domainEvent interface{}) error {
+	jsonEvent, err := json.Marshal(e.EventData)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(jsonEvent, domainEvent)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *EventRecord) SetFields(key string, set func(value interface{})) {
+	v, ok := e.EventData[key]
+	if ok {
+		set(v)
+	}
 }

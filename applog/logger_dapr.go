@@ -3,7 +3,9 @@ package applog
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 type logger struct {
@@ -14,7 +16,7 @@ type logger struct {
 func NewLogger(httpclient daprclient.DaprDddClient) Logger {
 	return &logger{
 		httpclient: httpclient,
-		level:      ERROR,
+		level:      logs.ErrorLevel,
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"reflect"
+	"strings"
 )
 
 type CreateAggregateOptions struct {
@@ -45,7 +46,7 @@ func (o *ApplyCommandOptions) SetEventStorageKey(v string) *ApplyCommandOptions 
 // @param opts
 // @return error
 //
-func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*ApplyCommandOptions) (err error) {
+func ApplyCommand(ctx context.Context, agg any, cmd Command, opts ...*ApplyCommandOptions) (err error) {
 	if agg == nil {
 		return errors.ErrorOf("ApplyCommand(ctx, agg, cmd) error: agg is nil")
 	}
@@ -55,7 +56,7 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 	opt := NewApplyCommandOptions()
 	opt.Merge(opts...)
 
-	if _, ok := cmd.(IsAggregateCreateCommand); ok {
+	if ok := isAggregateCreateCommand(ctx, agg, cmd); ok {
 		return callCommandHandler(ctx, agg, cmd)
 	}
 
@@ -71,11 +72,37 @@ func ApplyCommand(ctx context.Context, agg Aggregate, cmd Command, opts ...*Appl
 	return callCommandHandler(ctx, agg, cmd)
 }
 
+func isAggregateCreateCommand(ctx context.Context, aggregate any, cmd Command) bool {
+	if _, ok := cmd.(IsAggregateCreateCommand); ok {
+		return true
+	}
+
+	aggName := typeOf(aggregate).Name()
+	cmdName := typeOf(cmd).Name()
+	isAgg := strings.HasPrefix(aggName, cmdName)
+	isCreate := strings.HasSuffix("CreateCommand", cmdName)
+	if isAgg && isCreate {
+		return true
+	}
+	return false
+}
+
+func typeOf(obj interface{}) reflect.Type {
+	t := reflect.TypeOf(obj)
+	if t.Kind() == reflect.Pointer {
+		t = t.Elem()
+		if t.Kind() == reflect.Pointer {
+			t = t.Elem()
+		}
+	}
+	return t
+}
+
 func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {
 	o.eventStorageKey = &eventStorageKey
 }
 
-func callCommandHandler(ctx context.Context, aggregate Aggregate, cmd Command) error {
+func callCommandHandler(ctx context.Context, aggregate any, cmd Command) error {
 	cmdTypeName := reflect.ValueOf(cmd).Elem().Type().Name()
 	methodName := fmt.Sprintf("%s", cmdTypeName)
 	metadata := ddd_context.GetMetadataContext(ctx)

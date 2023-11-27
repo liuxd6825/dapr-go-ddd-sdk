@@ -10,13 +10,13 @@ import (
 
 type NewEventFunc func() interface{}
 
-var _eventTypeRegistry = newEventTypeRegistry()
-
 type RegisterEventTypeOptions struct {
 	marshaler JsonMarshaler
 }
 
 type RegisterOption func(*RegisterEventTypeOptions)
+
+var _eventTypeRegistry = newEventTypeRegistry()
 
 func RegisterOptionMarshaler(marshaler JsonMarshaler) RegisterOption {
 	return func(options *RegisterEventTypeOptions) {

@@ -22,7 +22,29 @@ const (
 type httpEventStorage struct {
 	client     daprclient.DaprDddClient
 	pubsubName string
-	subscribes *[]Subscribe
+	subscribes []*Subscribe
+}
+
+func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
+	subscribes = make([]*Subscribe, 0)
+	res := &httpEventStorage{
+		client:     httpClient,
+		subscribes: subscribes,
+	}
+	for _, option := range options {
+		option(res)
+	}
+	return res, nil
+}
+
+func (s *httpEventStorage) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *httpEventStorage) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (s *httpEventStorage) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
@@ -50,23 +72,11 @@ func (s *httpEventStorage) DeleteEvent(ctx context.Context, req *daprclient.Dele
 	panic("implement me")
 }
 
-func NewHttpEventStorage(httpClient daprclient.DaprDddClient, options ...func(s EventStorage)) (EventStorage, error) {
-	subscribes = make([]Subscribe, 0)
-	res := &httpEventStorage{
-		client:     httpClient,
-		subscribes: &subscribes,
-	}
-	for _, option := range options {
-		option(res)
-	}
-	return res, nil
-}
-
 func (s *httpEventStorage) GetPubsubName() string {
 	return s.pubsubName
 }
 
-func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate Aggregate) (Aggregate, bool, error) {
+func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error) {
 	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
 		return nil, false, err
 	}
@@ -81,7 +91,7 @@ func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 		TenantId:    tenantId,
 		AggregateId: aggregateId,
 	}
-
+	agg := aggregate.(Aggregate)
 	resp, err := s.LoadEvents(ctx, req)
 	if err != nil {
 		return nil, false, err
@@ -108,7 +118,7 @@ func (s *httpEventStorage) LoadAggregate(ctx context.Context, tenantId string, a
 			}
 		}
 	}
-	return aggregate, true, nil
+	return agg, true, nil
 }
 
 func (s *httpEventStorage) LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {

@@ -3,6 +3,7 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 )
 
@@ -10,6 +11,14 @@ type Neo4jSession struct {
 	driver        neo4j.Driver
 	sessionConfig neo4j.SessionConfig
 	isWrite       bool
+}
+
+type SessionOptions struct {
+	AccessMode *neo4j.AccessMode
+}
+
+func NewSessionOptions() *SessionOptions {
+	return &SessionOptions{}
 }
 
 func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
@@ -38,15 +47,21 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 				}
 			}
 		}()
+		/*		sessCtx := NewSessionContext(ctx, tx, session)
+				if dbFunc == nil {
+					return nil, nil
+				}
+				err := dbFunc(sessCtx)
+				if err != nil {
+					return nil, tx.Rollback()
+				}
+				return nil, tx.Commit()*/
 		sessCtx := NewSessionContext(ctx, tx, session)
 		if dbFunc == nil {
 			return nil, nil
 		}
 		err := dbFunc(sessCtx)
-		if err != nil {
-			return nil, tx.Rollback()
-		}
-		return nil, tx.Commit()
+		return nil, err
 	}
 
 	var err error
@@ -55,5 +70,29 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 	} else {
 		_, err = session.ReadTransaction(tx)
 	}
+	if err != nil {
+		logs.Error(ctx, err)
+	}
 	return err
+}
+
+func (o *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) {
+	o.AccessMode = &accessMode
+}
+
+func (o *SessionOptions) Merge(opts ...*SessionOptions) {
+	for _, o := range opts {
+		if o == nil {
+			continue
+		}
+		if o.AccessMode != nil {
+			o.SetAccessMode(*o.AccessMode)
+		}
+	}
+}
+
+func (o *SessionOptions) setDefault() {
+	if o.AccessMode == nil {
+		o.SetAccessMode(neo4j.AccessModeWrite)
+	}
 }

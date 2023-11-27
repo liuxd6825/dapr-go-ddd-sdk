@@ -2,6 +2,7 @@ package ddd_neo4j
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -9,45 +10,112 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
 	"log"
+	"strings"
+	"time"
 )
 
-type Neo4jEntity interface {
-	ddd.Entity
+/*type Dao[T any] interface {
+	Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T])
+	InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T]
+
+	Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T]
+	UpdateMany(ctx context.Context, list []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T]
+
+	DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error
+	DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error
+	DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) error
+	DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) error
+	DeleteByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) error
+
+	FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T]
+	FindByFilter(ctx context.Context, tenantId, filter string) *ddd_repository.FindListResult[T]
+	FindById(ctx context.Context, tenantId, id string, opts ...ddd_repository.Options) (T, bool, error)
+	FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) ([]T, bool, error)
+	FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T]
+	FindByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T]
+}*/
+
+type Element interface {
+	GetTenantId() string
+	SetTenantId(v string)
+	GetId() string
+	SetId(v string)
 }
 
-type Neo4jDao[T ElementEntity] struct {
-	driver        neo4j.Driver
-	cypherBuilder CypherBuilder
+type Dao[T Element] struct {
+	driver  neo4j.Driver
+	cypher  Cypher
+	newOne  func() T
+	newList func() []T
 }
 
-type SessionOptions struct {
-	AccessMode *neo4j.AccessMode
+type Options[T interface{}] struct {
+	newOne  func() T
+	newList func() []T
 }
 
-func NewSessionOptions() *SessionOptions {
-	return &SessionOptions{}
+func NewOptions[T interface{}](opts ...*Options[T]) *Options[T] {
+	n := &Options[T]{}
+	for _, o := range opts {
+		if o.newList != nil {
+			n.newList = o.newList
+		}
+		if o.newOne != nil {
+			n.newOne = o.newOne
+		}
+	}
+	return n
 }
 
-func NewNeo4jDao[T ElementEntity](driver neo4j.Driver, builder CypherBuilder) *Neo4jDao[T] {
-	base := &Neo4jDao[T]{}
-	return base.Init(driver, builder)
-}
-
-func (d *Neo4jDao[T]) Init(driver neo4j.Driver, builder CypherBuilder) *Neo4jDao[T] {
+func (d *Dao[T]) init(driver neo4j.Driver, cypher Cypher, opts ...*Options[T]) {
+	o := NewOptions[T](opts...)
 	d.driver = driver
-	d.cypherBuilder = builder
-	return d
+	d.cypher = cypher
+	if o.newList != nil {
+		d.newList = o.newList
+	}
+	if o.newOne != nil {
+		d.newOne = o.newOne
+	}
 }
 
-func (d *Neo4jDao[T]) NewEntity() (res T, resErr error) {
+func (d *Dao[T]) NewEntity() (res T, resErr error) {
+	if d.newOne != nil {
+		return d.newOne(), nil
+	}
 	return reflectutils.NewStruct[T]()
 }
 
-func (d *Neo4jDao[T]) NewEntities() (res []T, resErr error) {
-	return reflectutils.NewSlice[[]T]()
+func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err := errors.GetRecoverError(e); err != nil {
+				setResult = ddd_repository.NewSetResultError[T](err)
+			}
+		}
+	}()
+	for _, item := range data.Items() {
+		statue := item.Statue()
+		entity := item.Data().(T)
+		var err error
+		switch statue {
+		case ddd.DataStatueCreate:
+			err = d.Insert(ctx, entity, opts...).GetError()
+		case ddd.DataStatueUpdate:
+			err = d.Update(ctx, entity, opts...).GetError()
+		case ddd.DataStatueDelete:
+			err = d.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
+		case ddd.DataStatueCreateOrUpdate:
+			err = d.InsertOrUpdate(ctx, entity, opts...).GetError()
+		}
+		if err != nil {
+			return ddd_repository.NewSetResultError[T](err)
+		}
+	}
+	return ddd_repository.NewSetResultError[T](nil)
 }
 
-func (d *Neo4jDao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err := errors.GetRecoverError(e); err != nil {
@@ -56,19 +124,19 @@ func (d *Neo4jDao[T]) Insert(ctx context.Context, entity T, opts ...ddd_reposito
 		}
 	}()
 
-	cr, err := d.cypherBuilder.Insert(ctx, entity)
+	cr, err := d.cypher.Insert(ctx, entity)
 	if err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 
-	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
-	if err := res.GetOne("", entity); err != nil {
+	_, err = d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+	if err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return ddd_repository.NewSetResult(entity, err)
 }
 
-func (d *Neo4jDao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	for _, e := range entities {
 		if err := d.Insert(ctx, e, opts...).GetError(); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
@@ -77,23 +145,56 @@ func (d *Neo4jDao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_
 	return ddd_repository.NewSetManyResult[T](entities, nil)
 }
 
-func (d *Neo4jDao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	cr, err := d.cypherBuilder.Update(ctx, entity)
-	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
-	if err := res.GetOne("", entity); err != nil {
+func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
+	defer func() {
+		if e := recover(); e != nil {
+			if err := errors.GetRecoverError(e); err != nil {
+				setResult = ddd_repository.NewSetResultError[T](err)
+			}
+		}
+	}()
+
+	cr, err := d.cypher.InsertOrUpdate(ctx, entity)
+	if err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
+
+	_, err = d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+	if err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return ddd_repository.NewSetResult(entity, err)
 }
 
-func (d *Neo4jDao[T]) UpdateMany(ctx context.Context, list []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+func (d *Dao[T]) InsertOrUpdateMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+	for _, e := range entities {
+		if err := d.InsertOrUpdate(ctx, e, opts...).GetError(); err != nil {
+			return ddd_repository.NewSetManyResultError[T](err)
+		}
+	}
+	return ddd_repository.NewSetManyResult[T](entities, nil)
+}
+
+func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	cr, err := d.cypher.Update(ctx, entity)
+	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+	if err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
+	if _, err := res.GetOne("", entity); err != nil {
+		return ddd_repository.NewSetResultError[T](err)
+	}
+	return ddd_repository.NewSetResult(entity, err)
+}
+
+func (d *Dao[T]) UpdateMany(ctx context.Context, list []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	for _, entity := range list {
-		if cr, err := d.cypherBuilder.Update(ctx, entity); err != nil {
+		if cr, err := d.cypher.Update(ctx, entity); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		} else {
 			if res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
-			} else if err := res.GetOne(cr.ResultKeys()[0], entity); err != nil {
+			} else if _, err := res.GetOne(cr.ResultKeys()[0], entity); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
 			}
 		}
@@ -101,8 +202,63 @@ func (d *Neo4jDao[T]) UpdateMany(ctx context.Context, list []T, opts ...ddd_repo
 	return ddd_repository.NewSetManyResult(list, nil)
 }
 
-func (d *Neo4jDao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypherBuilder.DeleteById(ctx, tenantId, id)
+func (d *Dao[T]) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) error {
+	cr, err := d.cypher.UpdateLabelById(ctx, tenantId, id, label)
+	if err != nil {
+		return err
+	}
+	if cr == nil {
+		return nil
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) error {
+	cr, err := d.cypher.UpdateLabelByFilter(ctx, tenantId, filter, labels...)
+	if err != nil {
+		return err
+	}
+	if cr == nil {
+		return nil
+	}
+
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) error {
+	cr, err := d.cypher.DeleteLabelById(ctx, tenantId, id, label)
+	if err != nil || cr == nil {
+		return err
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) error {
+	cr, err := d.cypher.DeleteLabelByFilter(ctx, tenantId, filter, labels...)
+	if err != nil || cr == nil {
+		return err
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error {
+	cr, err := d.cypher.DeleteById(ctx, tenantId, id)
 	if err != nil {
 		return err
 	}
@@ -110,8 +266,8 @@ func (d *Neo4jDao[T]) DeleteById(ctx context.Context, tenantId string, id string
 	return err
 }
 
-func (d *Neo4jDao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypherBuilder.DeleteByIds(ctx, tenantId, ids)
+func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
+	cr, err := d.cypher.DeleteByIds(ctx, tenantId, ids)
 	if err != nil {
 		return err
 	}
@@ -119,8 +275,8 @@ func (d *Neo4jDao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []st
 	return err
 }
 
-func (d *Neo4jDao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypherBuilder.DeleteAll(ctx, tenantId)
+func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) error {
+	cr, err := d.cypher.DeleteAll(ctx, tenantId)
 	if err != nil {
 		return err
 	}
@@ -128,8 +284,8 @@ func (d *Neo4jDao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...dd
 	return err
 }
 
-func (d *Neo4jDao[T]) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypherBuilder.DeleteByFilter(ctx, tenantId, filter)
+func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) error {
+	cr, err := d.cypher.DeleteByFilter(ctx, tenantId, filter)
 	if err != nil {
 		return err
 	}
@@ -137,9 +293,26 @@ func (d *Neo4jDao[T]) DeleteByFilter(ctx context.Context, tenantId string, filte
 	return err
 }
 
-func (d *Neo4jDao[T]) FindById(ctx context.Context, tenantId, id string, opts ...ddd_repository.Options) (T, bool, error) {
+func (d *Dao[T]) DeleteByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) error {
+	return d.DeleteByFilter(ctx, tenantId, fmt.Sprintf("graphId=='%v'", graphId))
+}
+
+func (d *Dao[T]) DeleteByCaseId(ctx context.Context, tenantId string, caseId string, opts ...ddd_repository.Options) error {
+	return d.DeleteByFilter(ctx, tenantId, fmt.Sprintf("caseId=='%v'", caseId))
+}
+
+func (d *Dao[T]) DeleteByTenantId(ctx context.Context, tenantId string, opts ...ddd_repository.Options) error {
+	cr, err := d.cypher.DeleteByTenantId(ctx, tenantId)
+	if err != nil {
+		return err
+	}
+	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+	return err
+}
+
+func (d *Dao[T]) FindById(ctx context.Context, tenantId, id string, opts ...ddd_repository.Options) (T, bool, error) {
 	var null T
-	cr, err := d.cypherBuilder.FindById(ctx, tenantId, id)
+	cr, err := d.cypher.FindById(ctx, tenantId, id)
 	if err != nil {
 		return null, false, err
 	}
@@ -151,15 +324,17 @@ func (d *Neo4jDao[T]) FindById(ctx context.Context, tenantId, id string, opts ..
 	if err != nil {
 		return null, false, err
 	}
-	if err := result.GetOne("", entity); err != nil {
+	if ok, err := result.GetOne("", entity); err != nil {
 		return null, false, err
+	} else if !ok {
+		return null, false, nil
 	}
 	return entity, true, nil
 }
 
-func (d *Neo4jDao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) ([]T, bool, error) {
+func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) ([]T, bool, error) {
 	var null []T
-	cr, err := d.cypherBuilder.FindByIds(ctx, tenantId, ids)
+	cr, err := d.cypher.FindByIds(ctx, tenantId, ids)
 	if err != nil {
 		return null, false, err
 	}
@@ -167,18 +342,18 @@ func (d *Neo4jDao[T]) FindByIds(ctx context.Context, tenantId string, ids []stri
 	if err != nil {
 		return null, false, err
 	}
-	list, err := d.NewEntities()
+	list, err := reflectutils.NewSlice[[]T]()
 	if err != nil {
 		return null, false, err
 	}
 	if err := result.GetList(cr.ResultOneKey(), &list); err != nil {
 		return null, false, err
 	}
-	return list, true, nil
+	return list, len(list) > 0, nil
 }
 
-func (d *Neo4jDao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	cr, err := d.cypherBuilder.FindAll(ctx, tenantId)
+func (d *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	cr, err := d.cypher.FindAll(ctx, tenantId)
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
@@ -196,8 +371,8 @@ func (d *Neo4jDao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_
 	return ddd_repository.NewFindListResult[T](list, len(list) > 0, nil)
 }
 
-func (d *Neo4jDao[T]) FindByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	cr, err := d.cypherBuilder.FindByGraphId(ctx, tenantId, graphId)
+/*func (d *Dao[T]) FindByGraphId(ctx context.Context, tenantId string, graphId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	cr, err := d.cypher.FindByGraphId(ctx, tenantId, graphId)
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
@@ -213,29 +388,60 @@ func (d *Neo4jDao[T]) FindByGraphId(ctx context.Context, tenantId string, graphI
 		return ddd_repository.NewFindListResultError[T](err)
 	}
 	return ddd_repository.NewFindListResult[T](list, len(list) > 0, err)
+}*/
+
+func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	sb := strings.Builder{}
+	for k, v := range filterMap {
+		switch v.(type) {
+		case string:
+			sb.WriteString(fmt.Sprintf("%v=='%v'", k, v))
+		case time.Time:
+			sb.WriteString(fmt.Sprintf("%v=='%v'", k, v))
+		case *time.Time:
+			sb.WriteString(fmt.Sprintf("%v=='%v'", k, v))
+		default:
+			sb.WriteString(fmt.Sprintf("%v==%v", k, v))
+		}
+		sb.WriteString(" and ")
+	}
+	filter := sb.String()
+	if strings.HasSuffix(filter, " and ") {
+		filter = filter[0 : len(filter)-5]
+	}
+	return d.FindByFilter(ctx, tenantId, filter)
 }
 
-func (d *Neo4jDao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	/*	return d.DoFindList(func() (*[]T, bool, error) {
-		filter := d.NewFilter(tenantId, filterMap)
-		data := d.NewEntityList()
-		findOptions := getFindOptions(opts...)
-		cursor, err := d.collection.Find(ctx, filter, findOptions)
-		if err != nil {
+func (d *Dao[T]) FindByFilter(ctx context.Context, tenantId, filter string) *ddd_repository.FindListResult[T] {
+	return d.DoList(ctx, tenantId, func() (*ddd_repository.FindListResult[T], bool, error) {
+		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
-		err = cursor.All(ctx, data)
-		return data, true, err
-	})*/
-	data, err := d.NewEntities()
-	if err != nil {
-		var null []T
-		return ddd_repository.NewFindListResult[T](null, false, err)
-	}
-	return ddd_repository.NewFindListResult[T](data, true, nil)
+
+		cr, err := d.cypher.GetFilter(ctx, tenantId, filter)
+		if err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+
+		cypher := cr.Cypher()
+		result, err := d.Query(ctx, cypher, cr.Params())
+		if err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+
+		list, err := reflectutils.NewSlice[[]T]()
+		if err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+
+		if err = result.GetList(cr.ResultOneKey(), &list); err != nil {
+			return ddd_repository.NewFindListResultError[T](err), false, err
+		}
+		return ddd_repository.NewFindListResult[T](list, len(list) > 0, err), false, nil
+	})
 }
 
-func (d *Neo4jDao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, error) {
+func (d *Dao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, error) {
 	return d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
 		result, err := tx.Run(cypher, nil)
 		if err != nil {
@@ -245,7 +451,7 @@ func (d *Neo4jDao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, e
 	})
 }
 
-func (d *Neo4jDao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult, error) {
+func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult, error) {
 	var resultData *Neo4jResult
 	_, err := d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
 		result, err := tx.Run(cypher, params)
@@ -259,45 +465,57 @@ func (d *Neo4jDao[T]) Query(ctx context.Context, cypher string, params map[strin
 	return resultData, err
 }
 
-func (d *Neo4jDao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func() (*ddd_repository.FindPagingResult[T], bool, error) {
-		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
-			return nil, false, err
-		}
-
-		cr, err := d.cypherBuilder.FindPaging(ctx, query)
-		if err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-		}
-
-		result, err := d.Query(ctx, cr.Cypher(), cr.Params())
-		if err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-		}
-
-		list, err := reflectutils.NewSlice[[]T]()
-		if err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-		}
-
-		if err = result.GetList(cr.ResultOneKey(), &list); err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
-		}
-
-		var totalRows int64
-		if query.GetIsTotalRows() {
-			// "MATCH (n)-[r]->() RETURN COUNT(r)"
-		}
-
-		return ddd_repository.NewFindPagingResult[T](list, totalRows, query, nil), true, err
+func (d *Dao[T]) FindPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string, isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	return d.DoFilter(ctx, tenantId, func() (*ddd_repository.FindPagingResult[T], bool, error) {
+		return d.findPagingByCypher(ctx, tenantId, cypher, pageNum, pageSize, resultKey, isTotalRows, params, opts...)
 	})
 }
 
-func (d *Neo4jDao[T]) DoFilter(tenantId, filter string, fun func() (*ddd_repository.FindPagingResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	p := NewRSqlProcess()
-	if err := ParseProcess(filter, p); err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
+func (d *Dao[T]) findPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string, isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) (*ddd_repository.FindPagingResult[T], bool, error) {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("TenantId cannot be empty")); err != nil {
+		return nil, false, err
 	}
+	result, err := d.Query(ctx, cypher+" RETURN "+resultKey, params)
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+	}
+
+	list, err := reflectutils.NewSlice[[]T]()
+	if err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+	}
+
+	if err = result.GetList(resultKey, &list); err != nil {
+		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+	}
+
+	var totalRows *int64
+	if isTotalRows {
+		totalKey := "count"
+		countCypher := cypher + fmt.Sprintf(" RETURN count(%s) as %s ", resultKey, totalKey)
+		result, err := d.Query(ctx, countCypher, params)
+		total, err := result.GetInteger(totalKey, 0)
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+		}
+		totalRows = &total
+	}
+
+	res := ddd_repository.NewFindPagingResult[T](list, totalRows, nil, nil)
+	return res, true, err
+}
+
+func (d *Dao[T]) FindPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	return d.DoFilter(ctx, query.GetTenantId(), func() (*ddd_repository.FindPagingResult[T], bool, error) {
+		cr, err := d.cypher.FindPaging(ctx, query)
+		if err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
+		}
+		return d.findPagingByCypher(ctx, query.GetTenantId(), cr.Cypher(), query.GetPageNum(), query.GetPageSize(), cr.ResultKeys()[0], query.GetIsTotalRows(), cr.Params(), opts...)
+	})
+}
+
+func (d *Dao[T]) DoFilter(ctx context.Context, tenantId string, fun func() (*ddd_repository.FindPagingResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	data, _, err := fun()
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
@@ -305,7 +523,41 @@ func (d *Neo4jDao[T]) DoFilter(tenantId, filter string, fun func() (*ddd_reposit
 	return data
 }
 
-func (d *Neo4jDao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transaction) (*Neo4jResult, error), opts ...*SessionOptions) (*Neo4jResult, error) {
+func (d *Dao[T]) DoList(ctx context.Context, tenantId string, fun func() (*ddd_repository.FindListResult[T], bool, error), opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
+	data, _, err := fun()
+	if err != nil {
+		return ddd_repository.NewFindListResultError[T](err)
+	}
+	return data
+}
+
+func (d *Dao[T]) newSetManyResult(result *Neo4jResult, err error) *ddd_repository.SetManyResult[T] {
+	if err != nil {
+		return ddd_repository.NewSetManyResultError[T](err)
+	}
+	var data []T
+	if err := result.GetList("n", &data); err != nil {
+		ddd_repository.NewSetResultError[T](err)
+	}
+	return ddd_repository.NewSetManyResult[T](data, err)
+}
+
+func (d *Dao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...ddd_repository.Options) (*Neo4jResult, error) {
+	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		return nil, err
+	}
+	res, err := d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
+		r, err := tx.Run(cypher, params)
+		if err != nil {
+			return nil, err
+		}
+		return NewNeo4jResult(r), nil
+	})
+	return res, err
+}
+
+func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transaction) (*Neo4jResult, error), opts ...*SessionOptions) (result *Neo4jResult, err error) {
+
 	if fun == nil {
 		return nil, errors.New("doSession(ctx, fun) fun is nil")
 	}
@@ -322,10 +574,12 @@ func (d *Neo4jDao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transacti
 	session := d.driver.NewSession(neo4j.SessionConfig{AccessMode: *opt.AccessMode})
 	defer func() {
 		_ = session.Close()
+		if e1 := errors.GetError(recover()); e1 != nil {
+			err = e1
+		}
 	}()
 
 	var res interface{}
-	var err error
 	if *opt.AccessMode == neo4j.AccessModeRead {
 		res, err = session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
 			return fun(tx)
@@ -335,61 +589,23 @@ func (d *Neo4jDao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transacti
 			return fun(tx)
 		})
 	}
+	if err != nil {
+		return nil, err
+	}
 
 	if result, ok := res.(*Neo4jResult); ok {
-		return result, err
+		return result, nil
 	}
 
 	return nil, err
 }
 
-func (d *Neo4jDao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...ddd_repository.Options) (*Neo4jResult, error) {
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
-		return nil, err
-	}
-	res, err := d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
-		r, err := tx.Run(cypher, params)
-		return NewNeo4jResult(r), err
-	})
-	return res, err
-}
-
-func (d *Neo4jDao[T]) getLabels(entity ElementEntity) string {
-	label := ""
-	for _, l := range entity.GetLabels() {
-		label = label + " :" + l
-	}
-	return label
-}
-
-func (d *Neo4jDao[T]) newSetManyResult(result *Neo4jResult, err error) *ddd_repository.SetManyResult[T] {
-	if err != nil {
-		return ddd_repository.NewSetManyResultError[T](err)
-	}
-	var data []T
-	if err := result.GetList("n", &data); err != nil {
-		ddd_repository.NewSetResultError[T](err)
-	}
-	return ddd_repository.NewSetManyResult[T](data, err)
-}
-
-func (r *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) {
-	r.AccessMode = &accessMode
-}
-
-func (r *SessionOptions) Merge(opts ...*SessionOptions) {
-	for _, o := range opts {
-		if o == nil {
-			continue
-		}
-		if o.AccessMode != nil {
-			r.SetAccessMode(*o.AccessMode)
+func getLabels(labels ...string) string {
+	var s string
+	for _, l := range labels {
+		if len(l) > 0 {
+			s = fmt.Sprintf("%v :`%v`", s, l)
 		}
 	}
-}
-
-func (r *SessionOptions) setDefault() {
-	if r.AccessMode == nil {
-		r.SetAccessMode(neo4j.AccessModeWrite)
-	}
+	return strings.ToLower(s)
 }

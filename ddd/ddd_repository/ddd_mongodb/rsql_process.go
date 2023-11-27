@@ -127,7 +127,10 @@ func (m *MongoProcess) OnLike(name string, value interface{}, rValue rsql.Value)
 	if err != nil {
 		m.addError(name, err)
 	}
+
 	pattern := fmt.Sprintf("%s", value)
+	pattern = strings.ReplaceAll(pattern, "*", "")
+
 	m.current.addChildItem(AsFieldName(name), primitive.Regex{Pattern: pattern, Options: "im"})
 }
 
@@ -167,6 +170,34 @@ func (m *MongoProcess) OnNotIn(name string, value interface{}, rValue rsql.Value
 		m.addError(name, err)
 	}
 	m.current.addChildItem(AsFieldName(name), bson.M{"$nin": values})
+}
+
+func (m *MongoProcess) OnContains(name string, value interface{}, rValue rsql.Value) {
+	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
+	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$regex", primitive.Regex{Pattern: val, Options: "i"}}})
+}
+
+func (m *MongoProcess) OnNotContains(name string, value interface{}, rValue rsql.Value) {
+	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
+	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
+}
+
+func (m *MongoProcess) OnIsNull(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$in", []interface{}{nil}}})
+}
+
+func (m *MongoProcess) OnNotIsNull(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *MongoProcess) OnStart(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *MongoProcess) OnEnd(name string, value interface{}, rValue rsql.Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
 }
 
 func (m *MongoProcess) addError(name string, err error) {

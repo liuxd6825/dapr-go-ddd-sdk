@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/go-sdk/actor"
 	"github.com/liuxd6825/go-sdk/actor/config"
 	actorErr "github.com/liuxd6825/go-sdk/actor/error"
@@ -33,6 +34,7 @@ type ServiceOptions struct {
 	WebRootPath    string
 	SwaggerDoc     string
 }
+
 type service struct {
 	app            *iris.Application
 	appId          string
@@ -47,37 +49,6 @@ type service struct {
 	eventTypes     []RegisterEventType
 	authToken      string
 	webRootPath    string
-}
-
-func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
-	panic("implement me")
-}
-
-func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
-	panic("implement me")
-}
-
-func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
-	panic("implement me")
-}
-
-func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
-	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
-}
-
-func (s *service) Stop() error {
-	panic("implement me")
-}
-
-func (s *service) GracefulStop() error {
-	panic("implement me")
-}
-
-func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
-	w.Header().Set("Allow", "POST,OPTIONS")
 }
 
 func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
@@ -98,9 +69,41 @@ func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) co
 	}
 }
 
+func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
+	return nil
+}
+
+func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
+	return nil
+}
+
+func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
+	return nil
+}
+
+func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
+	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
+}
+
+func (s *service) Stop() error {
+	return nil
+}
+
+func (s *service) GracefulStop() error {
+	return nil
+}
+
+func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
+	w.Header().Set("Allow", "POST,OPTIONS")
+}
+
 func (s *service) Start() error {
 	app := s.app
 
+	//app.Use(GlobalJsonSerialization)
 	// register subscribe handler
 	app.Get("dapr/subscribe", s.subscribesHandler)
 
@@ -132,7 +135,7 @@ func (s *service) Start() error {
 	if s.subscribes != nil {
 		for _, subscribe := range s.subscribes {
 			if subscribe != nil {
-				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler()); err != nil {
+				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler(), subscribe.GetInterceptor()); err != nil {
 					return err
 				}
 			}
@@ -172,8 +175,8 @@ func (s *service) Start() error {
 			s.RegisterActorImplFactory(f)
 		}
 	}
-
-	if err := app.Run(iris.Addr(fmt.Sprintf("%s:%d", s.httpHost, s.httpPort))); err != nil {
+	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
+	if err := app.Run(iris.Addr(addr)); err != nil {
 		return err
 	}
 	return nil
@@ -194,6 +197,7 @@ func (s *service) actorMethodInvokeHandler(ctx *context.Context) {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return
 	}
+
 	ctx.StatusCode(http.StatusOK)
 	_, _ = ctx.Write(rspData)
 }
@@ -250,9 +254,14 @@ func (s *service) actorDeactivateHandler(ctx *context.Context) {
 	ctx.StatusCode(http.StatusOK)
 }
 
-func (s *service) subscribesHandler(ctx *context.Context) {
-	data := ddd.GetSubscribes()
-	_, _ = ctx.JSON(data)
+func (s *service) subscribesHandler(ictx *context.Context) {
+	subscribes := ddd.GetSubscribes()
+	_, _ = ictx.JSON(subscribes)
+
+	ctx := NewContext(ictx)
+	for _, s := range subscribes {
+		logs.Infof(ctx, "subscribe  pubsubName:%s,  topic:%s,  route:%s,  metadata:%s", s.PubsubName, s.Topic, s.Route, s.Metadata)
+	}
 }
 
 func (s *service) eventTypesHandler(ctx *context.Context) {
@@ -300,20 +309,23 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
 //
-func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
-	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
+func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
+	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
 			if e := errors.GetRecoverError(recover()); e != nil {
 				err = e
 			}
 		}()
 		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
-			if err = sh.CallQueryEventHandler(c, c); err != nil {
+			ctx := logs.NewContext(c, _logger)
+			if err = sh.Handler(ctx, c); err != nil {
 				c.SetErr(err)
 			}
 		})
 		return err
-	})
+	}
+
+	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, subscribesHandler, interceptors)
 	if err := ddd.RegisterQueryHandler(handler); err != nil {
 		return nil, err
 	}
@@ -333,6 +345,11 @@ func (s *service) registerController(relativePath string, controllers ...Control
 	configurators := func(app *mvc.Application) {
 		for _, c := range controllers {
 			app.Handle(c)
+		}
+	}
+	for _, c := range controllers {
+		if reg, ok := c.(RegisterHandler); ok {
+			reg.RegisterHandler(s.app)
 		}
 	}
 	mvc.Configure(s.app.Party(relativePath), configurators)

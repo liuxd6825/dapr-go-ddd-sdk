@@ -2,9 +2,14 @@ package randomutils
 
 import (
 	"fmt"
-	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"math"
 	"math/rand"
 	"time"
+
+	crypto "crypto/rand"
+	"math/big"
 )
 
 var lastName = []string{
@@ -48,75 +53,119 @@ var lastNameLen = len(lastName)
 var firstNameLen = len(firstName)
 
 func StringNumber(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 0)
 }
 
 func StringLower(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 1)
 }
 
 func StringUpper(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 2)
 }
 
 func String(size int) string {
+	rand.Seed(time.Now().UnixNano())
 	return randomString(size, 2)
 }
 
 func Int() int {
-	return rand.Intn(100)
+	v := RangeRand(0, 1000)
+	return int(v)
+}
+
+func IntMax(max int) int {
+	v := RangeRand(0, int64(max-1))
+	return int(v)
 }
 
 func Int64() int64 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Int63n(100000)
 }
 
+func Int64Max(max int64) int64 {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Int63n(max)
+}
+
 func Uint32() uint32 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Uint32()
 }
 
 func Uint64() uint64 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Uint64()
 }
 
 func Float32() float32 {
+	rand.Seed(time.Now().UnixNano())
 	return rand.Float32()
 }
 
 func PFloat32() *float32 {
+	rand.Seed(time.Now().UnixNano())
 	v := Float32()
 	return &v
 }
 
 func Float64() float64 {
-	return rand.Float64()
+	rand.Seed(time.Now().Unix())
+	v := float64(RangeRand(0, 1000)) + float64(RangeRand(0, 100))/100
+	return v
+}
+
+// 生成区间[-m, n]的安全随机数
+func RangeRand(min, max int64) int64 {
+	if min > max {
+		panic("the min is greater than max!")
+	}
+	if min < 0 {
+		f64Min := math.Abs(float64(min))
+		i64Min := int64(f64Min)
+		result, _ := crypto.Int(crypto.Reader, big.NewInt(max+1+i64Min))
+		return result.Int64() - i64Min
+	}
+	result, _ := crypto.Int(crypto.Reader, big.NewInt(max-min+1))
+	return min + result.Int64()
 }
 
 func PFloat64() *float64 {
+	rand.Seed(time.Now().UnixNano())
 	v := Float64()
 	return &v
 }
 
 // Email 随机生成英文字符串
 func Email() string {
+	rand.Seed(time.Now().UnixNano())
 	name := StringLower(8)
 	return fmt.Sprintf("%v@163.com", name)
 }
 
 // UUID 随机生成ID
 func UUID() string {
-	return uuid.New().String()
+	return idutils.NewId()
 }
 
 // PUUID 随机生成ID
 func PUUID() *string {
-	v := uuid.New().String()
+	v := UUID()
 	return &v
+}
+
+// NewId 新建ID
+func NewId() string {
+	return UUID()
 }
 
 // IpAddr 随机生成IP地址
 func IpAddr() string {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	ip := fmt.Sprintf("%d.%d.%d.%d", rand.Intn(255), rand.Intn(255), rand.Intn(255), rand.Intn(255))
 	return ip
 }
@@ -157,7 +206,7 @@ func PNameEN() *string {
 
 // DateString 随机生成日期字符串
 func DateString() string {
-	rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().UnixNano())
 	max := 2099
 	min := 2000
 	year := rand.Intn(max-min) + min
@@ -192,19 +241,19 @@ func TimeString() string {
 
 // PTimeString 随机生成时间字符串
 func PTimeString() *string {
-	v := TimeString()
-	return &v
+	value := TimeString()
+	return &value
 }
 
 func Date() time.Time {
-	r := Time()
-	date := time.Date(r.Year(), r.Month(), r.Day(), 0, 0, 0, 0, time.UTC).Unix()
+	value := Time()
+	date := time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC).Unix()
 	return time.Unix(date, 0)
 }
 
 func PDate() *time.Time {
-	pdate := Date()
-	return &pdate
+	value := Date()
+	return &value
 }
 
 func Time() time.Time {
@@ -217,8 +266,8 @@ func Time() time.Time {
 }
 
 func PTime() *time.Time {
-	pdate := Time()
-	return &pdate
+	value := Time()
+	return &value
 }
 
 func Now() time.Time {
@@ -226,8 +275,8 @@ func Now() time.Time {
 }
 
 func PNow() *time.Time {
-	t := Now()
-	return &t
+	value := Now()
+	return &value
 }
 
 func Boolean() bool {
@@ -237,6 +286,24 @@ func Boolean() bool {
 func PBoolean() *bool {
 	p := Uint32()%2 == 1
 	return &p
+}
+
+func JsonTime() types.JSONTime {
+	return types.JSONTime(Time())
+}
+
+func PJsonTime() *types.JSONTime {
+	value := JsonTime()
+	return &value
+}
+
+func JsonDate() types.JSONDate {
+	return types.JSONDate(Date())
+}
+
+func PJsonDate() *types.JSONDate {
+	value := JsonDate()
+	return &value
 }
 
 //
@@ -261,7 +328,7 @@ func randomString(size int, kind int) string {
 }
 
 // Options 参数
-type Options struct {
+/*type Options struct {
 	Length  *int
 	MinYear *int
 	MaxYear *int
@@ -327,3 +394,4 @@ func (o *Options) SetMinYear(len int) *Options {
 	o.MinYear = &v
 	return o
 }
+*/

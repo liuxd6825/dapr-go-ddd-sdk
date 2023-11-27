@@ -2,6 +2,7 @@ package stringutils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/inflection"
 	"strconv"
 	"strings"
@@ -32,8 +33,12 @@ func ValidEmptyStr(v string, msg string) error {
 }
 
 func AsFieldName(s string) string {
-	res := SnakeString(s)
+	res := strings.Replace(s, " ", "", -1)
+	res = SnakeString(res)
 	res = strings.Replace(res, "._", ".", -1)
+	if strings.HasSuffix(res, "_") {
+		res = res[1:]
+	}
 	return res
 }
 
@@ -217,4 +222,29 @@ func Plural(str string) string {
 //
 func Singular(str string) string {
 	return inflection.Singular(MidlineString(str))
+}
+
+func PStrList(s ...string) *[]string {
+	var res []string
+	for _, item := range s {
+		res = append(res, item)
+	}
+	return &res
+}
+
+func P2Str(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func AnyToString(v any) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	return fmt.Sprintf("%v", v)
 }

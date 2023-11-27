@@ -12,14 +12,6 @@ type AggregateSnapshotActor struct {
 	SaveSnapshot  func(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 }
 
-func (a *AggregateSnapshotActor) Type() string {
-	return aggregateSnapshotActorType
-}
-
-func (a *AggregateSnapshotActor) ID() string {
-	return fmt.Sprintf("aggType(%s),aggId(%s)", a.aggregateType, a.aggregateId)
-}
-
 type SaveSnapshotRequest struct {
 	TenantId        string `json:"tenantId"`
 	AggregateId     string `json:"aggregateId"`
@@ -37,4 +29,12 @@ func NewAggregateSnapshotClient(client dapr.Client, aggregateType, aggregateId s
 	}
 	client.ImplActorClientStub(actor)
 	return actor
+}
+
+func (a *AggregateSnapshotActor) Type() string {
+	return aggregateSnapshotActorType
+}
+
+func (a *AggregateSnapshotActor) ID() string {
+	return fmt.Sprintf("aggType(%s),aggId(%s)", a.aggregateType, a.aggregateId)
 }

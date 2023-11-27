@@ -6,7 +6,7 @@ import (
 
 var _appId string
 var eventStorages = map[string]EventStorage{"": NewEmptyEventStorage()}
-var subscribes = make([]Subscribe, 0)
+var subscribes = make([]*Subscribe, 0)
 var subscribeHandlers = make([]SubscribeHandler, 0)
 
 func Init(appId string) {
@@ -28,7 +28,7 @@ func StartSubscribeHandlers() error {
 		if err != nil {
 			return err
 		}
-		for _, subscribe := range *items {
+		for _, subscribe := range items {
 			if err := handler.RegisterSubscribe(subscribe); err != nil {
 				return err
 			}
@@ -42,7 +42,7 @@ func StartSubscribeHandlers() error {
 // @Description: 获取事件监听列表
 // @return []Subscribe
 //
-func GetSubscribes() []Subscribe {
+func GetSubscribes() []*Subscribe {
 	return subscribes
 }
 
@@ -90,7 +90,7 @@ func RegisterQueryHandler(subHandler SubscribeHandler) error {
 	if err != nil {
 		return err
 	}
-	for _, s := range *items {
+	for _, s := range items {
 		subscribes = append(subscribes, s)
 	}
 	return nil

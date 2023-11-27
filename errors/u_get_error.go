@@ -58,5 +58,5 @@ func GetRecoverError(re any) (err error) {
 			}
 		}
 	}
-	return
+	return err
 }
