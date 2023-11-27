@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"runtime"
 	"strings"
 	"time"
@@ -25,20 +27,17 @@ type Event interface {
 	GetEventId() string
 }
 
-//
 // Init
 // @Description: 初始化日期
 // @param daprClient DaprDddClient
 // @param aAppId Darp Appliation Id
 // @param level 日志级别
-//
 func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
 	log = NewLogger(daprClient)
 	log.SetLevel(level)
 	appId = aAppId
 }
 
-//
 // DoEventLog
 // @Description: 执行日志记录
 // @param ctx Context
@@ -47,25 +46,22 @@ func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
 // @param funcName 方法名称
 // @param method 执行函数
 // @return error 错误
-//
 func DoEventLog(ctx context.Context, structName string, event Event, funcName string, fun DoAction) error {
 	err := fun()
 	if err == nil {
 		_, _ = InfoEvent(event.GetTenantId(), structName, funcName, "success", event.GetEventId(), event.GetCommandId(), "")
 	} else {
-		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, "error", event.GetEventId(), event.GetCommandId(), "")
+		_, _ = ErrorEvent(event.GetTenantId(), structName, funcName, err.Error(), event.GetEventId(), event.GetCommandId(), "")
 	}
-	return nil
+	return err
 }
 
-//
 // DoAppLog
 // @Description:
 // @param ctx
 // @param info
 // @param fun
 // @return error
-//
 func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 	if err := assert.NotNil(info, assert.NewOptions("info is nil")); err != nil {
 		return err
@@ -86,12 +82,11 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 	}*/
 
 	if err != nil {
-		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, ERROR, err.Error())
+		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, logs.ErrorLevel, err.Error())
 	}
 	return err
 }
 
-//
 // Debug
 // @Description:  写调试级日志
 // @param tenantId
@@ -100,12 +95,10 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 // @param message
 // @return string
 // @return error
-//
 func Debug(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, DEBUG, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.DebugLevel, message)
 }
 
-//
 // Info
 // @Description: 写信息级日志
 // @param tenantId
@@ -114,116 +107,107 @@ func Debug(tenantId, className, funcName, message string) (string, error) {
 // @param message
 // @return string
 // @return error
-//
 func Info(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, INFO, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.InfoLevel, message)
 }
 
-//
 // Warn
-//  @Description: 写警告级日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @return string
-//  @return error
 //
+//	@Description: 写警告级日志
+//	@param tenantId
+//	@param className
+//	@param funcName
+//	@param message
+//	@return string
+//	@return error
 func Warn(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, WARN, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.WarnLevel, message)
 }
 
-//
 // Error
-//  @Description: 写错误级日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @return string
-//  @return error
 //
+//	@Description: 写错误级日志
+//	@param tenantId
+//	@param className
+//	@param funcName
+//	@param message
+//	@return string
+//	@return error
 func Error(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, ERROR, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.ErrorLevel, message)
 }
 
-//
 // Fatal
-//  @Description:  写致命级日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @return string
-//  @return error
 //
+//	@Description:  写致命级日志
+//	@param tenantId
+//	@param className
+//	@param funcName
+//	@param message
+//	@return string
+//	@return error
 func Fatal(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, FATAL, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logs.FatalLevel, message)
 }
 
-//
 // InfoEvent
-//  @Description: 写事件处理日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @param eventId
-//  @param commandId
-//  @param pubAppId
-//  @return string
-//  @return error
 //
+//	@Description: 写事件处理日志
+//	@param tenantId
+//	@param className
+//	@param funcName
+//	@param message
+//	@param eventId
+//	@param commandId
+//	@param pubAppId
+//	@return string
+//	@return error
 func InfoEvent(tenantId, structName, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, structName, funcName, INFO, message, eventId, commandId, pubAppId, false)
+	return writeEventLog(context.Background(), tenantId, structName, funcName, logs.InfoLevel, message, eventId, commandId, pubAppId, false)
 }
 
-//
 // ErrorEvent
-//  @Description: 写错误级日志
-//  @param tenantId
-//  @param className
-//  @param funcName
-//  @param message
-//  @param eventId
-//  @param commandId
-//  @param pubAppId
-//  @return string
-//  @return error
 //
+//	@Description: 写错误级日志
+//	@param tenantId
+//	@param className
+//	@param funcName
+//	@param message
+//	@param eventId
+//	@param commandId
+//	@param pubAppId
+//	@return string
+//	@return error
 func ErrorEvent(tenantId, className, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, className, funcName, ERROR, message, eventId, commandId, pubAppId, false)
+	return writeEventLog(context.Background(), tenantId, className, funcName, logs.ErrorLevel, message, eventId, commandId, pubAppId, false)
 }
 
-//
 // GetEventLogByAppIdAndCommandId
-//  @Description:  按CommandId获取日志
-//  @param tenantId
-//  @param appId
-//  @param commandId
-//  @return *[]EventLogDto
-//  @return error
 //
-func GetEventLogByAppIdAndCommandId(tenantId, appId, commandId string) (*[]EventLogDto, error) {
+//	@Description:  按CommandId获取日志
+//	@param tenantId
+//	@param appId
+//	@param commandId
+//	@return *[]EventLogDto
+//	@return error
+func GetEventLogByAppIdAndCommandId(tenantId, appId, commandId string) ([]*EventLogDto, error) {
 	return getEventLogByAppIdAndCommandId(context.Background(), tenantId, appId, commandId)
 }
 
-//
-//  writeEventLog
-//  @Description: 写事件日志
-//  @param ctx
-//  @param tenantId
-//  @param structName 被记录的结构名称
-//  @param funcName 被记录的方法名称
-//  @param level 日志级别
-//  @param message
-//  @param eventId
-//  @param commandId
-//  @param pubAppId
-//  @param status
-//  @return string
-//  @return error
-//
+// writeEventLog
+// @Description: 写事件日志
+// @param ctx
+// @param tenantId
+// @param structName 被记录的结构名称
+// @param funcName 被记录的方法名称
+// @param level 日志级别
+// @param message
+// @param eventId
+// @param commandId
+// @param pubAppId
+// @param status
+// @return string
+// @return error
 func writeEventLog(ctx context.Context, tenantId, structName, funcName string, level Level, message, eventId, commandId, pubAppId string, status bool) (string, error) {
 	uid := uuid.New().String()
 	timeNow := time.Now()
@@ -233,7 +217,7 @@ func writeEventLog(ctx context.Context, tenantId, structName, funcName string, l
 		AppId:     appId,
 		Class:     structName,
 		Func:      funcName,
-		Level:     level.ToString(),
+		Level:     level.String(),
 		Time:      &timeNow,
 		Status:    true,
 		Message:   message,
@@ -263,22 +247,20 @@ func writeEventLog(ctx context.Context, tenantId, structName, funcName string, l
 	return req.Id, err
 }
 
-//
-//  updateEventLog
-//  @Description: 更新事件日志
-//  @param ctx
-//  @param tenantId
-//  @param id
-//  @param className
-//  @param funcName
-//  @param level
-//  @param message
-//  @param eventId
-//  @param commandId
-//  @param pubAppId
-//  @return string
-//  @return error
-//
+// updateEventLog
+// @Description: 更新事件日志
+// @param ctx
+// @param tenantId
+// @param id
+// @param className
+// @param funcName
+// @param level
+// @param message
+// @param eventId
+// @param commandId
+// @param pubAppId
+// @return string
+// @return error
 func updateEventLog(ctx context.Context, tenantId, id, className, funcName string, level Level, message, eventId, commandId, pubAppId string) (string, error) {
 	timeNow := time.Now()
 	req := &WriteEventLogRequest{
@@ -287,7 +269,7 @@ func updateEventLog(ctx context.Context, tenantId, id, className, funcName strin
 		AppId:    appId,
 		Class:    className,
 		Func:     funcName,
-		Level:    level.ToString(),
+		Level:    level.String(),
 		Time:     &timeNow,
 		Status:   true,
 		Message:  message,
@@ -300,17 +282,15 @@ func updateEventLog(ctx context.Context, tenantId, id, className, funcName strin
 	return req.Id, err
 }
 
-//
-//  getEventLogByAppIdAndCommandId
-//  @Description: 按AppId与CommandId获取事件日志
-//  @param ctx
-//  @param tenantId
-//  @param appId
-//  @param commandId
-//  @return *[]EventLogDto
-//  @return error
-//
-func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, commandId string) (*[]EventLogDto, error) {
+// getEventLogByAppIdAndCommandId
+// @Description: 按AppId与CommandId获取事件日志
+// @param ctx
+// @param tenantId
+// @param appId
+// @param commandId
+// @return *[]EventLogDto
+// @return error
+func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, commandId string) ([]*EventLogDto, error) {
 	req := &GetEventLogByCommandIdRequest{
 		TenantId:  tenantId,
 		AppId:     appId,
@@ -326,20 +306,21 @@ func getEventLogByAppIdAndCommandId(ctx context.Context, tenantId, appId, comman
 	return resp.Data, nil
 }
 
-//
-//  writeAppLog
-//  @Description: 写日志
-//  @param ctx  上下文
-//  @param tenantId 租户id
-//  @param id 日志id
-//  @param className 结构名称
-//  @param funcName 方法名称
-//  @param level 日志级别
-//  @param message 日志内容
-//  @return string 日志id
-//  @return error 错误
-//
+// writeAppLog
+// @Description: 写日志
+// @param ctx  上下文
+// @param tenantId 租户id
+// @param id 日志id
+// @param className 结构名称
+// @param funcName 方法名称
+// @param level 日志级别
+// @param message 日志内容
+// @return string 日志id
+// @return error 错误
 func writeAppLog(ctx context.Context, tenantId, className, funcName string, level Level, message string) (string, error) {
+	if log == nil {
+		return "", errors.New("parameter level is nil")
+	}
 	if level < log.GetLevel() {
 		return "", nil
 	}
@@ -352,7 +333,7 @@ func writeAppLog(ctx context.Context, tenantId, className, funcName string, leve
 		AppId:    appId,
 		Class:    className,
 		Func:     funcName,
-		Level:    level.ToString(),
+		Level:    level.String(),
 		Time:     &timeNow,
 		Status:   true,
 		Message:  message,
@@ -364,7 +345,7 @@ func writeAppLog(ctx context.Context, tenantId, className, funcName string, leve
 		"appId":    appId,
 		"class":    className,
 		"func":     funcName,
-		"level":    level.ToString(),
+		"level":    level.String(),
 		"time":     &timeNow,
 		"status":   true,
 		"message":  message,
@@ -376,19 +357,17 @@ func writeAppLog(ctx context.Context, tenantId, className, funcName string, leve
 	return req.Id, err
 }
 
-//
-//  updateAppLog
-//  @Description: 更新日志
-//  @param ctx  上下文
-//  @param tenantId 租户id
-//  @param id 日志id
-//  @param className 结构名称
-//  @param funcName 方法名称
-//  @param level 日志级别
-//  @param message 日志内容
-//  @return *UpdateAppLogRequest 更新结果
-//  @return error 错误
-//
+// updateAppLog
+// @Description: 更新日志
+// @param ctx  上下文
+// @param tenantId 租户id
+// @param id 日志id
+// @param className 结构名称
+// @param funcName 方法名称
+// @param level 日志级别
+// @param message 日志内容
+// @return *UpdateAppLogRequest 更新结果
+// @return error 错误
 func updateAppLog(ctx context.Context, tenantId, id, className, funcName string, level Level, message string) (*UpdateAppLogRequest, error) {
 	timeNow := time.Now()
 	req := &UpdateAppLogRequest{
@@ -397,7 +376,7 @@ func updateAppLog(ctx context.Context, tenantId, id, className, funcName string,
 		AppId:    appId,
 		Class:    className,
 		Func:     funcName,
-		Level:    level.ToString(),
+		Level:    level.String(),
 		Time:     &timeNow,
 		Status:   true,
 		Message:  message,
@@ -407,10 +386,10 @@ func updateAppLog(ctx context.Context, tenantId, id, className, funcName string,
 }
 
 // RunFuncName
-//  @Description: 取得当前运行的方法名称
-//  @param skip 获取第几级方法名称
-//  @return string 方法名称
 //
+//	@Description: 取得当前运行的方法名称
+//	@param skip 获取第几级方法名称
+//	@return string 方法名称
 func RunFuncName(skip int) string {
 	pc := make([]uintptr, 1)
 	runtime.Callers(skip+1, pc)

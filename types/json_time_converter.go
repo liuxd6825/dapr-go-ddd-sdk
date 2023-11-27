@@ -40,9 +40,9 @@ func (c *jsonTimeConverter) converter(srcType, dstType interface{}) copier.TypeC
 		DstType: dstType,
 		Fn: func(src interface{}) (interface{}, error) {
 			switch srcType.(type) {
-			case *JSONDate:
+			case *JSONTime:
 				return c.pjsonToTime(src, srcType, dstType)
-			case JSONDate:
+			case JSONTime:
 				return c.jsonToTime(src, srcType, dstType)
 			case *time.Time:
 				return c.ptimeToJson(src, srcType, dstType)

@@ -42,21 +42,24 @@ func GetError(re any) (err error) {
 	return
 }
 
-func GetRecoverError(re any) (err error) {
-	err = nil
-	if re != nil {
-		switch re.(type) {
+func GetRecoverError(err error, rerr any) (resErr error) {
+	if err != nil {
+		return err
+	}
+	if rerr != nil {
+		switch rerr.(type) {
 		case string:
 			{
-				msg, _ := re.(string)
-				err = errors.New(msg)
+				msg, _ := rerr.(string)
+				resErr = errors.New(msg)
 			}
 		case error:
 			{
-				e, _ := re.(error)
-				err = e
+				if e, ok := rerr.(error); ok {
+					resErr = e
+				}
 			}
 		}
 	}
-	return
+	return resErr
 }

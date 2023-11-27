@@ -3,21 +3,13 @@ package ddd
 import (
 	"context"
 	"fmt"
-	dapr "github.com/liuxd6825/go-sdk/client"
+	dapr "github.com/liuxd6825/dapr-go-sdk/client"
 )
 
 type AggregateSnapshotActor struct {
 	aggregateType string
 	aggregateId   string
 	SaveSnapshot  func(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
-}
-
-func (a *AggregateSnapshotActor) Type() string {
-	return aggregateSnapshotActorType
-}
-
-func (a *AggregateSnapshotActor) ID() string {
-	return fmt.Sprintf("aggType(%s),aggId(%s)", a.aggregateType, a.aggregateId)
 }
 
 type SaveSnapshotRequest struct {
@@ -37,4 +29,12 @@ func NewAggregateSnapshotClient(client dapr.Client, aggregateType, aggregateId s
 	}
 	client.ImplActorClientStub(actor)
 	return actor
+}
+
+func (a *AggregateSnapshotActor) Type() string {
+	return aggregateSnapshotActorType
+}
+
+func (a *AggregateSnapshotActor) ID() string {
+	return fmt.Sprintf("aggType(%s),aggId(%s)", a.aggregateType, a.aggregateId)
 }

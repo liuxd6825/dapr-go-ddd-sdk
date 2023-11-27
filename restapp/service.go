@@ -11,11 +11,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/go-sdk/actor"
-	"github.com/liuxd6825/go-sdk/actor/config"
-	actorErr "github.com/liuxd6825/go-sdk/actor/error"
-	"github.com/liuxd6825/go-sdk/actor/runtime"
-	"github.com/liuxd6825/go-sdk/service/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-sdk/actor"
+	"github.com/liuxd6825/dapr-go-sdk/actor/config"
+	actorErr "github.com/liuxd6825/dapr-go-sdk/actor/error"
+	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
+	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
 )
 
@@ -24,7 +25,7 @@ type ServiceOptions struct {
 	HttpHost       string
 	HttpPort       int
 	LogLevel       applog.Level
-	EventStorages  map[string]ddd.EventStorage
+	EventStores    map[string]ddd.EventStore
 	ActorFactories []actor.Factory
 	Subscribes     []RegisterSubscribe
 	Controllers    []Controller
@@ -33,44 +34,79 @@ type ServiceOptions struct {
 	WebRootPath    string
 	SwaggerDoc     string
 }
+
 type service struct {
-	app            *iris.Application
-	appId          string
-	httpHost       string
-	httpPort       int
-	logLevel       applog.Level
-	daprDddClient  daprclient.DaprDddClient
-	eventStorages  map[string]ddd.EventStorage
-	actorFactories []actor.Factory
-	subscribes     []RegisterSubscribe
-	controllers    []Controller
-	eventTypes     []RegisterEventType
-	authToken      string
-	webRootPath    string
+	app                         *iris.Application
+	appId                       string
+	httpHost                    string
+	httpPort                    int
+	logLevel                    applog.Level
+	daprDddClient               daprclient.DaprDddClient
+	eventStores                 map[string]ddd.EventStore
+	actorFactories              []actor.Factory
+	subscribes                  []RegisterSubscribe
+	controllers                 []Controller
+	eventTypes                  []RegisterEventType
+	authToken                   string
+	webRootPath                 string
+	eventStoreDefaultPubsubName string // 默认事件存储器的名称
 }
 
-func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
-	panic("implement me")
+func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandler) error {
+	return nil
 }
 
-func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
-	panic("implement me")
-}
-
-func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
-	panic("implement me")
+func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
+	runtime.GetActorRuntimeInstance().RegisterActorFactoryContext(f, opts...)
 }
 
 func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
 	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
 }
 
+func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
+	eventStoreDefaultPubsubName := ""
+	es, ok := opts.EventStores[""]
+	if ok {
+		eventStoreDefaultPubsubName = es.GetPubsubName()
+	}
+
+	return &service{
+		httpPort:                    opts.HttpPort,
+		httpHost:                    opts.HttpHost,
+		appId:                       opts.AppId,
+		logLevel:                    opts.LogLevel,
+		daprDddClient:               daprDddClient,
+		eventStores:                 opts.EventStores,
+		actorFactories:              opts.ActorFactories,
+		subscribes:                  opts.Subscribes,
+		controllers:                 opts.Controllers,
+		eventTypes:                  opts.EventTypes,
+		authToken:                   opts.AuthToken,
+		webRootPath:                 opts.WebRootPath,
+		eventStoreDefaultPubsubName: eventStoreDefaultPubsubName,
+		app:                         iris.New(),
+	}
+}
+
+func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
+	return nil
+}
+
+func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
+	return nil
+}
+
+func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
+	return nil
+}
+
 func (s *service) Stop() error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) GracefulStop() error {
-	panic("implement me")
+	return nil
 }
 
 func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
@@ -80,27 +116,10 @@ func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Allow", "POST,OPTIONS")
 }
 
-func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
-	return &service{
-		httpPort:       opts.HttpPort,
-		httpHost:       opts.HttpHost,
-		appId:          opts.AppId,
-		logLevel:       opts.LogLevel,
-		daprDddClient:  daprDddClient,
-		eventStorages:  opts.EventStorages,
-		actorFactories: opts.ActorFactories,
-		subscribes:     opts.Subscribes,
-		controllers:    opts.Controllers,
-		eventTypes:     opts.EventTypes,
-		authToken:      opts.AuthToken,
-		webRootPath:    opts.WebRootPath,
-		app:            iris.New(),
-	}
-}
-
 func (s *service) Start() error {
 	app := s.app
 
+	//app.Use(GlobalJsonSerialization)
 	// register subscribe handler
 	app.Get("dapr/subscribe", s.subscribesHandler)
 
@@ -132,7 +151,7 @@ func (s *service) Start() error {
 	if s.subscribes != nil {
 		for _, subscribe := range s.subscribes {
 			if subscribe != nil {
-				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler()); err != nil {
+				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler(), subscribe.GetInterceptor()); err != nil {
 					return err
 				}
 			}
@@ -158,9 +177,9 @@ func (s *service) Start() error {
 	}
 
 	// 注册事件存储器
-	if s.eventStorages != nil {
-		for key, es := range s.eventStorages {
-			ddd.RegisterEventStorage(key, es)
+	if s.eventStores != nil {
+		for key, es := range s.eventStores {
+			ddd.RegisterEventStore(key, es)
 		}
 	}
 	if err := ddd.StartSubscribeHandlers(); err != nil {
@@ -172,8 +191,8 @@ func (s *service) Start() error {
 			s.RegisterActorImplFactory(f)
 		}
 	}
-
-	if err := app.Run(iris.Addr(fmt.Sprintf("%s:%d", s.httpHost, s.httpPort))); err != nil {
+	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
+	if err := app.Run(iris.Addr(addr)); err != nil {
 		return err
 	}
 	return nil
@@ -194,6 +213,7 @@ func (s *service) actorMethodInvokeHandler(ctx *context.Context) {
 		ctx.StatusCode(http.StatusInternalServerError)
 		return
 	}
+
 	ctx.StatusCode(http.StatusOK)
 	_, _ = ctx.Write(rspData)
 }
@@ -250,9 +270,14 @@ func (s *service) actorDeactivateHandler(ctx *context.Context) {
 	ctx.StatusCode(http.StatusOK)
 }
 
-func (s *service) subscribesHandler(ctx *context.Context) {
-	data := ddd.GetSubscribes()
-	_, _ = ctx.JSON(data)
+func (s *service) subscribesHandler(ictx *context.Context) {
+	subscribes := ddd.GetSubscribes()
+	_ = ictx.JSON(subscribes)
+
+	ctx := NewContext(ictx)
+	for _, s := range subscribes {
+		logs.Infof(ctx, "subscribe  pubsubName:%s,  topic:%s,  route:%s,  metadata:%s", s.PubsubName, s.Topic, s.Route, s.Metadata)
+	}
 }
 
 func (s *service) eventTypesHandler(ctx *context.Context) {
@@ -276,16 +301,14 @@ func (s *service) actorConfigHandler(ctx *context.Context) {
 	}
 }
 
-//
 // registerQueryHandler
 // @Description: 注册领域事件控制器
 // @param handlers
 // @return error
-//
 func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
-		err := ddd.RegisterQueryHandler(h)
+		err := ddd.RegisterQueryHandler(h, s.eventStoreDefaultPubsubName)
 		if err != nil {
 			return err
 		}
@@ -293,39 +316,36 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	return nil
 }
 
-//
 // registerSubscribeHandler
 // @Description: 新建领域事件控制器
 // @param subscribes
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
-//
-func (s *service) registerSubscribeHandler(subscribes *[]ddd.Subscribe, queryEventHandler ddd.QueryEventHandler) (ddd.SubscribeHandler, error) {
-	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, func(sh ddd.SubscribeHandler, subscribe ddd.Subscribe) (err error) {
+func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
+	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
-			if e := errors.GetRecoverError(recover()); e != nil {
-				err = e
-			}
+			err = errors.GetRecoverError(err, recover())
 		}()
 		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
-			if err = sh.CallQueryEventHandler(c, c); err != nil {
+			ctx := logs.NewContext(c, _logger)
+			if err = sh.Handler(ctx, c); err != nil {
 				c.SetErr(err)
 			}
 		})
 		return err
-	})
-	if err := ddd.RegisterQueryHandler(handler); err != nil {
+	}
+
+	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, subscribesHandler, interceptors)
+	if err := ddd.RegisterQueryHandler(handler, s.eventStoreDefaultPubsubName); err != nil {
 		return nil, err
 	}
 	return handler, nil
 }
 
-//
 // RegisterRestController
 // @Description: 注册UserInterface层Controller
 // @param relativePath
 // @param configurators
-//
 func (s *service) registerController(relativePath string, controllers ...Controller) {
 	if controllers == nil && len(controllers) == 0 {
 		return
@@ -335,14 +355,17 @@ func (s *service) registerController(relativePath string, controllers ...Control
 			app.Handle(c)
 		}
 	}
+	for _, c := range controllers {
+		if reg, ok := c.(RegisterHandler); ok {
+			reg.RegisterHandler(s.app)
+		}
+	}
 	mvc.Configure(s.app.Party(relativePath), configurators)
 }
 
-//
 // registerSwagger
 // @Description:
 // @receiver s
-//
 func (s *service) registerSwagger() {
 	url := fmt.Sprintf("http://%s:%d/swagger/doc.json", "localhost", s.httpPort)
 	cfg := &swagger.Config{

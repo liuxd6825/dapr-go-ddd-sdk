@@ -17,6 +17,13 @@ func getFindOptions(opts ...ddd_repository.Options) *options.FindOptions {
 	return findOneOptions
 }
 
+func getAggregateOptions(opts ...ddd_repository.Options) *options.AggregateOptions {
+	opt := ddd_repository.NewOptions().Merge(opts...)
+	options := &options.AggregateOptions{}
+	options.MaxTime = opt.GetTimeout()
+	return options
+}
+
 func getFindOneOptions(opts ...ddd_repository.Options) *options.FindOneOptions {
 	opt := ddd_repository.NewOptions().Merge(opts...)
 	findOneOptions := &options.FindOneOptions{}
@@ -25,8 +32,13 @@ func getFindOneOptions(opts ...ddd_repository.Options) *options.FindOneOptions {
 }
 
 func getUpdateOptions(opts ...ddd_repository.Options) *options.UpdateOptions {
-	updateOptions := &options.UpdateOptions{}
-	return updateOptions
+	opt := &options.UpdateOptions{}
+	for _, o := range opts {
+		if o.GetUpsert() != nil {
+			opt.Upsert = o.GetUpsert()
+		}
+	}
+	return opt
 }
 
 func getInsertOneOptions(opts ...ddd_repository.Options) *options.InsertOneOptions {

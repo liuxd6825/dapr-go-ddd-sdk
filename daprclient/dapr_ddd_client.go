@@ -6,8 +6,13 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	dapr_sdk_client "github.com/liuxd6825/go-sdk/client"
+	daprsdkclient "github.com/liuxd6825/dapr-go-sdk/client"
+	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc/status"
+	"strings"
+
+	// "google.golang.org/grpc/internal/status"
 	"net"
 	"net/http"
 	"strconv"
@@ -31,15 +36,25 @@ type DaprDddClient interface {
 	HttpGet(ctx context.Context, url string) *Response
 	HttpPost(ctx context.Context, url string, reqData interface{}) *Response
 	HttpPut(ctx context.Context, url string, reqData interface{}) *Response
+	HttpDelete(ctx context.Context, url string, reqData interface{}) *Response
+
+	WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (resp *WriteEventLogResponse, resErr error)
+	UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (resp *UpdateEventLogResponse, resErr error)
+	GetEventLogByCommandId(ctx context.Context, req *GetEventLogByCommandIdRequest) (resp *GetEventLogByCommandIdResponse, resErr error)
+	WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error)
+	UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error)
+	GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error)
+
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error)
-	CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error)
-	DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error)
+	Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error)
+	Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error)
+
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error)
 	GetEvents(ctx context.Context, req *GetEventsRequest) (*GetEventsResponse, error)
-	DaprClient() (dapr_sdk_client.Client, error)
+	DaprClient() (daprsdkclient.Client, error)
 }
 
 var _daprClient DaprDddClient
@@ -57,7 +72,7 @@ type daprDddClient struct {
 	httpPort   int64
 	grpcPort   int64
 	httpClient *http.Client
-	grpcClient dapr_sdk_client.Client
+	grpcClient daprsdkclient.Client
 }
 
 type Option func(options *DaprHttpOptions)
@@ -71,13 +86,13 @@ func newHttpOptions() *DaprHttpOptions {
 	return options
 }
 
-func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Option) (DaprDddClient, error) {
+func NewDaprDddClient(ctx context.Context, host string, httpPort int64, grpcPort int64, opts ...Option) (DaprDddClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)
 	}
 
-	grpcClient, err := newDaprClient(host, grpcPort)
+	grpcClient, err := newDaprClient(ctx, host, grpcPort)
 	if err != nil {
 		return nil, err
 	}
@@ -89,9 +104,12 @@ func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Optio
 				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			MaxIdleConns:        options.MaxIdleConns,
-			MaxIdleConnsPerHost: options.MaxIdleConnsPerHost,
-			IdleConnTimeout:     time.Second * time.Duration(options.IdleConnTimeout),
+			MaxIdleConns:           options.MaxIdleConns,
+			MaxIdleConnsPerHost:    options.MaxIdleConnsPerHost,
+			IdleConnTimeout:        time.Second * time.Duration(options.IdleConnTimeout),
+			MaxResponseHeaderBytes: 1024,
+			WriteBufferSize:        1024 * 80,
+			ReadBufferSize:         1024 * 80,
 		},
 	}
 
@@ -104,16 +122,16 @@ func NewDaprDddClient(host string, httpPort int64, grpcPort int64, opts ...Optio
 	}, nil
 }
 
-func newDaprClient(host string, grpcPort int64) (dapr_sdk_client.Client, error) {
+func newDaprClient(ctx context.Context, host string, grpcPort int64) (daprsdkclient.Client, error) {
 	// 三次试错创建daprClient
 	port := strconv.FormatInt(grpcPort, 10)
-	var grpcClient dapr_sdk_client.Client
+	var grpcClient daprsdkclient.Client
 	var err error
 	var waitSecond time.Duration = 5
 	addr := fmt.Sprintf("%s:%s", host, port)
 
 	for i := 0; i < 4; i++ {
-		if grpcClient, err = dapr_sdk_client.NewClientWithAddress(addr); err != nil {
+		if grpcClient, err = daprsdkclient.NewClientWithAddressContext(ctx, addr); err != nil {
 			log.Infoln(fmt.Sprintf("dapr client connection error, address=%s", addr), err)
 			continue
 		}
@@ -130,13 +148,13 @@ func newDaprClient(host string, grpcPort int64) (dapr_sdk_client.Client, error) 
 	return grpcClient, nil
 }
 
-func (c *daprDddClient) tryCall(fun func() error, tryCount int, waitSecond time.Duration) error {
+func (c *daprDddClient) tryCall(ctx context.Context, fun func() error, tryCount int, waitSecond time.Duration) error {
 	var err error
 	for i := 0; i < tryCount; i++ {
 		err = fun()
 		if errors.IsGrpcConnError(err) {
 			time.Sleep(time.Second * waitSecond)
-			grpcClient, err2 := newDaprClient(c.host, c.grpcPort)
+			grpcClient, err2 := newDaprClient(ctx, c.host, c.grpcPort)
 			if err2 != nil {
 				return err2
 			} else {
@@ -149,33 +167,30 @@ func (c *daprDddClient) tryCall(fun func() error, tryCount int, waitSecond time.
 	return err
 }
 
-func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error) {
-	var err error
+func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (res interface{}, err error) {
 	defer func() {
-		if e := errors.GetRecoverError(recover()); e != nil {
-			err = e
-		}
+		err = errors.GetRecoverError(err, recover())
 	}()
-	var respBytes []byte
 
+	var respBytes []byte
 	if request != nil {
-		reqBytes, err := json.Marshal(request)
-		if err != nil {
+		reqBytes, err1 := json.Marshal(request)
+		if err1 != nil {
 			return nil, ddd_utils.NewAppError(appID, err)
 		}
-		content := &dapr_sdk_client.DataContent{
+		content := &daprsdkclient.DataContent{
 			ContentType: "application/json",
 			Data:        reqBytes,
 		}
-		err = c.tryCall(func() error {
+		err = c.tryCall(ctx, func() error {
 			respBytes, err = c.grpcClient.InvokeMethodWithContent(ctx, appID, methodName, verb, content)
-			return err
+			return c.getError(err)
 		}, 3, 1)
 
 	} else {
-		err = c.tryCall(func() error {
+		err = c.tryCall(ctx, func() error {
 			respBytes, err = c.grpcClient.InvokeMethod(ctx, appID, methodName, verb)
-			return err
+			return c.getError(err)
 		}, 3, 1)
 	}
 	if err != nil {
@@ -190,7 +205,57 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 	}
 	return nil, nil
 }
+func (c *daprDddClient) getError(err error) error {
+	if err == nil {
+		return err
+	}
+	st, ok := status.FromError(err)
+	if ok {
+		msg := ""
+		details := st.Proto().GetDetails()
+		if len(details) > 0 {
+			for _, item := range details {
+				value := string(item.Value)
+				value = strings.ReplaceAll(value, "\n", "")
+				msg = msg + value + "\n"
+			}
+			return errors.New(msg)
+		}
+	}
+	return err
+}
+func (c *daprDddClient) Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error) {
+	resp := &CommitResponse{}
+	in := &pb.CommitDomainEventsRequest{
+		TenantId:  req.TenantId,
+		SessionId: req.SessionId,
+	}
+	out, err := c.grpcClient.CommitDomainEvents(ctx, in)
+	if out != nil {
+		resp.Headers = NewResponseHeadersNil()
+		resp.Headers.SetStatus(int32(out.Headers.Status))
+		resp.Headers.SetValues(out.Headers.Values)
+		resp.Headers.SetMessage(out.Headers.Message)
+	}
+	return resp, err
+}
 
-func (c *daprDddClient) DaprClient() (dapr_sdk_client.Client, error) {
+func (c *daprDddClient) Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error) {
+	resp := &RollbackResponse{}
+	in := &pb.RollbackDomainEventsRequest{
+		TenantId:  req.TenantId,
+		SessionId: req.SessionId,
+	}
+	out, err := c.grpcClient.RollbackDomainEvents(ctx, in)
+	if out != nil {
+		resp.Headers = NewResponseHeadersNil()
+		resp.Headers.SetStatus(int32(out.Headers.Status))
+		resp.Headers.SetValues(out.Headers.Values)
+		resp.Headers.SetMessage(out.Headers.Message)
+	}
+	return resp, err
+}
+
+func (c *daprDddClient) DaprClient() (daprsdkclient.Client, error) {
 	return c.grpcClient, nil
 }

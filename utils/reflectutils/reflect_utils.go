@@ -123,13 +123,14 @@ func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func
 	}
 
 	sourceSliceValue := reflect.ValueOf(sourceSlice)
-	if sourceSliceValue.Kind() == reflect.Ptr {
-		//sourceSliceValue = sourceSliceValue.Elem()
-	}
-	if sourceSliceValue.Kind() == reflect.Slice {
-		println("sourceSlice reflect.Slice")
-		//sourceSliceValue = sourceSliceValue.Elem()
-	}
+	/*	if sourceSliceValue.Kind() == reflect.Ptr {
+			//sourceSliceValue = sourceSliceValue.Elem()
+		}
+		if sourceSliceValue.Kind() == reflect.Slice {
+			println("sourceSlice reflect.Slice")
+			//sourceSliceValue = sourceSliceValue.Elem()
+		}
+	*/
 
 	count := sourceSliceValue.Len()
 	for i := 0; i < count; i++ {

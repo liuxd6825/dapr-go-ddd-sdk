@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type RsqlProcess interface {
@@ -24,61 +23,96 @@ type RsqlProcess interface {
 	OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value)
 	OnIn(name string, value interface{}, rValue rsql.Value)
 	OnNotIn(name string, value interface{}, rValue rsql.Value)
+	OnContains(name string, value interface{}, rValue rsql.Value)
+	OnNotContains(name string, value interface{}, rValue rsql.Value)
+
 	GetSqlWhere(tenantId string) interface{}
 	GetFilter(tenantId string) interface{}
+
+	OnIsNull(name string, value interface{}, rValue rsql.Value)
+	OnNotIsNull(name string, value interface{}, rValue rsql.Value)
+	OnStart(name string, value interface{}, rValue rsql.Value)
+	OnEnd(name string, value interface{}, rValue rsql.Value)
+
 }
 
 type rsqlProcess struct {
-	str string
+	str     string
+	dataKey string
 }
 
-func NewRSqlProcess() RsqlProcess {
-	return &rsqlProcess{}
+func NewRSqlProcess(dataKey string) RsqlProcess {
+	return &rsqlProcess{dataKey: dataKey}
 }
 
 func (p *rsqlProcess) OnNotEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s != (%v)", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s != (%v)", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnLike(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s like (%v)", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s like (%v)", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnNotLike(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s not like %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s not like %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnGreaterThan(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s>%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s>%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s>=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s>=%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnLessThan(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s<%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s<%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s <= %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s <= %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnIn(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s in %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s in %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnNotIn(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s not in %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s not in %v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) OnEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s=%v", p.str, p.dataKey, name, value)
 }
 
 func (p *rsqlProcess) NotEquals(name string, value interface{}, rValue rsql.Value) {
-	p.str = fmt.Sprintf("%s n.%s=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s.%s=%v", p.str, p.dataKey, name, value)
 }
+
+func (p *rsqlProcess) OnContains(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s like '*%v'", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnNotContains(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s not like '*%v*'", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnIsNull(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s is null", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnNotIsNull(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s is not null", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnStart(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s like '*%s", p.str, p.dataKey, name, value)
+}
+
+func (p *rsqlProcess) OnEnd(name string, value interface{}, rValue rsql.Value) {
+	p.str = fmt.Sprintf("%s %s.%s like '%s*", p.str, p.dataKey, name, value)
+}
+
 
 func (p *rsqlProcess) OnAndItem() {
 	p.str = fmt.Sprintf("%s and ", p.str)
@@ -111,12 +145,17 @@ func (p *rsqlProcess) Print() {
 	fmt.Print(p.str)
 }
 
-func getSqlWhere(tenantId, filter string) (string, error) {
-	p := NewRSqlProcess()
+func getNeo4jWhere(tenantId string, dataKey string, filter string) (string, error) {
+	p := NewRSqlProcess(dataKey)
+
 	if err := ParseProcess(filter, p); err != nil {
 		return "", err
 	}
-	return p.GetSqlWhere(tenantId).(string), nil
+	where := p.GetSqlWhere(tenantId).(string)
+	if len(where) > 0 {
+		where = "WHERE " + where
+	}
+	return where, nil
 }
 
 func ParseProcess(input string, process RsqlProcess) error {
@@ -161,41 +200,41 @@ func parseRSqlProcess(expr rsql.Expression, process rsql.Process) error {
 	case rsql.NotEqualsComparison:
 		ex, _ := expr.(rsql.NotEqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnNotEquals(name, value, ex.Comparison.Val)
 		break
 	case rsql.EqualsComparison:
 		ex, _ := expr.(rsql.EqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnEquals(name, value, ex.Comparison.Val)
 		break
 	case rsql.LikeComparison:
 		ex, _ := expr.(rsql.LikeComparison)
-		name := stringutils.AsFieldName(ex.Comparison.Identifier.Val)
+		name := getFieldName(ex.Comparison.Identifier.Val)
 		value := getValue(ex.Comparison.Val)
 		process.OnLike(name, value, ex.Comparison.Val)
 		break
 	case rsql.NotLikeComparison:
 		ex, _ := expr.(rsql.NotLikeComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnNotLike(name, value, ex.Comparison.Val)
 		break
 	case rsql.GreaterThanComparison:
 		ex, _ := expr.(rsql.GreaterThanComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnGreaterThan(name, value, ex.Comparison.Val)
 		break
 	case rsql.GreaterThanOrEqualsComparison:
 		ex, _ := expr.(rsql.GreaterThanOrEqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnGreaterThanOrEquals(name, value, ex.Comparison.Val)
 		break
@@ -208,21 +247,21 @@ func parseRSqlProcess(expr rsql.Expression, process rsql.Process) error {
 	case rsql.LessThanOrEqualsComparison:
 		ex, _ := expr.(rsql.LessThanOrEqualsComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnLessThanOrEquals(name, value, ex.Comparison.Val)
 		break
 	case rsql.InComparison:
 		ex, _ := expr.(rsql.InComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnIn(name, value, ex.Comparison.Val)
 		break
 	case rsql.NotInComparison:
 		ex, _ := expr.(rsql.NotInComparison)
 		name := ex.Comparison.Identifier.Val
-		name = stringutils.AsFieldName(name)
+		name = getFieldName(name)
 		value := getValue(ex.Comparison.Val)
 		process.OnNotIn(name, value, ex.Comparison.Val)
 		break
@@ -240,14 +279,18 @@ func getValue(val rsql.Value) interface{} {
 		value = val.(rsql.BooleanValue).Value
 		break
 	case rsql.StringValue:
-		value = fmt.Sprintf(`"%v"`, val.(rsql.StringValue).Value)
+		value = fmt.Sprintf(`'%v'`, val.(rsql.StringValue).Value)
 		break
 	case rsql.DateTimeValue:
-		value = fmt.Sprintf(`"%v"`, val.(rsql.DateTimeValue).Value)
+		value = fmt.Sprintf(`'%v'`, val.(rsql.DateTimeValue).Value)
 		break
 	case rsql.DoubleValue:
 		value = val.(rsql.DoubleValue).Value
 		break
 	}
 	return value
+}
+
+func getFieldName(name string) string {
+	return name
 }

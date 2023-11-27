@@ -20,6 +20,10 @@ const (
 	RightParenToken      = TokenType("RightParenToken")
 	OrToken              = TokenType("OrToken")
 	AndToken             = TokenType("AndToken")
+	ContainsToken        = TokenType("ContainsToken")
+	NotContainsToken     = TokenType("NotContainsToken")
+	IsNullToken          = TokenType("IsNullToken")
+	NotIsNullToken       = TokenType("NotIsNullToken")
 	EqualsToken          = TokenType("EqualsToken")
 	NotEqualsToken       = TokenType("NotEqualsToken")
 	LikeToken            = TokenType("LikeToken")
@@ -31,6 +35,8 @@ const (
 	InToken              = TokenType("InToken")
 	NotInToken           = TokenType("NotInToken")
 	CommaToken           = TokenType("CommaToken")
+	StartToken           = TokenType("StartToken")
+	EndToken             = TokenType("EndToken")
 	EOFToken             = TokenType("EOFToken")
 )
 
@@ -140,7 +146,7 @@ func (t *Lexer) processOperator() Token {
 
 func (t *Lexer) processNumber() Token {
 	idx := t.pos
-	if t.isDigit(idx) {
+	if t.isDigit(idx) || (t.charAt(idx) == '-' && t.isDigit(idx+1)) {
 		typ := IntegerToken
 		idx++
 		process := func() {
@@ -241,12 +247,8 @@ func (t *Lexer) processReserved() Token {
 		return t.generateToken(RightParenToken, idx+1)
 	} else if t.isString(idx, ",") {
 		return t.generateToken(CommaToken, idx+1)
-	} else if t.isString(idx, "!=~") {
-		return t.generateToken(NotLikeToken, idx+3)
 	} else if t.isString(idx, "!=") {
 		return t.generateToken(NotEqualsToken, idx+2)
-	} else if t.isString(idx, "==~") {
-		return t.generateToken(LikeToken, idx+3)
 	} else if t.isString(idx, "==") {
 		return t.generateToken(EqualsToken, idx+2)
 	} else if t.isString(idx, ">=") {
@@ -261,6 +263,24 @@ func (t *Lexer) processReserved() Token {
 		return t.generateToken(InToken, idx+4)
 	} else if t.isString(idx, "=out=") {
 		return t.generateToken(NotInToken, idx+5)
+	} else if t.isString(idx, "=contains=") {
+		return t.generateToken(ContainsToken, idx+10)
+	} else if t.isString(idx, "=!contains=") {
+		return t.generateToken(NotContainsToken, idx+11)
+	} else if t.isString(idx, "==~") || t.isString(idx, "~==") {
+		return t.generateToken(LikeToken, idx+3)
+	} else if t.isString(idx, "~=") || t.isString(idx, "=~") {
+		return t.generateToken(LikeToken, idx+2)
+	} else if t.isString(idx, "!=~") || t.isString(idx, "!~=") {
+		return t.generateToken(NotLikeToken, idx+3)
+	} else if t.isString(idx, "=null=") {
+		return t.generateToken(IsNullToken, idx+6)
+	} else if t.isString(idx, "=!null=") {
+		return t.generateToken(NotIsNullToken, idx+7)
+	} else if t.isString(idx, "=start=") {
+		return t.generateToken(IsNullToken, idx+7)
+	} else if t.isString(idx, "=end=") {
+		return t.generateToken(NotIsNullToken, idx+5)
 	}
 	return unknownToken()
 }
