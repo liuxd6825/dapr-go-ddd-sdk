@@ -61,7 +61,7 @@ func InitMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 		}
 		config := &ddd_mongodb.Config{
 			AppName:                appName,
-			Host:                   c.Host,
+			Host:                   strings.ReplaceAll(c.Host, " ", ""),
 			DatabaseName:           c.Database,
 			UserName:               c.UserName,
 			Password:               c.Password,
