@@ -3,7 +3,7 @@ package readexcel
 type Review struct {
 	Columns   []string     `json:"columns"`
 	Items     []ReviewItem `json:"items"`
-	Sheets    []Sheet      `json:"sheets"`
+	Sheets    []*Sheet     `json:"sheets"`
 	OpenSheet string       `json:"openSheet"`
 }
 
@@ -23,6 +23,6 @@ func (r *Review) AddColumns(column ...string) {
 	r.Columns = append(r.Columns, column...)
 }
 
-func (r *Review) AddSheetName(sheet ...Sheet) {
+func (r *Review) AddSheetName(sheet ...*Sheet) {
 	r.Sheets = append(r.Sheets, sheet...)
 }

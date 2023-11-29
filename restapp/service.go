@@ -1,6 +1,7 @@
 package restapp
 
 import (
+	context2 "context"
 	"fmt"
 	"github.com/iris-contrib/swagger/v12"
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
@@ -14,7 +15,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/actor/config"
-	actorErr "github.com/liuxd6825/dapr-go-sdk/actor/error"
+	actorError "github.com/liuxd6825/dapr-go-sdk/actor/error"
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
@@ -26,7 +27,7 @@ type ServiceOptions struct {
 	HttpPort       int
 	LogLevel       applog.Level
 	EventStores    map[string]ddd.EventStore
-	ActorFactories []actor.Factory
+	ActorFactories []actor.FactoryContext
 	Subscribes     []RegisterSubscribe
 	Controllers    []Controller
 	EventTypes     []RegisterEventType
@@ -43,25 +44,13 @@ type service struct {
 	logLevel                    applog.Level
 	daprDddClient               daprclient.DaprDddClient
 	eventStores                 map[string]ddd.EventStore
-	actorFactories              []actor.Factory
+	actorFactories              []actor.FactoryContext
 	subscribes                  []RegisterSubscribe
 	controllers                 []Controller
 	eventTypes                  []RegisterEventType
 	authToken                   string
 	webRootPath                 string
 	eventStoreDefaultPubsubName string // 默认事件存储器的名称
-}
-
-func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandler) error {
-	return nil
-}
-
-func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
-	runtime.GetActorRuntimeInstance().RegisterActorFactoryContext(f, opts...)
-}
-
-func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
-	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
 }
 
 func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
@@ -89,34 +78,13 @@ func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) co
 	}
 }
 
-func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
-	return nil
-}
-
-func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
-	return nil
-}
-
-func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
-	return nil
-}
-
-func (s *service) Stop() error {
-	return nil
-}
-
-func (s *service) GracefulStop() error {
-	return nil
-}
-
-func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
-	w.Header().Set("Allow", "POST,OPTIONS")
-}
-
 func (s *service) Start() error {
+	ctx := NewLoggerContext(context2.Background())
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			logs.Infof(ctx, "func=restapp.service.Start(), error=%v", err.Error())
+		}
+	}()
 	app := s.app
 
 	//app.Use(GlobalJsonSerialization)
@@ -188,7 +156,7 @@ func (s *service) Start() error {
 
 	if s.actorFactories != nil {
 		for _, f := range s.actorFactories {
-			s.RegisterActorImplFactory(f)
+			s.RegisterActorImplFactoryContext(f)
 		}
 	}
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
@@ -198,85 +166,195 @@ func (s *service) Start() error {
 	return nil
 }
 
-// register actor method invoke handler
-func (s *service) actorMethodInvokeHandler(ctx *context.Context) {
-	actorType := ctx.Params().Get("actorType")
-	actorId := ctx.Params().Get("actorId")
-	methodName := ctx.Params().Get("methodName")
-	reqData, _ := ctx.GetBody()
-	rspData, err := runtime.GetActorRuntimeInstance().InvokeActorMethod(actorType, actorId, methodName, reqData)
-	if err == actorErr.ErrActorTypeNotFound {
-		ctx.StatusCode(http.StatusNotFound)
-		return
-	}
-	if err != actorErr.Success {
-		ctx.StatusCode(http.StatusInternalServerError)
-		return
-	}
+func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandler) error {
+	return nil
+}
 
-	ctx.StatusCode(http.StatusOK)
-	_, _ = ctx.Write(rspData)
+func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
+	panic("restapp.service.RegisterActorImplFactory()")
+}
+
+func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
+	runtime.GetActorRuntimeInstanceContext().RegisterActorFactory(f, opts...)
+}
+
+func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
+	return nil
+}
+
+func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
+	return nil
+}
+
+func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
+	return nil
+}
+
+func (s *service) Stop() error {
+	return nil
+}
+
+func (s *service) GracefulStop() error {
+	return nil
+}
+
+// register actor method invoke handler
+func (s *service) actorMethodInvokeHandler(ictx *context.Context) {
+	const funLog = "restapp.service.actorMethodInvokeHandler()"
+	ctx := NewContext(ictx)
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			ictx.StatusCode(http.StatusInternalServerError)
+			logs.Infof(ctx, "func=%s, error=%v", funLog, err.Error())
+		}
+	}()
+
+	actorType := ictx.Params().Get("actorType")
+	actorId := ictx.Params().Get("actorId")
+	methodName := ictx.Params().Get("methodName")
+	reqData, _ := ictx.GetBody()
+	rspData, actorErr := runtime.GetActorRuntimeInstanceContext().InvokeActorMethod(ctx, actorType, actorId, methodName, reqData)
+	if actorErr != actorError.Success {
+		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, methodName=%v, actorError=%v", funLog, actorType, actorId, methodName, actorErr)
+	}
+	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
+	_, _ = ictx.Write(rspData)
 }
 
 // register actor reminder invoke handler
-func (s *service) actorReminderInvokeHandler(ctx *context.Context) {
-	actorType := ctx.Params().Get("actorType")
-	actorID := ctx.Params().Get("actorId")
-	reminderName := ctx.Params().Get("reminderName")
-	reqData, _ := ctx.GetBody()
-	err := runtime.GetActorRuntimeInstance().InvokeReminder(actorType, actorID, reminderName, reqData)
-	if err == actorErr.ErrActorTypeNotFound {
-		ctx.StatusCode(http.StatusNotFound)
-		return
+func (s *service) actorReminderInvokeHandler(ictx *context.Context) {
+	const funLog = "restapp.service.actorReminderInvokeHandler()"
+	ctx := NewContext(ictx)
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			ictx.StatusCode(http.StatusInternalServerError)
+			logs.Infof(ctx, "func=%s, error=%v", funLog, err.Error())
+		}
+	}()
+	actorType := ictx.Params().Get("actorType")
+	actorId := ictx.Params().Get("actorId")
+	reminderName := ictx.Params().Get("reminderName")
+	reqData, _ := ictx.GetBody()
+	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeReminder(ctx, actorType, actorId, reminderName, reqData)
+	if actorErr != actorError.Success {
+		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, reminderName=%v, actorError=%v", funLog, actorType, actorId, reminderName, actorErr)
 	}
-	if err != actorErr.Success {
-		ctx.StatusCode(http.StatusInternalServerError)
-		return
-	}
-	ctx.StatusCode(http.StatusOK)
+	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
 }
 
 // register actor timer invoke handler
-func (s *service) actorTimerInvokeHandler(ctx *context.Context) {
-	actorType := ctx.Params().Get("actorType")
-	actorID := ctx.Params().Get("actorId")
-	timerName := ctx.Params().Get("timerName")
-	reqData, _ := ctx.GetBody()
-	err := runtime.GetActorRuntimeInstance().InvokeTimer(actorType, actorID, timerName, reqData)
-	if err == actorErr.ErrActorTypeNotFound {
-		ctx.StatusCode(http.StatusNotFound)
-		return
+func (s *service) actorTimerInvokeHandler(ictx *context.Context) {
+	const funLog = "restapp.service.actorTimerInvokeHandler()"
+	ctx := NewContext(ictx)
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			ictx.StatusCode(http.StatusInternalServerError)
+			logs.Errorf(ctx, "func=%s, subscribeCount=%v", funLog, err.Error())
+		}
+	}()
+	actorType := ictx.Params().Get("actorType")
+	actorID := ictx.Params().Get("actorId")
+	timerName := ictx.Params().Get("timerName")
+	reqData, _ := ictx.GetBody()
+	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeTimer(ctx, actorType, actorID, timerName, reqData)
+	if actorErr != actorError.Success {
+		logs.Errorf(ctx, "func=%s,  actorType=%v, actorId=%v, timerName=%v, reqData=%v, actorError=%v", funLog, actorType, actorID, timerName, reqData, actorErr)
 	}
-	if err != actorErr.Success {
-		ctx.StatusCode(http.StatusInternalServerError)
-		return
-	}
-	ctx.StatusCode(http.StatusOK)
+	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
 }
 
 // register deactivate actor handler
-func (s *service) actorDeactivateHandler(ctx *context.Context) {
-	actorType := ctx.Params().Get("actorType")
-	actorID := ctx.Params().Get("actorId")
-	err := runtime.GetActorRuntimeInstance().Deactivate(actorType, actorID)
-	if err == actorErr.ErrActorTypeNotFound || err == actorErr.ErrActorIDNotFound {
-		ctx.StatusCode(http.StatusNotFound)
-		return
+func (s *service) actorDeactivateHandler(ictx *context.Context) {
+	const funLog = "restapp.service.actorDeactivateHandler()"
+	ctx := NewContext(ictx)
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			ictx.StatusCode(http.StatusInternalServerError)
+			logs.Errorf(ctx, "func=%s, err=%v", funLog, err.Error())
+		}
+	}()
+
+	actorType := ictx.Params().Get("actorType")
+	actorId := ictx.Params().Get("actorId")
+	actorErr := runtime.GetActorRuntimeInstanceContext().Deactivate(ctx, actorType, actorId)
+	if actorErr != actorError.Success {
+		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, actorErr=%s", funLog, actorType, actorId, ActorErrToError(actorErr).Error())
 	}
-	if err != actorErr.Success {
-		ctx.StatusCode(http.StatusInternalServerError)
-		return
+	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
+}
+
+func ActorErrToError(actorErr actorError.ActorErr) error {
+	msg := ""
+	switch actorErr {
+	case actorError.ErrActorTypeNotFound:
+		msg = "ErrActorTypeNotFound"
+		break
+	case actorError.ErrRemindersParamsInvalid:
+		msg = "ErrRemindersParamsInvalid"
+		break
+	case actorError.ErrActorMethodNoFound:
+		msg = "ErrActorMethodNoFound"
+		break
+	case actorError.ErrActorInvokeFailed:
+		msg = "ErrActorInvokeFailed"
+		break
+	case actorError.ErrReminderFuncUndefined:
+		msg = "ErrReminderFuncUndefined"
+		break
+	case actorError.ErrActorMethodSerializeFailed:
+		msg = "ErrActorMethodSerializeFailed"
+		break
+	case actorError.ErrActorSerializeNoFound:
+		msg = "ErrActorSerializeNoFound"
+		break
+	case actorError.ErrActorIDNotFound:
+		msg = "ErrActorIDNotFound"
+		break
+	case actorError.ErrActorFactoryNotSet:
+		msg = "ErrActorFactoryNotSet"
+		break
+	case actorError.ErrTimerParamsInvalid:
+		msg = "ErrTimerParamsInvalid"
+		break
+	case actorError.ErrSaveStateFailed:
+		msg = "ErrSaveStateFailed"
+		break
+	case actorError.ErrActorServerInvalid:
+		msg = "ErrActorServerInvalid"
+		break
+	default:
+		msg = "unknown"
+		break
 	}
-	ctx.StatusCode(http.StatusOK)
+	if len(msg) == 0 {
+		return nil
+	}
+	return errors.New(msg)
+}
+func actorErrorAsHttpStatus(err actorError.ActorErr) int {
+	statusCode := http.StatusOK
+	if err == actorError.ErrActorTypeNotFound || err == actorError.ErrActorIDNotFound {
+		statusCode = http.StatusNotFound
+	} else if err != actorError.Success {
+		statusCode = http.StatusInternalServerError
+	}
+	return statusCode
 }
 
 func (s *service) subscribesHandler(ictx *context.Context) {
+	ctx := NewContext(ictx)
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			logs.Errorf(ctx, "func=restapp.service.subscribesHandler(), error=%v", err.Error())
+		}
+	}()
+
 	subscribes := ddd.GetSubscribes()
 	_ = ictx.JSON(subscribes)
 
-	ctx := NewContext(ictx)
+	logs.Infof(ctx, "func=restapp.service.subscribesHandler(), subscribeCount=%v", len(subscribes))
 	for _, s := range subscribes {
-		logs.Infof(ctx, "subscribe  pubsubName:%s,  topic:%s,  route:%s,  metadata:%s", s.PubsubName, s.Topic, s.Route, s.Metadata)
+		logs.Infof(ctx, "func=restapp.service.subscribesHandler(), pubsubName=%s, topic=%s, topic=%s", s.PubsubName, s.Topic, s.Route)
 	}
 }
 
@@ -289,16 +367,28 @@ func (s *service) healthHandler(context *context.Context) {
 }
 
 // register actor config handler
-func (s *service) actorConfigHandler(ctx *context.Context) {
-	data, err := runtime.GetActorRuntimeInstance().GetJSONSerializedConfig()
+func (s *service) actorConfigHandler(ictx *context.Context) {
+	ctx := NewContext(ictx)
+	defer func() {
+		if err := errors.GetRecoverError(nil, recover()); err != nil {
+			logs.Errorf(ctx, "func=restapp.service.actorConfigHandler(), error=%v", err.Error())
+		}
+	}()
+	statusCode := http.StatusOK
+	data, err := runtime.GetActorRuntimeInstanceContext().GetJSONSerializedConfig()
 	if err != nil {
-		ctx.StatusCode(http.StatusInternalServerError)
-		return
+		statusCode = http.StatusInternalServerError
+	} else if _, err = ictx.Write(data); err != nil {
+		statusCode = http.StatusInternalServerError
 	}
-	ctx.StatusCode(http.StatusOK)
-	if _, err = ctx.Write(data); err != nil {
-		return
+
+	if err != nil {
+		logs.Errorf(ctx, "func=restapp.service.actorConfigHandler(), error=%v", err.Error())
 	}
+	if statusCode == http.StatusOK {
+		logs.Infof(ctx, "func=restapp.service.actorConfigHandler(), data=%s", string(data))
+	}
+	ictx.StatusCode(statusCode)
 }
 
 // registerQueryHandler
@@ -373,4 +463,11 @@ func (s *service) registerSwagger() {
 	}
 	// use swagger middleware to
 	s.app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(cfg, swaggerFiles.Handler))
+}
+
+func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
+	w.Header().Set("Allow", "POST,OPTIONS")
 }

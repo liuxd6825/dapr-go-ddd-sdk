@@ -64,7 +64,7 @@ type RegisterEventType struct {
 	NewFunc   ddd.NewEventFunc
 }
 
-var _actorsFactory []actor.Factory = []actor.Factory{
+var _actorsFactory []actor.FactoryContext = []actor.FactoryContext{
 	aggregateSnapshotActorFactory,
 }
 
@@ -152,15 +152,15 @@ func (r *RegisterEventType) GetNewFunc() ddd.NewEventFunc {
 	return r.NewFunc
 }
 
-func RegisterActor(actorServer actor.Server) {
-	_actorsFactory = append(_actorsFactory, func() actor.Server { return actorServer })
+func RegisterActor(actorServer actor.ServerContext) {
+	_actorsFactory = append(_actorsFactory, func() actor.ServerContext { return actorServer })
 }
 
-func GetActors() []actor.Factory {
+func GetActors() []actor.FactoryContext {
 	return _actorsFactory
 }
 
-func aggregateSnapshotActorFactory() actor.Server {
+func aggregateSnapshotActorFactory() actor.ServerContext {
 	client, err := daprclient.GetDaprDDDClient().DaprClient()
 	if err != nil {
 		panic(err)
@@ -169,7 +169,7 @@ func aggregateSnapshotActorFactory() actor.Server {
 }
 
 func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory,
+	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
 	options ...*RunOptions) (common.Service, error) {
 
 	config, err := NewConfigByFile(configFile)
@@ -190,7 +190,7 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 }
 
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.Factory, options ...*RunOptions) (common.Service, error) {
+	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 	if len(config.Mongo) > 0 {
 		InitMongo(config.App.AppId, config.Mongo)
 	}
@@ -280,7 +280,7 @@ func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string
 // @return error
 func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventStores map[string]ddd.EventStore,
-	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.Factory,
+	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
 	runOptions ...*RunOptions) (common.Service, error) {
 
 	opt := NewRunOptions(runOptions...)

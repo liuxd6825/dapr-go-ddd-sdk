@@ -46,11 +46,7 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 	if err != nil {
 		return nil, err
 	}
-	runtime, err := newRuntime()
-	if err != nil {
-		return nil, err
-	}
-	table := NewDataTable(temp)
+
 	sheet, err := getSheet(f, sheetName)
 	if err != nil {
 		return nil, err
@@ -59,7 +55,28 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 		return nil, errors.New("sheetName is null")
 	}
 
-	countRow := int64(len(sheet.Rows))
+	rows := NewRowBySheet(sheet)
+	return readBytes(ctx, rows, temp)
+}
+
+func ReadByMap(ctx context.Context, list []map[string]any, temp *Template) (*DataTable, error) {
+	if err := temp.Init(); err != nil {
+		return nil, err
+	}
+
+	rows := NewRowByMap(list)
+	return readBytes(ctx, rows, temp)
+}
+
+func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, error) {
+	runtime, err := newRuntime()
+	if err != nil {
+		return nil, err
+	}
+
+	table := NewDataTable(temp)
+	countRow := rows.Count()
+
 	iRow := temp.Heads[0].RowNum + 1
 	var index int64 = 0
 	for {
@@ -67,8 +84,8 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 			break
 		}
 		dataRow := NewDataRow()
-		excelRow := sheet.Row(int(iRow))
-		if excelRow == nil {
+		cells := rows.Row(int(iRow))
+		if cells == nil {
 			return table, nil
 		}
 
@@ -77,16 +94,16 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 			iRow++
 			for _, mapColumn := range rowColumn.Columns {
 				col := mapColumn.GetColNum()
-				count := len(excelRow.Cells)
+				count := len(cells)
 				if col < int64(count) {
-					cell := excelRow.Cells[col]
+					cell := cells[col]
 					if cell != nil {
-						cellValue := cell.String()
+						cellValue := getCellString(cell.String())
 
 						if isTime(cell) {
 							t, err := cell.GetTime(false)
 							if err != nil {
-								t = getExcelDate(cell.Value)
+								t = getExcelDate(cell.Value())
 							}
 
 							switch mapColumn.DataType {
@@ -101,6 +118,7 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 								break
 							}
 						}
+						cellValue = getCellString(cellValue)
 						rowCells[mapColumn.Key] = &DataCell{
 							Key:    mapColumn.Key,
 							Value:  cellValue,
@@ -119,7 +137,6 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 		getValueOptions := &KeyValueOptions{
 			Temp:     temp,
 			DataRow:  dataRow,
-			Sheet:    sheet,
 			RowCells: rowCells,
 		}
 		runtime.ClearInterrupt()
@@ -131,7 +148,8 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 				cellValue := temp.GetKeyValue(mapKey)
 				if cellValue != nil {
 					cellValues[mapKey] = ""
-					if str := cellValue.GetValue(getValueOptions); len(str) > 0 {
+					str := getCellString(cellValue.GetValue(getValueOptions))
+					if len(str) > 0 {
 						cellValues[mapKey] = str
 					}
 				}
@@ -150,7 +168,7 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 			} else if value, err = script.RunScript(runtime, cellValues, &field.Script); err != nil {
 				dataRow.AddValue(field.Name, err.Error())
 				dataRow.AddError(field.Name, err)
-				logs.Errorf(ctx, "readexcel.ReadBytes() sheetName:%s, row:%v, fieldName:%s, script:%s; error:%s； ", sheetName, iRow, field.Name, field.Script, err.Error())
+				logs.Errorf(ctx, "readexcel.ReadBytes() rowNum:%v, fieldName:%s, script:%s; error:%s； ", iRow, field.Name, field.Script, err.Error())
 				continue
 			}
 
@@ -180,6 +198,10 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 	return table, nil
 }
 
+func getCellString(str string) string {
+	return strings.ReplaceAll(str, "\t", "")
+}
+
 func GetSheetNames(buffer *bytes.Buffer) ([]string, error) {
 	f, err := xlsx.OpenBinary(buffer.Bytes())
 	if err != nil {
@@ -192,11 +214,11 @@ func GetSheetNames(buffer *bytes.Buffer) ([]string, error) {
 	return names, nil
 }
 
-func isTime(cell *xlsx.Cell) bool {
+func isTime(cell Cell) bool {
 	if cell.IsTime() || cell.Type() == xlsx.CellTypeDate {
 		return true
 	}
-	if cell.Type() == xlsx.CellTypeNumeric && strings.Contains(cell.NumFmt, "yy") {
+	if cell.Type() == xlsx.CellTypeNumeric && strings.Contains(cell.NumFmt(), "yy") {
 		return true
 	}
 	return false
@@ -283,7 +305,7 @@ func ReadBytesToMap(bytes []byte, sheetName string, maxRows int64) (*Review, err
 		review.AddColumns(GetCellLabel(c + 1))
 	}
 	for _, s := range f.Sheets {
-		review.AddSheetName(Sheet{Name: s.Name, MaxCol: s.MaxCol, MaxRow: s.MaxRow})
+		review.AddSheetName(&Sheet{Name: s.Name, MaxCol: s.MaxCol, MaxRow: s.MaxRow})
 	}
 	review.OpenSheet = sheet.Name
 	for rIdx := 0; rIdx < sheet.MaxRow; rIdx++ {

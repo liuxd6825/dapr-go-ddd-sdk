@@ -40,7 +40,7 @@ type DaprConfig struct {
 	Host               *string                `yaml:"host"`
 	HttpPort           *int64                 `yaml:"httpPort"`
 	GrpcPort           *int64                 `yaml:"grpcPort"`
-	MaxCallRecvMsgSize *int64                 `yaml:"maxCallRecvMsgSize"`
+	MaxCallRecvMsgSize *int64                 `yaml:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
 	EventStores        map[string]*EventStore `yaml:"eventStores"`
 }
 

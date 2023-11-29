@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -52,10 +53,18 @@ func newRuntime() (*goja.Runtime, error) {
 		return nil, err
 	}
 
+	if err := vm.Set("根据标识取支出金额", payoutByTag); err != nil {
+		return nil, err
+	}
+
 	if err := vm.Set("income", income); err != nil {
 		return nil, err
 	}
 	if err := vm.Set("取收入金额", income); err != nil {
+		return nil, err
+	}
+
+	if err := vm.Set("根据标识取收入金额", incomeByTag); err != nil {
 		return nil, err
 	}
 
@@ -80,6 +89,12 @@ func newRuntime() (*goja.Runtime, error) {
 		return nil, err
 	}
 
+	if err := vm.Set("regexpNum", regexpNum); err != nil {
+		return nil, err
+	}
+	if err := vm.Set("提取数字文本", regexpNum); err != nil {
+		return nil, err
+	}
 	return vm, nil
 }
 
@@ -130,6 +145,12 @@ func toFloat(val any) float64 {
 	} else if v, ok := val.(*int); ok {
 		return float64(*v)
 	} else if v, ok := val.(string); ok {
+		v = strings.ReplaceAll(v, "\t", "")
+		v = strings.ReplaceAll(v, "\r", "")
+		v = strings.ReplaceAll(v, "\n", "")
+		v = strings.ReplaceAll(v, " ", "")
+		v = strings.ReplaceAll(v, ",", "")
+		v = strings.ReplaceAll(v, "，", "")
 		f, err := strconv.ParseFloat(v, 8)
 		if err != nil {
 			return 0
@@ -143,12 +164,10 @@ func abs(val any) float64 {
 	return math.Abs(toFloat(val))
 }
 
-//
-//  isMinus
-//  @Description: 是否有负号
-//  @param val
-//  @return bool
-//
+// isMinus
+// @Description: 是否有负号
+// @param val
+// @return bool
 func isMinus(val any) bool {
 	if v, ok := val.(string); ok {
 		return strings.HasPrefix("-", v)
@@ -168,34 +187,42 @@ func isMinus(val any) bool {
 	return false
 }
 
-//
-//  payout
-//  @Description: 取得支出金额
-//  @param val
-//  @return float64
-//
+// payout
+// @Description: 取得支出金额
+// @param val
+// @return float64
 func payout(val any) float64 {
 	v := toFloat(val)
 	return 0 - abs(v)
 }
 
-//
-//  income
-//  @Description: 取得收入金额
-//  @param val
-//  @return float64
-//
+func payoutByTag(tagValue, tagName string, money any) float64 {
+	if tagValue == tagName {
+		return payout(money)
+	}
+	return 0
+}
+
+// income
+// @Description: 取得收入金额
+// @param val
+// @return float64
 func income(val any) float64 {
 	v := toFloat(val)
 	return abs(v)
 }
 
-//
-//  amount
-//  @Description: 取交易金额
-//  @param val
-//  @return float64
-//
+func incomeByTag(tagValue, tagName string, money any) float64 {
+	if tagValue == tagName {
+		return income(money)
+	}
+	return 0
+}
+
+// amount
+// @Description: 取交易金额
+// @param val
+// @return float64
 func amount(v1 any, v2 any) float64 {
 	a1 := abs(v1)
 	a2 := abs(v2)
@@ -203,4 +230,17 @@ func amount(v1 any, v2 any) float64 {
 		return a1
 	}
 	return a2
+}
+
+func regexpNum(val string, def string, idx int) string {
+	re := regexp.MustCompile("[0-9]+")
+	numbers := re.FindAllString(val, -1)
+	lg := len(numbers)
+	if lg == 1 || idx < 0 {
+		return numbers[0]
+	}
+	if lg >= idx {
+		return numbers[idx-1]
+	}
+	return def
 }

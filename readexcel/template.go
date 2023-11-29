@@ -3,15 +3,12 @@ package readexcel
 import (
 	"errors"
 	"fmt"
-	"github.com/tealeg/xlsx"
 	"strings"
 	"time"
 )
 
-//
 // Template
 // @Description: 导入模板
-//
 type Template struct {
 	Id         string     `json:"id"`
 	Consts     []*Const   `json:"consts"`
@@ -27,11 +24,9 @@ type TemplateBuilder interface {
 	NewTemplate()
 }
 
-//
 // NewTemplate
 // @Description: 新建
 // @return *Template
-//
 func NewTemplate(fields []*Field, heads []*MapHead, consts []*Const) (*Template, error) {
 	temp := &Template{
 		Fields:     fields,
@@ -47,19 +42,15 @@ func NewTemplate(fields []*Field, heads []*MapHead, consts []*Const) (*Template,
 	return temp, nil
 }
 
-//
 // MapHead
 // @Description: MapHead
-//
 type MapHead struct {
 	RowNum  int64        `json:"rowNum"`
 	Columns []*MapColumn `json:"columns"`
 }
 
-//
 // DataType
 // @Description: 数据类型
-//
 type DataType string
 
 const (
@@ -72,10 +63,8 @@ const (
 	Money    DataType = "money"
 )
 
-//
 // Field
 // @Description: 转成字段项
-//
 type Field struct {
 	Name      string     `json:"name,omitempty"`
 	Title     string     `json:"title,omitempty"`
@@ -99,8 +88,8 @@ type Replace struct {
 
 func NewField(name string, title string, dataType DataType, allowNull bool, keys ...string) *Field {
 	return &Field{
-		Name:      name,
-		Title:     title,
+		Name:      strings.ReplaceAll(name, "\t", ""),
+		Title:     strings.ReplaceAll(title, "\t", ""),
 		DataType:  dataType,
 		Size:      0,
 		AllowNull: allowNull,
@@ -109,10 +98,8 @@ func NewField(name string, title string, dataType DataType, allowNull bool, keys
 	}
 }
 
-//
 // MapItem
 // @Description:
-//
 type MapItem struct {
 	MapType MapType `json:"mapType"`
 	Name    string  `json:"name"`
@@ -125,10 +112,8 @@ const (
 	ConstTypeValue
 )
 
-//
 // Const
 // @Description: 常量
-//
 type Const struct {
 	Key   string    `json:"key"`
 	Type  ConstType `json:"type"`
@@ -136,19 +121,15 @@ type Const struct {
 	Value *string   `json:"value"`
 }
 
-//
 // Point
 // @Description: 位置
-//
 type Point struct {
 	Row int `json:"row"`
 	Col int `json:"col"`
 }
 
-//
 // MapType
 // @Description: 映射模式
-//
 type MapType int64
 
 const (
@@ -156,10 +137,8 @@ const (
 	MapTypeConst                 // 常量
 )
 
-//
 // MapColumn
 // @Description: 映射规则
-//
 type MapColumn struct {
 	Key      string   `json:"key"`
 	Label    string   `json:"colLabel"`
@@ -168,8 +147,8 @@ type MapColumn struct {
 }
 
 type KeyValueOptions struct {
-	Temp     *Template
-	Sheet    *xlsx.Sheet
+	Temp *Template
+	//Sheet    *xlsx.Sheet
 	DataRow  *DataRow
 	RowCells map[string]*DataCell
 }
@@ -179,10 +158,8 @@ type KeyValue interface {
 	GetValue(c *KeyValueOptions) string
 }
 
-//
 // NotFoundKeyError
 // @Description:
-//
 type NotFoundKeyError struct {
 	typeName string
 	key      string
@@ -193,7 +170,8 @@ func newNotFoundKeyError(typeName string, key string) error {
 }
 
 // Validator
-//  @Description: 验证器
+//
+//	@Description: 验证器
 type Validator func(cellText string) (any, error)
 type SetFieldFunc func(keys []string, values []string) (string, error)
 
@@ -216,12 +194,10 @@ func AddFieldFunc(key string, fun SetFieldFunc) error {
 	return nil
 }
 
-//
 // AddValidator
 // @Description: 添加验证器
 // @param key  关键字
 // @param validator 验证器
-//
 func AddValidator(key string, validator Validator) {
 	validatorRegistry[key] = validator
 }
@@ -245,7 +221,7 @@ func (t *Template) Init() error {
 		if len(row.Columns) > 0 {
 			for _, col := range row.Columns {
 				if col != nil {
-					t.columnsMap[col.Key] = col
+					t.columnsMap[getCellString(col.Key)] = col
 				}
 			}
 		}
@@ -253,7 +229,6 @@ func (t *Template) Init() error {
 	return nil
 }
 
-//
 // AddConst
 // @Description: 添加变量
 // @receiver t
@@ -261,7 +236,6 @@ func (t *Template) Init() error {
 // @param rowNum
 // @param colNum
 // @return error
-//
 func (t *Template) AddConst(name string, ctype ConstType, value string, point *Point) error {
 	c := &Const{Key: name, Type: ctype, Point: point, Value: PString(value)}
 	if _, ok := t.constsMap[name]; !ok {
@@ -347,12 +321,13 @@ func (c *Const) GetValue(ctx *KeyValueOptions) string {
 		if c.Value != nil {
 			return *c.Value
 		}
-		cell := ctx.Sheet.Cell(c.Point.Row, c.Point.Col)
-		if cell != nil {
-			c.Value = &cell.Value
-		} else {
-			c.Value = PString("")
-		}
+		/*
+			cell := ctx.Sheet.Cell(c.Point.Row, c.Point.Col)
+			if cell != nil {
+				c.Value = &cell.Value
+			} else {
+				c.Value = PString("")
+			} */
 		return *c.Value
 	} else if c.Type == ConstTypeValue {
 		return *c.Value
@@ -389,7 +364,11 @@ func (f *Field) SetValidator(v string) *Field {
 	return f
 }
 func (f *Field) SetMapKeys(v ...string) *Field {
-	f.MapKeys = v
+	var list []string
+	for _, val := range v {
+		list = append(list, getCellString(val))
+	}
+	f.MapKeys = list
 	return f
 }
 

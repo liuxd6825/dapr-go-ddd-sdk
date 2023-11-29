@@ -15,12 +15,8 @@ const aggregateSnapshotActorType = "ddd.AggregateSnapshotActorType"
 var logger = log.New(os.Stdout, "", 0)
 
 type AggregateSnapshotActorService struct {
-	actor.ServerImplBase
+	actor.ServerImplBaseCtx
 	daprClient dapr.Client
-}
-
-type AggregateSnapshotActorServiceContext struct {
-	*actor.ServerImplBaseCtx
 }
 
 func NewAggregateSnapshotActorService(daprClient dapr.Client) *AggregateSnapshotActorService {
@@ -43,14 +39,4 @@ func (s *AggregateSnapshotActorService) SaveSnapshot(ctx context.Context, req *S
 		return nil, err
 	}
 	return &SaveSnapshotResponse{}, nil
-}
-
-func (s *AggregateSnapshotActorService) WithContext() actor.ServerContext {
-	return &AggregateSnapshotActorServiceContext{
-		ServerImplBaseCtx: s.ServerImplBase.WithContext(),
-	}
-}
-
-func (c *AggregateSnapshotActorServiceContext) Type() string {
-	return aggregateSnapshotActorType
 }

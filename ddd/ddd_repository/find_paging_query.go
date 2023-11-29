@@ -28,6 +28,7 @@
 package ddd_repository
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"strings"
@@ -66,6 +67,25 @@ type FindPagingQuery interface {
 
 	GetGroupKeys() []any
 	SetGroupKeys([]any)
+}
+
+type FindPagingQueryBuilder interface {
+	SetTenantId(string) FindPagingQueryBuilder
+	SetFields(string) FindPagingQueryBuilder
+	SetFilter(format string, value ...any) FindPagingQueryBuilder
+	SetMustFilter(format string, value ...any) FindPagingQueryBuilder
+	SetSort(format string, value ...any) FindPagingQueryBuilder
+	SetPageNum(int64) FindPagingQueryBuilder
+	SetPageSize(int64) FindPagingQueryBuilder
+	SetIsTotalRows(bool) FindPagingQueryBuilder
+	SetGroupCols([]*GroupCol) FindPagingQueryBuilder
+	SetValueCols([]*ValueCol) FindPagingQueryBuilder
+	SetGroupKeys([]any) FindPagingQueryBuilder
+	GetQuery() FindPagingQuery
+}
+
+type findPagingQueryBuilder struct {
+	query FindPagingQuery
 }
 
 type GroupCol struct {
@@ -142,6 +162,12 @@ type GroupCols struct {
 
 type ValueCols struct {
 	cols []*ValueCol
+}
+
+func NewFindPagingQueryBuilder() FindPagingQueryBuilder {
+	return &findPagingQueryBuilder{
+		query: NewFindPagingQuery(),
+	}
 }
 
 func NewFindPagingQuery() FindPagingQuery {
@@ -344,10 +370,8 @@ func (q *FindPagingQueryRequest) GetGroupCols() []*GroupCol {
 	return q.GroupCols
 }
 
-//
 // Validate
 // @Description: 命令数据验证
-//
 func (q *FindPagingQueryRequest) Validate() error {
 	ve := errors.NewVerifyError()
 	if len(q.TenantId) == 0 {
@@ -366,4 +390,63 @@ func (r *FindByIdRequest) GetId() string {
 
 func (r *FindByAllRequest) GetTenantId() string {
 	return r.TenantId
+}
+
+func (f *findPagingQueryBuilder) SetTenantId(s string) FindPagingQueryBuilder {
+	f.query.SetTenantId(s)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetFields(s string) FindPagingQueryBuilder {
+	f.query.SetFields(s)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetFilter(format string, value ...any) FindPagingQueryBuilder {
+	f.query.SetFilter(fmt.Sprintf(format, value...))
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetMustFilter(format string, value ...any) FindPagingQueryBuilder {
+	f.query.SetMustFilter(fmt.Sprintf(format, value...))
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetSort(format string, value ...any) FindPagingQueryBuilder {
+	f.query.SetSort(fmt.Sprintf(format, value...))
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetPageNum(i int64) FindPagingQueryBuilder {
+	f.query.SetPageNum(i)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetPageSize(i int64) FindPagingQueryBuilder {
+	f.query.SetPageSize(i)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetIsTotalRows(b bool) FindPagingQueryBuilder {
+	f.query.SetIsTotalRows(b)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetGroupCols(cols []*GroupCol) FindPagingQueryBuilder {
+	f.query.SetGroupCols(cols)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetValueCols(cols []*ValueCol) FindPagingQueryBuilder {
+	f.query.SetValueCols(cols)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetGroupKeys(value []any) FindPagingQueryBuilder {
+	f.query.SetGroupKeys(value)
+	return f
+}
+
+func (f *findPagingQueryBuilder) GetQuery() FindPagingQuery {
+	return f.query
 }

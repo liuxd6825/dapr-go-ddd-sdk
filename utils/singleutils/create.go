@@ -15,8 +15,8 @@ var lock sync.RWMutex
 var items = make(map[string]*onceItem)
 
 func Create[T any](key string, fun func() T) T {
-	lock.Lock()
-	defer lock.Unlock()
+	//lock.Lock()
+	//defer lock.Unlock()
 
 	val, find := items[key]
 	if find {

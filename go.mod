@@ -27,12 +27,14 @@ require (
 )
 
 require (
+	github.com/allegro/bigcache v1.2.1
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
 	github.com/json-iterator/go v1.1.12
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
 	github.com/tealeg/xlsx v1.0.5
 	google.golang.org/grpc v1.57.1
+	google.golang.org/protobuf v1.31.0
 )
 
 require (
@@ -119,7 +121,6 @@ require (
 	golang.org/x/tools v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230807174057-1744710a1577 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
