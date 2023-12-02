@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/bsoncodec"
-	"go.mongodb.org/mongo-driver/bson/bsonoptions"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -87,24 +84,20 @@ func (i ObjectId) String() string {
 	return string(i)
 }
 
-//
 // ServerCount
 // @Description: 获取服务器的数量
 // @receiver c
 // @return int
-//
 func (c *Config) ServerCount() int {
 	list := strings.Split(c.Host, ",")
 	return len(list)
 }
 
-//
 // NewMongoDB
 // @Description:  新建MongoDB
 // @param config  配置类
 // @return *MongoDB MongoDB对象
 // @return error 错误信息
-//
 func NewMongoDB(config *Config, optionsFunc InitOptionsFunc) (*MongoDB, error) {
 	mongodb := &MongoDB{}
 	if err := mongodb.init(config, optionsFunc); err != nil {
@@ -113,13 +106,11 @@ func NewMongoDB(config *Config, optionsFunc InitOptionsFunc) (*MongoDB, error) {
 	return mongodb, nil
 }
 
-//
-//  init
-//  @Description: 初始化
-//  @receiver m  *MongoDB
-//  @param config  配置类
-//  @return error 错误信息
-//
+// init
+// @Description: 初始化
+// @receiver m  *MongoDB
+// @param config  配置类
+// @return error 错误信息
 func (m *MongoDB) init(config *Config, optionsFunc InitOptionsFunc) error {
 
 	if config == nil {
@@ -249,22 +240,23 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 	}
 
 	// 解决mongo不是本地时区的问题
-	builder := bsoncodec.NewRegistryBuilder()
+	//builder := bsoncodec.NewRegistryBuilder()
 
 	// 注册默认的编码和解码器
-	bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(builder)
-	bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(builder)
+	//bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(builder)
+	//bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(builder)
 
 	// 注册时间解码器
-	tTime := reflect.TypeOf(time.Time{})
-	tCodec := bsoncodec.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
-	registry := builder.RegisterTypeDecoder(tTime, tCodec).Build()
-	opts.SetRegistry(registry)
+	//tTime := reflect.TypeOf(time.Time{})
+	//tCodec := bsoncodec.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
+
+	opts.SetBSONOptions(&options.BSONOptions{
+		UseLocalTimeZone: true,
+	})
 
 	if optionsFunc != nil {
 		_ = optionsFunc(opts)
 	}
-
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("%v uri:%v", err.Error(), uri))
@@ -309,12 +301,10 @@ func getReadConcernObject(cn string) (*readconcern.ReadConcern, error) {
 	return nil, fmt.Errorf("readConcern %s not found", cn)
 }
 
-//
 // AsFieldName
 // @Description: 转换为mongodb规范的字段名称
 // @param name
 // @return string
-//
 func AsFieldName(name string) string {
 	return stringutils.SnakeString(name)
 }

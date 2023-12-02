@@ -25,12 +25,15 @@ func NewMongoScriptManager() DbScriptManager {
 	return &MongoManager{}
 }
 
-func (m *MongoManager) GetInitScript(ctx context.Context, dbKey string, tables []*Table, env *EnvConfig, options *CreateOptions) string {
-	cfg := env.Mongo[dbKey]
+func (m *MongoManager) GetScript(ctx context.Context, dbKey string, tables []*Table, env *EnvConfig, options *CreateOptions) (*strings.Builder, error) {
+	cfg, ok := env.Mongo[dbKey]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("dbKey not found %s", dbKey))
+	}
 	user := cfg.UserName
 	pwd := cfg.Password
 	dbName := cfg.Database
-	dbscript := fmt.Sprintf(`
+	dbScript := fmt.Sprintf(`
 db.createUser({
 	user:"%s",
 	pwd:"%s",
@@ -39,25 +42,28 @@ db.createUser({
 		{role:"dbAdmin",db:"%s"},
 		{role:"readWrite",db:"%s"}
 	]
-}); \r\n`, user, pwd, dbName, dbName, dbName)
+}); 
 
-	sb := strings.Builder{}
-	sb.WriteString(dbscript)
+
+`, user, pwd, dbName, dbName, dbName)
+
+	sb := &strings.Builder{}
+	sb.WriteString(dbScript)
+
 	for _, table := range tables {
-		sb.WriteString(m.getTableScript(ctx, env, dbKey, table, options))
+		m.getTableScript(ctx, env, dbName, table, sb, options)
 	}
-	return sb.String()
+	return sb, nil
 }
 
-func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbKey string, table *Table, options *CreateOptions) string {
+func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbName string, table *Table, sb *strings.Builder, options *CreateOptions) string {
 	opt := options
 	if opt == nil {
 		opt = NewCreateOptions()
 	}
 	collName := options.Prefix + table.TableName
-	sb := strings.Builder{}
 
-	sb.WriteString(fmt.Sprintf("use %s \r\n", dbKey))
+	sb.WriteString(fmt.Sprintf("use %s \r\n", dbName))
 	sb.WriteString(fmt.Sprintf("db.createCollection(\"%s\") \r\n", collName))
 
 	e := table.Object
@@ -90,7 +96,7 @@ func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbKey
 						order = 1
 						break
 					case "desc":
-						order = 0
+						order = -1
 						break
 					}
 				}
@@ -126,15 +132,15 @@ func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbKey
 				name = stringutils.SnakeString(f.Name)
 			}
 			if name != "_id" { //主键不需要创建
-				name = name + "_"
-				sb.WriteString(fmt.Sprintf("db.%v.createIndex({\"%s\":%v,\"description\":%v})", collName, name, order, desc))
+				sb.WriteString(fmt.Sprintf(`db.%v.createIndex({%s:%v}`, collName, name, order))
 				if isUnique {
 					sb.WriteString(fmt.Sprintf(",{unique:true}"))
 				}
-				sb.WriteString("} \r\n")
+				sb.WriteString(") \r\n")
 			}
 		}
 	}
+	sb.WriteString("\r\n\r\n")
 	return sb.String()
 }
 

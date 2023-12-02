@@ -4,15 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
-func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStorageKey string) (resErr error) {
+func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStoreKey string) (resErr error) {
 	defer func() {
-		if e := recover(); e != nil {
-			if err, ok := e.(error); ok {
-				resErr = err
-			}
-		}
+		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 
 	aggregate, err := NewAggregate(aggregateType)
@@ -24,7 +21,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 		TenantId:    tenantId,
 		AggregateId: aggregateId,
 	}
-	resp, err := LoadEvents(ctx, req, "")
+	resp, err := LoadEvents(ctx, req, eventStoreKey)
 	if err != nil {
 		return err
 	}
@@ -60,7 +57,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 			AggregateVersion: aggregate.GetAggregateVersion(),
 			SequenceNumber:   sequenceNumber,
 		}
-		eventStorage, err := GetEventStore(eventStorageKey)
+		eventStorage, err := GetEventStore(eventStoreKey)
 		if err != nil {
 			return err
 		}

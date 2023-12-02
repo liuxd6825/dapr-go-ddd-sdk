@@ -13,10 +13,10 @@ type AggregateSnapshotActor struct {
 }
 
 type SaveSnapshotRequest struct {
-	TenantId        string `json:"tenantId"`
-	AggregateId     string `json:"aggregateId"`
-	AggregateType   string `json:"aggregateType"`
-	EventStorageKey string `json:"eventStorageKey"`
+	TenantId      string `json:"tenantId"`
+	AggregateId   string `json:"aggregateId"`
+	AggregateType string `json:"aggregateType"`
+	EventStoreKey string `json:"eventStoreKey"`
 }
 
 type SaveSnapshotResponse struct {
@@ -32,7 +32,7 @@ func NewAggregateSnapshotClient(client dapr.Client, aggregateType, aggregateId s
 }
 
 func (a *AggregateSnapshotActor) Type() string {
-	return aggregateSnapshotActorType
+	return AggregateSnapshotActorType
 }
 
 func (a *AggregateSnapshotActor) ID() string {

@@ -2,6 +2,8 @@ package restapp
 
 import (
 	"context"
+	"os"
+	"strings"
 )
 
 func InitDbWithConfig(envName string, prefix string, dbKey string, config *Config, tables *Tables) error {
@@ -43,7 +45,7 @@ func InitDb(dbKey string, tables *Tables, env *EnvConfig, prefix string) error {
 	return nil
 }
 
-func InitDbScript(dbKey string, tables *Tables, env *EnvConfig, prefix string) error {
+func InitDbScript(dbKey string, tables *Tables, env *EnvConfig, prefix string, saveFile string) error {
 	if dbKey == "" {
 		panic("dbkey is not emtiy")
 	}
@@ -65,11 +67,28 @@ func InitDbScript(dbKey string, tables *Tables, env *EnvConfig, prefix string) e
 	}
 
 	if len(mTables) > 0 {
-		mongo.GetInitScript(ctx, dbKey, mTables, env, opt)
+		if sb, err := mongo.GetScript(ctx, dbKey, mTables, env, opt); err != nil {
+			return err
+		} else if err = writeFile(saveFile, sb); err != nil {
+			return err
+		}
 	}
 
 	if len(gTables) > 0 {
-		gorm.GetInitScript(ctx, dbKey, mTables, env, opt)
+		gorm.GetScript(ctx, dbKey, mTables, env, opt)
 	}
 	return nil
+}
+
+func writeFile(fileName string, sb *strings.Builder) error {
+	//在当前路径下，创建test.txt文件，若当前路径存在test.txt，则清空其内容
+	fileHandler, err := os.Create(fileName)
+	if nil != err {
+		panic(err)
+	}
+	defer fileHandler.Close()
+
+	//使用WriteString
+	_, err = fileHandler.WriteString(sb.String())
+	return err
 }

@@ -5,37 +5,39 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 )
 
-// Subscribe dapr消息订阅项
+// Subscribe internally represents single topic subscription.
 type Subscribe struct {
-	PubsubName string            `json:"pubsubName"`
-	Topic      string            `json:"topic,omitempty"`
-	Routes     *Routes           `json:"routes,omitempty"` // map[string]string
-	Route      string            `json:"route,omitempty"`  // map[string]string
-	Metadata   map[string]string `json:"metadata,omitempty"`
+	// PubsubName is name of the pub/sub this message came from.
+	PubsubName string `json:"pubsubname"`
+	// Topic is the name of the topic.
+	Topic string `json:"topic"`
+	// Route is the route of the handler where HTTP topic events should be published (passed as Path in gRPC).
+	Route string `json:"route,omitempty"`
+	// Routes specify multiple routes where topic events should be sent.
+	Routes *TopicRoutes `json:"routes,omitempty"`
+	// Metadata is the subscription metadata.
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
-// Routes encapsulates the rules and optional default path for a topic.
-type Routes struct {
-	// The list of rules for this topic.
-	// +optional
-	Rules []Rule `json:"rules,omitempty"`
-	// The default path for this topic.
-	// +optional
-	Default string `json:"default,omitempty"`
+// TopicRoutes encapsulates the default route and multiple routing rules.
+type TopicRoutes struct {
+	Rules   []TopicRule `json:"rules,omitempty"`
+	Default string      `json:"default,omitempty"`
+
+	// priority is used to track duplicate priorities where priority > 0.
+	// when priority is not specified (0), then the order in which they
+	// were added is used.
+	priorities map[int]struct{}
 }
 
-// Rule is used to specify the condition for sending
-// a message to a specific path.
-type Rule struct {
-	// The optional CEL expression used to match the event.
-	// If the match is not specified, then the route is considered
-	// the default. The rules are tested in the order specified,
-	// so they should be define from most-to-least specific.
-	// The default route should appear last in the list.
+// TopicRule represents a single routing rule.
+type TopicRule struct {
+	// Match is the CEL expression to match on the CloudEvent envelope.
 	Match string `json:"match"`
-
-	// The path for events that match this rule.
+	// Path is the HTTP path to post the event to (passed as Path in gRPC).
 	Path string `json:"path"`
+	// priority is the optional priority order (low to high) for this rule.
+	priority int `json:"-"`
 }
 
 // NewSubscribe 新建消息订阅项

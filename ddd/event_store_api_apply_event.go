@@ -208,6 +208,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 
 	var err error
 	var res any
+	defaultIsSourcing := true
 	err = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
 		var eventStore EventStore
 		applyEvents := make([]*daprclient.EventDto, 0)
@@ -222,7 +223,6 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			pubsubName = *val
 		}
 
-		defaultIsSourcing := true
 		// 判断是否需要进行"事件溯源"控制
 		if options.closeEventSource != nil {
 			closeEs := *options.closeEventSource
@@ -266,12 +266,16 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				}
 			}
 		}
+
+		// 如果是溯源模式进行聚合根镜像
+		if defaultIsSourcing && len(events) > 100 {
+			go func() {
+				_ = callActorSaveSnapshot(ctx, tenantId, aggId, aggType)
+			}()
+		}
+
 		return res, nil
 	})
-
-	go func() {
-		_ = callActorSaveSnapshot(ctx, tenantId, aggId, aggType)
-	}()
 
 	return res, err
 }

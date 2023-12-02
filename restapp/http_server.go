@@ -19,6 +19,8 @@ import (
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type ServiceOptions struct {
@@ -36,7 +38,7 @@ type ServiceOptions struct {
 	SwaggerDoc     string
 }
 
-type service struct {
+type HttpServer struct {
 	app                         *iris.Application
 	appId                       string
 	httpHost                    string
@@ -51,16 +53,19 @@ type service struct {
 	authToken                   string
 	webRootPath                 string
 	eventStoreDefaultPubsubName string // 默认事件存储器的名称
+
+	sdkServer *http.Server
 }
 
-func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
+func NewHttpServer(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
 	eventStoreDefaultPubsubName := ""
 	es, ok := opts.EventStores[""]
 	if ok {
 		eventStoreDefaultPubsubName = es.GetPubsubName()
 	}
 
-	return &service{
+	app := iris.New()
+	return &HttpServer{
 		httpPort:                    opts.HttpPort,
 		httpHost:                    opts.HttpHost,
 		appId:                       opts.AppId,
@@ -74,46 +79,21 @@ func NewService(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) co
 		authToken:                   opts.AuthToken,
 		webRootPath:                 opts.WebRootPath,
 		eventStoreDefaultPubsubName: eventStoreDefaultPubsubName,
-		app:                         iris.New(),
+		app:                         app,
 	}
+
 }
 
-func (s *service) Start() error {
+func (s *HttpServer) Start() error {
 	ctx := NewLoggerContext(context2.Background())
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Infof(ctx, "func=restapp.service.Start(), error=%v", err.Error())
+			logs.Infof(ctx, "func=restapp.HttpServer.Start(), error=%v", err.Error())
 		}
 	}()
 	app := s.app
 
-	//app.Use(GlobalJsonSerialization)
-	// register subscribe handler
-	app.Get("dapr/subscribe", s.subscribesHandler)
-
-	// register domain event types
-	app.Get("dapr/event-types", s.eventTypesHandler)
-
-	//	register health check handler
-	app.Get("/healthz", s.healthHandler)
-
-	// register actor config handler
-	app.Get("/dapr/config", s.actorConfigHandler)
-
-	// register actor method invoke handler
-	app.Put("/actors/{actorType}/{actorId}/method/{methodName}", s.actorMethodInvokeHandler)
-
-	// register actor reminder invoke handler
-	app.Put("/actors/{actorType}/{actorId}/method/remind/{reminderName}", s.actorReminderInvokeHandler)
-
-	// register actor reminder invoke handler
-	app.Put("/actors/{actorType}/{actorId}/method/timer/{timerName}", s.actorTimerInvokeHandler)
-
-	// register deactivate actor handler
-	app.Delete("/actors/{actorType}/{actorId}", s.actorDeactivateHandler)
-
-	// register swagger doc
-	s.registerSwagger()
+	s.registerBaseHandler()
 
 	// 注册消息订阅
 	if s.subscribes != nil {
@@ -166,41 +146,9 @@ func (s *service) Start() error {
 	return nil
 }
 
-func (s *service) AddHealthCheckHandler(name string, fn common.HealthCheckHandler) error {
-	return nil
-}
-
-func (s *service) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
-	panic("restapp.service.RegisterActorImplFactory()")
-}
-
-func (s *service) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
-	runtime.GetActorRuntimeInstanceContext().RegisterActorFactory(f, opts...)
-}
-
-func (s *service) AddServiceInvocationHandler(name string, fn common.ServiceInvocationHandler) error {
-	return nil
-}
-
-func (s *service) AddTopicEventHandler(sub *common.Subscription, fn common.TopicEventHandler) error {
-	return nil
-}
-
-func (s *service) AddBindingInvocationHandler(name string, fn common.BindingInvocationHandler) error {
-	return nil
-}
-
-func (s *service) Stop() error {
-	return nil
-}
-
-func (s *service) GracefulStop() error {
-	return nil
-}
-
 // register actor method invoke handler
-func (s *service) actorMethodInvokeHandler(ictx *context.Context) {
-	const funLog = "restapp.service.actorMethodInvokeHandler()"
+func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
+	const funLog = "restapp.HttpServer.actorInvokeHandler()"
 	ctx := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
@@ -215,15 +163,23 @@ func (s *service) actorMethodInvokeHandler(ictx *context.Context) {
 	reqData, _ := ictx.GetBody()
 	rspData, actorErr := runtime.GetActorRuntimeInstanceContext().InvokeActorMethod(ctx, actorType, actorId, methodName, reqData)
 	if actorErr != actorError.Success {
-		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, methodName=%v, actorError=%v", funLog, actorType, actorId, methodName, actorErr)
+		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, methodName=%v, actorError=%v", funLog, actorType, actorId, methodName, ActorErrToError(actorErr).Error())
 	}
-	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
+	if actorErr == actorError.ErrActorTypeNotFound || actorErr == actorError.ErrActorIDNotFound {
+		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
+		return
+	}
+	if actorErr != actorError.Success {
+		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	ictx.StatusCode(http.StatusOK)
 	_, _ = ictx.Write(rspData)
 }
 
 // register actor reminder invoke handler
-func (s *service) actorReminderInvokeHandler(ictx *context.Context) {
-	const funLog = "restapp.service.actorReminderInvokeHandler()"
+func (s *HttpServer) actorReminderInvokeHandler(ictx *context.Context) {
+	const funLog = "restapp.HttpServer.actorReminderInvokeHandler()"
 	ctx := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
@@ -237,14 +193,22 @@ func (s *service) actorReminderInvokeHandler(ictx *context.Context) {
 	reqData, _ := ictx.GetBody()
 	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeReminder(ctx, actorType, actorId, reminderName, reqData)
 	if actorErr != actorError.Success {
-		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, reminderName=%v, actorError=%v", funLog, actorType, actorId, reminderName, actorErr)
+		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, reminderName=%v, actorError=%v", funLog, actorType, actorId, reminderName, ActorErrToError(actorErr).Error())
+	}
+	if actorErr == actorError.ErrActorTypeNotFound {
+		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
+		return
+	}
+	if actorErr != actorError.Success {
+		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
 }
 
 // register actor timer invoke handler
-func (s *service) actorTimerInvokeHandler(ictx *context.Context) {
-	const funLog = "restapp.service.actorTimerInvokeHandler()"
+func (s *HttpServer) actorTimerInvokeHandler(ictx *context.Context) {
+	const funLog = "restapp.HttpServer.actorTimerInvokeHandler()"
 	ctx := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
@@ -258,14 +222,22 @@ func (s *service) actorTimerInvokeHandler(ictx *context.Context) {
 	reqData, _ := ictx.GetBody()
 	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeTimer(ctx, actorType, actorID, timerName, reqData)
 	if actorErr != actorError.Success {
-		logs.Errorf(ctx, "func=%s,  actorType=%v, actorId=%v, timerName=%v, reqData=%v, actorError=%v", funLog, actorType, actorID, timerName, reqData, actorErr)
+		logs.Errorf(ctx, "func=%s,  actorType=%v, actorId=%v, timerName=%v, reqData=%v, actorError=%v", funLog, actorType, actorID, timerName, reqData, ActorErrToError(actorErr).Error())
+	}
+	if actorErr == actorError.ErrActorTypeNotFound {
+		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
+		return
+	}
+	if actorErr != actorError.Success {
+		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
 }
 
 // register deactivate actor handler
-func (s *service) actorDeactivateHandler(ictx *context.Context) {
-	const funLog = "restapp.service.actorDeactivateHandler()"
+func (s *HttpServer) actorDeactivateHandler(ictx *context.Context) {
+	const funLog = "restapp.HttpServer.actorDeactivateHandler()"
 	ctx := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
@@ -280,7 +252,74 @@ func (s *service) actorDeactivateHandler(ictx *context.Context) {
 	if actorErr != actorError.Success {
 		logs.Errorf(ctx, "func=%s, actorType=%v, actorId=%v, actorErr=%s", funLog, actorType, actorId, ActorErrToError(actorErr).Error())
 	}
-	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
+	if actorErr == actorError.ErrActorTypeNotFound || actorErr == actorError.ErrActorIDNotFound {
+		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
+		return
+	}
+	if actorErr != actorError.Success {
+		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	ictx.StatusCode(http.StatusOK)
+}
+
+// Deprecated: Use RegisterActorImplFactoryContext instead.
+func (s *HttpServer) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
+	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
+}
+
+func (s *HttpServer) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
+	runtime.GetActorRuntimeInstanceContext().RegisterActorFactory(f, opts...)
+}
+
+// AddHealthCheckHandler appends provided app health check handler.
+func (s *HttpServer) AddHealthCheckHandler(route string, fn common.HealthCheckHandler) error {
+	if fn == nil {
+		return fmt.Errorf("health check handler required")
+	}
+
+	if !strings.HasPrefix(route, "/") {
+		route = fmt.Sprintf("/%s", route)
+	}
+
+	s.app.HandleMany("ALL", route, optionsHandler(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			if err := fn(r.Context()); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusNoContent)
+		})))
+	return nil
+}
+
+func setOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
+	w.Header().Set("Allow", "POST,OPTIONS")
+}
+
+func optionsHandler(h http.Handler) context.Handler {
+	return func(c *context.Context) {
+		if c.Method() == http.MethodOptions {
+			setOptions(c.ResponseWriter(), c.Request())
+		} else {
+			h.ServeHTTP(c.ResponseWriter(), c.Request())
+		}
+	}
+}
+
+func (s *HttpServer) Stop() error {
+	ctxShutDown, cancel := context2.WithTimeout(context2.Background(), 5*time.Second)
+	defer cancel()
+
+	return s.app.Shutdown(ctxShutDown)
+}
+
+func (s *HttpServer) GracefulStop() error {
+	return s.Stop()
 }
 
 func ActorErrToError(actorErr actorError.ActorErr) error {
@@ -341,37 +380,38 @@ func actorErrorAsHttpStatus(err actorError.ActorErr) int {
 	return statusCode
 }
 
-func (s *service) subscribesHandler(ictx *context.Context) {
+func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 	ctx := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Errorf(ctx, "func=restapp.service.subscribesHandler(), error=%v", err.Error())
+			logs.Errorf(ctx, "func=restapp.HttpServer.subscribesHandler(), error=%v", err.Error())
 		}
 	}()
 
 	subscribes := ddd.GetSubscribes()
+	ictx.Header("Context-Type", "application/json")
 	_ = ictx.JSON(subscribes)
 
-	logs.Infof(ctx, "func=restapp.service.subscribesHandler(), subscribeCount=%v", len(subscribes))
+	logs.Infof(ctx, "func=restapp.HttpServer.subscribesHandler(), subscribeCount=%v", len(subscribes))
 	for _, s := range subscribes {
-		logs.Infof(ctx, "func=restapp.service.subscribesHandler(), pubsubName=%s, topic=%s, topic=%s", s.PubsubName, s.Topic, s.Route)
+		logs.Infof(ctx, "func=restapp.HttpServer.subscribesHandler(), pubsubName=%s, topic=%s, topic=%s", s.PubsubName, s.Topic, s.Route)
 	}
 }
 
-func (s *service) eventTypesHandler(ctx *context.Context) {
+func (s *HttpServer) eventTypesHandler(ctx *context.Context) {
 
 }
 
-func (s *service) healthHandler(context *context.Context) {
+func (s *HttpServer) healthHandler(context *context.Context) {
 	context.StatusCode(http.StatusOK)
 }
 
 // register actor config handler
-func (s *service) actorConfigHandler(ictx *context.Context) {
+func (s *HttpServer) actorConfigHandler(ictx *context.Context) {
 	ctx := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Errorf(ctx, "func=restapp.service.actorConfigHandler(), error=%v", err.Error())
+			logs.Errorf(ctx, "func=restapp.HttpServer.actorConfigHandler(), error=%v", err.Error())
 		}
 	}()
 	statusCode := http.StatusOK
@@ -383,10 +423,10 @@ func (s *service) actorConfigHandler(ictx *context.Context) {
 	}
 
 	if err != nil {
-		logs.Errorf(ctx, "func=restapp.service.actorConfigHandler(), error=%v", err.Error())
+		logs.Errorf(ctx, "func=restapp.HttpServer.actorConfigHandler(), error=%v", err.Error())
 	}
 	if statusCode == http.StatusOK {
-		logs.Infof(ctx, "func=restapp.service.actorConfigHandler(), data=%s", string(data))
+		logs.Infof(ctx, "func=restapp.HttpServer.actorConfigHandler(), data=%s", string(data))
 	}
 	ictx.StatusCode(statusCode)
 }
@@ -395,7 +435,7 @@ func (s *service) actorConfigHandler(ictx *context.Context) {
 // @Description: 注册领域事件控制器
 // @param handlers
 // @return error
-func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
+func (s *HttpServer) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
 		err := ddd.RegisterQueryHandler(h, s.eventStoreDefaultPubsubName)
@@ -411,7 +451,7 @@ func (s *service) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 // @param subscribes
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
-func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
+func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
 	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
@@ -436,7 +476,7 @@ func (s *service) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEve
 // @Description: 注册UserInterface层Controller
 // @param relativePath
 // @param configurators
-func (s *service) registerController(relativePath string, controllers ...Controller) {
+func (s *HttpServer) registerController(relativePath string, controllers ...Controller) {
 	if controllers == nil && len(controllers) == 0 {
 		return
 	}
@@ -456,18 +496,11 @@ func (s *service) registerController(relativePath string, controllers ...Control
 // registerSwagger
 // @Description:
 // @receiver s
-func (s *service) registerSwagger() {
+func (s *HttpServer) registerSwagger() {
 	url := fmt.Sprintf("http://%s:%d/swagger/doc.json", "localhost", s.httpPort)
 	cfg := &swagger.Config{
 		URL: url,
 	}
 	// use swagger middleware to
 	s.app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(cfg, swaggerFiles.Handler))
-}
-
-func (s *service) setOptions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
-	w.Header().Set("Allow", "POST,OPTIONS")
 }

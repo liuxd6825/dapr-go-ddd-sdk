@@ -3,6 +3,7 @@ package restapp
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 type DbManager interface {
@@ -11,7 +12,7 @@ type DbManager interface {
 }
 
 type DbScriptManager interface {
-	GetInitScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) string
+	GetScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) (*strings.Builder, error)
 }
 
 type InitOptions struct {

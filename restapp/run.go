@@ -23,14 +23,12 @@ type RunConfig struct {
 }
 
 type RunOptions struct {
-	tables   *Tables
-	initDb   *bool
-	dbScript *bool
-	prefix   *string
-	dbKey    *string
-	file     *string
-	dbkey    *string
-	level    *logs.Level
+	tables  *Tables
+	init    *bool
+	sqlFile *string
+	prefix  *string
+	dbKey   *string
+	level   *logs.Level
 }
 
 type RegisterSubscribe interface {
@@ -76,11 +74,17 @@ func NewRunOptions(opts ...*RunOptions) *RunOptions {
 		if item.tables != nil {
 			o.tables = item.tables
 		}
-		if item.initDb != nil {
-			o.initDb = item.initDb
+		if item.init != nil {
+			o.init = item.init
 		}
 		if item.prefix != nil {
 			o.prefix = item.prefix
+		}
+		if item.dbKey != nil {
+			o.dbKey = item.dbKey
+		}
+		if item.sqlFile != nil {
+			o.sqlFile = item.sqlFile
 		}
 	}
 	return o
@@ -111,18 +115,10 @@ func NewRegisterSubscribeOptions(opts ...*RegisterSubscribeOptions) *RegisterSub
 	return o
 }
 
-func NewRegisterSubscribe(subscribes *[]ddd.Subscribe, handler ddd.QueryEventHandler, options ...*RegisterSubscribeOptions) RegisterSubscribe {
-	var subs []*ddd.Subscribe
-	if subscribes != nil {
-		list := *subscribes
-		for i, _ := range list {
-			subs = append(subs, &list[i])
-		}
-	}
-
+func NewRegisterSubscribe(subscribes []*ddd.Subscribe, handler ddd.QueryEventHandler, options ...*RegisterSubscribeOptions) RegisterSubscribe {
 	opt := NewRegisterSubscribeOptions(options...)
 	return &registerSubscribe{
-		subscribes:   subs,
+		subscribes:   subscribes,
 		handler:      handler,
 		interceptors: opt.interceptors,
 	}
@@ -165,7 +161,8 @@ func aggregateSnapshotActorFactory() actor.ServerContext {
 	if err != nil {
 		panic(err)
 	}
-	return ddd.NewAggregateSnapshotActorService(client)
+	service := ddd.NewAggregateSnapshotActorService(client)
+	return service
 }
 
 func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterSubscribe,
@@ -206,7 +203,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	}
 
 	opt := NewRunOptions(options...)
-	if opt.GetInitDb() {
+	if opt.GetInit() {
 		var err error
 		if opt.tables != nil {
 			err = InitDb(opt.GetDbKey(), opt.tables, config, opt.GetPrefix())
@@ -214,10 +211,10 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, err
 	}
 
-	if opt.GetDbScript() {
+	if opt.GetSqlFile() != "" {
 		var err error
 		if opt.tables != nil {
-			err = InitDbScript(opt.GetDbKey(), opt.tables, config, opt.GetPrefix())
+			err = InitDbScript(opt.GetDbKey(), opt.tables, config, opt.GetPrefix(), opt.GetSqlFile())
 		}
 		return nil, err
 	}
@@ -272,7 +269,7 @@ func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string
 // @Description:
 // @param options
 // @param app
-// @param webRootPath web service URL root path
+// @param webRootPath web HttpServer URL root path
 // @param subsFunc
 // @param controllersFunc
 // @param eventStorages
@@ -304,7 +301,7 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		WebRootPath:    webRootPath,
 	}
 
-	service := NewService(runCfg.DaprClient, serverOptions)
+	service := NewHttpServer(runCfg.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {
 		return service, err
 	}
@@ -312,27 +309,36 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 }
 
 func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
-	o.SetPrefix(flag.Prefix).SetInitDb(flag.InitDb).SetLevel(flag.Level)
+	o.SetPrefix(flag.Prefix)
+	o.SetInit(flag.Init)
+	o.SetDbKey(flag.DbKey)
+	o.SetSqlFile(flag.SqlFile)
+	o.SetLevel(flag.Level)
 	return o
 }
 
-func (o *RunOptions) GetInitDb() bool {
-	if o.initDb == nil {
+func (o *RunOptions) GetInit() bool {
+	if o.init == nil {
 		return false
 	}
-	return *o.initDb
+	return *o.init
 }
 
-func (o *RunOptions) GetDbScript() bool {
-	if o.dbScript == nil {
-		return false
-	}
-	return *o.dbScript
-}
-
-func (o *RunOptions) SetInitDb(v bool) *RunOptions {
-	o.initDb = &v
+func (o *RunOptions) SetInit(v bool) *RunOptions {
+	o.init = &v
 	return o
+}
+
+func (o *RunOptions) SetSqlFile(v string) *RunOptions {
+	o.sqlFile = &v
+	return o
+}
+
+func (o *RunOptions) GetSqlFile() string {
+	if o.sqlFile == nil {
+		return ""
+	}
+	return *o.sqlFile
 }
 
 func (o *RunOptions) GetLevel() *logs.Level {
@@ -365,23 +371,14 @@ func (o *RunOptions) GetTable() *Tables {
 	return o.tables
 }
 
-func (o *RunOptions) SetFile(v *string) *RunOptions {
-	o.file = v
-	return o
-}
-
-func (o *RunOptions) GetFile() string {
-	return *o.file
-}
-
-func (o *RunOptions) SetDbKey(v *string) *RunOptions {
-	o.dbkey = v
+func (o *RunOptions) SetDbKey(v string) *RunOptions {
+	o.dbKey = &v
 	return o
 }
 
 func (o *RunOptions) GetDbKey() string {
-	if o.dbkey == nil {
+	if o.dbKey == nil {
 		return ""
 	}
-	return *o.dbkey
+	return *o.dbKey
 }

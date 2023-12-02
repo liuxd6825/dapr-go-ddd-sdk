@@ -2,6 +2,7 @@ package restapp
 
 import (
 	"context"
+	"strings"
 )
 
 type GORMManager struct {
@@ -15,8 +16,8 @@ func (m *GORMManager) Update(ctx context.Context, table *Table, env *EnvConfig, 
 
 }
 
-func (m *GORMManager) GetInitScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) string {
-	return ""
+func (m *GORMManager) GetScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) (*strings.Builder, error) {
+	return nil, nil
 }
 
 func NewGormManager() DbManager {
