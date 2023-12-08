@@ -9,8 +9,8 @@ type Review struct {
 
 type Sheet struct {
 	Name   string `json:"name"`
-	MaxCol int    `json:"maxCol"`
-	MaxRow int    `json:"maxRow"`
+	MaxCol int64  `json:"maxCol"`
+	MaxRow int64  `json:"maxRow"`
 }
 
 type ReviewItem = map[string]any

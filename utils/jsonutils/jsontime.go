@@ -48,7 +48,7 @@ func (e *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *jsoniter.
 			timeFormat = "2006-01-02"
 		}
 
-		locale := setting.TimeZone
+		locale := setting.GetTimeZone()
 		binding.Encoder = &funcEncoder{fun: func(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 			if typeErr != nil {
 				stream.Error = typeErr

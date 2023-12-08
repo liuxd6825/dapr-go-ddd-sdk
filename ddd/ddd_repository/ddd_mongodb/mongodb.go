@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -253,7 +254,7 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 	*/
 
 	opts.SetBSONOptions(&options.BSONOptions{
-		UseLocalTimeZone: false,
+		UseLocalTimeZone: setting.IsLocalTimeZone(),
 	})
 
 	if optionsFunc != nil {

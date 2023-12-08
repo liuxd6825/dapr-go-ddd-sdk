@@ -305,7 +305,7 @@ func ReadBytesToMap(bytes []byte, sheetName string, maxRows int64) (*Review, err
 		review.AddColumns(GetCellLabel(c + 1))
 	}
 	for _, s := range f.Sheets {
-		review.AddSheetName(&Sheet{Name: s.Name, MaxCol: s.MaxCol, MaxRow: s.MaxRow})
+		review.AddSheetName(&Sheet{Name: s.Name, MaxCol: int64(s.MaxCol), MaxRow: int64(s.MaxRow)})
 	}
 	review.OpenSheet = sheet.Name
 	for rIdx := 0; rIdx < sheet.MaxRow; rIdx++ {

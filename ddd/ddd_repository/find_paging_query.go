@@ -81,7 +81,7 @@ type FindPagingQueryBuilder interface {
 	SetGroupCols([]*GroupCol) FindPagingQueryBuilder
 	SetValueCols([]*ValueCol) FindPagingQueryBuilder
 	SetGroupKeys([]any) FindPagingQueryBuilder
-	GetQuery() FindPagingQuery
+	Build() FindPagingQuery
 }
 
 type findPagingQueryBuilder struct {
@@ -447,6 +447,6 @@ func (f *findPagingQueryBuilder) SetGroupKeys(value []any) FindPagingQueryBuilde
 	return f
 }
 
-func (f *findPagingQueryBuilder) GetQuery() FindPagingQuery {
+func (f *findPagingQueryBuilder) Build() FindPagingQuery {
 	return f.query
 }
