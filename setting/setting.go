@@ -3,20 +3,25 @@ package setting
 import "time"
 
 // TimeZone 时区
-var timeZone = time.UTC
+var timeLocal = time.Local
+var timeUTC = time.UTC
+var timeZone = timeUTC
+var isUTCTime = false
 
 // SetUTCTimeZone
 //
 //	@Description: 设置为UTC时区
 func SetUTCTimeZone() {
-	timeZone = time.UTC
+	timeZone = timeUTC
+	isUTCTime = true
 }
 
 // SetLocalTimeZone
 //
-//	@Description: 设置为本地时氏
+//	@Description: 设置为本地时区
 func SetLocalTimeZone() {
-	timeZone = time.Local
+	timeZone = timeLocal
+	isUTCTime = false
 }
 
 // GetTimeZone
@@ -32,10 +37,7 @@ func GetTimeZone() *time.Location {
 //	@Description: 是否为本地时区
 //	@return bool
 func IsLocalTimeZone() bool {
-	if timeZone == time.UTC {
-		return false
-	}
-	return true
+	return !isUTCTime
 }
 
 // IsUTCTimeZone
@@ -43,8 +45,5 @@ func IsLocalTimeZone() bool {
 //	@Description: 是UTC时区
 //	@return bool
 func IsUTCTimeZone() bool {
-	if timeZone == time.UTC {
-		return true
-	}
-	return false
+	return isUTCTime
 }

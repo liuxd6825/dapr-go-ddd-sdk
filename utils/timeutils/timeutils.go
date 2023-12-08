@@ -3,6 +3,7 @@ package timeutils
 import (
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"reflect"
 	"strconv"
@@ -20,13 +21,19 @@ const LocalDateLayoutSlash = "2006/01/02"
 // @Description: 获取毫秒值为0的当前时间
 // @return time.Time
 func Now() time.Time {
-	t := time.Now()
-	v := Time(&t)
-	return *v
+	return now()
 }
 func PNow() *time.Time {
-	t := time.Now()
+	t := now()
 	return &t
+}
+
+func now() time.Time {
+	t := time.Now()
+	if setting.IsUTCTimeZone() {
+		return t.UTC()
+	}
+	return t
 }
 
 // Time

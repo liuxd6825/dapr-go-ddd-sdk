@@ -3,26 +3,23 @@ package readexcel
 import (
 	"errors"
 	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 )
 
-//
 // DataTable
 // @Description: 数据表格
-//
 type DataTable struct {
 	Temp   *Template  `json:"temp"`
 	Rows   []*DataRow `json:"rows"`
 	Errors []int64    `json:"errors"`
 }
 
-//
 // DataRow
 // @Description: 数据行
-//
 type DataRow struct {
 	RowNum int64                `json:"rowNum"` // 行号
 	Values map[string]any       `json:"values"` // 数据值
@@ -203,7 +200,7 @@ func ValueToDate(v any, defValue *time.Time, replace ...Replace) (*time.Time, er
 	if len(s) == 0 {
 		return defValue, nil
 	}
-	t, err := time.Parse(BaseFormat, s)
+	t, err := time.ParseInLocation(BaseFormat, s, setting.GetTimeZone())
 	return &t, err
 }
 

@@ -1,6 +1,9 @@
 package tokenutils
 
-import "context"
+import (
+	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
+)
 import "time"
 
 type SetUser interface {
@@ -37,7 +40,7 @@ func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc
 }
 
 func SetCreateUser(ctx context.Context, entity SetUser) error {
-	t := time.Now()
+	t := timeutils.Now()
 	entity.SetCreatorId(userId)
 	entity.SetCreatorName(userName)
 	entity.SetCreatedTime(&t)
@@ -49,7 +52,7 @@ func SetCreateUser(ctx context.Context, entity SetUser) error {
 }
 
 func SetUpdateUser(ctx context.Context, entity SetUser) error {
-	t := time.Now()
+	t := timeutils.Now()
 	entity.SetUpdaterId(userId)
 	entity.SetUpdaterName(userName)
 	entity.SetUpdatedTime(&t)
@@ -57,7 +60,7 @@ func SetUpdateUser(ctx context.Context, entity SetUser) error {
 }
 
 func SetDeleteUser(ctx context.Context, entity SetUser) error {
-	t := time.Now()
+	t := timeutils.Now()
 	entity.SetDeleterId(userId)
 	entity.SetDeleterName(userName)
 	entity.SetDeletedTime(&t)

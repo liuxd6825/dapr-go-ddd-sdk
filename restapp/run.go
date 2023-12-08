@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 )
@@ -301,6 +302,10 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		WebRootPath:    webRootPath,
 	}
 
+	// 设置全局时区为本地时区
+	setting.SetLocalTimeZone()
+
+	// 启动HTTP服务器
 	service := NewHttpServer(runCfg.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {
 		return service, err
