@@ -92,7 +92,8 @@ func NewDaprDddClient(ctx context.Context, host string, httpPort int64, grpcPort
 		opt(options)
 	}
 
-	grpcClient, err := newDaprClient(ctx, host, grpcPort)
+	//重试5分钟进行Dapr连接
+	grpcClient, err := newDaprClient(ctx, host, grpcPort, 60*5)
 	if err != nil {
 		return nil, err
 	}
@@ -122,15 +123,13 @@ func NewDaprDddClient(ctx context.Context, host string, httpPort int64, grpcPort
 	}, nil
 }
 
-func newDaprClient(ctx context.Context, host string, grpcPort int64) (daprsdkclient.Client, error) {
-	// 三次试错创建daprClient
+func newDaprClient(ctx context.Context, host string, grpcPort int64, retry uint) (daprsdkclient.Client, error) {
 	port := strconv.FormatInt(grpcPort, 10)
 	var grpcClient daprsdkclient.Client
 	var err error
-	var waitSecond time.Duration = 5
 	addr := fmt.Sprintf("%s:%s", host, port)
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i <= int(retry); i++ {
 		if grpcClient, err = daprsdkclient.NewClientWithAddressContext(ctx, addr); err != nil {
 			log.Infoln(fmt.Sprintf("dapr client connection error, address=%s", addr), err)
 			continue
@@ -139,8 +138,6 @@ func newDaprClient(ctx context.Context, host string, grpcPort int64) (daprsdkcli
 			log.Infoln(fmt.Sprintf("dapr client connection success, address=%s", addr))
 			break
 		}
-		time.Sleep(time.Second * waitSecond)
-		waitSecond = 3
 	}
 	if err != nil {
 		return nil, err
@@ -154,7 +151,7 @@ func (c *daprDddClient) tryCall(ctx context.Context, fun func() error, tryCount 
 		err = fun()
 		if errors.IsGrpcConnError(err) {
 			time.Sleep(time.Second * waitSecond)
-			grpcClient, err2 := newDaprClient(ctx, c.host, c.grpcPort)
+			grpcClient, err2 := newDaprClient(ctx, c.host, c.grpcPort, 1)
 			if err2 != nil {
 				return err2
 			} else {

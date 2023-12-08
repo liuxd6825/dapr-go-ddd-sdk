@@ -52,10 +52,10 @@ func newRuntime() (*goja.Runtime, error) {
 	if err := vm.Set("取文本", toString); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("提取数字文本", regexpNum); err != nil {
+	if err := vm.Set("取数字文本", regexpNum); err != nil {
 		return nil, err
 	}
-	if err := vm.Set("提取中间文本", match); err != nil {
+	if err := vm.Set("取中间文本", match); err != nil {
 		return nil, err
 	}
 	if err := vm.Set("取支付宝账号", GetZhiFuBaoOppAcc); err != nil {

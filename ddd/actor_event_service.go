@@ -8,6 +8,6 @@ import (
 const eventActorType = "ddd.EventActorType"
 
 type EventActorService struct {
-	actor.ServerImplBase
+	actor.ServerImplBaseCtx
 	daprClient dapr.Client
 }

@@ -20,7 +20,7 @@ type AggregateSnapshotActorService struct {
 	daprClient dapr.Client
 }
 
-func NewAggregateSnapshotActorService(daprClient dapr.Client) actor.ServerContext {
+func NewAggregateSnapshotActorService(daprClient dapr.Client) *AggregateSnapshotActorService {
 	return &AggregateSnapshotActorService{
 		daprClient: daprClient,
 	}

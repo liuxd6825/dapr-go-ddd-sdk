@@ -239,19 +239,21 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 		opts.SetMaxConnIdleTime(config.MaxConnIdleTime)
 	}
 
-	// 解决mongo不是本地时区的问题
-	//builder := bsoncodec.NewRegistryBuilder()
+	/*
+		// 解决mongo不是本地时区的问题
+		builder := bsoncodec.NewRegistryBuilder()
 
-	// 注册默认的编码和解码器
-	//bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(builder)
-	//bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(builder)
+		// 注册默认的编码和解码器
+		bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(builder)
+		bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(builder)
 
-	// 注册时间解码器
-	//tTime := reflect.TypeOf(time.Time{})
-	//tCodec := bsoncodec.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
+		// 注册时间解码器
+		tTime := reflect.TypeOf(time.Time{})
+		tCodec := bsoncodec.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
+	*/
 
 	opts.SetBSONOptions(&options.BSONOptions{
-		UseLocalTimeZone: true,
+		UseLocalTimeZone: false,
 	})
 
 	if optionsFunc != nil {

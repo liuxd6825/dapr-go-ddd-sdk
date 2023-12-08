@@ -2,6 +2,7 @@ package jsonutils
 
 import (
 	"github.com/json-iterator/go"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"time"
 	"unsafe"
 )
@@ -21,7 +22,7 @@ type CustomTimeExtension struct {
 	jsoniter.DummyExtension
 }
 
-func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *jsoniter.StructDescriptor) {
+func (e *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *jsoniter.StructDescriptor) {
 
 	for _, binding := range structDescriptor.Fields {
 		var typeErr error
@@ -47,27 +48,7 @@ func (extension *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *j
 			timeFormat = "2006-01-02"
 		}
 
-		locale := time.Local
-		/*	if isUTC, _ := strconv.ParseBool(binding.Field.Tag().Get("time_utc")); isUTC {
-				locale = time.UTC
-			}
-			if locTag := binding.Field.Tag().Get("time_location"); locTag != "" {
-				loc, err := time.LoadLocation(locTag)
-				if err != nil {
-					typeErr = err
-				} else {
-					locale = loc
-				}
-			}
-
-			var isSnap bool
-			snapTag := binding.Field.Tag().Get("time_snap")
-			if snapTag == "" && (formatTag == fDatetime || formatTag == fDate) {
-				isSnap = true
-			} else {
-				isSnap, _ = strconv.ParseBool(binding.Field.Tag().Get("time_snap"))
-			}
-		*/
+		locale := setting.TimeZone
 		binding.Encoder = &funcEncoder{fun: func(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 			if typeErr != nil {
 				stream.Error = typeErr
