@@ -21,6 +21,7 @@ type RunConfig struct {
 	LogLevel               applog.Level
 	DaprMaxCallRecvMsgSize *int64
 	DaprClient             daprclient.DaprDddClient
+	EnvConfig              *EnvConfig
 }
 
 type RunOptions struct {
@@ -187,6 +188,17 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
 
+// RubWithEnvConfig
+//
+//	@Description: 服务启动
+//	@param config  环境配置
+//	@param subsFunc  Dapr消息订阅
+//	@param controllersFunc  iris服务控制器
+//	@param eventsFunc DDD事件注册器
+//	@param actorsFunc Actor注册器
+//	@param options 启动参数， 可以根据参数启动服务，初始化数据库，生成数据库脚本等
+//	@return common.Service 服务
+//	@return error  错误
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 	if len(config.Mongo) > 0 {
@@ -204,6 +216,8 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	}
 
 	opt := NewRunOptions(options...)
+
+	// 是数据库初始化
 	if opt.GetInit() {
 		var err error
 		if opt.tables != nil {
@@ -212,6 +226,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, err
 	}
 
+	// 是生成数据库脚本
 	if opt.GetSqlFile() != "" {
 		var err error
 		if opt.tables != nil {
@@ -220,7 +235,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, err
 	}
 
-	//创建dapr客户端
+	// 启动服务，创建dapr客户端
 	daprClient, err := daprclient.NewDaprDddClient(context.Background(), config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
 	if err != nil {
 		panic(err)
@@ -235,6 +250,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		LogLevel:               config.Log.GetLevel(),
 		DaprMaxCallRecvMsgSize: config.Dapr.MaxCallRecvMsgSize,
 		DaprClient:             daprClient,
+		EnvConfig:              config,
 	}
 
 	eventStoresMap := newEventStores(&config.Dapr, daprClient)
@@ -300,6 +316,7 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		ActorFactories: actorsFunc(),
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
+		EnvConfig:      runCfg.EnvConfig,
 	}
 
 	// 设置全局时区为本地时区

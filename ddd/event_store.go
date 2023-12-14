@@ -3,9 +3,10 @@ package ddd
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"strings"
 )
 
@@ -86,15 +87,14 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 // @param record
 // @return error
 func CallEventHandler(ctx context.Context, handler interface{}, record *daprclient.EventRecord) error {
-	event, err := NewDomainEvent(record)
-	if err != nil {
-		_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
-		return err
-	}
-	if err = callEventHandler(ctx, handler, record.EventType, record.EventVersion, event); err != nil {
-		_, _ = applog.Error("", "ddd", "CallEventHandler", err.Error())
-	}
-	return err
+	return logs.DebugStart(ctx, func() error {
+		if event, err := NewDomainEvent(record); err != nil {
+			return errors.New("package:ddd; func:NewDomainEvent(); error:%v", err.Error())
+		} else if err = callEventHandler(ctx, handler, record.EventType, record.EventVersion, event); err != nil {
+			return errors.New("package:ddd; func:callEventHandler(); error:%v", err.Error())
+		}
+		return nil
+	}, "package:ddd; func:CallEventHandler(); eventType:%v; eventId:%v; eventVersion:%v;", record.EventType, record.EventId, record.EventVersion)
 }
 
 func callEventHandler(ctx context.Context, handler interface{}, eventType string, eventRevision string, event interface{}) error {

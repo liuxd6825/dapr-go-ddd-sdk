@@ -48,8 +48,8 @@ type DaprDddClient interface {
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
 	ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error)
-	Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error)
-	Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error)
+	CommitEvent(ctx context.Context, req *CommitRequest) (*CommitResponse, error)
+	RollbackEvent(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error)
 
 	SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error)
 	GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error)
@@ -164,6 +164,18 @@ func (c *daprDddClient) tryCall(ctx context.Context, fun func() error, tryCount 
 	return err
 }
 
+// InvokeService
+//
+//	@Description:
+//	@receiver c
+//	@param ctx
+//	@param appID
+//	@param methodName
+//	@param verb
+//	@param request
+//	@param response
+//	@return res
+//	@return err
 func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (res interface{}, err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
@@ -202,6 +214,7 @@ func (c *daprDddClient) InvokeService(ctx context.Context, appID, methodName, ve
 	}
 	return nil, nil
 }
+
 func (c *daprDddClient) getError(err error) error {
 	if err == nil {
 		return err
@@ -221,7 +234,17 @@ func (c *daprDddClient) getError(err error) error {
 	}
 	return err
 }
-func (c *daprDddClient) Commit(ctx context.Context, req *CommitRequest) (*CommitResponse, error) {
+
+// CommitEvent
+//
+//	@Description:
+//	@Description:
+//	@receiver c
+//	@param ctx
+//	@param req
+//	@return *CommitResponse
+//	@return error
+func (c *daprDddClient) CommitEvent(ctx context.Context, req *CommitRequest) (*CommitResponse, error) {
 	resp := &CommitResponse{}
 	in := &pb.CommitDomainEventsRequest{
 		TenantId:  req.TenantId,
@@ -237,7 +260,15 @@ func (c *daprDddClient) Commit(ctx context.Context, req *CommitRequest) (*Commit
 	return resp, err
 }
 
-func (c *daprDddClient) Rollback(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error) {
+// RollbackEvent
+//
+//	@Description:
+//	@receiver c
+//	@param ctx
+//	@param req
+//	@return *RollbackResponse
+//	@return error
+func (c *daprDddClient) RollbackEvent(ctx context.Context, req *RollbackRequest) (*RollbackResponse, error) {
 	resp := &RollbackResponse{}
 	in := &pb.RollbackDomainEventsRequest{
 		TenantId:  req.TenantId,

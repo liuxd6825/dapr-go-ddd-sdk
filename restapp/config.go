@@ -24,8 +24,8 @@ type EnvConfig struct {
 	Log   LogConfig               `yaml:"log"`
 	Dapr  DaprConfig              `yaml:"dapr"`
 	Mongo map[string]*MongoConfig `yaml:"mongo"`
-	Neo4j map[string]*Neo4jConfig `json:"neo4j"`
-	Mysql map[string]*MySqlConfig `json:"mysql"`
+	Neo4j map[string]*Neo4jConfig `yaml:"neo4j"`
+	Mysql map[string]*MySqlConfig `yaml:"mysql"`
 	Minio map[string]*MinioConfig `yaml:"minio"`
 }
 
@@ -42,6 +42,14 @@ type DaprConfig struct {
 	GrpcPort           *int64                 `yaml:"grpcPort"`
 	MaxCallRecvMsgSize *int64                 `yaml:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
 	EventStores        map[string]*EventStore `yaml:"eventStores"`
+	Actor              ActorConfig            `yaml:"actor"`
+}
+
+type ActorConfig struct {
+	ActorIdleTimeout       string `yaml:"actorIdleTimeout"`
+	ActorScanInterval      string `yaml:"actorScanInterval"`
+	DrainOngingCallTimeout string `yaml:"drainOngoingCallTimeout"`
+	DrainBalancedActors    bool   `yaml:"drainRebalancedActors"`
 }
 
 type EventStore struct {
@@ -78,11 +86,13 @@ func NewConfigByFile(fileName string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var config Config
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
 		return nil, err
 	}
+
 	for name, env := range config.Envs {
 		if err := env.Init(name); err != nil {
 			return nil, err
@@ -131,6 +141,8 @@ func (e *EnvConfig) Init(name string) error {
 		}
 	}
 
+	e.Dapr.Actor.init()
+
 	return nil
 }
 
@@ -177,6 +189,18 @@ func (d DaprConfig) GetGrpcPort() int64 {
 
 func (l *LogConfig) GetLevel() applog.Level {
 	return l.level
+}
+
+func (c *ActorConfig) init() {
+	if c.ActorIdleTimeout == "" {
+		c.ActorIdleTimeout = "1h"
+	}
+	if c.ActorScanInterval == "" {
+		c.ActorScanInterval = "30s"
+	}
+	if c.DrainOngingCallTimeout == "" {
+		c.DrainOngingCallTimeout = "5m"
+	}
 }
 
 func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {

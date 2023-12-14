@@ -115,7 +115,10 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 		}
 	}()
 
-	err = fun(ctx)
+	err = logs.DebugStart(ctx, func() error {
+		return fun(ctx)
+	}, "uri=%v; method=%v; params=%v;", ictx.FullRequestURI(), ictx.Method(), ictx.Params())
+
 	if err != nil && !errors.IsErrorAggregateExists(err) {
 		SetError(ctx, err)
 		return err
@@ -123,7 +126,7 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 	return err
 }
 
-func Do(ictx iris.Context, fun func() error) (err error) {
+func Do(ictx iris.Context, fun func(ctx context.Context) error) (err error) {
 	ctx := NewContext(ictx)
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
@@ -131,7 +134,10 @@ func Do(ictx iris.Context, fun func() error) (err error) {
 		}
 	}()
 	if fun != nil {
-		if err = fun(); err != nil {
+		err = logs.DebugStart(ctx, func() error {
+			return fun(ctx)
+		}, "uri=%v; method=%v; params=%v;", ictx.FullRequestURI(), ictx.Method(), ictx.Params())
+		if err != nil {
 			SetError(ctx, err)
 		}
 	}
@@ -146,7 +152,11 @@ func DoDto[T any](ictx iris.Context, fun func(ctx context.Context) (T, error)) (
 		}
 	}()
 	if fun != nil {
-		if dto, err = fun(ctx); err != nil {
+		_ = logs.DebugStart(ctx, func() error {
+			dto, err = fun(ctx)
+			return err
+		}, "uri=%v; method=%v; params=%v;", ictx.FullRequestURI(), ictx.Method(), ictx.Params())
+		if err != nil {
 			SetError(ictx, err)
 		}
 	}
@@ -168,7 +178,11 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 		}
 	}()
 
-	data, isFound, err = fun(ctx)
+	_ = logs.DebugStart(ctx, func() error {
+		data, isFound, err = fun(ctx)
+		return err
+	}, "uri=%v; method=%v; params=%v;", ictx.FullRequestURI(), ictx.Method(), ictx.Params())
+
 	if err != nil {
 		SetError(ctx, err)
 		return nil, false, err
@@ -195,16 +209,6 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data any, isFound bool, err erro
 	ctx := NewContext(ictx)
 
 	defer func() {
-		if e := recover(); e != nil {
-			var ok bool
-			err, ok = e.(error)
-			if ok {
-				SetError(ctx, err)
-			}
-		}
-	}()
-
-	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
 		}
@@ -213,7 +217,7 @@ func DoQuery(ictx iris.Context, fun QueryFunc) (data any, isFound bool, err erro
 	_ = logs.DebugStart(ctx, func() error {
 		data, isFound, err = fun(ctx)
 		return err
-	}, "uri=%v; params=%v;", ictx.FullRequestURI(), ictx.Params())
+	}, "uri=%v; method=%v; params=%v;", ictx.FullRequestURI(), ictx.Method(), ictx.Params())
 
 	if err != nil {
 		SetError(ctx, err)
@@ -266,14 +270,25 @@ func DoCmdAndQueryList(ictx iris.Context, queryAppId string, cmd Command, cmdFun
 	return doCmdAndQuery(ictx, queryAppId, false, cmd, cmdFun, queryFun, opts...)
 }
 
-func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (interface{}, bool, error) {
+func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (data interface{}, isFound bool, err error) {
 	ctx := NewContext(ictx)
+
+	defer func() {
+		if err = errors.GetRecoverError(err, recover()); err != nil {
+			SetError(ctx, err)
+		}
+	}()
+
 	options := &CmdAndQueryOptions{WaitSecond: 5}
 	for _, o := range opts {
 		o(options)
 	}
 
-	err := DoCmd(ictx, cmdFun)
+	_ = logs.DebugStart(ctx, func() error {
+		err = DoCmd(ictx, cmdFun)
+		return err
+	}, "uri=%v; method=%v; params=%v;", ictx.FullRequestURI(), ictx.Method(), ictx.Params())
+
 	isExists := errors.IsErrorAggregateExists(err)
 	if err != nil && !isExists {
 		SetError(ctx, err)
@@ -303,8 +318,6 @@ func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Comm
 		return nil, false, err
 	}*/
 
-	var data interface{}
-	var isFound bool
 	if isGetOne {
 		data, isFound, err = DoQueryOne(ictx, queryFun)
 	} else {

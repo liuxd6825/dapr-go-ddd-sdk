@@ -3,6 +3,7 @@ package logs
 import (
 	"context"
 	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -220,28 +221,33 @@ func Debugf(ctx context.Context, format string, args ...any) {
 	}
 }
 
-func DebugStart(ctx context.Context, fun func() error, format string, args ...any) error {
+func DebugStart(ctx context.Context, fun func() error, format string, args ...any) (err error) {
 	if l := GetLogger(ctx); l != nil {
 		if isLevel(l, DebugLevel) {
+
 			logId := idutils.NewId()
-			l.Debugf("start="+logId+"; "+format, getArgs(args...)...)
+			l.Debugf("logId="+logId+"; type=start; "+format, getArgs(args...)...)
 			st := time.Now()
-			err := fun()
-			et := time.Now()
-			ut := et.Sub(st)
-			var as []any
-			as = append(as, args...)
-			as = append(as, ut)
-			if err != nil {
-				as = append(as, err.Error())
-				l.Debugf("end="+logId+"; "+format+"; useTime=%v; error=%s,", getArgs(as...)...)
-				return err
-			}
-			l.Debugf("end="+logId+"; "+format+"; useTime=%v", getArgs(as...)...)
-			return nil
+
+			defer func() {
+				err = errors.GetRecoverError(err, recover())
+				et := time.Now()
+				ut := et.Sub(st)
+				var params []any
+				params = append(params, args...)
+				params = append(params, ut)
+				fmtStr := "logId=" + logId + "; type=end; " + format + "; time=%v;"
+				if err != nil {
+					fmtStr += " error:%v;"
+					params = append(params, err.Error())
+				}
+				l.Debugf(fmtStr, getArgs(params...)...)
+			}()
+
+			err = fun()
 		}
 	}
-	return nil
+	return err
 }
 
 func Printf(ctx context.Context, format string, args ...interface{}) {

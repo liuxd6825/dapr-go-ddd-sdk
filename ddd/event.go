@@ -26,6 +26,35 @@ type Event interface {
 	GetEventId() string   // 事件Id
 	GetEventType() string // 事件类型
 }
+type emptyEvent struct {
+	tenantId  string
+	commandId string
+	eventId   string
+	eventType string
+}
+
+func (e *emptyEvent) GetTenantId() string {
+	return e.tenantId
+}
+
+func (e *emptyEvent) GetCommandId() string {
+	return e.commandId
+}
+
+func (e *emptyEvent) GetEventId() string {
+	return e.eventId
+}
+
+func (e *emptyEvent) GetEventType() string {
+	return e.eventType
+}
+
+func NewEmptyEvent(e Event) Event {
+	if e != nil {
+		return e
+	}
+	return &emptyEvent{}
+}
 
 func DoEvent(eventData map[string]interface{}, event interface{}) *DoEventResult {
 	bs, err := json.Marshal(eventData)
