@@ -3,45 +3,60 @@ package ddd_mongodb
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 type MongoSession struct {
 	mongodb *MongoDB
-	isWrite bool
+}
+
+type sessionCtxKey struct {
 }
 
 func NewSession(isWrite bool, db *MongoDB) ddd_repository.Session {
-	return &MongoSession{mongodb: db, isWrite: isWrite}
+	return &MongoSession{mongodb: db}
 }
 
-func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc) error {
-	commitTime := 20 * time.Second
+func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc, opts ...*ddd_repository.SessionOptions) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			logs.Errorf(ctx, "func=MongoSession.UseTransaction(); error=%v;", err.Error())
+		}
+	}()
+
+	writeTime := ddd_repository.NewSessionOptions(opts...).GetWriteTime()
+
+	// 事务选项
 	opt := &options.SessionOptions{
-		DefaultMaxCommitTime: &commitTime,
+		DefaultMaxCommitTime: &writeTime,
+		DefaultWriteConcern: &writeconcern.WriteConcern{
+			WTimeout: writeTime,
+		},
 	}
-	err := r.mongodb.client.UseSessionWithOptions(ctx, opt, func(sCtx mongo.SessionContext) error {
+
+	// 事务处理
+	err = r.mongodb.client.UseSessionWithOptions(ctx, opt, func(ctx mongo.SessionContext) error {
 		serverCount := r.mongodb.config.ServerCount()
 		if serverCount == 1 {
-			return dbFunc(sCtx)
+			return dbFunc(ctx)
 		} else {
-			if err := sCtx.StartTransaction(); err != nil {
+			// 开启事务
+			if err = ctx.StartTransaction(); err != nil {
 				return err
 			}
-			err := dbFunc(sCtx)
-			if err != nil {
-				err = sCtx.AbortTransaction(ctx)
+			// 执行业务
+			if err = dbFunc(ctx); err != nil {
+				err = ctx.AbortTransaction(ctx)
 			} else {
-				err = sCtx.CommitTransaction(ctx)
+				err = ctx.CommitTransaction(ctx)
 			}
 			return err
 		}
 	})
-	if err != nil {
-		logs.Error(ctx, err.Error())
-	}
 	return err
 }

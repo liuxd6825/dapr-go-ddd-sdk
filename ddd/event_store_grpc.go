@@ -113,7 +113,7 @@ func (s *grpcEventStore) Commit(ctx context.Context, req *daprclient.CommitReque
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 	req.CompName = s.compName
-	return s.client.Commit(ctx, req)
+	return s.client.CommitEvent(ctx, req)
 }
 
 func (s *grpcEventStore) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
@@ -121,7 +121,7 @@ func (s *grpcEventStore) Rollback(ctx context.Context, req *daprclient.RollbackR
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 	req.CompName = s.compName
-	return s.client.Rollback(ctx, req)
+	return s.client.RollbackEvent(ctx, req)
 }
 
 func (s *grpcEventStore) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (res *daprclient.SaveSnapshotResponse, resErr error) {

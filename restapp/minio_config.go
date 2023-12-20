@@ -20,12 +20,12 @@ var _minioDefault *minio.Client
 
 func InitMinioByEnvConfig(config *EnvConfig) error {
 	if config != nil {
-		return InitMinio(config.Minio)
+		return initMinio(config.Minio)
 	}
 	return nil
 }
 
-func InitMinio(configs map[string]*MinioConfig) error {
+func initMinio(configs map[string]*MinioConfig) error {
 	if err := assert.NotNil(configs, assert.NewOptions("config is nil")); err != nil {
 		return err
 	}

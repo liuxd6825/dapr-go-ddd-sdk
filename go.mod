@@ -15,7 +15,7 @@ require (
 	github.com/liuxd6825/dapr-components-contrib v1.12.0
 	github.com/liuxd6825/dapr-go-sdk v1.9.0
 	//github.com/mitchellh/mapstructure v1.5.0
-	github.com/neo4j/neo4j-go-driver/v4 v4.4.3
+	github.com/neo4j/neo4j-go-driver/v5 v5.15.0
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -32,6 +32,8 @@ require (
 	github.com/json-iterator/go v1.1.12
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
+	github.com/neo4j/neo4j-go-driver/v4 v4.4.7
+	github.com/redis/go-redis/v9 v9.2.1
 	github.com/tealeg/xlsx v1.0.5
 	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.31.0
@@ -47,7 +49,9 @@ require (
 	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect

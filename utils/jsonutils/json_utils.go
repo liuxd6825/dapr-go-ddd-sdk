@@ -19,6 +19,10 @@ func MarshalIndent(data interface{}) (string, error) {
 	return string(bs), err
 }
 
+func Unmarshal(data []byte, v any) error {
+	return json.Unmarshal(data, v)
+}
+
 // MarshalNoKeyMarks key没有双引号，序列化json字符串。
 func MarshalNoKeyMarks(data map[string]interface{}) (string, error) {
 	sb := strings.Builder{}

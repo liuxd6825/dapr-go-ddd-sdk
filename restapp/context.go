@@ -28,6 +28,10 @@ func NewLoggerContext(ctx context.Context) context.Context {
 	return logs.NewContext(ctx, _logger)
 }
 
+func NewContext2(ctx context.Context) context.Context {
+	return logs.NewContext(ctx, _logger)
+}
+
 func newIrisContext(ctx iris.Context) ddd_context.ServerContext {
 	return &serverContext{
 		ctx: ctx,

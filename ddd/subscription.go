@@ -54,7 +54,7 @@ func NewSubscribe(pubsubName string, topic string, route string, metadata map[st
 type SubscribeHandler interface {
 	GetSubscribes() ([]*Subscribe, error)
 	RegisterSubscribe(subscribe *Subscribe) error
-	Handler(ctx context.Context, sctx SubscribeContext) error
+	SubscribeHandler(ctx context.Context, sCtx SubscribeContext) error
 }
 
 type SubscribeContext interface {
@@ -63,7 +63,7 @@ type SubscribeContext interface {
 }
 
 type SubscribeInterceptor interface {
-	Interceptor(ctx context.Context, sctx SubscribeContext) (bool, error)
+	Interceptor(ctx context.Context, sCtx SubscribeContext) (bool, error)
 }
 
 type SubscribeHandlerFunc func(sh SubscribeHandler, subscribe *Subscribe) error
@@ -95,7 +95,7 @@ func (h *subscribeHandler) RegisterSubscribe(subscribe *Subscribe) error {
 }
 
 // Handler 消息订阅处理器
-func (h *subscribeHandler) Handler(ctx context.Context, sctx SubscribeContext) error {
+func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeContext) error {
 	cancel, err := h.interceptor(ctx, sctx)
 	if cancel || err != nil {
 		return err

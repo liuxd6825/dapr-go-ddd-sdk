@@ -33,19 +33,19 @@ func (d *SetData[T]) AddItems(statue DataStatue, items ...T) {
 		d.items = append(d.items, i)
 	}
 }
-func (d *SetData[T]) CreateList() []T {
+func (d *SetData[T]) GetCreateList() []T {
 	return d.getStatueList(DataStatueCreate)
 }
 
-func (d *SetData[T]) CreateOrUpdateList() []T {
+func (d *SetData[T]) GetCreateOrUpdateList() []T {
 	return d.getStatueList(DataStatueCreateOrUpdate)
 }
 
-func (d *SetData[T]) UpdateList() []T {
+func (d *SetData[T]) GetUpdateList() []T {
 	return d.getStatueList(DataStatueUpdate)
 }
 
-func (d *SetData[T]) DeleteList() []T {
+func (d *SetData[T]) GetDeleteList() []T {
 	return d.getStatueList(DataStatueDelete)
 }
 

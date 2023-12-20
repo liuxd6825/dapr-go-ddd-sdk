@@ -13,6 +13,7 @@ import (
 )
 
 type MongoConfig struct {
+	DbKey                  string
 	Host                   string  `yaml:"host"`
 	Database               string  `yaml:"dbname"`
 	UserName               string  `yaml:"user"`
@@ -20,7 +21,6 @@ type MongoConfig struct {
 	ReplicaSet             string  `yaml:"replicaSet"`
 	WriteConcern           string  `yaml:"writeConcern"`
 	ReadConcern            string  `yaml:"readConcern"`
-	Options                string  `yaml:"options"`
 	OperationTimeout       *uint64 `yaml:"operationTimeout"` //单位秒
 	MaxPoolSize            *uint64 `yaml:"maxPoolSize"`
 	ConnectTimeout         *uint64 `yaml:"connectTimeout"` //单位秒
@@ -29,6 +29,7 @@ type MongoConfig struct {
 	MaxConnIdleTime        *uint64 `yaml:"maxConnIdleTime"`
 	ServerSelectionTimeout *uint64 `yaml:"serverSelectionTimeout"`
 	SocketTimeout          *uint64 `yaml:"socketTimeout"`
+	Direct                 *bool   `json:"direct"`
 }
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
@@ -46,7 +47,7 @@ func init() {
 	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
 }
 
-func InitMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
+func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 	if _initMongo {
 		return
 	}
@@ -67,7 +68,7 @@ func InitMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 			Password:               c.Password,
 			WriteConcern:           c.WriteConcern,
 			ReadConcern:            c.ReadConcern,
-			Options:                c.Options,
+			Direct:                 c.Direct,
 			ReplicaSet:             c.ReplicaSet,
 			MaxPoolSize:            defaultInt(c.MaxPoolSize, 20),
 			OperationTimeout:       defaultTimeout(c.OperationTimeout, 30),
@@ -88,12 +89,36 @@ func InitMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 		if err != nil {
 			panic(err)
 		}
-		_mongoDbs[strings.ToLower(k)] = mongodb
+		dbKey := strings.ToLower(k)
+		c.DbKey = dbKey
+		_mongoDbs[dbKey] = mongodb
 		_mongoDefault = mongodb
 	}
 	if len(_mongoDbs) > 1 {
 		_mongoDefault = nil
 	}
+}
+
+func GetMongoDB() *ddd_mongodb.MongoDB {
+	return _mongoDefault
+}
+
+func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
+	d, ok := _mongoDbs[strings.ToLower(dbKey)]
+	return d, ok
+}
+
+func CloseMongoDB(ctx context.Context) error {
+	c := func(d *ddd_mongodb.MongoDB) (err error) {
+		defer func() {
+			err = errors.GetRecoverError(err, recover())
+		}()
+		return d.Close(ctx)
+	}
+	for _, d := range _mongoDbs {
+		_ = c(d)
+	}
+	return nil
 }
 
 func pseconds(v *time.Duration) string {
@@ -128,26 +153,4 @@ func defaultTimeout(v *uint64, def uint64) time.Duration {
 		return time.Duration(def) * time.Second
 	}
 	return time.Duration(*v) * time.Second
-}
-
-func GetMongoDB() *ddd_mongodb.MongoDB {
-	return _mongoDefault
-}
-
-func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
-	d, ok := _mongoDbs[strings.ToLower(dbKey)]
-	return d, ok
-}
-
-func CloseMongoDB(ctx context.Context) error {
-	c := func(d *ddd_mongodb.MongoDB) (err error) {
-		defer func() {
-			err = errors.GetRecoverError(err, recover())
-		}()
-		return d.Close(ctx)
-	}
-	for _, d := range _mongoDbs {
-		_ = c(d)
-	}
-	return nil
 }

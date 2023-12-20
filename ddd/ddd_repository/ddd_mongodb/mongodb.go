@@ -35,7 +35,7 @@ const (
 	defaultTimeout = 30 * time.Second
 
 	// mongodb://<UserName>:<Password@<Host>/<database><Params>
-	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s?%s"
+	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s"
 
 	// mongodb://<Host>/<database><Params>
 	connectionURIFormat = "mongodb://%s/%s%s"
@@ -75,6 +75,7 @@ type Config struct {
 	ServerSelectionTimeout time.Duration //控制客户端在选择服务器之前可以逗留在服务器上的时间，单位是毫秒.
 	ConnectTimeout         time.Duration //控制客户端向MongoDB实例发出连接请求的最长时间.
 	SocketTimeout          time.Duration //控制客户端在接收响应之前可以逗留在服务器上的时间，单位是毫秒.
+	Direct                 *bool
 }
 
 type ObjectId string
@@ -199,7 +200,7 @@ func getMongoURI(metadata *Config) string {
 		return fmt.Sprintf(connectionURIFormatWithSrv, metadata.server, metadata.Options)
 	}
 	if metadata.UserName != "" && metadata.Password != "" {
-		return fmt.Sprintf(connectionURIFormatWithAuthentication, metadata.UserName, metadata.Password, metadata.Host, metadata.DatabaseName, metadata.Options)
+		return fmt.Sprintf(connectionURIFormatWithAuthentication, metadata.UserName, metadata.Password, metadata.Host, metadata.DatabaseName)
 	}
 	return fmt.Sprintf(connectionURIFormat, metadata.Host, metadata.DatabaseName, metadata.Options)
 }
@@ -239,6 +240,7 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 	if config.MaxConnIdleTime > 0 {
 		opts.SetMaxConnIdleTime(config.MaxConnIdleTime)
 	}
+	opts.Direct = config.Direct
 
 	/*
 		// 解决mongo不是本地时区的问题

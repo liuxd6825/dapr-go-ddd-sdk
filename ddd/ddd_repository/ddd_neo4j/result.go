@@ -1,12 +1,13 @@
 package ddd_neo4j
 
 import (
+	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/mitchellh/mapstructure"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"reflect"
 	"strconv"
 	"strings"
@@ -41,10 +42,10 @@ func NewMappingOptions() *MappingOptions {
 	}
 }
 
-func NewNeo4jResult(result neo4j.Result, keys ...*KeyResult[interface{}]) *Neo4jResult {
+func NewNeo4jResult(ctx context.Context, result neo4j.ResultWithContext, keys ...*KeyResult[interface{}]) *Neo4jResult {
 	mapList := make(map[string][]interface{})
 	init := false
-	for result.Next() {
+	for result.Next(ctx) {
 		record := result.Record()
 		if !init {
 			init = true
@@ -110,7 +111,6 @@ func (r *Neo4jResult) GetList(key string, resultList interface{}, opts ...*Mappi
 	return nil
 }
 
-//
 // GetInteger
 // @Description: 获取整数值，如count查询结果；当neo4j结果是列表时，只取第一条；当neo4j没有结果时，返回defaultValue值
 // @receiver r
@@ -118,7 +118,6 @@ func (r *Neo4jResult) GetList(key string, resultList interface{}, opts ...*Mappi
 // @param  defaultValue 默认值
 // @return int64 total汇总数据量
 // @return error 错误
-//
 func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) {
 	var total int64 = 0
 	dataList, ok := r.data[key]
@@ -137,7 +136,6 @@ func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) 
 	return total, nil
 }
 
-//
 // GetOne
 // @Description:
 // @receiver r
@@ -145,7 +143,6 @@ func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) 
 // @param entity
 // @return bool
 // @return error
-//
 func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*MappingOptions) (bool, error) {
 	options := NewMappingOptions()
 	options.Merge(opts...)

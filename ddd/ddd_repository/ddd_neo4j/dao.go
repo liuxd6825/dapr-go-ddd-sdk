@@ -7,9 +7,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/gocsv"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
+	"os"
 	"strings"
 	"time"
 )
@@ -43,7 +48,7 @@ type Element interface {
 }
 
 type Dao[T Element] struct {
-	driver  neo4j.Driver
+	driver  neo4j.DriverWithContext
 	cypher  Cypher
 	newOne  func() T
 	newList func() []T
@@ -53,6 +58,70 @@ type Options[T interface{}] struct {
 	newOne  func() T
 	newList func() []T
 }
+
+type ImportCsvCmd struct {
+	TenantId   string           `json:"tenantId" desc:"租户ID"`
+	CaseId     string           `json:"caseId" desc:""`
+	Neo4jPath  string           `json:"neo4JPath"`
+	ImportFile string           `json:"importFile"`
+	Labels     []string         `json:"label"`
+	Fields     []string         `json:"fields"`
+	ImportType ImportType       `json:"importType"`
+	Data       ImportCsvCmdData `json:"data"`
+}
+
+type ImportCsvCmdData interface {
+	Data() any
+	List() any
+	Item(index int) any
+	Append(item any)
+	Length() int
+}
+
+type ImportType int
+
+type ImportJsonCmd struct {
+	TenantId   string     `json:"tenantId" desc:"租户ID"`
+	CaseId     string     `json:"caseId" desc:""`
+	Neo4jPath  string     `json:"neo4JPath"`
+	ImportFile string     `json:"importFile"`
+	Nodes      []Node     `json:"nodes"`
+	Relations  []Relation `json:"relations"`
+}
+
+type importCsvCmdData struct {
+	list []any
+	data any
+}
+
+func (i *importCsvCmdData) List() any {
+	return i.list
+}
+
+func (i *importCsvCmdData) Data() any {
+	return i.data
+}
+
+func (i *importCsvCmdData) Item(index int) any {
+	return i.list[index]
+}
+
+func (i *importCsvCmdData) Append(item any) {
+	i.list = append(i.list, item)
+}
+
+func (i *importCsvCmdData) Length() int {
+	return len(i.list)
+}
+
+func NewImportCsvCmdData(data any) ImportCsvCmdData {
+	return &importCsvCmdData{data: data}
+}
+
+const (
+	ImportTypeNode = iota
+	ImportTypeRelation
+)
 
 func NewOptions[T interface{}](opts ...*Options[T]) *Options[T] {
 	n := &Options[T]{}
@@ -67,7 +136,7 @@ func NewOptions[T interface{}](opts ...*Options[T]) *Options[T] {
 	return n
 }
 
-func (d *Dao[T]) init(driver neo4j.Driver, cypher Cypher, opts ...*Options[T]) {
+func (d *Dao[T]) init(driver neo4j.DriverWithContext, cypher Cypher, opts ...*Options[T]) {
 	o := NewOptions[T](opts...)
 	d.driver = driver
 	d.cypher = cypher
@@ -77,6 +146,83 @@ func (d *Dao[T]) init(driver neo4j.Driver, cypher Cypher, opts ...*Options[T]) {
 	if o.newOne != nil {
 		d.newOne = o.newOne
 	}
+}
+
+func (d *Dao[T]) query(ctx context.Context, query string, data map[string]any) (any, error) {
+	result, err := neo4j.ExecuteQuery(ctx, d.driver, query, data, neo4j.EagerResultTransformer, neo4j.ExecuteQueryWithDatabase("neo4j"))
+	return result, err
+}
+
+func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.ManagedTransaction) (*Neo4jResult, error), opts ...*SessionOptions) (result *Neo4jResult, err error) {
+	if fun == nil {
+		return nil, errors.New("doSession(ctx, fun) fun is nil")
+	}
+	if sc, ok := GetSessionContext(ctx); ok {
+		tx := sc.GetTransaction()
+		_, err := fun(tx)
+		return nil, err
+	}
+
+	opt := NewSessionOptions(opts...)
+	opt.setDefault()
+
+	session := d.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: *opt.AccessMode})
+	defer func() {
+		_ = session.Close(ctx)
+		if e1 := errors.GetError(recover()); e1 != nil {
+			err = e1
+		}
+	}()
+	/*
+		ex, err := session.BeginTransaction(ctx, func(config *neo4j.TransactionConfig) {
+			config.Timeout = 50 * time.Second
+		})
+		if err != nil {
+			return nil, err
+		}
+	*/
+
+	var res any
+	if *opt.AccessMode == neo4j.AccessModeRead {
+		res, err = session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			return fun(tx)
+		})
+	} else if *opt.AccessMode == neo4j.AccessModeWrite {
+		res, err = session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			return fun(tx)
+		})
+	}
+	if err != nil {
+		return nil, err
+	}
+	if result, ok := res.(*Neo4jResult); ok {
+		return result, nil
+	}
+	return nil, err
+}
+
+func (d *Dao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, error) {
+	return d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult, error) {
+		result, err := tx.Run(ctx, cypher, nil)
+		if err != nil {
+			return nil, err
+		}
+		return NewNeo4jResult(ctx, result), err
+	})
+}
+
+func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult, error) {
+	var resultData *Neo4jResult
+	_, err := d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult, error) {
+		result, err := tx.Run(ctx, cypher, params)
+		if err != nil {
+			log.Println("wirte to DB with error:", err)
+			return nil, err
+		}
+		resultData = NewNeo4jResult(ctx, result)
+		return nil, err
+	})
+	return resultData, err
 }
 
 func (d *Dao[T]) NewEntity() (res T, resErr error) {
@@ -442,30 +588,6 @@ func (d *Dao[T]) FindByFilter(ctx context.Context, tenantId, filter string) *ddd
 	})
 }
 
-func (d *Dao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, error) {
-	return d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
-		result, err := tx.Run(cypher, nil)
-		if err != nil {
-			return nil, err
-		}
-		return NewNeo4jResult(result), err
-	})
-}
-
-func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult, error) {
-	var resultData *Neo4jResult
-	_, err := d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
-		result, err := tx.Run(cypher, params)
-		if err != nil {
-			log.Println("wirte to DB with error:", err)
-			return nil, err
-		}
-		resultData = NewNeo4jResult(result)
-		return nil, err
-	})
-	return resultData, err
-}
-
 func (d *Dao[T]) FindPagingByCypher(ctx context.Context, tenantId, cypher string, pageNum, pageSize int64, resultKey string, isTotalRows bool, params map[string]any, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	return d.DoFilter(ctx, tenantId, func() (*ddd_repository.FindPagingResult[T], bool, error) {
 		return d.findPagingByCypher(ctx, tenantId, cypher, pageNum, pageSize, resultKey, isTotalRows, params, opts...)
@@ -547,58 +669,354 @@ func (d *Dao[T]) doSet(ctx context.Context, tenantId string, cypher string, para
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return nil, err
 	}
-	res, err := d.doSession(ctx, func(tx neo4j.Transaction) (*Neo4jResult, error) {
-		r, err := tx.Run(cypher, params)
+	return d.Run(ctx, cypher, params, true, opts...)
+}
+
+func (d *Dao[T]) Run(ctx context.Context, cypher string, params map[string]any, isWriteMode bool, opts ...ddd_repository.Options) (*Neo4jResult, error) {
+	sOptionsBuilder := NewSessionOptionsBuilder().SetAccessMode(neo4j.AccessModeRead)
+	if isWriteMode {
+		sOptionsBuilder.SetAccessMode(neo4j.AccessModeWrite)
+	}
+
+	res, err := d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult, error) {
+		r, err := tx.Run(ctx, cypher, params)
 		if err != nil {
 			return nil, err
 		}
-		return NewNeo4jResult(r), nil
-	})
+		return NewNeo4jResult(ctx, r), nil
+	}, sOptionsBuilder.Build())
+
 	return res, err
 }
 
-func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.Transaction) (*Neo4jResult, error), opts ...*SessionOptions) (result *Neo4jResult, err error) {
-
-	if fun == nil {
-		return nil, errors.New("doSession(ctx, fun) fun is nil")
-	}
-	if sc, ok := GetSessionContext(ctx); ok {
-		tx := sc.GetTransaction()
-		_, err := fun(tx)
-		return nil, err
-	}
-
-	opt := NewSessionOptions()
-	opt.Merge(opts...)
-	opt.setDefault()
-
-	session := d.driver.NewSession(neo4j.SessionConfig{AccessMode: *opt.AccessMode})
+func (d *Dao[T]) ImportFile2(ctx context.Context, cmd ImportCsvCmd, data []T, opts ...ddd_repository.Options) (err error) {
 	defer func() {
-		_ = session.Close()
-		if e1 := errors.GetError(recover()); e1 != nil {
-			err = e1
-		}
+		err = errors.GetRecoverError(err, recover())
 	}()
 
-	var res interface{}
-	if *opt.AccessMode == neo4j.AccessModeRead {
-		res, err = session.ReadTransaction(func(tx neo4j.Transaction) (interface{}, error) {
-			return fun(tx)
-		})
-	} else if *opt.AccessMode == neo4j.AccessModeWrite {
-		res, err = session.WriteTransaction(func(tx neo4j.Transaction) (interface{}, error) {
-			return fun(tx)
-		})
+	labels := ""
+	for _, item := range cmd.Labels {
+		labels += ":" + item
 	}
+
+	field := strings.Builder{}
+	fs := []string{
+		"id", "caseId", "tenantId", "graphId", "nodeType", "isDeleted", "remarks",
+		"createTime", "creatorId", "creatorName", "deletedTime", "deleterId", "deleterName",
+		"updatedTime", "updaterId", "updaterName",
+	}
+	fs = append(fs, cmd.Fields...)
+	fsLen := len(fs) - 1
+	for i, name := range fs {
+		field.WriteString(name + ":a." + stringutils.FirstUpper(name))
+		if i < fsLen {
+			field.WriteString(",")
+		}
+	}
+
+	cypher := strings.Builder{}
+	//cypher.WriteString(fmt.Sprintf(`USING PERIODIC COMMIT 500;"`))
+	switch cmd.ImportType {
+	case ImportTypeNode:
+		batch, err := jsonutils.Marshal(data)
+		if err != nil {
+			return err
+		}
+		cypher.WriteString(fmt.Sprintf(`
+		UNWIND {batch:[%s]} as a
+		CREATE (n%s{%s})
+        `, batch, labels, field.String()))
+		break
+	case ImportTypeRelation:
+		var list []any
+		for _, item := range data {
+			var obj any = item
+			rel, ok := obj.(Relation)
+			if ok {
+				rel.SetProperties(map[string]any{})
+				d := struct {
+					Id      string `json:"id"`
+					StartId string `json:"startId"`
+					EndId   string `json:"endId"`
+					RelType string `json:"relType"`
+					Props   any    `json:"props"`
+				}{
+					Id:      rel.GetId(),
+					StartId: rel.GetStartId(),
+					EndId:   rel.GetEndId(),
+					RelType: rel.GetRelType(),
+					Props:   nil,
+				}
+
+				list = append(list, d)
+			}
+		}
+		batch, err := jsonutils.Marshal(list)
+		if err != nil {
+			return err
+		}
+
+		cypher.WriteString(fmt.Sprintf(`
+		UNWIND {batch:%s} as row
+		MATCH (from%s{id:row.startId})
+		MATCH (to%s{id:row.endId})
+		CALL apoc.create.relationship(from, row.relType, row.props, to) yield rel RETURN count(*)
+		`, batch, labels, labels))
+		break
+	}
+	//cypher.WriteString(fmt.Sprintf(`"),{batchSize:1000, parallel:true})`))
+
+	fmt.Println("***********")
+	logs.Debug(ctx, cypher.String())
+	fmt.Println("***********")
+
+	session := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer session.Close(ctx)
+
+	result, err := session.Run(ctx, cypher.String(), nil)
+	if err == nil {
+		summary, _ := result.Consume(ctx)
+		fmt.Println("Query updated the database?", summary.Counters().ContainsUpdates())
+	}
+
+	return err
+}
+
+func (d *Dao[T]) CreateIndex(ctx context.Context, index, label, property string) (err error) {
+	cypher := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS FOR (n:%s) ON (n.%s) ", index, label, property)
+	idxSession := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+
+	_, err = idxSession.Run(ctx, cypher, nil)
+	defer func() {
+		_ = idxSession.Close(ctx)
+	}()
+	return err
+}
+
+func (d *Dao[T]) ImportCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_repository.Options) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	fileName := cmd.Neo4jPath + "/import/" + cmd.ImportFile
+
+	var csvFile *os.File
+	csvFile, err = os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if result, ok := res.(*Neo4jResult); ok {
-		return result, nil
+	defer func() {
+		_ = csvFile.Close()
+	}()
+
+	if err = gocsv.MarshalFile(cmd.Data.Data(), csvFile); err != nil {
+		return err
 	}
 
-	return nil, err
+	labels := ""
+	for _, item := range cmd.Labels {
+		labels += ":" + item
+	}
+
+	fs := []string{
+		"id", "caseId", "tenantId", "graphId", "nodeType", "isDeleted", "remarks",
+		"createTime", "creatorId", "creatorName", "deletedTime", "deleterId", "deleterName",
+		"updatedTime", "updaterId", "updaterName",
+	}
+	fs = append(fs, cmd.Fields...)
+	fsLen := len(fs) - 1
+	props := strings.Builder{}
+	setFields := strings.Builder{}
+	for i, name := range fs {
+		props.WriteString(name + ":a." + stringutils.FirstUpper(name))
+		setFields.WriteString("n." + name + "=a." + stringutils.FirstUpper(name))
+		if i < fsLen {
+			props.WriteString(",")
+			setFields.WriteString(",")
+		}
+	}
+
+	//创建索引
+	_ = d.CreateIndex(ctx, "case_"+cmd.CaseId+"_id", "case_"+cmd.CaseId, "id")
+
+	cypher := strings.Builder{}
+
+	switch cmd.ImportType {
+	case ImportTypeNode:
+		cypher.WriteString(fmt.Sprintf(`
+		LOAD CSV WITH HEADERS FROM 'file:///%s' AS a
+		CALL {
+			WITH a
+			MERGE (n%s{id:a.Id}) ON CREATE SET %v ON MATCH SET %v 
+		}  IN TRANSACTIONS OF 1000 ROWS;
+        `, cmd.ImportFile, labels, setFields.String(), setFields.String()))
+		break
+	case ImportTypeRelation:
+		relTypes := make(map[string]int) // 存储去重后的关系
+		cypher.WriteString(fmt.Sprintf(`
+		LOAD CSV WITH HEADERS FROM 'file:///%s' AS a
+		CALL {
+			WITH a
+			MATCH (s%s{id:a.StartId}),(e%s{id:a.EndId}) 
+		`, cmd.ImportFile, labels, labels))
+
+		// 去重后的关系
+		for i := 0; i < cmd.Data.Length(); i++ {
+			item := cmd.Data.Item(i)
+			if rel, ok := item.(Relation); ok {
+				relType := rel.GetRelType()
+				if _, find := relTypes[relType]; !find {
+					relTypes[relType] = 0
+					// 按关系类型生成创建关系语句
+					cypher.WriteString(fmt.Sprintf(`
+					FOREACH (_ IN case when a.RelType = '%s' then[1] else[] end|
+						MERGE (s)-[n:%s{id:a.Id}]->(e)
+						ON CREATE SET %s
+						ON MATCH  SET %s
+					)`, relType, relType, setFields.String(), setFields.String()))
+				}
+			}
+		}
+		cypher.WriteString(`} IN TRANSACTIONS OF 100 ROWS;`)
+		break
+	}
+
+	fmt.Println("***********")
+	logs.Debug(ctx, cypher.String())
+	fmt.Println("***********")
+
+	session := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer func() {
+		_ = session.Close(ctx)
+	}()
+
+	_, err = session.Run(ctx, cypher.String(), nil)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		//summary, _ := result.Consume(ctx)
+		//fmt.Println("Query updated the database?", summary.Counters().ContainsUpdates())
+	}
+	return err
+}
+
+type ImportJsonRelation struct {
+	Id         string                  `json:"id"`
+	Type       string                  `json:"type"`
+	Label      string                  `json:"label"`
+	Properties any                     `json:"properties"`
+	Start      ImportJsonRelationStart `json:"start"`
+	End        ImportJsonRelationEnd   `json:"end"`
+}
+type ImportJsonRelationStart struct {
+	Id         string   `json:"id"`
+	Labels     []string `json:"labels"`
+	Properties any      `json:"properties"`
+}
+type ImportJsonRelationEnd struct {
+	Id         string   `json:"id"`
+	Labels     []string `json:"labels"`
+	Properties any      `json:"properties"`
+}
+
+type ImportJsonNode struct {
+	Id         string   `json:"id"`
+	Type       string   `json:"type"`
+	Labels     []string `json:"labels"`
+	Properties any      `json:"properties"`
+}
+type Null struct {
+}
+
+func (d *Dao[T]) ImportJson(ctx context.Context, cmd ImportJsonCmd, opts ...ddd_repository.Options) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	fileName := cmd.Neo4jPath + "/import/" + cmd.ImportFile
+
+	var jsonFile *os.File
+	jsonFile, err = os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = jsonFile.Close()
+	}()
+
+	//labelTenant := fmt.Sprintf("tenant_%s", cmd.TenantId)
+	labelCase := fmt.Sprintf("case_%s", cmd.CaseId)
+	lables := []string{
+		//labelTenant,
+		labelCase,
+	}
+	ids := map[string]int{}
+	for _, item := range cmd.Nodes {
+		id := item.GetId()
+		//nodeLables := append(lables, "human")
+		if _, ok := ids[id]; ok {
+			continue
+		}
+		ids[id] = 0
+		props := map[string]any{"id": item.GetId()}
+		node := ImportJsonNode{
+			Id:         item.GetId(),
+			Type:       "node",
+			Labels:     lables,
+			Properties: props,
+		}
+		if item, err := jsonutils.Marshal(node); err != nil {
+			return err
+		} else {
+			jsonFile.WriteString(item)
+			jsonFile.WriteString("\r\n")
+		}
+	}
+
+	for _, item := range cmd.Relations {
+		rel := ImportJsonRelation{
+			Id:         item.GetId(),
+			Type:       "relationship",
+			Label:      item.GetRelType(),
+			Properties: item.GetProperties(),
+			Start: ImportJsonRelationStart{
+				Id:         item.GetStartId(),
+				Labels:     lables,
+				Properties: Null{},
+			},
+			End: ImportJsonRelationEnd{
+				Id:         item.GetEndId(),
+				Labels:     lables,
+				Properties: Null{},
+			},
+		}
+		if item, err := jsonutils.Marshal(rel); err != nil {
+			return err
+		} else {
+			jsonFile.WriteString(item)
+			jsonFile.WriteString("\r\n")
+		}
+	}
+
+	cypher := fmt.Sprintf(`CALL apoc.import.json("file:///%s",{cleanup:false, importIdName:"id"} )`, cmd.ImportFile)
+
+	fmt.Println("***********")
+	logs.Debug(ctx, cypher)
+	fmt.Println("***********")
+
+	session := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer session.Close(ctx)
+
+	_, err = session.Run(ctx, cypher, nil)
+	if err != nil {
+		fmt.Println(err)
+
+	} else {
+		//summary, _ := result.Consume(ctx)
+		//fmt.Println("Query updated the database?", summary.Counters().ContainsUpdates())
+	}
+
+	return err
 }
 
 func getLabels(labels ...string) string {

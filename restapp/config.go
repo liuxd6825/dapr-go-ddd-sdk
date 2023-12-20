@@ -27,13 +27,15 @@ type EnvConfig struct {
 	Neo4j map[string]*Neo4jConfig `yaml:"neo4j"`
 	Mysql map[string]*MySqlConfig `yaml:"mysql"`
 	Minio map[string]*MinioConfig `yaml:"minio"`
+	Redis map[string]*RedisConfig `yaml:"redis"`
 }
 
 type AppConfig struct {
-	AppId    string `yaml:"id"`
-	HttpHost string `yaml:"httpHost"`
-	HttpPort int    `yaml:"httpPort"`
-	RootUrl  string `yaml:"rootUrl"`
+	AppId    string            `yaml:"id"`
+	HttpHost string            `yaml:"httpHost"`
+	HttpPort int               `yaml:"httpPort"`
+	RootUrl  string            `yaml:"rootUrl"`
+	Values   map[string]string `yaml:"values"`
 }
 
 type DaprConfig struct {

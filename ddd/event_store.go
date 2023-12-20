@@ -87,19 +87,24 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 // @param record
 // @return error
 func CallEventHandler(ctx context.Context, handler interface{}, record *daprclient.EventRecord) error {
+	event, err := NewDomainEvent(record)
+	if err != nil {
+		return errors.New("package:ddd; func:NewDomainEvent(); error:%v", err.Error())
+	}
+	if err = callEventHandler(ctx, handler, record.EventType, record.EventVersion, record.EventId, event); err != nil {
+		return errors.New("package:ddd; func:callEventHandler(); error:%v", err.Error())
+	}
+	return nil
+}
+
+func callEventHandler(ctx context.Context, aggregate any, eventType string, eventVersion string, eventId string, event any) error {
 	return logs.DebugStart(ctx, func() error {
-		if event, err := NewDomainEvent(record); err != nil {
-			return errors.New("package:ddd; func:NewDomainEvent(); error:%v", err.Error())
-		} else if err = callEventHandler(ctx, handler, record.EventType, record.EventVersion, event); err != nil {
+		methodName := getEventMethodName(eventType, eventVersion)
+		if err := CallMethod(aggregate, methodName, ctx, event); err != nil {
 			return errors.New("package:ddd; func:callEventHandler(); error:%v", err.Error())
 		}
 		return nil
-	}, "package:ddd; func:CallEventHandler(); eventType:%v; eventId:%v; eventVersion:%v;", record.EventType, record.EventId, record.EventVersion)
-}
-
-func callEventHandler(ctx context.Context, handler interface{}, eventType string, eventRevision string, event interface{}) error {
-	methodName := getEventMethodName(eventType, eventRevision)
-	return CallMethod(handler, methodName, ctx, event)
+	}, "package:ddd; func:callEventHandler(); eventType:%v; eventId:%v; eventVersion:%v;", eventType, eventId, eventVersion)
 }
 
 // getEventMethodName

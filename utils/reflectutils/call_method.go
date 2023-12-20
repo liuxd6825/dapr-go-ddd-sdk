@@ -6,6 +6,13 @@ import (
 	"reflect"
 )
 
+// CallMethod
+//
+//	@Description: 动态调用对象方法
+//	@param object 被调用的对象
+//	@param methodName 要执行的方法名称
+//	@param ps 参数值
+//	@return err 错误
 func CallMethod(object interface{}, methodName string, ps ...interface{}) (err error) {
 	at := reflect.TypeOf(object).Elem()
 	a := reflect.ValueOf(object)

@@ -3,12 +3,13 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 type Neo4jSession struct {
-	driver        neo4j.Driver
+	driver        neo4j.DriverWithContext
 	sessionConfig neo4j.SessionConfig
 	isWrite       bool
 }
@@ -16,12 +17,28 @@ type Neo4jSession struct {
 type SessionOptions struct {
 	AccessMode *neo4j.AccessMode
 }
-
-func NewSessionOptions() *SessionOptions {
-	return &SessionOptions{}
+type SessionOptionsBuilder struct {
+	options SessionOptions
 }
 
-func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
+func NewSessionOptionsBuilder() *SessionOptionsBuilder {
+	return &SessionOptionsBuilder{
+		options: SessionOptions{},
+	}
+}
+
+func (b *SessionOptionsBuilder) SetAccessMode(mode neo4j.AccessMode) *SessionOptionsBuilder {
+	b.options.AccessMode = &mode
+	return b
+}
+
+func (b *SessionOptionsBuilder) Build() *SessionOptions {
+	return &SessionOptions{
+		AccessMode: b.options.AccessMode,
+	}
+}
+
+func NewSession(isWrite bool, driver neo4j.DriverWithContext) ddd_repository.Session {
 	sessionConfig := neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead}
 	if isWrite {
 		sessionConfig.AccessMode = neo4j.AccessModeWrite
@@ -33,42 +50,35 @@ func NewSession(isWrite bool, driver neo4j.Driver) ddd_repository.Session {
 	}
 }
 
-func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc) error {
-	session := r.driver.NewSession(r.sessionConfig)
+func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository.SessionFunc, opts ...*ddd_repository.SessionOptions) error {
+	if dbFunc == nil {
+		return nil
+	}
+
+	opt := ddd_repository.NewSessionOptions(opts...)
+	session := r.driver.NewSession(ctx, r.sessionConfig)
 	defer func() {
-		_ = session.Close()
+		_ = session.Close(ctx)
 	}()
 
-	tx := func(tx neo4j.Transaction) (res interface{}, resErr error) {
+	txFunc := func(tx neo4j.ManagedTransaction) (res interface{}, err error) {
 		defer func() {
-			if e := recover(); e != nil {
-				if err, ok := e.(error); ok {
-					resErr = err
-				}
-			}
+			err = errors.GetRecoverError(err, recover())
 		}()
-		/*		sessCtx := NewSessionContext(ctx, tx, session)
-				if dbFunc == nil {
-					return nil, nil
-				}
-				err := dbFunc(sessCtx)
-				if err != nil {
-					return nil, tx.Rollback()
-				}
-				return nil, tx.Commit()*/
 		sessCtx := NewSessionContext(ctx, tx, session)
-		if dbFunc == nil {
-			return nil, nil
-		}
-		err := dbFunc(sessCtx)
+		err = dbFunc(sessCtx)
 		return nil, err
 	}
 
 	var err error
 	if r.isWrite {
-		_, err = session.WriteTransaction(tx)
+		_, err = session.ExecuteWrite(ctx, txFunc, func(config *neo4j.TransactionConfig) {
+			config.Timeout = opt.GetWriteTime()
+		})
 	} else {
-		_, err = session.ReadTransaction(tx)
+		_, err = session.ExecuteRead(ctx, txFunc, func(config *neo4j.TransactionConfig) {
+			config.Timeout = opt.GetReadTime()
+		})
 	}
 	if err != nil {
 		logs.Error(ctx, err)
@@ -80,19 +90,21 @@ func (o *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) {
 	o.AccessMode = &accessMode
 }
 
-func (o *SessionOptions) Merge(opts ...*SessionOptions) {
+func NewSessionOptions(opts ...*SessionOptions) *SessionOptions {
+	s := &SessionOptions{}
 	for _, o := range opts {
 		if o == nil {
 			continue
 		}
 		if o.AccessMode != nil {
-			o.SetAccessMode(*o.AccessMode)
+			s.SetAccessMode(*o.AccessMode)
 		}
 	}
+	return s
 }
 
 func (o *SessionOptions) setDefault() {
 	if o.AccessMode == nil {
-		o.SetAccessMode(neo4j.AccessModeWrite)
+		o.SetAccessMode(neo4j.AccessModeRead)
 	}
 }

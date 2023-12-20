@@ -64,6 +64,8 @@ type RegisterEventType struct {
 	NewFunc   ddd.NewEventFunc
 }
 
+var _currentEnvConfig *EnvConfig
+
 var _actorsFactory []actor.FactoryContext = []actor.FactoryContext{
 	aggregateSnapshotActorFactory,
 }
@@ -202,15 +204,21 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 	if len(config.Mongo) > 0 {
-		InitMongo(config.App.AppId, config.Mongo)
+		initMongo(config.App.AppId, config.Mongo)
 	}
 
 	if len(config.Neo4j) > 0 {
-		InitNeo4j(config.Neo4j)
+		initNeo4j(config.Neo4j)
 	}
 
 	if len(config.Minio) > 0 {
-		if err := InitMinio(config.Minio); err != nil {
+		if err := initMinio(config.Minio); err != nil {
+			return nil, err
+		}
+	}
+
+	if len(config.Redis) > 0 {
+		if err := initRedis(config.Redis); err != nil {
 			return nil, err
 		}
 	}
@@ -247,7 +255,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		AppId:                  config.App.AppId,
 		HttpHost:               config.App.HttpHost,
 		HttpPort:               config.App.HttpPort,
-		LogLevel:               config.Log.GetLevel(),
+		LogLevel:               config.Log.level,
 		DaprMaxCallRecvMsgSize: config.Dapr.MaxCallRecvMsgSize,
 		DaprClient:             daprClient,
 		EnvConfig:              config,
@@ -321,6 +329,8 @@ func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 
 	// 设置全局时区为本地时区
 	setting.SetLocalTimeZone()
+
+	_currentEnvConfig = runCfg.EnvConfig
 
 	// 启动HTTP服务器
 	service := NewHttpServer(runCfg.DaprClient, serverOptions)
@@ -403,4 +413,17 @@ func (o *RunOptions) GetDbKey() string {
 		return ""
 	}
 	return *o.dbKey
+}
+
+func GetConfigAppValue(name string) (string, bool) {
+	v, ok := _currentEnvConfig.App.Values[name]
+	return v, ok
+}
+
+func GetConfigAppValues() map[string]string {
+	return _currentEnvConfig.App.Values
+}
+
+func SetCurrentEnvConfig(envConfig *EnvConfig) {
+	_currentEnvConfig = envConfig
 }

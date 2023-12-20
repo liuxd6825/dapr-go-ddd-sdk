@@ -459,10 +459,10 @@ func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, query
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
-		s.app.Handle("POST", subscribe.Route, func(c *context.Context) {
-			ctx := logs.NewContext(c, _logger)
-			if err = sh.Handler(ctx, c); err != nil {
-				c.SetErr(err)
+		s.app.Handle("POST", subscribe.Route, func(ictx *context.Context) {
+			c := NewContext(ictx)
+			if err = sh.SubscribeHandler(c, ictx); err != nil {
+				ictx.SetErr(err)
 			}
 		})
 		return err

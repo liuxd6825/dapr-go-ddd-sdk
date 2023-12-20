@@ -1,14 +1,15 @@
 package ddd_neo4j
 
 import (
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	"context"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 var (
 	neo4jURL = "bolt://192.168.64.4:7687"
 	username = "neo4j"
 	password = "123456"
-	driver   neo4j.Driver
+	driver   neo4j.DriverWithContext
 )
 
 func init() {
@@ -19,10 +20,10 @@ func init() {
 	driver = d
 }
 
-func CreateDriver(uri, username, password string) (neo4j.Driver, error) {
-	return neo4j.NewDriver(uri, neo4j.BasicAuth(username, password, ""))
+func CreateDriver(uri, username, password string) (neo4j.DriverWithContext, error) {
+	return neo4j.NewDriverWithContext(uri, neo4j.BasicAuth(username, password, ""))
 }
 
-func CloseDriver(driver neo4j.Driver) error {
-	return driver.Close()
+func CloseDriver(ctx context.Context, driver neo4j.DriverWithContext) error {
+	return driver.Close(ctx)
 }

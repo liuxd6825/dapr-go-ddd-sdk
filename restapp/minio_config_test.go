@@ -18,7 +18,7 @@ func TestInitMinio(t *testing.T) {
 		SecretAccessKey: "admin9000",
 		UseSSL:          false,
 	}
-	if err := InitMinio(configs); err != nil {
+	if err := initMinio(configs); err != nil {
 		t.Error(err)
 		return
 	}

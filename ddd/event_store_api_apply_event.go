@@ -261,7 +261,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 
 		if defaultIsSourcing {
 			for _, event := range events {
-				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event); err != nil {
+				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event.GetEventId(), event); err != nil {
 					return nil, err
 				}
 			}

@@ -2,7 +2,7 @@ package ddd_neo4j
 
 import (
 	"context"
-	"github.com/neo4j/neo4j-go-driver/v4/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 type sessionKey struct {
@@ -10,11 +10,11 @@ type sessionKey struct {
 
 type SessionContext interface {
 	context.Context
-	GetSession() neo4j.Session
-	GetTransaction() neo4j.Transaction
+	GetSession() neo4j.SessionWithContext
+	GetTransaction() neo4j.ManagedTransaction
 }
 
-func NewSessionContext(ctx context.Context, tr neo4j.Transaction, session neo4j.Session) SessionContext {
+func NewSessionContext(ctx context.Context, tr neo4j.ManagedTransaction, session neo4j.SessionWithContext) SessionContext {
 	return &sessionContext{
 		Context: context.WithValue(ctx, sessionKey{}, session),
 		tr:      tr,
@@ -33,14 +33,14 @@ func GetSessionContext(ctx context.Context) (SessionContext, bool) {
 
 type sessionContext struct {
 	context.Context
-	tr      neo4j.Transaction
-	session neo4j.Session
+	tr      neo4j.ManagedTransaction
+	session neo4j.SessionWithContext
 }
 
-func (s *sessionContext) GetSession() neo4j.Session {
+func (s *sessionContext) GetSession() neo4j.SessionWithContext {
 	return s.session
 }
 
-func (s *sessionContext) GetTransaction() neo4j.Transaction {
+func (s *sessionContext) GetTransaction() neo4j.ManagedTransaction {
 	return s.tr
 }
