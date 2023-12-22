@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/gocsv"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -60,14 +61,14 @@ type Options[T interface{}] struct {
 }
 
 type ImportCsvCmd struct {
-	TenantId   string           `json:"tenantId" desc:"租户ID"`
-	CaseId     string           `json:"caseId" desc:""`
-	Neo4jPath  string           `json:"neo4JPath"`
-	ImportFile string           `json:"importFile"`
-	Labels     []string         `json:"label"`
-	Fields     []string         `json:"fields"`
-	ImportType ImportType       `json:"importType"`
-	Data       ImportCsvCmdData `json:"data"`
+	TenantId         string                 `json:"tenantId" desc:"租户ID"`
+	CaseId           string                 `json:"caseId" desc:""`
+	ImportFile       string                 `json:"importFile"`
+	Labels           []string               `json:"label"`
+	Fields           []string               `json:"fields"`
+	ImportType       ImportType             `json:"importType"`
+	Data             ImportCsvCmdData       `json:"data"`
+	SaveFileCallback ImportSaveFileCallback `json:"-"`
 }
 
 type ImportCsvCmdData interface {
@@ -793,24 +794,58 @@ func (d *Dao[T]) CreateIndex(ctx context.Context, index, label, property string)
 	return err
 }
 
+// SaveFileFun
+// fileName 文件名称
+// data 保存的数据
+// return string 存储文件的URI，可以是file:///或http://
+type ImportSaveFileCallback func(ctx context.Context, tenantId, fileName string, data any) (string, ImportSaveCompleteCallback, error)
+type ImportSaveCompleteCallback func() error
+
 func (d *Dao[T]) ImportCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_repository.Options) (err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
-	fileName := cmd.Neo4jPath + "/import/" + cmd.ImportFile
 
-	var csvFile *os.File
-	csvFile, err = os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
+	var complete ImportSaveCompleteCallback
 	defer func() {
-		_ = csvFile.Close()
+		if complete != nil {
+			//三次重试
+			for i := 1; i < 4; i++ {
+				if err := complete(); err != nil {
+					time.Sleep(time.Duration(3*i) * time.Second)
+					continue
+				}
+			}
+		}
 	}()
 
-	if err = gocsv.MarshalFile(cmd.Data.Data(), csvFile); err != nil {
-		return err
+	fileUri := ""
+	if cmd.SaveFileCallback == nil {
+		neo4jPath, err := restapp.GetConfigAppValue("neo4jPath")
+		if err != nil {
+			return err
+		}
+		fileUri = fmt.Sprintf("file:///%s", cmd.ImportFile)
+		fileName := fmt.Sprintf("file:///%s/import/%s", neo4jPath, cmd.ImportFile)
+		var csvFile *os.File
+		csvFile, err = os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			_ = csvFile.Close()
+			os.Remove(fileName)
+		}()
+
+		if err = gocsv.MarshalFile(cmd.Data.Data(), csvFile); err != nil {
+			return err
+		}
+	} else {
+		fileUri, complete, err = cmd.SaveFileCallback(ctx, cmd.TenantId, cmd.ImportFile, cmd.Data.Data())
+		if err != nil {
+			return err
+		}
 	}
 
 	labels := ""
@@ -844,21 +879,22 @@ func (d *Dao[T]) ImportCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_re
 	switch cmd.ImportType {
 	case ImportTypeNode:
 		cypher.WriteString(fmt.Sprintf(`
-		LOAD CSV WITH HEADERS FROM 'file:///%s' AS a
+		LOAD CSV WITH HEADERS FROM '%s' AS a
 		CALL {
 			WITH a
 			MERGE (n%s{id:a.Id}) ON CREATE SET %v ON MATCH SET %v 
-		}  IN TRANSACTIONS OF 1000 ROWS;
-        `, cmd.ImportFile, labels, setFields.String(), setFields.String()))
+		}  IN TRANSACTIONS OF 100 ROWS;
+        `, fileUri, labels, setFields.String(), setFields.String()))
 		break
+
 	case ImportTypeRelation:
 		relTypes := make(map[string]int) // 存储去重后的关系
 		cypher.WriteString(fmt.Sprintf(`
-		LOAD CSV WITH HEADERS FROM 'file:///%s' AS a
+		LOAD CSV WITH HEADERS FROM '%s' AS a
 		CALL {
 			WITH a
 			MATCH (s%s{id:a.StartId}),(e%s{id:a.EndId}) 
-		`, cmd.ImportFile, labels, labels))
+		`, fileUri, labels, labels))
 
 		// 去重后的关系
 		for i := 0; i < cmd.Data.Length(); i++ {
@@ -881,11 +917,15 @@ func (d *Dao[T]) ImportCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_re
 		break
 	}
 
-	fmt.Println("***********")
-	logs.Debug(ctx, cypher.String())
-	fmt.Println("***********")
+	logs.Debugf(ctx, `
+	******
+	%s
+	******
+	`, func() any {
+		return cypher.String()
+	})
 
-	session := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	session := d.driver.NewSession(ctx, neo4j.SessionConfig{})
 	defer func() {
 		_ = session.Close(ctx)
 	}()
@@ -893,9 +933,6 @@ func (d *Dao[T]) ImportCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_re
 	_, err = session.Run(ctx, cypher.String(), nil)
 	if err != nil {
 		fmt.Println(err)
-	} else {
-		//summary, _ := result.Consume(ctx)
-		//fmt.Println("Query updated the database?", summary.Counters().ContainsUpdates())
 	}
 	return err
 }

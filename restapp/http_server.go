@@ -58,6 +58,16 @@ type HttpServer struct {
 	sdkServer *http.Server
 }
 
+type OnAppInit func(ctx context2.Context) error
+
+var _appInits []OnAppInit
+
+func RegisterOnAppInit(init OnAppInit) {
+	if init != nil {
+		_appInits = append(_appInits, init)
+	}
+}
+
 func NewHttpServer(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
 	eventStoreDefaultPubsubName := ""
 	es, ok := opts.EventStores[""]
@@ -150,10 +160,18 @@ func (s *HttpServer) Start() error {
 			s.RegisterActorImplFactoryContext(f)
 		}
 	}
+
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
-	if err := app.Run(iris.Addr(addr)); err != nil {
+	if err := app.Run(iris.Addr(addr), func(application *iris.Application) {
+		for _, onInit := range _appInits {
+			if err := onInit(ctx); err != nil {
+				panic(err.Error())
+			}
+		}
+	}); err != nil {
 		return err
 	}
+
 	return nil
 }
 

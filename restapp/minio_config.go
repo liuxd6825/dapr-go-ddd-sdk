@@ -8,6 +8,7 @@ import (
 )
 
 type MinioConfig struct {
+	Name            string
 	Endpoint        string `yaml:"endpoint"`
 	AccessKey       string `yaml:"accessKey"`
 	SecretAccessKey string `yaml:"secretAccessKey"`
@@ -53,6 +54,10 @@ func initMinio(configs map[string]*MinioConfig) error {
 
 func GetMinioClient() *minio.Client {
 	return _minioDefault
+}
+
+func SetMinioClient(miniClient *minio.Client) {
+	_minioDefault = miniClient
 }
 
 func GetMinioClientByKey(key string) (*minio.Client, bool) {

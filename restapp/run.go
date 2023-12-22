@@ -2,6 +2,7 @@ package restapp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
@@ -415,9 +416,13 @@ func (o *RunOptions) GetDbKey() string {
 	return *o.dbKey
 }
 
-func GetConfigAppValue(name string) (string, bool) {
+func GetConfigAppValue(name string) (string, error) {
+	var err error
 	v, ok := _currentEnvConfig.App.Values[name]
-	return v, ok
+	if !ok {
+		err = errors.New(fmt.Sprintf("配置变量%s不存在", name))
+	}
+	return v, err
 }
 
 func GetConfigAppValues() map[string]string {
@@ -426,4 +431,8 @@ func GetConfigAppValues() map[string]string {
 
 func SetCurrentEnvConfig(envConfig *EnvConfig) {
 	_currentEnvConfig = envConfig
+}
+
+func GetCurrentEnvConfig() *EnvConfig {
+	return _currentEnvConfig
 }
