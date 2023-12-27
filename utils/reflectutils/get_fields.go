@@ -1,6 +1,7 @@
 package reflectutils
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
 )
 
@@ -16,10 +17,28 @@ func (f *Fields) addItem(v *reflect.StructField) {
 	f.items[v.Name] = v
 }
 
+func (f *Fields) ForEach(foreach func(index int, name string, field *reflect.StructField)) {
+	if foreach != nil {
+		i := 0
+		for name, item := range f.items {
+			foreach(i, name, item)
+			i++
+		}
+	}
+}
+
 func (f *Fields) Names() []string {
 	var names []string
 	for name, _ := range f.items {
 		names = append(names, name)
+	}
+	return names
+}
+
+func (f *Fields) NamesFirstLower() []string {
+	var names []string
+	for name, _ := range f.items {
+		names = append(names, stringutils.FirstLower(name))
 	}
 	return names
 }

@@ -3,8 +3,10 @@ package gocsv
 import (
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"io"
 	"reflect"
+	"strings"
 )
 
 var (
@@ -70,13 +72,44 @@ func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool) err
 	return writer.Error()
 }
 
-func writeTo(writer CSVWriter, in interface{}, omitHeaders bool) error {
+func writeMapTo(writer CSVWriter, mapList []map[string]any, headIsFirstLower bool) error {
+	header := []string{}
+	for i, data := range mapList {
+		if i == 0 {
+			for key, _ := range data {
+				header = append(header, key)
+			}
+			writer.Write(header)
+		} else {
+			row := []string{}
+			for _, key := range header {
+				val := data[key]
+				row = append(row, stringutils.AnyToString(val))
+			}
+			writer.Write(row)
+		}
+	}
+	writer.Flush()
+	return writer.Error()
+}
+
+func firstLower(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
+}
+
+func writeTo(writer CSVWriter, in interface{}, omitHeaders bool, headIsFirstLower bool) error {
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 	if err := ensureInType(inType); err != nil {
 		return err
 	}
 	inInnerWasPointer, inInnerType := getConcreteContainerInnerType(inType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureInInnerType(inInnerType); err != nil {
+		if mapList, ok := in.([]map[string]any); ok {
+			return writeMapTo(writer, mapList, headIsFirstLower)
+		}
 		return err
 	}
 	inInnerStructInfo := getStructInfo(inInnerType) // Get the inner struct info to get CSV annotations
@@ -85,8 +118,18 @@ func writeTo(writer CSVWriter, in interface{}, omitHeaders bool) error {
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
 	if !omitHeaders {
-		if err := writer.Write(csvHeadersLabels); err != nil {
-			return err
+		if headIsFirstLower {
+			var headers []string
+			for _, head := range csvHeadersLabels {
+				headers = append(headers, firstLower(head))
+			}
+			if err := writer.Write(headers); err != nil {
+				return err
+			}
+		} else {
+			if err := writer.Write(csvHeadersLabels); err != nil {
+				return err
+			}
 		}
 	}
 	inLen := inValue.Len()

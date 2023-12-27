@@ -1026,7 +1026,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, qry, err)
 	// 进行汇总计算
 	if len(qry.GetValueCols()) > 0 {
-		sumData, _, err := r.Sum(ctx, qry, opts...)
+		sumData, _, err := r.SumEntity(ctx, qry, opts...)
 		findData.SetSum(true, sumData, err)
 	} else {
 		sumData := []T{}
@@ -1098,7 +1098,22 @@ func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCol
 	return err
 }
 
-func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
+func (r Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
+	data, err := r.NewEntityList()
+	if err != nil {
+		return nil, false, err
+	}
+	_, found, err := r.Sum(ctx, qry, &data, opts...)
+	return data, found, err
+}
+
+func (r Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
+	data := make([]map[string]any, 0)
+	_, found, err := r.Sum(ctx, qry, &data, opts...)
+	return data, found, err
+}
+
+func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error) {
 	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
 	}
@@ -1126,22 +1141,34 @@ func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, opt
 		return nil, false, err
 	}
 
-	return r.sum(ctx, filterMap, qry.GetValueCols(), opts...)
-}
-
-func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) ([]T, bool, error) {
-	coll := r.getCollection(ctx)
-	data, err := r.NewEntityList()
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
 	}
+
+	_, found, err := r.sum(ctx, filterMap, qry.GetValueCols(), data, opts...)
+	return data, found, err
+}
+
+func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, data any, opts ...ddd_repository.Options) (any, bool, error) {
+	coll := r.getCollection(ctx)
+
 	var cur *mongo.Cursor
 	summaryMap := make(map[string]interface{})
 	summaryMap["_id"] = "total"
 	for _, col := range valueCols {
 		field := utils.SnakeString(col.Field)
 		aggFunc := utils.SnakeString(col.AggFunc.Name())
-		summaryMap[field] = map[string]interface{}{"$" + aggFunc: "$" + field}
+
+		var fieldValue any = "$" + field
+		if aggFunc == ddd_repository.AggFuncCount.Name() {
+			field = "count_" + field
+			aggFunc = "$sum"
+			fieldValue = 1
+		} else {
+			aggFunc = "$" + aggFunc
+		}
+
+		summaryMap[field] = map[string]interface{}{aggFunc: fieldValue}
 	}
 
 	pipeline := mongo.Pipeline{}
@@ -1151,11 +1178,11 @@ func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*
 	if summaryMap != nil {
 		pipeline = append(pipeline, bson.D{{"$group", summaryMap}})
 	}
-	cur, err = coll.Aggregate(ctx, pipeline)
+	cur, err := coll.Aggregate(ctx, pipeline)
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
 	}
-	err = cur.All(ctx, &data)
+	err = cur.All(ctx, data)
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
 	}

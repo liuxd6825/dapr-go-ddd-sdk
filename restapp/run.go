@@ -252,9 +252,13 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 
 	daprclient.SetDaprDddClient(daprClient)
 
+	appHost := config.App.HttpHost
+	if len(appHost) == 0 {
+		appHost = "0.0.0.0"
+	}
 	runCfg := &RunConfig{
 		AppId:                  config.App.AppId,
-		HttpHost:               config.App.HttpHost,
+		HttpHost:               appHost,
 		HttpPort:               config.App.HttpPort,
 		LogLevel:               config.Log.level,
 		DaprMaxCallRecvMsgSize: config.Dapr.MaxCallRecvMsgSize,

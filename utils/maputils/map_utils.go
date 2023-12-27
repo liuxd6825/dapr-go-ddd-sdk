@@ -36,6 +36,26 @@ func MapToSnakeKey(data map[string]any) map[string]any {
 	return m
 }
 
+func GetKeys(data map[string]any) []string {
+	keys := make([]string, len(data))
+	i := 0
+	for key, _ := range data {
+		keys[i] = key
+		i++
+	}
+	return keys
+}
+
+func GetKeysToFirstLower(data map[string]any) []string {
+	keys := make([]string, len(data))
+	i := 0
+	for key, _ := range data {
+		keys[i] = stringutils.FirstLower(key)
+		i++
+	}
+	return keys
+}
+
 func GetString(m map[string]interface{}, key string, result *string, def string) (bool, error) {
 	if v, ok := m[key]; ok {
 		str := fmt.Sprintf("%v", v)

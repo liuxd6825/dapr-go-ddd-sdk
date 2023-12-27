@@ -3,8 +3,10 @@ package logs
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -224,24 +226,27 @@ func Debugf(ctx context.Context, format string, args ...any) {
 func DebugStart(ctx context.Context, fun func() error, format string, args ...any) (err error) {
 	if l := GetLogger(ctx); l != nil {
 		if isLevel(l, DebugLevel) {
-
 			logId := idutils.NewId()
-			l.Debugf("logId="+logId+"; type=start; "+format, getArgs(args...)...)
-			st := time.Now()
+			funcName := reflectutils.RunFuncName(2)
+			debugMsg := fmt.Sprintf("id=%s; type=start; func=%s; info=<<! %s !>>;", logId, funcName, format)
+			l.Debugf(debugMsg, getArgs(args...)...)
+			startTime := time.Now()
 
 			defer func() {
-				err = errors.GetRecoverError(err, recover())
-				et := time.Now()
-				ut := et.Sub(st)
 				var params []any
 				params = append(params, args...)
-				params = append(params, ut)
-				fmtStr := "logId=" + logId + "; type=end; " + format + "; time=%v;"
+
+				userTime := time.Now().Sub(startTime)
+
+				debugMsg = fmt.Sprintf("id=%s; type=end;   func=%s; info=<<! %s !>>; useTime=%v", logId, funcName, format, userTime)
+				err = errors.GetRecoverError(err, recover())
 				if err != nil {
-					fmtStr += " error:%v;"
+					debugMsg += "; error=%s"
 					params = append(params, err.Error())
 				}
-				l.Debugf(fmtStr, getArgs(params...)...)
+				debugMsg += ";"
+
+				l.Debugf(debugMsg, getArgs(params...)...)
 			}()
 
 			err = fun()
