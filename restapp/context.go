@@ -42,6 +42,10 @@ func (o *ContextOptions) SetCheckAuth(val bool) *ContextOptions {
 }
 
 func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Context, err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	
 	opt := NewContextOptions(opts...)
 	newCtx = logs.NewContext(ictx, _logger)
 	metadata := make(map[string]string)
