@@ -13,23 +13,24 @@ import (
 )
 
 type MongoConfig struct {
-	DbKey                  string
-	Host                   string  `yaml:"host"`
-	Database               string  `yaml:"dbname"`
-	UserName               string  `yaml:"user"`
-	Password               string  `yaml:"pwd"`
-	ReplicaSet             string  `yaml:"replicaSet"`
-	WriteConcern           string  `yaml:"writeConcern"`
-	ReadConcern            string  `yaml:"readConcern"`
-	OperationTimeout       *uint64 `yaml:"operationTimeout"` //单位秒
-	MaxPoolSize            *uint64 `yaml:"maxPoolSize"`
-	ConnectTimeout         *uint64 `yaml:"connectTimeout"` //单位秒
-	HeartbeatInterval      *uint64 `yaml:"heartbeatInterval"`
-	LocalThreshold         *uint64 `yaml:"localThreshold"`
-	MaxConnIdleTime        *uint64 `yaml:"maxConnIdleTime"`
-	ServerSelectionTimeout *uint64 `yaml:"serverSelectionTimeout"`
-	SocketTimeout          *uint64 `yaml:"socketTimeout"`
-	Direct                 *bool   `json:"direct"`
+	DbKey        string
+	Host         string  `yaml:"host"`
+	Database     string  `yaml:"dbname"`
+	UserName     string  `yaml:"user"`
+	Password     string  `yaml:"pwd"`
+	ReplicaSet   string  `yaml:"replicaSet"`
+	WriteConcern string  `yaml:"writeConcern"`
+	ReadConcern  string  `yaml:"readConcern"`
+	MaxPoolSize  *uint64 `yaml:"maxPoolSize"`
+
+	Direct                 *bool  `json:"direct"`
+	LocalThreshold         string `yaml:"localThreshold"`         // 时间长度
+	ConnectTimeout         string `yaml:"connectTimeout"`         // 时间长度
+	HeartbeatInterval      string `yaml:"heartbeatInterval"`      // 时间长度
+	OperationTimeout       string `yaml:"operationTimeout"`       // 时间长度
+	MaxConnIdleTime        string `yaml:"maxConnIdleTime"`        // 时间长度
+	ServerSelectionTimeout string `yaml:"serverSelectionTimeout"` // 时间长度
+	SocketTimeout          string `yaml:"socketTimeout"`          // 时间长度
 }
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
@@ -60,6 +61,15 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 		if c.IsEmpty() {
 			continue
 		}
+
+		operationTimeout := defaultTimeout(c.OperationTimeout, "30s")
+		connectTimeout := defaultTimeout(c.ConnectTimeout, "5s")
+		heartbeatInterval := defaultTimeout(c.HeartbeatInterval, "5s")
+		localThreshold := defaultTimeout(c.LocalThreshold, "5s")
+		maxConnIdleTime := defaultTimeout(c.MaxConnIdleTime, "5s")
+		serverSelectionTimeout := defaultTimeout(c.ServerSelectionTimeout, "5s")
+		socketTimeout := defaultTimeout(c.SocketTimeout, "60s")
+
 		config := &ddd_mongodb.Config{
 			AppName:                appName,
 			Host:                   strings.ReplaceAll(c.Host, " ", ""),
@@ -71,19 +81,19 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 			Direct:                 c.Direct,
 			ReplicaSet:             c.ReplicaSet,
 			MaxPoolSize:            defaultInt(c.MaxPoolSize, 20),
-			OperationTimeout:       defaultTimeout(c.OperationTimeout, 30),
-			ConnectTimeout:         defaultTimeout(c.ConnectTimeout, 5),
-			HeartbeatInterval:      defaultTimeout(c.HeartbeatInterval, 5),
-			LocalThreshold:         defaultTimeout(c.LocalThreshold, 5),
-			MaxConnIdleTime:        defaultTimeout(c.MaxConnIdleTime, 5),
-			ServerSelectionTimeout: defaultTimeout(c.ServerSelectionTimeout, 5),
-			SocketTimeout:          defaultTimeout(c.SocketTimeout, 60),
+			OperationTimeout:       operationTimeout,
+			ConnectTimeout:         connectTimeout,
+			HeartbeatInterval:      heartbeatInterval,
+			LocalThreshold:         localThreshold,
+			MaxConnIdleTime:        maxConnIdleTime,
+			ServerSelectionTimeout: serverSelectionTimeout,
+			SocketTimeout:          socketTimeout,
 		}
 		mongodb, err := ddd_mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
-			_logger.Infof("config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%s; "+
-				"socketTimeout=%s; serverSelectionTimeout=%s; maxConnIdleTime=%s; operationTimeout=%v;timeUnit=second; ",
-				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), pseconds(opts.ConnectTimeout),
-				pseconds(opts.SocketTimeout), pseconds(opts.ServerSelectionTimeout), pseconds(opts.MaxConnIdleTime), config.OperationTimeout)
+			_logger.Infof("config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
+				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
+				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), connectTimeout,
+				socketTimeout, serverSelectionTimeout, maxConnIdleTime, operationTimeout, socketTimeout)
 			return nil
 		})
 		if err != nil {
@@ -148,9 +158,11 @@ func defaultInt(v *uint64, def uint64) uint64 {
 	return *v
 }
 
-func defaultTimeout(v *uint64, def uint64) time.Duration {
-	if v == nil {
-		return time.Duration(def) * time.Second
+func defaultTimeout(val string, def string) time.Duration {
+	val = strings.Trim(val, " ")
+	if val == "" {
+		val = def
 	}
-	return time.Duration(*v) * time.Second
+	v, _ := time.ParseDuration(val)
+	return v
 }

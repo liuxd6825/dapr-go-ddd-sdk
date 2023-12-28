@@ -29,6 +29,8 @@ require (
 require (
 	github.com/allegro/bigcache v1.2.1
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/json-iterator/go v1.1.12
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4

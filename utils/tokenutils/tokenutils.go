@@ -2,6 +2,7 @@ package tokenutils
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/auth"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 )
 import "time"
@@ -29,17 +30,28 @@ type TokenData struct {
 	TenantId string
 }
 
-func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc func(err error)) error {
+func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc func(err error)) (LoginUser, error) {
+	user, err := auth.GetLoginUser(ctx)
+	if err != nil {
+		return nil, err
+	}
 	if getFunc != nil {
-		getFunc(userId, userName)
+		getFunc(user.GetId(), user.GetName())
 	}
 	if errFunc != nil {
 		//errFunc()
 	}
-	return nil
+	return user, nil
 }
 
 func SetCreateUser(ctx context.Context, entity SetUser) error {
+	user, err := auth.GetLoginUser(ctx)
+	if err != nil {
+		return err
+	}
+	userId := user.GetId()
+	userName := user.GetName()
+
 	t := timeutils.Now()
 	entity.SetCreatorId(userId)
 	entity.SetCreatorName(userName)
@@ -52,6 +64,13 @@ func SetCreateUser(ctx context.Context, entity SetUser) error {
 }
 
 func SetUpdateUser(ctx context.Context, entity SetUser) error {
+	user, err := auth.GetLoginUser(ctx)
+	if err != nil {
+		return err
+	}
+	userId := user.GetId()
+	userName := user.GetName()
+
 	t := timeutils.Now()
 	entity.SetUpdaterId(userId)
 	entity.SetUpdaterName(userName)
@@ -60,6 +79,13 @@ func SetUpdateUser(ctx context.Context, entity SetUser) error {
 }
 
 func SetDeleteUser(ctx context.Context, entity SetUser) error {
+	user, err := auth.GetLoginUser(ctx)
+	if err != nil {
+		return err
+	}
+	userId := user.GetId()
+	userName := user.GetName()
+
 	t := timeutils.Now()
 	entity.SetDeleterId(userId)
 	entity.SetDeleterName(userName)

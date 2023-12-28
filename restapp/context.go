@@ -3,17 +3,48 @@ package restapp
 import (
 	"context"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/auth"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
+
+var JwtKey = "#@!{[duXm-serVice-t0ken]},.(10086)$!"
 
 type serverContext struct {
 	ctx iris.Context
 }
 
-func NewContext(ictx iris.Context) context.Context {
-	loggerCtx := logs.NewContext(ictx, _logger)
-	metadata := make(map[string]string, 0)
+type ContextOptions struct {
+	checkAuth *bool
+}
+
+func NewContextOptions(opts ...ContextOptions) *ContextOptions {
+	o := &ContextOptions{}
+	for _, item := range opts {
+		if item.checkAuth != nil {
+			o.checkAuth = item.checkAuth
+		}
+	}
+	return o
+}
+
+func (o *ContextOptions) CheckAuth() bool {
+	if o.checkAuth != nil {
+		return *o.checkAuth
+	}
+	return true
+}
+
+func (o *ContextOptions) SetCheckAuth(val bool) *ContextOptions {
+	o.checkAuth = &val
+	return o
+}
+
+func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Context, err error) {
+	opt := NewContextOptions(opts...)
+	newCtx = logs.NewContext(ictx, _logger)
+	metadata := make(map[string]string)
 	serverCtx := newIrisContext(ictx)
 	if ictx != nil {
 		header := ictx.Request().Header
@@ -21,7 +52,18 @@ func NewContext(ictx iris.Context) context.Context {
 			metadata[k] = v[0]
 		}
 	}
-	return ddd_context.NewContext(loggerCtx, metadata, serverCtx)
+	newCtx = ddd_context.NewContext(newCtx, metadata, serverCtx)
+
+	jwt, jwtOk := metadata["Authorization"]
+	if !jwtOk && opt.CheckAuth() {
+		return nil, errors.New("Authorization is null")
+	}
+
+	if jwtOk {
+		newCtx, err = auth.NewContext(newCtx, jwt, JwtKey)
+	}
+
+	return newCtx, err
 }
 
 func NewLoggerContext(ctx context.Context) context.Context {

@@ -178,7 +178,7 @@ func (s *HttpServer) Start() error {
 // register actor method invoke handler
 func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
 	const funLog = "restapp.HttpServer.actorInvokeHandler()"
-	ctx := NewContext(ictx)
+	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
@@ -209,7 +209,7 @@ func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
 // register actor reminder invoke handler
 func (s *HttpServer) actorReminderInvokeHandler(ictx *context.Context) {
 	const funLog = "restapp.HttpServer.actorReminderInvokeHandler()"
-	ctx := NewContext(ictx)
+	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
@@ -238,7 +238,7 @@ func (s *HttpServer) actorReminderInvokeHandler(ictx *context.Context) {
 // register actor timer invoke handler
 func (s *HttpServer) actorTimerInvokeHandler(ictx *context.Context) {
 	const funLog = "restapp.HttpServer.actorTimerInvokeHandler()"
-	ctx := NewContext(ictx)
+	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
@@ -267,7 +267,7 @@ func (s *HttpServer) actorTimerInvokeHandler(ictx *context.Context) {
 // register deactivate actor handler
 func (s *HttpServer) actorDeactivateHandler(ictx *context.Context) {
 	const funLog = "restapp.HttpServer.actorDeactivateHandler()"
-	ctx := NewContext(ictx)
+	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
@@ -403,7 +403,7 @@ func actorErrorAsHttpStatus(err actorError.ActorErr) int {
 }
 
 func (s *HttpServer) subscribesHandler(ictx *context.Context) {
-	ctx := NewContext(ictx)
+	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			logs.Errorf(ctx, "func=restapp.HttpServer.subscribesHandler(); error=%v;", err.Error())
@@ -430,7 +430,7 @@ func (s *HttpServer) healthHandler(context *context.Context) {
 
 // register actor config handler
 func (s *HttpServer) actorConfigHandler(ictx *context.Context) {
-	ctx := NewContext(ictx)
+	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			logs.Errorf(ctx, "func=restapp.HttpServer.actorConfigHandler(); error=%v;", err.Error())
@@ -478,7 +478,7 @@ func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, query
 			err = errors.GetRecoverError(err, recover())
 		}()
 		s.app.Handle("POST", subscribe.Route, func(ictx *context.Context) {
-			c := NewContext(ictx)
+			c, _ := NewContext(ictx)
 			if err = sh.SubscribeHandler(c, ictx); err != nil {
 				ictx.SetErr(err)
 			}

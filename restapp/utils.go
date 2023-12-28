@@ -106,7 +106,11 @@ func SetError(ctx context.Context, err error) {
 // @param fun  执行方法
 // @return err 错误
 func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
-	ctx := NewContext(ictx)
+	ctx, err := NewContext(ictx)
+	if err != nil {
+		SetError(ictx, err)
+		return err
+	}
 
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
@@ -127,7 +131,11 @@ func DoCmd(ictx iris.Context, fun CmdFunc) (err error) {
 }
 
 func Do(ictx iris.Context, fun func(ctx context.Context) error) (err error) {
-	ctx := NewContext(ictx)
+	ctx, err := NewContext(ictx)
+	if err != nil {
+		SetError(ictx, err)
+		return err
+	}
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			logs.Error(ctx, err)
@@ -145,7 +153,13 @@ func Do(ictx iris.Context, fun func(ctx context.Context) error) (err error) {
 }
 
 func DoDto[T any](ictx iris.Context, fun func(ctx context.Context) (T, error)) (dto T, err error) {
-	ctx := NewContext(ictx)
+	var null T
+	ctx, err := NewContext(ictx)
+	if err != nil {
+		SetError(ictx, err)
+		return null, err
+	}
+
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ictx, err)
@@ -171,7 +185,13 @@ func DoDto[T any](ictx iris.Context, fun func(ctx context.Context) (T, error)) (
 // @return isFound 是否有数据
 // @return err 错误
 func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound bool, err error) {
-	ctx := NewContext(ictx)
+
+	ctx, err := NewContext(ictx)
+	if err != nil {
+		SetError(ictx, err)
+		return nil, false, err
+	}
+
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
@@ -206,8 +226,11 @@ func DoQueryOne(ictx iris.Context, fun QueryFunc) (data interface{}, isFound boo
 // @return isFound 是否有数据
 // @return err 错误
 func DoQuery(ictx iris.Context, fun QueryFunc) (data any, isFound bool, err error) {
-	ctx := NewContext(ictx)
-
+	ctx, err := NewContext(ictx)
+	if err != nil {
+		SetError(ictx, err)
+		return nil, false, err
+	}
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
@@ -271,7 +294,11 @@ func DoCmdAndQueryList(ictx iris.Context, queryAppId string, cmd Command, cmdFun
 }
 
 func doCmdAndQuery(ictx iris.Context, queryAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (data interface{}, isFound bool, err error) {
-	ctx := NewContext(ictx)
+	ctx, err := NewContext(ictx)
+	if err != nil {
+		SetError(ictx, err)
+		return nil, false, err
+	}
 
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
