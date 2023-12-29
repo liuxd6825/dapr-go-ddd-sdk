@@ -37,21 +37,25 @@ func (h *logHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-func Init(path string, level Level) Logger {
+func Init(saveFile string, level Level, saveDays int, rotationHour int) Logger {
 	_once.Do(func() {
 		// 配置日志每隔 1 小时轮转一个新文件，保留最近 30 天的日志文件，多余的自动清理掉。
 		writer, _ := rotatelogs.New(
-			path+".%Y%m%d%H",
-			rotatelogs.WithLinkName(path),
-			rotatelogs.WithMaxAge(time.Duration(24*30)*time.Hour),
-			rotatelogs.WithRotationTime(time.Duration(1)*time.Hour),
+			saveFile+".%Y-%m-%d-%H.log",
+			rotatelogs.WithLinkName(saveFile),
+			rotatelogs.WithMaxAge(time.Duration(24*saveDays)*time.Hour),
+			rotatelogs.WithRotationTime(time.Duration(rotationHour)*time.Hour),
 		)
 		_logger = logrus.New()
-		_logger.SetOutput(writer)
-		_logger.SetLevel(level)
 		_logger.Hooks.Add(&logHook{level: level})
+		_logger.SetOutput(writer)
+
+		_logger.SetLevel(level)
+		_logger.SetReportCaller(true)
 
 		logrus.SetLevel(level)
+		logrus.SetReportCaller(true)
+
 	})
 	return _logger
 

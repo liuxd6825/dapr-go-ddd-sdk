@@ -11,14 +11,14 @@ func init() {
 
 }
 
-func initLogs(level logs.Level) {
+func initLogs(level logs.Level, saveDays int, rotationHour int) {
 	appPath, err := os.Executable()
 	if err != nil {
 		panic(err)
 	}
-	dir, exec := filepath.Split(appPath)
-	logPath := fmt.Sprintf("%s/logs/%s.log", dir, exec)
-	logs.Init(logPath, level)
+	dir, appName := filepath.Split(appPath)
+	saveFile := fmt.Sprintf("%s/logs/%s", dir, appName)
+	logs.Init(saveFile, level, saveDays, rotationHour)
 }
 
 func GetLogger() logs.Logger {

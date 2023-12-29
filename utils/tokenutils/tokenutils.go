@@ -19,11 +19,6 @@ type SetUser interface {
 	SetUpdaterName(value string)
 }
 
-const (
-	userId   = "test"
-	userName = "测试员"
-)
-
 type TokenData struct {
 	UserId   string
 	UserName string

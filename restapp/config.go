@@ -60,9 +60,10 @@ type EventStore struct {
 }
 
 type LogConfig struct {
-	Level string `yaml:"level"`
-	File  string `yaml:"file"`
-	level applog.Level
+	Level     string `yaml:"level"`
+	SaveDays  int    `yaml:"saveDays"`  //日志保存的天数
+	SplitHour int    `yaml:"splitHour"` //文件分隔时间，单位小时
+	level     logs.Level
 }
 
 func NewConfig() *Config {
@@ -110,16 +111,25 @@ func (e *EnvConfig) Init(name string) error {
 		e.App.HttpHost = "0.0.0.0"
 	}
 
+	// init log
+	level := logs.ErrorLevel
 	if e.Log.Level != "" {
 		l, err := logs.ParseLevel(e.Log.Level)
 		if err != nil {
 			return err
 		}
-		e.Log.level = l
+		level = l
 	}
+	if e.Log.SaveDays <= 0 {
+		e.Log.SaveDays = 30
+	}
+	if e.Log.SplitHour <= 0 {
+		e.Log.SplitHour = 1
+	}
+	e.Log.level = level
+	initLogs(level, e.Log.SaveDays, e.Log.SplitHour)
 
-	initLogs(e.Log.level)
-
+	// init dapr
 	if e.Dapr.Host == nil {
 		var value = "localhost"
 		e.Dapr.Host = e.GetEnvString("DAPR_HOST", &value)
