@@ -1,25 +1,26 @@
 package restapp
 
 import (
-	"github.com/sirupsen/logrus"
-	"sync"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"os"
+	"path/filepath"
 )
 
-var _logger *logrus.Logger
-var _once sync.Once
-
 func init() {
-	InitLogs()
+
 }
 
-func InitLogs() *logrus.Logger {
-	_once.Do(func() {
-		_logger = logrus.New()
-		_logger.SetLevel(logrus.DebugLevel)
-	})
-	return _logger
+func initLogs(level logs.Level) {
+	appPath, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	dir, exec := filepath.Split(appPath)
+	logPath := fmt.Sprintf("%s/logs/%s.log", dir, exec)
+	logs.Init(logPath, level)
 }
 
-func GetLogger() *logrus.Logger {
-	return _logger
+func GetLogger() logs.Logger {
+	return logs.GetLogrus()
 }

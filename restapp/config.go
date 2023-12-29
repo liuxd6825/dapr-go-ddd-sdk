@@ -61,6 +61,7 @@ type EventStore struct {
 
 type LogConfig struct {
 	Level string `yaml:"level"`
+	File  string `yaml:"file"`
 	level applog.Level
 }
 
@@ -116,6 +117,8 @@ func (e *EnvConfig) Init(name string) error {
 		}
 		e.Log.level = l
 	}
+
+	initLogs(e.Log.level)
 
 	if e.Dapr.Host == nil {
 		var value = "localhost"

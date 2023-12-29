@@ -87,20 +87,6 @@ const (
 type loggerKey struct {
 }
 
-func NewContext(parentCtx context.Context, logger Logger) context.Context {
-	ctx := context.WithValue(parentCtx, loggerKey{}, logger)
-	return ctx
-}
-
-func GetLogger(ctx context.Context) Logger {
-	if v := ctx.Value(loggerKey{}); v != nil {
-		if logger, ok := v.(Logger); ok {
-			return logger
-		}
-	}
-	return nil
-}
-
 func getArgs(args ...any) []any {
 	var res []any
 	for _, arg := range args {

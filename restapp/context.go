@@ -45,9 +45,9 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
-	
+
 	opt := NewContextOptions(opts...)
-	newCtx = logs.NewContext(ictx, _logger)
+	newCtx = logs.NewContext(ictx, GetLogger())
 	metadata := make(map[string]string)
 	serverCtx := newIrisContext(ictx)
 	if ictx != nil {
@@ -71,11 +71,11 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 }
 
 func NewLoggerContext(ctx context.Context) context.Context {
-	return logs.NewContext(ctx, _logger)
+	return logs.NewContext(ctx, GetLogger())
 }
 
 func NewContext2(ctx context.Context) context.Context {
-	return logs.NewContext(ctx, _logger)
+	return logs.NewContext(ctx, GetLogger())
 }
 
 func newIrisContext(ctx iris.Context) ddd_context.ServerContext {
