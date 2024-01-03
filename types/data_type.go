@@ -12,6 +12,9 @@ const (
 	DataTypeBool     DataType = "bool"
 	DataTypeArray    DataType = "array"
 	DataTypeObject   DataType = "object"
+	DataTypeYear     DataType = "year"
+	DataTypeMonth    DataType = "month"
+	DataTypeDay      DataType = "day"
 )
 
 func (d DataType) Name() string {
@@ -36,4 +39,19 @@ func (d DataType) IsInt() bool {
 
 func (d DataType) IsFloat() bool {
 	return d.Name() == DataTypeFloat.Name()
+}
+
+func (d DataType) IsYear() bool {
+	return d.Name() == DataTypeYear.Name()
+}
+
+func (d DataType) IsMonth() bool {
+	return d.Name() == DataTypeMonth.Name()
+}
+
+func (d DataType) IsDay() bool {
+	return d.Name() == DataTypeDay.Name()
+}
+func (d DataType) IsMoney() bool {
+	return d.Name() == DataTypeMoney.Name()
 }

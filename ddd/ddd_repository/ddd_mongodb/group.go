@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -202,6 +203,8 @@ func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 			f := b.GroupCols[i]
 			if f.DataType.IsDate() || f.DataType.IsDateTime() {
 				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toDate(b.GroupKeys[i])})
+			} else if f.DataType.IsFloat() || f.DataType.IsInt() || f.DataType.IsMoney() || f.DataType.IsYear() || f.DataType.IsMonth() || f.DataType.IsDay() {
+				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toNumber(b.GroupKeys[i])})
 			} else {
 				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): b.GroupKeys[i]})
 			}
@@ -209,6 +212,22 @@ func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 		mMatch["$and"] = val
 	}
 	return mMatch, nil
+}
+
+func toNumber(v interface{}) *float64 {
+	if v == nil {
+		return nil
+	}
+	_v := strings.Trim(v.(string), " ")
+	if _v == "" {
+		return nil
+	}
+
+	num, err := strconv.ParseFloat(_v, 64)
+	if err != nil {
+		return nil
+	}
+	return &num
 }
 
 // GetFilterSort
