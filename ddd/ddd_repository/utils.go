@@ -35,3 +35,25 @@ func RSqlKeyValueToMap(s string) map[string]string {
 	}
 	return res
 }
+
+type KeyValue struct {
+	Key   string
+	Value string
+}
+
+func RSqlKeyValueToList(s string) []KeyValue {
+	res := make([]KeyValue, 0)
+	if len(s) == 0 {
+		return res
+	}
+	list := strings.Split(s, ",")
+	for _, item := range list {
+		kv := strings.Split(item, ":")
+		if len(kv) == 2 {
+			key := strings.TrimSpace(kv[0])
+			val := strings.TrimSpace(kv[1])
+			res = append(res, KeyValue{Key: key, Value: val})
+		}
+	}
+	return res
+}

@@ -147,7 +147,7 @@ func (d *Dao[T]) importCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_re
 
 	_, err = session.Run(ctx, cypher.String(), nil)
 	if err != nil {
-		logs.Errorf(ctx, cypher.String())
+		logs.Error(ctx, cmd.TenantId, logs.Fields{"cypher": cypher.String()})
 	}
 	return err
 }

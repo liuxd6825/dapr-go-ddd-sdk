@@ -1,5 +1,11 @@
 package intutils
 
+import "strconv"
+
+func StrToInt64(val string) (int64, error) {
+	return strconv.ParseInt(val, 10, 64)
+}
+
 func P2Int(p *int) int {
 	if p == nil {
 		return 0

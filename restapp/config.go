@@ -35,6 +35,8 @@ type AppConfig struct {
 	HttpHost string            `yaml:"httpHost"`
 	HttpPort int               `yaml:"httpPort"`
 	RootUrl  string            `yaml:"rootUrl"`
+	CPU      int               `yaml:"cpu"`
+	Memory   string            `yaml:"memory"`
 	Values   map[string]string `yaml:"values"`
 }
 

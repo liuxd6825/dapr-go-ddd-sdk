@@ -90,7 +90,7 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 			SocketTimeout:          socketTimeout,
 		}
 		mongodb, err := ddd_mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
-			GetLogger().Info("config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
+			GetLogger().Infof("config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
 				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
 				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), connectTimeout,
 				socketTimeout, serverSelectionTimeout, maxConnIdleTime, operationTimeout, socketTimeout)

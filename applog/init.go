@@ -7,12 +7,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"runtime"
 	"strings"
 	"time"
 
-	logrus "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var log Logger
@@ -27,6 +26,8 @@ type Event interface {
 	GetEventId() string
 }
 
+var logLevel Level
+
 // Init
 // @Description: 初始化日期
 // @param daprClient DaprDddClient
@@ -36,6 +37,7 @@ func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
 	log = NewLogger(daprClient)
 	log.SetLevel(level)
 	appId = aAppId
+	logLevel = level
 }
 
 // DoEventLog
@@ -82,7 +84,7 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 	}*/
 
 	if err != nil {
-		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, logs.ErrorLevel, err.Error())
+		_, _ = writeAppLog(ctx, info.TenantId, info.ClassName, info.FuncName, logrus.ErrorLevel, err.Error())
 	}
 	return err
 }
@@ -96,7 +98,7 @@ func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
 // @return string
 // @return error
 func Debug(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, logs.DebugLevel, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logrus.DebugLevel, message)
 }
 
 // Info
@@ -108,7 +110,7 @@ func Debug(tenantId, className, funcName, message string) (string, error) {
 // @return string
 // @return error
 func Info(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, logs.InfoLevel, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logrus.InfoLevel, message)
 }
 
 // Warn
@@ -121,7 +123,7 @@ func Info(tenantId, className, funcName, message string) (string, error) {
 //	@return string
 //	@return error
 func Warn(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, logs.WarnLevel, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logrus.WarnLevel, message)
 }
 
 // Error
@@ -134,7 +136,7 @@ func Warn(tenantId, className, funcName, message string) (string, error) {
 //	@return string
 //	@return error
 func Error(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, logs.ErrorLevel, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logrus.ErrorLevel, message)
 }
 
 // Fatal
@@ -147,7 +149,7 @@ func Error(tenantId, className, funcName, message string) (string, error) {
 //	@return string
 //	@return error
 func Fatal(tenantId, className, funcName, message string) (string, error) {
-	return writeAppLog(context.Background(), tenantId, className, funcName, logs.FatalLevel, message)
+	return writeAppLog(context.Background(), tenantId, className, funcName, logrus.FatalLevel, message)
 }
 
 // InfoEvent
@@ -163,7 +165,7 @@ func Fatal(tenantId, className, funcName, message string) (string, error) {
 //	@return string
 //	@return error
 func InfoEvent(tenantId, structName, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, structName, funcName, logs.InfoLevel, message, eventId, commandId, pubAppId, false)
+	return writeEventLog(context.Background(), tenantId, structName, funcName, logrus.InfoLevel, message, eventId, commandId, pubAppId, false)
 }
 
 // ErrorEvent
@@ -179,7 +181,7 @@ func InfoEvent(tenantId, structName, funcName, message, eventId, commandId, pubA
 //	@return string
 //	@return error
 func ErrorEvent(tenantId, className, funcName, message, eventId, commandId, pubAppId string) (string, error) {
-	return writeEventLog(context.Background(), tenantId, className, funcName, logs.ErrorLevel, message, eventId, commandId, pubAppId, false)
+	return writeEventLog(context.Background(), tenantId, className, funcName, logrus.ErrorLevel, message, eventId, commandId, pubAppId, false)
 }
 
 // GetEventLogByAppIdAndCommandId

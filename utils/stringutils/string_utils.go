@@ -8,14 +8,16 @@ import (
 	"strings"
 )
 
-//
 // Int64ToString
 // @Description:
 // @param v
 // @return string
-//
 func Int64ToString(v int64) string {
 	return strconv.FormatInt(v, 10)
+}
+
+func ToInt64(v string) (int64, error) {
+	return strconv.ParseInt(v, 10, 64)
 }
 
 func IsEmptyStr(v string) bool {
@@ -46,12 +48,10 @@ func Relpace(s string, old string, new string) string {
 	return strings.Replace(s, "._", ".", -1)
 }
 
-//
 // FirstUpper
 // @Description: 字符串首字母大写
 // @param s
 // @return string
-//
 func FirstUpper(s string) string {
 	if s == "" {
 		return ""
@@ -63,12 +63,10 @@ func FirstUpper(s string) string {
 	return v
 }
 
-//
 // FirstLower
 // @Description: 字符串首字母小写
 // @param s
 // @return string
-//
 func FirstLower(s string) string {
 	if s == "" {
 		return ""
@@ -76,12 +74,10 @@ func FirstLower(s string) string {
 	return strings.ToLower(s[:1]) + s[1:]
 }
 
-//
 // ToUpper
 // @Description: 大写
 // @param s
 // @return string
-//
 func ToUpper(s string) string {
 	if s == "" {
 		return ""
@@ -89,12 +85,10 @@ func ToUpper(s string) string {
 	return strings.ToUpper(s)
 }
 
-//
 // ToLower
 // @Description: 小写
 // @param s
 // @return string
-//
 func ToLower(s string) string {
 	if s == "" {
 		return ""
@@ -102,12 +96,10 @@ func ToLower(s string) string {
 	return strings.ToLower(s)
 }
 
-//
 // SnakeString
 // @Description: 驼峰转蛇形
 // @param s 要转换的字符串
 // @return string
-//
 func SnakeString(s string) string {
 	data := make([]byte, 0, len(s)*2)
 	j := false
@@ -133,7 +125,6 @@ func SnakeString(s string) string {
 	return res
 }
 
-//
 // EqualFold
 // @Description: 可以检查两个字符串是否相等,同时忽略大小写
 // @param s
@@ -143,12 +134,10 @@ func EqualFold(s, t string) bool {
 	return strings.EqualFold(s, t)
 }
 
-//
 // MidlineString
 // @Description: 驼峰转中线
 // @param s 要转换的字符串
 // @return string
-//
 func MidlineString(s string) string {
 	data := make([]byte, 0, len(s)*2)
 	j := false
@@ -174,12 +163,10 @@ func MidlineString(s string) string {
 	return res
 }
 
-//
 // CamelString 蛇形转驼峰
 // @Description:
 // @param s 要转换的字符串
 // @return string
-//
 func CamelString(s string) string {
 	data := make([]byte, 0, len(s))
 	j := false
@@ -204,22 +191,18 @@ func CamelString(s string) string {
 	return string(data[:])
 }
 
-//
 // Plural
 // @Description: 将单词的单数形式转换为复数形式
 // @param str 单数
 // @return string 复数
-//
 func Plural(str string) string {
 	return inflection.Plural(MidlineString(str))
 }
 
-//
 // Singular
 // @Description: 复数转单数
 // @param str 复数
 // @return string 单数
-//
 func Singular(str string) string {
 	return inflection.Singular(MidlineString(str))
 }

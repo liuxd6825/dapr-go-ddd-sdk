@@ -25,7 +25,7 @@ func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 		if err != nil {
-			logs.Errorf(ctx, "func=MongoSession.UseTransaction(); error=%v;", err.Error())
+			logs.Error(ctx, "", logs.Fields{"func": "MongoSession.UseTransaction()", "error": err.Error()})
 		}
 	}()
 

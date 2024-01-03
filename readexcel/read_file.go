@@ -168,7 +168,13 @@ func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, erro
 			} else if value, err = script.RunScript(runtime, cellValues, &field.Script); err != nil {
 				dataRow.AddValue(field.Name, err.Error())
 				dataRow.AddError(field.Name, err)
-				logs.Errorf(ctx, "readexcel.ReadBytes() rowNum:%v, fieldName:%s, script:%s; error:%s； ", iRow, field.Name, field.Script, err.Error())
+				fields := logs.Fields{
+					"rowNum":    iRow,
+					"fieldName": field.Name,
+					"script":    field.Script,
+					"error":     err.Error(),
+				}
+				logs.Error(ctx, "", fields)
 				continue
 			}
 

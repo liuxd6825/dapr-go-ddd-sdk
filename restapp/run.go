@@ -11,8 +11,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
+	"runtime"
+	"runtime/debug"
+	"strings"
 )
 
 type RunConfig struct {
@@ -204,6 +208,13 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 //	@return error  错误
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
+
+	if config == nil {
+		return nil, errors.New("config is nil")
+	}
+
+	setCpuMemory(config.Name, &config.App)
+
 	if len(config.Mongo) > 0 {
 		initMongo(config.App.AppId, config.Mongo)
 	}
@@ -269,7 +280,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	eventStoresMap := newEventStores(&config.Dapr, daprClient)
 
 	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)
-	return Run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventStoresMap, eventsFunc, actorsFunc, options...)
+	return run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventStoresMap, eventsFunc, actorsFunc, options...)
 }
 
 func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {
@@ -295,6 +306,59 @@ func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string
 	return eventStoresMap
 }
 
+// setCpuMemory
+//
+//	@Description: 设置Cpu和内存大小
+//	@param config
+func setCpuMemory(envName string, config *AppConfig) {
+	if config == nil {
+		return
+	}
+	cpu := config.CPU
+	maxCpu := runtime.NumCPU()
+	if cpu < 0 {
+		cpu = maxCpu - cpu
+	}
+	if maxCpu < cpu {
+		cpu = maxCpu
+	}
+	if cpu <= 0 {
+		cpu = 1
+	}
+	runtime.GOMAXPROCS(cpu)
+
+	memTxt := strings.ToLower(strings.Trim(config.Memory, " "))
+	if memTxt == "" {
+		return
+	}
+	var memSize int64 = 0
+	size := len(memTxt)
+	unit := memTxt[size-1 : size]
+	memVal := memTxt[0 : size-1]
+	memSize, err := stringutils.ToInt64(memVal)
+	if err != nil {
+		panic(fmt.Sprintf("%s.app.memory = %s 值不正确。示例: 10G, 10M, 10K", envName, memTxt))
+	}
+
+	switch unit {
+	case "g":
+		{
+			memSize = memSize * 1024 * 1024 * 1024
+		}
+	case "m":
+		{
+			memSize = memSize * 1024 * 1024
+		}
+	case "k":
+		{
+			memSize = memSize * 1024
+		}
+	default:
+		panic(fmt.Sprintf("%s.app.memory=%s 不正确。示例: 10G, 10M, 10K", envName, memTxt))
+	}
+	debug.SetMemoryLimit(memSize)
+}
+
 // Run
 // @Description:
 // @param options
@@ -305,7 +369,7 @@ func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string
 // @param eventStorages
 // @param eventTypesFunc
 // @return error
-func Run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
+func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventStores map[string]ddd.EventStore,
 	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
 	runOptions ...*RunOptions) (common.Service, error) {

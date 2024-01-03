@@ -3,7 +3,7 @@ package applog
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,7 +16,7 @@ const (
 	ApiGetAppLogById = "v1.0/app-logger/%v/app-log/tenant-id/%s/id/%s"
 )
 
-type Level = logs.Level
+type Level = logrus.Level
 
 type Logger interface {
 	WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (*WriteEventLogResponse, error)

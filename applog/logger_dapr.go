@@ -3,7 +3,7 @@ package applog
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/sirupsen/logrus"
 )
 
 type logger struct {
@@ -14,7 +14,7 @@ type logger struct {
 func NewLogger(daprClient daprclient.DaprDddClient) Logger {
 	return &logger{
 		daprClient: daprClient,
-		level:      logs.ErrorLevel,
+		level:      logrus.ErrorLevel,
 	}
 }
 

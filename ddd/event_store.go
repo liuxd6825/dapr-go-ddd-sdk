@@ -97,14 +97,20 @@ func CallEventHandler(ctx context.Context, handler interface{}, record *daprclie
 	return nil
 }
 
-func callEventHandler(ctx context.Context, aggregate any, eventType string, eventVersion string, eventId string, event any) error {
-	return logs.DebugStart(ctx, func() error {
+func callEventHandler(ctx context.Context, agg any, eventType string, eventVersion string, eventId string, event any) error {
+	a, ok := agg.(Aggregate)
+	if !ok {
+		return errors.New("paramer agg is not Aggregate")
+	}
+	fields := logs.Fields{
+		"eventType":    eventType,
+		"eventVersion": eventVersion,
+		"eventId":      eventId,
+	}
+	return logs.DebugStart(ctx, a.GetTenantId(), fields, func() error {
 		methodName := getEventMethodName(eventType, eventVersion)
-		if err := CallMethod(aggregate, methodName, ctx, event); err != nil {
-			return errors.New("package:ddd; func:callEventHandler(); error:%v", err.Error())
-		}
-		return nil
-	}, "package:ddd; func:callEventHandler(); eventType:%v; eventId:%v; eventVersion:%v;", eventType, eventId, eventVersion)
+		return CallMethod(a, methodName, ctx, event)
+	})
 }
 
 // getEventMethodName

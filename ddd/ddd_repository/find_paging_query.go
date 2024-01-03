@@ -185,11 +185,11 @@ func NewGroupCols(s string) *GroupCols {
 	}
 	if len(s) > 0 {
 		cols := make([]*GroupCol, 0)
-		maps := RSqlKeyValueToMap(s)
-		for k, v := range maps {
+		maps := RSqlKeyValueToList(s)
+		for _, v := range maps {
 			col := &GroupCol{
-				Field:    k,
-				DataType: types.DataType(v),
+				Field:    v.Key,
+				DataType: types.DataType(v.Value),
 			}
 			cols = append(cols, col)
 		}
@@ -241,11 +241,11 @@ func (d *FindPagingQueryDTO) newGroupKeys(s string) []any {
 
 func (d *FindPagingQueryDTO) newGroupCols(s string) []*GroupCol {
 	res := make([]*GroupCol, 0)
-	maps := RSqlKeyValueToMap(s)
-	for k, v := range maps {
+	maps := RSqlKeyValueToList(s)
+	for _, v := range maps {
 		col := &GroupCol{
-			Field:    k,
-			DataType: types.DataType(v),
+			Field:    v.Key,
+			DataType: types.DataType(v.Value),
 		}
 		res = append(res, col)
 	}
@@ -254,11 +254,11 @@ func (d *FindPagingQueryDTO) newGroupCols(s string) []*GroupCol {
 
 func (d *FindPagingQueryDTO) newValueCols(s string) []*ValueCol {
 	res := make([]*ValueCol, 0)
-	maps := RSqlKeyValueToMap(s)
-	for k, v := range maps {
+	maps := RSqlKeyValueToList(s)
+	for _, v := range maps {
 		col := &ValueCol{
-			Field:   k,
-			AggFunc: AggFunc(v),
+			Field:   v.Key,
+			AggFunc: AggFunc(v.Value),
 		}
 		res = append(res, col)
 	}

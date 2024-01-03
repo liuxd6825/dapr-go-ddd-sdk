@@ -15,6 +15,9 @@ type serverContext struct {
 	ctx iris.Context
 }
 
+type tenantCtxKey struct {
+}
+
 type ContextOptions struct {
 	checkAuth *bool
 }
@@ -29,26 +32,15 @@ func NewContextOptions(opts ...ContextOptions) *ContextOptions {
 	return o
 }
 
-func (o *ContextOptions) CheckAuth() bool {
-	if o.checkAuth != nil {
-		return *o.checkAuth
-	}
-	return true
-}
-
-func (o *ContextOptions) SetCheckAuth(val bool) *ContextOptions {
-	o.checkAuth = &val
-	return o
-}
-
 func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Context, err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
 
 	opt := NewContextOptions(opts...)
-	newCtx = logs.NewContext(ictx, GetLogger())
+	newCtx = logs.NewContext(ictx)
 	metadata := make(map[string]string)
+
 	serverCtx := newIrisContext(ictx)
 	if ictx != nil {
 		header := ictx.Request().Header
@@ -70,20 +62,36 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 	return newCtx, err
 }
 
-func NewLoggerContext(ctx context.Context) context.Context {
-	return logs.NewContext(ctx, GetLogger())
-}
-
-func NewContext2(ctx context.Context) context.Context {
-	return logs.NewContext(ctx, GetLogger())
-}
-
 func newIrisContext(ctx iris.Context) ddd_context.ServerContext {
 	return &serverContext{
 		ctx: ctx,
 	}
 }
 
+// GetTenantId
+//
+//	@Description: 根据上下文取得租户ID
+//	@param ctx
+//	@return string
+//	@return bool
+func GetTenantId(ctx context.Context) (string, bool) {
+	val := ctx.Value(tenantCtxKey{})
+	if val == nil {
+		return "", false
+	}
+	tenantId, ok := val.(string)
+	return tenantId, ok
+}
+
+func NewLoggerContext(ctx context.Context) context.Context {
+	return logs.NewContext(ctx)
+}
+
+// GetIrisContext
+//
+//	@Description: 获取Iris上下文
+//	@param ctx
+//	@return iris.Context
 func GetIrisContext(ctx context.Context) iris.Context {
 	v := ddd_context.GetServerContext(ctx)
 	if s, ok := v.(*serverContext); ok {
@@ -98,4 +106,16 @@ func (s *serverContext) SetResponseHeader(name string, value string) {
 
 func (s *serverContext) URLParamDefault(name, def string) string {
 	return s.ctx.URLParamDefault(name, def)
+}
+
+func (o *ContextOptions) CheckAuth() bool {
+	if o.checkAuth != nil {
+		return *o.checkAuth
+	}
+	return true
+}
+
+func (o *ContextOptions) SetCheckAuth(val bool) *ContextOptions {
+	o.checkAuth = &val
+	return o
 }

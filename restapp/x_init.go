@@ -22,5 +22,5 @@ func initLogs(level logs.Level, saveDays int, rotationHour int) {
 }
 
 func GetLogger() logs.Logger {
-	return logs.GetLogrus()
+	return logs.GetLogger()
 }

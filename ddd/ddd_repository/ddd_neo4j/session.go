@@ -81,7 +81,7 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 		})
 	}
 	if err != nil {
-		logs.Error(ctx, err)
+		logs.ErrorErr(ctx, "", err)
 	}
 	return err
 }

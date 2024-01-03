@@ -42,7 +42,7 @@ func (c *nodeCypher) Insert(ctx context.Context, data interface{}) (CypherResult
 	labels := c.getLabels(list...)
 
 	cypher := fmt.Sprintf("CREATE (n%s{%s}) RETURN n ", labels, props)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, dataMap, nil), nil
 }
 
@@ -58,7 +58,7 @@ func (c *nodeCypher) InsertOrUpdate(ctx context.Context, data interface{}) (Cyph
 	labels := c.getLabels(list...)
 
 	cypher := fmt.Sprintf("MERGE (n%s{id:'%v'}) ON CREATE SET %v ON MATCH SET %v RETURN n ", labels, node.GetId(), props, props)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, dataMap, []string{"n"}), nil
 }
 
@@ -87,7 +87,7 @@ func (c *nodeCypher) InsertMany(ctx context.Context, list interface{}) (CypherRe
 			cyphers.WriteString(",")
 		}
 	}
-	logs.Debug(ctx, cyphers)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cyphers.String()})
 	return NewCypherBuilderResult(cyphers.String(), nil, nil), nil
 }
 
@@ -97,7 +97,7 @@ func (c *nodeCypher) Update(ctx context.Context, data interface{}, setFields ...
 		return nil, err
 	}
 	cypher := fmt.Sprintf("MATCH (n{id:$id}) SET %s RETURN n ", prosNames)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
@@ -112,7 +112,7 @@ func (c *nodeCypher) UpdateMany(ctx context.Context, list interface{}) (CypherRe
 func (c *nodeCypher) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
 	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
 	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]-(n) create (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", tenantId, id, label)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -125,7 +125,7 @@ func (c *nodeCypher) UpdateLabelByFilter(ctx context.Context, tenantId string, f
 	// 设置标签
 	// match (n:CAR) set n:NEW remove n:CAR
 	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v'}) %v SET n%v ", tenantId, where, setLabels)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -136,7 +136,7 @@ func (c *nodeCypher) Delete(ctx context.Context, data interface{}) (CypherResult
 	}
 
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:$tenantId,id:$id}) DETACH DELETE n", c.getLabels())
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, mapData, nil), nil
 }
 
@@ -153,7 +153,7 @@ func (c *nodeCypher) DeleteMany(ctx context.Context, tenantId string, ids []stri
 		}
 	}
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) where %v DELETE n", c.getLabels(), tenantId, whereIds)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -162,7 +162,7 @@ func (c *nodeCypher) DeleteById(ctx context.Context, tenantId string, id string)
 	params["id"] = id
 	params["tenantId"] = tenantId
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) DETACH DELETE n", c.getLabels(), tenantId, id)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, params, nil), nil
 }
 
@@ -176,31 +176,31 @@ func (c *nodeCypher) DeleteByIds(ctx context.Context, tenantId string, ids []str
 	}
 	idWhere := strings.Join(ids, ",")
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] DETACH DELETE n ", c.getLabels(), tenantId, idWhere)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) DeleteByCaseId(ctx context.Context, tenantId string, caseId string) (CypherResult, error) {
 	cypher := fmt.Sprintf("MATCH (n%v) DETACH DELETE n", c.getLabels("case_"+caseId, "tenant_"+tenantId))
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) DeleteByTenantId(ctx context.Context, tenantId string) (CypherResult, error) {
 	cypher := fmt.Sprintf("MATCH (n%v) DETACH DELETE n", c.getLabels("tenant_"+tenantId))
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) DeleteByLabels(ctx context.Context, tenantId string, label ...string) (CypherResult, error) {
 	cypher := fmt.Sprintf("MATCH (n%v) DETACH DELETE n", c.getLabels(label...))
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) DeleteAll(ctx context.Context, tenantId string) (CypherResult, error) {
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) DETACH DELETE n", c.getLabels(), tenantId)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -210,7 +210,7 @@ func (c *nodeCypher) DeleteByFilter(ctx context.Context, tenantId string, filter
 		return nil, err
 	}
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) WHERE (%v) DETACH DELETE n", c.labels, tenantId, where)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -218,7 +218,7 @@ func (c *nodeCypher) DeleteLabelById(ctx context.Context, tenantId string, id st
 	// 设置标签
 	// match (n:CAR) set n:NEW remove n:CAR
 	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v',id:'%v'}) REMOVE n:%v ", tenantId, id, label)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -231,13 +231,13 @@ func (c *nodeCypher) DeleteLabelByFilter(ctx context.Context, tenantId string, f
 	// 设置标签
 	// match (n:CAR) set n:NEW remove n:CAR
 	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v'}) %v REMOVE n%v ", tenantId, where, setLabels)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) FindById(ctx context.Context, tenantId, id string) (CypherResult, error) {
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v',id:'%v'}) RETURN n", c.getLabels(), tenantId, id)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -247,28 +247,28 @@ func (c *nodeCypher) FindByIds(ctx context.Context, tenantId string, ids []strin
 	}
 	idWhere := strings.Join(ids, ",")
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s'}) WHERE n.id in [%s] RETURN n ", c.getLabels(), tenantId, idWhere)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *nodeCypher) FindByCaseId(ctx context.Context, tenantId string, caseId string) (CypherResult, error) {
 	var params map[string]any
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%s', caseId:'%s'}) RETURN n ", c.labels, tenantId, caseId)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
 func (c *nodeCypher) FindByAggregateId(ctx context.Context, tenantId string, aggregateName, aggregateId string) (CypherResult, error) {
 	var params map[string]any
 	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) WHERE n.%v='%s' RETURN n ", c.getLabels(), tenantId, aggregateName, aggregateId)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
 func (c *nodeCypher) FindAll(ctx context.Context, tenantId string) (CypherResult, error) {
 	var params map[string]any
 	cypher := fmt.Sprintf("MATCH (n%s{tenantId:'%s'}) RETURN n ", c.getLabels(), tenantId)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
@@ -278,7 +278,7 @@ func (c *nodeCypher) GetFilter(ctx context.Context, tenantId, filter string) (Cy
 		return nil, err
 	}
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n  ", c.getLabels(), tenantId, where)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
@@ -293,7 +293,7 @@ func (c *nodeCypher) Count(ctx context.Context, tenantId, filter string) (Cypher
 		return nil, err
 	}
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN count(n) as count", c.getLabels(), tenantId, where)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"count"}), nil
 }
 
@@ -318,7 +318,7 @@ func (c *nodeCypher) FindPaging(ctx context.Context, query ddd_repository.FindPa
 	}
 
 	cypher := fmt.Sprintf("MATCH (n%v{tenantId:'%v'}) %v RETURN n %v %v SKIP %v LIMIT %v ", c.labels, query.GetTenantId(), where, count, order, skip, pageSize)
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, query.GetTenantId(), logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, keys), nil
 }
 

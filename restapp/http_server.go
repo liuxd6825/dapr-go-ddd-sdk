@@ -106,10 +106,10 @@ func NewHttpServer(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions)
 }
 
 func (s *HttpServer) Start() error {
-	ctx := NewLoggerContext(context2.Background())
+	ctx := logs.NewContext(context2.Background())
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Infof(ctx, "func=restapp.HttpServer.Start(), error=%v", err.Error())
+			logs.Info(ctx, "", logs.Fields{"func": "restapp.HttpServer.Start()", "error": err.Error()})
 		}
 	}()
 	app := s.app
@@ -182,7 +182,11 @@ func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
-			logs.Infof(ctx, "func=%s, error=%v", funLog, err.Error())
+			fields := logs.Fields{
+				"func":  funLog,
+				"error": err.Error(),
+			}
+			logs.Info(ctx, "", fields)
 		}
 	}()
 
@@ -192,7 +196,8 @@ func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
 	reqData, _ := ictx.GetBody()
 	rspData, actorErr := runtime.GetActorRuntimeInstanceContext().InvokeActorMethod(ctx, actorType, actorId, methodName, reqData)
 	if actorErr != actorError.Success {
-		logs.Errorf(ctx, "func=%s; actorType=%v; actorId=%v; methodName=%v; actorError=%v", funLog, actorType, actorId, methodName, ActorErrToError(actorErr).Error())
+		fields := newFieldError(funLog, actorType, actorId, methodName, ActorErrToError(actorErr))
+		logs.Error(ctx, "", fields)
 	}
 	if actorErr == actorError.ErrActorTypeNotFound || actorErr == actorError.ErrActorIDNotFound {
 		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
@@ -206,6 +211,17 @@ func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
 	_, _ = ictx.Write(rspData)
 }
 
+func newFieldError(funLog, actorType, actorId, methodName string, err error) logs.Fields {
+	fields := logs.Fields{
+		"funLog":     funLog,
+		"actorType":  actorType,
+		"actorId":    actorId,
+		"methodName": methodName,
+		"error":      err.Error(),
+	}
+	return fields
+}
+
 // register actor reminder invoke handler
 func (s *HttpServer) actorReminderInvokeHandler(ictx *context.Context) {
 	const funLog = "restapp.HttpServer.actorReminderInvokeHandler()"
@@ -213,16 +229,18 @@ func (s *HttpServer) actorReminderInvokeHandler(ictx *context.Context) {
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
-			logs.Infof(ctx, "func=%s, error=%v", funLog, err.Error())
+			logs.Info(ctx, "", logs.Fields{"func": funLog, "error": err.Error()})
 		}
 	}()
 	actorType := ictx.Params().Get("actorType")
 	actorId := ictx.Params().Get("actorId")
 	reminderName := ictx.Params().Get("reminderName")
 	reqData, _ := ictx.GetBody()
+
 	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeReminder(ctx, actorType, actorId, reminderName, reqData)
 	if actorErr != actorError.Success {
-		logs.Errorf(ctx, "func=%s; actorType=%v; actorId=%v; reminderName=%v; actorError=%v", funLog, actorType, actorId, reminderName, ActorErrToError(actorErr).Error())
+		fields := newFieldError(funLog, actorType, actorId, reminderName, ActorErrToError(actorErr))
+		logs.Error(ctx, "", fields)
 	}
 	if actorErr == actorError.ErrActorTypeNotFound {
 		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
@@ -242,16 +260,24 @@ func (s *HttpServer) actorTimerInvokeHandler(ictx *context.Context) {
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
-			logs.Errorf(ctx, "func=%s; subscribeCount=%v;", funLog, err.Error())
+			logs.Error(ctx, "", logs.Fields{"func": funLog, "error": err.Error()})
 		}
 	}()
 	actorType := ictx.Params().Get("actorType")
-	actorID := ictx.Params().Get("actorId")
+	actorId := ictx.Params().Get("actorId")
 	timerName := ictx.Params().Get("timerName")
 	reqData, _ := ictx.GetBody()
-	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeTimer(ctx, actorType, actorID, timerName, reqData)
+	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeTimer(ctx, actorType, actorId, timerName, reqData)
 	if actorErr != actorError.Success {
-		logs.Errorf(ctx, "func=%s; actorType=%v; actorId=%v; timerName=%v; reqData=%v; actorError=%v;", funLog, actorType, actorID, timerName, reqData, ActorErrToError(actorErr).Error())
+		fields := logs.Fields{
+			"func":       funLog,
+			"actorType":  actorType,
+			"actorId":    actorId,
+			"timerName":  timerName,
+			"reqData":    reqData,
+			"actorError": ActorErrToError(actorErr).Error(),
+		}
+		logs.Error(ctx, "", fields)
 	}
 	if actorErr == actorError.ErrActorTypeNotFound {
 		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
@@ -268,16 +294,22 @@ func (s *HttpServer) actorTimerInvokeHandler(ictx *context.Context) {
 func (s *HttpServer) actorDeactivateHandler(ictx *context.Context) {
 	const funLog = "restapp.HttpServer.actorDeactivateHandler()"
 	ctx, _ := NewContext(ictx)
+
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
 			ictx.StatusCode(http.StatusInternalServerError)
-			logs.Errorf(ctx, "func=%s; err=%v;", funLog, err.Error())
+			fields := logs.Fields{
+				"func":  funLog,
+				"error": err.Error(),
+			}
+			logs.Error(ctx, "", fields)
 		}
 	}()
 
 	actorType := ictx.Params().Get("actorType")
 	actorId := ictx.Params().Get("actorId")
 	actorErr := runtime.GetActorRuntimeInstanceContext().Deactivate(ctx, actorType, actorId)
+
 	if actorErr != actorError.Success && actorErr != actorError.ErrActorIDNotFound && actorErr != actorError.ErrActorTypeNotFound {
 		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
 		return
@@ -406,7 +438,11 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Errorf(ctx, "func=restapp.HttpServer.subscribesHandler(); error=%v;", err.Error())
+			fields := logs.Fields{
+				"func":  "restapp.HttpServer.subscribesHandler()",
+				"error": err.Error(),
+			}
+			logs.Error(ctx, "", fields)
 		}
 	}()
 
@@ -414,10 +450,23 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 	ictx.Header("Context-Type", "application/json")
 	_ = ictx.JSON(subscribes)
 
-	logs.Infof(ctx, "func=restapp.HttpServer.subscribesHandler(); subscribeCount=%v;", len(subscribes))
-	for _, s := range subscribes {
-		logs.Infof(ctx, "func=restapp.HttpServer.subscribesHandler(); pubsubName=%s; topic=%s; topic=%s;", s.PubsubName, s.Topic, s.Route)
+	fields := logs.Fields{
+		"func":           "restapp.HttpServer.subscribesHandler()",
+		"subscribeCount": len(subscribes),
 	}
+	logs.Info(ctx, "", fields)
+	if logs.GetLevel(ctx) == logs.DebugLevel {
+		for _, s := range subscribes {
+			fields := logs.Fields{
+				"func":       "restapp.HttpServer.subscribesHandler()",
+				"pubsubName": len(subscribes),
+				"topic":      s.Topic,
+				"route":      s.Route,
+			}
+			logs.Info(ctx, "", fields)
+		}
+	}
+
 }
 
 func (s *HttpServer) eventTypesHandler(ctx *context.Context) {
@@ -433,7 +482,7 @@ func (s *HttpServer) actorConfigHandler(ictx *context.Context) {
 	ctx, _ := NewContext(ictx)
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Errorf(ctx, "func=restapp.HttpServer.actorConfigHandler(); error=%v;", err.Error())
+			logs.Error(ctx, "", logs.Fields{"func": "restapp.HttpServer.actorConfigHandler()", "error": "err.Error()"})
 		}
 	}()
 	statusCode := http.StatusOK
@@ -445,9 +494,9 @@ func (s *HttpServer) actorConfigHandler(ictx *context.Context) {
 	}
 
 	if statusCode == http.StatusOK {
-		logs.Infof(ctx, "func=restapp.HttpServer.actorConfigHandler(); data=%s;", string(data))
+		logs.Info(ctx, "", logs.Fields{"func": "restapp.HttpServer.actorConfigHandler()", "data": string(data)})
 	} else {
-		logs.Errorf(ctx, "func=restapp.HttpServer.actorConfigHandler(); error=%v;", err.Error())
+		logs.Error(ctx, "", logs.Fields{"func": "restapp.HttpServer.actorConfigHandler()", "error": err.Error()})
 	}
 	ictx.StatusCode(statusCode)
 }

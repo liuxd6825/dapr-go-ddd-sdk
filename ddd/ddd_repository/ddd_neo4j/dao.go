@@ -799,7 +799,7 @@ func (d *Dao[T]) ImportJson(ctx context.Context, cmd ImportJsonCmd, opts ...ddd_
 	cypher := fmt.Sprintf(`CALL apoc.import.json("file:///%s",{cleanup:false, importIdName:"id"} )`, cmd.ImportFile)
 
 	fmt.Println("***********")
-	logs.Debug(ctx, cypher)
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	fmt.Println("***********")
 
 	session := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})

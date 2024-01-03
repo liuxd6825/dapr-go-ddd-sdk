@@ -34,7 +34,8 @@ func (s *AggregateSnapshotActorService) SaveSnapshot(ctx context.Context, req *S
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
-	logs.Debugf(ctx, "AggregateSnapshotActorService.SaveSnapshot() req=%v", func() any {
+
+	logs.Debugf(ctx, req.TenantId, logs.Fields{"AggregateType": req.AggregateType, "EventStoreKey": req.EventStoreKey}, "%s", func() any {
 		bs, _ := json.Marshal(req)
 		return string(bs)
 	})
