@@ -103,7 +103,7 @@ func isLevel(logger Logger, lvl Level) bool {
 	return false
 }
 
-func getFields(ctx context.Context, fields Fields) Fields {
+func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 	f := Fields{}
 	if user, err := auth.GetLoginUser(ctx); err == nil {
 		f["userId"] = user.GetId()
@@ -116,6 +116,14 @@ func getFields(ctx context.Context, fields Fields) Fields {
 			f[key] = val
 		}
 	}
+	if tenantId!=""{
+		f["tenantId"] = tenantId
+	} else 	if id , ok := f["tenantId"]; ok {
+		if id==""{
+			delete(f, "tenantId")
+		}
+	}
+
 	return f
 }
 
@@ -129,12 +137,8 @@ func write(ctx context.Context, tenantId string, fields Fields, level Level, arg
 func print(ctx context.Context, tenantId string, fields Fields, args []any, fun func(ctx context.Context, l Logger, args ...any)) {
 	var entry *logrus.Entry
 	arg := getArgs(getArgs(args...)...)
-	fs := getFields(ctx, fields)
-	if fields != nil {
-		entry = logger.WithField("tenantId", tenantId).WithFields(fs)
-	} else {
-		entry = logger.WithField("tenantId", tenantId)
-	}
+	fs := getFields(ctx, tenantId, fields)
+	entry = logger.WithFields(fs)
 	fun(ctx, entry, arg...)
 }
 

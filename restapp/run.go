@@ -235,6 +235,14 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		}
 	}
 
+	if config.App.AuthToken != "" {
+		DefaultAuthToken = config.App.AuthToken
+	}
+
+	if config.App.AuthTokenKey != "" {
+		DefaultAuthTokenKey = config.App.AuthTokenKey
+	}
+
 	opt := NewRunOptions(options...)
 
 	// 是数据库初始化
@@ -288,6 +296,7 @@ func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string
 	eventStoresMap := make(map[string]ddd.EventStore)
 	esMap := cfg.EventStores
 	if len(esMap) == 0 {
+		logs.Errorf(context.Background(), "", nil, "config eventStores is empity")
 		panic("config eventStores is empity")
 	} else {
 		var defEs ddd.EventStore
@@ -314,6 +323,7 @@ func setCpuMemory(envName string, config *AppConfig) {
 	if config == nil {
 		return
 	}
+	var fields logs.Fields
 	cpu := config.CPU
 	maxCpu := runtime.NumCPU()
 	if cpu < 0 {
@@ -329,6 +339,7 @@ func setCpuMemory(envName string, config *AppConfig) {
 
 	memTxt := strings.ToLower(strings.Trim(config.Memory, " "))
 	if memTxt == "" {
+		logs.Infof(context.Background(), "", fields, "ctype=app; cpu=%v;", cpu)
 		return
 	}
 	var memSize int64 = 0
@@ -337,26 +348,21 @@ func setCpuMemory(envName string, config *AppConfig) {
 	memVal := memTxt[0 : size-1]
 	memSize, err := stringutils.ToInt64(memVal)
 	if err != nil {
-		panic(fmt.Sprintf("%s.app.memory = %s 值不正确。示例: 10G, 10M, 10K", envName, memTxt))
+		logs.Panic(context.Background(), "", fields, "ctype=app; memory=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt)
 	}
 
 	switch unit {
 	case "g":
-		{
-			memSize = memSize * 1024 * 1024 * 1024
-		}
+		memSize = memSize * 1024 * 1024 * 1024
 	case "m":
-		{
-			memSize = memSize * 1024 * 1024
-		}
+		memSize = memSize * 1024 * 1024
 	case "k":
-		{
-			memSize = memSize * 1024
-		}
+		memSize = memSize * 1024
 	default:
-		panic(fmt.Sprintf("%s.app.memory=%s 不正确。示例: 10G, 10M, 10K", envName, memTxt))
+		logs.Panic(context.Background(), "", fields, "ctype=app; %s.app.memory=%s 不正确。示例: 10G, 10M, 10K", envName, memTxt)
 	}
 	debug.SetMemoryLimit(memSize)
+	logs.Infof(context.Background(), "", fields, "ctype=app; cpu=%v; memory=%s;", cpu, memTxt)
 }
 
 // Run

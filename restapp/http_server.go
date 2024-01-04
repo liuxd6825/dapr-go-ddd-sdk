@@ -14,8 +14,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
-	"github.com/liuxd6825/dapr-go-sdk/actor/config"
-	actorError "github.com/liuxd6825/dapr-go-sdk/actor/error"
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
@@ -175,157 +173,6 @@ func (s *HttpServer) Start() error {
 	return nil
 }
 
-// register actor method invoke handler
-func (s *HttpServer) actorInvokeHandler(ictx *context.Context) {
-	const funLog = "restapp.HttpServer.actorInvokeHandler()"
-	ctx, _ := NewContext(ictx)
-	defer func() {
-		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			ictx.StatusCode(http.StatusInternalServerError)
-			fields := logs.Fields{
-				"func":  funLog,
-				"error": err.Error(),
-			}
-			logs.Info(ctx, "", fields)
-		}
-	}()
-
-	actorType := ictx.Params().Get("actorType")
-	actorId := ictx.Params().Get("actorId")
-	methodName := ictx.Params().Get("methodName")
-	reqData, _ := ictx.GetBody()
-	rspData, actorErr := runtime.GetActorRuntimeInstanceContext().InvokeActorMethod(ctx, actorType, actorId, methodName, reqData)
-	if actorErr != actorError.Success {
-		fields := newFieldError(funLog, actorType, actorId, methodName, ActorErrToError(actorErr))
-		logs.Error(ctx, "", fields)
-	}
-	if actorErr == actorError.ErrActorTypeNotFound || actorErr == actorError.ErrActorIDNotFound {
-		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
-		return
-	}
-	if actorErr != actorError.Success {
-		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	ictx.StatusCode(http.StatusOK)
-	_, _ = ictx.Write(rspData)
-}
-
-func newFieldError(funLog, actorType, actorId, methodName string, err error) logs.Fields {
-	fields := logs.Fields{
-		"funLog":     funLog,
-		"actorType":  actorType,
-		"actorId":    actorId,
-		"methodName": methodName,
-		"error":      err.Error(),
-	}
-	return fields
-}
-
-// register actor reminder invoke handler
-func (s *HttpServer) actorReminderInvokeHandler(ictx *context.Context) {
-	const funLog = "restapp.HttpServer.actorReminderInvokeHandler()"
-	ctx, _ := NewContext(ictx)
-	defer func() {
-		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			ictx.StatusCode(http.StatusInternalServerError)
-			logs.Info(ctx, "", logs.Fields{"func": funLog, "error": err.Error()})
-		}
-	}()
-	actorType := ictx.Params().Get("actorType")
-	actorId := ictx.Params().Get("actorId")
-	reminderName := ictx.Params().Get("reminderName")
-	reqData, _ := ictx.GetBody()
-
-	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeReminder(ctx, actorType, actorId, reminderName, reqData)
-	if actorErr != actorError.Success {
-		fields := newFieldError(funLog, actorType, actorId, reminderName, ActorErrToError(actorErr))
-		logs.Error(ctx, "", fields)
-	}
-	if actorErr == actorError.ErrActorTypeNotFound {
-		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
-		return
-	}
-	if actorErr != actorError.Success {
-		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
-}
-
-// register actor timer invoke handler
-func (s *HttpServer) actorTimerInvokeHandler(ictx *context.Context) {
-	const funLog = "restapp.HttpServer.actorTimerInvokeHandler()"
-	ctx, _ := NewContext(ictx)
-	defer func() {
-		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			ictx.StatusCode(http.StatusInternalServerError)
-			logs.Error(ctx, "", logs.Fields{"func": funLog, "error": err.Error()})
-		}
-	}()
-	actorType := ictx.Params().Get("actorType")
-	actorId := ictx.Params().Get("actorId")
-	timerName := ictx.Params().Get("timerName")
-	reqData, _ := ictx.GetBody()
-	actorErr := runtime.GetActorRuntimeInstanceContext().InvokeTimer(ctx, actorType, actorId, timerName, reqData)
-	if actorErr != actorError.Success {
-		fields := logs.Fields{
-			"func":       funLog,
-			"actorType":  actorType,
-			"actorId":    actorId,
-			"timerName":  timerName,
-			"reqData":    reqData,
-			"actorError": ActorErrToError(actorErr).Error(),
-		}
-		logs.Error(ctx, "", fields)
-	}
-	if actorErr == actorError.ErrActorTypeNotFound {
-		ictx.ResponseWriter().WriteHeader(http.StatusNotFound)
-		return
-	}
-	if actorErr != actorError.Success {
-		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	ictx.StatusCode(actorErrorAsHttpStatus(actorErr))
-}
-
-// register deactivate actor handler
-func (s *HttpServer) actorDeactivateHandler(ictx *context.Context) {
-	const funLog = "restapp.HttpServer.actorDeactivateHandler()"
-	ctx, _ := NewContext(ictx)
-
-	defer func() {
-		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			ictx.StatusCode(http.StatusInternalServerError)
-			fields := logs.Fields{
-				"func":  funLog,
-				"error": err.Error(),
-			}
-			logs.Error(ctx, "", fields)
-		}
-	}()
-
-	actorType := ictx.Params().Get("actorType")
-	actorId := ictx.Params().Get("actorId")
-	actorErr := runtime.GetActorRuntimeInstanceContext().Deactivate(ctx, actorType, actorId)
-
-	if actorErr != actorError.Success && actorErr != actorError.ErrActorIDNotFound && actorErr != actorError.ErrActorTypeNotFound {
-		ictx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	ictx.StatusCode(http.StatusOK)
-}
-
-// Deprecated: Use RegisterActorImplFactoryContext instead.
-func (s *HttpServer) RegisterActorImplFactory(f actor.Factory, opts ...config.Option) {
-	runtime.GetActorRuntimeInstance().RegisterActorFactory(f, opts...)
-}
-
-func (s *HttpServer) RegisterActorImplFactoryContext(f actor.FactoryContext, opts ...config.Option) {
-	runtime.GetActorRuntimeInstanceContext().RegisterActorFactory(f, opts...)
-}
-
 // AddHealthCheckHandler appends provided app health check handler.
 func (s *HttpServer) AddHealthCheckHandler(route string, fn common.HealthCheckHandler) error {
 	if fn == nil {
@@ -348,23 +195,6 @@ func (s *HttpServer) AddHealthCheckHandler(route string, fn common.HealthCheckHa
 	return nil
 }
 
-func setOptions(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
-	w.Header().Set("Allow", "POST,OPTIONS")
-}
-
-func optionsHandler(h http.Handler) context.Handler {
-	return func(c *context.Context) {
-		if c.Method() == http.MethodOptions {
-			setOptions(c.ResponseWriter(), c.Request())
-		} else {
-			h.ServeHTTP(c.ResponseWriter(), c.Request())
-		}
-	}
-}
-
 func (s *HttpServer) Stop() error {
 	ctxShutDown, cancel := context2.WithTimeout(context2.Background(), 5*time.Second)
 	defer cancel()
@@ -374,64 +204,6 @@ func (s *HttpServer) Stop() error {
 
 func (s *HttpServer) GracefulStop() error {
 	return s.Stop()
-}
-
-func ActorErrToError(actorErr actorError.ActorErr) error {
-	msg := ""
-	switch actorErr {
-	case actorError.ErrActorTypeNotFound:
-		msg = "ErrActorTypeNotFound"
-		break
-	case actorError.ErrRemindersParamsInvalid:
-		msg = "ErrRemindersParamsInvalid"
-		break
-	case actorError.ErrActorMethodNoFound:
-		msg = "ErrActorMethodNoFound"
-		break
-	case actorError.ErrActorInvokeFailed:
-		msg = "ErrActorInvokeFailed"
-		break
-	case actorError.ErrReminderFuncUndefined:
-		msg = "ErrReminderFuncUndefined"
-		break
-	case actorError.ErrActorMethodSerializeFailed:
-		msg = "ErrActorMethodSerializeFailed"
-		break
-	case actorError.ErrActorSerializeNoFound:
-		msg = "ErrActorSerializeNoFound"
-		break
-	case actorError.ErrActorIDNotFound:
-		msg = "ErrActorIDNotFound"
-		break
-	case actorError.ErrActorFactoryNotSet:
-		msg = "ErrActorFactoryNotSet"
-		break
-	case actorError.ErrTimerParamsInvalid:
-		msg = "ErrTimerParamsInvalid"
-		break
-	case actorError.ErrSaveStateFailed:
-		msg = "ErrSaveStateFailed"
-		break
-	case actorError.ErrActorServerInvalid:
-		msg = "ErrActorServerInvalid"
-		break
-	default:
-		msg = "unknown"
-		break
-	}
-	if len(msg) == 0 {
-		return nil
-	}
-	return errors.New(msg)
-}
-func actorErrorAsHttpStatus(err actorError.ActorErr) int {
-	statusCode := http.StatusOK
-	if err == actorError.ErrActorTypeNotFound || err == actorError.ErrActorIDNotFound {
-		statusCode = http.StatusNotFound
-	} else if err != actorError.Success {
-		statusCode = http.StatusInternalServerError
-	}
-	return statusCode
 }
 
 func (s *HttpServer) subscribesHandler(ictx *context.Context) {
@@ -450,18 +222,13 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 	ictx.Header("Context-Type", "application/json")
 	_ = ictx.JSON(subscribes)
 
-	fields := logs.Fields{
-		"func":           "restapp.HttpServer.subscribesHandler()",
-		"subscribeCount": len(subscribes),
-	}
-	logs.Info(ctx, "", fields)
-	if logs.GetLevel(ctx) == logs.DebugLevel {
+	if logs.GetLevel(ctx) >= logs.InfoLevel {
 		for _, s := range subscribes {
 			fields := logs.Fields{
-				"func":       "restapp.HttpServer.subscribesHandler()",
-				"pubsubName": len(subscribes),
-				"topic":      s.Topic,
-				"route":      s.Route,
+				"dapr":   "subscribes",
+				"pubsub": s.PubsubName,
+				"topic":  s.Topic,
+				"route":  s.Route,
 			}
 			logs.Info(ctx, "", fields)
 		}
@@ -469,51 +236,12 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 
 }
 
-func (s *HttpServer) eventTypesHandler(ctx *context.Context) {
-
-}
-
 func (s *HttpServer) healthHandler(context *context.Context) {
 	context.StatusCode(http.StatusOK)
 }
 
-// register actor config handler
-func (s *HttpServer) actorConfigHandler(ictx *context.Context) {
-	ctx, _ := NewContext(ictx)
-	defer func() {
-		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Error(ctx, "", logs.Fields{"func": "restapp.HttpServer.actorConfigHandler()", "error": "err.Error()"})
-		}
-	}()
-	statusCode := http.StatusOK
-	data, err := runtime.GetActorRuntimeInstanceContext().GetJSONSerializedConfig()
-	if err != nil {
-		statusCode = http.StatusInternalServerError
-	} else if _, err = ictx.Write(data); err != nil {
-		statusCode = http.StatusInternalServerError
-	}
+func (s *HttpServer) eventTypesHandler(ctx *context.Context) {
 
-	if statusCode == http.StatusOK {
-		logs.Info(ctx, "", logs.Fields{"func": "restapp.HttpServer.actorConfigHandler()", "data": string(data)})
-	} else {
-		logs.Error(ctx, "", logs.Fields{"func": "restapp.HttpServer.actorConfigHandler()", "error": err.Error()})
-	}
-	ictx.StatusCode(statusCode)
-}
-
-// registerQueryHandler
-// @Description: 注册领域事件控制器
-// @param handlers
-// @return error
-func (s *HttpServer) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
-	// 注册User消息处理器
-	for _, h := range handlers {
-		err := ddd.RegisterQueryHandler(h, s.eventStoreDefaultPubsubName)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // registerSubscribeHandler
@@ -573,4 +301,36 @@ func (s *HttpServer) registerSwagger() {
 	}
 	// use swagger middleware to
 	s.app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(cfg, swaggerFiles.Handler))
+}
+
+// registerQueryHandler
+// @Description: 注册领域事件控制器
+// @param handlers
+// @return error
+func (s *HttpServer) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
+	// 注册User消息处理器
+	for _, h := range handlers {
+		err := ddd.RegisterQueryHandler(h, s.eventStoreDefaultPubsubName)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setOptions(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST,OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "authorization, origin, content-type, accept")
+	w.Header().Set("Allow", "POST,OPTIONS")
+}
+
+func optionsHandler(h http.Handler) context.Handler {
+	return func(c *context.Context) {
+		if c.Method() == http.MethodOptions {
+			setOptions(c.ResponseWriter(), c.Request())
+		} else {
+			h.ServeHTTP(c.ResponseWriter(), c.Request())
+		}
+	}
 }
