@@ -111,9 +111,11 @@ func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 		f["userName"] = user.GetName()
 	}
 
-	if _, ok := f["logId"]; !ok {
-		f["logId"] = idutils.NewId()
-	}
+	/*
+		if _, ok := f["logId"]; !ok {
+			f["logId"] = idutils.NewId()
+		}
+	*/
 
 	for key, val := range fields {
 		if fun, ok := val.(ArgFunc); ok {
