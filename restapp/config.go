@@ -31,15 +31,14 @@ type EnvConfig struct {
 }
 
 type AppConfig struct {
-	AppId        string            `yaml:"id"`
-	HttpHost     string            `yaml:"httpHost"`
-	HttpPort     int               `yaml:"httpPort"`
-	RootUrl      string            `yaml:"rootUrl"`
-	CPU          int               `yaml:"cpu"`
-	Memory       string            `yaml:"memory"`
-	Values       map[string]string `yaml:"values"`
-	AuthToken    string            `json:"authToken"`
-	AuthTokenKey string            `json:"authTokenKey"`
+	AppId     string            `yaml:"id"`
+	HttpHost  string            `yaml:"httpHost"`
+	HttpPort  int               `yaml:"httpPort"`
+	RootUrl   string            `yaml:"rootUrl"`
+	CPU       int               `yaml:"cpu"`
+	Memory    string            `yaml:"memory"`
+	Values    map[string]string `yaml:"values"`
+	AuthToken string            `yaml:"authToken"`
 }
 
 type DaprConfig struct {

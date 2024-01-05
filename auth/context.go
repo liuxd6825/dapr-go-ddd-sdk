@@ -8,24 +8,41 @@ import (
 type authKey struct {
 }
 
-var NotFundErr = errors.New("AuthContext not found")
-var ContextIsNilErr = errors.New("context is null")
+var (
+	NotFundErr      = errors.New("AuthContext not found")
+	ContextIsNilErr = errors.New("context is null")
+	ctxKey          = authKey{}
+)
 
-func NewContext(ctx context.Context, jwtText string, jwtKey string) (context.Context, error) {
-	user, err := decodeJwt(jwtText, jwtKey)
+func NewContext(ctx context.Context, jwtText string) (context.Context, error) {
+	tk, err := getToken(jwtText)
 	if err != nil {
 		return nil, err
 	}
-	return context.WithValue(ctx, authKey{}, user), nil
+	return context.WithValue(ctx, ctxKey, tk), nil
 }
 
-func GetLoginUser(ctx context.Context) (LoginUser, error) {
+func GetUser(ctx context.Context) (User, error) {
+	token, err := GetToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if token == nil {
+		return nil, errors.New("token is null")
+	}
+	if token.GetUser() == nil {
+		return nil, errors.New("token.User is null")
+	}
+	return token.GetUser(), nil
+}
+
+func GetToken(ctx context.Context) (Token, error) {
 	if ctx == nil {
 		return nil, ContextIsNilErr
 	}
-	val := ctx.Value(authKey{})
+	val := ctx.Value(ctxKey)
 	if val != nil {
-		return val.(LoginUser), nil
+		return val.(Token), nil
 	}
 	return nil, NotFundErr
 }

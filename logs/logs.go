@@ -105,7 +105,7 @@ func isLevel(logger Logger, lvl Level) bool {
 
 func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 	f := Fields{}
-	if user, err := auth.GetLoginUser(ctx); err == nil {
+	if user, err := auth.GetUser(ctx); err == nil {
 		f["userId"] = user.GetId()
 		f["userName"] = user.GetName()
 	}
@@ -116,10 +116,10 @@ func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 			f[key] = val
 		}
 	}
-	if tenantId!=""{
+	if tenantId != "" {
 		f["tenantId"] = tenantId
-	} else 	if id , ok := f["tenantId"]; ok {
-		if id==""{
+	} else if id, ok := f["tenantId"]; ok {
+		if id == "" {
 			delete(f, "tenantId")
 		}
 	}

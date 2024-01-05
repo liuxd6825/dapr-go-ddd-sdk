@@ -26,8 +26,7 @@ const (
 )
 
 var (
-	DefaultAuthToken    = ""
-	DefaultAuthTokenKey = "#@!{[duXm-serVice-t0ken]},.(10086)$!"
+	DefaultAuthToken = ""
 )
 
 func NewContextOptions(opts ...*ContextOptions) *ContextOptions {
@@ -109,7 +108,7 @@ func newAuthTokenContext(parent context.Context, token string, checkAuth bool) (
 			return parent, "", nil
 		}
 	}
-	newCtx, err = auth.NewContext(parent, token, DefaultAuthTokenKey)
+	newCtx, err = auth.NewContext(parent, token)
 	return newCtx, token, err
 }
 

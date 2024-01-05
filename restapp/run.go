@@ -239,10 +239,6 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		DefaultAuthToken = config.App.AuthToken
 	}
 
-	if config.App.AuthTokenKey != "" {
-		DefaultAuthTokenKey = config.App.AuthTokenKey
-	}
-
 	opt := NewRunOptions(options...)
 
 	// 是数据库初始化

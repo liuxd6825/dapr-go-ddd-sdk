@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	daprsdkclient "github.com/liuxd6825/dapr-go-sdk/client"
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/status"
 	"strings"
 
@@ -131,11 +131,11 @@ func newDaprClient(ctx context.Context, host string, grpcPort int64, retry uint)
 
 	for i := 0; i <= int(retry); i++ {
 		if grpcClient, err = daprsdkclient.NewClientWithAddressContext(ctx, addr); err != nil {
-			log.Infoln(fmt.Sprintf("dapr client connection error, address=%s", addr), err)
+			logs.Errorf(ctx, "", nil, "dapr %s", err.Error())
 			continue
 		}
 		if grpcClient != nil {
-			log.Infoln(fmt.Sprintf("dapr client connection success, address=%s", addr))
+			logs.Infof(ctx, "", nil, "dapr client connection success")
 			break
 		}
 	}
