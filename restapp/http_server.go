@@ -26,7 +26,6 @@ type ServiceOptions struct {
 	HttpHost       string
 	HttpPort       int
 	LogLevel       applog.Level
-	EventStores    map[string]ddd.EventStore
 	ActorFactories []actor.FactoryContext
 	Subscribes     []RegisterSubscribe
 	Controllers    []Controller
@@ -38,22 +37,20 @@ type ServiceOptions struct {
 }
 
 type HttpServer struct {
-	app                         *iris.Application
-	appId                       string
-	httpHost                    string
-	httpPort                    int
-	logLevel                    applog.Level
-	daprDddClient               daprclient.DaprDddClient
-	eventStores                 map[string]ddd.EventStore
-	actorFactories              []actor.FactoryContext
-	subscribes                  []RegisterSubscribe
-	controllers                 []Controller
-	eventTypes                  []RegisterEventType
-	authToken                   string
-	webRootPath                 string
-	eventStoreDefaultPubsubName string // 默认事件存储器的名称
-
-	sdkServer *http.Server
+	app            *iris.Application
+	appId          string
+	httpHost       string
+	httpPort       int
+	logLevel       applog.Level
+	daprDddClient  daprclient.DaprDddClient
+	eventStores    map[string]ddd.EventStore
+	actorFactories []actor.FactoryContext
+	subscribes     []RegisterSubscribe
+	controllers    []Controller
+	eventTypes     []RegisterEventType
+	authToken      string
+	webRootPath    string
+	sdkServer      *http.Server
 }
 
 type OnAppInit func(ctx context2.Context) error
@@ -67,12 +64,6 @@ func RegisterOnAppInit(init OnAppInit) {
 }
 
 func NewHttpServer(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
-	eventStoreDefaultPubsubName := ""
-	es, ok := opts.EventStores[""]
-	if ok {
-		eventStoreDefaultPubsubName = es.GetPubsubName()
-	}
-
 	actorRuntime := runtime.GetActorRuntimeInstanceContext()
 	envConfig := opts.EnvConfig
 	if opts.EnvConfig != nil {
@@ -85,20 +76,19 @@ func NewHttpServer(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions)
 
 	app := iris.New()
 	return &HttpServer{
-		httpPort:                    opts.HttpPort,
-		httpHost:                    opts.HttpHost,
-		appId:                       opts.AppId,
-		logLevel:                    opts.LogLevel,
-		daprDddClient:               daprDddClient,
-		eventStores:                 opts.EventStores,
-		actorFactories:              opts.ActorFactories,
-		subscribes:                  opts.Subscribes,
-		controllers:                 opts.Controllers,
-		eventTypes:                  opts.EventTypes,
-		authToken:                   opts.AuthToken,
-		webRootPath:                 opts.WebRootPath,
-		eventStoreDefaultPubsubName: eventStoreDefaultPubsubName,
-		app:                         app,
+		httpPort:       opts.HttpPort,
+		httpHost:       opts.HttpHost,
+		appId:          opts.AppId,
+		logLevel:       opts.LogLevel,
+		daprDddClient:  daprDddClient,
+		actorFactories: opts.ActorFactories,
+		subscribes:     opts.Subscribes,
+		controllers:    opts.Controllers,
+		eventTypes:     opts.EventTypes,
+		authToken:      opts.AuthToken,
+		webRootPath:    opts.WebRootPath,
+
+		app: app,
 	}
 
 }
@@ -134,21 +124,6 @@ func (s *HttpServer) Start() error {
 		}
 	}
 
-	// 注册领域事件类型
-	if s.eventTypes != nil {
-		for _, t := range s.eventTypes {
-			if err := ddd.RegisterEventType(t.EventType, t.Version, t.NewFunc); err != nil {
-				return errors.New(fmt.Sprintf("RegisterEventType() error:\"%s\" , EventType=\"%s\", Version=\"%s\"", err.Error(), t.EventType, t.Version))
-			}
-		}
-	}
-
-	// 注册事件存储器
-	if s.eventStores != nil {
-		for key, es := range s.eventStores {
-			ddd.RegisterEventStore(key, es)
-		}
-	}
 	if err := ddd.StartSubscribeHandlers(); err != nil {
 		return err
 	}
@@ -206,68 +181,12 @@ func (s *HttpServer) GracefulStop() error {
 	return s.Stop()
 }
 
-func (s *HttpServer) subscribesHandler(ictx *context.Context) {
-	ctx, _ := NewContext(ictx)
-	defer func() {
-		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			fields := logs.Fields{
-				"func":  "restapp.HttpServer.subscribesHandler()",
-				"error": err.Error(),
-			}
-			logs.Error(ctx, "", fields)
-		}
-	}()
-
-	subscribes := ddd.GetSubscribes()
-	ictx.Header("Context-Type", "application/json")
-	_ = ictx.JSON(subscribes)
-
-	if logs.GetLevel(ctx) >= logs.InfoLevel {
-		for _, s := range subscribes {
-			fields := logs.Fields{
-				"dapr":   "subscribes",
-				"pubsub": s.PubsubName,
-				"topic":  s.Topic,
-				"route":  s.Route,
-			}
-			logs.Info(ctx, "", fields)
-		}
-	}
-
-}
-
 func (s *HttpServer) healthHandler(context *context.Context) {
 	context.StatusCode(http.StatusOK)
 }
 
 func (s *HttpServer) eventTypesHandler(ctx *context.Context) {
 
-}
-
-// registerSubscribeHandler
-// @Description: 新建领域事件控制器
-// @param subscribes
-// @param queryEventHandler
-// @return ddd.SubscribeHandler
-func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
-	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
-		defer func() {
-			err = errors.GetRecoverError(err, recover())
-		}()
-		s.app.Handle("POST", subscribe.Route, func(ictx *context.Context) {
-			c, _ := NewContext(ictx)
-			if err = sh.SubscribeHandler(c, ictx); err != nil {
-				ictx.SetErr(err)
-			}
-		})
-		return err
-	}
-
-	handler := ddd.NewSubscribeHandler(subscribes, queryEventHandler, subscribesHandler, interceptors)
-	if err := ddd.RegisterQueryHandler(handler, s.eventStoreDefaultPubsubName); err != nil {
-		return nil, err
-	}
-	return handler, nil
 }
 
 // RegisterRestController
@@ -310,7 +229,7 @@ func (s *HttpServer) registerSwagger() {
 func (s *HttpServer) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
-		err := ddd.RegisterQueryHandler(h, s.eventStoreDefaultPubsubName)
+		err := ddd.RegisterQueryHandler(h, ddd.GetEventStoreDefaultPubsubName())
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-package auth
+package appctx
 
 import (
 	"context"
@@ -11,19 +11,19 @@ type authKey struct {
 var (
 	NotFundErr      = errors.New("AuthContext not found")
 	ContextIsNilErr = errors.New("context is null")
-	ctxKey          = authKey{}
+	authCtxKey      = authKey{}
 )
 
-func NewContext(ctx context.Context, jwtText string) (context.Context, error) {
+func NewAuthContext(ctx context.Context, jwtText string) (context.Context, error) {
 	tk, err := getToken(jwtText)
 	if err != nil {
 		return nil, err
 	}
-	return context.WithValue(ctx, ctxKey, tk), nil
+	return context.WithValue(ctx, authCtxKey, tk), nil
 }
 
-func GetUser(ctx context.Context) (User, error) {
-	token, err := GetToken(ctx)
+func GetAuthUser(ctx context.Context) (AuthUser, error) {
+	token, err := GetAuthToken(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -31,18 +31,18 @@ func GetUser(ctx context.Context) (User, error) {
 		return nil, errors.New("token is null")
 	}
 	if token.GetUser() == nil {
-		return nil, errors.New("token.User is null")
+		return nil, errors.New("token.AuthUser is null")
 	}
 	return token.GetUser(), nil
 }
 
-func GetToken(ctx context.Context) (Token, error) {
+func GetAuthToken(ctx context.Context) (AuthToken, error) {
 	if ctx == nil {
 		return nil, ContextIsNilErr
 	}
-	val := ctx.Value(ctxKey)
+	val := ctx.Value(authCtxKey)
 	if val != nil {
-		return val.(Token), nil
+		return val.(AuthToken), nil
 	}
 	return nil, NotFundErr
 }

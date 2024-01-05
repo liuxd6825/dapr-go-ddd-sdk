@@ -3,7 +3,7 @@ package context2
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/auth"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
@@ -35,7 +35,7 @@ func NewContext(ictx iris.Context, tenantId string, opts ...Options) (newCtx con
 	}
 
 	if jwtOk {
-		newCtx, err = auth.NewContext(newCtx, jwt, JwtKey)
+		newCtx, err = appctx.NewAuthContext(newCtx, jwt, JwtKey)
 	}
 	// 日志上下文
 	newCtx = NewLoggerContext(newCtx)

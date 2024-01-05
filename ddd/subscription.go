@@ -3,6 +3,7 @@ package ddd
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 // Subscribe internally represents single topic subscription.
@@ -94,7 +95,13 @@ func (h *subscribeHandler) RegisterSubscribe(subscribe *Subscribe) error {
 	return h.subscribeHandlerFunc(h, subscribe)
 }
 
-// Handler 消息订阅处理器
+// SubscribeHandler
+//
+//	@Description: 消息订阅处理器
+//	@receiver h
+//	@param ctx
+//	@param sctx
+//	@return error
 func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeContext) error {
 	cancel, err := h.interceptor(ctx, sctx)
 	if cancel || err != nil {
@@ -104,10 +111,23 @@ func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeC
 	if err != nil {
 		return err
 	}
-	return daprclient.NewEventRecordByJsonBytes(data).OnSuccess(func(eventRecord *daprclient.EventRecord) error {
-		return CallEventHandler(ctx, h.queryEventHandler, eventRecord)
-	}).OnError(func(err error) {
-		//logs.Error(ctx, "领域事件处理错误: data:%s; error:%s", string(data), err.Error())
+	return daprclient.NewEventRecordByJsonBytes(data).OnSuccess(ctx, func(ctx context.Context, r *daprclient.EventRecord) error {
+		return CallEventHandler(ctx, h.queryEventHandler, r)
+	}).OnError(func(err error, r *daprclient.EventRecord) {
+		if r != nil {
+			fields := logs.Fields{
+				"logFunc":   "SubscribeHandler",
+				"eventId":   r.EventId,
+				"eventType": r.EventType,
+				"event":     r.EventVersion,
+				"eventData": r.EventData,
+				"error":     err.Error(),
+			}
+			logs.Error(ctx, r.TenantId, fields)
+		} else {
+			logs.Errorf(ctx, "", nil, "领域事件处理错误: data:%s; error:%s", string(data), err.Error())
+		}
+
 	}).GetError()
 }
 

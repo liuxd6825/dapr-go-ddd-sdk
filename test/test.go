@@ -6,69 +6,86 @@ import (
 	"fmt"
 	"github.com/iris-contrib/httpexpect/v2"
 	"github.com/kataras/iris/v12/httptest"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dao/mongo_dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dao/neo4j_dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"github.com/redis/go-redis/v9"
 	"testing"
 )
 
-const (
-	EnvName  = "dev_lxd"
-	TenantId = "test"
-
+var (
+	EnvName                 = "dev_lxd"
+	TenantId                = "test"
 	DefaultOperationTimeout = 5
 )
 
+type Option struct {
+	fileName   *string
+	envName    *string
+	eventTypes []restapp.RegisterEventType
+}
+
+func NewOption(options ...*Option) *Option {
+	envName := EnvName
+	o := &Option{envName: &envName}
+	for _, item := range options {
+		if item.fileName != nil {
+			o.fileName = item.fileName
+		}
+		if item.eventTypes != nil {
+			o.eventTypes = item.eventTypes
+		}
+		if item.envName != nil {
+			o.envName = item.envName
+		}
+	}
+	return o
+}
+
+func InitQuery(options ...*Option) error {
+	o := NewOption(options...)
+	if o.fileName == nil {
+		o.SetFileName("query-config.yaml")
+	}
+	if o.envName == nil {
+		o.SetEnvName(EnvName)
+	}
+	ctx := context.Background()
+	return Init(ctx, o.FileName(), o.EnvName(), o.EventTypes())
+}
+
+func InitCommand(options ...*Option) error {
+	o := NewOption(options...)
+	if o.fileName == nil {
+		o.SetFileName("cmd-config.yaml")
+	}
+	if o.envName == nil {
+		o.SetEnvName(EnvName)
+	}
+	ctx := context.Background()
+	return Init(ctx, o.FileName(), o.EnvName(), o.EventTypes())
+}
+
 // InitQuery
 // @Description: 初始化QueryService测试环境
-func InitQuery() error {
+func Init(ctx context.Context, fileName string, envName string, eventTypes []restapp.RegisterEventType) error {
+	if fileName == "" {
+		return errors.New("fileName is null")
+	}
+	if envName == "" {
+		return errors.New("envName is null")
+	}
 	// 加载配置文件
-	config, err := restapp.NewConfigByFile("${search}/config/query-config.yaml")
+	config, err := restapp.NewConfigByFile("${search}/config/" + fileName)
 	if err != nil {
 		return err
 	}
 
 	// 读取指定环境下的配置信息
-	env, err := config.GetEnvConfig(EnvName)
+	env, err := config.GetEnvConfig(envName)
 	if err != nil {
 		return err
 	}
 
-	// 创建dapr客户端
-	daprClient, err := daprclient.NewDaprDddClient(context.Background(), env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort())
-	if err != nil {
-		return err
-	}
-	// 注册dapr客户端
-	daprclient.SetDaprDddClient(daprClient)
-
-	// 初始化ddd
-	ddd.Init(env.App.AppId)
-	applog.Init(daprClient, env.App.AppId, logs.DebugLevel)
-
-	restapp.SetCurrentEnvConfig(env)
-	// 初始化数据库
-	if err := initMongo(env.Mongo["default"]); err != nil {
-		return err
-	}
-	if err := initNeo4j(env.Neo4j["default"]); err != nil {
-		return err
-	}
-	if err := initRedis(env.Redis["default"]); err != nil {
-		return err
-	}
-	if err := initMinio(env); err != nil {
-		return err
-	}
-	return nil
+	return restapp.InitApplication(ctx, env, eventTypes, nil)
 }
 
 // GetResponseData
@@ -97,6 +114,7 @@ func GetResponseData(t *testing.T, resp *httpexpect.Response, data interface{}) 
 	return nil
 }
 
+/*
 func initMongo(dbConfig *restapp.MongoConfig) error {
 	config := &ddd_mongodb.Config{
 		Host:             dbConfig.Host,
@@ -113,7 +131,9 @@ func initMongo(dbConfig *restapp.MongoConfig) error {
 	mongo_dao.SetDB(db)
 	return nil
 }
+*/
 
+/*
 func initRedis(cfg *restapp.RedisConfig) error {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Host,
@@ -141,6 +161,7 @@ func initNeo4j(dbConfig *restapp.Neo4jConfig) error {
 	neo4j_dao.SetDB(driver)
 	return nil
 }
+*/
 
 // PrintJson 以JSON格式打印
 func PrintJson(t *testing.T, title string, data interface{}) error {
@@ -151,4 +172,40 @@ func PrintJson(t *testing.T, title string, data interface{}) error {
 	t.Log(title)
 	t.Log(string(bs))
 	return nil
+}
+
+func (o *Option) EnvName() string {
+	if o.envName == nil {
+		return EnvName
+	}
+	return *o.envName
+}
+
+func (o *Option) FileName() string {
+	if o.fileName == nil {
+		return ""
+	}
+	return *o.fileName
+}
+
+func (o *Option) EventTypes() []restapp.RegisterEventType {
+	if o.eventTypes == nil {
+		return nil
+	}
+	return o.eventTypes
+}
+
+func (o *Option) SetEnvName(val string) *Option {
+	o.envName = &val
+	return o
+}
+
+func (o *Option) SetFileName(val string) *Option {
+	o.fileName = &val
+	return o
+}
+
+func (o *Option) SetEventTypes(val []restapp.RegisterEventType) *Option {
+	o.eventTypes = val
+	return o
 }

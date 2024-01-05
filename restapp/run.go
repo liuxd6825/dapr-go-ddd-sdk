@@ -10,13 +10,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
-	"runtime"
-	"runtime/debug"
-	"strings"
 )
 
 type RunConfig struct {
@@ -209,38 +204,11 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 
-	if config == nil {
-		return nil, errors.New("config is nil")
-	}
-
-	setCpuMemory(config.Name, &config.App)
-
-	if len(config.Mongo) > 0 {
-		initMongo(config.App.AppId, config.Mongo)
-	}
-
-	if len(config.Neo4j) > 0 {
-		initNeo4j(config.Neo4j)
-	}
-
-	if len(config.Minio) > 0 {
-		if err := initMinio(config.Minio); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(config.Redis) > 0 {
-		if err := initRedis(config.Redis); err != nil {
-			return nil, err
-		}
-	}
-
-	if config.App.AuthToken != "" {
-		DefaultAuthToken = config.App.AuthToken
+	if err := InitApplication(context.Background(), config, eventsFunc(), nil); err != nil {
+		return nil, err
 	}
 
 	opt := NewRunOptions(options...)
-
 	// 是数据库初始化
 	if opt.GetInit() {
 		var err error
@@ -259,21 +227,11 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, err
 	}
 
-	// 启动服务，创建dapr客户端
-	daprClient, err := daprclient.NewDaprDddClient(context.Background(), config.Dapr.GetHost(), config.Dapr.GetHttpPort(), config.Dapr.GetGrpcPort())
-	if err != nil {
-		panic(err)
-	}
+	daprClient := daprclient.GetDaprDDDClient()
 
-	daprclient.SetDaprDddClient(daprClient)
-
-	appHost := config.App.HttpHost
-	if len(appHost) == 0 {
-		appHost = "0.0.0.0"
-	}
 	runCfg := &RunConfig{
 		AppId:                  config.App.AppId,
-		HttpHost:               appHost,
+		HttpHost:               config.App.HttpHost,
 		HttpPort:               config.App.HttpPort,
 		LogLevel:               config.Log.level,
 		DaprMaxCallRecvMsgSize: config.Dapr.MaxCallRecvMsgSize,
@@ -281,84 +239,8 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		EnvConfig:              config,
 	}
 
-	eventStoresMap := newEventStores(&config.Dapr, daprClient)
-
 	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)
-	return run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventStoresMap, eventsFunc, actorsFunc, options...)
-}
-
-func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {
-	//创建dapr事件存储器
-	eventStoresMap := make(map[string]ddd.EventStore)
-	esMap := cfg.EventStores
-	if len(esMap) == 0 {
-		logs.Errorf(context.Background(), "", nil, "config eventStores is empity")
-		panic("config eventStores is empity")
-	} else {
-		var defEs ddd.EventStore
-		for _, item := range esMap {
-			eventStorage, err := ddd.NewGrpcEventStore(item.CompName, item.PubsubName, client)
-			if err != nil {
-				panic(err)
-			}
-			eventStoresMap[item.CompName] = eventStorage
-			if defEs == nil {
-				defEs = eventStorage
-			}
-		}
-		eventStoresMap[""] = defEs
-	}
-	return eventStoresMap
-}
-
-// setCpuMemory
-//
-//	@Description: 设置Cpu和内存大小
-//	@param config
-func setCpuMemory(envName string, config *AppConfig) {
-	if config == nil {
-		return
-	}
-	var fields logs.Fields
-	cpu := config.CPU
-	maxCpu := runtime.NumCPU()
-	if cpu < 0 {
-		cpu = maxCpu - cpu
-	}
-	if maxCpu < cpu {
-		cpu = maxCpu
-	}
-	if cpu <= 0 {
-		cpu = 1
-	}
-	runtime.GOMAXPROCS(cpu)
-
-	memTxt := strings.ToLower(strings.Trim(config.Memory, " "))
-	if memTxt == "" {
-		logs.Infof(context.Background(), "", fields, "ctype=app; cpu=%v;", cpu)
-		return
-	}
-	var memSize int64 = 0
-	size := len(memTxt)
-	unit := memTxt[size-1 : size]
-	memVal := memTxt[0 : size-1]
-	memSize, err := stringutils.ToInt64(memVal)
-	if err != nil {
-		logs.Panic(context.Background(), "", fields, "ctype=app; memory=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt)
-	}
-
-	switch unit {
-	case "g":
-		memSize = memSize * 1024 * 1024 * 1024
-	case "m":
-		memSize = memSize * 1024 * 1024
-	case "k":
-		memSize = memSize * 1024
-	default:
-		logs.Panic(context.Background(), "", fields, "ctype=app; %s.app.memory=%s 不正确。示例: 10G, 10M, 10K", envName, memTxt)
-	}
-	debug.SetMemoryLimit(memSize)
-	logs.Infof(context.Background(), "", fields, "ctype=app; cpu=%v; memory=%s;", cpu, memTxt)
+	return run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
 
 // Run
@@ -372,24 +254,22 @@ func setCpuMemory(envName string, config *AppConfig) {
 // @param eventTypesFunc
 // @return error
 func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventStores map[string]ddd.EventStore,
-	eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
+	controllersFunc func() []Controller, eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
 	runOptions ...*RunOptions) (common.Service, error) {
 
 	opt := NewRunOptions(runOptions...)
-	ddd.Init(runCfg.AppId)
-	applog.Init(runCfg.DaprClient, runCfg.AppId, runCfg.LogLevel)
+
 	level := runCfg.LogLevel
 	if opt.level != nil {
 		level = *opt.level
 	}
 	serverOptions := &ServiceOptions{
-		AppId:          runCfg.AppId,
-		HttpHost:       runCfg.HttpHost,
-		HttpPort:       runCfg.HttpPort,
-		LogLevel:       level,
-		EventTypes:     eventTypesFunc(),
-		EventStores:    eventStores,
+		AppId:      runCfg.AppId,
+		HttpHost:   runCfg.HttpHost,
+		HttpPort:   runCfg.HttpPort,
+		LogLevel:   level,
+		EventTypes: eventTypesFunc(),
+
 		Subscribes:     subsFunc(),
 		Controllers:    controllersFunc(),
 		ActorFactories: actorsFunc(),
@@ -397,9 +277,6 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		WebRootPath:    webRootPath,
 		EnvConfig:      runCfg.EnvConfig,
 	}
-
-	// 设置全局时区为本地时区
-	setting.SetLocalTimeZone()
 
 	_currentEnvConfig = runCfg.EnvConfig
 
@@ -505,4 +382,27 @@ func SetCurrentEnvConfig(envConfig *EnvConfig) {
 
 func GetCurrentEnvConfig() *EnvConfig {
 	return _currentEnvConfig
+}
+
+func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {
+	//创建dapr事件存储器
+	eventStoresMap := make(map[string]ddd.EventStore)
+	esMap := cfg.EventStores
+	if len(esMap) == 0 {
+		logs.Panicf(context.Background(), "", nil, "config eventStores is empity")
+	} else {
+		var defEs ddd.EventStore
+		for _, item := range esMap {
+			eventStorage, err := ddd.NewGrpcEventStore(item.CompName, item.PubsubName, client)
+			if err != nil {
+				panic(err)
+			}
+			eventStoresMap[item.CompName] = eventStorage
+			if defEs == nil {
+				defEs = eventStorage
+			}
+		}
+		eventStoresMap[""] = defEs
+	}
+	return eventStoresMap
 }

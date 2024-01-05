@@ -3,7 +3,7 @@ package logs
 import (
 	"context"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/auth"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -105,10 +105,16 @@ func isLevel(logger Logger, lvl Level) bool {
 
 func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 	f := Fields{}
-	if user, err := auth.GetUser(ctx); err == nil {
+
+	if user, err := appctx.GetAuthUser(ctx); err == nil {
 		f["userId"] = user.GetId()
 		f["userName"] = user.GetName()
 	}
+
+	if _, ok := f["logId"]; !ok {
+		f["logId"] = idutils.NewId()
+	}
+
 	for key, val := range fields {
 		if fun, ok := val.(ArgFunc); ok {
 			f[key] = fun()
@@ -266,6 +272,18 @@ func Errorfmt(ctx context.Context, tenantId string, fmt string, args ...interfac
 func Panic(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
 	write(ctx, tenantId, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panic(args...)
+	})
+}
+
+func Panicf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
+	write(ctx, tenantId, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
+		l.Panicf(fmt, args...)
+	})
+}
+
+func PanicError(ctx context.Context, tenantId string, err error) {
+	write(ctx, tenantId, nil, PanicLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+		l.Panicln(err)
 	})
 }
 

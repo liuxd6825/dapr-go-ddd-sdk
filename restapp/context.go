@@ -3,7 +3,7 @@ package restapp
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/auth"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -11,9 +11,6 @@ import (
 
 type serverContext struct {
 	ctx iris.Context
-}
-
-type tenantCtxKey struct {
 }
 
 type ContextOptions struct {
@@ -76,7 +73,7 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	}
 
 	if opt.tenantId != nil {
-		newCtx = newTenantContext(newCtx, opt.TenantId())
+		newCtx = appctx.NewTenantContext(newCtx, opt.TenantId())
 	}
 
 	token := metadata[HttpHeadAuthorization]
@@ -108,7 +105,7 @@ func newAuthTokenContext(parent context.Context, token string, checkAuth bool) (
 			return parent, "", nil
 		}
 	}
-	newCtx, err = auth.NewContext(parent, token)
+	newCtx, err = appctx.NewAuthContext(parent, token)
 	return newCtx, token, err
 }
 
@@ -116,25 +113,6 @@ func newIrisContext(ctx iris.Context) ddd_context.ServerContext {
 	return &serverContext{
 		ctx: ctx,
 	}
-}
-
-func newTenantContext(parent context.Context, tenantId string) context.Context {
-	return context.WithValue(parent, tenantCtxKey{}, tenantId)
-}
-
-// GetTenantId
-//
-//	@Description: 根据上下文取得租户ID
-//	@param ctx
-//	@return string
-//	@return bool
-func GetTenantId(ctx context.Context) (string, bool) {
-	val := ctx.Value(tenantCtxKey{})
-	if val == nil {
-		return "", false
-	}
-	tenantId, ok := val.(string)
-	return tenantId, ok
 }
 
 func NewLoggerContext(ctx context.Context) context.Context {

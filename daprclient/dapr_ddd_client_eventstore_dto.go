@@ -1,7 +1,9 @@
 package daprclient
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"time"
 )
 
@@ -110,6 +112,7 @@ type LoadEventsResponse struct {
 }
 
 type Snapshot struct {
+	TenantId          string                 `json:"tenantId"`
 	AggregateData     map[string]interface{} `json:"aggregateData"`
 	AggregateRevision string                 `json:"aggregateRevision"`
 	SequenceNumber    uint64                 `json:"sequenceNumber"`
@@ -117,6 +120,7 @@ type Snapshot struct {
 }
 
 type EventRecord struct {
+	TenantId       string                 `json:"tenantId"`
 	EventId        string                 `json:"eventId"`
 	EventData      map[string]interface{} `json:"eventData"`
 	EventType      string                 `json:"eventType"`
@@ -290,16 +294,17 @@ func (r *ResponseHeaders) SetValues(v map[string]string) {
 	r.Values = v
 }
 
-func (r *EventRecordJsonMarshalResult) OnSuccess(doSuccess func(eventRecord *EventRecord) error) *EventRecordJsonMarshalResult {
+func (r *EventRecordJsonMarshalResult) OnSuccess(ctx context.Context, doSuccess func(ctx context.Context, record *EventRecord) error) *EventRecordJsonMarshalResult {
 	if r.err == nil {
-		r.err = doSuccess(r.eventRecord)
+		newCtx := appctx.NewTenantContext(ctx, r.eventRecord.TenantId)
+		r.err = doSuccess(newCtx, r.eventRecord)
 	}
 	return r
 }
 
-func (r *EventRecordJsonMarshalResult) OnError(doError func(err error)) *EventRecordJsonMarshalResult {
+func (r *EventRecordJsonMarshalResult) OnError(doError func(err error, eventRecord *EventRecord)) *EventRecordJsonMarshalResult {
 	if r.err != nil {
-		doError(r.err)
+		doError(r.err, r.eventRecord)
 	}
 	return r
 }

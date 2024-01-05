@@ -8,6 +8,7 @@ var _appId string
 var eventStores = map[string]EventStore{"": NewEmptyEventStore()}
 var subscribes = make([]*Subscribe, 0)
 var subscribeHandlers = make([]SubscribeHandler, 0)
+var eventStoreDefaultPubsubName string
 
 func Init(appId string) {
 	_appId = appId
@@ -42,7 +43,7 @@ func GetSubscribes() []*Subscribe {
 	return subscribes
 }
 
-// GetEventStorage
+// GetEventStore
 // @Description: 获取事件存储器
 // @param key 事件存储器名称
 // @return EventStorage 事件存储器
@@ -62,19 +63,26 @@ func GetEventStore(name string) (EventStore, error) {
 	return eventStorage, nil
 }
 
-// RegisterEventStorage
+// RegisterEventStore
 // @Description:  注册领域事件存储器
 // @param key 唯一名称
 // @param es  事件存储器
 func RegisterEventStore(key string, es EventStore) {
 	eventStores[key] = es
+	if key == "" || eventStoreDefaultPubsubName == "" {
+		eventStoreDefaultPubsubName = es.GetPubsubName()
+	}
+}
+
+func GetEventStoreDefaultPubsubName() string {
+	return eventStoreDefaultPubsubName
 }
 
 // RegisterQueryHandler
 // @Description:  注册事件监听器
 // @param subHandler
 // @return error
-func RegisterQueryHandler(subHandler SubscribeHandler, defualtPubsubName string) error {
+func RegisterQueryHandler(subHandler SubscribeHandler, defaultPubsubName string) error {
 	subscribeHandlers = append(subscribeHandlers, subHandler)
 	items, err := subHandler.GetSubscribes()
 	if err != nil {
@@ -82,7 +90,7 @@ func RegisterQueryHandler(subHandler SubscribeHandler, defualtPubsubName string)
 	}
 	for _, s := range items {
 		if s.PubsubName == "" {
-			s.PubsubName = defualtPubsubName
+			s.PubsubName = defaultPubsubName
 		}
 		subscribes = append(subscribes, s)
 	}

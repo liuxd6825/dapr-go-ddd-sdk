@@ -1,19 +1,16 @@
 package ddd
 
 import (
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"reflect"
 )
 
-//
 // CallMethod
 // @Description: 动态调用方法
 // @param object 被调用的结构
 // @param methodName 方法名称
 // @param ps 参数
 // @return err
-//
 func CallMethod(object interface{}, methodName string, ps ...interface{}) (err error) {
 	if object == nil {
 		return errors.NewMethodCallError("ddd", "CallMethod", "object is nil")
@@ -22,10 +19,7 @@ func CallMethod(object interface{}, methodName string, ps ...interface{}) (err e
 	typeName := at.Name()
 
 	defer func() {
-		if e := recover(); e != nil {
-			message := fmt.Sprintf("%v", e)
-			err = errors.NewMethodCallError(typeName, methodName, message)
-		}
+		err = errors.GetRecoverError(err, recover())
 	}()
 
 	a := reflect.ValueOf(object)

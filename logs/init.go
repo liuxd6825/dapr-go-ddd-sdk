@@ -114,8 +114,13 @@ func (f *Formatter) Format(e *logrus.Entry) ([]byte, error) {
 			sb.WriteString(fmt.Sprintf(`"%s":"%v", `, key, val))
 		}
 	}
-	sb.WriteString(fmt.Sprintf(`"msg":"%s" }`, e.Message))
-	sb.WriteString("\r\n")
+	if e.Message != "" {
+		sb.WriteString(fmt.Sprintf(`"msg":"%s" }`, e.Message))
+		sb.WriteString("\r\n")
+	} else {
+		s := sb.String()
+		return []byte(s[0:len(s)-3] + "}\r\n"), nil
+	}
 	return []byte(sb.String()), nil
 }
 

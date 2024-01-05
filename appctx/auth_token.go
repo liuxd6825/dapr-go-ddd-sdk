@@ -1,4 +1,4 @@
-package auth
+package appctx
 
 import (
 	"encoding/base64"
@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-type Token interface {
+type AuthToken interface {
 	GetSub() string
 	GetExp() int
-	GetUser() User
+	GetUser() AuthUser
 	GetClientId() string
 }
 
-type User interface {
+type AuthUser interface {
 	GetId() string
 	GetName() string
 	GetPhone() string
@@ -31,14 +31,14 @@ type User interface {
 	GetTenantAccount() string
 }
 
-type token struct {
-	Sub      string `json:"sub"`
-	Exp      int    `json:"exp"`
-	User     *user  `json:"user"`
-	ClientId string `json:"client_id"`
+type authToken struct {
+	Sub      string    `json:"sub"`
+	Exp      int       `json:"exp"`
+	User     *authUser `json:"user"`
+	ClientId string    `json:"client_id"`
 }
 
-type user struct {
+type authUser struct {
 	Id            string     `json:"id"`
 	Name          string     `json:"name"`
 	Phone         string     `json:"phone"`
@@ -52,12 +52,12 @@ type user struct {
 	TenantAccount string     `json:"tenantAccount"`
 }
 
-func getToken(jwtText string) (Token, error) {
+func getToken(jwtText string) (AuthToken, error) {
 	list := strings.Split(jwtText, ".")
 	if len(list) != 3 {
 		return nil, errors.New("token格式不正确")
 	}
-	tk := token{}
+	tk := authToken{}
 	bs, err := base64.RawURLEncoding.DecodeString(list[1])
 	if err != nil {
 		return nil, err
@@ -66,66 +66,66 @@ func getToken(jwtText string) (Token, error) {
 	return &tk, err
 }
 
-func newToken() Token {
-	return &token{}
+func newToken() AuthToken {
+	return &authToken{}
 }
 
-func (u *token) GetSub() string {
+func (u *authToken) GetSub() string {
 	return u.Sub
 }
 
-func (u *token) GetExp() int {
+func (u *authToken) GetExp() int {
 	return u.Exp
 }
 
-func (u *token) GetUser() User {
+func (u *authToken) GetUser() AuthUser {
 	return u.User
 }
 
-func (u *token) GetClientId() string {
+func (u *authToken) GetClientId() string {
 	return u.ClientId
 }
 
-func (u *user) GetId() string {
+func (u *authUser) GetId() string {
 	return u.Id
 }
 
-func (u *user) GetName() string {
+func (u *authUser) GetName() string {
 	return u.Name
 }
 
-func (u *user) GetPhone() string {
+func (u *authUser) GetPhone() string {
 	return u.Phone
 }
 
-func (u *user) GetAccount() string {
+func (u *authUser) GetAccount() string {
 	return u.Account
 }
 
-func (u *user) GetRegDate() *time.Time {
+func (u *authUser) GetRegDate() *time.Time {
 	return u.Regdate
 }
 
-func (u *user) GetWork() string {
+func (u *authUser) GetWork() string {
 	return u.Work
 }
 
-func (u *user) GetStatus() string {
+func (u *authUser) GetStatus() string {
 	return u.Status
 }
 
-func (u *user) GetUserType() string {
+func (u *authUser) GetUserType() string {
 	return u.UserType
 }
 
-func (u *user) GetTenantId() string {
+func (u *authUser) GetTenantId() string {
 	return u.TenantId
 }
 
-func (u *user) GetTenantName() string {
+func (u *authUser) GetTenantName() string {
 	return u.TenantName
 }
 
-func (u *user) GetTenantAccount() string {
+func (u *authUser) GetTenantAccount() string {
 	return u.TenantAccount
 }
