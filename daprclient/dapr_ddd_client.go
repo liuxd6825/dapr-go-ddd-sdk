@@ -93,7 +93,7 @@ func NewDaprDddClient(ctx context.Context, host string, httpPort int64, grpcPort
 	}
 
 	//重试5分钟进行Dapr连接
-	grpcClient, err := newDaprClient(ctx, host, grpcPort, 60*5)
+	grpcClient, err := newDaprClient(ctx, host, grpcPort, 5)
 	if err != nil {
 		return nil, err
 	}
