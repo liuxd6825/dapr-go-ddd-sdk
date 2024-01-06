@@ -2,7 +2,6 @@ package restapp
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
@@ -63,8 +62,6 @@ type RegisterEventType struct {
 	Version   string
 	NewFunc   ddd.NewEventFunc
 }
-
-var _currentEnvConfig *EnvConfig
 
 var _actorsFactory []actor.FactoryContext = []actor.FactoryContext{
 	aggregateSnapshotActorFactory,
@@ -361,27 +358,6 @@ func (o *RunOptions) GetDbKey() string {
 		return ""
 	}
 	return *o.dbKey
-}
-
-func GetConfigAppValue(name string) (string, error) {
-	var err error
-	v, ok := _currentEnvConfig.App.Values[name]
-	if !ok {
-		err = errors.New(fmt.Sprintf("配置变量%s不存在", name))
-	}
-	return v, err
-}
-
-func GetConfigAppValues() map[string]string {
-	return _currentEnvConfig.App.Values
-}
-
-func SetCurrentEnvConfig(envConfig *EnvConfig) {
-	_currentEnvConfig = envConfig
-}
-
-func GetCurrentEnvConfig() *EnvConfig {
-	return _currentEnvConfig
 }
 
 func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {

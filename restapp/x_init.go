@@ -17,6 +17,10 @@ import (
 	"strings"
 )
 
+var (
+	_currentEnvConfig *EnvConfig
+)
+
 func init() {
 
 }
@@ -43,6 +47,7 @@ func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []Reg
 	if len(envConfig.App.HttpHost) == 0 {
 		envConfig.App.HttpHost = "0.0.0.0"
 	}
+
 	// 设置全局时区为本地时区
 	setting.SetLocalTimeZone()
 
@@ -72,7 +77,7 @@ func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []Reg
 	}
 
 	SetCurrentEnvConfig(envConfig)
-	
+
 	// 启动服务，创建dapr客户端
 	daprClient, err := daprclient.NewDaprDddClient(ctx, envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort())
 	if err != nil {
@@ -150,4 +155,49 @@ func setCpuMemory(envName string, config *AppConfig) {
 	}
 	debug.SetMemoryLimit(memSize)
 	logs.Infof(context.Background(), "", fields, "ctype=app; cpu=%v; memory=%s;", cpu, memTxt)
+}
+
+func GetConfigAppValue(name string) (string, error) {
+	var err error
+	v, ok := _currentEnvConfig.App.Values[name]
+	if !ok {
+		err = errors.New(fmt.Sprintf("配置变量%s不存在", name))
+	}
+	return v, err
+}
+
+func GetConfigAppValues() map[string]string {
+	return _currentEnvConfig.App.Values
+}
+
+func SetCurrentEnvConfig(envConfig *EnvConfig) {
+	_currentEnvConfig = envConfig
+}
+
+func GetCurrentEnvConfig() *EnvConfig {
+	return _currentEnvConfig
+}
+
+func GetDaprHost() string {
+	return _currentEnvConfig.Dapr.GetHost()
+}
+
+func GetDaprHttpPort() int64 {
+	return _currentEnvConfig.Dapr.GetHttpPort()
+}
+
+func GetDaprGrpcPort() int64 {
+	return _currentEnvConfig.Dapr.GetGrpcPort()
+}
+
+func GetAppId() string {
+	return _currentEnvConfig.App.AppId
+}
+
+func GetAppHttpHost() string {
+	return _currentEnvConfig.App.HttpHost
+}
+
+func GetHttpInvoke(appId string) string {
+	return fmt.Sprintf("http://%s:%v/v1.0/invoke/%v/method/", GetDaprHost(), GetDaprHttpPort(), appId)
 }
