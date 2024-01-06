@@ -201,7 +201,7 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 
-	if err := InitApplication(context.Background(), config, eventsFunc(), nil); err != nil {
+	if err := InitApplication(context.Background(), config, eventsFunc(), false, nil); err != nil {
 		return nil, err
 	}
 

@@ -2,6 +2,7 @@ package feign
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"net/http"
 	"reflect"
 	"sync"
@@ -28,6 +29,17 @@ type BuildOption func(opt *buildOptions)
 func WithBaseURL(url string) BuildOption {
 	return func(opt *buildOptions) {
 		opt.baseUrl = url
+	}
+}
+
+// WithAppIdURL
+//
+//	@Description: 根据Dapr AppId设置baseUrl
+//	@param appId
+//	@return BuildOption
+func WithAppIdURL(appId string) BuildOption {
+	return func(opt *buildOptions) {
+		opt.baseUrl = restapp.GetHttpInvoke(appId)
 	}
 }
 
@@ -72,7 +84,7 @@ func (f *Factory) Build(target interface{}, opts ...BuildOption) (interface{}, e
 	}
 	bopts := &buildOptions{
 		client:      f.client,
-		contentType: ContentTypeText,
+		contentType: ContentTypeJson,
 		encoders: map[string]BodyEncoder{
 			ContentTypeJson: jsonEncoder,
 			ContentTypeText: textEncoder,

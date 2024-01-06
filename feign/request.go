@@ -111,7 +111,8 @@ func makeRequestFunction(funcType reflect.Type, defination reflect.StructField, 
 		}
 	}
 	lastIndex := len(opts.requestMws)
-	return reflect.MakeFunc(funcType, func(args []reflect.Value) []reflect.Value {
+	return reflect.MakeFunc(funcType, func(args []reflect.Value) (results []reflect.Value) {
+
 		r := newRequest(method, opts)
 		for _, builder := range builders {
 			if e := builder(args, r); e != nil {
@@ -128,7 +129,15 @@ func makeRequestFunction(funcType reflect.Type, defination reflect.StructField, 
 			handlers: make([]RequestHandler, len(opts.requestMws)+1),
 		}
 		copy(rc.handlers, opts.requestMws)
-		results := make([]reflect.Value, 0, funcType.NumOut())
+		results = make([]reflect.Value, 0, funcType.NumOut())
+
+		/*
+			defer func() {
+				err := errors.GetRecoverError(nil, recover())
+				makeResponse(funcType, "", &results, nil, newRequestError(err, req, rc.Response))
+			}()
+		*/
+
 		h := newRequestRunner(opts.client)
 		rc.handlers[lastIndex] = h
 		err = rc.handlers[0](rc)
@@ -188,7 +197,7 @@ func newHTTPRequest(r *requestTemplate) (*http.Request, error) {
 	}
 	if r.body != nil {
 		if cts := req.Header.Values(HeaderContentType); len(cts) == 0 {
-			req.Header.Set(HeaderContentType, "text/plain")
+			req.Header.Set(HeaderContentType, ContentTypeText)
 		}
 	}
 	req.Header[HeaderAccept] = Accept

@@ -2,15 +2,14 @@ package feign_test
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/feign"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
-
-	"github.com/snownd/cake"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRequestMiddleware(t *testing.T) {

@@ -2,6 +2,7 @@ package feign
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	urlUtils "net/url"
 	"reflect"
 	"strconv"
@@ -242,7 +243,11 @@ func makeArgBuilderForRequestConfigCached(t reflect.Type, index int, url string,
 		}
 	}
 
-	return func(args []reflect.Value, req *requestTemplate) error {
+	return func(args []reflect.Value, req *requestTemplate) (err error) {
+		defer func() {
+			err = errors.GetRecoverError(err, recover())
+		}()
+
 		layers := make([]string, len(urlLayers))
 		copy(layers, urlLayers)
 		config := args[index]

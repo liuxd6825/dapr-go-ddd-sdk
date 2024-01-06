@@ -39,7 +39,7 @@ func GetLogger() logs.Logger {
 	return logs.GetLogger()
 }
 
-func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []RegisterEventType, fun func(cxt context.Context) error) error {
+func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []RegisterEventType, isTest bool, fun func(cxt context.Context) error) error {
 	if envConfig == nil {
 		return errors.New("envConfig is null")
 	}

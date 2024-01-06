@@ -8,3 +8,7 @@ const (
 	HttpDelete HttpType = "DELETE"
 	HttpPut    HttpType = "PUT"
 )
+
+const (
+	ContentType = "Content-Type"
+)

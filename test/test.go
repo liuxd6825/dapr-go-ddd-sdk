@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	EnvName                 = "dev_lxd"
+	EnvName                 = "dev"
 	TenantId                = "test"
 	DefaultOperationTimeout = 5
 )
@@ -85,7 +85,7 @@ func Init(ctx context.Context, fileName string, envName string, eventTypes []res
 		return err
 	}
 
-	return restapp.InitApplication(ctx, env, eventTypes, nil)
+	return restapp.InitApplication(ctx, env, eventTypes, true, nil)
 }
 
 // GetResponseData

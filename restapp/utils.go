@@ -364,6 +364,7 @@ func doCmdAndQuery(ictx iris.Context, tenantId string, queryAppId string, isGetO
 }
 
 func SetJson(ictx iris.Context, data interface{}) error {
+	ictx.ResponseWriter().Header().Set(ContentType, ContentTypeApplicationJson)
 	bs, err := WriteJSON(data)
 	if err != nil {
 		SetError(ictx, err)
@@ -375,7 +376,6 @@ func SetJson(ictx iris.Context, data interface{}) error {
 		return err
 	}
 
-	ictx.ContentType(iris_context.ContentJSONHeaderValue)
 	return nil
 }
 
