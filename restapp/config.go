@@ -127,7 +127,7 @@ func (e *EnvConfig) Init(name string) error {
 		e.Log.SaveDays = 30
 	}
 	if e.Log.SplitHour <= 0 {
-		e.Log.SplitHour = 1
+		e.Log.SplitHour = 24
 	}
 	e.Log.level = level
 	initLogs(level, e.Log.SaveDays, e.Log.SplitHour)

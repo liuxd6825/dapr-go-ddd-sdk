@@ -5,6 +5,7 @@ import (
 	"compress/zlib"
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"io"
 	"net/http"
 	"reflect"
@@ -51,6 +52,7 @@ func makeRequestFunction(funcType reflect.Type, defination reflect.StructField, 
 			return nil
 		})
 	} else {
+
 		for i := 0; i < funcType.NumIn(); i++ {
 			index := i
 			argType := funcType.In(i)
@@ -121,6 +123,7 @@ func makeRequestFunction(funcType reflect.Type, defination reflect.StructField, 
 			}
 		}
 		req, err := newHTTPRequest(r)
+		logs.Debug(r.ctx, "", logs.Fields{"pkg": "dapr-go-ddd-sdk.feign", "url": req.URL})
 		if err != nil {
 			panic(err)
 		}

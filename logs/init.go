@@ -21,7 +21,7 @@ var (
 	logger      *logrus.Logger
 	once        sync.Once
 	formatter   = &Formatter{}
-	startFields = []string{"tenantId", "userId", "userName", "logId", "logType", "logFunc", "func", "error", "logUseTime"}
+	startFields = []string{"tenantId", "userId", "userName", "pkg", "logId", "logType", "logFunc", "func", "error", "logUseTime"}
 )
 
 // init
@@ -119,7 +119,7 @@ func (f *Formatter) Format(e *logrus.Entry) ([]byte, error) {
 		sb.WriteString("\r\n")
 	} else {
 		s := sb.String()
-		return []byte(s[0:len(s)-3] + "}\r\n"), nil
+		return []byte(s[0:len(s)-2] + "}\r\n"), nil
 	}
 	return []byte(sb.String()), nil
 }
