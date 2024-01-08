@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"strings"
-	"time"
 )
 
 type AuthToken interface {
@@ -21,7 +20,7 @@ type AuthUser interface {
 	GetPhone() string
 
 	GetAccount() string
-	GetRegDate() *time.Time
+	GetRegDate() string
 	GetWork() string
 	GetStatus() string
 	GetUserType() string
@@ -39,17 +38,17 @@ type authToken struct {
 }
 
 type authUser struct {
-	Id            string     `json:"id"`
-	Name          string     `json:"name"`
-	Phone         string     `json:"phone"`
-	Account       string     `json:"account"`
-	Regdate       *time.Time `json:"regdate"`
-	Work          string     `json:"work"`
-	Status        string     `json:"status"`
-	UserType      string     `json:"userType"`
-	TenantId      string     `json:"tenantId"`
-	TenantName    string     `json:"tenantName"`
-	TenantAccount string     `json:"tenantAccount"`
+	Id            string `json:"id"`
+	Name          string `json:"name"`
+	Phone         string `json:"phone"`
+	Account       string `json:"account"`
+	Regdate       string `json:"regdate"`
+	Work          string `json:"work"`
+	Status        string `json:"status"`
+	UserType      string `json:"userType"`
+	TenantId      string `json:"tenantId"`
+	TenantName    string `json:"tenantName"`
+	TenantAccount string `json:"tenantAccount"`
 }
 
 func getToken(jwtText string) (AuthToken, error) {
@@ -102,7 +101,7 @@ func (u *authUser) GetAccount() string {
 	return u.Account
 }
 
-func (u *authUser) GetRegDate() *time.Time {
+func (u *authUser) GetRegDate() string {
 	return u.Regdate
 }
 
