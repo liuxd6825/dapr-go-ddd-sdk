@@ -7,7 +7,7 @@ import (
 )
 import "time"
 
-type SetUser interface {
+type EditEntity interface {
 	SetCreatedTime(value *time.Time)
 	SetCreatorId(value string)
 	SetCreatorName(value string)
@@ -25,7 +25,7 @@ type TokenData struct {
 	TenantId string
 }
 
-func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc func(err error)) (LoginUser, error) {
+func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc func(err error)) (appctx.AuthUser, error) {
 	user, err := appctx.GetAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc
 	return user, nil
 }
 
-func SetCreateUser(ctx context.Context, entity SetUser) error {
+func SetCreateUser(ctx context.Context, entity EditEntity) error {
 	user, err := appctx.GetAuthUser(ctx)
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func SetCreateUser(ctx context.Context, entity SetUser) error {
 	return nil
 }
 
-func SetUpdateUser(ctx context.Context, entity SetUser) error {
+func SetUpdateUser(ctx context.Context, entity EditEntity) error {
 	user, err := appctx.GetAuthUser(ctx)
 	if err != nil {
 		return err
@@ -73,7 +73,7 @@ func SetUpdateUser(ctx context.Context, entity SetUser) error {
 	return nil
 }
 
-func SetDeleteUser(ctx context.Context, entity SetUser) error {
+func SetDeleteUser(ctx context.Context, entity EditEntity) error {
 	user, err := appctx.GetAuthUser(ctx)
 	if err != nil {
 		return err

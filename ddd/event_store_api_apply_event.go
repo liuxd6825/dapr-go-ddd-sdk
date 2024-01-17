@@ -2,8 +2,6 @@ package ddd
 
 import (
 	"context"
-	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -198,24 +196,26 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		sessionId = session.sessionId
 	}
 
-	logInfo := &applog.LogInfo{
-		TenantId:  aggregate.GetTenantId(),
-		ClassName: "ddd",
-		FuncName:  "callDaprEventMethod",
-		Message:   fmt.Sprintf("%v", aggregate),
-		Level:     logs.InfoLevel,
+	field := logs.Fields{
+		"package":       "ddd",
+		"funcName":      "callDaprEventMethod",
+		"aggregateId":   aggId,
+		"aggregateType": aggType,
 	}
 
 	var err error
 	var res any
+
+	//默认事件溯源为true
 	defaultIsSourcing := true
-	err = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
+
+	err = logs.DebugStart(ctx, tenantId, field, func() error {
 		var eventStore EventStore
 		applyEvents := make([]*daprclient.EventDto, 0)
 
 		eventStore, err = GetEventStore(options.GetEventStoreName())
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		pubsubName := eventStore.GetPubsubName()
@@ -232,7 +232,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		for _, event := range events {
 			relation, _, err := GetRelationByStructure(event.GetData())
 			if err != nil {
-				return nil, err
+				return err
 			}
 			isSourcing := defaultIsSourcing
 			if e, ok := event.(IsSourcing); ok {
@@ -256,13 +256,13 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 
 		res, err = applyEvent(ctx, eventStore, tenantId, sessionId, aggId, aggType, applyEvents)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if defaultIsSourcing {
 			for _, event := range events {
 				if err = callEventHandler(ctx, aggregate, event.GetTenantId(), event.GetEventType(), event.GetEventVersion(), event.GetEventId(), event); err != nil {
-					return nil, err
+					return err
 				}
 			}
 		}
@@ -274,7 +274,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			}()
 		}
 
-		return res, nil
+		return nil
 	})
 
 	return res, err

@@ -48,11 +48,16 @@ func init() {
 	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
 }
 
-func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
+func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
+	if appMongoConfigs == nil {
+		return nil
+	}
+
 	if _initMongo {
-		return
+		return nil
 	}
 	_initMongo = true
+
 	if err := assert.NotNil(appMongoConfigs, assert.NewOptions("appMongoConfig is nil")); err != nil {
 		panic(err)
 	}
@@ -107,6 +112,7 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) {
 	if len(_mongoDbs) > 1 {
 		_mongoDefault = nil
 	}
+	return nil
 }
 
 func GetMongoDB() *ddd_mongodb.MongoDB {

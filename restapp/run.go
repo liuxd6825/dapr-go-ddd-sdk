@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 )
@@ -23,147 +20,8 @@ type RunConfig struct {
 	EnvConfig              *EnvConfig
 }
 
-type RunOptions struct {
-	tables  *Tables
-	init    *bool
-	sqlFile *string
-	prefix  *string
-	dbKey   *string
-	level   *logs.Level
-}
-
-type RegisterSubscribe interface {
-	GetSubscribes() []*ddd.Subscribe
-	GetHandler() ddd.QueryEventHandler
-	GetInterceptor() []ddd.SubscribeInterceptorFunc
-}
-
-type registerSubscribe struct {
-	subscribes   []*ddd.Subscribe
-	handler      ddd.QueryEventHandler
-	interceptors []ddd.SubscribeInterceptorFunc
-}
-
-type RegisterController struct {
-	RelativePath string
-	Controllers  []interface{}
-}
-
-type Controller interface {
-	BeforeActivation(b mvc.BeforeActivation)
-}
-
 type RegisterHandler interface {
 	RegisterHandler(app *iris.Application)
-}
-
-type RegisterEventType struct {
-	EventType string
-	Version   string
-	NewFunc   ddd.NewEventFunc
-}
-
-var _actorsFactory []actor.FactoryContext = []actor.FactoryContext{
-	aggregateSnapshotActorFactory,
-}
-
-func NewRunOptions(opts ...*RunOptions) *RunOptions {
-	o := &RunOptions{
-		tables: nil,
-	}
-	for _, item := range opts {
-		if item.tables != nil {
-			o.tables = item.tables
-		}
-		if item.init != nil {
-			o.init = item.init
-		}
-		if item.prefix != nil {
-			o.prefix = item.prefix
-		}
-		if item.dbKey != nil {
-			o.dbKey = item.dbKey
-		}
-		if item.sqlFile != nil {
-			o.sqlFile = item.sqlFile
-		}
-	}
-	return o
-}
-
-type RegisterSubscribeOptions struct {
-	interceptors []ddd.SubscribeInterceptorFunc
-}
-
-func (o *RegisterSubscribeOptions) SetInterceptors(v []ddd.SubscribeInterceptorFunc) *RegisterSubscribeOptions {
-	o.interceptors = v
-	return o
-}
-
-var _subscribeInterceptor []ddd.SubscribeInterceptorFunc
-
-func RegisterSubscribeInterceptor(items ...ddd.SubscribeInterceptorFunc) {
-	_subscribeInterceptor = append(_subscribeInterceptor, items...)
-}
-
-func NewRegisterSubscribeOptions(opts ...*RegisterSubscribeOptions) *RegisterSubscribeOptions {
-	o := &RegisterSubscribeOptions{}
-	for _, item := range opts {
-		if item.interceptors != nil {
-			o.interceptors = item.interceptors
-		}
-	}
-	return o
-}
-
-func NewRegisterSubscribe(subscribes []*ddd.Subscribe, handler ddd.QueryEventHandler, options ...*RegisterSubscribeOptions) RegisterSubscribe {
-	opt := NewRegisterSubscribeOptions(options...)
-	return &registerSubscribe{
-		subscribes:   subscribes,
-		handler:      handler,
-		interceptors: opt.interceptors,
-	}
-}
-
-func (r *registerSubscribe) GetInterceptor() []ddd.SubscribeInterceptorFunc {
-	return r.interceptors
-}
-
-func (r *registerSubscribe) GetSubscribes() []*ddd.Subscribe {
-	return r.subscribes
-}
-
-func (r *registerSubscribe) GetHandler() ddd.QueryEventHandler {
-	return r.handler
-}
-
-func (r *RegisterEventType) GetEventType() string {
-	return r.EventType
-}
-
-func (r *RegisterEventType) GetVersion() string {
-	return r.Version
-}
-
-func (r *RegisterEventType) GetNewFunc() ddd.NewEventFunc {
-	return r.NewFunc
-}
-
-func RegisterActor(actorServer actor.ServerContext) {
-	_actorsFactory = append(_actorsFactory, func() actor.ServerContext { return actorServer })
-}
-
-func GetActors() []actor.FactoryContext {
-	return _actorsFactory
-}
-
-func aggregateSnapshotActorFactory() actor.ServerContext {
-	client, err := daprclient.GetDaprDDDClient().DaprClient()
-	if err != nil {
-		panic(err)
-	}
-	service := ddd.NewAggregateSnapshotActorService(client)
-	return service
 }
 
 func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterSubscribe,
@@ -275,7 +133,7 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		EnvConfig:      runCfg.EnvConfig,
 	}
 
-	_currentEnvConfig = runCfg.EnvConfig
+	_envConfig = runCfg.EnvConfig
 
 	// 启动HTTP服务器
 	service := NewHttpServer(runCfg.DaprClient, serverOptions)
@@ -283,102 +141,4 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		return service, err
 	}
 	return service, nil
-}
-
-func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
-	o.SetPrefix(flag.Prefix)
-	o.SetInit(flag.Init)
-	o.SetDbKey(flag.DbKey)
-	o.SetSqlFile(flag.SqlFile)
-	o.SetLevel(flag.Level)
-	return o
-}
-
-func (o *RunOptions) GetInit() bool {
-	if o.init == nil {
-		return false
-	}
-	return *o.init
-}
-
-func (o *RunOptions) SetInit(v bool) *RunOptions {
-	o.init = &v
-	return o
-}
-
-func (o *RunOptions) SetSqlFile(v string) *RunOptions {
-	o.sqlFile = &v
-	return o
-}
-
-func (o *RunOptions) GetSqlFile() string {
-	if o.sqlFile == nil {
-		return ""
-	}
-	return *o.sqlFile
-}
-
-func (o *RunOptions) GetLevel() *logs.Level {
-	return o.level
-}
-
-func (o *RunOptions) SetLevel(v *logs.Level) *RunOptions {
-	o.level = v
-	return o
-}
-
-func (o *RunOptions) SetPrefix(v string) *RunOptions {
-	o.prefix = &v
-	return o
-}
-
-func (o *RunOptions) GetPrefix() string {
-	if o.prefix == nil {
-		return ""
-	}
-	return *o.prefix
-}
-
-func (o *RunOptions) SetTable(v *Tables) *RunOptions {
-	o.tables = v
-	return o
-}
-
-func (o *RunOptions) GetTable() *Tables {
-	return o.tables
-}
-
-func (o *RunOptions) SetDbKey(v string) *RunOptions {
-	o.dbKey = &v
-	return o
-}
-
-func (o *RunOptions) GetDbKey() string {
-	if o.dbKey == nil {
-		return ""
-	}
-	return *o.dbKey
-}
-
-func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {
-	//创建dapr事件存储器
-	eventStoresMap := make(map[string]ddd.EventStore)
-	esMap := cfg.EventStores
-	if len(esMap) == 0 {
-		logs.Panicf(context.Background(), "", nil, "config eventStores is empity")
-	} else {
-		var defEs ddd.EventStore
-		for _, item := range esMap {
-			eventStorage, err := ddd.NewGrpcEventStore(item.CompName, item.PubsubName, client)
-			if err != nil {
-				panic(err)
-			}
-			eventStoresMap[item.CompName] = eventStorage
-			if defEs == nil {
-				defEs = eventStorage
-			}
-		}
-		eventStoresMap[""] = defEs
-	}
-	return eventStoresMap
 }

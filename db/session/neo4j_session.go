@@ -21,7 +21,7 @@ func StartNeo4jSession(ctx context.Context, fun Func, options ...*ddd_repository
 		return fun(ctx)
 	}, opt)
 	if err != nil {
-		logs.Errorf(ctx, "func=StartNeo4jSession(); error:%v;", err.Error())
+		logs.Errorf(ctx, "", nil, "func=StartNeo4jSession(); error:%v;", err.Error())
 	}
 	return err
 }

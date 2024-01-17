@@ -1,12 +1,18 @@
 package setting
 
-import "time"
+import (
+	"time"
+)
 
 // TimeZone 时区
 var timeLocal = time.Local
 var timeUTC = time.UTC
 var timeZone = timeUTC
 var isUTCTime = false
+
+const LocalDateFormat = "2006-01-02"
+const LocalTimeFormat = "2006-01-02 15:04:05"
+const LocalMsTimeFormat = "2006-01-02 15:04:05.000000"
 
 // SetUTCTimeZone
 //
@@ -30,6 +36,18 @@ func SetLocalTimeZone() {
 //	@return *time.Location
 func GetTimeZone() *time.Location {
 	return timeZone
+}
+
+func GetDateLayout() string {
+	return LocalDateFormat
+}
+
+func GetTimeLayout() string {
+	return LocalTimeFormat
+}
+
+func GetMsTimeLayout() string {
+	return LocalMsTimeFormat
 }
 
 // IsLocalTimeZone

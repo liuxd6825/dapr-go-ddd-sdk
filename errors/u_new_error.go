@@ -71,6 +71,11 @@ func New(formatOrText string, text ...any) error {
 
 }
 
+func NewFunc(skip int, formatOrText string, text ...any) error {
+	funName := runFuncName(skip + 1)
+	return New("funName:"+funName+"() "+formatOrText, text...)
+}
+
 func News(errs ...error) error {
 	return &Errors{
 		details: errs,

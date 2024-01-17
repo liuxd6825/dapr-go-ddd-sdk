@@ -21,7 +21,7 @@ func StartMongoSession(ctx context.Context, fun Func, options ...*ddd_repository
 		return fun(ctx)
 	}, opt)
 	if err != nil {
-		logs.Errorf(ctx, "func=StartMongoSession(); error:%v;", err.Error())
+		logs.Errorf(ctx, "", nil, "func=StartMongoSession(); error:%v;", err.Error())
 	}
 	return err
 }

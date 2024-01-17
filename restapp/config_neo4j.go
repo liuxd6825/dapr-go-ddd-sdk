@@ -21,7 +21,10 @@ type Neo4jConfig struct {
 var _neo4js = make(map[string]neo4j.DriverWithContext)
 var _neo4jDefault neo4j.DriverWithContext
 
-func initNeo4j(configs map[string]*Neo4jConfig) {
+func initNeo4j(configs map[string]*Neo4jConfig) error {
+	if configs == nil {
+		return nil
+	}
 	if err := assert.NotNil(configs, assert.NewOptions("config is nil")); err != nil {
 		panic(err)
 	}
@@ -44,6 +47,7 @@ func initNeo4j(configs map[string]*Neo4jConfig) {
 		_neo4js[key] = driver
 		_neo4jDefault = driver
 	}
+	return nil
 }
 
 func GetNeo4j() neo4j.DriverWithContext {

@@ -6,7 +6,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/inflection"
 	"strconv"
 	"strings"
+	"time"
 )
+
+const LocalDateFormatLine = "2006-01-02"
+const LocalTimeFormatLine = "2006-01-02 15:04:05"
+const LocalMsTimeFormatLine = "2006-01-02 15:04:05.000000"
 
 // Int64ToString
 // @Description:
@@ -229,5 +234,16 @@ func AnyToString(v any) string {
 	if s, ok := v.(string); ok {
 		return s
 	}
+	if s, ok := v.(*string); ok {
+		return *s
+	}
+
+	if t, ok := v.(time.Time); ok {
+		return t.Format(LocalMsTimeFormatLine)
+	}
+	if t, ok := v.(*time.Time); ok {
+		return t.Format(LocalMsTimeFormatLine)
+	}
+
 	return fmt.Sprintf("%v", v)
 }

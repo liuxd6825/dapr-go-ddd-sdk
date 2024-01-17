@@ -11,11 +11,17 @@ import (
 	"time"
 )
 
-const LocalTimeLayoutLine = "2006-01-02 15:04:05"
-const LocalTimeLayoutSlash = "2006/01/02 15:04:05"
+const LocalDateFormatLine = "2006-01-02"
+const LocalTimeFormatLine = "2006-01-02 15:04:05"
+const LocalMsTimeFormatLine = "2006-01-02 15:04:05.000000"
 
-const LocalDateLayoutLine = "2006-01-02"
+const LocalTimeFormatSlash = "2006/01/02 15:04:05"
 const LocalDateLayoutSlash = "2006/01/02"
+
+var (
+	splitsTime = []string{":", ",", " ", "."}
+	datesTime  = []string{"-", ",", " ", "."}
+)
 
 // Now
 // @Description: 获取毫秒值为0的当前时间
@@ -67,54 +73,115 @@ func AnyToTime(data interface{}, defaultValue time.Time) (time.Time, error) {
 }
 
 // 20180313114933
+// 20221001 11:09:22
 
-/**/
-func StrToDateTime(str string) (time.Time, error) {
-	format := LocalTimeLayoutLine
-	if len(str) == 14 {
-		if res, err := NumStrToDate(str); err == nil {
-			return res, nil
-		}
-	}
-	if len(str) <= 10 {
-		var err error
-		str, err = asDateString(str)
-		if err != nil {
-			return time.Time{}, nil
-		}
-		format = LocalDateLayoutLine
+// StrToDateTime
+//
+//	@Description:
+//	@param str
+//	@return time.Time
+//	@return error
+func StrToDateTime(str string) (res time.Time, err error) {
+	format := LocalTimeFormatLine
 
-	} else {
-		if strings.Contains(str, "T") {
-			format = time.RFC3339
-		} else if strings.Contains(str, "-") {
-			format = LocalTimeLayoutLine
-		} else if strings.Contains(str, "/") {
-			format = LocalTimeLayoutSlash
-		} else if strings.Contains(str, "Z") {
-			format = time.RFC3339Nano
-		}
+	// 按空格对字符串进行日期与时间的分割
+	dayVal, timeVar := split(str)
+
+	// 对日期部分进行格式化
+	dayVal, err = fmtDateStr(dayVal)
+	if err != nil {
+		return time.Time{}, err
 	}
-	res, err := time.Parse(format, str)
+
+	// 对时间部分进行格式化
+	timeVar, err = fmtTimeStr(timeVar)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// 合并为完整时间
+	str = dayVal + " " + timeVar
+	if strings.Contains(str, "-") {
+		format = LocalTimeFormatLine
+	} else if strings.Contains(str, "T") {
+		format = time.RFC3339
+	} else if strings.Contains(str, "/") {
+		format = LocalTimeFormatSlash
+	} else if strings.Contains(str, "Z") {
+		format = time.RFC3339Nano
+	}
+
+	res, err = time.Parse(format, str)
 	return res, err
 }
 
-func asDateString(str string) (string, error) {
+func FormatStr(fmt, str string) (res string, err error) {
+	tVal, err := StrToDateTime(str)
+	if err != nil {
+		return "", err
+	}
+	return tVal.Format(fmt), nil
+}
+
+// split
+//
+//	@Description: 将日期字符串分割成日期与时间两部分
+//	@param val
+//	@return string
+//	@return string
+func split(val string) (string, string) {
+	val = strings.ReplaceAll(val, "  ", " ")
+	val = strings.ReplaceAll(val, "T", " ")
+	val = strings.ReplaceAll(val, "Z", " ")
+	list := strings.Split(val, " ")
+	count := len(list)
+	if count == 1 {
+		return list[0], ""
+	}
+	if count >= 2 {
+		return list[0], list[1]
+	}
+	return "", ""
+}
+
+// fmtDateStr
+//
+//	@Description: 将日期字符串格式化为 yyyy-MM-dd格式, 支持格式有：2000年10月10日 | 20001010 | 2016-10-9 | 2014/10/10 | 2018.10.3
+//	@Description:
+//	@param str
+//	@return string
+//	@return error
+func fmtDateStr(str string) (string, error) {
 	if len(str) == 8 {
-		y := str[0:4]
-		m := str[4:6]
-		d := str[6:8]
-		return fmt.Sprintf("%s-%s-%s", y, m, d), nil
+		ok := true
+		for _, sp := range datesTime {
+			if strings.Contains(str, sp) {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			y := str[0:4]
+			m := str[4:6]
+			d := str[6:8]
+			return fmt.Sprintf("%s-%s-%s", y, m, d), nil
+		}
 	}
+	str = strings.ReplaceAll(str, "年", "-")
+	str = strings.ReplaceAll(str, "月", "-")
+	str = strings.ReplaceAll(str, "日", "-")
+
 	sep := ""
-	if strings.Contains(str, "-") {
-		sep = "-"
-	} else if strings.Contains(str, "/") {
-		sep = "/"
+	for _, sp := range datesTime {
+		if strings.Contains(str, sp) {
+			sep = sp
+			break
+		}
 	}
+
 	s := strings.Split(str, sep)
-	if len(s) != 3 {
-		return "", errors.New("error")
+	if len(s) < 3 {
+		return "", errors.New(fmt.Sprintf(`%s 时间格式不正确`, str))
 	}
 	if len(s[1]) == 1 {
 		s[1] = "0" + s[1]
@@ -123,6 +190,70 @@ func asDateString(str string) (string, error) {
 		s[2] = "0" + s[2]
 	}
 	return s[0] + "-" + s[1] + "-" + s[2], nil
+}
+
+// fmtTimeStr
+//
+//	@Description: 将日期字符串格式化为 HH:mm:ss 格式, 支持格式有：121019 |  12:10:09 | 12.10.10 | 12,10,10 | 12:10:09 | 12 10 19 | 12时10分19秒
+//	@Description:
+//	@param str
+//	@return string
+//	@return error
+func fmtTimeStr(str string) (string, error) {
+	str = strings.ReplaceAll(str, " ", "")
+	if len(str) == 4 {
+		ok := true
+		for _, sp := range splitsTime {
+			if strings.Contains(str, sp) {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			y := str[0:2]
+			m := str[2:4]
+			return fmt.Sprintf("%s:%s:00", y, m), nil
+		}
+	}
+
+	if len(str) == 6 {
+		ok := true
+		for _, sp := range splitsTime {
+			if strings.Contains(str, sp) {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			y := str[0:2]
+			m := str[2:4]
+			d := str[4:6]
+			return fmt.Sprintf("%s:%s:%s", y, m, d), nil
+		}
+
+	}
+	str = strings.ReplaceAll(str, "时", ":")
+	str = strings.ReplaceAll(str, "分", ":")
+	str = strings.ReplaceAll(str, "秒", ":")
+	sep := ":"
+
+	for _, sp := range splitsTime {
+		if strings.Contains(str, sp) {
+			sep = sp
+			break
+		}
+	}
+	s := strings.Split(str, sep)
+	if len(s) < 3 {
+		return "", errors.New(fmt.Sprintf(`%s 时间格式不正确，HH:mm:ss`, str))
+	}
+	if len(s[1]) == 1 {
+		s[1] = "0" + s[1]
+	}
+	if len(s[2]) == 1 {
+		s[2] = "0" + s[2]
+	}
+	return s[0] + ":" + s[1] + ":" + s[2], nil
 }
 
 func NumStrToDate(str string) (t time.Time, err error) {
@@ -291,14 +422,14 @@ func ToTimeString(date *time.Time) string {
 	if date == nil {
 		return ""
 	}
-	return date.Format(LocalTimeLayoutLine)
+	return date.Format(LocalTimeFormatLine)
 }
 
 func ToDateString(date *time.Time) string {
 	if date == nil {
 		return ""
 	}
-	return date.Format(LocalDateLayoutLine)
+	return date.Format(LocalDateFormatLine)
 }
 
 func AsTimestamp(t *time.Time) *timestamppb.Timestamp {

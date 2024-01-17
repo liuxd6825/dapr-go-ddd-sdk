@@ -9,7 +9,18 @@ func TestField_toDateTime(t *testing.T) {
 	date := "20110812"
 	time := "11.56.23"
 	res := toDateTime(date, time)
+
+	date = "20221001 11:09:22"
+	res = toDateTime(date)
+
+	date = "20221001T11:09:22"
+	res = toDateTime(date)
+
 	println(res)
+}
+
+func Test(t *testing.T) {
+
 }
 
 func Test_regexpNum(t *testing.T) {

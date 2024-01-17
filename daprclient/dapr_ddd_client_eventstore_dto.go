@@ -129,13 +129,15 @@ type EventRecord struct {
 }
 
 // NewEventRecordByJsonBytes 通过json反序列化EventRecord
-func NewEventRecordByJsonBytes(data []byte) *EventRecordJsonMarshalResult {
+func NewEventRecordByJsonBytes(data []byte) (*EventRecordJsonMarshalResult, error) {
 	eventRecord := &EventRecord{}
 	err := json.Unmarshal(data, eventRecord)
+	if err != nil {
+		return nil, err
+	}
 	return &EventRecordJsonMarshalResult{
 		eventRecord: eventRecord,
-		err:         err,
-	}
+	}, nil
 }
 
 // EventRecordJsonMarshalResult EventRecord反序列化返回值
@@ -294,12 +296,12 @@ func (r *ResponseHeaders) SetValues(v map[string]string) {
 	r.Values = v
 }
 
-func (r *EventRecordJsonMarshalResult) OnSuccess(ctx context.Context, doSuccess func(ctx context.Context, record *EventRecord) error) *EventRecordJsonMarshalResult {
+func (r *EventRecordJsonMarshalResult) OnSuccess(ctx context.Context, doSuccess func(ctx context.Context, record *EventRecord) error) error {
 	if r.err == nil {
 		newCtx := appctx.NewTenantContext(ctx, r.eventRecord.TenantId)
 		r.err = doSuccess(newCtx, r.eventRecord)
 	}
-	return r
+	return r.err
 }
 
 func (r *EventRecordJsonMarshalResult) OnError(doError func(err error, eventRecord *EventRecord)) *EventRecordJsonMarshalResult {

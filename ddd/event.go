@@ -26,6 +26,7 @@ type Event interface {
 	GetEventId() string   // 事件Id
 	GetEventType() string // 事件类型
 }
+
 type emptyEvent struct {
 	tenantId  string
 	commandId string

@@ -105,18 +105,10 @@ func isLevel(logger Logger, lvl Level) bool {
 
 func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 	f := Fields{}
-
 	if user, err := appctx.GetAuthUser(ctx); err == nil {
-		f["userId"] = user.GetId()
-		f["userName"] = user.GetName()
+		AddField(f, "userId", user.GetId())
+		AddField(f, "userName", user.GetName())
 	}
-
-	/*
-		if _, ok := f["logId"]; !ok {
-			f["logId"] = idutils.NewId()
-		}
-	*/
-
 	for key, val := range fields {
 		if fun, ok := val.(ArgFunc); ok {
 			f[key] = fun()
@@ -124,14 +116,12 @@ func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 			f[key] = val
 		}
 	}
-	if tenantId != "" {
-		f["tenantId"] = tenantId
-	} else if id, ok := f["tenantId"]; ok {
-		if id == "" {
-			delete(f, "tenantId")
+	if tenantId == "" {
+		if vId, ok := appctx.GetTenantId(ctx); ok {
+			tenantId = vId
 		}
 	}
-
+	AddField(f, "tenantId", tenantId)
 	return f
 }
 
@@ -346,7 +336,28 @@ func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() 
 	return err
 }
 
+func DoLog(ctx context.Context, tenantId string, fields Fields, fun func() error) (err error) {
+	defer func() {
+		if err = errors.GetRecoverError(err, recover()); err != nil {
+			Errorf(ctx, tenantId, fields, "error:%s", err.Error())
+		}
+	}()
+	err = fun()
+	Debug(ctx, tenantId, fields)
+	return err
+}
+
 func ParseLevel(lvl string) (Level, error) {
 	l, err := logrus.ParseLevel(lvl)
 	return l, err
+}
+
+func AddField(field Fields, key string, value any) {
+	field[key] = value
+}
+
+func AddFields(fields Fields, data Fields) {
+	for k, v := range data {
+		fields[k] = v
+	}
 }

@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/feign"
 	"time"
-
-	"github.com/snownd/cake"
 )
 
 const mockAPIID = ""

@@ -19,19 +19,21 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	Name  string                  `yaml:"-"`
-	App   AppConfig               `yaml:"app"`
-	Log   LogConfig               `yaml:"log"`
-	Dapr  DaprConfig              `yaml:"dapr"`
-	Mongo map[string]*MongoConfig `yaml:"mongo"`
-	Neo4j map[string]*Neo4jConfig `yaml:"neo4j"`
-	Mysql map[string]*MySqlConfig `yaml:"mysql"`
-	Minio map[string]*MinioConfig `yaml:"minio"`
-	Redis map[string]*RedisConfig `yaml:"redis"`
+	Name      string                     `yaml:"-"`
+	App       AppConfig                  `yaml:"app"`
+	Log       LogConfig                  `yaml:"log"`
+	Dapr      DaprConfig                 `yaml:"dapr"`
+	Resources map[string]*ResourceConfig `yaml:"resources"`
+	Mongo     map[string]*MongoConfig    `yaml:"mongo"`
+	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j"`
+	Mysql     map[string]*MySqlConfig    `yaml:"mysql"`
+	Minio     map[string]*MinioConfig    `yaml:"minio"`
+	Redis     map[string]*RedisConfig    `yaml:"redis"`
 }
 
 type AppConfig struct {
 	AppId     string            `yaml:"id"`
+	AppName   string            `yaml:"name"`
 	HttpHost  string            `yaml:"httpHost"`
 	HttpPort  int               `yaml:"httpPort"`
 	RootUrl   string            `yaml:"rootUrl"`
@@ -39,6 +41,14 @@ type AppConfig struct {
 	Memory    string            `yaml:"memory"`
 	Values    map[string]string `yaml:"values"`
 	AuthToken string            `yaml:"authToken"`
+}
+
+type ResourceConfig struct {
+	Namespace string            `yaml:"namespace"`
+	Name      string            `yaml:"name"`
+	Type      string            `yaml:"type"`
+	URI       string            `yaml:"uri"`
+	Metadata  map[string]string `yaml:"metadata"`
 }
 
 type DaprConfig struct {
@@ -184,21 +194,21 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 	return &value
 }
 
-func (d DaprConfig) GetHost() string {
+func (d *DaprConfig) GetHost() string {
 	if d.Host == nil {
 		return ""
 	}
 	return *d.Host
 }
 
-func (d DaprConfig) GetHttpPort() int64 {
+func (d *DaprConfig) GetHttpPort() int64 {
 	if d.HttpPort == nil {
 		return 0
 	}
 	return *d.HttpPort
 }
 
-func (d DaprConfig) GetGrpcPort() int64 {
+func (d *DaprConfig) GetGrpcPort() int64 {
 	if d.GrpcPort == nil {
 		return 0
 	}
@@ -236,6 +246,17 @@ func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
 	}
 
 	return nil, NewEnvTypeError(fmt.Sprintf("error config env is \"%s\". choose one of: [dev, test, prod]", env))
+}
+
+func initResources(resCfg map[string]*ResourceConfig) error {
+	if resCfg == nil {
+		return nil
+	}
+
+	for k, v := range resCfg {
+		v.Name = k
+	}
+	return nil
 }
 
 func searchConfigFile(path, configName string, fileName string) (string, bool, error) {

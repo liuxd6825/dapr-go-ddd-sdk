@@ -2,6 +2,7 @@ package ddd
 
 import (
 	"context"
+	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
@@ -61,6 +62,11 @@ type SubscribeHandler interface {
 type SubscribeContext interface {
 	GetBody() ([]byte, error)
 	SetErr(err error)
+	GetRequestURI() string
+}
+
+type subscribeContext struct {
+	ictx iris.Context
 }
 
 type SubscribeInterceptor interface {
@@ -76,6 +82,10 @@ type subscribeHandler struct {
 	queryEventHandler    QueryEventHandler
 	subscribeHandlerFunc SubscribeHandlerFunc
 	interceptors         []SubscribeInterceptorFunc
+}
+
+func NewSubscribeContext(ictx iris.Context) SubscribeContext {
+	return &subscribeContext{ictx: ictx}
 }
 
 func NewSubscribeHandler(subscribes []*Subscribe, queryEventHandler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
@@ -103,32 +113,33 @@ func (h *subscribeHandler) RegisterSubscribe(subscribe *Subscribe) error {
 //	@param sctx
 //	@return error
 func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeContext) error {
-	cancel, err := h.interceptor(ctx, sctx)
-	if cancel || err != nil {
-		return err
+	fields := logs.Fields{
+		"logFunc":    "SubscribeHandler",
+		"requestUri": sctx.GetRequestURI(),
 	}
-	data, err := sctx.GetBody()
-	if err != nil {
-		return err
-	}
-	return daprclient.NewEventRecordByJsonBytes(data).OnSuccess(ctx, func(ctx context.Context, r *daprclient.EventRecord) error {
-		return CallEventHandler(ctx, h.queryEventHandler, r)
-	}).OnError(func(err error, r *daprclient.EventRecord) {
-		if r != nil {
-			fields := logs.Fields{
-				"logFunc":   "SubscribeHandler",
-				"eventId":   r.EventId,
-				"eventType": r.EventType,
-				"event":     r.EventVersion,
-				"eventData": r.EventData,
-				"error":     err.Error(),
-			}
-			logs.Error(ctx, r.TenantId, fields)
-		} else {
-			logs.Errorf(ctx, "", nil, "领域事件处理错误: data:%s; error:%s", string(data), err.Error())
+	err := logs.DebugStart(ctx, "", fields, func() error {
+		cancel, err := h.interceptor(ctx, sctx)
+		if cancel || err != nil {
+			return err
+		}
+		data, err := sctx.GetBody()
+		if err != nil {
+			return err
 		}
 
-	}).GetError()
+		result, err := daprclient.NewEventRecordByJsonBytes(data)
+		if err != nil {
+			return err
+		}
+
+		record := result.GetEventRecord()
+		err = CallEventHandler(ctx, h.queryEventHandler, record)
+		return err
+	})
+	if err != nil {
+		sctx.SetErr(err)
+	}
+	return err
 }
 
 // interceptor
@@ -163,4 +174,16 @@ func (h *subscribeHandler) interceptor(ctx context.Context, sctx SubscribeContex
 		}
 	}
 	return
+}
+
+func (s *subscribeContext) GetBody() ([]byte, error) {
+	return s.ictx.GetBody()
+}
+
+func (s *subscribeContext) SetErr(err error) {
+	s.ictx.SetErr(err)
+}
+
+func (s *subscribeContext) GetRequestURI() string {
+	return s.ictx.Request().RequestURI
 }

@@ -4,12 +4,11 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
-type serverContext struct {
+type irisServer struct {
 	ctx iris.Context
 }
 
@@ -19,7 +18,7 @@ type ContextOptions struct {
 }
 
 const (
-	HttpHeadAuthorization = "Authorization"
+	Authorization = "Authorization"
 )
 
 var (
@@ -39,6 +38,10 @@ func NewContextOptions(opts ...*ContextOptions) *ContextOptions {
 	return o
 }
 
+func NewLoggerContext(ctx context.Context) context.Context {
+	return logs.NewContext(ctx)
+}
+
 // NewContextNoAuth
 //
 //	@Description:
@@ -47,10 +50,6 @@ func NewContextOptions(opts ...*ContextOptions) *ContextOptions {
 //	@return err
 func NewContextNoAuth(ictx iris.Context) (newCtx context.Context, err error) {
 	return NewContext(ictx, NewContextOptions().SetCheckAuth(false))
-}
-
-func NewContextTenantId(ictx iris.Context, tenantId string) (newCtx context.Context, err error) {
-	return NewContext(ictx, NewContextOptions().SetTenantId(tenantId))
 }
 
 func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Context, err error) {
@@ -62,42 +61,50 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 		pCtx = context.Background()
 	}
 	opt := NewContextOptions(opts...)
+
+	// 添加 日志 上下文
 	newCtx = logs.NewContext(pCtx)
 
-	metadata := make(map[string]string)
+	header := make(map[string][]string)
 	if ictx != nil {
-		header := ictx.Request().Header
-		for k, v := range header {
-			metadata[k] = v[0]
+		for k, v := range ictx.Request().Header {
+			header[k] = v
 		}
+		// 添加 Header 上下文
+		newCtx = appctx.NewHeaderContext(newCtx, header)
+		// 添加 ServerHeader 上下文
+		newCtx = appctx.NewServerContext(newCtx, &irisServer{ictx})
+		// 添加 iris.context 上下文
+		newCtx = appctx.NewIrisContext(newCtx, ictx)
 	}
 
+	//添加 租户 上下文
 	if opt.tenantId != nil {
 		newCtx = appctx.NewTenantContext(newCtx, opt.TenantId())
 	}
 
-	token := metadata[HttpHeadAuthorization]
-	newCtx, authToken, err := newAuthTokenContext(newCtx, token, opt.CheckAuth())
+	//添加 用户认证 上下文
+	newCtx, _, err = newAuthTokenContext(newCtx, header[Authorization], opt.CheckAuth())
 	if err != nil {
 		return nil, err
-	}
-	if token != authToken {
-		metadata[HttpHeadAuthorization] = authToken
-	}
-
-	if ictx != nil {
-		serverCtx := newIrisContext(ictx)
-		newCtx = ddd_context.NewContext(newCtx, metadata, serverCtx)
 	}
 
 	return newCtx, err
 }
 
-func newAuthTokenContext(parent context.Context, token string, checkAuth bool) (newCtx context.Context, authToken string, err error) {
+func newAuthTokenContext(parent context.Context, headerValues []string, checkAuth bool) (newCtx context.Context, authToken string, err error) {
+	token := ""
+	for _, v := range headerValues {
+		if len(v) > 0 {
+			token = v
+		}
+	}
+
 	newCtx = parent
 	if token == "" && DefaultAuthToken != "" {
 		token = DefaultAuthToken
 	}
+
 	if token == "" {
 		if checkAuth {
 			return nil, token, errors.New("Authorization is null")
@@ -107,37 +114,6 @@ func newAuthTokenContext(parent context.Context, token string, checkAuth bool) (
 	}
 	newCtx, err = appctx.NewAuthContext(parent, token)
 	return newCtx, token, err
-}
-
-func newIrisContext(ctx iris.Context) ddd_context.ServerContext {
-	return &serverContext{
-		ctx: ctx,
-	}
-}
-
-func NewLoggerContext(ctx context.Context) context.Context {
-	return logs.NewContext(ctx)
-}
-
-// GetIrisContext
-//
-//	@Description: 获取Iris上下文
-//	@param ctx
-//	@return iris.Context
-func GetIrisContext(ctx context.Context) iris.Context {
-	v := ddd_context.GetServerContext(ctx)
-	if s, ok := v.(*serverContext); ok {
-		return s.ctx
-	}
-	return nil
-}
-
-func (s *serverContext) SetResponseHeader(name string, value string) {
-	s.ctx.Header(name, value)
-}
-
-func (s *serverContext) URLParamDefault(name, def string) string {
-	return s.ctx.URLParamDefault(name, def)
 }
 
 func (o *ContextOptions) CheckAuth() bool {
@@ -162,4 +138,12 @@ func (o *ContextOptions) TenantId() string {
 func (o *ContextOptions) SetTenantId(val string) *ContextOptions {
 	o.tenantId = &val
 	return o
+}
+
+func (i *irisServer) SetResponseHeader(key string, value string) {
+	i.ctx.ResponseWriter().Header().Set(key, value)
+}
+
+func (i *irisServer) URLParamDefault(name, def string) string {
+	return i.ctx.URLParamDefault(name, def)
 }

@@ -28,7 +28,7 @@ func (a *RestAssembler) NewOptions() *Options {
 	}
 }
 
-func (a *RestAssembler) AssFindByIdRequest(ictx iris.Context) (*ddd_query.FindByIdQuery, error) {
+func (a *RestAssembler) AsFindByIdRequest(ictx iris.Context) (*ddd_query.FindByIdQuery, error) {
 	tenantId, err := a.GetTenantId(ictx)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (a *RestAssembler) AssFindByIdRequest(ictx iris.Context) (*ddd_query.FindBy
 	}, nil
 }
 
-func (a *RestAssembler) AssFindByIdsRequest(ictx iris.Context) (*ddd_query.FindByIdsQuery, error) {
+func (a *RestAssembler) AsFindByIdsRequest(ictx iris.Context) (*ddd_query.FindByIdsQuery, error) {
 	tenantId, err := a.GetTenantId(ictx)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (a *RestAssembler) AssFindByIdsRequest(ictx iris.Context) (*ddd_query.FindB
 	}, nil
 }
 
-func (a *RestAssembler) AssFindAllRequest(ictx iris.Context) (*ddd_query.FindAllQuery, error) {
+func (a *RestAssembler) AsFindAllRequest(ictx iris.Context) (*ddd_query.FindAllQuery, error) {
 	tenantId, err := a.GetTenantId(ictx)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (a *RestAssembler) AssFindAllRequest(ictx iris.Context) (*ddd_query.FindAll
 	}, nil
 }
 
-func (a *RestAssembler) AssFindAutoCompleteRequest(ictx iris.Context) (ddd_query.FindAutoCompleteQuery, error) {
+func (a *RestAssembler) AsFindAutoCompleteRequest(ictx iris.Context) (ddd_query.FindAutoCompleteQuery, error) {
 	var err error
 	dto := ddd_repository.NewFindAutoCompleteQueryDTO()
 
@@ -90,7 +90,7 @@ func (a *RestAssembler) AssFindAutoCompleteRequest(ictx iris.Context) (ddd_query
 	return dto.GetQuery(), err
 }
 
-func (a *RestAssembler) AssDistinctRequest(ictx iris.Context) (ddd_query.FindDistinctQuery, error) {
+func (a *RestAssembler) AsDistinctRequest(ictx iris.Context) (ddd_query.FindDistinctQuery, error) {
 	var err error
 	dto := ddd_repository.NewFindDistinctQueryDTO()
 
@@ -106,7 +106,7 @@ func (a *RestAssembler) AssDistinctRequest(ictx iris.Context) (ddd_query.FindDis
 	return dto.GetQuery(), err
 }
 
-func (a *RestAssembler) AssFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
+func (a *RestAssembler) AsFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
 	return a.assFindPagingRequest(ictx)
 }
 func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
@@ -145,7 +145,7 @@ func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*ddd_query.Find
 	return req.NewFindPagingQueryRequest(), nil
 }
 
-func (a *RestAssembler) AssFindPagingByCaseIdRequest(ictx iris.Context) (*ddd_query.FindPagingByCaseIdQuery, error) {
+func (a *RestAssembler) AsFindPagingByCaseIdRequest(ictx iris.Context) (*ddd_query.FindPagingByCaseIdQuery, error) {
 	paging, err := a.assFindPagingRequest(ictx)
 	if err != nil {
 		return nil, err
@@ -182,7 +182,6 @@ func (a *RestAssembler) GetIdParam(ictx iris.Context, name string) (string, erro
 	return id, nil
 }
 
-//
 // GetValueByUrlPath
 // @Description: 从URL路径中中获取string变量
 // @receiver a
@@ -191,7 +190,6 @@ func (a *RestAssembler) GetIdParam(ictx iris.Context, name string) (string, erro
 // @param opts 可选项
 // @return string 返回值
 // @return error 错误
-//
 func (a *RestAssembler) GetValueByUrlPath(ictx iris.Context, name string, opts ...*Options) (string, error) {
 	options := NewOptions().Merge(opts)
 	id := ictx.Params().GetStringDefault(name, "")

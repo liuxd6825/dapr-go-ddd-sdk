@@ -27,7 +27,6 @@ type AuthUser interface {
 
 	GetTenantId() string
 	GetTenantName() string
-	GetTenantAccount() string
 }
 
 type authToken struct {
@@ -38,17 +37,16 @@ type authToken struct {
 }
 
 type authUser struct {
-	Id            string `json:"id"`
-	Name          string `json:"name"`
-	Phone         string `json:"phone"`
-	Account       string `json:"account"`
-	Regdate       string `json:"regdate"`
-	Work          string `json:"work"`
-	Status        string `json:"status"`
-	UserType      string `json:"userType"`
-	TenantId      string `json:"tenantId"`
-	TenantName    string `json:"tenantName"`
-	TenantAccount string `json:"tenantAccount"`
+	Id         string `json:"id"`
+	Name       string `json:"name"`
+	Phone      string `json:"phone"`
+	Account    string `json:"account"`
+	Regdate    string `json:"regdate"`
+	Work       string `json:"work"`
+	Status     string `json:"status"`
+	UserType   string `json:"userType"`
+	TenantId   string `json:"tenantId"`
+	TenantName string `json:"tenantName"`
 }
 
 func getToken(jwtText string) (AuthToken, error) {
@@ -123,8 +121,4 @@ func (u *authUser) GetTenantId() string {
 
 func (u *authUser) GetTenantName() string {
 	return u.TenantName
-}
-
-func (u *authUser) GetTenantAccount() string {
-	return u.TenantAccount
 }

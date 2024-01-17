@@ -105,6 +105,9 @@ type requestError struct {
 }
 
 func (re requestError) Error() string {
+	if re.body != nil {
+		return string(re.body)
+	}
 	if re.err != nil {
 		return re.err.Error()
 	}

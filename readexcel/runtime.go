@@ -3,13 +3,13 @@ package readexcel
 import (
 	"fmt"
 	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const LocalTimeLayoutLine = "2006-01-02 15:04:05"
@@ -81,26 +81,17 @@ func replace(s string, old string, new string) string {
 	return strings.ReplaceAll(s, old, new)
 }
 
-func toDateTime(value ...string) (resText string) {
-	defer func() {
-		if e := recover(); e != nil {
-			if err, ok := e.(error); ok {
-				resText = err.Error()
-			}
-		}
-	}()
+func toDateTime(value ...string) (res string) {
 	var err error
-	res := time.Time{}
-	count := len(value)
-	if count == 1 {
-		res, err = timeutils.AnyToTime(value[0], time.Time{})
-	} else if count > 1 {
-		res, err = timeutils.ToDateTime(value[0], value[1])
-	}
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	timeStr := strings.Join(value, " ")
+	res, err = timeutils.FormatStr(LocalTimeLayoutLine, timeStr)
 	if err != nil {
-		return err.Error()
+		return ""
 	}
-	return res.Format(LocalTimeLayoutLine)
+	return res
 }
 
 func toFloat(val any) float64 {

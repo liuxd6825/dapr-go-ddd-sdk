@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	iris_context "github.com/kataras/iris/v12/context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -26,18 +27,6 @@ func (j *JsonTimeSerializer) Serialize(v interface{}) ([]byte, error) {
 		return nil, errors.New("invalid type")
 	}
 	return []byte(t.Format("2006-01-02 15:04:05")), nil
-}
-
-func myHandler(ctx iris.Context) {
-	type MyData struct {
-		Time time.Time `json:"time" serializer:"customTime"`
-		// other fields
-	}
-	data := MyData{
-		Time: time.Now(),
-		// other fields
-	}
-	ctx.JSON(data)
 }
 
 type Command interface {
@@ -81,9 +70,9 @@ func SetError(ctx context.Context, err error) {
 	}
 	logs.Error(ctx, "", logs.Fields{"error": err.Error()})
 
-	ictx, ok := ctx.(iris.Context)
+	ictx, ok := appctx.GetIrisContext(ctx)
 	if !ok {
-		ictx = GetIrisContext(ctx)
+		return
 	}
 	if ictx == nil {
 		return
@@ -153,10 +142,6 @@ func Do(ictx iris.Context, tenantId string, fun func(ctx context.Context) error)
 		}
 	}
 	return nil
-}
-
-func newLogFields(ictx iris.Context) logs.Fields {
-	return logs.Fields{"uri": ictx.FullRequestURI(), "method": ictx.Method(), "params": ictx.Params()}
 }
 
 func DoDto[T any](ictx iris.Context, tenantId string, fun func(ctx context.Context) (T, error)) (dto T, err error) {
@@ -249,6 +234,9 @@ func DoQuery(ictx iris.Context, tenantId string, fun QueryFunc) (data any, isFou
 		return err
 	})
 
+	if !isFound && err != nil {
+		return data, isFound, errors.ErrNotFound
+	}
 	if err != nil {
 		SetError(ctx, err)
 		return data, isFound, err
@@ -389,4 +377,8 @@ func ReadJSON(ictx iris.Context, obj any) error {
 
 func WriteJSON(data any) ([]byte, error) {
 	return jsonutils.CustomJson.Marshal(data)
+}
+
+func newLogFields(ictx iris.Context) logs.Fields {
+	return logs.Fields{"uri": ictx.FullRequestURI(), "method": ictx.Method(), "params": ictx.Params()}
 }

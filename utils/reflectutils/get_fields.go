@@ -9,8 +9,22 @@ type Fields struct {
 	items map[string]*reflect.StructField
 }
 
+type GetFieldsOptions struct {
+	anonymous *bool // 是否包含匿名字段
+}
+
 func NewFields() *Fields {
 	return &Fields{items: make(map[string]*reflect.StructField)}
+}
+
+func NewGetFieldsOptions(opts ...*GetFieldsOptions) *GetFieldsOptions {
+	o := &GetFieldsOptions{anonymous: nil}
+	for _, item := range opts {
+		if item.anonymous != nil {
+			o.anonymous = item.anonymous
+		}
+	}
+	return o
 }
 
 func (f *Fields) addItem(v *reflect.StructField) {
@@ -18,6 +32,7 @@ func (f *Fields) addItem(v *reflect.StructField) {
 }
 
 func (f *Fields) ForEach(foreach func(index int, name string, field *reflect.StructField)) {
+
 	if foreach != nil {
 		i := 0
 		for name, item := range f.items {
@@ -57,10 +72,6 @@ func (f *Fields) Count() int {
 	return len(f.items)
 }
 
-type GetFieldsOptions struct {
-	anonymous *bool // 是否包含匿名字段
-}
-
 func (o *GetFieldsOptions) Anonymous() bool {
 	if o.anonymous == nil {
 		return true
@@ -70,16 +81,6 @@ func (o *GetFieldsOptions) Anonymous() bool {
 
 func (o *GetFieldsOptions) SetAnonymous(v bool) *GetFieldsOptions {
 	o.anonymous = &v
-	return o
-}
-
-func NewGetFieldsOptions(opts ...*GetFieldsOptions) *GetFieldsOptions {
-	o := &GetFieldsOptions{anonymous: nil}
-	for _, item := range opts {
-		if item.anonymous != nil {
-			o.anonymous = item.anonymous
-		}
-	}
 	return o
 }
 
