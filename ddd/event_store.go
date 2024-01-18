@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"strings"
@@ -14,13 +14,13 @@ var strEmpty = ""
 
 type EventStore interface {
 	LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error)
-	LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error)
-	GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error)
-	ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventResponse, error)
-	Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error)
-	Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error)
-	SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error)
-	GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error)
+	LoadEvent(ctx context.Context, req *dapr.LoadEventsRequest) (*dapr.LoadEventsResponse, error)
+	GetEvents(ctx context.Context, req *dapr.GetEventsRequest) (*dapr.GetEventsResponse, error)
+	ApplyEvent(ctx context.Context, req *dapr.ApplyEventRequest) (*dapr.ApplyEventResponse, error)
+	Commit(ctx context.Context, req *dapr.CommitRequest) (res *dapr.CommitResponse, resErr error)
+	Rollback(ctx context.Context, req *dapr.RollbackRequest) (res *dapr.RollbackResponse, resErr error)
+	SaveSnapshot(ctx context.Context, req *dapr.SaveSnapshotRequest) (*dapr.SaveSnapshotResponse, error)
+	GetRelations(ctx context.Context, req *dapr.GetRelationsRequest) (*dapr.GetRelationsResponse, error)
 	GetPubsubName() string
 }
 
@@ -86,7 +86,7 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 // @param handler
 // @param record
 // @return error
-func CallEventHandler(ctx context.Context, handler interface{}, record *daprclient.EventRecord) error {
+func CallEventHandler(ctx context.Context, handler interface{}, record *dapr.EventRecord) error {
 	event, err := NewDomainEvent(record)
 	if err != nil {
 		return errors.New("package:ddd; func:NewDomainEvent(); error:%v", err.Error())

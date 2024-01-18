@@ -37,16 +37,7 @@ const OperateEventType = "system.UserOperateLogEventType"
 const OperateEventVersion = "v1.0"
 
 type DomainEvent interface {
-	GetData() interface{} // 事件数据
-}
-
-func NewOperateData(ctx context.Context, modelName string, actionType string, data any) (res *OperateData, err error) {
-	msg, err := reflectutils.ParseDesc(data)
-	if err != nil {
-		return nil, err
-	}
-	operateData, err := newOperateData(ctx, DefaultAppId, DefaultAppName, actionType, modelName, msg)
-	return operateData, err
+	GetData() any // 事件数据
 }
 
 func NewOperateEvent(ctx context.Context, commandId string, eventId string, oData *OperateData) *OperateEvent {
@@ -66,6 +57,16 @@ func NewOperateEvent(ctx context.Context, commandId string, eventId string, oDat
 		Data: oData,
 	}
 	return event
+}
+
+func NewOperateData(ctx context.Context, modelName string, actionType string, data any) (res *OperateData, err error) {
+	appId, appName := getAppIdName(ctx)
+	msg, err := reflectutils.ParseDesc(data)
+	if err != nil {
+		return nil, err
+	}
+	operateData, err := newOperateData(ctx, appId, appName, actionType, modelName, msg)
+	return operateData, err
 }
 
 func newOperateData(ctx context.Context, appId string, appName string, actionType string, modelName string, message string) (*OperateData, error) {
@@ -164,4 +165,15 @@ func (l *OperateEvent) GetData() any {
 
 func (l *OperateEvent) GetIsSourcing() bool {
 	return false
+}
+
+func getAppIdName(ctx context.Context) (string, string) {
+	appId := DefaultAppId
+	appName := DefaultAppName
+	appInfo, appErr := appctx.GetAppInfo(ctx)
+	if appErr == nil {
+		appId = appInfo.GetAppId()
+		appName = appInfo.GetAppName()
+	}
+	return appId, appName
 }

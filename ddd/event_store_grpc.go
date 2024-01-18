@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"io"
 	"net/http"
 )
 
 type grpcEventStore struct {
-	client     daprclient.DaprDddClient
+	client     dapr.DaprClient
 	compName   string
 	pubsubName string
 	subscribes []*Subscribe
 }
 
-func NewGrpcEventStore(compName string, pubsubName string, client daprclient.DaprDddClient, options ...func(s EventStore)) (EventStore, error) {
+func NewGrpcEventStore(compName string, pubsubName string, client dapr.DaprClient, options ...func(s EventStore)) (EventStore, error) {
 	subscribes = make([]*Subscribe, 0)
 	res := &grpcEventStore{
 		compName:   compName,
@@ -57,7 +57,7 @@ func (s *grpcEventStore) LoadAggregate(ctx context.Context, tenantId string, agg
 		return nil, false, err
 	}
 
-	req := &daprclient.LoadEventsRequest{
+	req := &dapr.LoadEventsRequest{
 		TenantId:      tenantId,
 		AggregateType: a.GetAggregateType(),
 		AggregateId:   aggregateId,
@@ -92,14 +92,14 @@ func (s *grpcEventStore) LoadAggregate(ctx context.Context, tenantId string, agg
 	return a, true, err
 }
 
-func (s *grpcEventStore) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (res *daprclient.LoadEventsResponse, resErr error) {
+func (s *grpcEventStore) LoadEvent(ctx context.Context, req *dapr.LoadEventsRequest) (res *dapr.LoadEventsResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 	return s.client.LoadEvents(ctx, req)
 }
 
-func (s *grpcEventStore) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (res *daprclient.ApplyEventResponse, resErr error) {
+func (s *grpcEventStore) ApplyEvent(ctx context.Context, req *dapr.ApplyEventRequest) (res *dapr.ApplyEventResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -108,7 +108,7 @@ func (s *grpcEventStore) ApplyEvent(ctx context.Context, req *daprclient.ApplyEv
 	return s.client.ApplyEvent(ctx, req)
 }
 
-func (s *grpcEventStore) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+func (s *grpcEventStore) Commit(ctx context.Context, req *dapr.CommitRequest) (res *dapr.CommitResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -116,7 +116,7 @@ func (s *grpcEventStore) Commit(ctx context.Context, req *daprclient.CommitReque
 	return s.client.CommitEvent(ctx, req)
 }
 
-func (s *grpcEventStore) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+func (s *grpcEventStore) Rollback(ctx context.Context, req *dapr.RollbackRequest) (res *dapr.RollbackResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -124,7 +124,7 @@ func (s *grpcEventStore) Rollback(ctx context.Context, req *daprclient.RollbackR
 	return s.client.RollbackEvent(ctx, req)
 }
 
-func (s *grpcEventStore) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (res *daprclient.SaveSnapshotResponse, resErr error) {
+func (s *grpcEventStore) SaveSnapshot(ctx context.Context, req *dapr.SaveSnapshotRequest) (res *dapr.SaveSnapshotResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -132,7 +132,7 @@ func (s *grpcEventStore) SaveSnapshot(ctx context.Context, req *daprclient.SaveS
 	return s.client.SaveSnapshot(ctx, req)
 }
 
-func (s *grpcEventStore) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (res *daprclient.GetEventsResponse, resErr error) {
+func (s *grpcEventStore) GetEvents(ctx context.Context, req *dapr.GetEventsRequest) (res *dapr.GetEventsResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -140,7 +140,7 @@ func (s *grpcEventStore) GetEvents(ctx context.Context, req *daprclient.GetEvent
 	return s.client.GetEvents(ctx, req)
 }
 
-func (s *grpcEventStore) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (res *daprclient.GetRelationsResponse, resErr error) {
+func (s *grpcEventStore) GetRelations(ctx context.Context, req *dapr.GetRelationsRequest) (res *dapr.GetRelationsResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -154,7 +154,7 @@ func (s *grpcEventStore) getBodyBytes(resp *http.Response) ([]byte, error) {
 	return bytes, err
 }
 
-func (s *grpcEventStore) setEventsPubsubName(events []*daprclient.EventDto) {
+func (s *grpcEventStore) setEventsPubsubName(events []*dapr.EventDto) {
 	if events != nil {
 		for _, event := range events {
 			if len(event.PubsubName) == 0 {

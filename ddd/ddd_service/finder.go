@@ -3,7 +3,7 @@ package ddd_service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
@@ -53,7 +53,7 @@ func (s *daprFinder) find(ctx context.Context, tenantId, methodName string, req 
 		err = errors.GetRecoverError(err, recover())
 	}()
 	methodNameUrl := fmt.Sprintf("/api/%s/tenants/%s/%s%s", s.apiVersion, tenantId, s.resourceName, methodName)
-	_, err = daprclient.GetDaprDDDClient().InvokeService(ctx, s.queryAppId, methodNameUrl, "get", req, resData)
+	_, err = dapr.GetDaprClient().InvokeService(ctx, s.queryAppId, methodNameUrl, "get", req, resData)
 	if err == nil {
 		isFound = true
 	}

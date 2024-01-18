@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 )
@@ -16,7 +16,7 @@ type RunConfig struct {
 	HttpPort               int
 	LogLevel               applog.Level
 	DaprMaxCallRecvMsgSize *int64
-	DaprClient             daprclient.DaprDddClient
+	DaprClient             dapr.DaprClient
 	EnvConfig              *EnvConfig
 }
 
@@ -82,7 +82,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, err
 	}
 
-	daprClient := daprclient.GetDaprDDDClient()
+	daprClient := dapr.GetDaprClient()
 
 	runCfg := &RunConfig{
 		AppId:                  config.App.AppId,

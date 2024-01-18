@@ -3,7 +3,7 @@ package ddd
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 )
 
 type GetEventsOptions struct {
@@ -27,7 +27,7 @@ func NewGetEventsWhereOptions() *GetEventsWhereOptions {
 	return &GetEventsWhereOptions{wheres: make(map[string]string)}
 }
 
-func GetEvents(ctx context.Context, req *daprclient.GetEventsRequest, opts ...*ApplyCommandOptions) (*daprclient.GetEventsResponse, error) {
+func GetEvents(ctx context.Context, req *dapr.GetEventsRequest, opts ...*ApplyCommandOptions) (*dapr.GetEventsResponse, error) {
 	opt := NewApplyCommandOptions().Merge(opts...)
 	eventStorage, err := GetEventStore(opt.EventStorageKey)
 	if err != nil {

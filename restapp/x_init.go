@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -120,12 +120,12 @@ func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []Reg
 	SetEnvConfig(envConfig)
 
 	// 启动服务，创建dapr客户端
-	daprClient, err := daprclient.NewDaprDddClient(ctx, envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort())
+	daprClient, err := dapr.NewDaprDddClient(ctx, envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort())
 	if err != nil {
 		return err
 	}
 
-	daprclient.SetDaprDddClient(daprClient)
+	dapr.SetDaprClient(daprClient)
 	ddd.Init(envConfig.App.AppId)
 	applog.Init(daprClient, envConfig.App.AppId, envConfig.Log.level)
 
@@ -214,7 +214,7 @@ func setCpuMemory(envName string, config *AppConfig) {
 	logs.Infof(context.Background(), "", fields, "ctype=app; cpu=%v; memory=%s;", cpu, memTxt)
 }
 
-func newEventStores(cfg *DaprConfig, client daprclient.DaprDddClient) map[string]ddd.EventStore {
+func newEventStores(cfg *DaprConfig, client dapr.DaprClient) map[string]ddd.EventStore {
 	//创建dapr事件存储器
 	eventStoresMap := make(map[string]ddd.EventStore)
 	esMap := cfg.EventStores

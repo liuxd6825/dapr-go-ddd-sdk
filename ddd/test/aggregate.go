@@ -2,7 +2,7 @@ package test
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 )
 
@@ -20,7 +20,7 @@ func (t TestAggregate) OnCommand(ctx context.Context, cmd ddd.Command) error {
 	return nil
 }
 
-func (t TestAggregate) CreateDomainEvent(ctx context.Context, eventRecord *daprclient.EventRecord) ddd.DomainEvent {
+func (t TestAggregate) CreateDomainEvent(ctx context.Context, eventRecord *dapr.EventRecord) ddd.DomainEvent {
 	return nil
 }
 

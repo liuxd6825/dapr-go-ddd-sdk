@@ -3,7 +3,7 @@ package ddd
 import (
 	"context"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
@@ -17,7 +17,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 		return err
 	}
 
-	req := &daprclient.LoadEventsRequest{
+	req := &dapr.LoadEventsRequest{
 		TenantId:    tenantId,
 		AggregateId: aggregateId,
 	}
@@ -49,7 +49,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 			}
 		}
 
-		snapshot := &daprclient.SaveSnapshotRequest{
+		snapshot := &dapr.SaveSnapshotRequest{
 			TenantId:         tenantId,
 			AggregateData:    aggregate,
 			AggregateId:      aggregateId,

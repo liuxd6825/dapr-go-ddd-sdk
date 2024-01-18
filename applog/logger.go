@@ -2,7 +2,7 @@ package applog
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,28 +31,28 @@ type Logger interface {
 	GetLevel() Level
 }
 
-type WriteEventLogRequest = daprclient.WriteEventLogRequest
+type WriteEventLogRequest = dapr.WriteEventLogRequest
 
-type WriteEventLogResponse = daprclient.WriteEventLogResponse
+type WriteEventLogResponse = dapr.WriteEventLogResponse
 
-type UpdateEventLogRequest = daprclient.UpdateEventLogRequest
+type UpdateEventLogRequest = dapr.UpdateEventLogRequest
 
-type UpdateEventLogResponse = daprclient.UpdateEventLogResponse
+type UpdateEventLogResponse = dapr.UpdateEventLogResponse
 
-type GetEventLogByCommandIdRequest = daprclient.GetEventLogByCommandIdRequest
+type GetEventLogByCommandIdRequest = dapr.GetEventLogByCommandIdRequest
 
-type GetEventLogByCommandIdResponse = daprclient.GetEventLogByCommandIdResponse
+type GetEventLogByCommandIdResponse = dapr.GetEventLogByCommandIdResponse
 
-type EventLogDto = daprclient.EventLogDto
+type EventLogDto = dapr.EventLogDto
 
-type WriteAppLogRequest = daprclient.WriteAppLogRequest
+type WriteAppLogRequest = dapr.WriteAppLogRequest
 
-type WriteAppLogResponse = daprclient.WriteAppLogResponse
+type WriteAppLogResponse = dapr.WriteAppLogResponse
 
-type UpdateAppLogRequest = daprclient.UpdateAppLogRequest
+type UpdateAppLogRequest = dapr.UpdateAppLogRequest
 
-type UpdateAppLogResponse = daprclient.UpdateAppLogResponse
+type UpdateAppLogResponse = dapr.UpdateAppLogResponse
 
-type GetAppLogByIdRequest = daprclient.GetAppLogByIdRequest
+type GetAppLogByIdRequest = dapr.GetAppLogByIdRequest
 
-type GetAppLogByIdResponse = daprclient.GetAppLogByIdResponse
+type GetAppLogByIdResponse = dapr.GetAppLogByIdResponse

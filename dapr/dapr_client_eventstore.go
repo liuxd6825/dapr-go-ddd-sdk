@@ -1,4 +1,4 @@
-package daprclient
+package dapr
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 )
 
-func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
+func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func (c *daprDddClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) 
 	return resp, nil
 }
 
-func (c *daprDddClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error) {
+func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error) {
 	errs := errors.NewErrors()
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		errs.AddError(err)
@@ -129,7 +129,7 @@ func newRequstHeaders(request *RequestHeader) *pb.RequestHeaders {
 	}
 }
 
-/*func (c *daprDddClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
+/*func (c *daprClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func newRequstHeaders(request *RequestHeader) *pb.RequestHeaders {
 	return resp, nil
 }*/
 
-/*func (c *daprDddClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
+/*func (c *daprClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func newRequstHeaders(request *RequestHeader) *pb.RequestHeaders {
 }
 */
 
-func (c *daprDddClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
+func (c *daprClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
 	var resList []*pb.EventDto
 	for _, e := range events {
 		event, err := c.newEvent(e)
@@ -211,7 +211,7 @@ func (c *daprDddClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
 	return resList, nil
 }
 
-func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
+func (c *daprClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 	if err := ddd_utils.IsEmpty(e.CommandId, "CommandId"); err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (c *daprDddClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 	return event, nil
 }
 
-func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
+func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
@@ -300,7 +300,7 @@ func (c *daprDddClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotReque
 	return resp, nil
 }
 
-func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error) {
+func (c *daprClient) GetRelations(ctx context.Context, req *GetRelationsRequest) (*GetRelationsResponse, error) {
 	if req == nil {
 		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req is nil")
 	}
@@ -358,7 +358,7 @@ func (c *daprDddClient) GetRelations(ctx context.Context, req *GetRelationsReque
 	return resp, nil
 }
 
-func (c *daprDddClient) GetEvents(ctx context.Context, req *GetEventsRequest) (*GetEventsResponse, error) {
+func (c *daprClient) GetEvents(ctx context.Context, req *GetEventsRequest) (*GetEventsResponse, error) {
 	if req == nil {
 		return nil, errors.New("daprclient.GetRelations(ctx, req) error: req is nil")
 	}
@@ -426,7 +426,7 @@ func (c *daprDddClient) GetEvents(ctx context.Context, req *GetEventsRequest) (*
 	return resp, nil
 }
 
-func (c *daprDddClient) newResponseHeaders(out *pb.ResponseHeaders) *ResponseHeaders {
+func (c *daprClient) newResponseHeaders(out *pb.ResponseHeaders) *ResponseHeaders {
 	if out == nil {
 		return &ResponseHeaders{
 			Status:  ResponseStatusSuccess,

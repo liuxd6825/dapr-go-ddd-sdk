@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"runtime"
 	"strings"
@@ -30,10 +30,10 @@ var logLevel Level
 
 // Init
 // @Description: 初始化日期
-// @param daprClient DaprDddClient
+// @param daprClient DaprClient
 // @param aAppId Darp Appliation Id
 // @param level 日志级别
-func Init(daprClient daprclient.DaprDddClient, aAppId string, level Level) {
+func Init(daprClient dapr.DaprClient, aAppId string, level Level) {
 	log = NewLogger(daprClient)
 	log.SetLevel(level)
 	appId = aAppId

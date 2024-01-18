@@ -1,4 +1,4 @@
-package daprclient
+package dapr
 
 import (
 	"context"
@@ -137,7 +137,7 @@ type GetAppLogByIdResponse struct {
 	Message  string     `json:"message"`
 }
 
-func (c *daprDddClient) WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (resp *WriteEventLogResponse, resErr error) {
+func (c *daprClient) WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (resp *WriteEventLogResponse, resErr error) {
 	request := &pb.WriteAppEventLogRequest{
 		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
@@ -162,7 +162,7 @@ func (c *daprDddClient) WriteEventLog(ctx context.Context, req *WriteEventLogReq
 	return resp, nil
 }
 
-func (c *daprDddClient) UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (resp *UpdateEventLogResponse, resErr error) {
+func (c *daprClient) UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (resp *UpdateEventLogResponse, resErr error) {
 	request := &pb.UpdateAppEventLogRequest{
 		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
@@ -189,7 +189,7 @@ func (c *daprDddClient) UpdateEventLog(ctx context.Context, req *UpdateEventLogR
 	return response, nil
 }
 
-func (c *daprDddClient) GetEventLogByCommandId(ctx context.Context, req *GetEventLogByCommandIdRequest) (resp *GetEventLogByCommandIdResponse, resErr error) {
+func (c *daprClient) GetEventLogByCommandId(ctx context.Context, req *GetEventLogByCommandIdRequest) (resp *GetEventLogByCommandIdResponse, resErr error) {
 	request := &pb.GetAppEventLogByCommandIdRequest{
 		Headers:   newRequstHeaders(&req.Headers),
 		TenantId:  req.TenantId,
@@ -226,7 +226,7 @@ func (c *daprDddClient) GetEventLogByCommandId(ctx context.Context, req *GetEven
 	return response, nil
 }
 
-func (c *daprDddClient) WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error) {
+func (c *daprClient) WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error) {
 	request := &pb.WriteAppLogRequest{
 		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
@@ -247,7 +247,7 @@ func (c *daprDddClient) WriteAppLog(ctx context.Context, req *WriteAppLogRequest
 	return resp, nil
 }
 
-func (c *daprDddClient) UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error) {
+func (c *daprClient) UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error) {
 	request := &pb.UpdateAppLogRequest{
 		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,
@@ -268,7 +268,7 @@ func (c *daprDddClient) UpdateAppLog(ctx context.Context, req *UpdateAppLogReque
 	return resp, nil
 }
 
-func (c *daprDddClient) GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error) {
+func (c *daprClient) GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error) {
 	request := &pb.GetAppLogByIdRequest{
 		Headers:  newRequstHeaders(&req.Headers),
 		TenantId: req.TenantId,

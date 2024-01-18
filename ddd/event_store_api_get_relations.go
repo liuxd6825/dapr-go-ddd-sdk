@@ -3,7 +3,7 @@ package ddd
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 )
 
 type RelationsOptions struct {
@@ -27,10 +27,10 @@ func NewWhereOptions() *WhereOptions {
 	return &WhereOptions{wheres: make(map[string]string)}
 }
 
-func HasRelations(ctx context.Context, tenantId, aggregateType string, opts ...*WhereOptions) (bool, uint64, *daprclient.GetRelationsResponse, error) {
+func HasRelations(ctx context.Context, tenantId, aggregateType string, opts ...*WhereOptions) (bool, uint64, *dapr.GetRelationsResponse, error) {
 	options := NewWhereOptions()
 	options.Merge(opts...)
-	req := &daprclient.GetRelationsRequest{
+	req := &dapr.GetRelationsRequest{
 		TenantId:      tenantId,
 		AggregateType: aggregateType,
 		Filter:        options.GetFilter(),
@@ -49,7 +49,7 @@ func HasAggregate(ctx context.Context, tenantId, aggregateType, aggregateId stri
 	return ok, err
 }
 
-func GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest, opts ...*ApplyCommandOptions) (*daprclient.GetRelationsResponse, error) {
+func GetRelations(ctx context.Context, req *dapr.GetRelationsRequest, opts ...*ApplyCommandOptions) (*dapr.GetRelationsResponse, error) {
 	opt := NewApplyCommandOptions().Merge(opts...)
 	eventStorage, err := GetEventStore(opt.EventStorageKey)
 	if err != nil {

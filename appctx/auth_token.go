@@ -14,21 +14,6 @@ type AuthToken interface {
 	GetClientId() string
 }
 
-type AuthUser interface {
-	GetId() string
-	GetName() string
-	GetPhone() string
-
-	GetAccount() string
-	GetRegDate() string
-	GetWork() string
-	GetStatus() string
-	GetUserType() string
-
-	GetTenantId() string
-	GetTenantName() string
-}
-
 type authToken struct {
 	Sub      string    `json:"sub"`
 	Exp      int       `json:"exp"`

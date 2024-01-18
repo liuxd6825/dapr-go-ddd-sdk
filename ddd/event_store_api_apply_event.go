@@ -2,7 +2,7 @@ package ddd
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
@@ -99,49 +99,49 @@ func (a *ApplyEventOptions) GetSessionId() *string {
 	return a.sessionId
 }
 
-func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.ApplyEventResponse, error) {
+func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
 	res, err := callDaprEventMethod(ctx, EventApply, aggregate, []DomainEvent{event}, opts...)
-	if resp, ok := res.(*daprclient.ApplyEventResponse); ok {
+	if resp, ok := res.(*dapr.ApplyEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
 }
 
-func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*daprclient.ApplyEventResponse, error) {
+func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
 	res, err := callDaprEventMethod(ctx, EventApply, aggregate, events, opts...)
-	if resp, ok := res.(*daprclient.ApplyEventResponse); ok {
+	if resp, ok := res.(*dapr.ApplyEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
 }
 
-func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.CreateEventResponse, error) {
+func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
 	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, []DomainEvent{event}, opts...)
-	if resp, ok := res.(*daprclient.CreateEventResponse); ok {
+	if resp, ok := res.(*dapr.CreateEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
 }
 
-func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*daprclient.CreateEventResponse, error) {
+func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
 	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, events, opts...)
-	if resp, ok := res.(*daprclient.CreateEventResponse); ok {
+	if resp, ok := res.(*dapr.CreateEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
 }
 
-func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*daprclient.DeleteEventResponse, error) {
+func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
 	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, []DomainEvent{event}, opts...)
-	if resp, ok := res.(*daprclient.DeleteEventResponse); ok {
+	if resp, ok := res.(*dapr.DeleteEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
 }
 
-func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*daprclient.DeleteEventResponse, error) {
+func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
 	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, events, opts...)
-	if resp, ok := res.(*daprclient.DeleteEventResponse); ok {
+	if resp, ok := res.(*dapr.DeleteEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
@@ -211,7 +211,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 
 	err = logs.DebugStart(ctx, tenantId, field, func() error {
 		var eventStore EventStore
-		applyEvents := make([]*daprclient.EventDto, 0)
+		applyEvents := make([]*dapr.EventDto, 0)
 
 		eventStore, err = GetEventStore(options.GetEventStoreName())
 		if err != nil {
@@ -238,7 +238,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 			if e, ok := event.(IsSourcing); ok {
 				isSourcing = e.GetIsSourcing()
 			}
-			eventDto := &daprclient.EventDto{
+			eventDto := &dapr.EventDto{
 				ApplyType:    callEventType.ToString(),
 				CommandId:    event.GetCommandId(),
 				EventId:      event.GetEventId(),
@@ -280,8 +280,8 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 	return res, err
 }
 
-func applyEvent(ctx context.Context, eventStorage EventStore, tenantId, sessionId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.ApplyEventResponse, error) {
-	req := &daprclient.ApplyEventRequest{
+func applyEvent(ctx context.Context, eventStorage EventStore, tenantId, sessionId, aggregateId, aggregateType string, events []*dapr.EventDto) (*dapr.ApplyEventResponse, error) {
+	req := &dapr.ApplyEventRequest{
 		SessionId:     sessionId,
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,
@@ -292,11 +292,11 @@ func applyEvent(ctx context.Context, eventStorage EventStore, tenantId, sessionI
 	return resp, err
 }
 
-func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *daprclient.CommitResponse, resErr error) {
+func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *dapr.CommitResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
-	req := &daprclient.CommitRequest{
+	req := &dapr.CommitRequest{
 		TenantId:  tenantId,
 		SessionId: sessionId,
 	}
@@ -310,17 +310,17 @@ func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*App
 	}
 
 	out, err := eventStorage.Commit(ctx, req)
-	resp := &daprclient.CommitResponse{
+	resp := &dapr.CommitResponse{
 		Headers: out.Headers,
 	}
 	return resp, err
 }
 
-func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *daprclient.RollbackResponse, resErr error) {
+func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*ApplyEventOptions) (res *dapr.RollbackResponse, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
-	req := &daprclient.RollbackRequest{
+	req := &dapr.RollbackRequest{
 		TenantId:  tenantId,
 		SessionId: sessionId,
 	}
@@ -334,7 +334,7 @@ func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*A
 	}
 
 	out, err := eventStorage.Rollback(ctx, req)
-	resp := &daprclient.RollbackResponse{
+	resp := &dapr.RollbackResponse{
 		Headers: out.Headers,
 	}
 	return resp, err
@@ -375,7 +375,7 @@ func callActorSaveSnapshot(ctx context.Context, tenantId, aggregateId, aggregate
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 
-	client, err := daprclient.GetDaprDDDClient().DaprClient()
+	client, err := dapr.GetDaprClient().Client()
 	if err != nil {
 		return err
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -42,7 +42,7 @@ type HttpServer struct {
 	httpHost       string
 	httpPort       int
 	logLevel       applog.Level
-	daprDddClient  daprclient.DaprDddClient
+	daprDddClient  dapr.DaprClient
 	eventStores    map[string]ddd.EventStore
 	actorFactories []actor.FactoryContext
 	subscribes     []RegisterSubscribe
@@ -63,7 +63,7 @@ func RegisterOnAppInit(init OnAppInit) {
 	}
 }
 
-func NewHttpServer(daprDddClient daprclient.DaprDddClient, opts *ServiceOptions) common.Service {
+func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.Service {
 	actorRuntime := runtime.GetActorRuntimeInstanceContext()
 	envConfig := opts.EnvConfig
 	if opts.EnvConfig != nil {

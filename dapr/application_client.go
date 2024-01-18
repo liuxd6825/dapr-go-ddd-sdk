@@ -1,4 +1,4 @@
-package daprclient
+package dapr
 
 import (
 	"context"
@@ -39,7 +39,7 @@ func NewApplicationClient(cmd *AppConfig, query *AppConfig) *ApplicationClient {
 }
 
 /*
-func (s *ApplicationClient) HttpGet(ctx context.Context, tenantId, methodName string, paras ...string) (res *Response, err error) {
+func (s *ApplicationClient) HttpGet(ctx context.Context, tenantId, methodName string, paras ...string) (res *HttpResponse, err error) {
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
@@ -50,10 +50,10 @@ func (s *ApplicationClient) HttpGet(ctx context.Context, tenantId, methodName st
 	if err != nil {
 		return nil, err
 	}
-	return GetDaprDDDClient().HttpGet(ctx, url)
+	return GetDaprClient().HttpGet(ctx, url)
 }
 
-func (s *ApplicationClient) HttpPost(ctx context.Context, tenantId, methodName string, requestData interface{}, paras ...string) (res *Response, err error) {
+func (s *ApplicationClient) HttpPost(ctx context.Context, tenantId, methodName string, requestData interface{}, paras ...string) (res *HttpResponse, err error) {
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
@@ -63,11 +63,11 @@ func (s *ApplicationClient) HttpPost(ctx context.Context, tenantId, methodName s
 	if err != nil {
 		return nil, err
 	}
-	resp, err := GetDaprDDDClient().HttpPost(ctx, url, requestData)
+	resp, err := GetDaprClient().HttpPost(ctx, url, requestData)
 	return resp, err
 }
 
-func (s *ApplicationClient) HttpPut(ctx context.Context, tenantId, methodName string, requestData interface{}, paras ...string) (res *Response, err error) {
+func (s *ApplicationClient) HttpPut(ctx context.Context, tenantId, methodName string, requestData interface{}, paras ...string) (res *HttpResponse, err error) {
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
@@ -77,10 +77,10 @@ func (s *ApplicationClient) HttpPut(ctx context.Context, tenantId, methodName st
 	if err != nil {
 		return nil, err
 	}
-	return GetDaprDDDClient().HttpPut(ctx, url, requestData)
+	return GetDaprClient().HttpPut(ctx, url, requestData)
 }
 
-func (s *ApplicationClient) HttpDelete(ctx context.Context, tenantId, methodName string, requestData interface{}, paras ...string) (res *Response, err error) {
+func (s *ApplicationClient) HttpDelete(ctx context.Context, tenantId, methodName string, requestData interface{}, paras ...string) (res *HttpResponse, err error) {
 	defer func() {
 		if e := errors.GetRecoverError(recover()); e != nil {
 			err = e
@@ -90,7 +90,7 @@ func (s *ApplicationClient) HttpDelete(ctx context.Context, tenantId, methodName
 	if err != nil {
 		return nil, err
 	}
-	return GetDaprDDDClient().HttpDelete(ctx, url, requestData)
+	return GetDaprClient().HttpDelete(ctx, url, requestData)
 }
 */
 
@@ -141,7 +141,7 @@ func (s *ApplicationClient) InvokeService(ctx context.Context, config *AppConfig
 		err = errors.GetRecoverError(err, recover())
 	}()
 	methodNameUrl := fmt.Sprintf("/api/%s/tenants/%s/%s%s", config.ApiVersion, tenantId, config.ResourceName, methodName)
-	return GetDaprDDDClient().InvokeService(ctx, config.AppId, methodNameUrl, methodType.ToString(), request, response)
+	return GetDaprClient().InvokeService(ctx, config.AppId, methodNameUrl, methodType.ToString(), request, response)
 }
 
 func (m MethodType) ToString() string {

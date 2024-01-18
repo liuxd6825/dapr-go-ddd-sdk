@@ -2,16 +2,16 @@ package applog
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/sirupsen/logrus"
 )
 
 type logger struct {
-	daprClient daprclient.DaprDddClient
+	daprClient dapr.DaprClient
 	level      Level
 }
 
-func NewLogger(daprClient daprclient.DaprDddClient) Logger {
+func NewLogger(daprClient dapr.DaprClient) Logger {
 	return &logger{
 		daprClient: daprClient,
 		level:      logrus.ErrorLevel,

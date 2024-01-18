@@ -1,4 +1,4 @@
-package actorclient
+package actor
 
 import (
 	"errors"
@@ -11,17 +11,20 @@ const (
 	ResponseStatusSuccess ResponseStatus = http.StatusOK
 	ResponseStatusError   ResponseStatus = http.StatusInternalServerError
 )
+const (
+	ResponseMessageSuccess = "success"
+)
 
 type Response struct {
 	Status  ResponseStatus `json:"status"`
 	Message string         `json:"message"`
-	Data    map[string]any `json:"data"`
+	Data    any            `json:"data"`
 }
 
 func NewResponse(err error) *Response {
 	resp := &Response{
 		Status:  ResponseStatusSuccess,
-		Message: "success",
+		Message: ResponseMessageSuccess,
 	}
 	if err != nil {
 		resp.Status = ResponseStatusError
@@ -35,4 +38,14 @@ func (a *Response) GetError() error {
 		return errors.New(a.Message)
 	}
 	return nil
+}
+
+func (a *Response) SetError(err error) {
+	if err != nil {
+		a.Status = ResponseStatusError
+		a.Message = err.Error()
+	} else {
+		a.Status = ResponseStatusSuccess
+		a.Message = ResponseMessageSuccess
+	}
 }

@@ -1,4 +1,4 @@
-package daprclient
+package dapr
 
 import (
 	"context"

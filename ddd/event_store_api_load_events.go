@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
@@ -16,7 +16,7 @@ import (
 // @param EventStoreKey 事件存储器key
 // @return resp 响应体
 // @return err 错误
-func LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest, eventStorageKey string) (resp *daprclient.LoadEventsResponse, respErr error) {
+func LoadEvents(ctx context.Context, req *dapr.LoadEventsRequest, eventStorageKey string) (resp *dapr.LoadEventsResponse, respErr error) {
 	defer func() {
 		respErr = errors.GetRecoverError(respErr, recover())
 	}()

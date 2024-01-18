@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 )
 
 type NewEventFunc func() interface{}
@@ -37,7 +37,7 @@ func RegisterEventType(eventType string, eventVersion string, newFunc NewEventFu
 	return _eventTypeRegistry.add(eventType, eventVersion, newFunc, options...)
 }
 
-func NewDomainEvent(record *daprclient.EventRecord) (interface{}, error) {
+func NewDomainEvent(record *dapr.EventRecord) (interface{}, error) {
 	if eventTypes, ok := _eventTypeRegistry.typeMap[record.EventType]; ok {
 		if item, ok := eventTypes.versionMap[record.EventVersion]; ok {
 			event := item.newFunc()
@@ -68,7 +68,7 @@ func getRegistryItem(eventType, eventRevision string) (*registryItem, error) {
 	return nil, errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", eventType, eventRevision))
 }
 
-type JsonMarshaler func(record *daprclient.EventRecord, event interface{}) error
+type JsonMarshaler func(record *dapr.EventRecord, event interface{}) error
 
 type registryItem struct {
 	eventType      string
@@ -92,18 +92,15 @@ type eventTypeRegistry struct {
 	typeMap map[string]*eventTypes
 }
 
-//
-//  newEventTypeRegistry
-//  @Description: 新建事件类型注册表
-//  @return *eventTypeRegistry
-//
+// newEventTypeRegistry
+// @Description: 新建事件类型注册表
+// @return *eventTypeRegistry
 func newEventTypeRegistry() *eventTypeRegistry {
 	return &eventTypeRegistry{
 		typeMap: make(map[string]*eventTypes),
 	}
 }
 
-//
 // add
 // @Description: 添加事件类型
 // @receiver r
@@ -112,7 +109,6 @@ func newEventTypeRegistry() *eventTypeRegistry {
 // @param newFunc 事件方法
 // @param options 选项
 // @return error 错误
-//
 func (r *eventTypeRegistry) add(eventType string, version string, newFunc NewEventFunc, options ...RegisterOption) error {
 	opts := &RegisterEventTypeOptions{}
 	for _, item := range options {

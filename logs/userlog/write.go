@@ -2,6 +2,7 @@ package userlog
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
@@ -29,6 +30,11 @@ type Log interface {
 	GetTenantId() string
 	GetTime() time.Time
 	GetMessage() string
+}
+
+type Command interface {
+	GetTenantId() string
+	GetData() any
 }
 
 var DefaultAppId string = ""
@@ -59,12 +65,12 @@ func WriteOperateEvent(ctx context.Context, modelName string, actionType string,
 	return applyEvent(ctx, oEvent.GetTenantId(), oEvent.Data.UserId, oEvent)
 }
 
-func WriteOperate(ctx context.Context, modelName string, actionType string, tenantId, userId string, data any, doFun func(ctx context.Context) error) error {
-	if doFun != nil {
+func WriteOperate(ctx context.Context, modelName string, actionType string, tenantId, userId string, data any, fun func(ctx context.Context) error) error {
+	if fun != nil {
 		return nil
 	}
 
-	err := doFun(ctx)
+	err := fun(ctx)
 	if err != nil {
 		return err
 	}
@@ -77,6 +83,14 @@ func WriteOperate(ctx context.Context, modelName string, actionType string, tena
 	oEvent := NewOperateEvent(ctx, idutils.NewId(), idutils.NewId(), oData)
 	err = applyEvent(ctx, tenantId, userId, oEvent)
 	return err
+}
+
+func WriteCommand(ctx context.Context, modelName string, actionType string, cmd Command, fun func(ctx context.Context) error) error {
+	user, err := appctx.GetAuthUser(ctx)
+	if err != nil {
+		return errors.ErrNotFoundLoginUser
+	}
+	return WriteOperate(ctx, modelName, actionType, user.GetId(), cmd.GetTenantId(), cmd.GetData(), fun)
 }
 
 func applyEvent(ctx context.Context, tenantId string, userId string, event ddd.DomainEvent) (err error) {

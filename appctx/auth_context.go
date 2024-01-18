@@ -8,6 +8,21 @@ import (
 type authKey struct {
 }
 
+type AuthUser interface {
+	GetId() string
+	GetName() string
+	GetPhone() string
+
+	GetAccount() string
+	GetRegDate() string
+	GetWork() string
+	GetStatus() string
+	GetUserType() string
+
+	GetTenantId() string
+	GetTenantName() string
+}
+
 var (
 	NotFundErr      = errors.New("AuthContext not found")
 	ContextIsNilErr = errors.New("context is null")

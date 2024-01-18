@@ -3,7 +3,7 @@ package ddd
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
@@ -127,7 +127,7 @@ func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeC
 			return err
 		}
 
-		result, err := daprclient.NewEventRecordByJsonBytes(data)
+		result, err := dapr.NewEventRecordByJsonBytes(data)
 		if err != nil {
 			return err
 		}

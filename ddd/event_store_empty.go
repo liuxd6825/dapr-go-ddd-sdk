@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 )
 
 type emptyEventStore struct {
@@ -20,31 +20,31 @@ func (s *emptyEventStore) panicMessage(funcName string) string {
 	return fmt.Sprintf(NotImplemented, funcName)
 }
 
-func (s *emptyEventStore) Commit(ctx context.Context, req *daprclient.CommitRequest) (res *daprclient.CommitResponse, resErr error) {
+func (s *emptyEventStore) Commit(ctx context.Context, req *dapr.CommitRequest) (res *dapr.CommitResponse, resErr error) {
 	panic(s.panicMessage("Commit()"))
 }
 
-func (s *emptyEventStore) Rollback(ctx context.Context, req *daprclient.RollbackRequest) (res *daprclient.RollbackResponse, resErr error) {
+func (s *emptyEventStore) Rollback(ctx context.Context, req *dapr.RollbackRequest) (res *dapr.RollbackResponse, resErr error) {
 	panic(s.panicMessage("Rollback()"))
 }
 
-func (s *emptyEventStore) GetEvents(ctx context.Context, req *daprclient.GetEventsRequest) (*daprclient.GetEventsResponse, error) {
+func (s *emptyEventStore) GetEvents(ctx context.Context, req *dapr.GetEventsRequest) (*dapr.GetEventsResponse, error) {
 	panic(s.panicMessage("GetEvents()"))
 }
 
-func (s *emptyEventStore) GetRelations(ctx context.Context, req *daprclient.GetRelationsRequest) (*daprclient.GetRelationsResponse, error) {
+func (s *emptyEventStore) GetRelations(ctx context.Context, req *dapr.GetRelationsRequest) (*dapr.GetRelationsResponse, error) {
 	panic(s.panicMessage("GetRelations()"))
 }
 
-func (s *emptyEventStore) LoadEvent(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error) {
+func (s *emptyEventStore) LoadEvent(ctx context.Context, req *dapr.LoadEventsRequest) (*dapr.LoadEventsResponse, error) {
 	panic(s.panicMessage("LoadEvent()"))
 }
 
-func (s *emptyEventStore) CreateEvent(ctx context.Context, req *daprclient.CreateEventRequest) (*daprclient.CreateEventResponse, error) {
+func (s *emptyEventStore) CreateEvent(ctx context.Context, req *dapr.CreateEventRequest) (*dapr.CreateEventResponse, error) {
 	panic(s.panicMessage("CreateEvent()"))
 }
 
-func (s *emptyEventStore) DeleteEvent(ctx context.Context, req *daprclient.DeleteEventRequest) (*daprclient.DeleteEventResponse, error) {
+func (s *emptyEventStore) DeleteEvent(ctx context.Context, req *dapr.DeleteEventRequest) (*dapr.DeleteEventResponse, error) {
 	panic(s.panicMessage("DeleteEvent()"))
 }
 
@@ -64,15 +64,15 @@ func (s *emptyEventStore) LoadAggregate(ctx context.Context, tenantId string, ag
 	panic(s.panicMessage("LoadAggregate()"))
 }
 
-func (s *emptyEventStore) LoadEvents(ctx context.Context, req *daprclient.LoadEventsRequest) (*daprclient.LoadEventsResponse, error) {
+func (s *emptyEventStore) LoadEvents(ctx context.Context, req *dapr.LoadEventsRequest) (*dapr.LoadEventsResponse, error) {
 	panic(s.panicMessage("LoadEvents()"))
 }
 
-func (s *emptyEventStore) ApplyEvent(ctx context.Context, req *daprclient.ApplyEventRequest) (*daprclient.ApplyEventResponse, error) {
+func (s *emptyEventStore) ApplyEvent(ctx context.Context, req *dapr.ApplyEventRequest) (*dapr.ApplyEventResponse, error) {
 	panic(s.panicMessage("ApplyEvent()"))
 }
 
-func (s *emptyEventStore) SaveSnapshot(ctx context.Context, req *daprclient.SaveSnapshotRequest) (*daprclient.SaveSnapshotResponse, error) {
+func (s *emptyEventStore) SaveSnapshot(ctx context.Context, req *dapr.SaveSnapshotRequest) (*dapr.SaveSnapshotResponse, error) {
 	return nil, errors.New("emptyEventStore")
 }
 

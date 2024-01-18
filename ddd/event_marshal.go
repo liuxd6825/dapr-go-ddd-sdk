@@ -1,7 +1,7 @@
 package ddd
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 
 type EventMarshal interface {
-	Marshal(record *daprclient.EventRecord) error
+	Marshal(record *dapr.EventRecord) error
 }

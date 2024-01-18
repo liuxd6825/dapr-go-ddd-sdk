@@ -1,7 +1,7 @@
 package restapp
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"sync"
@@ -26,7 +26,7 @@ func getActorsFactory() []actor.FactoryContext {
 }
 
 func newAggregateSnapshotActorFactory() actor.ServerContext {
-	client, err := daprclient.GetDaprDDDClient().DaprClient()
+	client, err := dapr.GetClient()
 	if err != nil {
 		panic(err)
 	}
