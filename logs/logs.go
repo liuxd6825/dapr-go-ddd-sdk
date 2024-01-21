@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/runtimeutils"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -57,24 +58,13 @@ var loggerLevel Level = logrus.DebugLevel
 // These are the different logging levels. You can set the logging level to log
 // on your instance of logger, obtained with `logrus.New()`.
 const (
-	// PanicLevel level, highest level of severity. Logs and then calls panic with the
-	// message passed to Debug, Info, ...
-	PanicLevel = logrus.PanicLevel
-	// FatalLevel level. Logs and then calls `logger.Exit(1)`. It will exit even if the
-	// logging level is set to Panic.
-	FatalLevel = logrus.FatalLevel
-	// ErrorLevel level. Logs. Used for errors that should definitely be noted.
-	// Commonly used for hooks to send errors to an error tracking service.
-	ErrorLevel = logrus.ErrorLevel
-	// WarnLevel level. Non-critical entries that deserve eyes.
-	WarnLevel = logrus.WarnLevel
-	// InfoLevel level. General operational entries about what's going on inside the
-	// application.
-	InfoLevel = logrus.InfoLevel
-	// DebugLevel level. Usually only enabled when debugging. Very verbose logging.
-	DebugLevel = logrus.DebugLevel
-	// TraceLevel level. Designates finer-grained informational events than the Debug.
-	TraceLevel = logrus.TraceLevel
+	PanicLevel Level = logrus.PanicLevel
+	FatalLevel Level = logrus.FatalLevel
+	ErrorLevel Level = logrus.ErrorLevel
+	WarnLevel  Level = logrus.WarnLevel
+	InfoLevel  Level = logrus.InfoLevel
+	DebugLevel Level = logrus.DebugLevel
+	TraceLevel Level = logrus.TraceLevel
 )
 
 type loggerKey struct {
@@ -96,8 +86,8 @@ func getArgs(args ...any) []any {
 	return res
 }
 
-func isLevel(logger Logger, lvl Level) bool {
-	if loggerLevel >= lvl {
+func isLevel(lvl Level) bool {
+	if GetLevel() >= lvl {
 		return true
 	}
 	return false
@@ -105,10 +95,7 @@ func isLevel(logger Logger, lvl Level) bool {
 
 func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 	f := Fields{}
-	if user, err := appctx.GetAuthUser(ctx); err == nil {
-		AddField(f, "userId", user.GetId())
-		AddField(f, "userName", user.GetName())
-	}
+
 	for key, val := range fields {
 		if fun, ok := val.(ArgFunc); ok {
 			f[key] = fun()
@@ -116,17 +103,23 @@ func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 			f[key] = val
 		}
 	}
-	if tenantId == "" {
-		if vId, ok := appctx.GetTenantId(ctx); ok {
-			tenantId = vId
+	if ctx != nil {
+		if user, ok := appctx.GetAuthUser(ctx); ok {
+			SetField(f, "userId", user.GetId())
+			SetField(f, "userName", user.GetName())
+		}
+		if tenantId == "" {
+			tenantId, _ = appctx.GetTenantId(ctx)
+		}
+		if tenantId != "" {
+			SetField(f, "tenantId", tenantId)
 		}
 	}
-	AddField(f, "tenantId", tenantId)
 	return f
 }
 
 func write(ctx context.Context, tenantId string, fields Fields, level Level, args []any, fun func(ctx context.Context, l Logger, args ...any)) {
-	if !isLevel(logger, level) {
+	if !isLevel(level) {
 		return
 	}
 	print(ctx, tenantId, fields, args, fun)
@@ -141,13 +134,13 @@ func print(ctx context.Context, tenantId string, fields Fields, args []any, fun 
 }
 
 // SetLevel sets the logger level.
-func SetLevel(ctx context.Context, level Level) {
+func SetLevel(level Level) {
 	loggerLevel = level
 	logger.SetLevel(level)
 }
 
 // GetLevel returns the logger level.
-func GetLevel(ctx context.Context) Level {
+func GetLevel() Level {
 	return loggerLevel
 }
 
@@ -296,54 +289,55 @@ func Fatal(ctx context.Context, tenantId string, fields Fields, args ...interfac
 //	@param args
 //	@return err
 func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() error) (err error) {
-	if isLevel(logger, DebugLevel) {
-		logId := idutils.NewId()
-		funcName := reflectutils.RunFuncName(2)
-		fs := Fields{
-			"logId":   logId,
-			"logFunc": funcName,
-			"logType": "start",
-		}
+	logId := idutils.NewId()
+	funcName := runtimeutils.GetFuncName(2)
+	fs := Fields{
+		"logId":   logId,
+		"logFunc": funcName,
+	}
+
+	if isLevel(DebugLevel) {
+		SetField(fs, "logType", "start")
 		for key, val := range fields {
 			fs[key] = val
 		}
-
 		write(ctx, tenantId, fs, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 			l.Debug()
 		})
-
 		startTime := time.Now()
-
 		defer func() {
-			var params []any
-			useTime := time.Now().Sub(startTime)
-			fs["logUseTime"] = useTime
-			fs["logType"] = "end"
-
+			logLevel := DebugLevel
 			err = errors.GetRecoverError(err, recover())
 			if err != nil {
-				fs["error"] = err.Error()
-				params = append(params, err.Error())
+				logLevel = ErrorLevel
+				SetField(fs, "error", err.Error())
 			}
-			write(ctx, tenantId, fs, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
-				l.Debug()
+			write(ctx, tenantId, fs, logLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+				if logLevel == ErrorLevel {
+					l.Error()
+				} else if logLevel == DebugLevel {
+					l.Debug()
+				}
 			})
 		}()
 
 		err = fun()
+		useTime := time.Now().Sub(startTime)
+		SetField(fs, "logUseTime", useTime)
+		SetField(fs, "logType", "end")
+
+	} else {
+		defer func() {
+			if err = errors.GetRecoverError(err, recover()); err != nil {
+				SetField(fs, "error", err.Error())
+				write(ctx, tenantId, fs, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+					l.Error()
+				})
+			}
+		}()
+		err = fun()
 	}
 
-	return err
-}
-
-func DoLog(ctx context.Context, tenantId string, fields Fields, fun func() error) (err error) {
-	defer func() {
-		if err = errors.GetRecoverError(err, recover()); err != nil {
-			Errorf(ctx, tenantId, fields, "error:%s", err.Error())
-		}
-	}()
-	err = fun()
-	Debug(ctx, tenantId, fields)
 	return err
 }
 
@@ -352,7 +346,7 @@ func ParseLevel(lvl string) (Level, error) {
 	return l, err
 }
 
-func AddField(field Fields, key string, value any) {
+func SetField(field Fields, key string, value any) {
 	field[key] = value
 }
 

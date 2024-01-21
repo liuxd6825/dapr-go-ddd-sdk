@@ -3,6 +3,7 @@ package userlog
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"time"
@@ -70,9 +71,9 @@ func NewOperateData(ctx context.Context, modelName string, actionType string, da
 }
 
 func newOperateData(ctx context.Context, appId string, appName string, actionType string, modelName string, message string) (*OperateData, error) {
-	authUser, uErr := appctx.GetAuthUser(ctx)
-	if uErr != nil {
-		return nil, uErr
+	authUser, ok := appctx.GetAuthUser(ctx)
+	if !ok {
+		return nil, errors.ErrNotFoundLoginUser
 	}
 
 	tenantId, ok := appctx.GetTenantId(ctx)
@@ -170,8 +171,8 @@ func (l *OperateEvent) GetIsSourcing() bool {
 func getAppIdName(ctx context.Context) (string, string) {
 	appId := DefaultAppId
 	appName := DefaultAppName
-	appInfo, appErr := appctx.GetAppInfo(ctx)
-	if appErr == nil {
+	appInfo, ok := appctx.GetAppInfo(ctx)
+	if ok {
 		appId = appInfo.GetAppId()
 		appName = appInfo.GetAppName()
 	}

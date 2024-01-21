@@ -37,15 +37,13 @@ func (o *ApplyCommandOptions) SetEventStorageKey(v string) *ApplyCommandOptions 
 	return o
 }
 
-//
 // ApplyCommand
 // @Description: 执行聚合命令
 // @param ctx
-// @param aggregate
+// @param agg
 // @param cmd
 // @param opts
 // @return error
-//
 func ApplyCommand(ctx context.Context, agg any, cmd Command, opts ...*ApplyCommandOptions) (err error) {
 	if agg == nil {
 		return errors.ErrorOf("ApplyCommand(ctx, agg, cmd) error: agg is nil")

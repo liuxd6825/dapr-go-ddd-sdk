@@ -5,23 +5,8 @@ import (
 	"fmt"
 	errors2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"reflect"
-	"runtime"
 )
 
-//
-// RunFuncName
-// @Description: 获取当前运行的方法名称
-// @param skip  调用方法的调转级数
-// @return string 返回方法名称
-//
-func RunFuncName(skip int) string {
-	pc := make([]uintptr, 1)
-	runtime.Callers(skip+1, pc)
-	f := runtime.FuncForPC(pc[0])
-	return f.Name()
-}
-
-//
 // NewSliceItemType
 // @Description: 根据给定切片，返回元素的Type
 // @param slice
@@ -46,14 +31,12 @@ func NewSliceItemType(slice interface{}) (res reflect.Type, resErr error) {
 	return e, nil
 }
 
-//
 // MappingStruct
 // @Description: 映射结构，将源结构属性映射到目标结构
 // @param source 源结构实例
 // @param result 结果结构实例
 // @param set 设置方法
 // @return resErr 错误
-//
 func MappingStruct(source interface{}, result interface{}, set func(source, target reflect.Value) error) (resErr error) {
 	defer func() {
 		if err := errors2.GetError(recover()); err != nil {
@@ -89,14 +72,12 @@ func MappingStruct(source interface{}, result interface{}, set func(source, targ
 	return nil
 }
 
-//
 // MappingSlice
 // @Description: 映射切片，将源切片元素映射到目标元素上。
 // @param sourceSlice 源切片
 // @param resultSlice  目标切片
 // @param setItem 设置函数
 // @return resErr 返回错误
-//
 func MappingSlice(sourceSlice interface{}, resultSlice interface{}, setItem func(index int, source reflect.Value, target reflect.Value) error) (resErr error) {
 	defer func() {
 		if err := errors2.GetError(recover()); err != nil {
@@ -177,11 +158,9 @@ func NewStruct[T interface{}]() (res T, resErr error) {
 	return v.Interface().(T), nil
 }
 
-//
 // NewSlice
 // @Description: 动态创建切片  NewSlice[[]Object]()
 // @return interface{}
-//
 func NewSlice[T interface{}]() (res T, resErr error) {
 	defer func() {
 		if err := errors2.GetError(recover()); err != nil {
@@ -198,12 +177,10 @@ func NewSlice[T interface{}]() (res T, resErr error) {
 	return res, nil
 }
 
-//
 // GetValuePointer
 // @Description: 检查指针层级，只保留最后的指值
 // @param v
 // @return reflect.Value
-//
 func GetValuePointer(data interface{}) reflect.Value {
 	v := reflect.ValueOf(data)
 	for v.Kind() == reflect.Pointer && v.Elem().Kind() == reflect.Pointer {

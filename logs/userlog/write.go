@@ -86,8 +86,8 @@ func WriteOperate(ctx context.Context, modelName string, actionType string, tena
 }
 
 func WriteCommand(ctx context.Context, modelName string, actionType string, cmd Command, fun func(ctx context.Context) error) error {
-	user, err := appctx.GetAuthUser(ctx)
-	if err != nil {
+	user, ok := appctx.GetAuthUser(ctx)
+	if !ok {
 		return errors.ErrNotFoundLoginUser
 	}
 	return WriteOperate(ctx, modelName, actionType, user.GetId(), cmd.GetTenantId(), cmd.GetData(), fun)

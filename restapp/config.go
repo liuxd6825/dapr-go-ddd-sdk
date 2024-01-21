@@ -3,6 +3,7 @@ package restapp
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	log "github.com/sirupsen/logrus"
@@ -37,8 +38,8 @@ type AppConfig struct {
 	HttpHost  string            `yaml:"httpHost"`
 	HttpPort  int               `yaml:"httpPort"`
 	RootUrl   string            `yaml:"rootUrl"`
-	CPU       int               `yaml:"cpu"`
-	Memory    string            `yaml:"memory"`
+	CPU       *int              `yaml:"cpu"`
+	Memory    *string           `yaml:"memory"`
 	Values    map[string]string `yaml:"values"`
 	AuthToken string            `yaml:"authToken"`
 }
@@ -52,12 +53,15 @@ type ResourceConfig struct {
 }
 
 type DaprConfig struct {
-	Host               *string                `yaml:"host"`
-	HttpPort           *int64                 `yaml:"httpPort"`
-	GrpcPort           *int64                 `yaml:"grpcPort"`
-	MaxCallRecvMsgSize *int64                 `yaml:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
-	EventStores        map[string]*EventStore `yaml:"eventStores"`
-	Actor              ActorConfig            `yaml:"actor"`
+	Host                *string                `yaml:"host"`
+	HttpPort            *int64                 `yaml:"httpPort"`
+	GrpcPort            *int64                 `yaml:"grpcPort"`
+	MaxCallRecvMsgSize  *int                   `yaml:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
+	MaxIdleConns        *int                   `yaml:"maxIdleConns"`
+	MaxIdleConnsPerHost *int                   `yaml:"maxIdleConnsPerHost"`
+	IdleConnTimeout     *int                   `yaml:"idleConnTimeout"`
+	EventStores         map[string]*EventStore `yaml:"eventStores"`
+	Actor               ActorConfig            `yaml:"actor"`
 }
 
 type ActorConfig struct {
@@ -140,36 +144,16 @@ func (e *EnvConfig) Init(name string) error {
 		e.Log.SplitHour = 24
 	}
 	e.Log.level = level
-	initLogs(level, e.Log.SaveDays, e.Log.SplitHour)
 
-	// init dapr
-	if e.Dapr.Host == nil {
-		var value = "localhost"
-		e.Dapr.Host = e.GetEnvString("DAPR_HOST", &value)
+	//初始化日志
+	if err := initLogs(level, e.Log.SaveDays, e.Log.SplitHour); err != nil {
+		return err
 	}
 
-	if e.Dapr.HttpPort == nil {
-		var value int64 = 3500
-		e.Dapr.HttpPort = e.GetEnvInt("DAPR_HTTP_PORT", &value)
+	//初始化Dapr
+	if err := e.Dapr.init(e); err != nil {
+		return err
 	}
-
-	if e.Dapr.GrpcPort == nil {
-		var value int64 = 50001
-		e.Dapr.GrpcPort = e.GetEnvInt("DAPR_GRPC_PORT", &value)
-	}
-
-	if len(e.Dapr.EventStores) > 0 {
-		for compName, es := range e.Dapr.EventStores {
-			if es.CompName == "" {
-				es.CompName = compName
-			}
-			if len(es.PubsubName) == 0 {
-				return errors.ErrorOf("config env:%s  Dapr.EventStores.%s pubsub is null", name, compName)
-			}
-		}
-	}
-
-	e.Dapr.Actor.init()
 
 	return nil
 }
@@ -229,6 +213,59 @@ func (c *ActorConfig) init() {
 	if c.DrainOngingCallTimeout == "" {
 		c.DrainOngingCallTimeout = "5m"
 	}
+}
+
+func (c *DaprConfig) init(e *EnvConfig) error {
+	if c.Host == nil {
+		var value = "localhost"
+		c.Host = e.GetEnvString("DAPR_HOST", &value)
+	}
+
+	if e.Dapr.HttpPort == nil {
+		var value int64 = 3500
+		c.HttpPort = e.GetEnvInt("DAPR_HTTP_PORT", &value)
+	}
+
+	if e.Dapr.GrpcPort == nil {
+		var value int64 = 50001
+		c.GrpcPort = e.GetEnvInt("DAPR_GRPC_PORT", &value)
+	}
+
+	if c.MaxCallRecvMsgSize == nil {
+		val := dapr.GetMaxCallRecvMsgSize()
+		c.MaxCallRecvMsgSize = &val
+	}
+
+	if c.MaxIdleConnsPerHost == nil {
+		val := dapr.DefaultMaxIdleConnsPerHost
+		c.MaxIdleConns = &val
+	}
+
+	if c.IdleConnTimeout == nil {
+		val := dapr.DefaultIdleConnTimeout
+		c.IdleConnTimeout = &val
+	}
+
+	if c.MaxIdleConns == nil {
+		val := dapr.DefaultMaxIdleConns
+		c.MaxIdleConnsPerHost = &val
+	}
+
+	if len(c.EventStores) > 0 {
+		for compName, es := range e.Dapr.EventStores {
+			if es.CompName == "" {
+				es.CompName = compName
+			}
+			if len(es.PubsubName) == 0 {
+				return errors.ErrorOf("config env:%s  Dapr.EventStores.%s pubsub is null", e.Name, compName)
+			}
+		}
+	}
+
+	e.Dapr.Actor.init()
+
+	return nil
+
 }
 
 func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {

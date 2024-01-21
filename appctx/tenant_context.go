@@ -18,6 +18,9 @@ func NewTenantContext(parent context.Context, tenantId string) context.Context {
 //	@return string
 //	@return bool
 func GetTenantId(ctx context.Context) (string, bool) {
+	if ctx == nil {
+		return "", false
+	}
 	val := ctx.Value(tenantCtxKey)
 	if val == nil {
 		return "", false

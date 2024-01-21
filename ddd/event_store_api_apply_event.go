@@ -150,7 +150,7 @@ func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent
 // callDaprEventMethod
 // @Description: 应用领域事件
 // @param ctx
-// @param aggregate
+// @param agg
 // @param event
 // @param options
 // @return err

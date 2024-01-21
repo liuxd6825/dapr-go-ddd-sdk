@@ -6,17 +6,30 @@ import (
 )
 
 func TestField_toDateTime(t *testing.T) {
-	date := "20110812"
-	time := "11.56.23"
-	res := toDateTime(date, time)
+	var ds, ts, res string
 
-	date = "20221001 11:09:22"
-	res = toDateTime(date)
+	ds = "20181101"
+	res = toDateTime(ds)
+	t.Log(ds, "=", res)
 
-	date = "20221001T11:09:22"
-	res = toDateTime(date)
+	ds = "20181101"
+	ts = ""
+	res = toDateTime(ds, ts)
+	t.Log(ds, "=", res)
 
-	println(res)
+	ds = "20110812"
+	ts = "11.56.23"
+	res = toDateTime(ds, ts)
+	t.Log(ds, ",", ts, "=", res)
+
+	ds = "20221001 11:09:22"
+	res = toDateTime(ds)
+	t.Log(ds, "=", res)
+
+	ds = "20221001T11:09:22"
+	res = toDateTime(ds)
+	t.Log(ds, "=", res)
+
 }
 
 func Test(t *testing.T) {

@@ -22,7 +22,7 @@ func Test_Create(t *testing.T) {
 }
 
 func newServer() *server {
-	return Create[*server]("10D157C3-0B57-425D-827A-173CCEADBE40", func() *server {
+	return Create[*server](func() *server {
 		return &server{time: time.Now()}
 	})
 }

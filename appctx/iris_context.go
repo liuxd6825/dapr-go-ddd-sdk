@@ -15,6 +15,9 @@ func NewIrisContext(parent context.Context, ictx iris.Context) context.Context {
 }
 
 func GetIrisContext(ctx context.Context) (iris.Context, bool) {
+	if ctx == nil {
+		return nil, false
+	}
 	val := ctx.Value(irisKey)
 	if val == nil {
 		return nil, false

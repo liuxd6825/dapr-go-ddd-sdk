@@ -28,3 +28,19 @@ func newClientWithAddress(address string) (client Client, err error) {
 func newClientWithAddressContext(ctx context.Context, address string, opts ...ClientOption) (client Client, err error) {
 	return daprsdk.NewClientWithAddressContext(ctx, address, opts...)
 }
+
+// SetMaxCallRecvMsgSize
+//
+//	@Description: 设置Client最大接收与发送数据包大小，单位M。需要在NewClient()之前设置。
+//	@param val
+func SetMaxCallRecvMsgSize(val int) {
+	daprsdk.DefaultMaxCallRecvMsgSize = val
+}
+
+// GetMaxCallRecvMsgSize
+//
+//	@Description: 获取Client最大接收与发送数据包大小，单位M
+//	@return int
+func GetMaxCallRecvMsgSize() int {
+	return daprsdk.DefaultMaxCallRecvMsgSize
+}

@@ -59,7 +59,7 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 	if err := assert.NotNil(event, assert.NewOptions("event is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
+	if err := assert.NotNil(aggregate, assert.NewOptions("agg is nil")); err != nil {
 		return err
 	}
 

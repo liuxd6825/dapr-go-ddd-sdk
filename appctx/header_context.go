@@ -20,6 +20,9 @@ func NewHeaderContext(parent context.Context, metadata Header) context.Context {
 }
 
 func GetHeader(ctx context.Context) (Header, bool) {
+	if ctx == nil {
+		return nil, false
+	}
 	header := ctx.Value(headerKey)
 	mapData, ok := header.(Header)
 	return mapData, ok

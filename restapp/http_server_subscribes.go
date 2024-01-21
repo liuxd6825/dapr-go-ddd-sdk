@@ -55,7 +55,7 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 	ictx.Header("Context-Type", "application/json")
 	_ = ictx.JSON(subscribes)
 
-	if logs.GetLevel(ctx) >= logs.InfoLevel {
+	if logs.GetLevel() >= logs.InfoLevel {
 		for _, s := range subscribes {
 			fields := logs.Fields{
 				"dapr":   "subscribes",

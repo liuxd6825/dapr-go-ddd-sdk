@@ -77,7 +77,7 @@ func (s *httpEventStore) GetPubsubName() string {
 }
 
 func (s *httpEventStore) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error) {
-	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
+	if err := assert.NotNil(aggregate, assert.NewOptions("agg is nil")); err != nil {
 		return nil, false, err
 	}
 	if err := assert.NotEmpty(aggregateId, assert.NewOptions("aggregateId is nil")); err != nil {

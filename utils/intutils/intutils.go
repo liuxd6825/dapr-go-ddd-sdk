@@ -47,3 +47,10 @@ func P2Uint64(p *uint64) uint64 {
 	}
 	return *p
 }
+
+func P2IntDefault(val *int, def int) int {
+	if val == nil {
+		return def
+	}
+	return *val
+}

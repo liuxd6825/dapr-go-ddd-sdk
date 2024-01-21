@@ -42,10 +42,10 @@ func (s *grpcEventStore) LoadAggregate(ctx context.Context, tenantId string, agg
 
 	a, ok := aggregate.(Aggregate)
 	if !ok {
-		return nil, false, errors.New("aggregate is not ddd.Aggregate interface")
+		return nil, false, errors.New("agg is not ddd.Aggregate interface")
 	}
 
-	if err := assert.NotNil(aggregate, assert.NewOptions("aggregate is nil")); err != nil {
+	if err := assert.NotNil(aggregate, assert.NewOptions("agg is nil")); err != nil {
 		return nil, false, err
 	}
 

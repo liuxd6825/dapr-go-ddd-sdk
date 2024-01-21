@@ -93,16 +93,28 @@ func StrToDateTime(str string) (res time.Time, err error) {
 		return time.Time{}, err
 	}
 
-	// 对时间部分进行格式化
-	timeVar, err = fmtTimeStr(timeVar)
-	if err != nil {
-		return time.Time{}, err
+	timeIsNil := false
+	if len(timeVar) == 0 {
+		timeIsNil = true
+	}
+	str = dayVal
+	if !timeIsNil {
+		// 对时间部分进行格式化
+		timeVar, err = fmtTimeStr(timeVar)
+		if err != nil {
+			return time.Time{}, err
+		}
+		str = dayVal + " " + timeVar
 	}
 
 	// 合并为完整时间
-	str = dayVal + " " + timeVar
+
 	if strings.Contains(str, "-") {
-		format = LocalTimeFormatLine
+		if timeIsNil {
+			format = LocalDateFormatLine
+		} else {
+			format = LocalTimeFormatLine
+		}
 	} else if strings.Contains(str, "T") {
 		format = time.RFC3339
 	} else if strings.Contains(str, "/") {

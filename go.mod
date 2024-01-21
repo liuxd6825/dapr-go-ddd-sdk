@@ -37,6 +37,7 @@ require (
 	github.com/redis/go-redis/v9 v9.2.1
 	github.com/snownd/cake v0.6.0
 	github.com/tealeg/xlsx v1.0.5
+	go.uber.org/automaxprocs v1.5.3
 	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.31.0
 )

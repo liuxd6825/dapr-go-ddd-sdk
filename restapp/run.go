@@ -85,13 +85,13 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	daprClient := dapr.GetDaprClient()
 
 	runCfg := &RunConfig{
-		AppId:                  config.App.AppId,
-		HttpHost:               config.App.HttpHost,
-		HttpPort:               config.App.HttpPort,
-		LogLevel:               config.Log.level,
-		DaprMaxCallRecvMsgSize: config.Dapr.MaxCallRecvMsgSize,
-		DaprClient:             daprClient,
-		EnvConfig:              config,
+		AppId:    config.App.AppId,
+		HttpHost: config.App.HttpHost,
+		HttpPort: config.App.HttpPort,
+		LogLevel: config.Log.level,
+
+		DaprClient: daprClient,
+		EnvConfig:  config,
 	}
 
 	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)

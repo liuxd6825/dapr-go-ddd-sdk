@@ -107,7 +107,7 @@ func (h *subscribeHandler) RegisterSubscribe(subscribe *Subscribe) error {
 
 // SubscribeHandler
 //
-//	@Description: 消息订阅处理器
+//	@Description: 领域事件订阅处理器
 //	@receiver h
 //	@param ctx
 //	@param sctx
@@ -181,6 +181,7 @@ func (s *subscribeContext) GetBody() ([]byte, error) {
 }
 
 func (s *subscribeContext) SetErr(err error) {
+	s.ictx.StatusCode(500)
 	s.ictx.SetErr(err)
 }
 

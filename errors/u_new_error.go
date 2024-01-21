@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+type Error struct {
+	msg string
+	err error
+}
+
 type Errors struct {
 	details []error `json:"details"`
 }
@@ -15,6 +20,20 @@ func NewErrors() *Errors {
 	return &Errors{
 		details: make([]error, 0),
 	}
+}
+
+func News(errs ...error) error {
+	return &Errors{
+		details: errs,
+	}
+}
+
+func NewMethod(packName, methodName string, msg string) error {
+	return errors.New(fmt.Sprintf("%v.%v(), error:%v", packName, methodName, msg))
+}
+
+func ErrorOf(format string, args ...any) error {
+	return New(format, args...)
 }
 
 func (e *Errors) Error() string {
@@ -71,23 +90,22 @@ func New(formatOrText string, text ...any) error {
 
 }
 
-func NewFunc(skip int, formatOrText string, text ...any) error {
-	funName := runFuncName(skip + 1)
-	return New("funName:"+funName+"() "+formatOrText, text...)
-}
+func NewErr(err error, formatOrText string, text ...any) error {
+	count := len(text)
+	if count == 0 {
+		return errors.New(formatOrText)
+	}
 
-func News(errs ...error) error {
-	return &Errors{
-		details: errs,
+	str := fmt.Sprintf(formatOrText, text...)
+	return &Error{
+		msg: str,
+		err: err,
 	}
 }
 
-func NewMethod(packName, methodName string, msg string) error {
-	return errors.New(fmt.Sprintf("%v.%v(), error:%v", packName, methodName, msg))
-}
-
-func ErrorOf(format string, args ...any) error {
-	return New(format, args...)
+func NewFunc(skip int, formatOrText string, text ...any) error {
+	funName := runFuncName(skip + 1)
+	return New("funName:"+funName+"() "+formatOrText, text...)
 }
 
 func runFuncName(skip int) string {
@@ -95,4 +113,8 @@ func runFuncName(skip int) string {
 	runtime.Callers(skip+1, pc)
 	f := runtime.FuncForPC(pc[0])
 	return f.Name()
+}
+
+func (e *Error) Error() string {
+	return e.msg
 }

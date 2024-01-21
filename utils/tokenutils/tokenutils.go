@@ -3,6 +3,7 @@ package tokenutils
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 )
 import "time"
@@ -26,9 +27,9 @@ type TokenData struct {
 }
 
 func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc func(err error)) (appctx.AuthUser, error) {
-	user, err := appctx.GetAuthUser(ctx)
-	if err != nil {
-		return nil, err
+	user, isFound := appctx.GetAuthUser(ctx)
+	if !isFound {
+		return nil, errors.ErrNotFoundLoginUser
 	}
 	if getFunc != nil {
 		getFunc(user.GetId(), user.GetName())
@@ -40,9 +41,9 @@ func GetUser(ctx context.Context, getFunc func(userId, userName string), errFunc
 }
 
 func SetCreateUser(ctx context.Context, entity EditEntity) error {
-	user, err := appctx.GetAuthUser(ctx)
-	if err != nil {
-		return err
+	user, isFound := appctx.GetAuthUser(ctx)
+	if !isFound {
+		return errors.ErrNotFoundLoginUser
 	}
 	userId := user.GetId()
 	userName := user.GetName()
@@ -59,10 +60,11 @@ func SetCreateUser(ctx context.Context, entity EditEntity) error {
 }
 
 func SetUpdateUser(ctx context.Context, entity EditEntity) error {
-	user, err := appctx.GetAuthUser(ctx)
-	if err != nil {
-		return err
+	user, isFound := appctx.GetAuthUser(ctx)
+	if !isFound {
+		return errors.ErrNotFoundLoginUser
 	}
+
 	userId := user.GetId()
 	userName := user.GetName()
 
@@ -74,10 +76,11 @@ func SetUpdateUser(ctx context.Context, entity EditEntity) error {
 }
 
 func SetDeleteUser(ctx context.Context, entity EditEntity) error {
-	user, err := appctx.GetAuthUser(ctx)
-	if err != nil {
-		return err
+	user, isFound := appctx.GetAuthUser(ctx)
+	if !isFound {
+		return errors.ErrNotFoundLoginUser
 	}
+
 	userId := user.GetId()
 	userName := user.GetName()
 

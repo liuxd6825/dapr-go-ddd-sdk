@@ -37,29 +37,29 @@ func NewAuthContext(ctx context.Context, jwtText string) (context.Context, error
 	return context.WithValue(ctx, authCtxKey, tk), nil
 }
 
-func GetAuthUser(ctx context.Context) (AuthUser, error) {
-	token, err := GetAuthToken(ctx)
-	if err != nil {
-		return nil, err
+func GetAuthUser(ctx context.Context) (AuthUser, bool) {
+	token, isFound := GetAuthToken(ctx)
+	if !isFound {
+		return nil, false
 	}
 	if token == nil {
-		return nil, errors.New("token is null")
+		return nil, false
 	}
 	if token.GetUser() == nil {
-		return nil, errors.New("token.AuthUser is null")
+		return nil, false
 	}
-	return token.GetUser(), nil
+	return token.GetUser(), true
 }
 
-func GetAuthToken(ctx context.Context) (AuthToken, error) {
+func GetAuthToken(ctx context.Context) (AuthToken, bool) {
 	if ctx == nil {
-		return nil, ContextIsNilErr
+		return nil, false
 	}
 	val := ctx.Value(authCtxKey)
 	if val != nil {
-		return val.(AuthToken), nil
+		return val.(AuthToken), true
 	}
-	return nil, NotFundErr
+	return nil, false
 }
 
 func IsNotFundErr(err error) bool {

@@ -30,6 +30,7 @@ type DaprHttpOptions struct {
 	MaxIdleConns        int
 	MaxIdleConnsPerHost int
 	IdleConnTimeout     int
+	MaxCallRecvMsgSize  int
 }
 
 // DaprClient
@@ -91,11 +92,12 @@ func newHttpOptions() *DaprHttpOptions {
 		MaxIdleConns:        DefaultMaxIdleConns,
 		MaxIdleConnsPerHost: DefaultMaxIdleConnsPerHost,
 		IdleConnTimeout:     DefaultIdleConnTimeout,
+		MaxCallRecvMsgSize:  GetMaxCallRecvMsgSize(),
 	}
 	return options
 }
 
-func NewDaprDddClient(ctx context.Context, host string, httpPort int64, grpcPort int64, opts ...Option) (DaprClient, error) {
+func NewDaprClient(ctx context.Context, host string, httpPort int64, grpcPort int64, opts ...Option) (DaprClient, error) {
 	options := newHttpOptions()
 	for _, opt := range opts {
 		opt(options)

@@ -1,6 +1,8 @@
 package singleutils
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/runtimeutils"
+	"strings"
 	"sync"
 )
 
@@ -14,11 +16,17 @@ type onceItem struct {
 var lock sync.RWMutex
 var items = make(map[string]*onceItem)
 
-func Create[T any](key string, fun func() T) T {
+func Create[T any](fun func() T, keys ...string) T {
 	//lock.Lock()
 	//defer lock.Unlock()
 
-	val, find := items[key]
+	key := runtimeutils.GetFuncName(1)
+	if len(keys) > 0 {
+		key = key + "-" + strings.Join(keys, "-")
+	}
+
+	val, find := getItem(key)
+
 	if find {
 		return val.obj.(T)
 	}
@@ -27,10 +35,27 @@ func Create[T any](key string, fun func() T) T {
 		fun: fun,
 	}
 	val.once.Do(func() {
-		if create, ok := val.fun.(func() T); ok {
-			val.obj = create()
+		if newFun, ok := val.fun.(func() T); ok {
+			val.obj = newFun()
 		}
-		items[val.key] = val
+		addItem(val)
 	})
 	return val.obj.(T)
+}
+
+func getItem(key string) (*onceItem, bool) {
+	lock.RLock()
+	defer func() {
+		lock.RUnlock()
+	}()
+	val, find := items[key]
+	return val, find
+}
+
+func addItem(item *onceItem) {
+	lock.RLock()
+	defer func() {
+		lock.RUnlock()
+	}()
+	items[item.key] = item
 }

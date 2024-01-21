@@ -32,7 +32,7 @@ func (o *LoadAggregateOptions) Merge(opts ...*LoadAggregateOptions) *LoadAggrega
 // @param ctx 上下文
 // @param tenantId 租户id
 // @param aggregateId 聚合根id
-// @param aggregate 聚合根对象
+// @param agg 聚合根对象
 // @param opts 可选参数
 // @return agg    聚合根对象
 // @return isFound 是否找到

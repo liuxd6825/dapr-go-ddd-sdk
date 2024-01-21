@@ -7,19 +7,19 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
-func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, aggregateId string, eventStoreKey string) (resErr error) {
+func SaveSnapshot(ctx context.Context, tenantId string, aggType string, aggId string, eventStoreKey string) (resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 
-	aggregate, err := NewAggregate(aggregateType)
+	agg, err := NewAggregateByType(aggType)
 	if err != nil {
 		return err
 	}
 
 	req := &dapr.LoadEventsRequest{
 		TenantId:    tenantId,
-		AggregateId: aggregateId,
+		AggregateId: aggId,
 	}
 	resp, err := LoadEvents(ctx, req, eventStoreKey)
 	if err != nil {
@@ -34,7 +34,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 		if err != nil {
 			return err
 		}
-		err = json.Unmarshal(bytes, aggregate)
+		err = json.Unmarshal(bytes, agg)
 		if err != nil {
 			return err
 		}
@@ -44,17 +44,17 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggregateType string, ag
 		sequenceNumber := uint64(0)
 		for _, record := range *resp.EventRecords {
 			sequenceNumber = record.SequenceNumber
-			if err = CallEventHandler(ctx, aggregate, &record); err != nil {
+			if err = CallEventHandler(ctx, agg, &record); err != nil {
 				return err
 			}
 		}
 
 		snapshot := &dapr.SaveSnapshotRequest{
 			TenantId:         tenantId,
-			AggregateData:    aggregate,
-			AggregateId:      aggregateId,
-			AggregateType:    aggregateType,
-			AggregateVersion: aggregate.GetAggregateVersion(),
+			AggregateData:    agg,
+			AggregateId:      aggId,
+			AggregateType:    aggType,
+			AggregateVersion: agg.GetAggregateVersion(),
 			SequenceNumber:   sequenceNumber,
 		}
 		eventStorage, err := GetEventStore(eventStoreKey)

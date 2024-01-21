@@ -2,7 +2,6 @@ package appctx
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 )
 
 type appKey struct {
@@ -28,16 +27,19 @@ func newAppContext(parent context.Context, appId, appName string) context.Contex
 	return newCtx
 }
 
-func GetAppInfo(ctx context.Context) (AppInfo, error) {
+func GetAppInfo(ctx context.Context) (AppInfo, bool) {
+	if ctx == nil {
+		return nil, false
+	}
 	val := ctx.Value(appCtxKey)
 	if val == nil {
-		return nil, errors.New("")
+		return nil, false
 	}
 	appInfo, ok := val.(AppInfo)
 	if !ok {
-		return nil, errors.New("")
+		return nil, false
 	}
-	return appInfo, nil
+	return appInfo, true
 }
 
 func (a *app) GetAppId() string {

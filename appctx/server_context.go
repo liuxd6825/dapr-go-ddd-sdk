@@ -19,6 +19,10 @@ func NewServerContext(parent context.Context, server Server) context.Context {
 }
 
 func GetServer(ctx context.Context) (Server, bool) {
+	if ctx == nil {
+		return nil, false
+	}
+
 	header := ctx.Value(serverKey)
 	if header == nil {
 		return nil, false
