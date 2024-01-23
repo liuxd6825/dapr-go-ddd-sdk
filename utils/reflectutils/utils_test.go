@@ -25,3 +25,7 @@ func TestParseDesc(t *testing.T) {
 	assert.NoError(t, err)
 	t.Logf("%s", desc)
 }
+
+func TestGetTypeName(t *testing.T) {
+
+}

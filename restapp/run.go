@@ -8,6 +8,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
+	"os"
+	"path/filepath"
 )
 
 type RunConfig struct {
@@ -40,7 +42,7 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 
 	envConfig, err := config.GetEnvConfig(env)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
@@ -59,37 +61,55 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 
-	if err := InitApplication(context.Background(), config, eventsFunc(), false, nil); err != nil {
-		return nil, err
+	opt := NewRunOptions(options...)
+	var err error
+
+	runType := RunTypeStart
+	if opt.runType != nil {
+		runType = *opt.runType
 	}
 
-	opt := NewRunOptions(options...)
-	// 是数据库初始化
-	if opt.GetInit() {
-		var err error
+	switch runType {
+	case RunTypeInitDB: // 是数据库初始化
 		if opt.tables != nil {
 			err = InitDb(opt.GetDbKey(), opt.tables, config, opt.GetPrefix())
 		}
 		return nil, err
-	}
-
-	// 是生成数据库脚本
-	if opt.GetSqlFile() != "" {
-		var err error
+	case RunTypeCreateSqlFile: // 是生成数据库脚本
 		if opt.tables != nil {
 			err = InitDbScript(opt.GetDbKey(), opt.tables, config, opt.GetPrefix(), opt.GetSqlFile())
 		}
 		return nil, err
+	case RunTypeStatus: // 查看服务状态
+		status(config)
+		return nil, nil
+	case RunTypeStop:
+		stop(config)
+		return nil, nil
+	default:
+		break
+	}
+
+	//
+	// 启动服务
+	//
+
+	// 启动Dapr服务
+	if err := startDapr(config); err != nil {
+		return nil, err
+	}
+
+	// 初始化应用
+	if err := InitApplication(context.Background(), config, eventsFunc(), false, nil); err != nil {
+		return nil, err
 	}
 
 	daprClient := dapr.GetDaprClient()
-
 	runCfg := &RunConfig{
-		AppId:    config.App.AppId,
-		HttpHost: config.App.HttpHost,
-		HttpPort: config.App.HttpPort,
-		LogLevel: config.Log.level,
-
+		AppId:      config.App.AppId,
+		HttpHost:   config.App.HttpHost,
+		HttpPort:   config.App.HttpPort,
+		LogLevel:   config.Log.level,
 		DaprClient: daprClient,
 		EnvConfig:  config,
 	}
@@ -132,13 +152,30 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		WebRootPath:    webRootPath,
 		EnvConfig:      runCfg.EnvConfig,
 	}
-
 	_envConfig = runCfg.EnvConfig
-
 	// 启动HTTP服务器
 	service := NewHttpServer(runCfg.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {
 		return service, err
 	}
 	return service, nil
+}
+
+var appExeName = ""
+
+// GetAppExcName
+//
+//	@Description: 取应用程序名称
+//	@return string
+func GetAppExcName() string {
+	if appExeName != "" {
+		return appExeName
+	}
+	path, _ := os.Executable()
+	_, name := filepath.Split(path)
+	return name
+}
+
+func SetAppExcName(name string) {
+	appExeName = name
 }

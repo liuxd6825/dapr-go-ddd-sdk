@@ -19,13 +19,13 @@ var (
 // @return string 返回方法名称
 func GetFuncName(skip int) string {
 	pc := make([]uintptr, 1)
-	runtime.Callers(skip+2, pc)
+	runtime.Callers(skip+1, pc)
 	f := runtime.FuncForPC(pc[0])
 	return f.Name()
 }
 
 func GetPackageName(skip int) string {
-	_, filename, _, _ := runtime.Caller(skip + 2)
+	_, filename, _, _ := runtime.Caller(skip + 1)
 	return path.Base(path.Dir(filename))
 }
 

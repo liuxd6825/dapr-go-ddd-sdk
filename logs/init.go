@@ -64,7 +64,7 @@ func Init(saveFile string, level Level, saveDays int, rotationHour int) Logger {
 		logger.SetFormatter(formatter)
 		logger.SetLevel(level)
 		logger.SetReportCaller(false)
-		logger.Infof("ctype=app; logFile=%s", logFile)
+		// logger.Infof("ctype=app; logFile=%s", logFile)
 
 	})
 	return logger

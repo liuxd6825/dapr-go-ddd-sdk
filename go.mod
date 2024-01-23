@@ -36,8 +36,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
 	github.com/redis/go-redis/v9 v9.2.1
 	github.com/snownd/cake v0.6.0
+	github.com/spf13/cobra v1.7.0
 	github.com/tealeg/xlsx v1.0.5
-	go.uber.org/automaxprocs v1.5.3
 	google.golang.org/grpc v1.57.1
 	google.golang.org/protobuf v1.31.0
 )
@@ -79,6 +79,7 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible // indirect
 	github.com/iris-contrib/schema v0.0.6 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
@@ -115,6 +116,7 @@ require (
 	github.com/sanity-io/litter v1.5.5 // indirect
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/swaggo/swag v1.6.5 // indirect
 	github.com/tdewolff/minify/v2 v2.20.6 // indirect
 	github.com/tdewolff/parse/v2 v2.7.4 // indirect

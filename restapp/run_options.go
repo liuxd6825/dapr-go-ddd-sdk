@@ -3,12 +3,14 @@ package restapp
 import "github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 
 type RunOptions struct {
+	runType *RunType
 	tables  *Tables
-	init    *bool
 	sqlFile *string
 	prefix  *string
 	dbKey   *string
 	level   *logs.Level
+	status  *bool
+	stop    *bool
 }
 
 func NewRunOptions(opts ...*RunOptions) *RunOptions {
@@ -19,8 +21,8 @@ func NewRunOptions(opts ...*RunOptions) *RunOptions {
 		if item.tables != nil {
 			o.tables = item.tables
 		}
-		if item.init != nil {
-			o.init = item.init
+		if item.runType != nil {
+			o.runType = item.runType
 		}
 		if item.prefix != nil {
 			o.prefix = item.prefix
@@ -31,19 +33,49 @@ func NewRunOptions(opts ...*RunOptions) *RunOptions {
 		if item.sqlFile != nil {
 			o.sqlFile = item.sqlFile
 		}
+		if item.status != nil {
+			o.status = item.status
+		}
+		if item.stop != nil {
+			o.stop = item.stop
+		}
 	}
 	return o
 }
 
-func (o *RunOptions) GetInit() bool {
-	if o.init == nil {
-		return false
-	}
-	return *o.init
+func (o *RunOptions) SetStatus(v bool) *RunOptions {
+	o.status = &v
+	return o
 }
 
-func (o *RunOptions) SetInit(v bool) *RunOptions {
-	o.init = &v
+func (o *RunOptions) GetStatus() bool {
+	if o.status == nil {
+		return false
+	}
+	return *o.status
+}
+
+func (o *RunOptions) SetStop(v bool) *RunOptions {
+	o.stop = &v
+	return o
+}
+
+func (o *RunOptions) GetStop() bool {
+	if o.stop == nil {
+		return false
+	}
+	return *o.status
+}
+
+func (o *RunOptions) GetRunType() RunType {
+	if o.runType == nil {
+		return *o.runType
+	}
+	return RunTypeStart
+}
+
+func (o *RunOptions) SetInit(v RunType) *RunOptions {
+	o.runType = &v
 	return o
 }
 
@@ -103,9 +135,8 @@ func (o *RunOptions) GetDbKey() string {
 
 func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
 	o.SetPrefix(flag.Prefix)
-	o.SetInit(flag.Init)
 	o.SetDbKey(flag.DbKey)
 	o.SetSqlFile(flag.SqlFile)
-	o.SetLevel(flag.Level)
+	o.runType = &flag.RunType
 	return o
 }

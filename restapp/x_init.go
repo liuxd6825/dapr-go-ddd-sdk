@@ -25,57 +25,62 @@ var (
 
 const SystemTenantId = "system"
 
-func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []RegisterEventType, isTest bool, fun func(cxt context.Context) error) error {
-	if envConfig == nil {
+func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterEventType, isTest bool, fun func(cxt context.Context) error) error {
+	if env == nil {
 		return errors.New("envConfig is null")
 	}
 
-	if len(envConfig.App.HttpHost) == 0 {
-		envConfig.App.HttpHost = "0.0.0.0"
+	if len(env.App.HttpHost) == 0 {
+		env.App.HttpHost = "0.0.0.0"
 	}
+
+	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", env.App.AppId, env.Name))
+	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", env.App.HttpHost, env.App.HttpPort, env.App.RootUrl))
+	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort()))
+	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(env.Dapr.EventStores)))
 
 	// 设置全局时区为本地时区
 	setting.SetLocalTimeZone()
 
-	userlog.Init(envConfig.App.AppId, envConfig.App.AppName)
+	userlog.Init(env.App.AppId, env.App.AppName)
 
 	//设置CPU与内容
-	if err := setCpuMemory(envConfig.Name, &envConfig.App); err != nil {
+	if err := setCpuMemory(env.Name, &env.App); err != nil {
 		return err
 	}
 
-	if err := initMongo(envConfig.App.AppId, envConfig.Mongo); err != nil {
+	if err := initMongo(env.App.AppId, env.Mongo); err != nil {
 		return err
 	}
 
-	if err := initNeo4j(envConfig.Neo4j); err != nil {
+	if err := initNeo4j(env.Neo4j); err != nil {
 		return err
 	}
 
-	if err := initResources(envConfig.Resources); err != nil {
+	if err := initResources(env.Resources); err != nil {
 		return err
 	}
 
-	if err := initMinio(envConfig.Minio); err != nil {
+	if err := initMinio(env.Minio); err != nil {
 		return err
 	}
 
-	if err := initRedis(envConfig.Redis); err != nil {
+	if err := initRedis(env.Redis); err != nil {
 		return err
 	}
 
-	if envConfig.App.AuthToken != "" {
-		DefaultAuthToken = envConfig.App.AuthToken
+	if env.App.AuthToken != "" {
+		DefaultAuthToken = env.App.AuthToken
 	}
 
-	SetEnvConfig(envConfig)
+	SetEnvConfig(env)
 
 	// 启动服务，创建dapr客户端
-	daprClient, err := dapr.NewDaprClient(ctx, envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort(), func(ops *dapr.DaprHttpOptions) {
-		ops.MaxCallRecvMsgSize = intutils.P2IntDefault(envConfig.Dapr.MaxCallRecvMsgSize, dapr.GetMaxCallRecvMsgSize())
-		ops.MaxIdleConns = intutils.P2IntDefault(envConfig.Dapr.MaxIdleConns, dapr.DefaultMaxIdleConns)
-		ops.MaxIdleConnsPerHost = intutils.P2IntDefault(envConfig.Dapr.MaxIdleConnsPerHost, dapr.DefaultMaxIdleConnsPerHost)
-		ops.IdleConnTimeout = intutils.P2IntDefault(envConfig.Dapr.IdleConnTimeout, dapr.DefaultIdleConnTimeout)
+	daprClient, err := dapr.NewDaprClient(ctx, env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort(), func(ops *dapr.DaprHttpOptions) {
+		ops.MaxCallRecvMsgSize = intutils.P2IntDefault(env.Dapr.MaxCallRecvMsgSize, dapr.GetMaxCallRecvMsgSize())
+		ops.MaxIdleConns = intutils.P2IntDefault(env.Dapr.MaxIdleConns, dapr.DefaultMaxIdleConns)
+		ops.MaxIdleConnsPerHost = intutils.P2IntDefault(env.Dapr.MaxIdleConnsPerHost, dapr.DefaultMaxIdleConnsPerHost)
+		ops.IdleConnTimeout = intutils.P2IntDefault(env.Dapr.IdleConnTimeout, dapr.DefaultIdleConnTimeout)
 	})
 
 	if err != nil {
@@ -83,8 +88,8 @@ func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []Reg
 	}
 
 	dapr.SetDaprClient(daprClient)
-	ddd.Init(envConfig.App.AppId)
-	applog.Init(daprClient, envConfig.App.AppId, envConfig.Log.level)
+	ddd.Init(env.App.AppId)
+	applog.Init(daprClient, env.App.AppId, env.Log.level)
 
 	// 注册领域事件类型
 	for _, t := range eventTypes {
@@ -94,7 +99,7 @@ func InitApplication(ctx context.Context, envConfig *EnvConfig, eventTypes []Reg
 	}
 
 	// 注册事件存储器
-	eventStoresMap := newEventStores(&envConfig.Dapr, daprClient)
+	eventStoresMap := newEventStores(&env.Dapr, daprClient)
 	for key, es := range eventStoresMap {
 		ddd.RegisterEventStore(key, es)
 	}

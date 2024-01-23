@@ -1,8 +1,7 @@
 package singleutils
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/runtimeutils"
-	"strings"
+	"reflect"
 	"sync"
 )
 
@@ -14,19 +13,20 @@ type onceItem struct {
 }
 
 var lock sync.RWMutex
-var items = make(map[string]*onceItem)
+var items = make(map[any]*onceItem)
 
-func Create[T any](fun func() T, keys ...string) T {
-	//lock.Lock()
-	//defer lock.Unlock()
+type Options struct {
+	GetFuncSkip int
+}
 
-	key := runtimeutils.GetFuncName(1)
-	if len(keys) > 0 {
-		key = key + "-" + strings.Join(keys, "-")
+type CreateOptions func(opt *Options)
+
+func Create[T any](key string, fun func() T, opts ...CreateOptions) T {
+	opt := &Options{GetFuncSkip: 1}
+	for _, o := range opts {
+		o(opt)
 	}
-
 	val, find := getItem(key)
-
 	if find {
 		return val.obj.(T)
 	}
@@ -37,10 +37,24 @@ func Create[T any](fun func() T, keys ...string) T {
 	val.once.Do(func() {
 		if newFun, ok := val.fun.(func() T); ok {
 			val.obj = newFun()
+			addItem(val)
 		}
-		addItem(val)
 	})
 	return val.obj.(T)
+}
+
+func CreateObj[T any](fun func() T, opts ...CreateOptions) T {
+	var null T
+	key := GetTypeName(null)
+	return Create[T](key, fun, opts...)
+}
+
+func GetTypeName(val any) string {
+	t := reflect.TypeOf(val)
+	if t == nil {
+		panic("val is nil")
+	}
+	return t.PkgPath() + t.String()
 }
 
 func getItem(key string) (*onceItem, bool) {
@@ -53,9 +67,9 @@ func getItem(key string) (*onceItem, bool) {
 }
 
 func addItem(item *onceItem) {
-	lock.RLock()
+	lock.Lock()
 	defer func() {
-		lock.RUnlock()
+		lock.Unlock()
 	}()
 	items[item.key] = item
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -20,10 +19,11 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	Name      string                     `yaml:"-"`
-	App       AppConfig                  `yaml:"app"`
-	Log       LogConfig                  `yaml:"log"`
-	Dapr      DaprConfig                 `yaml:"dapr"`
+	Name string     `yaml:"-"`
+	App  AppConfig  `yaml:"app"`
+	Log  LogConfig  `yaml:"log"`
+	Dapr DaprConfig `yaml:"dapr"`
+
 	Resources map[string]*ResourceConfig `yaml:"resources"`
 	Mongo     map[string]*MongoConfig    `yaml:"mongo"`
 	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j"`
@@ -62,6 +62,17 @@ type DaprConfig struct {
 	IdleConnTimeout     *int                   `yaml:"idleConnTimeout"`
 	EventStores         map[string]*EventStore `yaml:"eventStores"`
 	Actor               ActorConfig            `yaml:"actor"`
+	Server              DaprServerConfig       `yaml:"server"`
+}
+
+// DaprServerConfig dapr服务端参数
+type DaprServerConfig struct {
+	Start                bool   `yaml:"start"` //是否启动Daprd
+	LogLevel             string `yaml:"logLevel"`
+	EnableMetrics        bool   `yaml:"enableMetrics"`
+	Config               string `yaml:"config"`
+	ComponentsPath       string `yaml:"componentsPath"`
+	PlacementHostAddress string `yaml:"placementHostAddress"`
 }
 
 type ActorConfig struct {
@@ -275,10 +286,6 @@ func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
 	}
 
 	if envConfig != nil {
-		log.Infoln(fmt.Sprintf("ctype=app; appId=%s; env=%s;", envConfig.App.AppId, env))
-		log.Infoln(fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", envConfig.App.HttpHost, envConfig.App.HttpPort, envConfig.App.RootUrl))
-		log.Infoln(fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", envConfig.Dapr.GetHost(), envConfig.Dapr.GetHttpPort(), envConfig.Dapr.GetGrpcPort()))
-		log.Infoln(fmt.Sprintf("ctype=eventStores; length=%v;", len(envConfig.Dapr.EventStores)))
 		return envConfig, nil
 	}
 
