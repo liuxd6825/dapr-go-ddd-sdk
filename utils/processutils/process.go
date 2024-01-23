@@ -15,7 +15,7 @@ import (
 
 type Process interface {
 	Start() error
-	Kill() error
+	Kill() (string, error)
 	CheckRunning() (string, error)
 	GetProcessInfo() ([]*ProcessInfo, error)
 }
@@ -72,12 +72,26 @@ func (p *process) init() {
 	p.check = sb.String()
 }
 
-func (p *process) Kill() error {
-	pid, err := p.CheckRunning()
+func (p *process) Kill() (pid string, err error) {
+	defer func() {
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Stop %s %s", p.cmdName, err.Error()))
+		} else if pid == "" {
+			fmt.Println(fmt.Sprintf("Stop %s not found", p.cmdName))
+		} else {
+			fmt.Println(fmt.Sprintf("Stop %s OK PID=%s", p.cmdName, pid))
+		}
+	}()
+
+	pid, err = p.CheckRunning()
 	if err != nil {
-		return nil
+		return pid, err
 	}
-	return p.kill(pid)
+	err = p.kill(pid)
+	if err != nil {
+		return pid, err
+	}
+	return pid, err
 }
 
 func (p *process) kill(pid string) error {

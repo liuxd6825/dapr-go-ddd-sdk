@@ -44,25 +44,16 @@ func stopDapr(env *EnvConfig) error {
 		return nil
 	}
 	p := newDaprProcess(env)
-	err := p.Kill()
-	if err != nil {
-		return err
-	}
-	fmt.Println("Stop Dapr OK")
+	_, _ = p.Kill()
 	return nil
 }
 
 func stopService(env *EnvConfig) error {
-
 	if env == nil {
 		return nil
 	}
 	p := newServiceProcess(env)
-	err := p.Kill()
-	if err != nil {
-		return err
-	}
-	fmt.Println("Stop Service OK")
+	_, _ = p.Kill()
 	return nil
 }
 
