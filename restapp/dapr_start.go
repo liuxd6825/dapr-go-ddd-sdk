@@ -9,17 +9,17 @@ import (
 )
 
 func start(env *EnvConfig) {
-	startDapr(env)
+	_ = startDapr(env)
 }
 
 func status(env *EnvConfig) {
-	statusService(env)
-	statusDapr(env)
+	_, _ = statusService(env)
+	_, _ = statusDapr(env)
 }
 
 func stop(env *EnvConfig) error {
-	stopDapr(env)
-	stopService(env)
+	_ = stopDapr(env)
+	_ = stopService(env)
 	return nil
 }
 
