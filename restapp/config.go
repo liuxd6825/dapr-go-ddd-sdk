@@ -73,6 +73,7 @@ type DaprServerConfig struct {
 	Config               string `yaml:"config"`
 	ComponentsPath       string `yaml:"componentsPath"`
 	PlacementHostAddress string `yaml:"placementHostAddress"`
+	SaveLogFile          string `yaml:"saveLogFile"`
 }
 
 type ActorConfig struct {
@@ -155,11 +156,6 @@ func (e *EnvConfig) Init(name string) error {
 		e.Log.SplitHour = 24
 	}
 	e.Log.level = level
-
-	//初始化日志
-	if err := initLogs(level, e.Log.SaveDays, e.Log.SplitHour); err != nil {
-		return err
-	}
 
 	//初始化Dapr
 	if err := e.Dapr.init(e); err != nil {

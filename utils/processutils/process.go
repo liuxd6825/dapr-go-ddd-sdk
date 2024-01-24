@@ -37,9 +37,9 @@ func NewProcess(cmdName string, args []string, checkArgs ...string) Process {
 
 func (p *process) Start() error {
 	cmd := exec.Command(p.cmdName, p.args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	//cmd.Stdin = os.Stdin
+	//cmd.Stdout = os.Stdout
+	//cmd.Stderr = os.Stderr
 
 	cmdLine := p.cmdName
 	count := len(p.args) / 2

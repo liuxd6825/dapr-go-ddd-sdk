@@ -115,7 +115,6 @@ func initLogs(level logs.Level, saveDays int, rotationHour int) error {
 	if err != nil {
 		return err
 	}
-	//appPath = filepath.Clean(appPath)
 	appPath, err = filepath.Abs(appPath)
 	if err != nil {
 		return err

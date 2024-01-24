@@ -9,7 +9,8 @@ func newStartCmd() *cobra.Command {
 	var stopCmd = &cobra.Command{
 		Use:   "start",
 		Short: "启动",
-		Long:  "启动应用进程与守护进程",
+		Long:  "启动应用进程与dapr守护进程",
+		Args:  cobra.MatchAll(cobra.ExactArgs(0)),
 		Run: func(cmd *cobra.Command, args []string) {
 			runFlag.RunType = restapp.RunTypeStart
 			if err := runFunc(runFlag); err != nil {

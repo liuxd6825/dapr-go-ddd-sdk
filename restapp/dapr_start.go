@@ -13,13 +13,23 @@ func start(env *EnvConfig) {
 }
 
 func status(env *EnvConfig) {
+	fmt.Println("")
 	_, _ = statusService(env)
+
+	fmt.Println("")
 	_, _ = statusDapr(env)
+
+	fmt.Println("")
 }
 
 func stop(env *EnvConfig) error {
+	fmt.Println("")
 	_ = stopDapr(env)
+
+	fmt.Println("")
 	_ = stopService(env)
+
+	fmt.Println("")
 	return nil
 }
 
@@ -97,6 +107,7 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	enableMetrics := strconv.FormatBool(env.Dapr.Server.EnableMetrics)
 	logLevel := env.Dapr.Server.LogLevel
 	placementHostAddress := env.Dapr.Server.PlacementHostAddress
+	saveLogFile := env.Dapr.Server.SaveLogFile
 
 	if strings.HasPrefix(config, "./") {
 		config = path + config[1:]
@@ -111,12 +122,16 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 		"-dapr-http-port", daprHttpPort,
 		"-dapr-grpc-port", daprGrpcPort,
 		"-log-level", logLevel,
-		"-enable-metrics", enableMetrics,
 		"-config", config,
 		"-components-path", componentsPath,
-		"-placement-host-address", placementHostAddress,
+		"-enable-metrics", enableMetrics,
 	}
-
+	if placementHostAddress != "" {
+		args = append(args, "-placement-host-address", placementHostAddress)
+	}
+	if saveLogFile != "" {
+		args = append(args, "-save-log-file", saveLogFile)
+	}
 	p := processutils.NewProcess("daprd", args, appId, appHttpPort, daprGrpcPort)
 	return p
 }

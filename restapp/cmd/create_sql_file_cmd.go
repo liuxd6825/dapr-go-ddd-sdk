@@ -17,6 +17,6 @@ func newCreateSqlFileCmd() *cobra.Command {
 			}
 		},
 	}
-	initCmd.LocalFlags().StringVar(&runFlag.SqlFile, "file", "./init_db.sql", "要生成的初始化脚本文件名")
+	initCmd.LocalFlags().StringVarP(&runFlag.SqlFile, "file", "f", "./init_db.sql", "要生成的初始化脚本文件名")
 	return initCmd
 }

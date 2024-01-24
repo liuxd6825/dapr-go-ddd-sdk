@@ -32,7 +32,8 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
-		panic(err)
+		fmt.Println(fmt.Sprintf("打开配置文件%s时出错，错误:%s", configFile, err.Error()))
+		return nil, err
 	}
 
 	env := config.Env
@@ -42,8 +43,10 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 
 	envConfig, err := config.GetEnvConfig(env)
 	if err != nil {
-		panic(err.Error())
+		fmt.Println(fmt.Sprintf("获取配置环境名称[%s]时出错，错误:%s", env, err.Error()))
+		return nil, err
 	}
+
 	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
 
@@ -84,7 +87,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		status(config)
 		return nil, nil
 	case RunTypeStop:
-		stop(config)
+		_ = stop(config)
 		return nil, nil
 	default:
 		break
@@ -94,13 +97,19 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	// 启动服务
 	//
 
+	//初始化日志
+	if err = initLogs(config.Log.level, config.Log.SaveDays, config.Log.SplitHour); err != nil {
+		fmt.Println(fmt.Sprintf("初始化日志文件时出错，错误:%s", err.Error()))
+		return nil, err
+	}
+
 	// 启动Dapr服务
-	if err := startDapr(config); err != nil {
+	if err = startDapr(config); err != nil {
 		return nil, err
 	}
 
 	// 初始化应用
-	if err := InitApplication(context.Background(), config, eventsFunc(), false, nil); err != nil {
+	if err = InitApplication(context.Background(), config, eventsFunc(), false, nil); err != nil {
 		return nil, err
 	}
 
