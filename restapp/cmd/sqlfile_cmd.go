@@ -7,7 +7,7 @@ import (
 
 func newCreateSqlFileCmd() *cobra.Command {
 	var initCmd = &cobra.Command{
-		Use:   "create-sql-file",
+		Use:   "sql-file",
 		Short: "创建SQLFile",
 		Long:  "生成数据库初始化脚本文件，。",
 		Run: func(cmd *cobra.Command, args []string) {

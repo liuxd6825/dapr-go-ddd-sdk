@@ -42,9 +42,9 @@ func (p *process) Start() error {
 	//cmd.Stderr = os.Stderr
 
 	cmdLine := p.cmdName
-	count := len(p.args) / 2
+	count := len(p.args)
 	for i := 0; i < count; i++ {
-		cmdLine = fmt.Sprintf("%s %s=%s", cmdLine, p.args[i*2], p.args[i*2+1])
+		cmdLine = fmt.Sprintf("%s %s ", cmdLine, p.args[i])
 	}
 
 	logs.Infof(context.Background(), "", nil, cmdLine)

@@ -51,6 +51,7 @@ type HttpServer struct {
 	authToken      string
 	webRootPath    string
 	sdkServer      *http.Server
+	envConfig      *EnvConfig
 }
 
 type OnAppInit func(ctx context2.Context) error
@@ -87,8 +88,8 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		eventTypes:     opts.EventTypes,
 		authToken:      opts.AuthToken,
 		webRootPath:    opts.WebRootPath,
-
-		app: app,
+		envConfig:      opts.EnvConfig,
+		app:            app,
 	}
 
 }
@@ -141,6 +142,7 @@ func (s *HttpServer) Start() error {
 				panic(err.Error())
 			}
 		}
+		fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
 	}); err != nil {
 		return err
 	}

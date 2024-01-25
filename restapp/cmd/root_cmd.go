@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/spf13/cobra"
 )
@@ -36,19 +37,16 @@ func Start(config string, fun func(flag *restapp.RunFlag) error, options ...Opti
 }
 
 func newRootCmd(config string, appTitle string) *cobra.Command {
-	name := restapp.GetAppExcName()
+	name := restapp.GetExeName()
 	var rootCmd = &cobra.Command{
 		Use:   name,
 		Short: appTitle,
 		Long:  appTitle,
 		Run: func(cmd *cobra.Command, args []string) {
-			println("请使用 start, status, stop, init-db, create_sql_file, version, help 命令")
+			fmt.Println("请使用 start, status, stop, init-db, sql-file, version, help 命令")
 		},
 	}
 	rootCmd.PersistentFlags().StringVarP(&runFlag.Config, "config", "c", config, "配置文件名")
 	rootCmd.PersistentFlags().StringVarP(&runFlag.Env, "env", "e", "", "配置文件中定义的env环境名称")
-	/*if err := rootCmd.MarkFlagRequired("env"); err != nil {
-		fmt.Println(err.Error())
-	}*/
 	return rootCmd
 }

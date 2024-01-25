@@ -8,8 +8,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
-	"os"
-	"path/filepath"
 )
 
 type RunConfig struct {
@@ -98,7 +96,7 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	//
 
 	//初始化日志
-	if err = initLogs(config.Log.level, config.Log.SaveDays, config.Log.SplitHour); err != nil {
+	if err = initLogs(config.Log.level, config.Log.SaveDays, config.Log.SplitHour, config.Log.LogFile, config.Log.OutputType); err != nil {
 		fmt.Println(fmt.Sprintf("初始化日志文件时出错，错误:%s", err.Error()))
 		return nil, err
 	}
@@ -123,7 +121,6 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 		EnvConfig:  config,
 	}
 
-	fmt.Printf("---------- %s ----------\r\n", config.App.AppId)
 	return run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
 
@@ -168,23 +165,4 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		return service, err
 	}
 	return service, nil
-}
-
-var appExeName = ""
-
-// GetAppExcName
-//
-//	@Description: 取应用程序名称
-//	@return string
-func GetAppExcName() string {
-	if appExeName != "" {
-		return appExeName
-	}
-	path, _ := os.Executable()
-	_, name := filepath.Split(path)
-	return name
-}
-
-func SetAppExcName(name string) {
-	appExeName = name
 }

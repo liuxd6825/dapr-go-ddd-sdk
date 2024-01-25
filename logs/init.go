@@ -5,6 +5,8 @@ import (
 	"fmt"
 	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/sirupsen/logrus"
+	"io"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -16,6 +18,15 @@ type logHook struct {
 
 type Formatter struct {
 }
+
+// OutputType 输出类型
+type OutputType int
+
+const (
+	OutputTypeConsole OutputType = iota
+	OutputTypeFile
+	OutputTypeAll
+)
 
 var (
 	logger      *logrus.Logger
@@ -43,31 +54,58 @@ func init() {
 //	@param saveDays
 //	@param rotationHour
 //	@return Logger
-func Init(saveFile string, level Level, saveDays int, rotationHour int) Logger {
+func Init(saveFile string, level Level, saveDays int, rotationHour int, outputType OutputType) Logger {
 	once.Do(func() {
 		logrus.SetLevel(level)
 		logrus.SetReportCaller(false)
 		logrus.SetFormatter(formatter)
 
-		logFile := saveFile + ".%Y-%m-%d-%H.log"
-		// 配置日志每隔 1 小时轮转一个新文件，保留最近 30 天的日志文件，多余的自动清理掉。
-		writer, _ := rotatelogs.New(
-			logFile,
-			rotatelogs.WithLinkName(saveFile),
-			rotatelogs.WithMaxAge(time.Duration(24*saveDays)*time.Hour),
-			rotatelogs.WithRotationTime(time.Duration(rotationHour)*time.Hour),
-		)
-
 		logger = logrus.New()
-		logger.Hooks.Add(&logHook{level: level})
-		logger.SetOutput(writer)
 		logger.SetFormatter(formatter)
-		logger.SetLevel(level)
 		logger.SetReportCaller(false)
-		// logger.Infof("ctype=app; logFile=%s", logFile)
+		SetLevel(level)
 
+		switch outputType {
+		case OutputTypeConsole:
+			break
+		case OutputTypeFile:
+			output := newFileWriter(saveFile, saveDays, rotationHour)
+			logger.SetOutput(output)
+		default:
+			output := newFileWriter(saveFile, saveDays, rotationHour)
+			logger.SetOutput(output)
+			logger.Hooks.Add(&logHook{level: level})
+		}
 	})
 	return logger
+}
+
+func newFileWriter(saveFile string, saveDays int, rotationHour int) io.Writer {
+	saveFile = strings.ReplaceAll(saveFile, "___", "")
+	saveFile, _ = filepath.Abs(saveFile)
+	logFile := saveFile + ".%Y-%m-%d-%H.log"
+	// 配置日志每隔 1 小时轮转一个新文件，保留最近 30 天的日志文件，多余的自动清理掉。
+	writer, _ := rotatelogs.New(
+		logFile,
+		rotatelogs.WithLinkName(saveFile),
+		rotatelogs.WithMaxAge(time.Duration(24*saveDays)*time.Hour),
+		rotatelogs.WithRotationTime(time.Duration(rotationHour)*time.Hour),
+	)
+	return writer
+}
+
+func ParseOutputType(val string) (OutputType, error) {
+	val = strings.ToLower(val)
+	switch val {
+	case "console":
+		return OutputTypeConsole, nil
+	case "file":
+		return OutputTypeFile, nil
+	case "all":
+		return OutputTypeAll, nil
+	default:
+		return OutputTypeConsole, nil
+	}
 }
 
 func (h *logHook) Levels() []logrus.Level {

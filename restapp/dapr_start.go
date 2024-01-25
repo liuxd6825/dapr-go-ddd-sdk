@@ -3,9 +3,7 @@ package restapp
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/processutils"
-	"os"
 	"strconv"
-	"strings"
 )
 
 func start(env *EnvConfig) {
@@ -91,13 +89,12 @@ func statusService(env *EnvConfig) ([]*processutils.ProcessInfo, error) {
 }
 
 func newServiceProcess(env *EnvConfig) processutils.Process {
-	exeName := GetAppExcName()
+	exeName := GetExeName()
 	p := processutils.NewProcess(exeName, nil, "start")
 	return p
 }
 
 func newDaprProcess(env *EnvConfig) processutils.Process {
-	path, _ := os.Getwd()
 	appId := env.App.AppId
 	appHttpPort := strconv.FormatInt(int64(env.App.HttpPort), 10)
 	daprHttpPort := strconv.FormatInt(*env.Dapr.HttpPort, 10)
@@ -107,31 +104,22 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	enableMetrics := strconv.FormatBool(env.Dapr.Server.EnableMetrics)
 	logLevel := env.Dapr.Server.LogLevel
 	placementHostAddress := env.Dapr.Server.PlacementHostAddress
-	saveLogFile := env.Dapr.Server.SaveLogFile
-
-	if strings.HasPrefix(config, "./") {
-		config = path + config[1:]
-	}
-	if strings.HasPrefix(componentsPath, "./") {
-		componentsPath = path + componentsPath[1:]
-	}
+	logFile := env.Dapr.Server.LogFile
+	logOutputType := env.Dapr.Server.LogOutputType
 
 	args := []string{
-		"-app-id", appId,
-		"-app-port", appHttpPort,
-		"-dapr-http-port", daprHttpPort,
-		"-dapr-grpc-port", daprGrpcPort,
-		"-log-level", logLevel,
-		"-config", config,
-		"-components-path", componentsPath,
-		"-enable-metrics", enableMetrics,
+		"-app-id=" + appId,
+		"-app-port=" + appHttpPort,
+		"-dapr-http-port=" + daprHttpPort,
+		"-dapr-grpc-port=" + daprGrpcPort,
+		"-log-level=" + logLevel,
+		"-log-output-type=" + logOutputType,
+		"-log-file=" + AbsFileName(logFile),
+		"-enable-metrics=" + enableMetrics,
+		"-config=" + AbsFileName(config),
+		"-components-path=" + AbsFileName(componentsPath),
+		"-placement-host-address=" + placementHostAddress,
 	}
-	if placementHostAddress != "" {
-		args = append(args, "-placement-host-address", placementHostAddress)
-	}
-	if saveLogFile != "" {
-		args = append(args, "-save-log-file", saveLogFile)
-	}
-	p := processutils.NewProcess("daprd", args, appId, appHttpPort, daprGrpcPort)
+	p := processutils.NewProcess("daprd", args, "app-id="+appId, "app-port="+appHttpPort)
 	return p
 }

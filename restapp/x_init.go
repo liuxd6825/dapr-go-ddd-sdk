@@ -12,8 +12,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"os"
-	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"strings"
@@ -89,7 +87,12 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 
 	dapr.SetDaprClient(daprClient)
 	ddd.Init(env.App.AppId)
-	applog.Init(daprClient, env.App.AppId, env.Log.level)
+
+	level, err := logs.ParseLevel(env.Log.Level)
+	if err != nil {
+		return errors.ErrorOf("log.Level is error %s", err)
+	}
+	applog.Init(daprClient, env.App.AppId, level)
 
 	// 注册领域事件类型
 	for _, t := range eventTypes {
@@ -110,19 +113,12 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	return err
 }
 
-func initLogs(level logs.Level, saveDays int, rotationHour int) error {
-	appPath, err := os.Executable()
+func initLogs(level logs.Level, saveDays int, rotationHour int, logFile string, outputType string) error {
+	outType, err := logs.ParseOutputType(outputType)
 	if err != nil {
 		return err
 	}
-	appPath, err = filepath.Abs(appPath)
-	if err != nil {
-		return err
-	}
-
-	dir, appName := filepath.Split(appPath)
-	saveFile := fmt.Sprintf("%s/logs/%s", dir, appName)
-	logs.Init(saveFile, level, saveDays, rotationHour)
+	logs.Init(AbsFileName(logFile), level, saveDays, rotationHour, outType)
 	return nil
 }
 

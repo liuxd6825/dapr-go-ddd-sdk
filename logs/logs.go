@@ -137,6 +137,7 @@ func print(ctx context.Context, tenantId string, fields Fields, args []any, fun 
 func SetLevel(level Level) {
 	loggerLevel = level
 	logger.SetLevel(level)
+	logrus.StandardLogger().SetLevel(level)
 }
 
 // GetLevel returns the logger level.

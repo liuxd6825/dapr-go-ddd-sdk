@@ -68,12 +68,13 @@ type DaprConfig struct {
 // DaprServerConfig dapr服务端参数
 type DaprServerConfig struct {
 	Start                bool   `yaml:"start"` //是否启动Daprd
-	LogLevel             string `yaml:"logLevel"`
 	EnableMetrics        bool   `yaml:"enableMetrics"`
 	Config               string `yaml:"config"`
 	ComponentsPath       string `yaml:"componentsPath"`
 	PlacementHostAddress string `yaml:"placementHostAddress"`
-	SaveLogFile          string `yaml:"saveLogFile"`
+	LogLevel             string `yaml:"logLevel"`
+	LogFile              string `yaml:"logFile"`
+	LogOutputType        string `yaml:"logOutputType"`
 }
 
 type ActorConfig struct {
@@ -89,10 +90,12 @@ type EventStore struct {
 }
 
 type LogConfig struct {
-	Level     string `yaml:"level"`
-	SaveDays  int    `yaml:"saveDays"`  //日志保存的天数
-	SplitHour int    `yaml:"splitHour"` //文件分隔时间，单位小时
-	level     logs.Level
+	Level      string `yaml:"level"`
+	SaveDays   int    `yaml:"saveDays"`  //日志保存的天数
+	SplitHour  int    `yaml:"splitHour"` //文件分隔时间，单位小时
+	LogFile    string `yaml:"logFile"`
+	OutputType string `yaml:"outputType"` // 日志输出类型 console、 file、 all
+	level      logs.Level
 }
 
 func NewConfig() *Config {
@@ -154,6 +157,9 @@ func (e *EnvConfig) Init(name string) error {
 	}
 	if e.Log.SplitHour <= 0 {
 		e.Log.SplitHour = 24
+	}
+	if e.Log.LogFile == "" {
+		e.Log.LogFile = fmt.Sprintf("./logs/%s.log", GetExeName())
 	}
 	e.Log.level = level
 
