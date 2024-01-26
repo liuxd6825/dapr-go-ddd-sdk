@@ -49,13 +49,17 @@ func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc ddd_repository
 			if err = ctx.StartTransaction(); err != nil {
 				return err
 			}
+			var tranErr error
 			// 执行业务
 			if err = dbFunc(ctx); err != nil {
-				err = ctx.AbortTransaction(ctx)
+				tranErr = ctx.AbortTransaction(ctx)
 			} else {
-				err = ctx.CommitTransaction(ctx)
+				tranErr = ctx.CommitTransaction(ctx)
 			}
-			return err
+			if err != nil {
+				return err
+			}
+			return tranErr
 		}
 	})
 	return err

@@ -9,14 +9,12 @@ type ctxHeaderKey struct {
 
 type Header map[string][]string
 
-var headerKey = ctxHeaderKey{}
-
 func NewHeaderContext(pCtx context.Context, header map[string][]string) context.Context {
 	data := Header{}
 	for k, v := range header {
 		data[k] = v
 	}
-	return context.WithValue(pCtx, headerKey, data)
+	return context.WithValue(pCtx, ctxHeaderKey{}, data)
 }
 
 func SetHeaderContext(parent context.Context, header map[string][]string) context.Context {
@@ -30,14 +28,14 @@ func SetHeaderContext(parent context.Context, header map[string][]string) contex
 	if ok {
 		return parent
 	}
-	return context.WithValue(parent, headerKey, header)
+	return context.WithValue(parent, ctxHeaderKey{}, header)
 }
 
 func GetHeader(ctx context.Context) (Header, bool) {
 	if ctx == nil {
 		return nil, false
 	}
-	header := ctx.Value(headerKey)
+	header := ctx.Value(ctxHeaderKey{})
 	mapData, ok := header.(Header)
 	return mapData, ok
 }

@@ -62,7 +62,10 @@ func (a *ApplyEventOptions) SetMetadataFromCtx(ctx context.Context) *ApplyEventO
 		a.metadata = header
 	}
 	if tenantId, ok := appctx.GetTenantId(ctx); ok {
-		a.metadata["tenant_id"] = []string{tenantId}
+		a.metadata["TenantId"] = []string{tenantId}
+	}
+	if auth, ok := appctx.GetAuthToken(ctx); ok {
+		a.metadata[Authorization] = []string{auth.GetToken()}
 	}
 	return a
 }

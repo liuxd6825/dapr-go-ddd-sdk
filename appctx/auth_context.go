@@ -30,7 +30,7 @@ var (
 )
 
 func NewAuthContext(ctx context.Context, token string) (context.Context, error) {
-	tk, err := getToken(token)
+	tk, err := getAuthToken(token)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func NewAuthContext(ctx context.Context, token string) (context.Context, error) 
 }
 
 func SetAuthContext(ctx context.Context, token string) (context.Context, error) {
-	newToken, err := getToken(token)
+	newToken, err := getAuthToken(token)
 	if err != nil {
 		return nil, err
 	}

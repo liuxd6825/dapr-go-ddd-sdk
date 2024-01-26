@@ -44,8 +44,6 @@ type TopicRule struct {
 	priority int `json:"-"`
 }
 
-const Authorization = "Authorization"
-
 // NewSubscribe 新建消息订阅项
 func NewSubscribe(pubsubName string, topic string, route string, metadata map[string]string, handler interface{}) *Subscribe {
 	return &Subscribe{
@@ -160,14 +158,7 @@ func (h *subscribeHandler) newContext(ctx context.Context, record *dapr.EventRec
 	if record == nil {
 		return ctx, nil
 	}
-	newCtx = appctx.SetTenantContext(ctx, record.TenantId)
-	newCtx = appctx.SetHeaderContext(ctx, record.Metadata)
-	if val, ok := record.Metadata[Authorization]; ok {
-		if len(val) > 0 {
-			authorization := val[0]
-			newCtx, err = appctx.SetAuthContext(ctx, authorization)
-		}
-	}
+	newCtx = appctx.SetContext(ctx, record.TenantId, "", record.Metadata)
 	return newCtx, nil
 }
 

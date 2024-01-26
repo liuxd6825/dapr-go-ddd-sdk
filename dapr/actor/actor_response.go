@@ -15,6 +15,11 @@ const (
 	ResponseMessageSuccess = "success"
 )
 
+type Request struct {
+	TenantId string              `json:"tenantId"`
+	Header   map[string][]string `json:"header"`
+}
+
 type Response struct {
 	Status  ResponseStatus `json:"status"`
 	Message string         `json:"message"`

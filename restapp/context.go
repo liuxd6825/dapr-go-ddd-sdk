@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"strings"
 )
 
 type irisServer struct {
@@ -65,23 +66,19 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	// 添加 日志 上下文
 	newCtx = logs.NewContext(pCtx)
 
-	header := make(map[string][]string)
 	if ictx != nil {
-		for k, v := range ictx.Request().Header {
-			header[k] = v
-		}
-		// 添加 Header 上下文
-		newCtx = appctx.NewHeaderContext(newCtx, header)
 		// 添加 ServerHeader 上下文
 		newCtx = appctx.NewServerContext(newCtx, &irisServer{ictx})
-		// 添加 iris.context 上下文
-		newCtx = appctx.NewIrisContext(newCtx, ictx)
 	}
 
 	//添加 租户 上下文
 	if opt.tenantId != nil {
 		newCtx = appctx.NewTenantContext(newCtx, opt.TenantId())
 	}
+
+	// 添加 Header 上下文
+	header := newHeader(ictx)
+	newCtx = appctx.NewHeaderContext(newCtx, header)
 
 	//添加 用户认证 上下文
 	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], opt.CheckAuth())
@@ -90,6 +87,31 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	}
 
 	return newCtx, err
+}
+
+func newHeader(ictx iris.Context) appctx.Header {
+	var header appctx.Header
+	if ictx != nil {
+		header = appctx.Header(ictx.Request().Header)
+	}
+	if header == nil {
+		header = appctx.Header{}
+	}
+
+	isHave := false
+	if val, ok := header[Authorization]; ok {
+		for _, s := range val {
+			if strings.Trim(s, " ") != "" {
+				isHave = true
+				break
+			}
+		}
+	}
+	if !isHave && DefaultAuthToken != "" {
+		header[Authorization] = []string{DefaultAuthToken}
+	}
+
+	return header
 }
 
 func NewAuthTokenContext(parent context.Context, headerValues []string, checkAuth bool) (newCtx context.Context, authToken string, err error) {

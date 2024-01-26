@@ -12,14 +12,16 @@ type AuthToken interface {
 	GetExp() int
 	GetUser() AuthUser
 	GetClientId() string
+	GetToken() string
 	Copy(source AuthToken)
 }
 
 type authToken struct {
-	Sub      string   `json:"sub"`
-	Exp      int      `json:"exp"`
-	User     AuthUser `json:"user"`
-	ClientId string   `json:"client_id"`
+	Sub      string    `json:"sub"`
+	Exp      int       `json:"exp"`
+	User     *authUser `json:"user"`
+	ClientId string    `json:"client_id"`
+	Token    string    `json:"token"`
 }
 
 type authUser struct {
@@ -35,8 +37,8 @@ type authUser struct {
 	TenantName string `json:"tenantName"`
 }
 
-func getToken(jwtText string) (AuthToken, error) {
-	list := strings.Split(jwtText, ".")
+func getAuthToken(tokenStr string) (AuthToken, error) {
+	list := strings.Split(tokenStr, ".")
 	if len(list) != 3 {
 		return nil, errors.New("token格式不正确")
 	}
@@ -46,8 +48,13 @@ func getToken(jwtText string) (AuthToken, error) {
 		return nil, err
 	}
 	err = jsonutils.Unmarshal(bs, &tk)
+	tk.Token = tokenStr
 	return &tk, err
 }
+
+///////////////////////
+//     authToken
+///////////////////////
 
 func newToken() AuthToken {
 	return &authToken{}
@@ -55,7 +62,7 @@ func newToken() AuthToken {
 
 func (u *authToken) Copy(source AuthToken) {
 	u.Exp = source.GetExp()
-	u.User = source.GetUser()
+	u.User = source.GetUser().(*authUser)
 	u.Sub = source.GetSub()
 	u.ClientId = source.GetClientId()
 }
@@ -75,6 +82,14 @@ func (u *authToken) GetUser() AuthUser {
 func (u *authToken) GetClientId() string {
 	return u.ClientId
 }
+
+func (u *authToken) GetToken() string {
+	return u.Token
+}
+
+///////////////////////
+//     authUser
+///////////////////////
 
 func (u *authUser) GetId() string {
 	return u.Id
