@@ -3,7 +3,6 @@ package ddd
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 )
@@ -48,14 +47,12 @@ func NewDomainEvent(record *dapr.EventRecord) (interface{}, error) {
 				err = record.Marshal(event)
 			}
 			if err != nil {
-				_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
 				return nil, err
 			}
 			return event, nil
 		}
 	}
 	err := errors.New(fmt.Sprintf("没有注册的事件类型 %s %s", record.EventType, record.EventVersion))
-	_, _ = applog.Error("", "ddd", "NewDomainEvent", err.Error())
 	return nil, err
 }
 

@@ -3,7 +3,6 @@ package ddd
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -16,27 +15,28 @@ import (
 // @param EventStoreKey 事件存储器key
 // @return resp 响应体
 // @return err 错误
-func LoadEvents(ctx context.Context, req *dapr.LoadEventsRequest, eventStorageKey string) (resp *dapr.LoadEventsResponse, respErr error) {
+func LoadEvents(ctx context.Context, req *dapr.LoadEventsRequest, eventStorageKey string) (resp *dapr.LoadEventsResponse, err error) {
 	defer func() {
-		respErr = errors.GetRecoverError(respErr, recover())
+		err = errors.GetRecoverError(err, recover())
 	}()
 
-	logInfo := &applog.LogInfo{
-		TenantId:  req.TenantId,
-		ClassName: "ddd",
-		FuncName:  "LoadAggregate",
-		Message:   fmt.Sprintf("%v", req),
-		Level:     logs.InfoLevel,
+	fields := logs.Fields{
+		"tenantId":  req.TenantId,
+		"className": "ddd",
+		"funcName":  "LoadAggregate",
+		"message":   fmt.Sprintf("%v", req),
+		"level":     logs.InfoLevel,
 	}
 
-	_ = applog.DoAppLog(ctx, logInfo, func() (interface{}, error) {
+	err = logs.DebugStart(ctx, req.TenantId, fields, func() error {
 		eventStorage, e := GetEventStore(eventStorageKey)
 		if e != nil {
-			resp, respErr = nil, e
-			return nil, respErr
+			resp, err = nil, e
+			return err
 		}
-		resp, respErr = eventStorage.LoadEvent(ctx, req)
-		return resp, respErr
+		resp, err = eventStorage.LoadEvent(ctx, req)
+		return err
 	})
+
 	return
 }

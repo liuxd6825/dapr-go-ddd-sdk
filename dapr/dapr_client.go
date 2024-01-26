@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	daprsdkclient "github.com/liuxd6825/dapr-go-sdk/client"
@@ -196,7 +195,7 @@ func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb 
 	if request != nil {
 		reqBytes, err1 := json.Marshal(request)
 		if err1 != nil {
-			return nil, ddd_utils.NewAppError(appID, err)
+			return nil, NewAppError(appID, err)
 		}
 		content := &daprsdkclient.DataContent{
 			ContentType: "application/json",
@@ -214,12 +213,12 @@ func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb 
 		}, 3, 1)
 	}
 	if err != nil {
-		return nil, ddd_utils.NewAppError(appID, err)
+		return nil, NewAppError(appID, err)
 	}
 	if len(respBytes) > 0 {
 		err = json.Unmarshal(respBytes, response)
 		if err != nil {
-			return nil, ddd_utils.NewAppError(appID, err)
+			return nil, NewAppError(appID, err)
 		}
 		return response, nil
 	}
@@ -265,10 +264,26 @@ func (c *daprClient) CommitEvent(ctx context.Context, req *CommitRequest) (*Comm
 	if out != nil {
 		resp.Headers = NewResponseHeadersNil()
 		resp.Headers.SetStatus(int32(out.Headers.Status))
-		resp.Headers.SetValues(out.Headers.Values)
+		resp.Headers.SetValues(newMapStrings(out.Headers.Values))
 		resp.Headers.SetMessage(out.Headers.Message)
 	}
 	return resp, err
+}
+
+func newPbMapStrings(mapValues map[string][]string) map[string]*pb.Strings {
+	values := make(map[string]*pb.Strings)
+	for k, v := range mapValues {
+		values[k] = &pb.Strings{Values: v}
+	}
+	return values
+}
+
+func newMapStrings(mapValues map[string]*pb.Strings) map[string][]string {
+	values := make(map[string][]string)
+	for k, v := range mapValues {
+		values[k] = v.Values
+	}
+	return values
 }
 
 // RollbackEvent
@@ -289,7 +304,7 @@ func (c *daprClient) RollbackEvent(ctx context.Context, req *RollbackRequest) (*
 	if out != nil {
 		resp.Headers = NewResponseHeadersNil()
 		resp.Headers.SetStatus(int32(out.Headers.Status))
-		resp.Headers.SetValues(out.Headers.Values)
+		resp.Headers.SetValues(newMapStrings(out.Headers.Values))
 		resp.Headers.SetMessage(out.Headers.Message)
 	}
 	return resp, err

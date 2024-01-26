@@ -8,7 +8,7 @@ import (
 )
 
 type RequestHeader struct {
-	Values map[string]string `json:"values"`
+	Values map[string][]string `json:"values"`
 }
 
 type CommitRequest struct {
@@ -76,17 +76,17 @@ type DeleteEventResponse struct {
 }
 
 type EventDto struct {
-	ApplyType    string            `json:"applyType"`
-	EventId      string            `json:"eventId"`
-	CommandId    string            `json:"commandId"`
-	EventData    interface{}       `json:"eventData"`
-	EventType    string            `json:"eventType"`
-	EventVersion string            `json:"eventVersion"`
-	Metadata     map[string]string `json:"metadata"`
-	PubsubName   string            `json:"pubsubName"`
-	Topic        string            `json:"topic"`
-	Relations    map[string]string `json:"relations"` // 聚合关系
-	IsSourcing   bool              `json:"isSourcing"`
+	ApplyType    string              `json:"applyType"`
+	EventId      string              `json:"eventId"`
+	CommandId    string              `json:"commandId"`
+	EventData    interface{}         `json:"eventData"`
+	EventType    string              `json:"eventType"`
+	EventVersion string              `json:"eventVersion"`
+	Metadata     map[string][]string `json:"metadata"`
+	PubsubName   string              `json:"pubsubName"`
+	Topic        string              `json:"topic"`
+	Relations    map[string]string   `json:"relations"` // 聚合关系
+	IsSourcing   bool                `json:"isSourcing"`
 }
 
 type ExistAggregateResponse struct {
@@ -119,6 +119,8 @@ type Snapshot struct {
 	Metadata          map[string]string      `json:"metadata"`
 }
 
+type Metadata map[string][]string
+
 type EventRecord struct {
 	TenantId       string                 `json:"tenantId"`
 	EventId        string                 `json:"eventId"`
@@ -126,6 +128,7 @@ type EventRecord struct {
 	EventType      string                 `json:"eventType"`
 	EventVersion   string                 `json:"eventVersion"`
 	SequenceNumber uint64                 `json:"sequenceNumber"`
+	Metadata       Metadata               `json:"metadata"`
 }
 
 // NewEventRecordByJsonBytes 通过json反序列化EventRecord
@@ -197,9 +200,9 @@ type Relation struct {
 }
 
 type ResponseHeaders struct {
-	Values  map[string]string `json:"values"`
-	Status  ResponseStatus    `json:"status"`
-	Message string            `json:"message"`
+	Values  map[string][]string `json:"values"`
+	Status  ResponseStatus      `json:"status"`
+	Message string              `json:"message"`
 }
 
 type GetEventsRequest struct {
@@ -251,9 +254,9 @@ func NewResponseHeadersNil() *ResponseHeaders {
 	return &ResponseHeaders{}
 }
 
-func NewResponseHeaders(status ResponseStatus, err error, values map[string]string) *ResponseHeaders {
+func NewResponseHeaders(status ResponseStatus, err error, values map[string][]string) *ResponseHeaders {
 	if values == nil {
-		values = make(map[string]string)
+		values = make(map[string][]string)
 	}
 	if err != nil {
 		return NewResponseHeadersError(err, values)
@@ -266,9 +269,9 @@ func NewResponseHeaders(status ResponseStatus, err error, values map[string]stri
 	return resp
 }
 
-func NewResponseHeadersError(err error, values map[string]string) *ResponseHeaders {
+func NewResponseHeadersError(err error, values map[string][]string) *ResponseHeaders {
 	if values == nil {
-		values = make(map[string]string)
+		values = make(map[string][]string)
 	}
 	resp := &ResponseHeaders{
 		Status:  ResponseStatusError,
@@ -292,7 +295,7 @@ func (r *ResponseHeaders) SetStatus(v int32) {
 	r.Status = ResponseStatus(v)
 }
 
-func (r *ResponseHeaders) SetValues(v map[string]string) {
+func (r *ResponseHeaders) SetValues(v map[string][]string) {
 	r.Values = v
 }
 

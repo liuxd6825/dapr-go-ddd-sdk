@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	"fmt"
 )
 
 func GetMessage(e any) (res string, ok bool) {
@@ -19,6 +20,9 @@ func GetMessage(e any) (res string, ok bool) {
 		ok = true
 		err, _ := e.(error)
 		res = err.Error()
+	default:
+		res = fmt.Sprintf("%v", e)
+		ok = true
 	}
 	return res, ok
 }

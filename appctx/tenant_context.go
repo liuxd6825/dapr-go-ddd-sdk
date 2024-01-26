@@ -2,13 +2,30 @@ package appctx
 
 import "context"
 
+type tenantValue struct {
+	tenantId string
+}
 type tenantKey struct {
 }
 
 var tenantCtxKey = tenantKey{}
 
 func NewTenantContext(parent context.Context, tenantId string) context.Context {
-	return context.WithValue(parent, tenantCtxKey, tenantId)
+	tenVal := &tenantValue{tenantId: tenantId}
+	return context.WithValue(parent, tenantCtxKey, tenVal)
+}
+
+func SetTenantContext(parent context.Context, tenantId string) context.Context {
+	var tenVal *tenantValue
+	val := parent.Value(tenantCtxKey)
+	if val != nil {
+		tenVal = val.(*tenantValue)
+		tenVal.tenantId = tenantId
+		return parent
+	}
+
+	tenVal = &tenantValue{tenantId: tenantId}
+	return context.WithValue(parent, tenantCtxKey, tenVal)
 }
 
 // GetTenantId
@@ -25,6 +42,6 @@ func GetTenantId(ctx context.Context) (string, bool) {
 	if val == nil {
 		return "", false
 	}
-	tenantId, ok := val.(string)
-	return tenantId, ok
+	tenVal, ok := val.(*tenantValue)
+	return tenVal.tenantId, ok
 }

@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func newStartCmd() *cobra.Command {
@@ -14,7 +16,8 @@ func newStartCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			runFlag.RunType = restapp.RunTypeStart
 			if err := runFunc(runFlag); err != nil {
-				panic(err)
+				fmt.Println(err.Error())
+				os.Exit(0)
 			}
 		},
 	}

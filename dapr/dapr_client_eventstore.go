@@ -3,16 +3,15 @@ package dapr
 import (
 	"context"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 )
 
 func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "TenantId"); err != nil {
+	if err := IsEmpty(req.TenantId, "TenantId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+	if err := IsEmpty(req.AggregateId, "AggregateId"); err != nil {
 		return nil, err
 	}
 
@@ -35,11 +34,11 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 	}
 
 	if out.Snapshot != nil {
-		aggregateData, err := ddd_utils.NewMapInterface(out.Snapshot.AggregateData)
+		aggregateData, err := NewMapInterface(out.Snapshot.AggregateData)
 		if err != nil {
 			return nil, err
 		}
-		metadata, err := ddd_utils.NewMapString(out.Snapshot.Metadata)
+		metadata, err := NewMapString(out.Snapshot.Metadata)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +55,7 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 	events := make([]EventRecord, 0)
 	if out.Events != nil {
 		for _, item := range out.Events {
-			eventData, err := ddd_utils.NewMapInterface(item.EventData)
+			eventData, err := NewMapInterface(item.EventData)
 			if err != nil {
 				return nil, err
 			}
@@ -76,16 +75,16 @@ func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*L
 
 func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*ApplyEventResponse, error) {
 	errs := errors.NewErrors()
-	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
+	if err := IsEmpty(req.TenantId, "tenantId"); err != nil {
 		errs.AddError(err)
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+	if err := IsEmpty(req.AggregateId, "AggregateId"); err != nil {
 		errs.AddError(err)
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
+	if err := IsEmpty(req.AggregateType, "AggregateType"); err != nil {
 		errs.AddError(err)
 	}
-	if err := ddd_utils.IsEmpty(req.CompName, "CompName"); err != nil {
+	if err := IsEmpty(req.CompName, "CompName"); err != nil {
 		errs.AddError(err)
 	}
 	if req.Events == nil {
@@ -120,23 +119,23 @@ func (c *daprClient) ApplyEvent(ctx context.Context, req *ApplyEventRequest) (*A
 }
 
 func newRequstHeaders(request *RequestHeader) *pb.RequestHeaders {
-	var values map[string]string
+	var values map[string][]string
 	if request == nil {
 		values = request.Values
 	}
 	return &pb.RequestHeaders{
-		Values: values,
+		Values: newPbMapStrings(values),
 	}
 }
 
 /*func (c *daprClient) CreateEvent(ctx context.Context, req *CreateEventRequest) (*CreateEventResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
+	if err := IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+	if err := IsEmpty(req.AggregateId, "AggregateId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
+	if err := IsEmpty(req.AggregateType, "AggregateType"); err != nil {
 		return nil, err
 	}
 	if req.Events == nil {
@@ -165,13 +164,13 @@ func newRequstHeaders(request *RequestHeader) *pb.RequestHeaders {
 }*/
 
 /*func (c *daprClient) DeleteEvent(ctx context.Context, req *DeleteEventRequest) (*DeleteEventResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
+	if err := IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+	if err := IsEmpty(req.AggregateId, "AggregateId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
+	if err := IsEmpty(req.AggregateType, "AggregateType"); err != nil {
 		return nil, err
 	}
 	if req.Event == nil {
@@ -212,30 +211,30 @@ func (c *daprClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
 }
 
 func (c *daprClient) newEvent(e *EventDto) (*pb.EventDto, error) {
-	if err := ddd_utils.IsEmpty(e.CommandId, "CommandId"); err != nil {
+	if err := IsEmpty(e.CommandId, "CommandId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(e.PubsubName, "PubsubName"); err != nil {
+	if err := IsEmpty(e.PubsubName, "PubsubName"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(e.EventType, "EventType"); err != nil {
+	if err := IsEmpty(e.EventType, "EventType"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(e.EventId, "EventId"); err != nil {
+	if err := IsEmpty(e.EventId, "EventId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(e.EventVersion, "EventVersion"); err != nil {
+	if err := IsEmpty(e.EventVersion, "EventVersion"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(e.Topic, "Topic"); err != nil {
+	if err := IsEmpty(e.Topic, "Topic"); err != nil {
 		return nil, err
 	}
-	eventData, err := ddd_utils.ToJson(e.EventData)
+	eventData, err := ToJson(e.EventData)
 	if err != nil {
 		return nil, err
 	}
 
-	metadata, err := ddd_utils.ToJson(e.Metadata)
+	metadata, err := ToJson(e.Metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -257,24 +256,24 @@ func (c *daprClient) newEvent(e *EventDto) (*pb.EventDto, error) {
 }
 
 func (c *daprClient) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (*SaveSnapshotResponse, error) {
-	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
+	if err := IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateId, "AggregateId"); err != nil {
+	if err := IsEmpty(req.AggregateId, "AggregateId"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateType, "AggregateType"); err != nil {
+	if err := IsEmpty(req.AggregateType, "AggregateType"); err != nil {
 		return nil, err
 	}
-	if err := ddd_utils.IsEmpty(req.AggregateVersion, "AggregateVersion"); err != nil {
+	if err := IsEmpty(req.AggregateVersion, "AggregateVersion"); err != nil {
 		return nil, err
 	}
 
-	aggregateData, err := ddd_utils.ToJson(req.AggregateData)
+	aggregateData, err := ToJson(req.AggregateData)
 	if err != nil {
 		return nil, err
 	}
-	metadata, err := ddd_utils.ToJson(req.Metadata)
+	metadata, err := ToJson(req.Metadata)
 	if err != nil {
 		return nil, err
 	}
@@ -431,17 +430,14 @@ func (c *daprClient) newResponseHeaders(out *pb.ResponseHeaders) *ResponseHeader
 		return &ResponseHeaders{
 			Status:  ResponseStatusSuccess,
 			Message: "",
-			Values:  map[string]string{},
+			Values:  make(map[string][]string),
 		}
 	}
 	values := out.Values
-	if values == nil {
-		values = map[string]string{}
-	}
 	res := &ResponseHeaders{
 		Status:  ResponseStatus(out.Status),
 		Message: out.Message,
-		Values:  values,
+		Values:  newMapStrings(values),
 	}
 	return res
 }

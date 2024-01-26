@@ -132,7 +132,7 @@ func (h *logHook) Fire(entry *logrus.Entry) error {
 
 func (f *Formatter) Format(e *logrus.Entry) ([]byte, error) {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf(`{"time":"%s", "level":"%s", `, e.Time.Format("2006-01-02 03:04:05.0000"), e.Level.String()))
+	sb.WriteString(fmt.Sprintf(`{"time":"%s", "level":"%s", `, e.Time.Format("2006-01-02 15:04:05.0000"), e.Level.String()))
 
 	for _, name := range startFields {
 		if val, ok := e.Data[name]; ok {

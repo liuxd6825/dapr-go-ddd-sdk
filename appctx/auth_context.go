@@ -29,12 +29,27 @@ var (
 	authCtxKey      = authKey{}
 )
 
-func NewAuthContext(ctx context.Context, jwtText string) (context.Context, error) {
-	tk, err := getToken(jwtText)
+func NewAuthContext(ctx context.Context, token string) (context.Context, error) {
+	tk, err := getToken(token)
 	if err != nil {
 		return nil, err
 	}
 	return context.WithValue(ctx, authCtxKey, tk), nil
+}
+
+func SetAuthContext(ctx context.Context, token string) (context.Context, error) {
+	newToken, err := getToken(token)
+	if err != nil {
+		return nil, err
+	}
+	val := ctx.Value(authCtxKey)
+	if val != nil {
+		if oldToken, ok := val.(*authToken); ok {
+			oldToken.Copy(newToken)
+			return ctx, nil
+		}
+	}
+	return context.WithValue(ctx, authCtxKey, newToken), nil
 }
 
 func GetAuthUser(ctx context.Context) (AuthUser, bool) {

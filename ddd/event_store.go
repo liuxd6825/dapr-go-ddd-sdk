@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"strings"
 )
 
@@ -87,12 +88,17 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 // @param record
 // @return error
 func CallEventHandler(ctx context.Context, handler interface{}, record *dapr.EventRecord) error {
+	if record == nil {
+		return errors.New("package:ddd; func:CallEventHandler(); error: record is nil")
+	}
+
 	event, err := NewDomainEvent(record)
 	if err != nil {
-		return errors.New("package:ddd; func:NewDomainEvent(); error:%v", err.Error())
+		return errors.New("package:ddd; func:CallEventHandler(); error:%v", err.Error())
 	}
+
 	if err = callEventHandler(ctx, handler, record.TenantId, record.EventType, record.EventVersion, record.EventId, event); err != nil {
-		return errors.New("package:ddd; func:callEventHandler(); error:%v", err.Error())
+		return errors.New("package:ddd; func:CallEventHandler(); error:%v", err.Error())
 	}
 	return nil
 }
@@ -105,7 +111,7 @@ func callEventHandler(ctx context.Context, handler any, tenantId string, eventTy
 	}
 	return logs.DebugStart(ctx, tenantId, fields, func() error {
 		methodName := getEventMethodName(eventType, eventVersion)
-		return CallMethod(handler, methodName, ctx, event)
+		return reflectutils.CallMethod(handler, methodName, ctx, event)
 	})
 }
 

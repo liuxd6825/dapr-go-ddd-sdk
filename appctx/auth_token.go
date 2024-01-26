@@ -12,13 +12,14 @@ type AuthToken interface {
 	GetExp() int
 	GetUser() AuthUser
 	GetClientId() string
+	Copy(source AuthToken)
 }
 
 type authToken struct {
-	Sub      string    `json:"sub"`
-	Exp      int       `json:"exp"`
-	User     *authUser `json:"user"`
-	ClientId string    `json:"client_id"`
+	Sub      string   `json:"sub"`
+	Exp      int      `json:"exp"`
+	User     AuthUser `json:"user"`
+	ClientId string   `json:"client_id"`
 }
 
 type authUser struct {
@@ -50,6 +51,13 @@ func getToken(jwtText string) (AuthToken, error) {
 
 func newToken() AuthToken {
 	return &authToken{}
+}
+
+func (u *authToken) Copy(source AuthToken) {
+	u.Exp = source.GetExp()
+	u.User = source.GetUser()
+	u.Sub = source.GetSub()
+	u.ClientId = source.GetClientId()
 }
 
 func (u *authToken) GetSub() string {

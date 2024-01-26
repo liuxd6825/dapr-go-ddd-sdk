@@ -2,20 +2,23 @@ package ddd
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
+type Metadata = map[string][]string
+
 type ApplyEventOptions struct {
 	pubsubName       *string
 	eventStoreName   *string
-	metadata         map[string]string
+	metadata         Metadata
 	sessionId        *string
 	closeEventSource *bool
 }
 
-func NewApplyEventOptions(metadata map[string]string) *ApplyEventOptions {
+func NewApplyEventOptions(metadata Metadata) *ApplyEventOptions {
 	return &ApplyEventOptions{
 		metadata: metadata,
 	}
@@ -51,6 +54,19 @@ func (a *ApplyEventOptions) Merge(opts ...*ApplyEventOptions) *ApplyEventOptions
 	return a
 }
 
+func (a *ApplyEventOptions) SetMetadataFromCtx(ctx context.Context) *ApplyEventOptions {
+	if ctx == nil {
+		return a
+	}
+	if header, ok := appctx.GetHeader(ctx); ok {
+		a.metadata = header
+	}
+	if tenantId, ok := appctx.GetTenantId(ctx); ok {
+		a.metadata["tenant_id"] = []string{tenantId}
+	}
+	return a
+}
+
 func (a *ApplyEventOptions) SetCloseEventSource(v bool) *ApplyEventOptions {
 	a.closeEventSource = &v
 	return a
@@ -81,12 +97,15 @@ func (a *ApplyEventOptions) GetEventStoreName() string {
 	return ""
 }
 
-func (a *ApplyEventOptions) SetMetadata(value map[string]string) *ApplyEventOptions {
+func (a *ApplyEventOptions) SetMetadata(value Metadata) *ApplyEventOptions {
 	a.metadata = value
 	return a
 }
 
-func (a *ApplyEventOptions) GetMetadata() map[string]string {
+func (a *ApplyEventOptions) GetMetadata() Metadata {
+	if a.metadata == nil {
+		a.metadata = Metadata{}
+	}
 	return a.metadata
 }
 
@@ -159,8 +178,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
 
-	metadata := make(map[string]string)
-	options := NewApplyEventOptionsNil().SetMetadata(metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadataFromCtx(ctx).Merge(opts...)
 
 	for _, event := range events {
 		if err := checkEvent(aggregate, event); err != nil {
@@ -244,7 +262,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 				EventId:      event.GetEventId(),
 				EventVersion: event.GetEventVersion(),
 				EventType:    event.GetEventType(),
-				Metadata:     options.metadata,
+				Metadata:     options.GetMetadata(),
 				PubsubName:   pubsubName,
 				EventData:    event,
 				Relations:    relation,
@@ -301,8 +319,7 @@ func Commit(ctx context.Context, tenantId string, sessionId string, opts ...*App
 		SessionId: sessionId,
 	}
 
-	metadata := make(map[string]string)
-	options := NewApplyEventOptionsNil().SetMetadata(metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadataFromCtx(ctx).Merge(opts...)
 
 	eventStorage, err := GetEventStore(options.GetEventStoreName())
 	if err != nil {
@@ -325,8 +342,7 @@ func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*A
 		SessionId: sessionId,
 	}
 
-	metadata := make(map[string]string)
-	options := NewApplyEventOptionsNil().SetMetadata(metadata).Merge(opts...)
+	options := NewApplyEventOptionsNil().SetMetadataFromCtx(ctx).Merge(opts...)
 
 	eventStorage, err := GetEventStore(options.GetEventStoreName())
 	if err != nil {

@@ -13,15 +13,19 @@ import (
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
 func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
-
 	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
+
 		s.app.Handle("POST", subscribe.Route, func(ictx *context.Context) {
-			ctx, _ := NewContext(ictx)
+			ctx, err := NewContext(ictx, NewContextOptions().SetCheckAuth(false))
+			if err != nil {
+				err = errors.ErrorOf("处理subscribe,调用NewContext()出错。错误:%s", err.Error())
+				SetError(ictx, err)
+			}
 			if err = sh.SubscribeHandler(ctx, ddd.NewSubscribeContext(ictx)); err != nil {
-				ictx.SetErr(err)
+				SetError(ictx, err)
 			}
 		})
 		return err

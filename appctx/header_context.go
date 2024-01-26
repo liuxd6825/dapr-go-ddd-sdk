@@ -11,12 +11,26 @@ type Header map[string][]string
 
 var headerKey = ctxHeaderKey{}
 
-func NewHeaderContext(parent context.Context, metadata Header) context.Context {
-	header := make(Header)
-	for k, v := range metadata {
-		header[k] = v
+func NewHeaderContext(pCtx context.Context, header map[string][]string) context.Context {
+	data := Header{}
+	for k, v := range header {
+		data[k] = v
 	}
-	return context.WithValue(parent, headerKey, metadata)
+	return context.WithValue(pCtx, headerKey, data)
+}
+
+func SetHeaderContext(parent context.Context, header map[string][]string) context.Context {
+	data, ok := GetHeader(parent)
+	if !ok {
+		data = Header{}
+	}
+	for k, v := range header {
+		data[k] = append(data[k], v...)
+	}
+	if ok {
+		return parent
+	}
+	return context.WithValue(parent, headerKey, header)
 }
 
 func GetHeader(ctx context.Context) (Header, bool) {

@@ -240,7 +240,6 @@ func NewRefObj(obj interface{}) *RefObj {
 	}
 
 	o.fieldsValue = reflect.Indirect(reflect.ValueOf(obj))
-
 	return o
 }
 

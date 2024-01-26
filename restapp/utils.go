@@ -11,6 +11,7 @@ var noExtExeName = "" //当前应用的名称(无扩展名)
 var exeName = ""      //当前应用的名称
 var pathName = ""     // 当前应用路径
 var pid = ""          // 当前进程PID
+var envName = ""
 
 func init() {
 	val := int64(os.Getpid())
@@ -19,6 +20,14 @@ func init() {
 	path, _ := os.Executable()
 	pathName, exeName = filepath.Split(path)
 	SetExeName(exeName)
+}
+
+func GetEnvName() string {
+	return envName
+}
+
+func SetEnvName(val string) {
+	envName = val
 }
 
 // GetPID
@@ -62,6 +71,7 @@ func SetExeName(name string) {
 func AbsFileName(val string) string {
 	val = strings.ReplaceAll(val, "${AppName}", GetExeName())
 	val = strings.ReplaceAll(val, "${PID}", GetPID())
+	val = strings.ReplaceAll(val, "${EnvName}", GetEnvName())
 	val, _ = filepath.Abs(val)
 	return val
 }

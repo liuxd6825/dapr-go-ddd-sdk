@@ -3,7 +3,9 @@ package ddd
 import (
 	"context"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
@@ -42,6 +44,8 @@ type TopicRule struct {
 	priority int `json:"-"`
 }
 
+const Authorization = "Authorization"
+
 // NewSubscribe 新建消息订阅项
 func NewSubscribe(pubsubName string, topic string, route string, metadata map[string]string, handler interface{}) *Subscribe {
 	return &Subscribe{
@@ -63,10 +67,15 @@ type SubscribeContext interface {
 	GetBody() ([]byte, error)
 	SetErr(err error)
 	GetRequestURI() string
+	GetHeader() map[string][]string
 }
 
 type subscribeContext struct {
 	ictx iris.Context
+}
+
+func (s *subscribeContext) GetHeader() map[string][]string {
+	return s.ictx.Request().Header
 }
 
 type SubscribeInterceptor interface {
@@ -117,6 +126,7 @@ func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeC
 		"logFunc":    "SubscribeHandler",
 		"requestUri": sctx.GetRequestURI(),
 	}
+
 	err := logs.DebugStart(ctx, "", fields, func() error {
 		cancel, err := h.interceptor(ctx, sctx)
 		if cancel || err != nil {
@@ -126,20 +136,39 @@ func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeC
 		if err != nil {
 			return err
 		}
-
 		result, err := dapr.NewEventRecordByJsonBytes(data)
 		if err != nil {
 			return err
 		}
 
 		record := result.GetEventRecord()
-		err = CallEventHandler(ctx, h.queryEventHandler, record)
+		newCtx, err := h.newContext(ctx, record)
+		if err != nil {
+			return errors.New("subscribeHandler.newContext(); error:%s;", err.Error())
+		}
+		err = CallEventHandler(newCtx, h.queryEventHandler, record)
+
 		return err
 	})
 	if err != nil {
 		sctx.SetErr(err)
 	}
 	return err
+}
+
+func (h *subscribeHandler) newContext(ctx context.Context, record *dapr.EventRecord) (newCtx context.Context, err error) {
+	if record == nil {
+		return ctx, nil
+	}
+	newCtx = appctx.SetTenantContext(ctx, record.TenantId)
+	newCtx = appctx.SetHeaderContext(ctx, record.Metadata)
+	if val, ok := record.Metadata[Authorization]; ok {
+		if len(val) > 0 {
+			authorization := val[0]
+			newCtx, err = appctx.SetAuthContext(ctx, authorization)
+		}
+	}
+	return newCtx, nil
 }
 
 // interceptor

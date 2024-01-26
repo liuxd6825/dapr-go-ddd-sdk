@@ -24,10 +24,11 @@ type RegisterHandler interface {
 	RegisterHandler(app *iris.Application)
 }
 
-func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterSubscribe,
+func RunWithConfig(envName string, configFile string, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
 	options ...*RunOptions) (common.Service, error) {
 
+	SetEnvName(envName)
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("打开配置文件%s时出错，错误:%s", configFile, err.Error()))
@@ -35,8 +36,8 @@ func RunWithConfig(setEnv string, configFile string, subsFunc func() []RegisterS
 	}
 
 	env := config.Env
-	if len(setEnv) > 0 {
-		env = setEnv
+	if len(envName) > 0 {
+		env = envName
 	}
 
 	envConfig, err := config.GetEnvConfig(env)

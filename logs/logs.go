@@ -27,6 +27,7 @@ type Logger interface {
 	Error(args ...interface{})
 	Panic(args ...interface{})
 	Fatal(args ...interface{})
+
 	Tracef(format string, args ...interface{})
 	Debugf(format string, args ...interface{})
 	Printf(format string, args ...interface{})
@@ -36,6 +37,7 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 	Panicf(format string, args ...interface{})
 	Fatalf(format string, args ...interface{})
+
 	Traceln(args ...interface{})
 	Debugln(args ...interface{})
 	Println(args ...interface{})
@@ -43,6 +45,7 @@ type Logger interface {
 	Warnln(args ...interface{})
 	Warningln(args ...interface{})
 	Errorln(args ...interface{})
+
 	Panicln(args ...interface{})
 	Fatalln(args ...interface{})
 }
@@ -175,6 +178,12 @@ func Debug(ctx context.Context, tenantId string, fields Fields) {
 	})
 }
 
+func DebugMsg(ctx context.Context, tenantId string, args ...any) {
+	write(ctx, tenantId, nil, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
+		l.Debug(args...)
+	})
+}
+
 func Debugf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
 	write(ctx, tenantId, fields, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Debugf(fmt, args...)
@@ -207,6 +216,12 @@ func Infof(ctx context.Context, tenantId string, fields Fields, fmt string, args
 	})
 }
 
+func InfoMsg(ctx context.Context, tenantId string, args ...any) {
+	write(ctx, tenantId, nil, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
+		l.Info(args...)
+	})
+}
+
 func Warn(ctx context.Context, tenantId string, fields Fields) {
 	write(ctx, tenantId, fields, WarnLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Warn()
@@ -216,6 +231,12 @@ func Warn(ctx context.Context, tenantId string, fields Fields) {
 func Warnf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
 	write(ctx, tenantId, fields, WarnLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Infof(fmt, args...)
+	})
+}
+
+func WarnMsg(ctx context.Context, tenantId string, args ...any) {
+	write(ctx, tenantId, nil, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+		l.Warn(args...)
 	})
 }
 
@@ -255,6 +276,12 @@ func Errorfmt(ctx context.Context, tenantId string, fmt string, args ...interfac
 	})
 }
 
+func ErrorMsg(ctx context.Context, tenantId string, args ...any) {
+	write(ctx, tenantId, nil, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+		l.Error(args...)
+	})
+}
+
 func Panic(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
 	write(ctx, tenantId, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panic(args...)
@@ -275,6 +302,12 @@ func PanicError(ctx context.Context, tenantId string, err error) {
 
 func Fatal(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
 	write(ctx, tenantId, fields, FatalLevel, args, func(ctx context.Context, l Logger, args ...any) {
+		l.Panic(args...)
+	})
+}
+
+func FatalMsg(ctx context.Context, tenantId string, args ...interface{}) {
+	write(ctx, tenantId, nil, FatalLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panic(args...)
 	})
 }

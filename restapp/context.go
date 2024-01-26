@@ -84,7 +84,7 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	}
 
 	//添加 用户认证 上下文
-	newCtx, _, err = newAuthTokenContext(newCtx, header[Authorization], opt.CheckAuth())
+	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], opt.CheckAuth())
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	return newCtx, err
 }
 
-func newAuthTokenContext(parent context.Context, headerValues []string, checkAuth bool) (newCtx context.Context, authToken string, err error) {
+func NewAuthTokenContext(parent context.Context, headerValues []string, checkAuth bool) (newCtx context.Context, authToken string, err error) {
 	token := ""
 	for _, v := range headerValues {
 		if len(v) > 0 {

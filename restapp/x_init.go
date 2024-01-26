@@ -153,7 +153,7 @@ func setCpuMemory(envName string, config *AppConfig) error {
 			logs.Panic(ctx, "", fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
 			return err
 		} else {
-			logs.Info(ctx, "", fields, "ctype=app; memory=%s; ", envName, memTxt)
+			logs.Info(ctx, "", fields, "ctype=app; memory=%s; ", memTxt)
 		}
 	}
 
