@@ -1,8 +1,12 @@
 package restapp
 
 import (
+	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/processutils"
+	"os"
 	"strconv"
 )
 
@@ -99,12 +103,12 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	appHttpPort := strconv.FormatInt(int64(env.App.HttpPort), 10)
 	daprHttpPort := strconv.FormatInt(*env.Dapr.HttpPort, 10)
 	daprGrpcPort := strconv.FormatInt(*env.Dapr.GrpcPort, 10)
-	config := env.Dapr.Server.Config
-	componentsPath := env.Dapr.Server.ComponentsPath
+	config := AbsFileName(env.Dapr.Server.Config)
+	componentsPath := AbsFileName(env.Dapr.Server.ComponentsPath)
+	logFile := AbsFileName(env.Dapr.Server.LogFile)
 	enableMetrics := strconv.FormatBool(env.Dapr.Server.EnableMetrics)
 	logLevel := env.Dapr.Server.LogLevel
 	placementHostAddress := env.Dapr.Server.PlacementHostAddress
-	logFile := env.Dapr.Server.LogFile
 	logOutputType := env.Dapr.Server.LogOutputType
 
 	args := []string{
@@ -114,12 +118,27 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 		"-dapr-grpc-port=" + daprGrpcPort,
 		"-log-level=" + logLevel,
 		"-log-output-type=" + logOutputType,
-		"-log-file=" + AbsFileName(logFile),
+		"-log-file=" + logFile,
 		"-enable-metrics=" + enableMetrics,
-		"-config=" + AbsFileName(config),
-		"-components-path=" + AbsFileName(componentsPath),
+		"-config=" + config,
+		"-components-path=" + componentsPath,
 		"-placement-host-address=" + placementHostAddress,
 	}
+
+	ctx := context.Background()
+	errCount := 0
+	if !fileutils.IsExist(config) {
+		logs.Errorf(ctx, "", nil, "dapr -config=%s not exist", config)
+		errCount++
+	}
+	if !fileutils.IsExist(componentsPath) {
+		logs.Errorf(ctx, "", nil, "dapr -components-path=%s not exist", config)
+		errCount++
+	}
+	if errCount != 0 {
+		os.Exit(0)
+	}
+
 	p := processutils.NewProcess("daprd", args, "app-id="+appId, "app-port="+appHttpPort)
 	return p
 }

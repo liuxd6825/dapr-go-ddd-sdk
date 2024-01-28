@@ -29,6 +29,7 @@ require (
 require (
 	github.com/allegro/bigcache v1.2.1
 	github.com/dop251/goja v0.0.0-20231027120936-b396bb4c349d
+	github.com/fmorenovr/gotry v0.0.0-20190819174022-76e4fe5fe9d6
 	github.com/iris-contrib/httpexpect/v2 v2.12.1
 	github.com/json-iterator/go v1.1.12
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
@@ -82,6 +83,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iris-contrib/go.uuid v2.0.0+incompatible // indirect
 	github.com/iris-contrib/schema v0.0.6 // indirect
+	github.com/jenazads/gotry v0.0.0-20190819174022-76e4fe5fe9d6 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect

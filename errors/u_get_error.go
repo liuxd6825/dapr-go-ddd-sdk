@@ -46,6 +46,14 @@ func GetError(re any) (err error) {
 	return
 }
 
+type anyError struct {
+	sourceErr any
+}
+
+func (e *anyError) Error() string {
+	return fmt.Sprintf("%v", e.sourceErr)
+}
+
 func GetRecoverError(err error, rerr any) (resErr error) {
 	if err != nil {
 		return err
@@ -62,6 +70,10 @@ func GetRecoverError(err error, rerr any) (resErr error) {
 				if e, ok := rerr.(error); ok {
 					resErr = e
 				}
+			}
+		default:
+			{
+				return &anyError{sourceErr: rerr}
 			}
 		}
 	}

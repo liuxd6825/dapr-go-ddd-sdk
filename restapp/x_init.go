@@ -140,7 +140,7 @@ func setCpuMemory(envName string, config *AppConfig) error {
 	if config.CPU != nil {
 		cpu, err := setCpu(*config.CPU)
 		if err != nil {
-			logs.Panic(ctx, "", fields, "ctype=app; cpu=%v; error=%s ", envName, cpu, err.Error())
+			logs.Errorf(ctx, "", fields, "ctype=app; cpu=%v; error=%s ", envName, cpu, err.Error())
 			return err
 		} else {
 			logs.Infof(ctx, "", fields, "ctype=app; cpu=%v;", cpu)
@@ -150,10 +150,10 @@ func setCpuMemory(envName string, config *AppConfig) error {
 	if config.Memory != nil {
 		memTxt, err := setMem(*config.Memory)
 		if err != nil {
-			logs.Panic(ctx, "", fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
+			logs.Errorf(ctx, "", fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
 			return err
 		} else {
-			logs.Info(ctx, "", fields, "ctype=app; memory=%s; ", memTxt)
+			logs.Infof(ctx, "", fields, "ctype=app; memory=%s; ", memTxt)
 		}
 	}
 
@@ -244,8 +244,16 @@ func GetEnvConfig() *EnvConfig {
 	return _envConfig
 }
 
-func SetEnvConfig(envConfig *EnvConfig) *EnvConfig {
-	return _envConfig
+func SetEnvConfig(envConfig *EnvConfig) {
+	_envConfig = envConfig
+	if envConfig != nil {
+		SetEnvName(envConfig.Name)
+
+		envConfig.Log.LogFile = AbsFileName(envConfig.Log.LogFile)
+		envConfig.Dapr.Server.Config = AbsFileName(envConfig.Dapr.Server.Config)
+		envConfig.Dapr.Server.LogFile = AbsFileName(envConfig.Dapr.Server.LogFile)
+		envConfig.Dapr.Server.ComponentsPath = AbsFileName(envConfig.Dapr.Server.ComponentsPath)
+	}
 }
 
 func GetDaprHost() string {

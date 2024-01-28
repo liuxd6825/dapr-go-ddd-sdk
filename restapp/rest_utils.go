@@ -77,6 +77,13 @@ func SetError(ctx context.Context, err error) {
 	if ictx == nil {
 		return
 	}
+	setResponseError(ictx, err)
+}
+
+func setResponseError(ictx iris.Context, err error) {
+	if ictx == nil {
+		return
+	}
 	switch err.(type) {
 	case *errors.NullError:
 		_ = SetErrorNotFond(ictx)

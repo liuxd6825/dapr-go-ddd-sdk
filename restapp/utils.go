@@ -22,6 +22,10 @@ func init() {
 	SetExeName(exeName)
 }
 
+func GetPathName() string {
+	return pathName
+}
+
 func GetEnvName() string {
 	return envName
 }
@@ -69,6 +73,9 @@ func SetExeName(name string) {
 //	@param val
 //	@return string
 func AbsFileName(val string) string {
+	if val == "" {
+		return ""
+	}
 	val = strings.ReplaceAll(val, "${AppName}", GetExeName())
 	val = strings.ReplaceAll(val, "${PID}", GetPID())
 	val = strings.ReplaceAll(val, "${EnvName}", GetEnvName())

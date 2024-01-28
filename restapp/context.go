@@ -69,6 +69,7 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	if ictx != nil {
 		// 添加 ServerHeader 上下文
 		newCtx = appctx.NewServerContext(newCtx, &irisServer{ictx})
+		newCtx = appctx.NewIrisContext(newCtx, ictx)
 	}
 
 	//添加 租户 上下文

@@ -19,82 +19,82 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	Name string     `yaml:"-"`
-	App  AppConfig  `yaml:"app"`
-	Log  LogConfig  `yaml:"log"`
-	Dapr DaprConfig `yaml:"dapr"`
+	Name string     `yaml:"-" json:"name"`
+	App  AppConfig  `yaml:"app" json:"app"`
+	Log  LogConfig  `yaml:"log" json:"log"`
+	Dapr DaprConfig `yaml:"dapr" json:"dapr"`
 
-	Resources map[string]*ResourceConfig `yaml:"resources"`
-	Mongo     map[string]*MongoConfig    `yaml:"mongo"`
-	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j"`
-	Mysql     map[string]*MySqlConfig    `yaml:"mysql"`
-	Minio     map[string]*MinioConfig    `yaml:"minio"`
-	Redis     map[string]*RedisConfig    `yaml:"redis"`
+	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
+	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
+	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
+	Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
+	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
+	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
 }
 
 type AppConfig struct {
-	AppId     string            `yaml:"id"`
-	AppName   string            `yaml:"name"`
-	HttpHost  string            `yaml:"httpHost"`
-	HttpPort  int               `yaml:"httpPort"`
-	RootUrl   string            `yaml:"rootUrl"`
-	CPU       *int              `yaml:"cpu"`
-	Memory    *string           `yaml:"memory"`
-	Values    map[string]string `yaml:"values"`
-	AuthToken string            `yaml:"authToken"`
+	AppId     string            `yaml:"id" json:"id"`
+	AppName   string            `yaml:"name" json:"name"`
+	HttpHost  string            `yaml:"httpHost" json:"httpHost"`
+	HttpPort  int               `yaml:"httpPort" json:"httpPort"`
+	RootUrl   string            `yaml:"rootUrl" json:"rootUrl"`
+	CPU       *int              `yaml:"cpu" json:"cpu"`
+	Memory    *string           `yaml:"memory" json:"memory"`
+	Values    map[string]string `yaml:"values" json:"values"`
+	AuthToken string            `yaml:"authToken" json:"authToken"`
 }
 
 type ResourceConfig struct {
-	Namespace string            `yaml:"namespace"`
-	Name      string            `yaml:"name"`
-	Type      string            `yaml:"type"`
-	URI       string            `yaml:"uri"`
-	Metadata  map[string]string `yaml:"metadata"`
+	Namespace string            `yaml:"namespace" json:"namespace"`
+	Name      string            `yaml:"name" json:"name"`
+	Type      string            `yaml:"type" json:"type"`
+	URI       string            `yaml:"uri" json:"uri"`
+	Metadata  map[string]string `yaml:"metadata" json:"metadata"`
 }
 
 type DaprConfig struct {
-	Host                *string                `yaml:"host"`
-	HttpPort            *int64                 `yaml:"httpPort"`
-	GrpcPort            *int64                 `yaml:"grpcPort"`
-	MaxCallRecvMsgSize  *int                   `yaml:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
-	MaxIdleConns        *int                   `yaml:"maxIdleConns"`
-	MaxIdleConnsPerHost *int                   `yaml:"maxIdleConnsPerHost"`
-	IdleConnTimeout     *int                   `yaml:"idleConnTimeout"`
-	EventStores         map[string]*EventStore `yaml:"eventStores"`
-	Actor               ActorConfig            `yaml:"actor"`
-	Server              DaprServerConfig       `yaml:"server"`
+	Host                *string                `yaml:"host" json:"host"`
+	HttpPort            *int64                 `yaml:"httpPort" json:"httpPort"`
+	GrpcPort            *int64                 `yaml:"grpcPort" json:"grpcPort"`
+	MaxCallRecvMsgSize  *int                   `yaml:"maxCallRecvMsgSize" json:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
+	MaxIdleConns        *int                   `yaml:"maxIdleConns" json:"maxIdleConns"`
+	MaxIdleConnsPerHost *int                   `yaml:"maxIdleConnsPerHost" json:"maxIdleConnsPerHost"`
+	IdleConnTimeout     *int                   `yaml:"idleConnTimeout" json:"idleConnTimeout"`
+	EventStores         map[string]*EventStore `yaml:"eventStores" json:"eventStores"`
+	Actor               ActorConfig            `yaml:"actor" json:"actor"`
+	Server              DaprServerConfig       `yaml:"server" json:"server"`
 }
 
 // DaprServerConfig dapr服务端参数
 type DaprServerConfig struct {
-	Start                bool   `yaml:"start"` //是否启动Daprd
-	EnableMetrics        bool   `yaml:"enableMetrics"`
-	Config               string `yaml:"config"`
-	ComponentsPath       string `yaml:"componentsPath"`
-	PlacementHostAddress string `yaml:"placementHostAddress"`
-	LogLevel             string `yaml:"logLevel"`
-	LogFile              string `yaml:"logFile"`
-	LogOutputType        string `yaml:"logOutputType"`
+	Start                bool   `yaml:"start" json:"start"` //是否启动Daprd
+	EnableMetrics        bool   `yaml:"enableMetrics" json:"enableMetrics"`
+	Config               string `yaml:"config" json:"config"`
+	ComponentsPath       string `yaml:"componentsPath" json:"componentsPath"`
+	PlacementHostAddress string `yaml:"placementHostAddress" json:"placementHostAddress"`
+	LogLevel             string `yaml:"logLevel" json:"logLevel"`
+	LogFile              string `yaml:"logFile" json:"logFile"`
+	LogOutputType        string `yaml:"logOutputType" json:"logOutputType"`
 }
 
 type ActorConfig struct {
-	ActorIdleTimeout       string `yaml:"actorIdleTimeout"`
-	ActorScanInterval      string `yaml:"actorScanInterval"`
-	DrainOngingCallTimeout string `yaml:"drainOngoingCallTimeout"`
-	DrainBalancedActors    bool   `yaml:"drainRebalancedActors"`
+	ActorIdleTimeout       string `yaml:"actorIdleTimeout" json:"actorIdleTimeout"`
+	ActorScanInterval      string `yaml:"actorScanInterval" json:"actorScanInterval"`
+	DrainOngingCallTimeout string `yaml:"drainOngoingCallTimeout" json:"drainOngingCallTimeout"`
+	DrainBalancedActors    bool   `yaml:"drainRebalancedActors" json:"drainBalancedActors"`
 }
 
 type EventStore struct {
-	CompName   string `yaml:"name"`   // Dapr EventStarge 组件名称
-	PubsubName string `yaml:"pubsub"` // Dapr Pubsub 组件名称
+	CompName   string `yaml:"name" json:"name"`     // Dapr EventStarge 组件名称
+	PubsubName string `yaml:"pubsub" json:"pubsub"` // Dapr Pubsub 组件名称
 }
 
 type LogConfig struct {
-	Level      string `yaml:"level"`
-	SaveDays   int    `yaml:"saveDays"`  //日志保存的天数
-	SplitHour  int    `yaml:"splitHour"` //文件分隔时间，单位小时
-	LogFile    string `yaml:"logFile"`
-	OutputType string `yaml:"outputType"` // 日志输出类型 console、 file、 all
+	Level      string `yaml:"level" json:"level"`
+	SaveDays   int    `yaml:"saveDays" json:"saveDays"`   //日志保存的天数
+	SplitHour  int    `yaml:"splitHour" json:"splitHour"` //文件分隔时间，单位小时
+	LogFile    string `yaml:"logFile" json:"logFile"`
+	OutputType string `yaml:"outputType" json:"outputType"` // 日志输出类型 console、 file、 all
 	level      logs.Level
 }
 

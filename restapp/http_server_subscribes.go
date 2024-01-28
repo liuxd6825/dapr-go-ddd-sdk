@@ -23,6 +23,7 @@ func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, query
 			if err != nil {
 				err = errors.ErrorOf("处理subscribe,调用NewContext()出错。错误:%s", err.Error())
 				SetError(ictx, err)
+				return
 			}
 			if err = sh.SubscribeHandler(ctx, ddd.NewSubscribeContext(ictx)); err != nil {
 				SetError(ictx, err)

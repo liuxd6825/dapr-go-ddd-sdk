@@ -6,6 +6,8 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 )
@@ -28,21 +30,20 @@ func RunWithConfig(envName string, configFile string, subsFunc func() []Register
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
 	options ...*RunOptions) (common.Service, error) {
 
-	SetEnvName(envName)
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
 		fmt.Println(fmt.Sprintf("打开配置文件%s时出错，错误:%s", configFile, err.Error()))
 		return nil, err
 	}
 
-	env := config.Env
+	eName := config.Env
 	if len(envName) > 0 {
-		env = envName
+		eName = envName
 	}
 
-	envConfig, err := config.GetEnvConfig(env)
+	envConfig, err := config.GetEnvConfig(eName)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("获取配置环境名称[%s]时出错，错误:%s", env, err.Error()))
+		fmt.Println(fmt.Sprintf("获取配置环境名称[%s]时出错，错误:%s", eName, err.Error()))
 		return nil, err
 	}
 
@@ -60,8 +61,18 @@ func RunWithConfig(envName string, configFile string, subsFunc func() []Register
 //	@param options 启动参数， 可以根据参数启动服务，初始化数据库，生成数据库脚本等
 //	@return common.Service 服务
 //	@return error  错误
-func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
+func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
+
+	ctx := context.Background()
+	SetEnvConfig(envConfig)
+	logs.Infof(ctx, "", nil, "env config: %s", func() any {
+		jsonText, err := jsonutils.Marshal(envConfig)
+		if err != nil {
+			return err.Error()
+		}
+		return jsonText
+	})
 
 	opt := NewRunOptions(options...)
 	var err error
@@ -74,19 +85,19 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	switch runType {
 	case RunTypeInitDB: // 是数据库初始化
 		if opt.tables != nil {
-			err = InitDb(opt.GetDbKey(), opt.tables, config, opt.GetPrefix())
+			err = InitDb(opt.GetDbKey(), opt.tables, envConfig, opt.GetPrefix())
 		}
 		return nil, err
 	case RunTypeCreateSqlFile: // 是生成数据库脚本
 		if opt.tables != nil {
-			err = InitDbScript(opt.GetDbKey(), opt.tables, config, opt.GetPrefix(), opt.GetSqlFile())
+			err = InitDbScript(opt.GetDbKey(), opt.tables, envConfig, opt.GetPrefix(), opt.GetSqlFile())
 		}
 		return nil, err
 	case RunTypeStatus: // 查看服务状态
-		status(config)
+		status(envConfig)
 		return nil, nil
 	case RunTypeStop:
-		_ = stop(config)
+		_ = stop(envConfig)
 		return nil, nil
 	default:
 		break
@@ -97,32 +108,32 @@ func RubWithEnvConfig(config *EnvConfig, subsFunc func() []RegisterSubscribe,
 	//
 
 	//初始化日志
-	if err = initLogs(config.Log.level, config.Log.SaveDays, config.Log.SplitHour, config.Log.LogFile, config.Log.OutputType); err != nil {
+	if err = initLogs(envConfig.Log.level, envConfig.Log.SaveDays, envConfig.Log.SplitHour, envConfig.Log.LogFile, envConfig.Log.OutputType); err != nil {
 		fmt.Println(fmt.Sprintf("初始化日志文件时出错，错误:%s", err.Error()))
 		return nil, err
 	}
 
 	// 启动Dapr服务
-	if err = startDapr(config); err != nil {
+	if err = startDapr(envConfig); err != nil {
 		return nil, err
 	}
 
 	// 初始化应用
-	if err = InitApplication(context.Background(), config, eventsFunc(), false, nil); err != nil {
+	if err = InitApplication(context.Background(), envConfig, eventsFunc(), false, nil); err != nil {
 		return nil, err
 	}
 
 	daprClient := dapr.GetDaprClient()
 	runCfg := &RunConfig{
-		AppId:      config.App.AppId,
-		HttpHost:   config.App.HttpHost,
-		HttpPort:   config.App.HttpPort,
-		LogLevel:   config.Log.level,
+		AppId:      envConfig.App.AppId,
+		HttpHost:   envConfig.App.HttpHost,
+		HttpPort:   envConfig.App.HttpPort,
+		LogLevel:   envConfig.Log.level,
 		DaprClient: daprClient,
-		EnvConfig:  config,
+		EnvConfig:  envConfig,
 	}
 
-	return run(runCfg, config.App.RootUrl, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
+	return run(runCfg, envConfig.App.RootUrl, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
 }
 
 // Run
