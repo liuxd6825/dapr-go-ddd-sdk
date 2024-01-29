@@ -119,7 +119,7 @@ func Float64() float64 {
 	return v
 }
 
-// 生成区间[-m, n]的安全随机数
+// RangeRand 生成区间[-m, n]的安全随机数
 func RangeRand(min, max int64) int64 {
 	if min > max {
 		panic("the min is greater than max!")
@@ -306,13 +306,11 @@ func PJsonDate() *types.JSONDate {
 	return &value
 }
 
-//
-//  randomString
-//  @Description: 随机生成字符串
-//  @param size size 随机码的位数
-//  @param kind 0:纯数字/1:小写字母/2:大写字母/3:数字、大小写字母
-//  @return string
-//
+// randomString
+// @Description: 随机生成字符串
+// @param size size 随机码的位数
+// @param kind 0:纯数字/1:小写字母/2:大写字母/3:数字、大小写字母
+// @return string
 func randomString(size int, kind int) string {
 	ikind, kinds, rsbytes := kind, [][]int{[]int{10, 48}, []int{26, 97}, []int{26, 65}}, make([]byte, size)
 	isAll := kind > 2 || kind < 0

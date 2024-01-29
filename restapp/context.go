@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/goplus"
 	"strings"
 )
 
@@ -13,10 +14,11 @@ type irisServer struct {
 	ctx iris.Context
 }
 
-type ContextOptions struct {
-	checkAuth *bool
-	tenantId  *string
+type ContextOption struct {
+	CheckAuth *bool
+	TenantId  *string
 }
+type ContextOptions func(option *ContextOption)
 
 const (
 	Authorization = "Authorization"
@@ -25,19 +27,6 @@ const (
 var (
 	DefaultAuthToken = ""
 )
-
-func NewContextOptions(opts ...*ContextOptions) *ContextOptions {
-	o := &ContextOptions{}
-	for _, item := range opts {
-		if item.checkAuth != nil {
-			o.checkAuth = item.checkAuth
-		}
-		if item.tenantId != nil {
-			o.tenantId = item.tenantId
-		}
-	}
-	return o
-}
 
 func NewLoggerContext(ctx context.Context) context.Context {
 	return logs.NewContext(ctx)
@@ -50,10 +39,23 @@ func NewLoggerContext(ctx context.Context) context.Context {
 //	@return newCtx
 //	@return err
 func NewContextNoAuth(ictx iris.Context) (newCtx context.Context, err error) {
-	return NewContext(ictx, NewContextOptions().SetCheckAuth(false))
+	return NewContext(ictx, func(opt *ContextOption) {
+		opt.CheckAuth = goplus.PBool(false)
+		opt.TenantId = nil
+	})
 }
 
-func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Context, err error) {
+func newContextOption(opts ...ContextOptions) *ContextOption {
+	opt := &ContextOption{}
+	for _, item := range opts {
+		if item != nil {
+			item(opt)
+		}
+	}
+	return opt
+}
+
+func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Context, err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
@@ -61,7 +63,11 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	if ictx == nil {
 		pCtx = context.Background()
 	}
-	opt := NewContextOptions(opts...)
+
+	opt := newContextOption(opts...)
+	for _, fun := range opts {
+		fun(opt)
+	}
 
 	// 添加 日志 上下文
 	newCtx = logs.NewContext(pCtx)
@@ -73,8 +79,8 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	}
 
 	//添加 租户 上下文
-	if opt.tenantId != nil {
-		newCtx = appctx.NewTenantContext(newCtx, opt.TenantId())
+	if opt.TenantId != nil {
+		newCtx = appctx.NewTenantContext(newCtx, goplus.String(opt.TenantId, ""))
 	}
 
 	// 添加 Header 上下文
@@ -82,7 +88,7 @@ func NewContext(ictx iris.Context, opts ...*ContextOptions) (newCtx context.Cont
 	newCtx = appctx.NewHeaderContext(newCtx, header)
 
 	//添加 用户认证 上下文
-	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], opt.CheckAuth())
+	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], goplus.Bool(opt.CheckAuth))
 	if err != nil {
 		return nil, err
 	}
@@ -130,37 +136,13 @@ func NewAuthTokenContext(parent context.Context, headerValues []string, checkAut
 
 	if token == "" {
 		if checkAuth {
-			return nil, token, errors.New("Authorization is null")
+			return nil, token, errors.New("Header Authorization is null")
 		} else {
 			return parent, "", nil
 		}
 	}
 	newCtx, err = appctx.NewAuthContext(parent, token)
 	return newCtx, token, err
-}
-
-func (o *ContextOptions) CheckAuth() bool {
-	if o.checkAuth != nil {
-		return *o.checkAuth
-	}
-	return true
-}
-
-func (o *ContextOptions) SetCheckAuth(val bool) *ContextOptions {
-	o.checkAuth = &val
-	return o
-}
-
-func (o *ContextOptions) TenantId() string {
-	if o.tenantId != nil {
-		return *o.tenantId
-	}
-	return ""
-}
-
-func (o *ContextOptions) SetTenantId(val string) *ContextOptions {
-	o.tenantId = &val
-	return o
 }
 
 func (i *irisServer) SetResponseHeader(key string, value string) {

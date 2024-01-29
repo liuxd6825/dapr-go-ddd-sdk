@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/redis/go-redis/v9"
+	"os"
 	"strings"
 	"time"
 )
@@ -63,6 +65,11 @@ func initRedis(configs map[string]*RedisConfig) error {
 			// 每次计算重试间隔时间的上限，默认512毫秒，-1表示取消间隔
 			MaxRetryBackoff: parseDuration("redis.maxRetryBackoff", c.MaxRetryBackoff, 512*time.Millisecond),
 		})
+
+		if _, err := rdb.Ping(context.Background()).Result(); err != nil {
+			logs.Errorf(context.Background(), "", nil, "连接neo4j失败, host:%s, error:%s  ", c.Host, err.Error())
+			os.Exit(0)
+		}
 		dbKey := strings.ToLower(k)
 		_redisDbs[dbKey] = rdb
 		_redisDefault = rdb

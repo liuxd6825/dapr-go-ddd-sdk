@@ -67,9 +67,12 @@ func (s *grpcEventStore) LoadAggregate(ctx context.Context, tenantId string, agg
 	if err != nil {
 		return nil, false, errors.New("grpcEventStore.LoadEvent() error:%s", err.Error())
 	}
-	if resp.Snapshot == nil && (resp.EventRecords == nil || len(*resp.EventRecords) == 0) {
-		return nil, false, err
-	}
+
+	/*
+		if resp.Snapshot == nil && (resp.EventRecords == nil || len(*resp.EventRecords) == 0) {
+			return nil, false, err
+		}
+	*/
 
 	if resp.Snapshot != nil {
 		bytes, err := json.Marshal(resp.Snapshot.AggregateData)

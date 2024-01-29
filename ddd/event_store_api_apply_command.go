@@ -2,10 +2,7 @@ package ddd
 
 import (
 	"context"
-	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"reflect"
 	"strings"
 )
@@ -99,11 +96,4 @@ func typeOf(obj interface{}) reflect.Type {
 
 func (o *CreateAggregateOptions) SetEventStorageKey(eventStorageKey string) {
 	o.eventStorageKey = &eventStorageKey
-}
-
-func callCommandHandler(ctx context.Context, aggregate any, cmd Command) error {
-	cmdTypeName := reflect.ValueOf(cmd).Elem().Type().Name()
-	methodName := fmt.Sprintf("%s", cmdTypeName)
-	metadata := ddd_context.GetMetadataContext(ctx)
-	return reflectutils.CallMethod(aggregate, methodName, ctx, cmd, metadata)
 }

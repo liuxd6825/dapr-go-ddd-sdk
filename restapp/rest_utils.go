@@ -21,13 +21,11 @@ const (
 type JsonTimeSerializer struct {
 }
 
-func (j *JsonTimeSerializer) Serialize(v interface{}) ([]byte, error) {
-	t, ok := v.(*time.Time)
-	if !ok {
-		return nil, errors.New("invalid type")
-	}
-	return []byte(t.Format("2006-01-02 15:04:05")), nil
+type DoOption struct {
+	CheckAuth *bool // 是否检查 Header Auth
 }
+
+type DoOptions = func(opt *DoOption)
 
 type Command interface {
 	GetCommandId() string
@@ -41,6 +39,7 @@ type QueryFunc func(ctx context.Context) (interface{}, bool, error)
 // @Description: 命令执行参数
 type CmdAndQueryOptions struct {
 	WaitSecond int // 超时时间，单位秒
+	DoOption
 }
 
 type CmdAndQueryOption func(options *CmdAndQueryOptions)
@@ -104,8 +103,12 @@ func setResponseError(ictx iris.Context, err error) {
 // @param cmd  命令
 // @param fun  执行方法
 // @return err 错误
-func DoCmd(ictx iris.Context, tenantId string, fun CmdFunc) (err error) {
-	ctx, err := NewContext(ictx)
+func DoCmd(ictx iris.Context, tenantId string, fun CmdFunc, opts ...DoOptions) (err error) {
+	opt := newOption(opts...)
+	ctx, err := NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
+
 	if err != nil {
 		SetError(ictx, err)
 		return err
@@ -129,12 +132,26 @@ func DoCmd(ictx iris.Context, tenantId string, fun CmdFunc) (err error) {
 	return err
 }
 
-func Do(ictx iris.Context, tenantId string, fun func(ctx context.Context) error) (err error) {
-	ctx, err := NewContext(ictx)
+func newOption(options ...DoOptions) *DoOption {
+	opt := &DoOption{}
+	for _, item := range options {
+		item(opt)
+	}
+	return opt
+}
+
+func Do(ictx iris.Context, tenantId string, fun func(ctx context.Context) error, opts ...DoOptions) (err error) {
+
+	opt := newOption(opts...)
+	ctx, err := NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
+
 	if err != nil {
 		SetError(ictx, err)
 		return err
 	}
+
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			logs.ErrorErr(ctx, tenantId, err)
@@ -151,9 +168,14 @@ func Do(ictx iris.Context, tenantId string, fun func(ctx context.Context) error)
 	return nil
 }
 
-func DoDto[T any](ictx iris.Context, tenantId string, fun func(ctx context.Context) (T, error)) (dto T, err error) {
+func DoDto[T any](ictx iris.Context, tenantId string, fun func(ctx context.Context) (T, error), opts ...DoOptions) (dto T, err error) {
 	var null T
-	ctx, err := NewContext(ictx)
+
+	opt := newOption(opts...)
+	ctx, err := NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
+
 	if err != nil {
 		SetError(ictx, err)
 		return null, err
@@ -183,9 +205,12 @@ func DoDto[T any](ictx iris.Context, tenantId string, fun func(ctx context.Conte
 // @return data 返回数据
 // @return isFound 是否有数据
 // @return err 错误
-func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc) (data interface{}, isFound bool, err error) {
+func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOptions) (data interface{}, isFound bool, err error) {
+	opt := newOption(opts...)
+	ctx, err := NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
 
-	ctx, err := NewContext(ictx)
 	if err != nil {
 		SetError(ictx, err)
 		return nil, false, err
@@ -224,8 +249,12 @@ func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc) (data interfa
 // @return data 返回数据
 // @return isFound 是否有数据
 // @return err 错误
-func DoQuery(ictx iris.Context, tenantId string, fun QueryFunc) (data any, isFound bool, err error) {
-	ctx, err := NewContext(ictx)
+func DoQuery(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOptions) (data any, isFound bool, err error) {
+	opt := newOption(opts...)
+	ctx, err := NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
+
 	if err != nil {
 		SetError(ictx, err)
 		return nil, false, err
@@ -295,8 +324,30 @@ func DoCmdAndQueryList(ictx iris.Context, tenantId string, queryAppId string, cm
 	return doCmdAndQuery(ictx, tenantId, queryAppId, false, cmd, cmdFun, queryFun, opts...)
 }
 
+// doCmdAndQuery
+//
+//	@Description:
+//	@param ictx
+//	@param tenantId
+//	@param queryAppId
+//	@param isGetOne
+//	@param cmd
+//	@param cmdFun
+//	@param queryFun
+//	@param opts
+//	@return data
+//	@return isFound
+//	@return err
 func doCmdAndQuery(ictx iris.Context, tenantId string, queryAppId string, isGetOne bool, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...CmdAndQueryOption) (data interface{}, isFound bool, err error) {
-	ctx, err := NewContext(ictx)
+	opt := &CmdAndQueryOptions{WaitSecond: 5}
+	for _, o := range opts {
+		o(opt)
+	}
+
+	ctx, err := NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
+
 	if err != nil {
 		SetError(ictx, err)
 		return nil, false, err
@@ -307,11 +358,6 @@ func doCmdAndQuery(ictx iris.Context, tenantId string, queryAppId string, isGetO
 			SetError(ctx, err)
 		}
 	}()
-
-	options := &CmdAndQueryOptions{WaitSecond: 5}
-	for _, o := range opts {
-		o(options)
-	}
 
 	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
 		err = DoCmd(ictx, tenantId, cmdFun)
@@ -326,7 +372,7 @@ func doCmdAndQuery(ictx iris.Context, tenantId string, queryAppId string, isGetO
 	err = nil
 	//isTimeout := true
 	// 循环检查EventLog日志是否存在
-	for i := 0; i < options.WaitSecond; i++ {
+	for i := 0; i < opt.WaitSecond; i++ {
 		time.Sleep(time.Duration(1) * time.Second)
 		logs, err := applog.GetEventLogByAppIdAndCommandId(cmd.GetTenantId(), queryAppId, cmd.GetCommandId())
 		if err != nil {
@@ -388,4 +434,25 @@ func WriteJSON(data any) ([]byte, error) {
 
 func newLogFields(ictx iris.Context) logs.Fields {
 	return logs.Fields{"uri": ictx.FullRequestURI(), "method": ictx.Method(), "params": ictx.Params()}
+}
+
+// //////////////////////
+//
+//	JsonTimeSerializer
+//
+// //////////////////////
+
+// Serialize
+//
+//	@Description:
+//	@receiver j
+//	@param v
+//	@return []byte
+//	@return error
+func (j *JsonTimeSerializer) Serialize(v interface{}) ([]byte, error) {
+	t, ok := v.(*time.Time)
+	if !ok {
+		return nil, errors.New("invalid type")
+	}
+	return []byte(t.Format("2006-01-02 15:04:05")), nil
 }

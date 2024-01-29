@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"os"
 	"strings"
 )
 
@@ -43,7 +45,8 @@ func initMySql(configs map[string]*MySqlConfig) {
 		}), &gorm.Config{Logger: logger.Default.LogMode(cfg.LogLevel)})
 
 		if err != nil {
-			panic(err)
+			logs.Errorf(context.Background(), "", nil, "连接mysql失败, error:%s", err.Error())
+			os.Exit(0)
 		}
 		_mysqlList[strings.ToLower(key)] = db
 		_mysqlDefault = db

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"os"
 	"strings"
 )
 
@@ -40,7 +42,8 @@ func initNeo4j(configs map[string]*Neo4jConfig) error {
 		}
 		err = driver.VerifyConnectivity(ctx)
 		if err != nil {
-			panic(err)
+			logs.Errorf(ctx, "", nil, "连接neo4j失败, error:%s  ", uri, err.Error())
+			os.Exit(0)
 		}
 		key := strings.ToLower(dbKey)
 		config.DbKey = key

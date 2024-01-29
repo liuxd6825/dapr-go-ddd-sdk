@@ -122,7 +122,7 @@ func (a *ApplyEventOptions) GetSessionId() *string {
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventApply, aggregate, []DomainEvent{event}, opts...)
+	res, err := publishEvents(ctx, EventApply, aggregate, []DomainEvent{event}, opts...)
 	if resp, ok := res.(*dapr.ApplyEventResponse); ok {
 		return resp, err
 	}
@@ -130,7 +130,7 @@ func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opt
 }
 
 func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventApply, aggregate, events, opts...)
+	res, err := publishEvents(ctx, EventApply, aggregate, events, opts...)
 	if resp, ok := res.(*dapr.ApplyEventResponse); ok {
 		return resp, err
 	}
@@ -138,7 +138,7 @@ func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent,
 }
 
 func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, []DomainEvent{event}, opts...)
+	res, err := publishEvents(ctx, EventCreate, aggregate, []DomainEvent{event}, opts...)
 	if resp, ok := res.(*dapr.CreateEventResponse); ok {
 		return resp, err
 	}
@@ -146,7 +146,7 @@ func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 }
 
 func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventCreate, aggregate, events, opts...)
+	res, err := publishEvents(ctx, EventCreate, aggregate, events, opts...)
 	if resp, ok := res.(*dapr.CreateEventResponse); ok {
 		return resp, err
 	}
@@ -154,7 +154,7 @@ func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent
 }
 
 func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, []DomainEvent{event}, opts...)
+	res, err := publishEvents(ctx, EventDelete, aggregate, []DomainEvent{event}, opts...)
 	if resp, ok := res.(*dapr.DeleteEventResponse); ok {
 		return resp, err
 	}
@@ -162,7 +162,7 @@ func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 }
 
 func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
-	res, err := callDaprEventMethod(ctx, EventDelete, aggregate, events, opts...)
+	res, err := publishEvents(ctx, EventDelete, aggregate, events, opts...)
 	if resp, ok := res.(*dapr.DeleteEventResponse); ok {
 		return resp, err
 	}
@@ -176,7 +176,7 @@ func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent
 // @param event
 // @param options
 // @return err
-func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
+func publishEvents(ctx context.Context, callEventType CallEventType, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()
@@ -195,13 +195,13 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 
 	errs := errors.NewErrors()
 	if len(tenantId) == 0 {
-		errs.AddString("tenantId is empty")
+		errs.AddString("callDaprEventMethod() aggregate.GetTenantId() is empty")
 	}
 	if len(aggId) == 0 {
-		errs.AddString("aggregateId is empty")
+		errs.AddString("callDaprEventMethod()  aggregate.GetAggregateId() is empty")
 	}
 	if len(aggType) == 0 {
-		errs.AddString("aggregateType is empty")
+		errs.AddString("callDaprEventMethod() aggregate.GetAggregateType() is empty")
 	}
 	if !errs.IsEmpty() {
 		return nil, errs
@@ -282,7 +282,7 @@ func callDaprEventMethod(ctx context.Context, callEventType CallEventType, aggre
 
 		if defaultIsSourcing {
 			for _, event := range events {
-				if err = callEventHandler(ctx, aggregate, event.GetTenantId(), event.GetEventType(), event.GetEventVersion(), event.GetEventId(), event); err != nil {
+				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event, options.GetMetadata()); err != nil {
 					return err
 				}
 			}

@@ -61,11 +61,11 @@ func CallMethod(obj any, methodName string, args ...any) (err error) {
 	}()
 
 	if obj == nil {
-		return errors.ErrorOf("CallMethod() obj is null")
+		return errors.ErrorOf("reflectutils.CallMethod() obj is null")
 	}
 
 	if err = checkArgsIsNil(args...); err != nil {
-		return errors.ErrorOf("CallMethod() error:%s", err.Error())
+		return errors.ErrorOf("reflectutils.CallMethod() error:%s", err.Error())
 	}
 
 	refObj := NewRefObj(obj)
@@ -73,7 +73,21 @@ func CallMethod(obj any, methodName string, args ...any) (err error) {
 	if !method.IsValid() {
 		return NewNewMethodNotExistError(refObj.Type().Name(), methodName)
 	}
-	callResult, err := method.Call(args...)
+
+	//取参数总量
+	inCount := len(method.InTypes())
+	//如果传入参数过少，退出
+	if inCount > len(args) {
+		return errors.ErrorOf("动态调用方法时，传入的参数个数不足。%s.%s()", refObj.Type().Name(), methodName)
+	}
+	//参方法参数个数，传入参数
+	inArgs := make([]any, inCount)
+	for i := 0; i < inCount; i++ {
+		inArgs[i] = args[i]
+	}
+
+	//调用方法
+	callResult, err := method.Call(inArgs...)
 	if err != nil {
 		return err
 	}

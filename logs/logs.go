@@ -323,14 +323,13 @@ func FatalMsg(ctx context.Context, tenantId string, args ...interface{}) {
 //	@param args
 //	@return err
 func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() error) (err error) {
-	logId := idutils.NewId()
-	funcName := runtimeutils.GetFuncName(2)
-	fs := Fields{
-		"logId":   logId,
-		"logFunc": funcName,
-	}
-
 	if isLevel(DebugLevel) {
+		logId := idutils.NewId()
+		funcName := runtimeutils.GetFuncName(2)
+		fs := Fields{
+			"logId":   logId,
+			"logFunc": funcName,
+		}
 		SetField(fs, "logType", "start")
 		for key, val := range fields {
 			fs[key] = val
@@ -359,12 +358,13 @@ func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() 
 		useTime := time.Now().Sub(startTime)
 		SetField(fs, "logUseTime", useTime)
 		SetField(fs, "logType", "end")
-
+		if err != nil {
+			SetField(fs, "error", err.Error())
+		}
 	} else {
 		defer func() {
 			if err = errors.GetRecoverError(err, recover()); err != nil {
-				SetField(fs, "error", err.Error())
-				write(ctx, tenantId, fs, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+				write(ctx, tenantId, nil, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 					l.Error()
 				})
 			}

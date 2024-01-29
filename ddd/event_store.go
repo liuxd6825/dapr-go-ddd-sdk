@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"reflect"
 	"strings"
 )
 
@@ -91,28 +92,54 @@ func CallEventHandler(ctx context.Context, handler interface{}, record *dapr.Eve
 	if record == nil {
 		return errors.New("package:ddd; func:CallEventHandler(); error: record is nil")
 	}
-
 	event, err := NewDomainEvent(record)
 	if err != nil {
-		return errors.New("package:ddd; func:CallEventHandler(); error:%v", err.Error())
+		return errors.New("package:ddd; func:CallEventHandler(); error: NewDomainEvent() %v", err.Error())
 	}
-
-	if err = callEventHandler(ctx, handler, record.TenantId, record.EventType, record.EventVersion, record.EventId, event); err != nil {
-		return errors.New("package:ddd; func:CallEventHandler(); error:%v", err.Error())
-	}
-	return nil
+	metadata := record.Metadata
+	return callEventHandler(ctx, handler, record.EventType, record.EventVersion, event, metadata)
 }
 
-func callEventHandler(ctx context.Context, handler any, tenantId string, eventType string, eventVersion string, eventId string, event any) error {
-	fields := logs.Fields{
-		"eventType":    eventType,
-		"eventVersion": eventVersion,
-		"eventId":      eventId,
-	}
-	return logs.DebugStart(ctx, tenantId, fields, func() error {
-		methodName := getEventMethodName(eventType, eventVersion)
-		return reflectutils.CallMethod(handler, methodName, ctx, event)
-	})
+// callEventHandler
+//
+//	@Description: 调用QueryHandler事件订阅处理器
+//	@param ctx  上下文
+//	@param queryHandler 事件处理器
+//	@param eventType  事件类型
+//	@param eventVersion 事件版本号
+//	@param event 事件对象
+//	@param metadata  事件元数据
+//	@return error 错误
+func callEventHandler(ctx context.Context, queryHandler any, eventType string, eventVersion string, event any, metadata Metadata) error {
+	methodName := getEventMethodName(eventType, eventVersion)
+	return callMethod(ctx, queryHandler, methodName, event, metadata)
+}
+
+// callCommandHandler
+//
+//	@Description: 调用CommandHandle命令处理器
+//	@param ctx 上下文
+//	@param aggregate 聚合根对象
+//	@param cmd 命令
+//	@return error 错误
+func callCommandHandler(ctx context.Context, aggregate any, cmd Command) error {
+	cmdTypeName := reflect.ValueOf(cmd).Elem().Type().Name()
+	methodName := fmt.Sprintf("%s", cmdTypeName)
+	metadata := ddd_context.GetMetadataContext(ctx)
+	return callMethod(ctx, aggregate, methodName, cmd, metadata)
+}
+
+// callMethod
+//
+//	@Description: 动态调用方法
+//	@param obj 方法对象
+//	@param methodName 方法名称
+//	@param ctx
+//	@param eventOrCommand
+//	@param metadata
+//	@return error
+func callMethod(ctx context.Context, obj any, methodName string, eventOrCommand any, metadata Metadata) error {
+	return reflectutils.CallMethod(obj, methodName, ctx, eventOrCommand, metadata)
 }
 
 // getEventMethodName

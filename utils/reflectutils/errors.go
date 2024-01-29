@@ -15,7 +15,7 @@ func NewNewMethodNotExistError(typeName string, methodName string) error {
 }
 
 func (m *methodNotExistError) Error() string {
-	return fmt.Sprintf("%s %s", m.typeName, m.methodName)
+	return fmt.Sprintf("%s.%s()方法不存在.", m.typeName, m.methodName)
 }
 
 type methodCallError struct {

@@ -1,9 +1,12 @@
 package restapp
 
 import (
+	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"os"
 	"strings"
 )
 
@@ -41,7 +44,8 @@ func initMinio(configs map[string]*MinioConfig) error {
 		}
 		minioClient, err := minio.New(c.Endpoint, options)
 		if err != nil {
-			return err
+			logs.Errorf(context.Background(), "", nil, "连接mysql失败, error:%s", c.Endpoint, err.Error())
+			os.Exit(0)
 		}
 		c.minioClient = minioClient
 		_minioList[k] = minioClient

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"time"
 )
 
@@ -136,7 +137,7 @@ func NewEventRecordByJsonBytes(data []byte) (*EventRecordJsonMarshalResult, erro
 	eventRecord := &EventRecord{}
 	err := json.Unmarshal(data, eventRecord)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("json.Unmarshal() %s", err.Error())
 	}
 	return &EventRecordJsonMarshalResult{
 		eventRecord: eventRecord,

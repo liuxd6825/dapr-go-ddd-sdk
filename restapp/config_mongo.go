@@ -6,8 +6,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"os"
 	"strings"
 	"time"
 )
@@ -102,7 +104,8 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 			return nil
 		})
 		if err != nil {
-			panic(err)
+			logs.Errorf(context.Background(), "", nil, "连接mongo失败, error:%s", config.Host, err.Error())
+			os.Exit(0)
 		}
 		dbKey := strings.ToLower(k)
 		c.DbKey = dbKey
