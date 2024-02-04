@@ -8,6 +8,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
+	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
 	"strings"
@@ -101,11 +103,13 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
 				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), connectTimeout,
 				socketTimeout, serverSelectionTimeout, maxConnIdleTime, operationTimeout, socketTimeout)
+			opts.Monitor = newMongoMonitor()
+			opts.ServerMonitor = newMongoServerMonitor()
 			return nil
 		})
 		if err != nil {
 			logs.Errorf(context.Background(), "", nil, "连接mongo失败, error:%s", config.Host, err.Error())
-			os.Exit(0)
+			os.Exit(1)
 		}
 		dbKey := strings.ToLower(k)
 		c.DbKey = dbKey
@@ -116,6 +120,66 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 		_mongoDefault = nil
 	}
 	return nil
+}
+
+func newMongoMonitor() *event.CommandMonitor {
+	monitor := &event.CommandMonitor{}
+	monitor.Failed = func(ctx context.Context, failedEvent *event.CommandFailedEvent) {
+		logs.Errorf(context.Background(), "", nil, "Mongodb CommandMonitor Failed %s", func() any {
+			if text, err := jsonutils.Marshal(failedEvent); err != nil {
+				return err.Error()
+			} else {
+				return text
+			}
+		})
+	}
+	/*
+		monitor.Succeeded = func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
+			logs.Infof(context.Background(), "", nil, "Mongodb CommandMonitor Succeeded %s", func() any {
+				if text, err := jsonutils.Marshal(succeededEvent); err != nil {
+					return err.Error()
+				} else {
+					return text
+				}
+			})
+		}
+		monitor.Started = func(ctx context.Context, startedEvent *event.CommandStartedEvent) {
+			logs.Infof(context.Background(), "", nil, "Mongodb CommandMonitor Started %s", func() any {
+				if text, err := jsonutils.Marshal(startedEvent); err != nil {
+					return err.Error()
+				} else {
+					return text
+				}
+			})
+		}
+	*/
+	return monitor
+}
+
+func newMongoServerMonitor() *event.ServerMonitor {
+	monitor := &event.ServerMonitor{}
+	monitor.ServerClosed = func(event *event.ServerClosedEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerClosed Address=%s, TopologyID=%v  ", event.Address, event.TopologyID)
+	}
+	monitor.ServerHeartbeatFailed = func(event *event.ServerHeartbeatFailedEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerHeartbeatFailed Failure=%s ", event.Failure.Error())
+	}
+	monitor.ServerDescriptionChanged = func(event *event.ServerDescriptionChangedEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerDescriptionChanged Address=%s, NewDescription=%v  ", event.Address, event.NewDescription)
+	}
+	monitor.ServerOpening = func(event *event.ServerOpeningEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerOpening Address=%s, TopologyID=%v  ", event.Address, event.TopologyID)
+	}
+	monitor.TopologyClosed = func(event *event.TopologyClosedEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor TopologyClosed TopologyID=%v ", event.TopologyID)
+	}
+	monitor.TopologyDescriptionChanged = func(event *event.TopologyDescriptionChangedEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor TopologyDescriptionChanged TopologyID=%s, NewDescription=%v  ", event.TopologyID, event.NewDescription)
+	}
+	monitor.TopologyOpening = func(event *event.TopologyOpeningEvent) {
+		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor TopologyOpening TopologyID=%v  ", event.TopologyID)
+	}
+	return monitor
 }
 
 func GetMongoDB() *ddd_mongodb.MongoDB {

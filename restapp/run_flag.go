@@ -21,6 +21,7 @@ const (
 	RunTypeStatus
 	RunTypeInitDB
 	RunTypeCreateSqlFile
+	RunTypeVersion
 	RunTypeHelp
 )
 

@@ -10,28 +10,34 @@ var runFlag = &restapp.RunFlag{}
 var runFunc func(flag *restapp.RunFlag) error
 
 type Option struct {
-	Version  string
-	AppTitle string
+	Version   string
+	AppTitle  string
+	BuildTime string
+	GitHead   string
 }
 type Options func(opts *Option)
 
 func Start(config string, fun func(flag *restapp.RunFlag) error, options ...Options) {
-	opts := &Option{Version: "v1.0", AppTitle: "应用服务"}
+	opt := &Option{Version: "", AppTitle: "应用服务"}
 	for _, o := range options {
 		if o != nil {
-			o(opts)
+			o(opt)
 		}
 	}
 
+	restapp.BuildTime = opt.BuildTime
+	restapp.Version = opt.Version
+	restapp.GitHead = opt.GitHead
+
 	runFunc = fun
-	rootCmd := newRootCmd(config, opts.AppTitle)
+	rootCmd := newRootCmd(config, opt.AppTitle)
 	rootCmd.AddCommand(newStartCmd())
 	rootCmd.AddCommand(newStatusCmd())
 	rootCmd.AddCommand(newStopCmd())
 	rootCmd.AddCommand(newInitDbCmd())
 	rootCmd.AddCommand(newCreateSqlFileCmd())
-	rootCmd.AddCommand(newVersionCmd(opts.Version))
-	rootCmd.SetVersionTemplate(opts.Version)
+	rootCmd.AddCommand(newVersionCmd(opt.Version))
+	rootCmd.SetVersionTemplate(opt.Version)
 	rootCmd.Commands()
 	_ = rootCmd.Execute()
 }

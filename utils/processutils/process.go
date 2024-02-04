@@ -36,6 +36,7 @@ func NewProcess(cmdName string, args []string, checkArgs ...string) Process {
 }
 
 func (p *process) Start() error {
+	ctx := context.Background()
 	cmd := exec.Command(p.cmdName, p.args...)
 	//cmd.Stdin = os.Stdin
 	//cmd.Stdout = os.Stdout
@@ -50,6 +51,7 @@ func (p *process) Start() error {
 	logs.Infof(context.Background(), "", nil, cmdLine)
 	_, err := p.CheckRunning()
 	if err != nil && !errors.Is(err, ErrNotFoundProcess) {
+		logs.Errorf(ctx, "", nil, "dapr start() error = %s", err.Error())
 		return err
 	}
 

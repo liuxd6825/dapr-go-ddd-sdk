@@ -7,11 +7,19 @@ import (
 	"strings"
 )
 
-var noExtExeName = "" //当前应用的名称(无扩展名)
-var exeName = ""      //当前应用的名称
-var pathName = ""     // 当前应用路径
-var pid = ""          // 当前进程PID
-var envName = ""
+var (
+	noExtExeName = "" //当前应用的名称(无扩展名)
+	exeName      = "" //当前应用的名称
+	pathName     = "" // 当前应用路径
+	pid          = "" // 当前进程PID
+	envName      = ""
+)
+var (
+	AppTitle  = "" // 应用名称
+	Version   = "" // 应用版本号
+	BuildTime = "" // 编译时间
+	GitHead   = "" // Git
+)
 
 func init() {
 	val := int64(os.Getpid())

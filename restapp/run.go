@@ -6,8 +6,8 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 )
@@ -64,15 +64,17 @@ func RunWithConfig(envName string, configFile string, subsFunc func() []Register
 func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
 
-	ctx := context.Background()
 	SetEnvConfig(envConfig)
-	logs.Infof(ctx, "", nil, "env config: %s", func() any {
-		jsonText, err := jsonutils.Marshal(envConfig)
-		if err != nil {
-			return err.Error()
-		}
-		return jsonText
-	})
+	/*
+		ctx := context.Background()
+		logs.Infof(ctx, "", nil, "env config: %s", func() any {
+			jsonText, err := jsonutils.Marshal(envConfig)
+			if err != nil {
+				return err.Error()
+			}
+			return jsonText
+		})
+	*/
 
 	opt := NewRunOptions(options...)
 	var err error
@@ -98,6 +100,11 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, nil
 	case RunTypeStop:
 		_ = stop(envConfig)
+		return nil, nil
+	case RunTypeVersion:
+		fmt.Println("version: ", Version)
+		fmt.Println("build time: " + BuildTime)
+		fmt.Println("git head: " + GitHead)
 		return nil, nil
 	default:
 		break
@@ -148,8 +155,15 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 // @return error
 func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
 	controllersFunc func() []Controller, eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
-	runOptions ...*RunOptions) (common.Service, error) {
+	runOptions ...*RunOptions) (res common.Service, err error) {
 
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			fmt.Println("exit error " + err.Error())
+			logs.Errorf(context.Background(), "", nil, "exit error %s", err.Error())
+		}
+	}()
 	opt := NewRunOptions(runOptions...)
 
 	level := runCfg.LogLevel
