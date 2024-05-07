@@ -22,7 +22,13 @@ import (
 const (
 	ConstIdField       = "_id"
 	ConstTenantIdField = "tenant_id"
+	TenantIdField      = "tenant_id"
 )
+
+type DataMap interface {
+	GetDataMap() map[string]any
+	SetDataMap(data map[string]any)
+}
 
 type Dao[T ddd.Entity] struct {
 	entityBuilder *ddd_repository.EntityBuilder[T]
@@ -1352,6 +1358,21 @@ func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 		res = append(res, item)
 	}
 	return res, nil
+}
+
+func (r *Dao[T]) getDocuments(entities []T) []any {
+	var list []any
+	for _, item := range entities {
+		list = append(list, r.getDocument(item))
+	}
+	return list
+}
+
+func (r *Dao[T]) getDocument(entity any) any {
+	if dataMap, ok := entity.(DataMap); ok {
+		return dataMap.GetDataMap()
+	}
+	return entity
 }
 
 func (o *Options) SetAutoCreateCollection(v bool) *Options {

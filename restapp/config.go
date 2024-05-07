@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/power/server/config"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -19,11 +20,11 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	Name string     `yaml:"-" json:"name"`
-	App  AppConfig  `yaml:"app" json:"app"`
-	Log  LogConfig  `yaml:"log" json:"log"`
-	Dapr DaprConfig `yaml:"dapr" json:"dapr"`
-
+	Name      string                     `yaml:"-" json:"name"`
+	App       AppConfig                  `yaml:"app" json:"app"`
+	Log       LogConfig                  `yaml:"log" json:"log"`
+	Dapr      DaprConfig                 `yaml:"dapr" json:"dapr"`
+	JsServer  config.JsServerConfig      `yaml:"jsServer" json:"jsServer"`
 	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
 	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
 	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`

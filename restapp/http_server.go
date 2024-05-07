@@ -13,12 +13,17 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/power/db"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/power/server"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/power/service"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
 	"strings"
 	"time"
+
+	_ "github.com/iris-contrib/pongo2-addons/v4"
 )
 
 type ServiceOptions struct {
@@ -76,6 +81,15 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 	}
 
 	app := iris.New()
+	//tmpl := iris.HTML("./views", ".html")
+
+	// Enable re-build on local template files changes.
+	//tmpl.Reload(true)
+
+	// Register the view engine to the views,
+	// this will load the templates.
+	//app.RegisterView(tmpl)
+
 	return &HttpServer{
 		httpPort:       opts.HttpPort,
 		httpHost:       opts.HttpHost,
@@ -102,8 +116,13 @@ func (s *HttpServer) Start() error {
 		}
 	}()
 	app := s.app
-
 	s.registerBaseHandler()
+
+	if err := server.Start(app, &s.envConfig.JsServer, func(s *service.Service) error {
+		return s.SetValue("db", db.NewDb())
+	}); err != nil {
+		return err
+	}
 
 	// 注册消息订阅
 	if s.subscribes != nil {

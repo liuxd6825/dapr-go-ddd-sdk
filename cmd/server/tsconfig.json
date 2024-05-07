@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es6",
+    "noEmitOnError": false,
+    "allowSyntheticDefaultImports": true,
+    "importHelpers": false,
+    "sourceMap": false,
+    "inlineSources": false,
+    "rootDir": "./",
+    "incremental": true,
+    "noImplicitUseStrict": true,
+    "noResolve":true, //编译选项，三斜线引用会被忽略；它们不会增加新文件
+    "esModuleInterop":false,
+     "types" : [],
+  },
+  "include": [
+    ".//*.ts",
+    ".//k6/*.ts",
+    ".//src/*.ts"
+  ]
+}

@@ -108,7 +108,6 @@ func DoCmd(ictx iris.Context, tenantId string, fun CmdFunc, opts ...DoOptions) (
 	ctx, err := NewContext(ictx, func(option *ContextOption) {
 		option.CheckAuth = opt.CheckAuth
 	})
-
 	if err != nil {
 		SetError(ictx, err)
 		return err
