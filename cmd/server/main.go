@@ -9,7 +9,8 @@ import (
 func main() {
 	rootPath, _ := os.Getwd()
 	app := iris.New()
-	if err := jsserver.RunServer(app, rootPath+"/src"); err != nil {
+	server := jsserver.New(app, rootPath+"/src", true)
+	if err := server.Run(); err != nil {
 		panic(err)
 	}
 	if err := app.Run(iris.Addr(":8080")); err != nil {

@@ -1,5 +1,5 @@
 // @ts-ignore
-import {TestService} from "./test_service";
+import {RecordService, TestServiceService} from "./record_service";
 // @ts-ignore
 import {db} from "../pkg/k6/db";
 
@@ -22,6 +22,6 @@ export default function(){
       console.log(err.Error())
       return
    }
-   new TestService();
+   let service = new RecordService();
 }
 

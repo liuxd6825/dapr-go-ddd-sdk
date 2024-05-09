@@ -2,10 +2,12 @@ package jsserver
 
 import (
 	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/k6"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/k6/server"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/watcher"
 	"github.com/liuxd6825/k6server/js"
 	"github.com/liuxd6825/k6server/lib"
 	"github.com/liuxd6825/k6server/lib/fsext"
@@ -14,18 +16,37 @@ import (
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/url"
+	"os/exec"
+	"strings"
 )
 
-const script = `
-export default function() {
-	server.get("/test", function(ictx){
-		ictx.json({"name":"test", "address":"cc"})
-	})
+type JsServer struct {
+	app     *iris.Application
+	srcPath string
+	reload  bool
+	watcher watcher.Watcher
 }
-`
 
-func RunServer(app *iris.Application, srcPath string) error {
-	mainFile := srcPath + "/main.js"
+func New(app *iris.Application, srcPath string, reload bool) *JsServer {
+	return &JsServer{
+		app:     app,
+		srcPath: srcPath,
+		reload:  reload,
+	}
+}
+
+func (s *JsServer) Run() error {
+	if err := s.run(); err != nil {
+		return err
+	}
+	if s.reload {
+		s.fileWatcher()
+	}
+	return nil
+}
+
+func (s *JsServer) run() error {
+	mainFile := s.srcPath + "/main.js"
 	data, err := ioutil.ReadFile(mainFile)
 	if err != nil {
 		return err
@@ -33,7 +54,7 @@ func RunServer(app *iris.Application, srcPath string) error {
 
 	piState := getTestPreInitState(logrus.New())
 
-	bundle, err := newBundle(srcPath, mainFile, data, piState, app)
+	bundle, err := newBundle(s.srcPath, mainFile, data, piState, s.app)
 	if err != nil {
 		return err
 	}
@@ -50,7 +71,7 @@ func RunServer(app *iris.Application, srcPath string) error {
 	//defer cancel()
 
 	vu, err := runner.NewVU(ctx, 1, 10, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
-		modules := k6.NewModules(app)
+		modules := k6.NewModules(s.app)
 		for k, m := range modules {
 			vu.GetRuntime().Set(k, m)
 		}
@@ -62,6 +83,44 @@ func RunServer(app *iris.Application, srcPath string) error {
 	params := &lib.VUActivationParams{RunContext: ctx}
 	err = vu.Activate(params).RunOnce()
 	return err
+}
+
+func (s *JsServer) fileWatcher() {
+	s.watcher = watcher.NewFileWatcher(s.srcPath)
+	err := s.watcher.Start(func(rootPath, fileName string, eventType watcher.EventType) error {
+		reload := false
+		if strings.HasSuffix(fileName, ".ts") {
+			s.tsc()
+			return nil
+		}
+
+		switch eventType {
+		case watcher.WriteEvent:
+			reload = true
+		}
+		if reload {
+			if err := s.run(); err != nil {
+				s.app.Logger().Error(err)
+			}
+			if err := s.app.RefreshRouter(); err != nil {
+				s.app.Logger().Error(err)
+			}
+
+			s.app.Logger().Infof("restart JsServer, file: %s/%s。", rootPath, fileName)
+		}
+		return nil
+	})
+	if err != nil {
+		s.app.Logger().Error(err)
+	}
+}
+
+func (s *JsServer) tsc() {
+	cmd := exec.Command("tsc", "--build", "tsconfig.json")
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("tsc failed:" + err.Error())
+	}
 }
 
 func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {

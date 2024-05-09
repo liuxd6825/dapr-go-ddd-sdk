@@ -1,3 +1,5 @@
+import {Context, Result} from "./common";
+
 export interface DB {
     open(cfg: DBConfig): Error | undefined;
 
@@ -32,13 +34,6 @@ export interface Options {
     upsert?: boolean;
 }
 
-export interface Error {
-    error(): string
-}
-
-export interface Context {
-
-}
 
 export interface FindPagingQueryRequest {
     tenantId  :  string
@@ -79,9 +74,9 @@ export interface Model {
 
     deleteById(ctx: Context, tenantId: string, id: string, opts?: Options): Error;
 
-    findById(ctx: Context, tenantId: string, id: string, opts?: Options): { data: any, isFound: boolean, err: Error }
+    findById(ctx: Context, tenantId: string, id: string, opts?: Options): Result;
 
-    findPaging(ctx: Context, query: FindPagingQueryRequest, opts?: Options) : FindPagingQueryResult
+    findPaging(ctx: Context, query: FindPagingQueryRequest, opts?: Options) : Result;
 }
 
 export const db: DB;

@@ -82,13 +82,13 @@
         "affectsGlobalScope": true
       },
       "./src/main.ts": {
-        "version": "69aec43c3a3dd5a93f978742de8c906d0d261d4fa0a51d10591f814461eb8a34",
+        "version": "3d3911291ff53e8d1ac23b484f866990b5d332fbd910918cf6784b4db23b31e9",
         "signature": "87c3b7246e2d3d81d06e2fb172d316c10de70cd9a61d6722023592f16006172a",
         "affectsGlobalScope": false
       },
-      "./src/test_service.ts": {
-        "version": "d3d1158b0983589f8a85a0bf1ad47eaf92cfbd86318f537c075264878a1b4d22",
-        "signature": "eeb099703aa77350b0aa3c271ce00e19900e132766bff0cdf47ace481e055192",
+      "./src/record_service.ts": {
+        "version": "35c9de8cf96601d41275d901fafcacd7160a679d22a98d3a923f70dba8951adc",
+        "signature": "94c82f4e8394f12282ce568aeec86a366bfc614a12b8a332c6ae6d5607ef19ae",
         "affectsGlobalScope": false
       }
     },
@@ -110,13 +110,13 @@
     },
     "referencedMap": {
       "./src/main.ts": [
-        "./src/test_service.ts"
+        "./src/record_service.ts"
       ]
     },
     "exportedModulesMap": {},
     "semanticDiagnosticsPerFile": [
       "./src/main.ts",
-      "./src/test_service.ts",
+      "./src/record_service.ts",
       "../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.d.ts",
       "../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.iterable.d.ts",
       "../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es2015.collection.d.ts",

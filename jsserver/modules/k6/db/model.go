@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/common"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -99,13 +100,14 @@ type FundResult struct {
 	Error   error
 }
 
-func (d *Model) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.RepositoryOptions) *ddd_repository.FindOneResult[*Entity] {
-	return d.dao.FindById(ctx, tenantId, id, newOptions(opts)...)
+func (d *Model) FindById(ctx context.Context, tenantId string, id string, opts ...*ddd_repository.RepositoryOptions) *common.Result[*Entity] {
+	res := d.dao.FindById(ctx, tenantId, id, newOptions(opts)...)
+	return common.NewResult[*Entity](res.Data, res.Err)
 }
 
-func (d *Model) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*ddd_repository.RepositoryOptions) *Result[[]*Entity] {
-	data, is, err := d.dao.FindByIds(ctx, tenantId, ids, newOptions(opts)...).Result()
-	return NewResult[[]*Entity](data, is, err)
+func (d *Model) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*ddd_repository.RepositoryOptions) *common.Result[[]*Entity] {
+	data, _, err := d.dao.FindByIds(ctx, tenantId, ids, newOptions(opts)...).Result()
+	return common.NewResult[[]*Entity](data, err)
 }
 
 func (d *Model) FindAll(ctx context.Context, tenantId string, opts ...*ddd_repository.RepositoryOptions) *ddd_repository.FindListResult[*Entity] {
@@ -124,32 +126,33 @@ func (d *Model) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAu
 	return d.dao.FindAutoComplete(ctx, qry, newOptions(opts)...)
 }
 
-func (d *Model) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*ddd_repository.RepositoryOptions) *ddd_repository.FindPagingResult[*Entity] {
-	return d.dao.FindDistinct(ctx, qry, newOptions(opts)...)
+func (d *Model) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*ddd_repository.RepositoryOptions) *common.Result[*ddd_repository.FindPagingResult[*Entity]] {
+	data := d.dao.FindDistinct(ctx, qry, newOptions(opts)...)
+	return common.NewResult[*ddd_repository.FindPagingResult[*Entity]](data, nil)
 }
 
 func (d *Model) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}) error {
 	return d.dao.AggregateByPipeline(ctx, pipeline, data)
 }
 
-func (d *Model) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*ddd_repository.RepositoryOptions) *Result[[]*Entity] {
-	data, is, err := d.dao.SumEntity(ctx, qry, newOptions(opts)...)
-	return NewResult[[]*Entity](data, is, err)
+func (d *Model) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*ddd_repository.RepositoryOptions) *common.Result[[]*Entity] {
+	data, _, err := d.dao.SumEntity(ctx, qry, newOptions(opts)...)
+	return common.NewResult[[]*Entity](data, err)
 }
 
-func (d *Model) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*ddd_repository.RepositoryOptions) *Result[[]map[string]any] {
-	data, is, err := d.dao.SumMap(ctx, qry, newOptions(opts)...)
-	return NewResult[[]map[string]any](data, is, err)
+func (d *Model) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*ddd_repository.RepositoryOptions) *common.Result[[]map[string]any] {
+	data, _, err := d.dao.SumMap(ctx, qry, newOptions(opts)...)
+	return common.NewResult[[]map[string]any](data, err)
 }
 
-func (d *Model) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*ddd_repository.RepositoryOptions) *Result[any] {
-	data, is, err := d.dao.Sum(ctx, qry, data, newOptions(opts)...)
-	return NewResult[any](data, is, err)
+func (d *Model) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*ddd_repository.RepositoryOptions) *common.Result[any] {
+	data, _, err := d.dao.Sum(ctx, qry, data, newOptions(opts)...)
+	return common.NewResult[any](data, err)
 }
 
-func (d *Model) GetFilterMap(tenantId string, rsqlstr string) *Result[map[string]any] {
+func (d *Model) GetFilterMap(tenantId string, rsqlstr string) *common.Result[map[string]any] {
 	data, err := d.dao.GetFilterMap(tenantId, rsqlstr)
-	return NewResult[map[string]any](data, err != nil, err)
+	return common.NewResult[map[string]any](data, err)
 }
 
 func newOptions(opts []*ddd_repository.RepositoryOptions) []ddd_repository.Options {
@@ -158,14 +161,4 @@ func newOptions(opts []*ddd_repository.RepositoryOptions) []ddd_repository.Optio
 		res = append(res, o)
 	}
 	return res
-}
-
-type Result[T any] struct {
-	Data  T     `json:"data"`
-	Ok    bool  `json:"ok"`
-	Error error `json:"error"`
-}
-
-func NewResult[T any](data T, isFound bool, err error) *Result[T] {
-	return &Result[T]{Data: data, Ok: isFound, Error: err}
 }

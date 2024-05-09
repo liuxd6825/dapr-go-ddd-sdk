@@ -5,6 +5,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/k6server/js/modules"
 )
@@ -16,32 +17,12 @@ type Server struct {
 	timerIDCounter uint64
 }
 
-type ResultDoQuery struct {
-	Data    any
-	IsFound bool
-	Error   error
-}
-
-type ResultData struct {
-	Data  any
-	Error error
-}
-
-type QueryFunc func(ctx context.Context) (map[string]any, bool, error)
-
 // Exports returns the exports of the k6 module.
 func (e *Server) Exports() modules.Exports {
 	return modules.Exports{
 		Named: map[string]interface{}{
-			"server":            e.vu.Runtime().ToValue(e),
-			"readJson":          e.vu.Runtime().ToValue(ReadJson),
-			"doRequest":         e.vu.Runtime().ToValue(DoRequest),
-			"doQuery":           e.vu.Runtime().ToValue(DoQuery),
-			"doQueryOne":        e.vu.Runtime().ToValue(DoQueryOne),
-			"doCmdAndQueryOne":  e.vu.Runtime().ToValue(DoCmdAndQueryOne),
-			"doCmdAndQueryList": e.vu.Runtime().ToValue(DoCmdAndQueryList),
-			"doCmd":             e.vu.Runtime().ToValue(DoCmd),
-			"time":              e.vu.Runtime().ToValue(NewTime()),
+			"server": e.vu.Runtime().ToValue(e),
+			"time":   e.vu.Runtime().ToValue(NewTime()),
 		},
 	}
 }
@@ -80,37 +61,50 @@ func (e *Server) Handle(method string, relativePath string, fun func(ictx iris.C
 	})
 }
 
-func DoQuery(ictx iris.Context, tenantId string, fun restapp.QueryFunc, opts ...restapp.DoOptions) (any, bool, error) {
-	return restapp.DoQuery(ictx, tenantId, fun, opts...)
+func (e *Server) DoQuery(ictx iris.Context, tenantId string, fun restapp.QueryFunc, opts ...restapp.DoOptions) *common.Result[any] {
+	data, _, err := restapp.DoQuery(ictx, tenantId, fun, opts...)
+	return common.NewResult[any](data, err)
 }
 
-func DoRequest(ictx iris.Context, tenantId string, fun func(ctx context.Context) error, opts ...restapp.DoOptions) (err error) {
-	return restapp.Do(ictx, tenantId, fun, opts...)
+func (e *Server) DoRequest(ictx iris.Context, tenantId string, fun func(ctx context.Context) error, opts ...restapp.DoOptions) *common.Result[any] {
+	err := restapp.Do(ictx, tenantId, fun, opts...)
+	return common.NewResult[any](nil, err)
 }
 
-func ReadJson(ictx iris.Context) (map[string]any, error) {
-	var data map[string]any
-	err := ictx.ReadJSON(&data)
-	return data, err
+func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
+	var v any
+	if len(data) > 0 {
+		v = data[0]
+	} else {
+		v = make(map[string]any)
+	}
+
+	err := ictx.ReadJSON(&v)
+	return common.NewResult[any](v, err)
 }
 
-func DoQueryOne(ictx iris.Context, tenantId string, fun restapp.QueryFunc, opts ...restapp.DoOptions) *ResultDoQuery {
-	data, isFound, err := restapp.DoQueryOne(ictx, tenantId, fun, opts...)
-	return &ResultDoQuery{Data: data, IsFound: isFound, Error: err}
+type QueryFunc = func(tx context.Context) *common.Result[any]
+
+func (e *Server) DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc, opts ...restapp.DoOptions) *common.Result[any] {
+	data, _, err := restapp.DoQueryOne(ictx, tenantId, func(ctx context.Context) (interface{}, bool, error) {
+		return fun(ctx).GetResults()
+	}, opts...)
+	return common.NewResult[any](data, err)
 }
 
-func DoCmdAndQueryOne(ictx iris.Context, tenantId, queryAppId string, cmd restapp.Command, cmdFun restapp.CmdFunc, queryFun restapp.QueryFunc, opts ...restapp.CmdAndQueryOption) *ResultDoQuery {
-	data, isFound, err := restapp.DoCmdAndQueryOne(ictx, tenantId, queryAppId, cmd, cmdFun, queryFun, opts...)
-	return &ResultDoQuery{Data: data, IsFound: isFound, Error: err}
+func (e *Server) DoCmdAndQueryOne(ictx iris.Context, tenantId, queryAppId string, cmd restapp.Command, cmdFun restapp.CmdFunc, queryFun restapp.QueryFunc, opts ...restapp.CmdAndQueryOption) *common.Result[any] {
+	data, _, err := restapp.DoCmdAndQueryOne(ictx, tenantId, queryAppId, cmd, cmdFun, queryFun, opts...)
+	return common.NewResult[any](data, err)
 }
 
-func DoCmdAndQueryList(ictx iris.Context, tenantId string, queryAppId string, cmd restapp.Command, cmdFun restapp.CmdFunc, queryFun restapp.QueryFunc, opts ...restapp.CmdAndQueryOption) *ResultDoQuery {
-	data, isFound, err := restapp.DoCmdAndQueryList(ictx, tenantId, queryAppId, cmd, cmdFun, queryFun, opts...)
-	return &ResultDoQuery{Data: data, IsFound: isFound, Error: err}
+func (e *Server) DoCmdAndQueryList(ictx iris.Context, tenantId string, queryAppId string, cmd restapp.Command, cmdFun restapp.CmdFunc, queryFun restapp.QueryFunc, opts ...restapp.CmdAndQueryOption) *common.Result[any] {
+	data, _, err := restapp.DoCmdAndQueryList(ictx, tenantId, queryAppId, cmd, cmdFun, queryFun, opts...)
+	return common.NewResult[any](data, err)
 }
 
-func DoCmd(ictx iris.Context, tenantId string, fun restapp.CmdFunc, opts ...restapp.DoOptions) (err error) {
-	return restapp.DoCmd(ictx, tenantId, fun, opts...)
+func (e *Server) DoCmd(ictx iris.Context, tenantId string, fun restapp.CmdFunc, opts ...restapp.DoOptions) *common.Result[any] {
+	err := restapp.DoCmd(ictx, tenantId, fun, opts...)
+	return common.NewResult[any](nil, err)
 }
 
 func setError(ctx iris.Context, err error) {
