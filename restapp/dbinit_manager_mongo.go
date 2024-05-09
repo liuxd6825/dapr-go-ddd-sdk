@@ -30,9 +30,9 @@ func (m *MongoManager) GetScript(ctx context.Context, dbKey string, tables []*Ta
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("dbKey not found %s", dbKey))
 	}
-	user := cfg.UserName
-	pwd := cfg.Password
-	dbName := cfg.Database
+	user := cfg.User
+	pwd := cfg.Pwd
+	dbName := cfg.DbName
 	dbScript := fmt.Sprintf(`
 db.createUser({
 	user:"%s",

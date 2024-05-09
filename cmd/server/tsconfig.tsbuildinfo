@@ -81,24 +81,14 @@
         "signature": "9d122b7e8c1a5c72506eea50c0973cba55b92b5532d5cafa8a6ce2c547d57551",
         "affectsGlobalScope": true
       },
-      "./main.ts": {
-        "version": "81069e6c8e052ffc614ed7d85cfd0a8fa9d88f142e7c6dbb9baa6bb6de9750ec",
+      "./src/main.ts": {
+        "version": "69aec43c3a3dd5a93f978742de8c906d0d261d4fa0a51d10591f814461eb8a34",
         "signature": "87c3b7246e2d3d81d06e2fb172d316c10de70cd9a61d6722023592f16006172a",
         "affectsGlobalScope": false
       },
-      "./k6/base.ts": {
-        "version": "9d5a2f6342e0a814652f6f05d007addc78103fd22443a06ee0d220568746301d",
-        "signature": "ad27d78b2ee631435edeff75eb2cc8c2266e9242c1a3114ea5626a664cf31646",
-        "affectsGlobalScope": false
-      },
-      "./k6/server.d.ts": {
-        "version": "3f361df980cca6c11945a4b4c4391c14e857ad2b3bdeef5aa159acbd8cf9c1f6",
-        "signature": "3f361df980cca6c11945a4b4c4391c14e857ad2b3bdeef5aa159acbd8cf9c1f6",
-        "affectsGlobalScope": false
-      },
       "./src/test_service.ts": {
-        "version": "6e86d25236763a326cfb012fdc7f48624d83f582bb8c1b9291c7da2c99345df2",
-        "signature": "0d43fed33aaa2c7c9c82a0623f77c9c8198da597c0ed66c5a58514e4d64d3fb0",
+        "version": "d3d1158b0983589f8a85a0bf1ad47eaf92cfbd86318f537c075264878a1b4d22",
+        "signature": "eeb099703aa77350b0aa3c271ce00e19900e132766bff0cdf47ace481e055192",
         "affectsGlobalScope": false
       }
     },
@@ -110,7 +100,7 @@
       "importHelpers": false,
       "sourceMap": false,
       "inlineSources": false,
-      "rootDir": "./",
+      "rootDir": "./src",
       "incremental": true,
       "noImplicitUseStrict": true,
       "noResolve": true,
@@ -119,22 +109,13 @@
       "configFilePath": "./tsconfig.json"
     },
     "referencedMap": {
-      "./main.ts": [
+      "./src/main.ts": [
         "./src/test_service.ts"
-      ],
-      "./src/test_service.ts": [
-        "./k6/server.d.ts"
       ]
     },
-    "exportedModulesMap": {
-      "./src/test_service.ts": [
-        "./k6/server.d.ts"
-      ]
-    },
+    "exportedModulesMap": {},
     "semanticDiagnosticsPerFile": [
-      "./k6/base.ts",
-      "./k6/server.d.ts",
-      "./main.ts",
+      "./src/main.ts",
       "./src/test_service.ts",
       "../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.d.ts",
       "../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.iterable.d.ts",

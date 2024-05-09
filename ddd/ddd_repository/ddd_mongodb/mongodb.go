@@ -18,8 +18,8 @@ import (
 
 const (
 	host                   = "Host"
-	username               = "UserName"
-	password               = "Password"
+	username               = "User"
+	password               = "Pwd"
 	databaseName           = "DatabaseName"
 	eventCollectionName    = "eventCollectionName"
 	snapshotCollectionName = "snapshotCollectionName"
@@ -34,7 +34,7 @@ const (
 
 	defaultTimeout = 30 * time.Second
 
-	// mongodb://<UserName>:<Password@<Host>/<database><Params>
+	// mongodb://<User>:<Pwd@<Host>/<database><Params>
 	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s"
 
 	// mongodb://<Host>/<database><Params>

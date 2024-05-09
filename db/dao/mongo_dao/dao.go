@@ -14,8 +14,8 @@ type Dao[T ddd.Entity] struct {
 }
 
 type RepositoryOptions struct {
-	mongoDB         *ddd_mongodb.MongoDB
-	getCollCallback GetCollectionCallback
+	MongoDB         *ddd_mongodb.MongoDB
+	GetCollCallback GetCollectionCallback
 }
 
 type GetCollectionCallback func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection)
@@ -29,18 +29,18 @@ func NewSession(isWrite bool) ddd_repository.Session {
 func NewRepositoryOptions(opts ...*RepositoryOptions) *RepositoryOptions {
 	o := &RepositoryOptions{}
 	for _, item := range opts {
-		if item.mongoDB != nil {
-			o.mongoDB = item.mongoDB
+		if item.MongoDB != nil {
+			o.MongoDB = item.MongoDB
 		}
-		if item.getCollCallback != nil {
-			o.getCollCallback = item.getCollCallback
+		if item.GetCollCallback != nil {
+			o.GetCollCallback = item.GetCollCallback
 		}
 	}
-	if o.mongoDB == nil {
-		o.mongoDB = _mongodb
+	if o.MongoDB == nil {
+		o.MongoDB = _mongodb
 	}
-	if o.mongoDB == nil {
-		o.mongoDB = GetDB()
+	if o.MongoDB == nil {
+		o.MongoDB = GetDB()
 	}
 	return o
 }
@@ -53,14 +53,14 @@ func NewDao[T ddd.Entity](collectionName string, opts ...*RepositoryOptions) *Da
 
 	getCollCallback := func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection) {
 		if mongodb == nil || coll == nil {
-			mongodb = opt.mongoDB
-			coll = opt.mongoDB.GetCollection(initCollName)
+			mongodb = opt.MongoDB
+			coll = opt.MongoDB.GetCollection(initCollName)
 		}
 		return mongodb, coll
 	}
 
-	if opt.getCollCallback != nil {
-		getCollCallback = opt.getCollCallback
+	if opt.GetCollCallback != nil {
+		getCollCallback = opt.GetCollCallback
 	}
 
 	return &Dao[T]{
@@ -170,16 +170,6 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 
 func (d *Dao[T]) GetFilterMap(tenantId string, rsqlstr string) (map[string]interface{}, error) {
 	return d.dao.GetFilterMap(tenantId, rsqlstr)
-}
-
-func (o *RepositoryOptions) SetMongoDB(mongoDB *ddd_mongodb.MongoDB) *RepositoryOptions {
-	o.mongoDB = mongoDB
-	return o
-}
-
-func (o *RepositoryOptions) SetGetCollectionCallback(v GetCollectionCallback) *RepositoryOptions {
-	o.getCollCallback = v
-	return o
 }
 
 func GetDB() *ddd_mongodb.MongoDB {

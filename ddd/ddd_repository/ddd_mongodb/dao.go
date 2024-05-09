@@ -25,9 +25,10 @@ const (
 	TenantIdField      = "tenant_id"
 )
 
-type DataMap interface {
-	GetDataMap() map[string]any
-	SetDataMap(data map[string]any)
+type MapEntity interface {
+	ddd.Entity
+	GetMapValues() map[string]any
+	SetMapValues(val map[string]any)
 }
 
 type Dao[T ddd.Entity] struct {
@@ -38,11 +39,13 @@ type Dao[T ddd.Entity] struct {
 	newFun        func() T                                                                   // 新建实体结构方法
 	initfu        func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 	options       *Options
+	isMapEntity   bool
 }
 
 type Options struct {
 	autoCreateCollection *bool // 自动建表
 	autoCreateIndex      *bool // 自动建索引
+	isMapEntity          *bool //实体是map对象
 }
 
 func NewOptions(opts ...*Options) *Options {
@@ -57,6 +60,9 @@ func NewOptions(opts ...*Options) *Options {
 		if item.autoCreateIndex != nil {
 			o.autoCreateIndex = item.autoCreateIndex
 		}
+		if item.isMapEntity != nil {
+			o.isMapEntity = item.isMapEntity
+		}
 	}
 	return o
 }
@@ -65,6 +71,9 @@ func NewDao[T ddd.Entity](initfu func(ctx context.Context) (mongodb *MongoDB, co
 	r := &Dao[T]{}
 	r.initfu = initfu
 	r.options = NewOptions(opts...)
+	if r.options.isMapEntity != nil {
+		r.isMapEntity = *r.options.isMapEntity
+	}
 	return r
 }
 
@@ -651,14 +660,80 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 			return null, false, err
 		}
 		result := r.getCollection(ctx).FindOne(ctx, filter, findOneOptions)
-		if result.Err() != nil {
-			return null, false, result.Err()
-		}
-		if err := result.Decode(data); err != nil {
+		if err := r.DecodeSingle(result, data); err != nil {
 			return null, false, err
 		}
 		return data, true, nil
 	})
+}
+
+func (r *Dao[T]) DecodeSingle(result *mongo.SingleResult, data any) error {
+	if result.Err() != nil {
+		return result.Err()
+	}
+	if r.isMapEntity {
+		mapEntity := data.(MapEntity)
+		vals := make(map[string]any)
+		err := result.Decode(vals)
+		if err != nil {
+			return err
+		}
+		values := make(map[string]any)
+		for k, v := range vals {
+			name := stringutils.MongoFieldAsJsonName(k)
+			values[name] = v
+		}
+		mapEntity.SetMapValues(values)
+	} else {
+		if err := result.Decode(data); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *Dao[T]) DecodeList(ctx context.Context, cursor *mongo.Cursor, data *[]T) error {
+	if cursor.Err() != nil {
+		return cursor.Err()
+	}
+
+	if r.isMapEntity {
+		list := make([]map[string]any, 0)
+		if err := cursor.All(ctx, &list); err != nil {
+			return err
+		}
+		newEntity := func() (any, error) {
+			entity, err := r.NewEntity()
+			if err != nil {
+				return nil, err
+			}
+			return entity, nil
+		}
+		entities := make([]MapEntity, len(list))
+		for i, item := range list {
+			entity, err := newEntity()
+			if err != nil {
+				return err
+			}
+			mapEntity, ok := entity.(MapEntity)
+			if !ok {
+				return err
+			}
+			values := make(map[string]any)
+			for k, v := range item {
+				name := stringutils.MongoFieldAsJsonName(k)
+				values[name] = v
+			}
+			mapEntity.SetMapValues(values)
+			entities[i] = mapEntity
+			*data = append(*data, entity.(T))
+		}
+	} else {
+		if err := cursor.All(ctx, data); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
@@ -1020,7 +1095,8 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 			totalRows = d[0].TotalRows
 		}
 	} else {
-		err = cur.All(ctx, &data)
+		//err = cur.All(ctx, &data)
+		err = r.DecodeList(ctx, cur, &data)
 		if err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
@@ -1360,6 +1436,7 @@ func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 	return res, nil
 }
 
+/*
 func (r *Dao[T]) getDocuments(entities []T) []any {
 	var list []any
 	for _, item := range entities {
@@ -1375,6 +1452,8 @@ func (r *Dao[T]) getDocument(entity any) any {
 	return entity
 }
 
+*/
+
 func (o *Options) SetAutoCreateCollection(v bool) *Options {
 	o.autoCreateCollection = &v
 	return o
@@ -1382,6 +1461,11 @@ func (o *Options) SetAutoCreateCollection(v bool) *Options {
 
 func (o *Options) SetAutoCreateIndex(v bool) *Options {
 	o.autoCreateIndex = &v
+	return o
+}
+
+func (o *Options) SetIsMapEntity(v bool) *Options {
+	o.isMapEntity = &v
 	return o
 }
 
@@ -1398,5 +1482,13 @@ func (o *Options) GetAutoCreateIndex() bool {
 		return false
 	}
 	v := o.autoCreateIndex
+	return *v
+}
+
+func (o *Options) GetIsMapEntity() bool {
+	if o == nil || o.autoCreateIndex == nil {
+		return false
+	}
+	v := o.isMapEntity
 	return *v
 }

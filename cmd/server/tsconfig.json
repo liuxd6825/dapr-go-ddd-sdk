@@ -7,7 +7,7 @@
     "importHelpers": false,
     "sourceMap": false,
     "inlineSources": false,
-    "rootDir": "./",
+    "rootDir": "./src",
     "incremental": true,
     "noImplicitUseStrict": true,
     "noResolve":true, //编译选项，三斜线引用会被忽略；它们不会增加新文件

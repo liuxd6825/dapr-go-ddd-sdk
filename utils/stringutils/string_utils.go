@@ -49,6 +49,19 @@ func AsFieldName(s string) string {
 	return res
 }
 
+func MongoFieldAsJsonName(fieldName string) string {
+	key := fieldName
+	if key == "_id" {
+		key = "id"
+	} else {
+		key = CamelString(key)
+	}
+	if strings.HasPrefix(key, "_") {
+		key = key[1:]
+	}
+	return FirstLower(key)
+}
+
 func Relpace(s string, old string, new string) string {
 	return strings.Replace(s, "._", ".", -1)
 }

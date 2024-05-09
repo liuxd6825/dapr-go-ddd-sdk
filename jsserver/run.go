@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/k6"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/jsserver/modules/k6/server"
 	"github.com/liuxd6825/k6server/js"
 	"github.com/liuxd6825/k6server/lib"
@@ -77,6 +78,7 @@ func newBundle(rootPath string, filename string, data []byte, piState *lib.TestP
 	fs := fsext.NewOsFs()
 	jsModules := map[string]any{
 		"k6/server": server.New(app),
+		"k6/db":     db.New(),
 	}
 
 	return js.NewBundleFormJsModules(

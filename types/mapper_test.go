@@ -120,7 +120,7 @@ func Test_MaskMapper(t *testing.T) {
 		t.Error(err)
 	}
 	if to.UserName != "" {
-		t.Error(errors.New("to.UserName is not null"))
+		t.Error(errors.New("to.User is not null"))
 	}
 	if to.Id == "" {
 		t.Error(errors.New("to.Id is null"))
@@ -134,12 +134,12 @@ func Test_MaskMapperType(t *testing.T) {
 		UserName: "userName",
 	}
 	to := UserFields{UserName: ""}
-	mask := []string{"UserName"}
+	mask := []string{"User"}
 	if err := MaskMapperType(&from, &to, mask, MaskTypeExclude); err != nil {
 		t.Error(err)
 	}
 	if to.UserName != "" {
-		t.Error(errors.New("to.UserName is not null"))
+		t.Error(errors.New("to.User is not null"))
 	}
 	if to.Id == "" {
 		t.Error(errors.New("to.Id is null"))
@@ -153,13 +153,13 @@ func Test_MaskMapperTypeRemove(t *testing.T) {
 		UserName: "userName",
 	}
 	to := UserFields{UserName: ""}
-	mask := []string{"UserName"}
-	remove := []string{"UserName"}
+	mask := []string{"User"}
+	remove := []string{"User"}
 	if err := MaskMapperRemove(&from, &to, mask, MaskTypeContain, remove); err != nil {
 		t.Error(err)
 	}
 	if to.UserName != "" {
-		t.Error(errors.New("to.UserName is not null"))
+		t.Error(errors.New("to.User is not null"))
 	}
 	if to.Id != "" {
 		t.Error(errors.New("to.Id is not null"))

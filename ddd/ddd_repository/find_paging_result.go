@@ -15,24 +15,24 @@ type FindPagingResultDTO struct {
 	Fields      string `json:"fields"`               // 字段值，多个用逗号分隔
 	Sort        string `json:"sort"`                 // 排序条件
 	Error       error  `json:"error"`                // 错误
-	IsFound     bool   `json:"isFound"`              // 是否找到数据
+	IsFound     bool   `json:"IsFound"`              // 是否找到数据
 	IsTotalRows bool   `json:"isTotalRows"`          // 是否统计总记录数
 }
 
 type FindPagingResult[T any] struct {
 	Data        []T    `json:"data"`
-	SumData     []T    `json:"sumData"`
-	TotalRows   *int64 `json:"totalRows"`
-	TotalPages  *int64 `json:"totalPages"`
-	PageNum     int64  `json:"pageNum"`
-	PageSize    int64  `json:"pageSize"`
-	Filter      string `json:"filter"`
-	Fields      string `json:"fields"`
-	Sort        string `json:"sort"`
-	IsFound     bool   `json:"isFound"`
-	IsTotalRows bool   `json:"isTotalRows"`
-	IsSum       bool   `json:"isSum"`
-	Error       error  `json:"-"`
+	SumData     []T    `json:"sumData,omitempty"`
+	TotalRows   *int64 `json:"totalRows,omitempty"`
+	TotalPages  *int64 `json:"totalPages,omitempty"`
+	PageNum     int64  `json:"pageNum,omitempty"`
+	PageSize    int64  `json:"pageSize,omitempty"`
+	Filter      string `json:"filter,omitempty"`
+	Fields      string `json:"fields,omitempty"`
+	Sort        string `json:"sort,omitempty"`
+	IsFound     bool   `json:"isFound,omitempty"`
+	IsTotalRows bool   `json:"isTotalRows,omitempty"`
+	IsSum       bool   `json:"isSum,omitempty"`
+	Error       error  `json:"error,omitempty"`
 }
 
 type FindPagingResultOptions[T interface{}] struct {

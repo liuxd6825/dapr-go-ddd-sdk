@@ -17,24 +17,25 @@ import (
 )
 
 type MongoConfig struct {
-	DbKey        string
-	Host         string  `yaml:"host"`
-	Database     string  `yaml:"dbname"`
-	UserName     string  `yaml:"user"`
-	Password     string  `yaml:"pwd"`
-	ReplicaSet   string  `yaml:"replicaSet"`
-	WriteConcern string  `yaml:"writeConcern"`
-	ReadConcern  string  `yaml:"readConcern"`
-	MaxPoolSize  *uint64 `yaml:"maxPoolSize"`
+	DbKey        string  `json:"dbKey"`
+	AppName      string  `yaml:"appName" json:"appName"`
+	Host         string  `yaml:"host" json:"host"`
+	DbName       string  `yaml:"dbname" json:"dbName"`
+	User         string  `yaml:"user" json:"user"`
+	Pwd          string  `yaml:"pwd" json:"pwd"`
+	ReplicaSet   string  `yaml:"replicaSet" json:"replicaSet"`
+	WriteConcern string  `yaml:"writeConcern" json:"writeConcern"`
+	ReadConcern  string  `yaml:"readConcern" json:"readConcern"`
+	MaxPoolSize  *uint64 `yaml:"maxPoolSize" json:"maxPoolSize"`
 
-	Direct                 *bool  `json:"direct"`
-	LocalThreshold         string `yaml:"localThreshold"`         // 时间长度
-	ConnectTimeout         string `yaml:"connectTimeout"`         // 时间长度
-	HeartbeatInterval      string `yaml:"heartbeatInterval"`      // 时间长度
-	OperationTimeout       string `yaml:"operationTimeout"`       // 时间长度
-	MaxConnIdleTime        string `yaml:"maxConnIdleTime"`        // 时间长度
-	ServerSelectionTimeout string `yaml:"serverSelectionTimeout"` // 时间长度
-	SocketTimeout          string `yaml:"socketTimeout"`          // 时间长度
+	Direct                 *bool  `yaml:"direct" json:"direct" `
+	LocalThreshold         string `yaml:"localThreshold" json:"localThreshold"`                 // 时间长度
+	ConnectTimeout         string `yaml:"connectTimeout" json:"connectTimeout"`                 // 时间长度
+	HeartbeatInterval      string `yaml:"heartbeatInterval" json:"heartbeatInterval"`           // 时间长度
+	OperationTimeout       string `yaml:"operationTimeout" json:"operationTimeout"`             // 时间长度
+	MaxConnIdleTime        string `yaml:"maxConnIdleTime" json:"maxConnIdleTime"`               // 时间长度
+	ServerSelectionTimeout string `yaml:"serverSelectionTimeout" json:"serverSelectionTimeout"` // 时间长度
+	SocketTimeout          string `yaml:"socketTimeout" json:"socketTimeout"`                   // 时间长度
 }
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
@@ -42,7 +43,7 @@ var _mongoDefault *ddd_mongodb.MongoDB
 var _initMongo = false
 
 func (m MongoConfig) IsEmpty() bool {
-	if m.Host == "" && m.Database == "" && m.Password == "" && m.UserName == "" {
+	if m.Host == "" && m.DbName == "" && m.Pwd == "" && m.User == "" {
 		return true
 	}
 	return false
@@ -70,39 +71,12 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 		if c.IsEmpty() {
 			continue
 		}
-
-		operationTimeout := defaultTimeout(c.OperationTimeout, "30s")
-		connectTimeout := defaultTimeout(c.ConnectTimeout, "5s")
-		heartbeatInterval := defaultTimeout(c.HeartbeatInterval, "5s")
-		localThreshold := defaultTimeout(c.LocalThreshold, "5s")
-		maxConnIdleTime := defaultTimeout(c.MaxConnIdleTime, "5s")
-		serverSelectionTimeout := defaultTimeout(c.ServerSelectionTimeout, "5s")
-		socketTimeout := defaultTimeout(c.SocketTimeout, "60s")
-
-		config := &ddd_mongodb.Config{
-			AppName:                appName,
-			Host:                   strings.ReplaceAll(c.Host, " ", ""),
-			DatabaseName:           c.Database,
-			UserName:               c.UserName,
-			Password:               c.Password,
-			WriteConcern:           c.WriteConcern,
-			ReadConcern:            c.ReadConcern,
-			Direct:                 c.Direct,
-			ReplicaSet:             c.ReplicaSet,
-			MaxPoolSize:            defaultInt(c.MaxPoolSize, 20),
-			OperationTimeout:       operationTimeout,
-			ConnectTimeout:         connectTimeout,
-			HeartbeatInterval:      heartbeatInterval,
-			LocalThreshold:         localThreshold,
-			MaxConnIdleTime:        maxConnIdleTime,
-			ServerSelectionTimeout: serverSelectionTimeout,
-			SocketTimeout:          socketTimeout,
-		}
+		config := NewDddMongodbConfig(c)
 		mongodb, err := ddd_mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
 			GetLogger().Infof("config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
 				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
-				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), connectTimeout,
-				socketTimeout, serverSelectionTimeout, maxConnIdleTime, operationTimeout, socketTimeout)
+				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), config.ConnectTimeout,
+				config.SocketTimeout, config.ServerSelectionTimeout, config.MaxConnIdleTime, config.OperationTimeout, config.SocketTimeout)
 			opts.Monitor = newMongoMonitor()
 			opts.ServerMonitor = newMongoServerMonitor()
 			return nil
@@ -120,6 +94,37 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 		_mongoDefault = nil
 	}
 	return nil
+}
+
+func NewDddMongodbConfig(c *MongoConfig) *ddd_mongodb.Config {
+	operationTimeout := defaultTimeout(c.OperationTimeout, "30s")
+	connectTimeout := defaultTimeout(c.ConnectTimeout, "5s")
+	heartbeatInterval := defaultTimeout(c.HeartbeatInterval, "5s")
+	localThreshold := defaultTimeout(c.LocalThreshold, "5s")
+	maxConnIdleTime := defaultTimeout(c.MaxConnIdleTime, "5s")
+	serverSelectionTimeout := defaultTimeout(c.ServerSelectionTimeout, "5s")
+	socketTimeout := defaultTimeout(c.SocketTimeout, "60s")
+
+	config := &ddd_mongodb.Config{
+		AppName:                c.AppName,
+		Host:                   strings.ReplaceAll(c.Host, " ", ""),
+		DatabaseName:           c.DbName,
+		UserName:               c.User,
+		Password:               c.Pwd,
+		WriteConcern:           c.WriteConcern,
+		ReadConcern:            c.ReadConcern,
+		Direct:                 c.Direct,
+		ReplicaSet:             c.ReplicaSet,
+		MaxPoolSize:            defaultInt(c.MaxPoolSize, 20),
+		OperationTimeout:       operationTimeout,
+		ConnectTimeout:         connectTimeout,
+		HeartbeatInterval:      heartbeatInterval,
+		LocalThreshold:         localThreshold,
+		MaxConnIdleTime:        maxConnIdleTime,
+		ServerSelectionTimeout: serverSelectionTimeout,
+		SocketTimeout:          socketTimeout,
+	}
+	return config
 }
 
 func newMongoMonitor() *event.CommandMonitor {

@@ -6,7 +6,7 @@ package ddd_repository
 	Delete(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult[T]
 	DeleteById(ctx context.Context, tenantId string, id string, opts ...*SetOptions) *SetResult[T]
 	DeleteAll(ctx context.Context, tenantId string, opts ...*SetOptions) *SetResult[T]
-	DeleteByMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...*SetOptions) *SetResult[T]
+	DeleteByMap(ctx context.Context, tenantId string, Data map[string]interface{}, opts ...*SetOptions) *SetResult[T]
 	NewFilter(tenantId string, filterMap map[string]interface{}) bson.D
 	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T]
 	FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*FindOptions) *FindOneResult[T]

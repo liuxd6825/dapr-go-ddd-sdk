@@ -84,7 +84,7 @@ func AbsFileName(val string) string {
 	if val == "" {
 		return ""
 	}
-	val = strings.ReplaceAll(val, "${AppName}", GetExeName())
+	val = strings.ReplaceAll(val, "${Appname}", GetExeName())
 	val = strings.ReplaceAll(val, "${PID}", GetPID())
 	val = strings.ReplaceAll(val, "${EnvName}", GetEnvName())
 	val, _ = filepath.Abs(val)

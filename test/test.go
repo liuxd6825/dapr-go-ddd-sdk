@@ -118,9 +118,9 @@ func GetResponseData(t *testing.T, resp *httpexpect.Response, data interface{}) 
 func initMongo(dbConfig *restapp.MongoConfig) error {
 	config := &ddd_mongodb.Config{
 		Host:             dbConfig.Host,
-		UserName:         dbConfig.UserName,
-		Password:         dbConfig.Password,
-		DatabaseName:     dbConfig.Database,
+		User:         dbConfig.User,
+		Pwd:         dbConfig.Pwd,
+		DatabaseName:     dbConfig.Dbname,
 		OperationTimeout: DefaultOperationTimeout,
 		ReplicaSet:       dbConfig.ReplicaSet,
 	}
@@ -137,8 +137,8 @@ func initMongo(dbConfig *restapp.MongoConfig) error {
 func initRedis(cfg *restapp.RedisConfig) error {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Host,
-		Password: cfg.Password, // no password set
-		DB:       cfg.Database, // use default DB
+		Pwd: cfg.Pwd, // no password set
+		DB:       cfg.Dbname, // use default DB
 	})
 	restapp.SetRedis("default", rdb)
 	return nil
@@ -154,7 +154,7 @@ func initNeo4j(dbConfig *restapp.Neo4jConfig) error {
 	}
 	neo4jUil := fmt.Sprintf("bolt://%v:%v", dbConfig.Host, dbConfig.Port)
 	configures := []func(*neo4j.Config){cfg}
-	driver, err := neo4j.NewDriverWithContext(neo4jUil, neo4j.BasicAuth(dbConfig.UserName, dbConfig.Password, ""), configures...)
+	driver, err := neo4j.NewDriverWithContext(neo4jUil, neo4j.BasicAuth(dbConfig.User, dbConfig.Pwd, ""), configures...)
 	if err != nil {
 		return err
 	}
