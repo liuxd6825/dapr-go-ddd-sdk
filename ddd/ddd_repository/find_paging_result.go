@@ -26,12 +26,12 @@ type FindPagingResult[T any] struct {
 	TotalPages  *int64 `json:"totalPages,omitempty"`
 	PageNum     int64  `json:"pageNum,omitempty"`
 	PageSize    int64  `json:"pageSize,omitempty"`
-	Filter      string `json:"filter,omitempty"`
-	Fields      string `json:"fields,omitempty"`
-	Sort        string `json:"sort,omitempty"`
-	IsFound     bool   `json:"isFound,omitempty"`
-	IsTotalRows bool   `json:"isTotalRows,omitempty"`
-	IsSum       bool   `json:"isSum,omitempty"`
+	Filter      string `json:"filter"`
+	Fields      string `json:"fields"`
+	Sort        string `json:"sort"`
+	IsFound     bool   `json:"isFound"`
+	IsTotalRows bool   `json:"isTotalRows"`
+	IsSum       bool   `json:"isSum"`
 	Error       error  `json:"error,omitempty"`
 }
 

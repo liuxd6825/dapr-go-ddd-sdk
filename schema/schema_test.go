@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewSchemaString(t *testing.T) {
-	schema, err := NewSchemaFile("./test/schema.json")
+	schema, err := NewSchemaFile("./test/validate.json")
 	assert.NoError(t, err)
 	assert.NotNil(t, schema)
 }

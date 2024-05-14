@@ -1114,6 +1114,7 @@ func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQue
 		sumData := []T{}
 		findData.SetSum(false, sumData, err)
 	}
+	findData.IsTotalRows = qry.GetIsTotalRows()
 	return findData
 }
 

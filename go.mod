@@ -32,8 +32,10 @@ require (
 	github.com/allegro/bigcache v1.2.1
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/dop251/goja_nodejs v0.0.0-20211022123610-8dd9abb0616d
+	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/gookit/goutil v0.6.15
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/pongo2-addons/v4 v4.0.0
 	github.com/json-iterator/go v1.1.12
@@ -42,6 +44,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
 	github.com/redis/go-redis/v9 v9.5.1
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.0-beta1
 	github.com/snownd/cake v0.6.0
 	github.com/spf13/cobra v1.7.0
 	github.com/tealeg/xlsx v1.0.5
@@ -71,7 +74,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidmz/go-pageant v1.0.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dlclark/regexp2 v1.9.0 // indirect
+	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/extemporalgenome/slug v0.0.0-20150414033109-0320c85e32e0 // indirect
 	github.com/fatih/color v1.16.0 // indirect

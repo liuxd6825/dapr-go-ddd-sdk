@@ -25,5 +25,4 @@ func RunScript[T any](vm *goja.Runtime, values map[string]T, script *string) (go
 	}
 	value, err := vm.RunString(code)
 	return value, err
-
 }

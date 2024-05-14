@@ -33,7 +33,7 @@ type Command interface {
 }
 
 type CmdFunc func(ctx context.Context) error
-type QueryFunc func(ctx context.Context) (interface{}, bool, error)
+type QueryFunc func(ctx context.Context) (interface{}, error)
 
 // CmdAndQueryOptions
 // @Description: 命令执行参数
@@ -131,6 +131,14 @@ func DoCmd(ictx iris.Context, tenantId string, fun CmdFunc, opts ...DoOptions) (
 	return err
 }
 
+func NewCtx(ictx iris.Context, opts ...DoOptions) (ctx context.Context, err error) {
+	opt := newOption(opts...)
+	ctx, err = NewContext(ictx, func(option *ContextOption) {
+		option.CheckAuth = opt.CheckAuth
+	})
+	return ctx, err
+}
+
 func newOption(options ...DoOptions) *DoOption {
 	opt := &DoOption{}
 	for _, item := range options {
@@ -222,7 +230,7 @@ func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOpt
 	}()
 
 	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
-		data, isFound, err = fun(ctx)
+		data, err = fun(ctx)
 		return err
 	})
 
@@ -230,7 +238,7 @@ func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOpt
 		SetError(ctx, err)
 		return nil, false, err
 	}
-	if data == nil || !isFound {
+	if data == nil {
 		return nil, false, SetErrorNotFond(ictx)
 	}
 	err = SetJson(ictx, data)
@@ -265,24 +273,22 @@ func DoQuery(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOption
 	}()
 
 	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
-		data, isFound, err = fun(ctx)
+		data, err = fun(ctx)
 		return err
 	})
-
-	if !isFound && err != nil {
-		return data, isFound, errors.ErrNotFound
+	if data == nil && err != nil {
+		return data, false, errors.ErrNotFound
 	}
 	if err != nil {
 		SetError(ctx, err)
-		return data, isFound, err
+		return data, false, err
 	}
-
 	err = SetJson(ictx, data)
 	if err != nil {
 		SetError(ctx, err)
 		return nil, false, err
 	}
-	return data, isFound, err
+	return data, true, err
 }
 
 func CmdAndQueryOptionWaitSecond(waitSecond int) CmdAndQueryOption {
@@ -293,7 +299,7 @@ func CmdAndQueryOptionWaitSecond(waitSecond int) CmdAndQueryOption {
 
 // DoCmdAndQueryOne 执行命令并返回查询一个数据
 //
-//	DoCmdAndQueryOne
+//	DoCmdOne
 //	@Description:  执行命令并返回查询一个数据
 //	@param ctx 上下文
 //	@param queryAppId  查询AppId

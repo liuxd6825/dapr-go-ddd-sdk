@@ -35,7 +35,7 @@ type UiCol struct {
 	Span       int         `json:"span,omitempty"`
 	UiProperty *UiProperty `json:"uiproperty,omitempty"`
 	Property   *Property   `json:"property,omitempty"`
-	schema     *Schema     `json:"schema,omitempty"`
+	schema     *Schema     `json:"validate,omitempty"`
 	Required   bool        `json:"required,omitempty"`
 }
 

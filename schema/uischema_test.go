@@ -10,7 +10,7 @@ func TestNewUiSchemaFile(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, uiSchema)
 
-	schema, err := NewSchemaFile("./test/schema.json")
+	schema, err := NewSchemaFile("./test/validate.json")
 	assert.NoError(t, err)
 	assert.NotNil(t, schema)
 

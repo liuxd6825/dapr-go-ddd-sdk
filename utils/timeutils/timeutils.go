@@ -72,6 +72,10 @@ func AnyToTime(data interface{}, defaultValue time.Time) (time.Time, error) {
 	return defaultValue, nil
 }
 
+func AsTime(data interface{}) (time.Time, error) {
+	return AnyToTime(data, time.Time{})
+}
+
 // 20180313114933
 // 20221001 11:09:22
 
