@@ -1,4 +1,4 @@
-import {GoError, Context, Result} from "./common";
+import {GoError, Context, Result, Object} from "./common";
 import {Entity} from "./db";
 import {Schema} from "./schema";
 
@@ -79,24 +79,29 @@ export interface IContext {
 }
 //  request context
 export interface RContext {
+    params():Params;
+    readJson(data?:any):Result<any>;
+    readObject(schema:Schema):Result<Object>;
+    writeJson(data:any):GoError;
+    executor<T>():Executor<T>;
+}
+
+export interface Params {
     getId():string;
     getTenantId(): string;
     getCaseId(): string;
     getFindPaging(): FindPagingRequest;
-    paramString(key:string): Result<string>;
-    paramStrings(key:string):Result<string[]>;
-    paramBool(key:string): Result<boolean>;
-    paramFloat64(key:string): Result<number>;
-    paramInt(key:string): Result<bigint>;
-    readJson(data?:any):Result<any>;
-    writeJson(data:any):GoError;
-    executor<T>():Executor<T>;
+    string(key:string): Result<string>;
+    strings(key:string):Result<string[]>;
+    bool(key:string): Result<boolean>;
+    float64(key:string): Result<number>;
+    int64(key:string): Result<bigint>;
 }
 
 export interface Executor<T> {
     doQuery(fun:(ctx:Context)=>Result<any>):Executor<T>;
     doQueryOne(fun:(ctx:Context)=>Result<any>):Executor<T>;
-    doCommand(fun:(ctx:Context, cmd:Command<any>)=>GoError):Executor<T>;
+    doCommand(fun:(ctx:Context)=>GoError):Executor<T>;
     doError(fun:(err:Error)=>void):Executor<T>;
     getData():T;
     getError():GoError;
@@ -117,6 +122,7 @@ export interface FindPagingRequest {
     valueCols   :{aggFunc:string;field:string;}[];
 }
 
+export function newObject(v: any): any;
 export const server: Server;
 export const time: Time;
 

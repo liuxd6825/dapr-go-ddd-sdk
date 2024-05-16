@@ -96,7 +96,7 @@ export interface FindPagingQuery {
 }
 
 export interface Model<T> {
-    insert(ctx: Context, entity: any, opts?: Options): GoError;
+    create(ctx: Context, entity: any, opts?: Options): GoError;
 
     update(ctx: Context, entity: any, opts?: Options): GoError;
 

@@ -3,7 +3,7 @@ import { RecordService } from "./record_service";
 // @ts-ignore
 import { db } from "../pkg/k6/db";
 export default function () {
-    let err = db.open({
+    var err = db.open({
         appName: "rs-server",
         host: "192.168.65.5:27018,192.168.65.5:27019,192.168.65.5:27020",
         replicaSet: "mongors",
@@ -20,5 +20,5 @@ export default function () {
         console.log(err.Error());
         return;
     }
-    let service = new RecordService();
+    var service = new RecordService();
 }

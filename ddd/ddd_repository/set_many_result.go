@@ -1,7 +1,6 @@
 package ddd_repository
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -37,14 +36,14 @@ func NewSetManyCountResult(updateRes *mongo.UpdateResult, err error) *SetManyCou
 	return res
 }
 
-func NewSetManyResult[T ddd.Entity](data []T, err error) *SetManyResult[T] {
+func NewSetManyResult[T any](data []T, err error) *SetManyResult[T] {
 	return &SetManyResult[T]{
 		data: data,
 		err:  err,
 	}
 }
 
-func NewSetManyResultError[T ddd.Entity](err error) *SetManyResult[T] {
+func NewSetManyResultError[T any](err error) *SetManyResult[T] {
 	return &SetManyResult[T]{
 		err: err,
 	}

@@ -10,21 +10,15 @@ type CmdFunc func(ctx context.Context, command Command) error
 
 func (e *Server) DoCmd(rctx *RContext, fun CmdFunc, opts ...restapp.DoOptions) *common.Result[any] {
 	err := restapp.DoCmd(rctx.ictx, rctx.GetTenantId(), func(ctx context.Context) error {
-		return rctx.NewCommand().DoSuccess(func(cmd Command) error {
-			return fun(ctx, cmd)
-		}).Error
+		return nil
 	}, opts...)
 	return common.NewResult[any](nil, err)
 }
 
 func (e *Server) DoCmdAndQueryOne(rctx *RContext, queryAppId string, cmdFun CmdFunc, queryFun QueryFunc, opts ...restapp.CmdAndQueryOption) *common.Result[any] {
-	cmd, err := rctx.NewCommand().GetResults()
-	if err != nil {
-		return common.NewResult[any](nil, err)
-	}
 
-	data, _, err := restapp.DoCmdAndQueryOne(rctx.ictx, rctx.GetTenantId(), queryAppId, cmd, func(ctx context.Context) error {
-		return cmdFun(ctx, rctx.NewCommand().Data)
+	data, _, err := restapp.DoCmdAndQueryOne(rctx.ictx, rctx.GetTenantId(), queryAppId, nil, func(ctx context.Context) error {
+		return nil
 	}, func(ctx context.Context) (any, error) {
 		data, err := queryFun(ctx).GetResults()
 		return data, err

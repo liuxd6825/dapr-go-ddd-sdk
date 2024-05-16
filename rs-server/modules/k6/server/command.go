@@ -32,12 +32,26 @@ func (c Command) SetTypeName(val string) {
 	_ = common.Object(c).Set(common.TypeName, val)
 }
 
+func (c Command) GetIsValidOnly() bool {
+	b, _ := common.Object(c).GetBool("isValidOnly")
+	return b
+}
+
+func (c Command) SetIsValidOnly(val bool) {
+	_ = common.Object(c).Set("isValidOnly", val)
+}
+
 func (c Command) GetData() map[string]any {
-	m, ok := common.Object(c).GetMap(common.Data)
-	if !ok {
+	v := common.Object(c).Get("data")
+	switch v.(type) {
+	case map[string]any:
+		return v.(map[string]any)
+	case Command:
+		return v.(map[string]interface{})
+	default:
 		return nil
 	}
-	return m
+	return nil
 }
 
 func (c Command) SetData(val map[string]any) {

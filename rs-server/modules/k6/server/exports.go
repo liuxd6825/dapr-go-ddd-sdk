@@ -17,9 +17,11 @@ func NewExports(vu modules.VU, app *iris.Application) *Exports {
 
 // Exports returns the exports of the k6 module.
 func (e *Exports) Exports() modules.Exports {
+	server := NewServer(e.app, e.vu)
 	return modules.Exports{
 		Named: map[string]interface{}{
-			"server": e.vu.Runtime().ToValue(NewServer(e.app)),
+			"server": e.vu.Runtime().ToValue(server),
+			"object": e.vu.Runtime().ToValue(server.newObject),
 			"time":   e.vu.Runtime().ToValue(NewTime()),
 		},
 	}

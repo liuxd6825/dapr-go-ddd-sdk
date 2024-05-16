@@ -13,4 +13,6 @@ export interface Result<T> {
     results?:()=>{data:T, error?:GoError}
 }
 
+export type Object = { [key:string]:any };
+
 export function newGoError (error:string):GoError;

@@ -1,4 +1,4 @@
-export const recordSchemas = {
+export var recordSchemas = {
     domain: {
         id: "https://example.com/schemas/record/domain.json",
         title: "交易记录",

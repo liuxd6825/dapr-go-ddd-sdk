@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"io"
 	"os"
 	"strings"
@@ -135,19 +136,19 @@ func (s *Schema) ToJson() string {
 	return string(bs)
 }
 
-func (s *Schema) Convertor(source common.Object) (common.Object, error) {
-	return s.convertor(source, s.Properties)
+func (s *Schema) Convertor(obj types.Object) (common.Object, error) {
+	return s.convertor(obj, s.Properties)
 }
 
-func (s *Schema) convertor(source common.Object, props Properties) (common.Object, error) {
-	target := common.NewObject()
+func (s *Schema) convertor(source types.Object, props Properties) (common.Object, error) {
+	target := types.NewObject()
 	for key, prop := range props {
 		var val any
 		var err error
 		switch prop.Type {
 		case TypeObject:
 			val = source.Get(key)
-			obj, ok := common.AsObject(val)
+			obj, ok := types.AsObject(val)
 			if ok {
 				val, err = s.convertor(obj, prop.Properties)
 			}
@@ -174,8 +175,9 @@ func (s *Schema) convertor(source common.Object, props Properties) (common.Objec
 		if err != nil {
 			return nil, err
 		}
-		_ = target.Set(key, val)
-
+		if err = target.Set(key, val); err != nil {
+			return nil, err
+		}
 	}
 	return target, nil
 }

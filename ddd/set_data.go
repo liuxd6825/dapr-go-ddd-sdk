@@ -2,13 +2,13 @@ package ddd
 
 type DataStatue int
 
-type SetDataItem struct {
-	data   Entity
+type SetDataItem[T any] struct {
+	data   T
 	statue DataStatue
 }
 
-type SetData[T Entity] struct {
-	items []*SetDataItem
+type SetData[T any] struct {
+	items []*SetDataItem[T]
 }
 
 const (
@@ -18,15 +18,15 @@ const (
 	DataStatueCreateOrUpdate
 )
 
-func NewSetData[T Entity]() *SetData[T] {
+func NewSetData[T any]() *SetData[T] {
 	return &SetData[T]{
-		items: []*SetDataItem{},
+		items: []*SetDataItem[T]{},
 	}
 }
 
 func (d *SetData[T]) AddItems(statue DataStatue, items ...T) {
 	for _, item := range items {
-		i := &SetDataItem{
+		i := &SetDataItem[T]{
 			statue: statue,
 			data:   item,
 		}
@@ -49,7 +49,7 @@ func (d *SetData[T]) GetDeleteList() []T {
 	return d.getStatueList(DataStatueDelete)
 }
 
-func (d *SetData[T]) Items() []*SetDataItem {
+func (d *SetData[T]) Items() []*SetDataItem[T] {
 	return d.items
 }
 
@@ -57,17 +57,17 @@ func (d *SetData[T]) getStatueList(statue DataStatue) []T {
 	var list []T
 	for _, item := range d.items {
 		if item.statue == statue {
-			list = append(list, item.data.(T))
+			list = append(list, item.data)
 		}
 	}
 	return list
 }
 
-func (d *SetDataItem) Data() Entity {
+func (d *SetDataItem[T]) Data() T {
 	return d.data
 }
 
-func (d *SetDataItem) Statue() DataStatue {
+func (d *SetDataItem[T]) Statue() DataStatue {
 	return d.statue
 }
 

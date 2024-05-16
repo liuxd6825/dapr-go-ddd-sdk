@@ -1,14 +1,18 @@
 package server
 
 import (
+	"fmt"
+	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/k6/schema"
+	"github.com/liuxd6825/k6server/js/modules"
 )
 
 type Server struct {
 	app *iris.Application
+	vu  modules.VU
 }
 
 type MethodType string
@@ -25,14 +29,14 @@ func (m MethodType) String() string {
 }
 
 type HandleOptions struct {
-	Method MethodType                                 `json:"method"`
-	Path   string                                     `json:"path"`
-	Handle func(cxt *RContext, data ...common.Object) `json:"handle"`
-	Schema *schema.Schema                             `json:"schema"`
+	Method MethodType                    `json:"method"`
+	Path   string                        `json:"path"`
+	Handle func(cxt *RContext, data any) `json:"handle"`
+	Schema *schema.Schema                `json:"schema"`
 }
 
-func NewServer(app *iris.Application) *Server {
-	return &Server{app: app}
+func NewServer(app *iris.Application, vu modules.VU) *Server {
+	return &Server{app: app, vu: vu}
 }
 
 func (e *Server) Get(opt *HandleOptions) {
@@ -52,23 +56,45 @@ func (e *Server) Put(opt *HandleOptions) {
 
 func (e *Server) Handle(opt *HandleOptions) {
 	method := opt.Method.String()
+	if opt.Handle == nil {
+		return
+	}
+
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
-		var object = common.NewObject()
+		defer ctxRecover(ictx, recover())
+		rctx := NewRContext(ictx)
+		var obj common.Object
 		var err error
 		if opt.Schema != nil {
-			if err = ictx.ReadJSON(&object); err == nil {
-				if err = opt.Schema.Validate(object); err == nil {
-					object, err = opt.Schema.Convertor(object)
-				}
-			}
+			obj, err = rctx.ReadObject(opt.Schema)
 		}
 		if err != nil {
 			setError(ictx, err)
 			return
 		}
-		defer ctxRecover(ictx, recover())
-		opt.Handle(NewRContext(ictx), object)
+		opt.Handle(rctx, e.newObject(obj))
 	})
+}
+
+func (e *Server) newObject(v map[string]any) *goja.Object {
+	if v == nil {
+		obj := e.vu.Runtime().NewObject()
+		return obj
+	}
+	obj := e.vu.Runtime().NewObject()
+	for k, v := range v {
+		if m, ok := v.(map[string]any); ok {
+			obj.Set(k, e.newObject(m))
+			continue
+		} else if m, ok := v.(common.Object); ok {
+			obj.Set(k, e.newObject(m))
+			continue
+		}
+		if err := obj.Set(k, v); err != nil {
+			fmt.Println(err)
+		}
+	}
+	return obj
 }
 
 func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {

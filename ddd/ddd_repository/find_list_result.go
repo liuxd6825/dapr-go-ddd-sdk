@@ -1,7 +1,5 @@
 package ddd_repository
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-
 type FindListResult[T interface{}] struct {
 	err     error
 	data    []T
@@ -16,7 +14,7 @@ func NewFindListResult[T interface{}](data []T, isFound bool, err error) *FindLi
 	}
 }
 
-func NewFindListResultError[T ddd.Entity](err error) *FindListResult[T] {
+func NewFindListResultError[T any](err error) *FindListResult[T] {
 	return &FindListResult[T]{
 		err: err,
 	}

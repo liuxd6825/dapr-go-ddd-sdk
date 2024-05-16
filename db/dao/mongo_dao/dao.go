@@ -64,7 +64,7 @@ func NewDao[T ddd.Entity](collectionName string, opts ...*RepositoryOptions) *Da
 	}
 
 	return &Dao[T]{
-		dao: ddd_mongodb.NewDao[T](getCollCallback, ddd_mongodb.NewOptions().SetAutoCreateCollection(true).SetAutoCreateIndex(true)),
+		dao: ddd_mongodb.NewDao[T](getCollCallback, ddd_mongodb.NewOptions[T]().SetAutoCreateCollection(true).SetAutoCreateIndex(true)),
 	}
 }
 

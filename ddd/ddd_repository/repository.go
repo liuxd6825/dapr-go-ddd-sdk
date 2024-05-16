@@ -49,7 +49,7 @@ type IRepository[T ddd.Entity] interface {
 	mongo *ddd_mongodb.Repository[T]
 }
 
-func NewRepositoryWithMongo[T ddd.Entity](entityBuilder *EntityBuilder[T], mongodb *ddd_mongodb.MongoDB, collection *mongo.Collection) *Repository[T] {
+func NewRepositoryWithMongo[T ddd.Entity](entityBuilder *EntityManager[T], mongodb *ddd_mongodb.MongoDB, collection *mongo.Collection) *Repository[T] {
 	return &Repository[T]{
 		entityBuilder: entityBuilder,
 		collection:    collection,

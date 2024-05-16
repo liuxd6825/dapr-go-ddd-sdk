@@ -10,7 +10,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,56 +24,57 @@ const (
 	TenantIdField      = "tenant_id"
 )
 
-type MapEntity interface {
-	ddd.Entity
-	GetMapValues() map[string]any
-	SetMapValues(val map[string]any)
-}
-
-type Dao[T ddd.Entity] struct {
-	entityBuilder *ddd_repository.EntityBuilder[T]
+type Dao[T any] struct {
+	entityBuilder ddd.EntityBuilder[T] // 实体构造器
+	decoder       Decoder[T]           // mongo数据解码器
 	collection    *mongo.Collection
 	mongodb       *MongoDB
 	null          T
 	newFun        func() T                                                                   // 新建实体结构方法
-	initfu        func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
-	options       *Options
-	isMapEntity   bool
+	initFun       func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
+	options       *Options[T]
 }
 
-type Options struct {
-	autoCreateCollection *bool // 自动建表
-	autoCreateIndex      *bool // 自动建索引
-	isMapEntity          *bool //实体是map对象
-}
-
-func NewOptions(opts ...*Options) *Options {
-	o := &Options{}
-	for _, item := range opts {
-		if item == nil {
-			continue
-		}
-		if item.autoCreateCollection != nil {
-			o.autoCreateCollection = item.autoCreateCollection
-		}
-		if item.autoCreateIndex != nil {
-			o.autoCreateIndex = item.autoCreateIndex
-		}
-		if item.isMapEntity != nil {
-			o.isMapEntity = item.isMapEntity
-		}
-	}
-	return o
-}
-
-func NewDao[T ddd.Entity](initfu func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options) *Dao[T] {
+func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
 	r := &Dao[T]{}
-	r.initfu = initfu
-	r.options = NewOptions(opts...)
-	if r.options.isMapEntity != nil {
-		r.isMapEntity = *r.options.isMapEntity
+	r.initFun = initFun
+	r.options = NewOptions[T](opts...)
+	if r.options.entityBuilder == nil {
+		r.options.entityBuilder = ddd.NewStructEntityBuilder[T]()
+		r.decoder = NewStructDecoder[T]()
+	}
+	r.entityBuilder = r.options.entityBuilder
+	switch r.entityBuilder.(type) {
+	case *ddd.StructEntityBuilder[T]:
+		r.decoder = NewStructDecoder[T]()
+	default:
+		r.decoder = NewMapDecoder[T]()
 	}
 	return r
+}
+
+func (r *Dao[T]) NewEntity() (T, error) {
+	return r.entityBuilder.NewEntity()
+}
+
+func (r *Dao[T]) NewEntityList() ([]T, error) {
+	return r.entityBuilder.NewEntityList()
+}
+
+func (r *Dao[T]) GetTenantId(entity T) string {
+	return r.entityBuilder.GetTenantId(entity)
+}
+
+func (r *Dao[T]) SetTenantId(entity T, tenantId string) {
+	r.entityBuilder.SetTenantId(entity, tenantId)
+}
+
+func (r *Dao[T]) GetId(entity T) string {
+	return r.entityBuilder.GetId(entity)
+}
+
+func (r *Dao[T]) SetId(entity T, id string) {
+	r.entityBuilder.SetId(entity, id)
 }
 
 func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.Collection) error {
@@ -205,16 +205,8 @@ func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
 	return err
 }
 
-func (r *Dao[T]) NewEntity() (T, error) {
-	return reflectutils.NewStruct[T]()
-}
-
-func (r *Dao[T]) NewEntityList() ([]T, error) {
-	return reflectutils.NewSlice[[]T]()
-}
-
 func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
-	mongodb, coll := r.initfu(ctx)
+	mongodb, coll := r.initFun(ctx)
 	if err := r.Init(ctx, mongodb, coll); err != nil {
 		panic(err)
 	}
@@ -230,14 +222,14 @@ func (r *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_rep
 	}()
 	for _, item := range data.Items() {
 		statue := item.Statue()
-		entity := item.Data().(T)
+		entity := item.Data()
 		switch statue {
 		case ddd.DataStatueCreate:
 			err = r.Insert(ctx, entity, opts...).GetError()
 		case ddd.DataStatueUpdate:
 			err = r.Update(ctx, entity, opts...).GetError()
 		case ddd.DataStatueDelete:
-			err = r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...).GetError()
+			err = r.DeleteById(ctx, r.GetTenantId(entity), r.GetId(entity), opts...).GetError()
 		case ddd.DataStatueCreateOrUpdate:
 			err = r.InsertOrUpdate(ctx, entity, opts...).GetError()
 		}
@@ -249,11 +241,11 @@ func (r *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_rep
 }
 
 func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert.NotEmpty(r.GetTenantId(entity), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
-		filter := r.NewFilter(entity.GetTenantId(), map[string]interface{}{"id": entity.GetId()})
+		filter := r.NewFilter(r.GetTenantId(entity), map[string]interface{}{"id": r.GetId(entity)})
 		findOneOptions := getFindOneOptions(opts...)
 		isFound := true
 
@@ -275,11 +267,10 @@ func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repos
 			return entity, err
 		}
 	})
-	return ddd_repository.NewSetResultError[T](nil)
 }
 
 func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert.NotEmpty(r.GetTenantId(entity), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
@@ -288,6 +279,14 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 	})
 }
 
+// InsertMap
+// @Description: 插入数据
+// @receiver r
+// @param ctx
+// @param tenantId
+// @param data
+// @param opts
+// @return error
 func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) error {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return err
@@ -303,7 +302,7 @@ func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repos
 	}
 
 	for _, e := range entitits {
-		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert.NotEmpty(r.GetTenantId(e), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
@@ -320,7 +319,7 @@ func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repos
 }
 
 func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	if err := assert.NotEmpty(entity.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert.NotEmpty(r.GetTenantId(entity), assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	return r.DoSet(func() (T, error) {
@@ -333,7 +332,7 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repositor
 	data := r.getUpdateData(entity, opt)
 	uopt := getUpdateOptions(opts...)
 	setData := bson.M{"$set": data}
-	_, err := r.getCollection(ctx).UpdateByID(ctx, entity.GetId(), setData, uopt)
+	_, err := r.getCollection(ctx).UpdateByID(ctx, r.GetId(entity), setData, uopt)
 	if err != nil {
 		return entity, err
 	}
@@ -363,7 +362,7 @@ func (r *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 	var list []mongo.WriteModel
 	for _, entity := range entities {
 		data := bson.M{"$set": entity}
-		model := mongo.NewUpdateOneModel().SetFilter(bson.D{{"_id", entity.GetId()}}).SetUpdate(data).SetUpsert(true)
+		model := mongo.NewUpdateOneModel().SetFilter(bson.D{{"_id", r.GetId(entity)}}).SetUpdate(data).SetUpsert(true)
 		list = append(list, model)
 	}
 	_, err := r.BulkWrite(ctx, list)
@@ -410,7 +409,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 	}
 
 	for _, e := range entities {
-		if err := assert.NotEmpty(e.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert.NotEmpty(r.GetTenantId(e), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
@@ -424,7 +423,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 			if err := types.MaskMapper(e, &m, mask); err != nil {
 				return ddd_repository.NewSetManyResultError[T](err)
 			}
-			m[ConstIdField] = e.GetId()
+			m[ConstIdField] = r.GetId(e)
 			doc := asDocument(m)
 			docs = append(docs, doc)
 		}
@@ -544,8 +543,8 @@ func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	return res.UpsertedCount, nil
 }
 
-func (r *Dao[T]) Delete(ctx context.Context, entity ddd.Entity, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	return r.DeleteById(ctx, entity.GetTenantId(), entity.GetId(), opts...)
+func (r *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	return r.DeleteById(ctx, r.GetTenantId(entity), r.GetId(entity), opts...)
 }
 
 func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) error {
@@ -660,80 +659,19 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 			return null, false, err
 		}
 		result := r.getCollection(ctx).FindOne(ctx, filter, findOneOptions)
-		if err := r.DecodeSingle(result, data); err != nil {
+		if err := r.DecodeSingle(ctx, result, data); err != nil {
 			return null, false, err
 		}
 		return data, true, nil
 	})
 }
 
-func (r *Dao[T]) DecodeSingle(result *mongo.SingleResult, data any) error {
-	if result.Err() != nil {
-		return result.Err()
-	}
-	if r.isMapEntity {
-		mapEntity := data.(MapEntity)
-		vals := make(map[string]any)
-		err := result.Decode(vals)
-		if err != nil {
-			return err
-		}
-		values := make(map[string]any)
-		for k, v := range vals {
-			name := stringutils.MongoFieldAsJsonName(k)
-			values[name] = v
-		}
-		mapEntity.SetMapValues(values)
-	} else {
-		if err := result.Decode(data); err != nil {
-			return err
-		}
-	}
-	return nil
+func (r *Dao[T]) DecodeSingle(ctx context.Context, result *mongo.SingleResult, data T) error {
+	return r.decoder.Single(ctx, result, data)
 }
 
 func (r *Dao[T]) DecodeList(ctx context.Context, cursor *mongo.Cursor, data *[]T) error {
-	if cursor.Err() != nil {
-		return cursor.Err()
-	}
-
-	if r.isMapEntity {
-		list := make([]map[string]any, 0)
-		if err := cursor.All(ctx, &list); err != nil {
-			return err
-		}
-		newEntity := func() (any, error) {
-			entity, err := r.NewEntity()
-			if err != nil {
-				return nil, err
-			}
-			return entity, nil
-		}
-		entities := make([]MapEntity, len(list))
-		for i, item := range list {
-			entity, err := newEntity()
-			if err != nil {
-				return err
-			}
-			mapEntity, ok := entity.(MapEntity)
-			if !ok {
-				return err
-			}
-			values := make(map[string]any)
-			for k, v := range item {
-				name := stringutils.MongoFieldAsJsonName(k)
-				values[name] = v
-			}
-			mapEntity.SetMapValues(values)
-			entities[i] = mapEntity
-			*data = append(*data, entity.(T))
-		}
-	} else {
-		if err := cursor.All(ctx, data); err != nil {
-			return err
-		}
-	}
-	return nil
+	return r.decoder.List(ctx, cursor, data)
 }
 
 func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
@@ -842,7 +780,7 @@ func (r *Dao[T]) getFindOptionsProjection(query ddd_repository.FindPagingQuery) 
 }
 
 /*
-	func (r Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	func (r *Dao[T]) FindPaging2(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 		var err error
 		findOptions := getFindOptions(opts...)
 		queryGroup := NewQueryGroup(query)
@@ -971,7 +909,7 @@ func (r *Dao[T]) getFindOptionsProjection(query ddd_repository.FindPagingQuery) 
 		return findData
 	}
 */
-func (r Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (result *ddd_repository.FindPagingResult[T]) {
+func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (result *ddd_repository.FindPagingResult[T]) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err, ok := e.(error); ok {
@@ -1181,7 +1119,7 @@ func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCol
 	return err
 }
 
-func (r Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
+func (r *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
 	data, err := r.NewEntityList()
 	if err != nil {
 		return nil, false, err
@@ -1190,13 +1128,13 @@ func (r Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuer
 	return data, found, err
 }
 
-func (r Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
+func (r *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
 	data := make([]map[string]any, 0)
 	_, found, err := r.Sum(ctx, qry, &data, opts...)
 	return data, found, err
 }
 
-func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error) {
+func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error) {
 	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
 	}
@@ -1232,7 +1170,7 @@ func (r Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, dat
 	return data, found, err
 }
 
-func (r Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, data any, opts ...ddd_repository.Options) (any, bool, error) {
+func (r *Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, data any, opts ...ddd_repository.Options) (any, bool, error) {
 	coll := r.getCollection(ctx)
 
 	var cur *mongo.Cursor
@@ -1454,42 +1392,3 @@ func (r *Dao[T]) getDocument(entity any) any {
 }
 
 */
-
-func (o *Options) SetAutoCreateCollection(v bool) *Options {
-	o.autoCreateCollection = &v
-	return o
-}
-
-func (o *Options) SetAutoCreateIndex(v bool) *Options {
-	o.autoCreateIndex = &v
-	return o
-}
-
-func (o *Options) SetIsMapEntity(v bool) *Options {
-	o.isMapEntity = &v
-	return o
-}
-
-func (o *Options) GetAutoCreateCollection() bool {
-	if o == nil || o.autoCreateCollection == nil {
-		return false
-	}
-	v := o.autoCreateCollection
-	return *v
-}
-
-func (o *Options) GetAutoCreateIndex() bool {
-	if o == nil || o.autoCreateIndex == nil {
-		return false
-	}
-	v := o.autoCreateIndex
-	return *v
-}
-
-func (o *Options) GetIsMapEntity() bool {
-	if o == nil || o.autoCreateIndex == nil {
-		return false
-	}
-	v := o.isMapEntity
-	return *v
-}

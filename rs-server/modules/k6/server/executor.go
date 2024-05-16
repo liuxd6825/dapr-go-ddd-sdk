@@ -26,13 +26,13 @@ func (e *Executor) init() bool {
 	return e.error == nil
 }
 
-func (e *Executor) DoCommand(fun func(ctx context.Context, cmd Command) error) *Executor {
+func (e *Executor) DoCommand(fun func(ctx context.Context) error) *Executor {
 	if !e.init() {
 		return e
 	}
 
 	if fun != nil {
-		//e.error = fun(e.ctx, cmd)
+		e.error = fun(e.ctx)
 	}
 	return e
 }
@@ -87,7 +87,6 @@ func (e *Executor) GetResult() *common.Result[any] {
 }
 
 func (e *Executor) SetResponse() {
-	defer ctxRecover(e.rctx.ictx, recover())
 	if e.error != nil {
 		if errors.Is(e.error, notFoundError) {
 			e.rctx.SetError(e.error, iris.StatusNotFound)
@@ -95,5 +94,7 @@ func (e *Executor) SetResponse() {
 			e.rctx.SetError(e.error)
 		}
 	}
-	_ = e.rctx.WriteJson(e.data)
+	if e.data != nil {
+		_ = e.rctx.WriteJson(e.data)
+	}
 }

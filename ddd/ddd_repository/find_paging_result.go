@@ -60,7 +60,7 @@ func NewFindPagingSumResult[T ddd.Entity](data []T, sumData []T, totalRows *int6
 	return res
 }
 
-func NewFindPagingResult[T ddd.Entity](data []T, totalRows *int64, query FindPagingQuery, err error) *FindPagingResult[T] {
+func NewFindPagingResult[T any](data []T, totalRows *int64, query FindPagingQuery, err error) *FindPagingResult[T] {
 	res := &FindPagingResult[T]{
 		Data:        data,
 		TotalRows:   nil,
@@ -93,11 +93,11 @@ func NewFindPagingResult[T ddd.Entity](data []T, totalRows *int64, query FindPag
 	return res
 }
 
-func NewFindPagingResultOptions[T ddd.Entity]() *FindPagingResultOptions[T] {
+func NewFindPagingResultOptions[T any]() *FindPagingResultOptions[T] {
 	return &FindPagingResultOptions[T]{}
 }
 
-func NewFindPagingResultWithError[T ddd.Entity](err ...error) *FindPagingResult[T] {
+func NewFindPagingResultWithError[T any](err ...error) *FindPagingResult[T] {
 	return &FindPagingResult[T]{
 		Data:    []T{},
 		IsFound: false,
