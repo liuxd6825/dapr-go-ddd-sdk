@@ -199,7 +199,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 )
-replace go.mongodb.org/mongo-driver => ../../mongo-go-driver
+replace go.mongodb.org/mongo-driver => ../../mongo-driver
 //replace github.com/liuxd6825/dapr => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha2
 //replace github.com/liuxd6825/dapr-go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
 //replace github.com/liuxd6825/dapr-components-contrib => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
