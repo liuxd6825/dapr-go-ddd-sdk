@@ -27,6 +27,9 @@ func (e *Executor) init() bool {
 }
 
 func (e *Executor) DoCommand(fun func(ctx context.Context) error) *Executor {
+	defer func() {
+		e.error = catchError(e.rctx.ictx, e.error, recover())
+	}()
 	if !e.init() {
 		return e
 	}
@@ -38,7 +41,9 @@ func (e *Executor) DoCommand(fun func(ctx context.Context) error) *Executor {
 }
 
 func (e *Executor) DoQuery(fun func(ctx context.Context) *common.Result[any]) *Executor {
-	defer ctxRecover(e.rctx.ictx, recover())
+	defer func() {
+		e.error = catchError(e.rctx.ictx, e.error, recover())
+	}()
 	if !e.init() {
 		return e
 	}
@@ -58,7 +63,9 @@ func (e *Executor) DoQuery(fun func(ctx context.Context) *common.Result[any]) *E
 //	@param fun
 //	@return *Executor
 func (e *Executor) DoQueryOne(fun func(ctx context.Context) *common.Result[any]) *Executor {
-	defer ctxRecover(e.rctx.ictx, recover())
+	defer func() {
+		e.error = catchError(e.rctx.ictx, e.error, recover())
+	}()
 	e.DoQuery(fun)
 	if e.error == nil && e.data == nil {
 		e.error = notFoundError
@@ -67,7 +74,9 @@ func (e *Executor) DoQueryOne(fun func(ctx context.Context) *common.Result[any])
 }
 
 func (e *Executor) DoError(fun func(err error)) *Executor {
-	defer ctxRecover(e.rctx.ictx, recover())
+	defer func() {
+		e.error = catchError(e.rctx.ictx, e.error, recover())
+	}()
 	if fun != nil && e.error != nil {
 		fun(e.error)
 	}

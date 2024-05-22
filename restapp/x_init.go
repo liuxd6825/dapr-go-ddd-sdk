@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs/userlog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
@@ -69,6 +70,14 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 
 	if env.App.AuthToken != "" {
 		DefaultAuthToken = env.App.AuthToken
+	}
+
+	if len(env.Fs) != 0 {
+		fsManager, err := fs.NewManagerWithConfigs(env.Fs)
+		if err != nil {
+			return err
+		}
+		env.fsManager = fsManager
 	}
 
 	SetEnvConfig(env)

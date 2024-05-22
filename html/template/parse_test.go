@@ -1,18 +1,16 @@
 package template
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/html/template/loader/file"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/giteafs"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestHtmlParse(t *testing.T) {
-	fileService := file.NewLoader("file", "/Users/lxd/Projects/gitea/draw-web")
-	if err := fileService.Connect(); err != nil {
-		t.Error(err)
-	}
+	fs, err := giteafs.NewFs(&giteafs.Config{Url: "http://localhost:3000", User: "liuxd", Password: "liuxd", Repo: "test", Branch: "main"})
+	assert.NoError(t, err)
 
-	parse := NewParse(fileService, "src/master/schema/human/form.html", []byte(content))
+	parse := NewParse(fs, "src/master/schema/human/form.html", []byte(content))
 	res, err := parse.Parse()
 	assert.NoError(t, err)
 	t.Log(res.HTML)

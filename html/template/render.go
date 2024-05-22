@@ -5,19 +5,28 @@ import (
 	"errors"
 	"fmt"
 	"github.com/flosch/pongo2/v6"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/html/template/loader"
+	"github.com/spf13/afero"
 	"io"
 )
 
-func Render(ctx context.Context, writer io.Writer, loader loader.Loader, filepath string, data ...func(ctx pongo2.Context)) error {
+// Render
+//
+//	@Description: 渲染HTML模板，并执行服务端代码
+//	@param ctx 上下文
+//	@param writer 输出流
+//	@param loader 模板文件加载器
+//	@param filepath 模板文件路径
+//	@param data 模板数据
+//	@return error 错误信息
+func Render(ctx context.Context, writer io.Writer, fs afero.Fs, filepath string, data ...func(ctx pongo2.Context)) error {
 	//从gitea中加载文件
-	fileBytes, err := loader.GetFile(filepath)
+	fileBytes, err := readFile(fs, filepath)
 	if err != nil {
 		return err
 	}
 
 	// 解析文件内容
-	parse, err := NewParse(loader, filepath, fileBytes).Parse()
+	parse, err := NewParse(fs, filepath, fileBytes).Parse()
 	if err != nil {
 		return errors.New(fmt.Sprintf("解释 %s 时出错,%s。", filepath, err.Error()))
 	}

@@ -61,10 +61,11 @@ func (e *Server) Handle(opt *HandleOptions) {
 	}
 
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
-		defer ctxRecover(ictx, recover())
+		var err error
+		defer catchError(ictx, err, recover())
+
 		rctx := NewRContext(ictx)
 		var obj common.Object
-		var err error
 		if opt.Schema != nil {
 			obj, err = rctx.ReadObject(opt.Schema)
 		}
@@ -109,16 +110,27 @@ func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
 	return common.NewResult[any](v, err)
 }
 
-func setError(ctx iris.Context, err error) {
-	ctx.SetErr(err)
-	ctx.StatusCode(httptest.StatusInternalServerError)
-	_, _ = ctx.WriteString(err.Error())
+func catchError(ctx iris.Context, e error, recover any) error {
+	var err error
+	if e != nil {
+		err = e
+	} else if recover != nil {
+		if ve := recover.(error); ve != nil {
+			err = ve
+		} else {
+			err = fmt.Errorf("unknown error %s")
+		}
+	}
+	if err != nil && ctx != nil {
+		setError(ctx, err)
+	}
+	return nil
 }
 
-func ctxRecover(ctx iris.Context, recover any) {
-	if recover != nil {
-		if err := recover.(error); err != nil {
-			setError(ctx, err)
-		}
+func setError(ctx iris.Context, err error) {
+	if err != nil && ctx != nil {
+		ctx.SetErr(err)
+		ctx.StatusCode(httptest.StatusInternalServerError)
+		_, _ = ctx.WriteString(err.Error())
 	}
 }

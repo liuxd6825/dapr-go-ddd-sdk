@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/html/template/loader"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/schema"
+	"github.com/spf13/afero"
 	"strings"
 )
 
@@ -15,7 +15,7 @@ type Parse struct {
 	ref      string
 	fileName string
 	content  string
-	loader   loader.Loader
+	fs       afero.Fs
 	schema   *schema.Schema
 	uiSchema *schema.UiSchema
 }
@@ -30,9 +30,9 @@ type ParseResult struct {
 	UiSchema     *schema.UiSchema `json:"uiSchema"`
 }
 
-func NewParse(loader loader.Loader, fileName string, content []byte) *Parse {
+func NewParse(fs afero.Fs, fileName string, content []byte) *Parse {
 	return &Parse{
-		loader:   loader,
+		fs:       fs,
 		fileName: fileName,
 		content:  string(content),
 	}
@@ -84,7 +84,7 @@ func (h *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 	var err error
 
 	if res.SchemaFile != "" {
-		sm, err = loadSchema(h.loader, res.SchemaFile)
+		sm, err = loadSchema(h.fs, res.SchemaFile)
 		if err != nil {
 			return newError(res.SchemaFile, err)
 		}
@@ -92,7 +92,7 @@ func (h *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 	}
 
 	if res.UiSchemaFile != "" {
-		ui, err = loadUiSchema(h.loader, sm, res.UiSchemaFile)
+		ui, err = loadUiSchema(h.fs, sm, res.UiSchemaFile)
 		if err != nil {
 			return newError(res.UiSchemaFile, err)
 		}
@@ -134,12 +134,11 @@ func (h *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 //	@return string 使用form模板渲染的HTML
 //	@return error
 func (h *Parse) schemaRender(htmlTplFileName string, sm *schema.Schema, ui *schema.UiSchema) (string, error) {
-	builder := NewBuilder(sm, ui)
-	content, err := h.loader.GetFile(htmlTplFileName)
+	builder := NewUiBuilder(sm, ui)
+	content, err := readFile(h.fs, htmlTplFileName)
 	if err != nil {
 		return "", err
 	}
-
 	writer := bytes.Buffer{}
 	err = builder.BuildBytes(content, &writer)
 	return writer.String(), err

@@ -9,14 +9,12 @@ service:
     path: "./services"
 
 repos:
-  gitea:
-    draw-web:
-      url: http://localhost:3000
-      repo: draw-web
-      branch: main
-      user: liuxd
-      password: liuxd
-  file:
-    draw-web:
-      path: "/Users/lxd/Projects/gitea/draw-web"
+  draw-web@gitea:
+    url: http://localhost:3000
+    repo: draw-web
+    branch: main
+    user: liuxd
+    password: liuxd
+  draw-web@local:
+    path: "/Users/lxd/Projects/gitea/draw-web"
 

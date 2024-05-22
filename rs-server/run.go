@@ -11,7 +11,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/watcher"
 	"github.com/liuxd6825/k6server/js"
 	"github.com/liuxd6825/k6server/lib"
-	"github.com/liuxd6825/k6server/lib/fsext"
 	"github.com/liuxd6825/k6server/loader"
 	"github.com/liuxd6825/k6server/metrics"
 	"github.com/sirupsen/logrus"
@@ -26,13 +25,14 @@ type JsServer struct {
 	srcPath string
 	reload  bool
 	watcher watcher.Watcher
+	fsCfg   *FsConfig
 }
 
-func New(app *iris.Application, srcPath string, reload bool) *JsServer {
+func New(app *iris.Application, fsCfg *FsConfig, reload bool) *JsServer {
 	return &JsServer{
-		app:     app,
-		srcPath: srcPath,
-		reload:  reload,
+		app:    app,
+		fsCfg:  fsCfg,
+		reload: reload,
 	}
 }
 
@@ -55,7 +55,7 @@ func (s *JsServer) run() error {
 
 	piState := getTestPreInitState(logrus.New())
 
-	bundle, err := newBundle(s.srcPath, mainFile, data, piState, s.app)
+	bundle, err := newBundle(s.srcPath, mainFile, data, piState, s.app, s.fsCfg)
 	if err != nil {
 		return err
 	}
@@ -133,14 +133,12 @@ func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {
 	}
 }
 
-func newBundle(rootPath string, filename string, data []byte, piState *lib.TestPreInitState, app *iris.Application) (*js.Bundle, error) {
-	fs := fsext.NewOsFs()
+func newBundle(rootPath string, filename string, data []byte, piState *lib.TestPreInitState, app *iris.Application, fs *FsConfig) (*js.Bundle, error) {
 	jsModules := map[string]any{
 		"k6/server": server.New(app),
 		"k6/db":     db.New(),
 		"k6/schema": schema.New(),
 	}
-
 	return js.NewBundleFormJsModules(
 		piState,
 		&loader.SourceData{
@@ -148,7 +146,7 @@ func newBundle(rootPath string, filename string, data []byte, piState *lib.TestP
 			Data: data,
 			PWD:  &url.URL{Path: rootPath, Scheme: "file"},
 		},
-		map[string]fsext.Fs{"file": fs, "https": fsext.NewMemMapFs()},
+		fs.ToMap(),
 		jsModules,
 	)
 }

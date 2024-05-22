@@ -5,8 +5,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/power/server/config"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -24,15 +24,20 @@ type EnvConfig struct {
 	App       AppConfig                  `yaml:"app" json:"app"`
 	Log       LogConfig                  `yaml:"log" json:"log"`
 	Dapr      DaprConfig                 `yaml:"dapr" json:"dapr"`
-	JsServer  config.JsServerConfig      `yaml:"jsServer" json:"jsServer"`
 	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
 	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
 	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
 	Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
 	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
 	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
+	Fs        []map[string]any           `yaml:"fs" json:"fs"`
+	fsManager *fs.Manager                `yaml:"-" json:"-"`
 }
 
+// AppConfig
+// @Description:  应用配置
+// @Author:       liuxd
+// @Date:         2021/10/18 10:57
 type AppConfig struct {
 	AppId     string            `yaml:"id" json:"id"`
 	AppName   string            `yaml:"name" json:"name"`
@@ -43,6 +48,29 @@ type AppConfig struct {
 	Memory    *string           `yaml:"memory" json:"memory"`
 	Values    map[string]string `yaml:"values" json:"values"`
 	AuthToken string            `yaml:"authToken" json:"authToken"`
+	RsServer  RsServer          `yaml:"rsServer" json:"rsServer"` // 脚本服务配置
+	Template  HtmlTemplate      `yaml:"template" json:"template"` // html模板配置
+}
+
+// RsServer
+// @Description: 脚本服务配置
+// @Author:       liuxd
+// @Date:         2021/10/18 10:57
+type RsServer struct {
+	Enable    bool   `yaml:"enable" json:"enable"`       // 是否启用脚本服务
+	FileFsKey string `yaml:"fileFsKey" json:"fileFsKey"` // 在fs节中配置key
+	HttpFsKey string `yaml:"httpFsKey" json:"httpFsKey"` // 在fs节中配置key
+	Reload    bool   `yaml:"reload" json:"reload"`       // 是否自动加载脚本
+}
+
+// HtmlTemplate
+// @Description: html 模板配置
+// @Author:       liuxd
+// @Date:         2021/10/18 10:57
+type HtmlTemplate struct {
+	Enable bool   `yaml:"enable" json:"enable"` // 是否启用html模板
+	ApiUrl string `yaml:"apiUrl" json:"apiUrl"` // api html模板文件路径
+	FsKey  string `yaml:"fsKey" json:"fsKey"`   // 在fs节中配置key
 }
 
 type ResourceConfig struct {
@@ -190,6 +218,10 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 		return defValue
 	}
 	return &value
+}
+
+func (e *EnvConfig) GetFsManager() *fs.Manager {
+	return e.fsManager
 }
 
 func (d *DaprConfig) GetHost() string {

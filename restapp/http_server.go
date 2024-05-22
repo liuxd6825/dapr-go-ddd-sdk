@@ -12,10 +12,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/html/template"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/power/db"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/power/server"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/power/service"
+	rs_server "github.com/liuxd6825/dapr-go-ddd-sdk/rs-server"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
@@ -118,9 +117,24 @@ func (s *HttpServer) Start() error {
 	app := s.app
 	s.registerBaseHandler()
 
-	if err := server.Start(app, &s.envConfig.JsServer, func(s *service.Service) error {
-		return s.SetValue("db", db.NewDb())
-	}); err != nil {
+	if s.envConfig.App.RsServer.Enable {
+		fsManger := s.envConfig.GetFsManager()
+		fileFs, fileOk := fsManger.Get(s.envConfig.App.RsServer.FileFsKey)
+		if !fileOk {
+			return errors.New("rsServer file fs key not found")
+		}
+		httpFs, httpOk := fsManger.Get(s.envConfig.App.RsServer.HttpFsKey)
+		if !httpOk {
+			return errors.New("rsServer http fs key not found")
+		}
+		fsCfg := rs_server.NewFsConfig(fileFs, httpFs)
+		server := rs_server.New(app, fsCfg, true)
+		if err := server.Run(); err != nil {
+			panic(err)
+		}
+	}
+
+	if err := s.addRenderHandler(app); err != nil {
 		return err
 	}
 
@@ -166,6 +180,30 @@ func (s *HttpServer) Start() error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *HttpServer) addRenderHandler(app *iris.Application) error {
+	if !s.envConfig.App.Template.Enable {
+		return nil
+	}
+	fsKey := s.envConfig.App.Template.FsKey
+	if fsKey == "" {
+		return errors.New("template fsKey is empty")
+	}
+	fs, ok := s.envConfig.fsManager.Get(fsKey)
+	if !ok {
+		return errors.New("template fsManager fs key not found %s", fsKey)
+	}
+	render, err := template.NewHandler(fs)
+	if err != nil {
+		return err
+	}
+	apiUrl := fmt.Sprintf("%s/{filePath:path}", s.envConfig.App.Template.ApiUrl)
+	app.Get(apiUrl, func(ictx iris.Context) {
+		filePath := ictx.URLParam("filePath")
+		render(ictx, filePath)
+	})
 	return nil
 }
 
