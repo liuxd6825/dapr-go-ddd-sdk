@@ -26,7 +26,7 @@ envs:
         branch: master
       - id: "file"
         type : local
-        path: "/var/opt/services/master/data/prod_master_cmd"
+        path: "/users/liuxd/test"
       - id: "memory"
         type: memory
       - id: "http"

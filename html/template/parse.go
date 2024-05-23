@@ -65,7 +65,7 @@ func (h *Parse) initSchema(doc *goquery.Document, res *ParseResult) error {
 			res.SchemaFile = src
 		case "uischema":
 			res.UiSchemaFile = src
-		case "formtpl":
+		case "template":
 			res.FormTplFile = src
 		}
 	})
