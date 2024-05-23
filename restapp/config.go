@@ -57,10 +57,10 @@ type AppConfig struct {
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
 type RsServer struct {
-	Enable    bool   `yaml:"enable" json:"enable"`       // 是否启用脚本服务
-	FileFsKey string `yaml:"fileFsKey" json:"fileFsKey"` // 在fs节中配置key
-	HttpFsKey string `yaml:"httpFsKey" json:"httpFsKey"` // 在fs节中配置key
-	Reload    bool   `yaml:"reload" json:"reload"`       // 是否自动加载脚本
+	Enable   bool   `yaml:"enable" json:"enable"`     // 是否启用脚本服务
+	FileFsId string `yaml:"fileFsId" json:"fileFsId"` // 在fs节中配置key
+	HttpFsId string `yaml:"httpFsId" json:"httpFsId"` // 在fs节中配置key
+	Reload   bool   `yaml:"reload" json:"reload"`     // 是否自动加载脚本
 }
 
 // HtmlTemplate
@@ -70,7 +70,7 @@ type RsServer struct {
 type HtmlTemplate struct {
 	Enable bool   `yaml:"enable" json:"enable"` // 是否启用html模板
 	ApiUrl string `yaml:"apiUrl" json:"apiUrl"` // api html模板文件路径
-	FsKey  string `yaml:"fsKey" json:"fsKey"`   // 在fs节中配置key
+	FsId   string `yaml:"fsId" json:"fsId"`     // 在fs节中配置key
 }
 
 type ResourceConfig struct {
@@ -220,8 +220,18 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 	return &value
 }
 
-func (e *EnvConfig) GetFsManager() *fs.Manager {
-	return e.fsManager
+func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
+	if e.fsManager != nil {
+		return e.fsManager, nil
+	}
+	if len(e.Fs) != 0 {
+		fsManager, err := fs.NewManagerWithConfigs(e.Fs)
+		if err != nil {
+			return nil, err
+		}
+		e.fsManager = fsManager
+	}
+	return e.fsManager, nil
 }
 
 func (d *DaprConfig) GetHost() string {

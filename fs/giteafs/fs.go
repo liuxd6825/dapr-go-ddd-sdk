@@ -2,6 +2,7 @@ package giteafs
 
 import (
 	gitea "code.gitea.io/sdk/gitea"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/spf13/afero"
 	"os"
 	"time"
@@ -15,7 +16,7 @@ type Fs struct {
 func NewFs(cfg *Config) (afero.Fs, error) {
 	client, err := NewClient(cfg.Url, cfg.User, cfg.Password)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("giteafs.NewFs() %s ", err.Error())
 	}
 	fs := &Fs{cfg: cfg, gitea: client}
 	return fs, nil

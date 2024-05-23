@@ -1,4 +1,4 @@
-package localfs
+package memoryfs
 
 import (
 	"fmt"
@@ -7,11 +7,10 @@ import (
 )
 
 type Config struct {
-	Id   string `yaml:"id"`
-	Path string `yaml:"path"`
+	Id string `yaml:"id"`
 }
 
-func NewConfig(metadata map[string]any) (*Config, error) {
+func NewConfig(metadata map[string]interface{}) (*Config, error) {
 	cfg := &Config{}
 	err := mapstructure.Decode(metadata, cfg)
 	if err != nil {
@@ -21,9 +20,6 @@ func NewConfig(metadata map[string]any) (*Config, error) {
 	vErr.Message = fmt.Sprintf("config: %s", cfg.Id)
 	if cfg.Id == "" {
 		vErr.AppendField("id", "missing id")
-	}
-	if cfg.Path == "" {
-		vErr.AppendField("path", "missing url")
 	}
 	if vErr.HasError() {
 		return nil, vErr

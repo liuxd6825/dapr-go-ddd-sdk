@@ -34,6 +34,7 @@ require (
 	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/fsnotify/fsnotify v1.7.0
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/gookit/goutil v0.6.15
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
 	github.com/iris-contrib/pongo2-addons/v4 v4.0.0

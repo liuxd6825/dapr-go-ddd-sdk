@@ -133,11 +133,11 @@ func (s *HttpServer) Start() error {
 	/*
 		if s.envConfig.App.RsServer.Enable {
 			fsManger := s.envConfig.GetFsManager()
-			fileFs, fileOk := fsManger.Get(s.envConfig.App.RsServer.FileFsKey)
+			fileFs, fileOk := fsManger.Get(s.envConfig.App.RsServer.FileFsId)
 			if !fileOk {
 				return errors.New("rsServer file fs key not found")
 			}
-			httpFs, httpOk := fsManger.Get(s.envConfig.App.RsServer.HttpFsKey)
+			httpFs, httpOk := fsManger.Get(s.envConfig.App.RsServer.HttpFsId)
 			if !httpOk {
 				return errors.New("rsServer http fs key not found")
 			}
@@ -202,7 +202,7 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	if !s.envConfig.App.Template.Enable {
 		return nil
 	}
-	fsKey := s.envConfig.App.Template.FsKey
+	fsKey := s.envConfig.App.Template.FsId
 	if fsKey == "" {
 		return errors.New("template fsKey is empty")
 	}
