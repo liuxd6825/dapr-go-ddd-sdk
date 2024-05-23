@@ -14,7 +14,7 @@ envs:
       template:
         enable: true
         fsId: "file"
-        apiUrl: "master_cmd"
+        apiUrl: "/api/v1.0/template"
     fs:
       - id: "gitea"
         type: gitea
