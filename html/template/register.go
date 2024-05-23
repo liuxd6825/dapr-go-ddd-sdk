@@ -77,6 +77,5 @@ func SetError(ctx iris.Context, err error) {
 	if err != nil && ctx != nil {
 		ctx.SetErr(err)
 		ctx.StatusCode(httptest.StatusInternalServerError)
-		_, _ = ctx.WriteString(err.Error())
 	}
 }

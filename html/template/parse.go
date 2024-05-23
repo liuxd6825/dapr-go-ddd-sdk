@@ -72,7 +72,13 @@ func (h *Parse) initSchema(doc *goquery.Document, res *ParseResult) error {
 
 	scripts := head.Find("script")
 	scripts.Each(func(i int, selection *goquery.Selection) {
-		res.Script.WriteString(selection.Text())
+		html := strings.ReplaceAll(selection.Text(), "\n", "")
+		html = strings.ReplaceAll(html, "\t", "")
+		html = strings.ReplaceAll(html, "  ", "")
+		html = strings.TrimSpace(html)
+		if html != "" {
+			res.Script.WriteString(selection.Text())
+		}
 	})
 
 	return nil

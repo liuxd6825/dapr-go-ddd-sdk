@@ -216,7 +216,7 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	}
 	apiUrl := fmt.Sprintf("%s/{filePath:path}", s.envConfig.App.Template.ApiUrl)
 	app.Get(apiUrl, func(ictx iris.Context) {
-		filePath := ictx.URLParam("filePath")
+		filePath := ictx.Params().Get("filePath")
 		render(ictx, filePath)
 	})
 	return nil

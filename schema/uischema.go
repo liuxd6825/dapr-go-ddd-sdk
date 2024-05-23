@@ -89,6 +89,9 @@ func NewUiSchema(schema *Schema, reader io.Reader) (*UiSchema, error) {
 
 func (s *UiSchema) Init(schema *Schema) error {
 	s.schema = schema
+	if s.Layout == nil {
+		return errors.New("ui:layout is required")
+	}
 	for _, row := range s.Layout.Rows {
 		for _, col := range row.Cols {
 			col.schema = schema
