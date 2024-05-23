@@ -14,15 +14,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/html/template"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	rs_server "github.com/liuxd6825/dapr-go-ddd-sdk/rs-server"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
 	"strings"
 	"time"
-
-	_ "github.com/iris-contrib/pongo2-addons/v4"
 )
 
 type ServiceOptions struct {
@@ -38,6 +35,7 @@ type ServiceOptions struct {
 	WebRootPath    string
 	SwaggerDoc     string
 	EnvConfig      *EnvConfig
+	Inits          []RunInitFunc
 }
 
 type HttpServer struct {
@@ -56,6 +54,7 @@ type HttpServer struct {
 	webRootPath    string
 	sdkServer      *http.Server
 	envConfig      *EnvConfig
+	inits          []RunInitFunc
 }
 
 type OnAppInit func(ctx context2.Context) error
@@ -103,8 +102,17 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		webRootPath:    opts.WebRootPath,
 		envConfig:      opts.EnvConfig,
 		app:            app,
+		inits:          opts.Inits,
 	}
 
+}
+
+func (s *HttpServer) EnvConfig() *EnvConfig {
+	return s.envConfig
+}
+
+func (s *HttpServer) App() *iris.Application {
+	return s.app
 }
 
 func (s *HttpServer) Start() error {
@@ -116,23 +124,30 @@ func (s *HttpServer) Start() error {
 	}()
 	app := s.app
 	s.registerBaseHandler()
-
-	if s.envConfig.App.RsServer.Enable {
-		fsManger := s.envConfig.GetFsManager()
-		fileFs, fileOk := fsManger.Get(s.envConfig.App.RsServer.FileFsKey)
-		if !fileOk {
-			return errors.New("rsServer file fs key not found")
-		}
-		httpFs, httpOk := fsManger.Get(s.envConfig.App.RsServer.HttpFsKey)
-		if !httpOk {
-			return errors.New("rsServer http fs key not found")
-		}
-		fsCfg := rs_server.NewFsConfig(fileFs, httpFs)
-		server := rs_server.New(app, fsCfg, true)
-		if err := server.Run(); err != nil {
-			panic(err)
+	for _, opt := range s.inits {
+		if err := opt(s); err != nil {
+			return err
 		}
 	}
+
+	/*
+		if s.envConfig.App.RsServer.Enable {
+			fsManger := s.envConfig.GetFsManager()
+			fileFs, fileOk := fsManger.Get(s.envConfig.App.RsServer.FileFsKey)
+			if !fileOk {
+				return errors.New("rsServer file fs key not found")
+			}
+			httpFs, httpOk := fsManger.Get(s.envConfig.App.RsServer.HttpFsKey)
+			if !httpOk {
+				return errors.New("rsServer http fs key not found")
+			}
+			fsCfg := rs_server.NewFsConfig(fileFs, httpFs)
+			server := rs_server.New(app, fsCfg, true)
+			if err := server.Run(); err != nil {
+				return err
+			}
+		}
+	*/
 
 	if err := s.addRenderHandler(app); err != nil {
 		return err

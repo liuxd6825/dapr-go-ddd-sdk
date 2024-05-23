@@ -2,6 +2,8 @@ package restapp
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 
+type RunInitFunc func(server *HttpServer) error
+
 type RunOptions struct {
 	runType *RunType
 	tables  *Tables
@@ -11,6 +13,8 @@ type RunOptions struct {
 	level   *logs.Level
 	status  *bool
 	stop    *bool
+	init    RunInitFunc
+	inits   []RunInitFunc
 }
 
 func NewRunOptions(opts ...*RunOptions) *RunOptions {
@@ -38,6 +42,9 @@ func NewRunOptions(opts ...*RunOptions) *RunOptions {
 		}
 		if item.stop != nil {
 			o.stop = item.stop
+		}
+		if item.init != nil {
+			o.inits = append(o.inits, item.init)
 		}
 	}
 	return o
@@ -138,5 +145,14 @@ func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
 	o.SetDbKey(flag.DbKey)
 	o.SetSqlFile(flag.SqlFile)
 	o.runType = &flag.RunType
+	return o
+}
+
+func (o *RunOptions) GetInit() func(server *HttpServer) error {
+	return o.init
+}
+
+func (o *RunOptions) SetInitFunc(init func(server *HttpServer) error) *RunOptions {
+	o.init = init
 	return o
 }

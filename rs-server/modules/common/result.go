@@ -29,3 +29,12 @@ func (r *Result[T]) DoError(fun func(err error)) *Result[T] {
 func (r *Result[T]) GetResults() (T, error) {
 	return r.Data, r.Error
 }
+
+func (r *Result[T]) GetFoundResults() (T, bool, error) {
+	return r.Data, !r.IsNil(), r.Error
+}
+
+func (r *Result[T]) IsNil() bool {
+	var data any = r.Data
+	return data == nil
+}

@@ -9,15 +9,15 @@ import (
 type QueryFunc = func(tx context.Context) *common.Result[any]
 
 func (e *Server) DoQuery(ctx *RContext, fun QueryFunc, opts ...restapp.DoOptions) *common.Result[any] {
-	data, _, err := restapp.DoQuery(ctx.ictx, ctx.GetTenantId(), func(ctx context.Context) (interface{}, error) {
-		return fun(ctx).GetResults()
+	data, _, err := restapp.DoQuery(ctx.ictx, ctx.GetTenantId(), func(ctx context.Context) (interface{}, bool, error) {
+		return fun(ctx).GetFoundResults()
 	}, opts...)
 	return common.NewResult[any](data, err)
 }
 
 func (e *Server) DoQueryOne(ctx *RContext, fun QueryFunc, opts ...restapp.DoOptions) *common.Result[any] {
-	data, _, err := restapp.DoQueryOne(ctx.ictx, ctx.GetTenantId(), func(ctx context.Context) (interface{}, error) {
-		return fun(ctx).GetResults()
+	data, _, err := restapp.DoQueryOne(ctx.ictx, ctx.GetTenantId(), func(ctx context.Context) (interface{}, bool, error) {
+		return fun(ctx).GetFoundResults()
 	}, opts...)
 	return common.NewResult[any](data, err)
 }

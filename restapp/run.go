@@ -183,6 +183,8 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
 		EnvConfig:      runCfg.EnvConfig,
+
+		Inits: opt.inits,
 	}
 	_envConfig = runCfg.EnvConfig
 	// 启动HTTP服务器

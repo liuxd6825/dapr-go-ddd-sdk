@@ -240,7 +240,7 @@ func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_rep
 
 	for _, item := range data.Items() {
 		statue := item.Statue()
-		entity := item.Data().(T)
+		entity := item.Data()
 		switch statue {
 		case ddd.DataStatueCreate:
 			err = d.Insert(ctx, entity, opts...).GetError()

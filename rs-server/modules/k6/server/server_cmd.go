@@ -19,9 +19,9 @@ func (e *Server) DoCmdAndQueryOne(rctx *RContext, queryAppId string, cmdFun CmdF
 
 	data, _, err := restapp.DoCmdAndQueryOne(rctx.ictx, rctx.GetTenantId(), queryAppId, nil, func(ctx context.Context) error {
 		return nil
-	}, func(ctx context.Context) (any, error) {
-		data, err := queryFun(ctx).GetResults()
-		return data, err
+	}, func(ctx context.Context) (any, bool, error) {
+		return queryFun(ctx).GetFoundResults()
+
 	}, opts...)
 	return common.NewResult[any](data, err)
 }
@@ -30,9 +30,8 @@ func (e *Server) DoCmdAndQueryList(ctx *RContext, queryAppId string, cmd Command
 	data, _, err := restapp.DoCmdAndQueryList(ctx.ictx, ctx.GetTenantId(), queryAppId, cmd, func(ctx context.Context) error {
 		err := cmdFun(ctx, cmd)
 		return err
-	}, func(ctx context.Context) (any, error) {
-		data, err := queryFun(ctx).GetResults()
-		return data, err
+	}, func(ctx context.Context) (any, bool, error) {
+		return queryFun(ctx).GetFoundResults()
 	}, opts...)
 	return common.NewResult[any](data, err)
 }

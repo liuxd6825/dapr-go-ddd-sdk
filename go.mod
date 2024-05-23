@@ -31,7 +31,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/allegro/bigcache v1.2.1
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
-	github.com/dop251/goja_nodejs v0.0.0-20211022123610-8dd9abb0616d
 	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/fsnotify/fsnotify v1.7.0
@@ -46,6 +45,7 @@ require (
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.0-beta1
 	github.com/snownd/cake v0.6.0
+	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v1.7.0
 	github.com/tealeg/xlsx v1.0.5
 	google.golang.org/grpc v1.63.2
@@ -152,7 +152,6 @@ require (
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/serenize/snaker v0.0.0-20201027110005-a7ad2135616e // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
-	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/swaggo/swag v1.6.5 // indirect
 	github.com/tdewolff/minify/v2 v2.20.19 // indirect
@@ -199,7 +198,9 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 )
+
 replace go.mongodb.org/mongo-driver => ../../mongo-driver
+
 //replace github.com/liuxd6825/dapr => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha2
 //replace github.com/liuxd6825/dapr-go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
 //replace github.com/liuxd6825/dapr-components-contrib => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
@@ -211,5 +212,3 @@ replace github.com/liuxd6825/dapr-go-sdk => ../dapr-go-sdk
 replace github.com/liuxd6825/dapr-components-contrib => ../dapr-components-contrib
 
 replace github.com/liuxd6825/k6server => ../../k6server
-
-

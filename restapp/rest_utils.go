@@ -33,7 +33,7 @@ type Command interface {
 }
 
 type CmdFunc func(ctx context.Context) error
-type QueryFunc func(ctx context.Context) (interface{}, error)
+type QueryFunc func(ctx context.Context) (interface{}, bool, error)
 
 // CmdAndQueryOptions
 // @Description: 命令执行参数
@@ -230,7 +230,7 @@ func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOpt
 	}()
 
 	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
-		data, err = fun(ctx)
+		data, _, err = fun(ctx)
 		return err
 	})
 
@@ -273,7 +273,7 @@ func DoQuery(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOption
 	}()
 
 	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
-		data, err = fun(ctx)
+		data, isFound, err = fun(ctx)
 		return err
 	})
 	if data == nil && err != nil {
