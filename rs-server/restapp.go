@@ -19,11 +19,11 @@ func InitHttpServer(s *restapp.HttpServer) error {
 		}
 		fileFs, fileOk := fsManger.Get(env.App.RsServer.FileFsId)
 		if !fileOk {
-			return errors.New("rsServer file fs key not found")
+			return errors.New(env.Name + ".app.rsServer fileFsId not found")
 		}
 		httpFs, httpOk := fsManger.Get(env.App.RsServer.HttpFsId)
 		if !httpOk {
-			return errors.New("rsServer http fs key not found")
+			return errors.New(env.Name + ".app.rsServer httpFsId not found")
 		}
 		fsCfg := NewFsConfig(fileFs, httpFs)
 		server := New(s.App(), fsCfg, env.App.RsServer.Reload)
