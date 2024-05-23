@@ -5,7 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
-// InitApp
+// InitHttpServer
 //
 //	@Description: 添加到restapp的初始化函数 Options.Init
 //	@param s
@@ -13,7 +13,10 @@ import (
 func InitHttpServer(s *restapp.HttpServer) error {
 	env := s.EnvConfig()
 	if env.App.RsServer.Enable {
-		fsManger := env.GetFsManager()
+		fsManger, err := env.GetFsManager()
+		if err != nil {
+			return err
+		}
 		fileFs, fileOk := fsManger.Get(env.App.RsServer.FileFsId)
 		if !fileOk {
 			return errors.New("rsServer file fs key not found")
