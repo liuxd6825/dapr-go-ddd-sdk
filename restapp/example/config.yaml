@@ -1,5 +1,7 @@
 env: test
 envs:
+
+
   dev_lxd:
     app:
       id: duxm-master-cmd-service
@@ -7,27 +9,33 @@ envs:
       rootUrl: /api/v1.0
       authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
       rsServer:
-        enable: true
-        fileFsId: "file"
-        httpFsId: "memory"
+        enable: false
+        fileFsId: "src"
+        httpFsId: "http"
         reload: true
+        mainJs: "/main.js"
+        tscCmd: "tsc -w -p ./src"
       template:
         enable: true
-        fsId: "file"
-        apiUrl: "master_cmd"
+        fsId: "src"
+        apiUrl: "/html"
     fs:
       - id: "gitea"
         type: gitea
-        url: "http://192.168.122.230:3000"
+        url: "http://localhost:3000"
         user: liuxd
         password: liuxd
-        repo: test_master_cmd
+        email: lxd2711@163.com
+        repo: test
         branch: master
-      - id: "file"
+      - id: "src"
         type : local
-        path: "/var/opt/services/master/data/prod_master_cmd"
+        path: "/Users/lxd/Projects/duxm/draw-web/src"
       - id: "memory"
         type: memory
+      - id: "http"
+        type: http
+        baseUrl: "http://"
     log:
       outputType: console
       level: debug

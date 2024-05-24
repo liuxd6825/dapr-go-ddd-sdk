@@ -59,6 +59,10 @@ func (e *Errors) AddFormat(format string, obj ...any) {
 	e.AddError(errors.New(fmt.Sprintf(format, obj...)))
 }
 
+func (e *Errors) HasError() bool {
+	return len(e.details) > 0
+}
+
 func (e *Errors) Len() int {
 	return len(e.details)
 }
