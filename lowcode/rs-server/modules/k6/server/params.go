@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 )
 
 type Params struct {

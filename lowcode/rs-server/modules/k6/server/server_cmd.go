@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
 )
 
 type CmdFunc func(ctx context.Context, command Command) error

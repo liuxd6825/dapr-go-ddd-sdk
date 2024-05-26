@@ -5,8 +5,8 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/k6/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/k6server/js/modules"
 )
 

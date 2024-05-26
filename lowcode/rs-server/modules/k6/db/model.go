@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

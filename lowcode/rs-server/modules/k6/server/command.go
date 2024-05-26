@@ -1,6 +1,6 @@
 package server
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/rs-server/modules/common"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 
 type Command common.Object
 
