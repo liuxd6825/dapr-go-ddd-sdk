@@ -20,7 +20,7 @@ import (
 //	@return error 错误信息
 func Render(ctx context.Context, writer io.Writer, fs afero.Fs, filepath string, data ...func(ctx pongo2.Context)) error {
 	//从gitea中加载文件
-	fileBytes, err := readFile(fs, filepath)
+	fileBytes, err := readFile(fs, "", filepath)
 	if err != nil {
 		return err
 	}

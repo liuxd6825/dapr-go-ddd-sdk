@@ -3,9 +3,7 @@ package schema
 import (
 	"errors"
 	"fmt"
-	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
-	"strings"
 )
 
 type UiSchemasLibrary struct {
@@ -48,21 +46,9 @@ func (s *UiSchemasLibrary) Map() map[string]*UiSchema {
 }
 
 func (s *UiSchemasLibrary) loadCode(bytes []byte) (map[string]*UiSchema, error) {
-	str := string(bytes)
-	code := strings.ReplaceAll(str, "export var", " var")
-	vm := goja.New()
-	_, err := vm.RunString(code)
+	data, err := getJsValue(bytes, "uischemas")
 	if err != nil {
 		return nil, err
-	}
-	value := vm.Get("uiSchemas")
-	if value == nil {
-		return nil, errors.New("uiSchemas is not an object")
-	}
-
-	data, ok := value.Export().(map[string]any)
-	if !ok {
-		return nil, errors.New("uiSchemas is not an map[string]any")
 	}
 	items := map[string]*UiSchema{}
 	for key, item := range data {

@@ -26,20 +26,9 @@ func (s *SchemasLibrary) LoadJavaScript(bytes []byte) error {
 }
 
 func (s *SchemasLibrary) loadJsCode(bytes []byte) (map[string]*Schema, error) {
-	code := strings.ReplaceAll(string(bytes), "export var", " var")
-	vm := goja.New()
-	_, err := vm.RunString(code)
+	data, err := getJsValue(bytes, "schemas")
 	if err != nil {
 		return nil, err
-	}
-	value := vm.Get("schemas")
-	if value == nil {
-		return nil, errors.New("schemas.SchemasLibrary is not an object")
-	}
-
-	data, ok := value.Export().(map[string]any)
-	if !ok {
-		return nil, errors.New("schemas.SchemasLibrary is not an map[string]any")
 	}
 	items := map[string]*Schema{}
 	for key, item := range data {
@@ -54,6 +43,27 @@ func (s *SchemasLibrary) loadJsCode(bytes []byte) (map[string]*Schema, error) {
 		items[key] = &schema
 	}
 	return items, nil
+}
+
+func getJsValue(bytes []byte, valueName string) (map[string]any, error) {
+	code := strings.ReplaceAll(string(bytes), "export var", " var")
+	code = strings.ReplaceAll(code, "export const", " var")
+
+	vm := goja.New()
+	_, err := vm.RunString(code)
+	if err != nil {
+		return nil, err
+	}
+	value := vm.Get(valueName)
+	if value == nil {
+		return nil, errors.New("schemas.SchemasLibrary is not an object")
+	}
+	data, ok := value.Export().(map[string]any)
+	if !ok {
+		return nil, errors.New("schemas.SchemasLibrary is not an map[string]any")
+	}
+
+	return data, nil
 }
 
 func (s *SchemasLibrary) Get(name string) (*Schema, error) {

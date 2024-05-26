@@ -11,13 +11,14 @@ import (
 )
 
 type Parse struct {
-	repo     string
-	ref      string
-	fileName string
-	content  string
-	fs       afero.Fs
-	schema   *schema.Schema
-	uiSchema *schema.UiSchema
+	repo         string
+	ref          string
+	htmlPathName string
+	htmlFileName string
+	content      string
+	fs           afero.Fs
+	schema       *schema.Schema
+	uiSchema     *schema.UiSchema
 }
 
 type ParseResult struct {
@@ -32,11 +33,15 @@ type ParseResult struct {
 	UiSchema     *schema.UiSchema `json:"uiSchema"`
 }
 
-func NewParse(fs afero.Fs, fileName string, content []byte) *Parse {
+func NewParse(fs afero.Fs, htmlFileName string, content []byte) *Parse {
+	i := strings.LastIndex(htmlFileName, "/")
+	path := htmlFileName[:i]
+
 	return &Parse{
-		fs:       fs,
-		fileName: fileName,
-		content:  string(content),
+		fs:           fs,
+		htmlPathName: path,
+		htmlFileName: htmlFileName,
+		content:      string(content),
 	}
 }
 
@@ -120,7 +125,7 @@ func (p *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 	errs := errors.NewErrors()
 
 	if res.SchemaFile != "" {
-		sm, err := loadSchema(p.fs, res.SchemaFile, res.SchemaName)
+		sm, err := loadSchema(p.fs, p.htmlPathName, res.SchemaFile, res.SchemaName)
 		if err != nil {
 			errs.AddError(newError(res.SchemaFile, err))
 		}
@@ -128,7 +133,7 @@ func (p *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 	}
 
 	if res.UiSchemaFile != "" {
-		ui, err := loadUiSchema(p.fs, p.schema, res.UiSchemaFile, res.UiName)
+		ui, err := loadUiSchema(p.fs, p.schema, p.htmlPathName, res.UiSchemaFile, res.UiName)
 		if err != nil {
 			errs.AddError(newError(res.UiSchemaFile, err))
 		}
@@ -178,7 +183,7 @@ func (p *Parse) schemaRender(htmlTplFileName string, schema *schema.Schema, uiSc
 		return "", errors.ErrorOf("param schema or uiSchema is nil")
 	}
 	builder := NewUiBuilder(schema, uiSchema)
-	content, err := readFile(p.fs, htmlTplFileName)
+	content, err := readFile(p.fs, p.htmlPathName, htmlTplFileName)
 	if err != nil {
 		return "", err
 	}
