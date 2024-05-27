@@ -114,6 +114,12 @@ func NewSchemaFile(pathFile string) (*Schema, error) {
 	return NewSchema(file)
 }
 
+func (s *Schema) Init() {
+	if s.Properties != nil {
+		s.Properties.Init()
+	}
+}
+
 func (s *Schema) Validate(obj any) error {
 	if s.validate == nil {
 		s.validate = NewValidate(s)
@@ -180,4 +186,10 @@ func (s *Schema) convertor(source types.Object, props Properties) (common.Object
 		}
 	}
 	return target, nil
+}
+
+func (p *Properties) Init() {
+	for key, value := range *p {
+		value.Name = key
+	}
 }

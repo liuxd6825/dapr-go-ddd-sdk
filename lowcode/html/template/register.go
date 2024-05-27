@@ -3,6 +3,7 @@ package template
 import (
 	"errors"
 	"fmt"
+	"github.com/flosch/pongo2/v6"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 	"github.com/spf13/afero"
@@ -29,7 +30,9 @@ func NewHandler(fs afero.Fs) (RenderHandle, error) {
 
 func (h *Handler) handle(ictx iris.Context, filepath string) {
 	do(ictx, func(ctx iris.Context) error {
-		return Render(ictx, ictx.ResponseWriter(), h.fs, filepath)
+		return Render(ictx, ictx.ResponseWriter(), h.fs, filepath, func(data pongo2.Context) {
+			data["params"] = ctx.Params()
+		})
 	})
 }
 

@@ -41,6 +41,7 @@ func (s *SchemasLibrary) loadJsCode(bytes []byte) (map[string]*Schema, error) {
 			return nil, err
 		}
 		items[key] = &schema
+		schema.Init()
 	}
 	return items, nil
 }
