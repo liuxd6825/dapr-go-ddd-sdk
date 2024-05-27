@@ -18,7 +18,7 @@ import (
 //	@param filepath 模板文件路径
 //	@param data 模板数据
 //	@return error 错误信息
-func Render(ctx context.Context, writer io.Writer, fs afero.Fs, filepath string, data ...func(ctx pongo2.Context)) error {
+func Render(ctx context.Context, writer io.Writer, fs afero.Fs, filepath string, options ...func(ctx pongo2.Context)) error {
 	//从gitea中加载文件
 	fileBytes, err := readFile(fs, "", filepath)
 	if err != nil {
@@ -43,9 +43,9 @@ func Render(ctx context.Context, writer io.Writer, fs afero.Fs, filepath string,
 
 	var tplExample = pongo2.Must(pongo2.FromString(parse.HTML))
 	tplCtx := pongo2.Context{"vdata": vdata, "schema": parse.Schema, "uischeam": parse.UiSchema}
-	for _, d := range data {
-		if d != nil {
-			d(tplCtx)
+	for _, opt := range options {
+		if opt != nil {
+			opt(tplCtx)
 		}
 	}
 	if err = tplExample.ExecuteWriter(tplCtx, writer); err != nil {
