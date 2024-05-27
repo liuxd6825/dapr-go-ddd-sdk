@@ -2,6 +2,7 @@ package rs_server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6"
@@ -21,19 +22,38 @@ import (
 )
 
 type JsServer struct {
-	app     *iris.Application
-	srcPath string
-	reload  bool
-	watcher watcher.Watcher
-	fsCfg   *FsConfig
+	app      *iris.Application
+	mainFile string
+	rootPath string
+	reload   bool
+	watcher  watcher.Watcher
+	fsCfg    *FsConfig
 }
 
-func New(app *iris.Application, fsCfg *FsConfig, reload bool) *JsServer {
-	return &JsServer{
-		app:    app,
-		fsCfg:  fsCfg,
-		reload: reload,
+func New(app *iris.Application, fsCfg *FsConfig, mainFile string, reload bool) (*JsServer, error) {
+	if fsCfg == nil {
+		return nil, errors.New("parameter fsCfg is nil")
 	}
+	if app == nil {
+		return nil, errors.New("parameter app is nil")
+	}
+	if mainFile == "" {
+		return nil, errors.New("parameter mainFile is empty")
+	}
+
+	var rootPath = "/"
+	i := strings.Index(mainFile, "/")
+	if i > -1 {
+		rootPath = mainFile[:i]
+	}
+
+	return &JsServer{
+		app:      app,
+		rootPath: rootPath,
+		mainFile: mainFile,
+		fsCfg:    fsCfg,
+		reload:   reload,
+	}, nil
 }
 
 func (s *JsServer) Run() error {
@@ -47,15 +67,18 @@ func (s *JsServer) Run() error {
 }
 
 func (s *JsServer) run() error {
-	mainFile := s.srcPath + "/main.js"
-	data, err := ioutil.ReadFile(mainFile)
+	file, err := s.fsCfg.FileFs.Open(s.mainFile)
+	if err != nil {
+		return err
+	}
+
+	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
 
 	piState := getTestPreInitState(logrus.New())
-
-	bundle, err := newBundle(s.srcPath, mainFile, data, piState, s.app, s.fsCfg)
+	bundle, err := newBundle(s.rootPath, s.mainFile, data, piState, s.app, s.fsCfg)
 	if err != nil {
 		return err
 	}
@@ -84,7 +107,7 @@ func (s *JsServer) run() error {
 }
 
 func (s *JsServer) fileWatcher() {
-	s.watcher = watcher.NewFileWatcher(s.srcPath)
+	s.watcher = watcher.NewFileWatcher(s.rootPath)
 	err := s.watcher.Start(func(rootPath, fileName string, eventType watcher.EventType) error {
 		reload := false
 		if strings.HasSuffix(fileName, ".ts") {
@@ -133,17 +156,18 @@ func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {
 	}
 }
 
-func newBundle(rootPath string, filename string, data []byte, piState *lib.TestPreInitState, app *iris.Application, fs *FsConfig) (*js.Bundle, error) {
+func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, fs *FsConfig) (*js.Bundle, error) {
 	jsModules := map[string]any{
 		"k6/server": server.New(app),
 		"k6/db":     db.New(),
 		"k6/schema": schema.New(),
 	}
+
 	return js.NewBundleFormJsModules(
 		piState,
 		&loader.SourceData{
 			URL:  &url.URL{Path: filename, Scheme: "file"},
-			Data: data,
+			Data: jsCodeData,
 			PWD:  &url.URL{Path: rootPath, Scheme: "file"},
 		},
 		fs.ToMap(),

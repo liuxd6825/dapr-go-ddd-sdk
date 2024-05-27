@@ -5,7 +5,7 @@ import {db, Model} from "../pkg/k6/db";
 // @ts-ignore
 import {Context, GoError, Result} from "../pkg/k6/common";
 // @ts-ignore
-import {schema as recordSchemas, IRecord} from "./schema/record.schema";
+import {schemas as recordSchemas, IRecord, schemas} from "./schema/record.schema";
 // @ts-ignore
 import {newSchema, Property, Schema} from "../pkg/k6/schema";
 

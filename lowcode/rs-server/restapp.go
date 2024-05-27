@@ -10,7 +10,7 @@ import (
 //	@Description: 添加到restapp的初始化函数 Options.Init
 //	@param s
 //	@return error
-func InitHttpServer(s *restapp.HttpServer) error {
+func InitHttpServer(s *restapp.HttpServer, mainFile string) error {
 	env := s.EnvConfig()
 	if env.App.RsServer.Enable {
 		fsManger, err := env.GetFsManager()
@@ -26,8 +26,11 @@ func InitHttpServer(s *restapp.HttpServer) error {
 			return errors.New(env.Name + ".app.rsServer httpFsId not found")
 		}
 		fsCfg := NewFsConfig(fileFs, httpFs)
-		server := New(s.App(), fsCfg, env.App.RsServer.Reload)
-		if err := server.Run(); err != nil {
+		server, err := New(s.App(), fsCfg, mainFile, env.App.RsServer.Reload)
+		if err != nil {
+			return err
+		}
+		if err = server.Run(); err != nil {
 			return err
 		}
 	}

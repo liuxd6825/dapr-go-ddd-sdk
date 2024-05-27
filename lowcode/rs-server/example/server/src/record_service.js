@@ -3,7 +3,7 @@ import { server } from "../pkg/k6/server";
 // @ts-ignore
 import { db } from "../pkg/k6/db";
 // @ts-ignore
-import { recordSchemas } from "./schema/record.schema";
+import { schemas as recordSchemas } from "./schema/record.schema";
 // @ts-ignore
 import { newSchema } from "../pkg/k6/schema";
 var RecordService = /** @class */ (function () {

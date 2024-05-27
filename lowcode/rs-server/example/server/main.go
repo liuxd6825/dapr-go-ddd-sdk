@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server"
 	"github.com/spf13/afero"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -16,17 +17,25 @@ func main() {
 		panic(err)
 	}
 
-	server := rs_server.New(app, fs, true)
-	if err := server.Run(); err != nil {
+	server, err := rs_server.New(app, fs, "./main.js", true)
+	if err != nil {
 		panic(err)
 	}
-	if err := app.Run(iris.Addr(":8080")); err != nil {
+	if err = server.Run(); err != nil {
+		panic(err)
+	}
+	if err = app.Run(iris.Addr(":8080")); err != nil {
 		panic(err)
 	}
 }
 
 func newServerFsConfig() (*rs_server.FsConfig, error) {
+	// 获取当前目录 必须是项目下的lowcode/rs-server/example/server目录
 	rootPath, _ := os.Getwd()
+	if !strings.HasSuffix(rootPath, "/example/server") {
+		rootPath = rootPath + "/lowcode/rs-server/example/server"
+	}
+	// 设置源代码目录为当前目录下的src目录
 	fileFs, err := localfs.NewFs(&localfs.Config{Id: "file", Path: rootPath + "/src"})
 	if err != nil {
 		return nil, err
