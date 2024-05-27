@@ -1,0 +1,39 @@
+@startuml graph
+
+'@domain()
+class Node  extends Base {
+    id string
+    nodeType string
+}
+
+class Edge <<Use, Name>> extends Base ,Edit implements IBase,IEdit{
+    id string
+    edgeType string
+    subType string
+    properties object
+    startId string
+    endId string
+}
+
+enum NodeType {
+    Company
+    Person
+    Account
+    Contract
+    Product
+    Record
+}
+
+class EdgeType<<Use>> {
+    id string
+    aType string
+    bType string
+}
+
+Edge "*"-left->"1 开始节点" Node :> 引用
+Edge "*"-->"1 结束节点" Node :> 引用
+Node -down- NodeType
+Edge -down- EdgeType
+
+
+@enduml

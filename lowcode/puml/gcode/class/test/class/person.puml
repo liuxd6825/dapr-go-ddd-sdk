@@ -1,0 +1,120 @@
+@startuml 
+
+!includesub contract.puml!BASIC
+
+' 模型分析
+namespace model {
+
+    !startsub BASIC
+    '人员
+    class Person  {
+        '姓名 { size:100, len:200, desc:"" }
+        Name string
+        '出生日期
+        Birthday dateTime
+        '分析状态  
+        Analyse string
+        '备注
+        Notes string
+        '保存
+        Save(cmd SaveCommand) error
+        '按Id查询
+        {static} {abstract} FindById(ctx context.Context, id string) (Person, error)
+        '按Id查询
+        {static abstract} FindPaging(ctx context.Context, filter string) ([]*Person, error)
+        '按Id查询
+        FindList(ctx context.Context, filter string) (persons []*Person, isFound bool, err error)
+    }
+    !endsub
+
+    class Basic {
+        '分析状态  
+        Title string
+        Name string
+        Value string
+        DataType string
+    }
+
+    '证件
+    class License {
+        '截止日期
+        LicenseType string
+        '卡号
+        Code string
+        '截止日期
+        ExpirationDate dateTime
+        '备注
+        Notes string
+    }
+
+    '身份证件类型
+    enum LicenseType {
+        '身份证
+        IdCard
+        '驾驶证
+        Drive
+        '医保
+        Health
+        '社会卡
+        SocialSecurity
+    }
+
+
+    '性别
+    enum Gender {
+        '男
+        Man
+        '女
+        Woman
+        '@
+        M
+    }
+
+    '人员类型
+    enum  PeopleType {
+        '报案人
+        Informant
+        '嫌疑人
+        Suspect
+        '受害人
+        Victim
+        '第三人
+        Third
+    }
+
+    '报案人金额
+    enum InformantMoney {
+
+    }
+
+    '嫌疑人金额
+    enum SuspectMoney {
+
+    }
+
+
+    enum AnalyseStatus {
+        待分析
+        分析中
+        排除
+        完成
+    }
+
+    Person ”*“->"*" 银行账户 :> 拥有
+    Person "0..*" - "0..*" Person
+    Person "0..*" - "0..*" PeopleType
+    Person "*"-"0..1" Gender
+
+    Person "*" - "1" AnalyseStatus
+    Person "1"--"*" Basic :> 拥有
+    Person "*" - "*" Contract
+
+    Person -|> AnalyseStatus
+
+}
+
+class PersonA {
+}
+
+@enduml
+

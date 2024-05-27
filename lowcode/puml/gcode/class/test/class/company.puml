@@ -1,0 +1,5 @@
+@startuml company
+class Company {
+
+}
+@enduml

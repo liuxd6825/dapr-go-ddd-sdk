@@ -1,0 +1,7 @@
+@startuml tags
+class Tag{
+    Name string
+    FindById(id string) *Tag
+    FindByModelId(appId string, modelType string, modelId string) []*Tag
+}
+@enduml

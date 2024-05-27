@@ -1,0 +1,20 @@
+@startuml contract
+
+!includesub person.puml!BASIC
+
+!startsub BASIC
+'' 合同
+class Contract {
+    string 合同类型  
+    string 合同编号
+    string 甲方
+    string 乙方
+    string 合同金额
+    string 合同内容
+    string 备注
+    string 产品公司
+}
+!endsub
+
+
+@enduml

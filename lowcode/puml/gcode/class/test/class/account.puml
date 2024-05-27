@@ -1,0 +1,10 @@
+@startuml bank
+class Account{
+    状态
+    人员
+    开户行
+    账号
+    启用日期
+    停用日期
+}
+@enduml

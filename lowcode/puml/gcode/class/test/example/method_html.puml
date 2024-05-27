@@ -1,0 +1,17 @@
+@startuml
+namespace parser {
+    ' 类解析
+    class ClassParser {
+        ' 字段说明
+        - allInterfaces <font color=blue>map</font>[string]<font color=blue>struct</font>{}
+        ' 函数说明
+        GetName() string
+    }
+
+    interface IClassParser {
+        ' 获取名称
+        GetName() string
+    }
+
+}
+@enduml

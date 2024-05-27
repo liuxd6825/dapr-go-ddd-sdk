@@ -1,0 +1,23 @@
+@startuml link
+
+'‘ 连接
+class Link {
+    Name string
+    '’ 连接类型
+    LinkTypeId string
+    AId string
+    BId string
+    '' 备注
+    Notes string
+
+    FindById(id string) *Tag
+    FindByModelId(appId string, modelType string, modelId string) []*Tag
+}
+
+'’  连接类型
+class LinkType {
+    Name string
+
+}
+
+@enduml

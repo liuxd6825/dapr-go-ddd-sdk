@@ -1,0 +1,10 @@
+
+@startuml
+'人员信息
+class Person {
+    '@enum(A,B,C)
+    Type PersonType
+}
+
+
+@enduml

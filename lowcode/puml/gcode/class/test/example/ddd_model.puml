@@ -1,0 +1,29 @@
+@startuml
+namespace person {
+    ' 类解析
+    ' @aggregateRoot{}
+    class Person {
+        '姓名
+        '@metadata(size:100,len:200)
+        Name string
+        '出生日期
+        Birthday dateTime
+        '分析状态
+        Analyse string
+        '备注
+        Notes string
+    }
+
+    class Basic {
+        '分析状态
+        Title string
+        Name string
+        Value string
+        DataType string
+    }
+
+    Person "1"-->"1" Basic
+
+
+}
+@enduml

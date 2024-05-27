@@ -1,0 +1,27 @@
+package example
+
+
+@startuml
+
+namespace def {
+    '人员信息
+    class A {
+        Name()
+    }
+
+    note left of A
+       人员信息
+    end note
+}
+
+'B
+class B {
+    Name()
+}
+
+note left of B
+   人员信息
+end note
+
+
+@enduml
