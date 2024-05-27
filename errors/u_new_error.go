@@ -16,16 +16,65 @@ type Errors struct {
 	details []error `json:"details"`
 }
 
+type ParamsError struct {
+	funName string
+	Errors
+}
+
 func NewErrors() *Errors {
 	return &Errors{
 		details: make([]error, 0),
 	}
 }
 
-func News(errs ...error) error {
-	return &Errors{
-		details: errs,
+func NewParamsError(funName string) *ParamsError {
+	return &ParamsError{
+		funName: funName,
 	}
+}
+
+func News(errs ...error) error {
+	var errsList []error
+	for _, err := range errs {
+		if err != nil {
+			errsList = append(errsList, err)
+		}
+	}
+	return &Errors{
+		details: errsList,
+	}
+}
+
+func (e *ParamsError) AddNil(msg string, data any) {
+	if data == nil {
+		e.AddError(msg, "不能为nil")
+	} else if v, ok := data.(string); ok {
+		if v == "" {
+			e.AddError(msg, "不能为nil")
+		}
+	} else if v, ok := data.(bool); ok {
+		if v {
+			e.AddError(msg, "条件不满足")
+		}
+	}
+}
+
+func (e *ParamsError) AddEmpty(msg string, data string) {
+	if data == "" {
+		e.AddError(msg, "不能为空")
+	}
+
+}
+
+func (e *ParamsError) AddBool(msg string, condition bool) {
+	if condition {
+		e.AddError(msg, "条件不满足")
+	}
+}
+
+func (e *ParamsError) AddError(name string, reason string) {
+	err := errors.New(fmt.Sprintf("参数 \"%s\" 传入错误: %s。", name, reason))
+	e.details = append(e.details, err)
 }
 
 func NewMethod(packName, methodName string, msg string) error {

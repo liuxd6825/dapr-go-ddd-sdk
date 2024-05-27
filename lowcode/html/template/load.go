@@ -83,6 +83,9 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 func readFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
 	fileName := absFile(pwd, filename)
 	file, err := fs.Open(fileName)
+	if err != nil {
+		return nil, err
+	}
 	context, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err

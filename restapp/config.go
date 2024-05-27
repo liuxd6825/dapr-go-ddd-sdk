@@ -60,6 +60,7 @@ type RsServer struct {
 	Enable   bool   `yaml:"enable" json:"enable"`     // 是否启用脚本服务
 	FileFsId string `yaml:"fileFsId" json:"fileFsId"` // 在fs节中配置key
 	HttpFsId string `yaml:"httpFsId" json:"httpFsId"` // 在fs节中配置key
+	SrcPath  string `yaml:"srcPath" json:"srcPath"`   // 脚本文件路径
 	Reload   bool   `yaml:"reload" json:"reload"`     // 是否自动加载脚本
 }
 
