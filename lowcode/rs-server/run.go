@@ -2,9 +2,9 @@ package rs_server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
@@ -31,18 +31,16 @@ type JsServer struct {
 }
 
 func New(app *iris.Application, fsCfg *FsConfig, mainFile string, reload bool) (*JsServer, error) {
-	if fsCfg == nil {
-		return nil, errors.New("parameter fsCfg is nil")
-	}
-	if app == nil {
-		return nil, errors.New("parameter app is nil")
-	}
-	if mainFile == "" {
-		return nil, errors.New("parameter mainFile is empty")
+	errs := errors.NewParamsError("rs_server.New()")
+	errs.AddNil("fsCfg", fsCfg)
+	errs.AddNil("app", app)
+	errs.AddNil("mainFile", mainFile)
+	if errs.HasError() {
+		return nil, errs
 	}
 
 	var rootPath = "/"
-	i := strings.Index(mainFile, "/")
+	i := strings.LastIndex(mainFile, "/")
 	if i > -1 {
 		rootPath = mainFile[:i]
 	}

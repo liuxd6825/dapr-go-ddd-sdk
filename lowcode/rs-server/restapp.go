@@ -5,12 +5,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
-// InitHttpServer
+// InitRsServer
 //
 //	@Description: 添加到restapp的初始化函数 Options.Init
 //	@param s
 //	@return error
-func InitHttpServer(s *restapp.HttpServer, mainFile string) error {
+func InitRsServer(s *restapp.HttpServer) error {
 	env := s.EnvConfig()
 	if env.App.RsServer.Enable {
 		fsManger, err := env.GetFsManager()
@@ -26,6 +26,7 @@ func InitHttpServer(s *restapp.HttpServer, mainFile string) error {
 			return errors.New(env.Name + ".app.rsServer httpFsId not found")
 		}
 		fsCfg := NewFsConfig(fileFs, httpFs)
+		mainFile := env.App.RsServer.SrcPath + "/main.js"
 		server, err := New(s.App(), fsCfg, mainFile, env.App.RsServer.Reload)
 		if err != nil {
 			return err
