@@ -55,6 +55,7 @@ func (e *Server) Put(opt *HandleOptions) {
 }
 
 func (e *Server) Handle(opt *HandleOptions) {
+
 	method := opt.Method.String()
 	if opt.Handle == nil {
 		return

@@ -123,31 +123,6 @@ func (s *HttpServer) Start() error {
 		}
 	}()
 	app := s.app
-	s.registerBaseHandler()
-	for _, opt := range s.inits {
-		if err := opt(s); err != nil {
-			return err
-		}
-	}
-
-	/*
-		if s.envConfig.App.RsServer.Enable {
-			fsManger := s.envConfig.GetFsManager()
-			fileFs, fileOk := fsManger.Get(s.envConfig.App.RsServer.FileFsId)
-			if !fileOk {
-				return errors.New("rsServer file fs key not found")
-			}
-			httpFs, httpOk := fsManger.Get(s.envConfig.App.RsServer.HttpFsId)
-			if !httpOk {
-				return errors.New("rsServer http fs key not found")
-			}
-			fsCfg := rs_server.NewFsConfig(fileFs, httpFs)
-			server := rs_server.New(app, fsCfg, true)
-			if err := server.Run(); err != nil {
-				return err
-			}
-		}
-	*/
 
 	if err := s.addRenderHandler(app); err != nil {
 		return err
@@ -183,6 +158,13 @@ func (s *HttpServer) Start() error {
 		}
 	}
 
+	s.registerBaseHandler()
+	for _, init := range s.inits {
+		if err := init(s); err != nil {
+			return err
+		}
+	}
+
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
 	if err := app.Run(iris.Addr(addr), func(application *iris.Application) {
 		for _, onInit := range _appInits {
@@ -191,6 +173,9 @@ func (s *HttpServer) Start() error {
 			}
 		}
 		fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
+		for _, v := range application.GetRoutes() {
+			logs.Debug(ctx, "", logs.Fields{"route": v.Method + " " + v.Path})
+		}
 	}); err != nil {
 		return err
 	}
