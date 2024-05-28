@@ -173,9 +173,12 @@ func (s *HttpServer) Start() error {
 			}
 		}
 		fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
-		for _, v := range application.GetRoutes() {
-			logs.Debug(ctx, "", logs.Fields{"route": v.Method + " " + v.Path})
+		if logs.GetLevel() <= logs.DebugLevel {
+			for _, v := range application.GetRoutes() {
+				logs.Debug(ctx, "", logs.Fields{"route": v.Method + " " + v.Path})
+			}
 		}
+
 	}); err != nil {
 		return err
 	}
