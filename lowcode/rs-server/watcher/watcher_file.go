@@ -30,7 +30,6 @@ func (w *fileWatcher) Start(opts ...Options) error {
 
 	//3、启动监听文件对象事件协程
 	go func() {
-		fmt.Println("开始监听文件变化" + rootPath)
 		for {
 			select {
 			case e := <-watcher.Events:

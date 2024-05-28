@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
@@ -58,7 +60,7 @@ func (s *JsServer) Run() error {
 	if err := s.run(); err != nil {
 		return err
 	}
-	if s.reload {
+	if s.reload && s.fsCfg.FileFs.Name() == localfs.Name() {
 		s.fileWatcher()
 	}
 	return nil
@@ -92,7 +94,9 @@ func (s *JsServer) run() error {
 	vu, err := runner.NewVU(ctx, 1, 10, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
 		modules := k6.NewModules(s.app)
 		for k, m := range modules {
-			vu.GetRuntime().Set(k, m)
+			if err = vu.GetRuntime().Set(k, m); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -105,7 +109,12 @@ func (s *JsServer) run() error {
 }
 
 func (s *JsServer) fileWatcher() {
-	s.watcher = watcher.NewFileWatcher(s.rootPath)
+	f := s.fsCfg.FileFs
+	rootPath := s.rootPath
+	if pathFs, ok := f.(fs.PathFs); ok {
+		rootPath = pathFs.BasePath() + rootPath
+	}
+	s.watcher = watcher.NewFileWatcher(rootPath)
 	err := s.watcher.Start(func(rootPath, fileName string, eventType watcher.EventType) error {
 		reload := false
 		if strings.HasSuffix(fileName, ".ts") {
@@ -127,7 +136,7 @@ func (s *JsServer) fileWatcher() {
 				s.app.Logger().Error(err)
 			}
 
-			s.app.Logger().Infof("restart JsServer, file: %s/%s。", rootPath, fileName)
+			s.app.Logger().Infof("restart RsServer, file: %s/%s。", rootPath, fileName)
 		}
 		return nil
 	})
