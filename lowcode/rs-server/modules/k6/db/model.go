@@ -8,17 +8,20 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Model struct {
-	dao *ddd_mongodb.Dao[ddd.MapEntity]
+	db        *DB
+	tableName string
+	dao       *ddd_mongodb.Dao[ddd.MapEntity]
 }
 
 type ModelOptions = mongo_dao.RepositoryOptions
 
-func NewModel(collectionName string, opts ...*ModelOptions) *Model {
-	initCollName := collectionName
+func NewModel(db *DB, tableName string, opts ...*ModelOptions) *Model {
+	initTableName := tableName
 	opt := mongo_dao.NewRepositoryOptions(opts...)
 	var mongodb *ddd_mongodb.MongoDB
 	var coll *mongo.Collection
@@ -26,7 +29,7 @@ func NewModel(collectionName string, opts ...*ModelOptions) *Model {
 	getCollCallback := func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection) {
 		if mongodb == nil || coll == nil {
 			mongodb = opt.MongoDB
-			coll = opt.MongoDB.GetCollection(initCollName)
+			coll = opt.MongoDB.GetCollection(initTableName)
 		}
 		return mongodb, coll
 	}
@@ -38,7 +41,11 @@ func NewModel(collectionName string, opts ...*ModelOptions) *Model {
 	daoOpts := ddd_mongodb.NewOptions[ddd.MapEntity]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
 	fmt.Print(opts)
 	dao := ddd_mongodb.NewDao[ddd.MapEntity](getCollCallback, daoOpts)
-	return &Model{dao: dao}
+	return &Model{db: db, dao: dao, tableName: tableName}
+}
+
+func (d *Model) Table(ctx context.Context, schema *schema.Schema, opts ...*ddd_repository.RepositoryOptions) *Table {
+	return NewTable(d.db, d.tableName, schema)
 }
 
 func (d *Model) Save(ctx context.Context, setData *ddd.SetData[ddd.MapEntity], opts ...*ddd_repository.RepositoryOptions) error {

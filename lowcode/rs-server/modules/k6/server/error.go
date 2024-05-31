@@ -7,7 +7,7 @@ var (
 	notFoundError = &NotFoundError{}
 )
 
-func NewExecutor(rctx *RContext) *Executor {
+func NewExecutor(rctx *WebContext) *Executor {
 	return &Executor{rctx: rctx}
 }
 

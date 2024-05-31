@@ -26,19 +26,44 @@
         "signature": "097a57355ded99c68e6df1b738990448e0bf170e606707df5a7c0481ff2427cd",
         "affectsGlobalScope": true
       },
+      "./pkg/k6/common.d.ts": {
+        "version": "99676e2ca498f1ae56ace213051f46d4f9c7f37ef4f0ca818e2d3ed3725b277e",
+        "signature": "99676e2ca498f1ae56ace213051f46d4f9c7f37ef4f0ca818e2d3ed3725b277e",
+        "affectsGlobalScope": false
+      },
+      "./pkg/k6/db.d.ts": {
+        "version": "4a05e7dc9df452729e59853595feeb13fdce57e1936a2fb26926819decf6df9e",
+        "signature": "4a05e7dc9df452729e59853595feeb13fdce57e1936a2fb26926819decf6df9e",
+        "affectsGlobalScope": false
+      },
+      "./pkg/k6/schema.d.ts": {
+        "version": "2ef4bab7beb25c27e6188673e4b5833f9071473fee4d2e101d326280bc469fe2",
+        "signature": "2ef4bab7beb25c27e6188673e4b5833f9071473fee4d2e101d326280bc469fe2",
+        "affectsGlobalScope": false
+      },
+      "./pkg/k6/server.d.ts": {
+        "version": "42a1eb02c8c778d3085e5f9b0a777d0a21d84eea4198c2f672f292afb04b4064",
+        "signature": "42a1eb02c8c778d3085e5f9b0a777d0a21d84eea4198c2f672f292afb04b4064",
+        "affectsGlobalScope": false
+      },
+      "./pkg/k6server/decorator.ts": {
+        "version": "9279b128962169de8a09aa789668972b283805d15ddc65a7c20fdaaa00a15191",
+        "signature": "dae94772b1e5879a2748c87392aee7f76bd813b7a39c6aed47d5def3875264f0",
+        "affectsGlobalScope": false
+      },
+      "./src/human_service.ts": {
+        "version": "143c07ef90ac46ebabe99921037b513cd9d0d07f0dab80115c086cb67d671c26",
+        "signature": "25e201925c5d5d0983a69be50860458a1bccf77abed6048ed7921f101d8b58b9",
+        "affectsGlobalScope": false
+      },
       "./src/main.ts": {
-        "version": "dd52629fe54520ced06afbebb06f60b88a7f0fca0c4e388047be6a3d5ee9aaa7",
+        "version": "fcb26844420f8f76ce7f0d425a3d81ba1933547a0761e0d22c3fcd320ec533ad",
         "signature": "87c3b7246e2d3d81d06e2fb172d316c10de70cd9a61d6722023592f16006172a",
         "affectsGlobalScope": false
       },
-      "./src/record_service.ts": {
-        "version": "5769803298a4f73420b12c1d46c76d8ce543dccef582c15dd8d4793655daabde",
-        "signature": "5e92cdbc2b87c2ccf0ba371a40377ba25d1eab511d00680522a08ece82f5bedc",
-        "affectsGlobalScope": false
-      },
-      "./src/schema/record.schema.ts": {
-        "version": "74b2067b9149e0d95e1dd2be821b34dd2e84c12037476cfb4b64cdf7d506a492",
-        "signature": "92bccc03b8ab359fdea7eda30e7fc45de639cf7f8bf47a8457787d2c5b678849",
+      "./src/schema/human.schema.ts": {
+        "version": "5e2ea0164e22837b5669d85d932ae4c2c651a689ebb0164d84f291218cce3eee",
+        "signature": "5b3dd9b4bbad7dbb213ee5f7c76fc35b9d120594b0eb9a8b3b2e86f4d6a25ebd",
         "affectsGlobalScope": false
       }
     },
@@ -55,26 +80,77 @@
       "noImplicitUseStrict": true,
       "noResolve": true,
       "esModuleInterop": false,
+      "experimentalDecorators": true,
       "types": [],
       "configFilePath": "./tsconfig.json"
     },
     "referencedMap": {
-      "./src/main.ts": [
-        "./src/record_service.ts"
+      "./pkg/k6/db.d.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/schema.d.ts"
       ],
-      "./src/record_service.ts": [
-        "./src/schema/record.schema.ts"
+      "./pkg/k6/schema.d.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/db.d.ts"
+      ],
+      "./pkg/k6/server.d.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/db.d.ts",
+        "./pkg/k6/schema.d.ts"
+      ],
+      "./pkg/k6server/decorator.ts": [
+        "./pkg/k6/schema.d.ts",
+        "./pkg/k6/server.d.ts"
+      ],
+      "./src/human_service.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/db.d.ts",
+        "./pkg/k6/schema.d.ts",
+        "./pkg/k6/server.d.ts",
+        "./pkg/k6server/decorator.ts",
+        "./src/schema/human.schema.ts"
+      ],
+      "./src/main.ts": [
+        "./pkg/k6/db.d.ts",
+        "./src/human_service.ts"
+      ],
+      "./src/schema/human.schema.ts": [
+        "./pkg/k6/schema.d.ts"
       ]
     },
     "exportedModulesMap": {
-      "./src/record_service.ts": [
-        "./src/schema/record.schema.ts"
+      "./pkg/k6/db.d.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/schema.d.ts"
+      ],
+      "./pkg/k6/schema.d.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/db.d.ts"
+      ],
+      "./pkg/k6/server.d.ts": [
+        "./pkg/k6/common.d.ts",
+        "./pkg/k6/db.d.ts",
+        "./pkg/k6/schema.d.ts"
+      ],
+      "./pkg/k6server/decorator.ts": [
+        "./pkg/k6/schema.d.ts"
+      ],
+      "./src/human_service.ts": [
+        "./pkg/k6/db.d.ts",
+        "./pkg/k6/schema.d.ts",
+        "./pkg/k6/server.d.ts",
+        "./src/schema/human.schema.ts"
       ]
     },
     "semanticDiagnosticsPerFile": [
+      "./pkg/k6/common.d.ts",
+      "./pkg/k6/db.d.ts",
+      "./pkg/k6/schema.d.ts",
+      "./pkg/k6/server.d.ts",
+      "./pkg/k6server/decorator.ts",
+      "./src/human_service.ts",
       "./src/main.ts",
-      "./src/record_service.ts",
-      "./src/schema/record.schema.ts",
+      "./src/schema/human.schema.ts",
       "../../../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.d.ts",
       "../../../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.dom.d.ts",
       "../../../../../../../../../../usr/local/lib/node_modules/typescript/lib/lib.es5.d.ts",

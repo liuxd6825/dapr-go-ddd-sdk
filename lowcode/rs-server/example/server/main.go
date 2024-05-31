@@ -36,7 +36,7 @@ func newServerFsConfig() (*rs_server.FsConfig, error) {
 		rootPath = rootPath + "/lowcode/rs-server/example/server"
 	}
 	// 设置源代码目录为当前目录下的src目录
-	fileFs, err := localfs.NewFs(&localfs.Config{Id: "file", Path: rootPath + "/src"})
+	fileFs, err := localfs.NewFs(localfs.Config{Id: "file", Path: rootPath + "/src"})
 	if err != nil {
 		return nil, err
 	}

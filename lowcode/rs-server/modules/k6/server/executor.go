@@ -9,7 +9,7 @@ import (
 )
 
 type Executor struct {
-	rctx        *RContext
+	rctx        *WebContext
 	error       error
 	data        any
 	errorStatus int

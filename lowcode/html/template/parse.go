@@ -33,6 +33,13 @@ type ParseResult struct {
 	UiSchema     *schema.UiSchema `json:"uiSchema"`
 }
 
+const (
+	SchemaTag   = "schema"
+	SlotTag     = "tpl-slot"
+	TemplateTag = "template"
+	UiSchemaTag = "uischema"
+)
+
 func NewParse(fs afero.Fs, htmlFileName string, content []byte) *Parse {
 	i := strings.LastIndex(htmlFileName, "/")
 	path := htmlFileName[:i]
@@ -69,13 +76,13 @@ func (p *Parse) initSchema(doc *goquery.Document, res *ParseResult) error {
 		src, _ := selection.Attr("src")
 		name, _ := selection.Attr("name")
 		switch id {
-		case "schema":
+		case SchemaTag:
 			res.SchemaFile = src
 			res.SchemaName = name
-		case "uischema":
+		case UiSchemaTag:
 			res.UiSchemaFile = src
 			res.UiName = name
-		case "template":
+		case TemplateTag:
 			res.Template = src
 		}
 	})
@@ -152,7 +159,7 @@ func (p *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 		}
 		res.HTML = html
 	} else {
-		slot := body.Find("hyk-slot")
+		slot := body.Find(SlotTag)
 		if slot.Length() > 0 {
 			html, err := p.schemaRender(res.Template, p.schema, p.uiSchema)
 			if err != nil {
@@ -160,6 +167,7 @@ func (p *Parse) initBody(doc *goquery.Document, res *ParseResult) error {
 			}
 			slot.SetHtml(html)
 		}
+		slot.BeforeHtml("<div></div>")
 		html, err := body.Html()
 		if err != nil {
 			errs.AddError(newError("body.Html()", err))

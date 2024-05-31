@@ -1,5 +1,5 @@
 import {GoError, Context, Result, Object} from "./common";
-import {Entity} from "./db";
+import {Entity, FindPagingQuery} from "./db";
 import {Schema} from "./schema";
 
 
@@ -15,9 +15,7 @@ export interface RequestParams {
     get(key: string): string;
 }
 
-export interface Handle {
-    (ctx: IContext): void;
-}
+
 
 export interface Time {
     now(): any;
@@ -43,27 +41,36 @@ export interface CmdAndQueryOptions extends DoOptions {
     waitSecond: number; // 超时时间，单位秒
 }
 
-export interface HandleOptions  {
+export interface HandleOption  {
     method?:"GET"|"POST"|"PUT"|"DELETE"|"PATCH"|"HEAD"|"OPTIONS";
     path:string;
     handle:Handle;
     schema?:Schema;
+    desc?: string; // 方法说明
 }
 
-export interface Server {
-    handle(opts: HandleOptions): void;
-    get(opts: HandleOptions):void;
-    post(opts: HandleOptions):void;
-    put(opts: HandleOptions):void;
-    delete(opts: HandleOptions):void;
-    patch(opts: HandleOptions):void;
+export interface HandleDesc {
+    desc:string;
+    params: {name:string; dataType: string; desc:string; }[]
+}
 
-    doRequest:(ictx: RContext, fun: (ctx: Context) => void, opts?: DoOptions)=>  Result<any>;
-    doQuery:(ictx: RContext,  fun: QueryFunc, opt?: DoOptions)=>  Result<any>;
-    doQueryOne:(ictx: RContext, fun: QueryFunc, opt?: DoOptions)=>  Result<any>;
-    doCmd:(ictx: RContext,cmdFun: CmdFunc, opts?: CmdAndQueryOptions)=> Result<any>;
-    doCmdAndQueryOne:(ictx: RContext, queryAppId: string, cmd: Command<any>, cmdFun: CmdFunc, queryFun: QueryFunc, opts?: CmdAndQueryOptions)=> Result<any>;
-    doCmdAndQueryList:(ictx: RContext, queryAppId: string, cmd: Command<any>, cmdFun: CmdFunc, queryFun: QueryFunc, opts?: CmdAndQueryOptions)=> Result<any>;
+export type Handle = (ctx: WebContext, data?:any)=>void;
+
+export interface Server {
+    get(opts: HandleOption):void;
+    post(opts: HandleOption):void;
+    put(opts: HandleOption):void;
+    delete(opts: HandleOption):void;
+    patch(opts: HandleOption):void;
+    handle(opt:HandleOption): void;
+    handles(opts:HandleOption[]): void;
+
+    doRequest:(wctx: WebContext, fun: (ctx: Context) => void, opts?: DoOptions)=> Result<any>;
+    doQuery:(wctx: WebContext,  fun: QueryFunc, opt?: DoOptions)=> Result<any>;
+    doQueryOne:(wctx: WebContext, fun: QueryFunc, opt?: DoOptions)=> Result<any>;
+    doCmd:(wctx: WebContext,cmdFun: CmdFunc, opts?: CmdAndQueryOptions)=> Result<any>;
+    doCmdAndQueryOne:(wctx: WebContext, queryAppId: string, cmd: Command<any>, cmdFun: CmdFunc, queryFun: QueryFunc, opts?: CmdAndQueryOptions)=> Result<any>;
+    doCmdAndQueryList:(wctx: WebContext, queryAppId: string, cmd: Command<any>, cmdFun: CmdFunc, queryFun: QueryFunc, opts?: CmdAndQueryOptions)=> Result<any>;
 }
 // iris context
 export interface IContext {
@@ -78,19 +85,25 @@ export interface IContext {
     params(): RequestParams;
 }
 //  request context
-export interface RContext {
+export interface WebContext {
     params():Params;
     readJson(data?:any):Result<any>;
     readObject(schema:Schema):Result<Object>;
     writeJson(data:any):GoError;
     executor<T>():Executor<T>;
+    getTenantId():string;
+    getCaseId():string;
+    getId():string;
+    getFindPaging():FindPagingQuery;
+    printf(a1?:any, a2?:any, a3?:any, a4?:any, a5?:any, a6?:any, a7?:any, a8?:any, a9?:any, a10?:any, a11?:any, a12?:any, a13?:any, a14?:any, a15?:any, a16?:any, a17?:any, a18?:any, a19?:any, a20?:any, a21?:any, a22?:any, a23?:any, a24?:any, a25?:any, a26?:any, a27?:any, a28?:any, a29?:any, a30?:any);
+
 }
 
 export interface Params {
     getId():string;
     getTenantId(): string;
     getCaseId(): string;
-    getFindPaging(): FindPagingRequest;
+    getFindPaging(): FindPagingQuery;
     string(key:string): Result<string>;
     strings(key:string):Result<string[]>;
     bool(key:string): Result<boolean>;
@@ -109,18 +122,6 @@ export interface Executor<T> {
     setResponse():void;
 }
 
-export interface FindPagingRequest {
-    tenantId    :string;
-    fields      :string;      // 以逗号分隔多个字段
-    filter      :string;
-    sort        :string;
-    pageNum     :bigint;
-    pageSize    :bigint;
-    isTotalRows :boolean;
-    groupCols   :{field:string,dataType:string}[];
-    groupKeys   :any[];
-    valueCols   :{aggFunc:string;field:string;}[];
-}
 
 export function newObject(v: any): any;
 export const server: Server;

@@ -1,7 +1,8 @@
 // @ts-ignore
-import {RecordService, TestServiceService} from "./record_service";
+import {HumanService} from "./human_service";
 // @ts-ignore
 import {db} from "../pkg/k6/db";
+
 
 export default function(){
    let err = db.open({
@@ -19,9 +20,9 @@ export default function(){
    });
 
    if (err) {
-      console.log(err.Error())
+      console.log(err.error())
       return
    }
-   let service = new RecordService();
+   let humanService = new HumanService();
 }
 

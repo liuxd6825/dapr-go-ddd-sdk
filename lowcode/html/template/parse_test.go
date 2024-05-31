@@ -12,7 +12,7 @@ func TestHtmlParse(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	fs, err := localfs.NewFs(&localfs.Config{Path: path})
+	fs, err := localfs.NewFs(localfs.Config{Path: path})
 	assert.NoError(t, err)
 
 	parse := NewParse(fs, "/testfile/form.tpl", []byte(content))

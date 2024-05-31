@@ -66,7 +66,8 @@ func NewManagerWithConfigs(maps []map[string]any) (*Manager, error) {
 		var err error
 		switch cfg.(type) {
 		case *localfs.Config:
-			fs, err = localfs.NewFs(cfg.(*localfs.Config))
+			c := *cfg.(*localfs.Config)
+			fs, err = localfs.NewFs(c)
 		case *giteafs.Config:
 			fs, err = giteafs.NewFs(cfg.(*giteafs.Config))
 		case *httpfs.Config:

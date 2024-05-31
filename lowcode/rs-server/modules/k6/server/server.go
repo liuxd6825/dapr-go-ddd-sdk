@@ -6,7 +6,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/k6server/js/modules"
 )
 
@@ -15,67 +14,8 @@ type Server struct {
 	vu  modules.VU
 }
 
-type MethodType string
-
-const (
-	GET    MethodType = "GET"
-	POST   MethodType = "POST"
-	PUT    MethodType = "PUT"
-	DELETE MethodType = "DELETE"
-)
-
-func (m MethodType) String() string {
-	return string(m)
-}
-
-type HandleOptions struct {
-	Method MethodType                    `json:"method"`
-	Path   string                        `json:"path"`
-	Handle func(cxt *RContext, data any) `json:"handle"`
-	Schema *schema.Schema                `json:"schema"`
-}
-
 func NewServer(app *iris.Application, vu modules.VU) *Server {
 	return &Server{app: app, vu: vu}
-}
-
-func (e *Server) Get(opt *HandleOptions) {
-	opt.Method = GET
-	e.Handle(opt)
-}
-
-func (e *Server) Post(opt *HandleOptions) {
-	opt.Method = POST
-	e.Handle(opt)
-}
-
-func (e *Server) Put(opt *HandleOptions) {
-	opt.Method = PUT
-	e.Handle(opt)
-}
-
-func (e *Server) Handle(opt *HandleOptions) {
-
-	method := opt.Method.String()
-	if opt.Handle == nil {
-		return
-	}
-
-	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
-		var err error
-		defer catchError(ictx, err, recover())
-
-		rctx := NewRContext(ictx)
-		var obj common.Object
-		if opt.Schema != nil {
-			obj, err = rctx.ReadObject(opt.Schema)
-		}
-		if err != nil {
-			setError(ictx, err)
-			return
-		}
-		opt.Handle(rctx, e.newObject(obj))
-	})
 }
 
 func (e *Server) newObject(v map[string]any) *goja.Object {
@@ -109,6 +49,10 @@ func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
 
 	err := ictx.ReadJSON(&v)
 	return common.NewResult[any](v, err)
+}
+
+func (e *Server) CreateOpenApiService() {
+
 }
 
 func catchError(ctx iris.Context, e error, recover any) error {

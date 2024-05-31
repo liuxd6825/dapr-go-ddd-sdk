@@ -1,10 +1,5 @@
 import {Context, GoError, Result} from "./common";
-
-export interface DB {
-    open(cfg: DBConfig): Error | undefined;
-
-    model<T>(tableName: string): Model<T>;
-}
+import {Schema} from "./schema";
 
 export interface Entity {
     id:string;
@@ -20,7 +15,7 @@ export interface DBConfig {
     replicaSet?: string;
     writeConcern?: string;
     readConcern?: string;
-    maxPoolSize?: bigint;
+    maxPoolSize?: number;
     direct?: boolean;
     localThreshold?: string;             // 时间长度
     connectTimeout?: string;           // 时间长度
@@ -39,10 +34,7 @@ export interface Options {
     upsert?: boolean;
 }
 
-export interface GroupCol {
-    field: string;
-    dataType: DataType;
-}
+
 
 type DataType =
     "string"
@@ -57,7 +49,14 @@ type DataType =
     | "year"
     | "month"
     | "day";
+
 type AggFunc = "sum" | "count" | "avg" | "first" | "last" | "max" | "min" | "zero";
+
+export interface GroupCol {
+    field: string;
+    dataType: DataType;
+}
+
 
 export interface ValueCol {
     aggFunc: AggFunc;
@@ -106,5 +105,33 @@ export interface Model<T> {
 
     findPaging(ctx: Context, query: FindPagingQuery, opts?: Options): FindPagingQueryResult<T>;
 }
+
+export interface DB {
+    open(cfg: DBConfig): GoError | undefined;
+
+    model<T>(tableName: string): Model<T>;
+}
+
+export interface Table {
+    name(): string;
+    create(ctx: Context): GoError;
+    drop(ctx: Context): GoError;
+}
+
+export interface Model<T> {
+    create(ctx: Context, entity: any, opts?: Options): GoError;
+
+    update(ctx: Context, entity: any, opts?: Options): GoError;
+
+    deleteById(ctx: Context, tenantId: string, id: string, opts?: Options): GoError;
+
+    findById(ctx: Context, tenantId: string, id: string, opts?: Options): Result<T>;
+
+    findPaging(ctx: Context, query: FindPagingQuery, opts?: Options): FindPagingQueryResult<T>;
+
+    table(ctx: Context, schema: Schema, opts?: Options) :Table
+
+}
+
 
 export const db: DB;

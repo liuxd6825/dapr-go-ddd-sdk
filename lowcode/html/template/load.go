@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/giteafs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/spf13/afero"
 	"io/ioutil"
 	"strings"
@@ -81,7 +82,7 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 //	@return []byte 文件内容
 //	@return error
 func readFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
-	fileName := absFile(pwd, filename)
+	fileName := fileutils.AbsPath(pwd, filename)
 	file, err := fs.Open(fileName)
 	if err != nil {
 		return nil, err
@@ -94,52 +95,4 @@ func readFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
 		context, err = base64.StdEncoding.DecodeString(string(context))
 	}
 	return context, err
-}
-
-func absFile(pwd string, filename string) string {
-	if pwd == "" {
-		return filename
-	}
-	var res []string
-	paths := splitFilePath(pwd)
-	names := splitFilePath(filename)
-	ok := false
-	start := 0
-	for i, name := range names {
-		if len(paths) > 0 {
-			if name == ".." {
-				start = i
-				paths = paths[:len(paths)-1]
-				ok = true
-			} else if name == "." {
-				start = i
-				ok = true
-				continue
-			} else if name == "" {
-				continue
-			} else {
-				break
-			}
-		}
-	}
-	if ok {
-		names = names[start+1:]
-		res = append(paths, names...)
-	} else {
-		res = names
-	}
-
-	return strings.Join(res, "/")
-}
-
-func splitFilePath(filename string) []string {
-	var res []string
-	paths := strings.Split(filename, "/")
-	if paths[len(paths)-1] == "" {
-		paths = paths[:len(paths)-1]
-	}
-	for _, path := range paths {
-		res = append(res, path)
-	}
-	return res
 }

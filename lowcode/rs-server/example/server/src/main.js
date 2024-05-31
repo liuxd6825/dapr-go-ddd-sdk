@@ -1,5 +1,5 @@
 // @ts-ignore
-import { RecordService } from "./record_service";
+import { HumanService } from "./human_service";
 // @ts-ignore
 import { db } from "../pkg/k6/db";
 export default function () {
@@ -17,8 +17,8 @@ export default function () {
         serverSelectionTimeout: "20s"
     });
     if (err) {
-        console.log(err.Error());
+        console.log(err.error());
         return;
     }
-    var service = new RecordService();
+    var humanService = new HumanService();
 }

@@ -1,30 +1,8 @@
 import {GoError} from "./common";
 import {Entity} from "./db";
-export interface Options {
-    schema?: string;
-    id: string;
-    title?: string;
-    description?: string;
-    type: Type;
-    properties?: Properties;
-    definitions?: Properties;
-    required?: string[];
-}
-export interface Schema {
-    schema?: string;
-    id: string;
-    title?: string;
-    description?: string;
-    type: Type;
-    properties?: Properties;
-    definitions?: Properties;
-    required?: string[];
-    validate: (val: any) => GoError;
-}
 
-type Type = "object" | "string" | "integer" | "number" | "array" | "boolean";
+export type Type = "object" | "string" | "integer" | "number" | "array" | "boolean";
 
-export type Properties = { [key: string]: Property };
 export type Format =
     "date-time"  // 2018-11-13T20:20:39+00:00
     | "time"     // 20:20:39+00:00
@@ -45,10 +23,15 @@ export type Format =
     | "json-pointer"
     | "relative-json-pointer"
     | "regex";
+export interface Items {
+    type: string;
+}
+
+export type Properties = { [key: string]: Property };
 
 export interface Property {
     title?: string;
-    type: Type;
+    type: string;
     pattern?: string; // 正则表达式
     format?: Format;  // 表格
     properties?: Properties;
@@ -63,8 +46,29 @@ export interface Property {
     maximum?: number;
 }
 
-export interface Items {
-    type: Type;
+
+export interface Options {
+    $schema?: string;
+    $id: string;
+    title?: string;
+    description?: string;
+    type: string;
+    properties?: Properties;
+    definitions?: Properties;
+    required?: string[];
 }
+
+export interface Schema {
+    $schema?: string;
+    $id: string;
+    title?: string;
+    description?: string;
+    type: string;
+    properties?: Properties;
+    definitions?: Properties;
+    required?: string[];
+    validate?: (val: any) => GoError;
+}
+
 
 export function newSchema(opts: Options): Schema;

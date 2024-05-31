@@ -26,5 +26,5 @@ func (d *DB) Open(cfg restapp.MongoConfig) error {
 }
 
 func (d *DB) Model(name string) *Model {
-	return NewModel(name, &ModelOptions{MongoDB: d.mongodb})
+	return NewModel(d, name, &ModelOptions{MongoDB: d.mongodb})
 }

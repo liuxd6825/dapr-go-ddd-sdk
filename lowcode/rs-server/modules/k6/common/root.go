@@ -1,4 +1,4 @@
-package server
+package common
 
 import (
 	"github.com/kataras/iris/v12"
@@ -6,7 +6,6 @@ import (
 )
 
 type RootModule struct {
-	app *iris.Application
 }
 
 var (
@@ -15,14 +14,14 @@ var (
 )
 
 // New returns a pointer to a new RootModule instance.
-func New(app *iris.Application) *RootModule {
-	return &RootModule{app: app}
+func New() *RootModule {
+	return &RootModule{}
 }
 
 // NewModuleInstance implements the modules.Module interface to return
 // a new instance for each VU.
 func (m *RootModule) NewModuleInstance(vu modules.VU) modules.Instance {
-	return NewExports(vu, m.app)
+	return NewExports(vu)
 }
 
 type Exports struct {
@@ -31,18 +30,15 @@ type Exports struct {
 }
 
 // NewExports returns a new instance of Exports.
-func NewExports(vu modules.VU, app *iris.Application) *Exports {
-	return &Exports{vu: vu, app: app}
+func NewExports(vu modules.VU) *Exports {
+	return &Exports{vu: vu}
 }
 
 // Exports returns the exports of the k6 module.
 func (e *Exports) Exports() modules.Exports {
-	server := NewServer(e.app, e.vu)
 	return modules.Exports{
 		Named: map[string]interface{}{
-			"fmt":    e.vu.Runtime().ToValue(NewLogs()),
-			"server": e.vu.Runtime().ToValue(server),
-			"object": e.vu.Runtime().ToValue(server.newObject),
+			"context": e.vu.Runtime().ToValue(NewContextPkg()),
 		},
 	}
 }

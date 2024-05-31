@@ -7,7 +7,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
@@ -110,10 +113,14 @@ func (s *JsServer) run() error {
 
 func (s *JsServer) fileWatcher() {
 	f := s.fsCfg.FileFs
+	if f.Name() != localfs.Name() {
+		return
+	}
 	rootPath := s.rootPath
 	if pathFs, ok := f.(fs.PathFs); ok {
-		rootPath = pathFs.BasePath() + rootPath
+		rootPath = fileutils.AbsPath(pathFs.BasePath(), rootPath)
 	}
+
 	s.watcher = watcher.NewFileWatcher(rootPath)
 	err := s.watcher.Start(func(rootPath, fileName string, eventType watcher.EventType) error {
 		reload := false
@@ -168,6 +175,7 @@ func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPr
 		"k6/server": server.New(app),
 		"k6/db":     db.New(),
 		"k6/schema": schema.New(),
+		"k6/common": common.New(),
 	}
 
 	return js.NewBundleFormJsModules(

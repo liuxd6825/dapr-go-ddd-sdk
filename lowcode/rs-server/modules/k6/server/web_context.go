@@ -9,25 +9,25 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
-type RContext struct {
+type WebContext struct {
 	ictx iris.Context
 	restapp.RestAssembler
 	params *Params
 }
 
-func NewRContext(ictx iris.Context) *RContext {
-	return &RContext{ictx: ictx, params: NewParams(ictx)}
+func NewWebContext(ictx iris.Context) *WebContext {
+	return &WebContext{ictx: ictx, params: NewParams(ictx)}
 }
 
-func (c *RContext) Params() *Params {
+func (c *WebContext) Params() *Params {
 	return c.params
 }
 
-func (c *RContext) Ictx() iris.Context {
+func (c *WebContext) Ictx() iris.Context {
 	return c.ictx
 }
 
-func (c *RContext) ReadJson(data ...any) *common.Result[any] {
+func (c *WebContext) ReadJson(data ...any) *common.Result[any] {
 	var v any
 	for _, d := range data {
 		v = d
@@ -49,7 +49,7 @@ func (c *RContext) ReadJson(data ...any) *common.Result[any] {
 	return common.NewResult[any](v, err)
 }
 
-func (c *RContext) ReadObject(schema *schema.Schema) (common.Object, error) {
+func (c *WebContext) ReadObject(schema *schema.Schema) (common.Object, error) {
 	object := types.NewObject()
 	var err error
 	if schema != nil {
@@ -62,12 +62,12 @@ func (c *RContext) ReadObject(schema *schema.Schema) (common.Object, error) {
 	return object, err
 }
 
-func (c *RContext) WriteJson(data any) error {
+func (c *WebContext) WriteJson(data any) error {
 	c.ictx.StatusCode(iris.StatusOK)
 	return c.ictx.JSON(data)
 }
 
-func (c *RContext) SetError(err error, httpStatus ...int) {
+func (c *WebContext) SetError(err error, httpStatus ...int) {
 	status := iris.StatusInternalServerError
 	for _, s := range httpStatus {
 		status = s
@@ -79,10 +79,10 @@ func (c *RContext) SetError(err error, httpStatus ...int) {
 	}
 }
 
-func (c *RContext) Executor() *Executor {
+func (c *WebContext) Executor() *Executor {
 	return NewExecutor(c)
 }
 
-func (c *RContext) Printf(format string, args ...interface{}) {
+func (c *WebContext) Printf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
