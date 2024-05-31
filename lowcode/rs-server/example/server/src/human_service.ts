@@ -70,8 +70,8 @@ export class HumanService {
     @get("/tenants/{tenantId}/human")
     findPaging_handler=(rctx:WebContext)=>{
         rctx.executor().doQuery((ctx:Context):Result<any>=>{
-            let data = this.humans.findPaging(ctx, rctx.getFindPaging());
-            return {data:data, error:null};
+            let res = this.humans.findPaging(ctx, rctx.getFindPaging());
+            return {data:res.data, error:res.error};
         }).setResponse()
     }
 

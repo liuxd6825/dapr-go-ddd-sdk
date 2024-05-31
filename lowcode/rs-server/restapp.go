@@ -3,6 +3,7 @@ package rs_server
 import (
 	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/spf13/afero"
 )
 
 // InitRsServer
@@ -25,9 +26,12 @@ func InitRsServer(s *restapp.HttpServer) error {
 		if !httpOk {
 			return errors.New(env.Name + ".app.rsServer httpFsId not found")
 		}
+		if env.App.RsServer.BasePath != "" {
+			fileFs = afero.NewBasePathFs(fileFs, env.App.RsServer.BasePath)
+		}
 		fsCfg := NewFsConfig(fileFs, httpFs)
-		mainFile := env.App.RsServer.SrcPath + "/main.js"
-		server, err := New(s.App(), fsCfg, mainFile, env.App.RsServer.Reload)
+		//mainFile := env.App.RsServer.SrcPath + "/main.js"
+		server, err := New(s.App(), fsCfg, "/main.js", env.App.RsServer.Reload)
 		if err != nil {
 			return err
 		}

@@ -29,7 +29,7 @@ import (
 type JsServer struct {
 	app      *iris.Application
 	mainFile string
-	rootPath string
+	mainPath string
 	reload   bool
 	watcher  watcher.Watcher
 	fsCfg    *FsConfig
@@ -44,15 +44,15 @@ func New(app *iris.Application, fsCfg *FsConfig, mainFile string, reload bool) (
 		return nil, errs
 	}
 
-	var rootPath = "/"
+	var mainPath = "/"
 	i := strings.LastIndex(mainFile, "/")
 	if i > -1 {
-		rootPath = mainFile[:i]
+		mainPath = mainFile[:i]
 	}
 
 	return &JsServer{
 		app:      app,
-		rootPath: rootPath,
+		mainPath: mainPath,
 		mainFile: mainFile,
 		fsCfg:    fsCfg,
 		reload:   reload,
@@ -81,7 +81,7 @@ func (s *JsServer) run() error {
 	}
 
 	piState := getTestPreInitState(logrus.New())
-	bundle, err := newBundle(s.rootPath, s.mainFile, data, piState, s.app, s.fsCfg)
+	bundle, err := newBundle(s.mainPath, s.mainFile, data, piState, s.app, s.fsCfg)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (s *JsServer) fileWatcher() {
 	if f.Name() != localfs.Name() {
 		return
 	}
-	rootPath := s.rootPath
+	rootPath := s.mainPath
 	if pathFs, ok := f.(fs.PathFs); ok {
 		rootPath = fileutils.AbsPath(pathFs.BasePath(), rootPath)
 	}

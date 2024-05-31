@@ -40,8 +40,8 @@ var HumanService = /** @class */ (function () {
         // @ts-ignore
         this.findPaging_handler = function (rctx) {
             rctx.executor().doQuery(function (ctx) {
-                var data = _this.humans.findPaging(ctx, rctx.getFindPaging());
-                return { data: data, error: null };
+                var res = _this.humans.findPaging(ctx, rctx.getFindPaging());
+                return { data: res.data, error: res.error };
             }).setResponse();
         };
         this.schema = newSchema(humanSchemas.default);

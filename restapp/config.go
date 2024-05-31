@@ -60,7 +60,7 @@ type RsServer struct {
 	Enable   bool   `yaml:"enable" json:"enable"`     // 是否启用脚本服务
 	FileFsId string `yaml:"fileFsId" json:"fileFsId"` // 在fs节中配置key
 	HttpFsId string `yaml:"httpFsId" json:"httpFsId"` // 在fs节中配置key
-	SrcPath  string `yaml:"srcPath" json:"srcPath"`   // 脚本文件路径
+	BasePath string `yaml:"basePath" json:"basePath"` // 脚本文件路径
 	Reload   bool   `yaml:"reload" json:"reload"`     // 是否自动加载脚本
 }
 
@@ -69,9 +69,10 @@ type RsServer struct {
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
 type HtmlTemplate struct {
-	Enable bool   `yaml:"enable" json:"enable"` // 是否启用html模板
-	ApiUrl string `yaml:"apiUrl" json:"apiUrl"` // api html模板文件路径
-	FsId   string `yaml:"fsId" json:"fsId"`     // 在fs节中配置key
+	Enable   bool   `yaml:"enable" json:"enable"`     // 是否启用html模板
+	ApiUrl   string `yaml:"apiUrl" json:"apiUrl"`     // api html模板文件路径
+	FsId     string `yaml:"fsId" json:"fsId"`         // 在fs节中配置key
+	BasePath string `yaml:"basePath" json:"basePath"` // 脚本文件路径
 }
 
 type ResourceConfig struct {
