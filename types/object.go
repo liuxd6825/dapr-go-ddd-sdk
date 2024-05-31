@@ -3,6 +3,7 @@ package types
 import (
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/gookit/goutil/maputil"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"time"
@@ -47,12 +48,20 @@ func (o Object) GetString(key string) string {
 }
 
 func (o Object) GetInt(key string) (int64, error) {
-	return convertor.ToInt(o[key])
+	v, err := convertor.ToInt(o[key])
+	if err != nil {
+		return 0, errors.New("%s is not int", key)
+	}
+	return int64(v), nil
 }
 
 func (o Object) GetFloat(key string) (float64, error) {
-	val := o[key]
-	return convertor.ToFloat(val)
+	v, err := convertor.ToFloat(o[key])
+	if err != nil {
+		return 0, errors.New("%s is not float64", key)
+	}
+	return v, nil
+
 }
 
 func (o Object) GetBool(key string) (bool, error) {

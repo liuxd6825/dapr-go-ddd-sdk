@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 )
@@ -61,6 +62,9 @@ func (e *Server) Handle(opt *HandleOpt) {
 		var obj common.Object
 		if opt.Schema != nil {
 			obj, err = rctx.ReadObject(opt.Schema)
+			if err != nil {
+				err = errors.NewErr(err, "数据验证失败")
+			}
 		}
 		if err != nil {
 			setError(ictx, err)

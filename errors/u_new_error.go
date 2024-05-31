@@ -144,10 +144,11 @@ func New(formatOrText string, text ...any) error {
 }
 
 func NewErr(err error, formatOrText string, text ...any) error {
-	count := len(text)
-	if count == 0 {
-		return errors.New(formatOrText)
-	}
+	/*
+		count := len(text)
+		if count == 0 {
+			return errors.New(formatOrText)
+		}*/
 
 	str := fmt.Sprintf(formatOrText, text...)
 	return &Error{
@@ -169,5 +170,8 @@ func runFuncName(skip int) string {
 }
 
 func (e *Error) Error() string {
-	return e.msg
+	if e.err == nil {
+		return e.msg
+	}
+	return e.msg + ": " + e.err.Error()
 }
