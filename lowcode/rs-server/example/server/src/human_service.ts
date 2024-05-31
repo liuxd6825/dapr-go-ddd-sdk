@@ -1,13 +1,13 @@
 // @ts-ignore
-import {db, Model} from "../pkg/k6/db";
+import {db, Model} from "./pkg/k6/db";
 // @ts-ignore
-import {Context, GoError, Result, context, logs} from "../pkg/k6/common";
+import {Context, GoError, Result, context, logs} from "./pkg/k6/common";
 // @ts-ignore
-import {newSchema, Property, Schema} from "../pkg/k6/schema";
+import {newSchema, Property, Schema} from "./pkg/k6/schema";
 // @ts-ignore
-import {server, WebContext} from "../pkg/k6/server";
+import {server, WebContext} from "./pkg/k6/server";
 
-import {get, put, post, del} from "../pkg/k6server/decorator";
+import {get, put, post, del} from "./pkg/k6server/decorator";
 import {schemas as humanSchemas, Human} from "./schema/human.schema";
 
 interface CreateFields {

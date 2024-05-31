@@ -1,7 +1,7 @@
 // @ts-ignore
 import { HumanService } from "./human_service";
 // @ts-ignore
-import { db } from "../pkg/k6/db";
+import { db } from "./pkg/k6/db";
 export default function () {
     var err = db.open({
         appName: "rs-server",

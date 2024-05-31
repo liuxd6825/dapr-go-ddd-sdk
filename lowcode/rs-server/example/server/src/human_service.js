@@ -5,12 +5,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 // @ts-ignore
-import { db } from "../pkg/k6/db";
+import { db } from "./pkg/k6/db";
 // @ts-ignore
-import { context } from "../pkg/k6/common";
+import { context } from "./pkg/k6/common";
 // @ts-ignore
-import { newSchema } from "../pkg/k6/schema";
-import { get, put, post } from "../pkg/k6server/decorator";
+import { newSchema } from "./pkg/k6/schema";
+import { get, put, post } from "./pkg/k6server/decorator";
 import { schemas as humanSchemas } from "./schema/human.schema";
 var HumanService = /** @class */ (function () {
     function HumanService() {

@@ -1,4 +1,4 @@
-import {Type} from "../../pkg/k6/schema"
+import {Type} from "../pkg/k6/schema"
 
 export interface Human {
     id: string;
