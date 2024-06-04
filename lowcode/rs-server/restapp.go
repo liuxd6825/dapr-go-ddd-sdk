@@ -30,7 +30,6 @@ func InitRsServer(s *restapp.HttpServer) error {
 			fileFs = afero.NewBasePathFs(fileFs, env.App.RsServer.BasePath)
 		}
 		fsCfg := NewFsConfig(fileFs, httpFs)
-		//mainFile := env.App.RsServer.SrcPath + "/main.js"
 		server, err := New(s.App(), fsCfg, "/main.js", env.App.RsServer.Reload)
 		if err != nil {
 			return err

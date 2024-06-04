@@ -5,17 +5,19 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/k6server/js/modules"
 )
 
 type Server struct {
-	app *iris.Application
-	vu  modules.VU
+	app      *iris.Application
+	vu       modules.VU
+	services map[string]*Service
 }
 
 func NewServer(app *iris.Application, vu modules.VU) *Server {
-	return &Server{app: app, vu: vu}
+	return &Server{app: app, vu: vu, services: make(map[string]*Service)}
 }
 
 func (e *Server) newObject(v map[string]any) *goja.Object {
@@ -53,6 +55,28 @@ func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
 
 func (e *Server) CreateOpenApiService() {
 
+}
+
+type AddServiceOption struct {
+	Name    string
+	Desc    string
+	Service *goja.Object
+}
+
+func (e *Server) AddService(opts *AddServiceOption) error {
+	if opts == nil {
+		return errors.New("opts is nil")
+	}
+	if opts.Service == nil {
+		return errors.New("opts.Service is nil")
+	}
+	e.services[opts.Name] = &Service{
+		Service: opts.Service,
+		Name:    opts.Name,
+		Desc:    opts.Desc,
+		server:  e,
+	}
+	return nil
 }
 
 func catchError(ctx iris.Context, e error, recover any) error {

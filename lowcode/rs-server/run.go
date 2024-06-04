@@ -177,12 +177,11 @@ func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPr
 		"k6/schema": schema.New(),
 		"k6/common": common.New(),
 	}
-
 	return js.NewBundleFormJsModules(
 		piState,
 		&loader.SourceData{
-			URL:  &url.URL{Path: filename, Scheme: "file"},
 			Data: jsCodeData,
+			URL:  &url.URL{Path: filename, Scheme: "file"},
 			PWD:  &url.URL{Path: rootPath, Scheme: "file"},
 		},
 		fs.ToMap(),

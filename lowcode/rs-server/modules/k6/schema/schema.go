@@ -9,12 +9,15 @@ type Schema struct {
 }
 
 func NewSchema(schema *Schema) *Schema {
-	if schema.Properties != nil {
-		for k, v := range schema.Properties {
-			v.Name = k
-		}
+	return schema.Init()
+}
+
+func (s *Schema) Init() *Schema {
+	if s == nil {
+		return s
 	}
-	return schema
+	s.Schema.Init()
+	return s
 }
 
 type Validate = schema2.Validate

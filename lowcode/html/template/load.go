@@ -25,6 +25,7 @@ func loadSchema(fs afero.Fs, pwd string, schemasFile string, schemaName string) 
 	if err != nil {
 		return nil, err
 	}
+	// 是js文件 则加载js文件
 	if strings.HasSuffix(schemasFile, ".js") {
 		schemas := schema.NewSchemasLibrary()
 		if err = schemas.LoadJavaScript(bytes); err != nil {
@@ -33,7 +34,7 @@ func loadSchema(fs afero.Fs, pwd string, schemasFile string, schemaName string) 
 		s, err := schemas.Get(schemaName)
 		return s, err
 	}
-
+	// 默认json文件
 	s, err := schema.NewSchemaWithJson(string(bytes))
 	return s, err
 }
@@ -52,10 +53,12 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 	if sm == nil {
 		return nil, errors.New("schema instance is nil")
 	}
+
 	bytes, err := readFile(fs, pwd, uiSchemaFile)
 	if err != nil {
 		return nil, err
 	}
+	// 是js文件 则加载js文件
 	if strings.HasSuffix(uiSchemaFile, ".js") {
 		uiSchemas := schema.NewUiSchemasLibrary()
 		if err = uiSchemas.LoadJavaScript(bytes); err != nil {
@@ -69,6 +72,7 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 		}
 		return ui, err
 	}
+	// 默认json文件
 	ui, err := schema.NewUiSchemaWithJson(sm, string(bytes))
 	return ui, err
 }
