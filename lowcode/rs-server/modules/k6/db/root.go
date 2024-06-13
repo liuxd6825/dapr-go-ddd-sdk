@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/liuxd6825/k6server/js/modules"
+	"sync"
 )
 
 type RootModule struct {
@@ -29,11 +30,17 @@ type Exports struct {
 	vu modules.VU
 }
 
+var _dbOnce sync.Once
+var _db *DB
+
 // Exports returns the exports of the k6 module.
 func (e *Exports) Exports() modules.Exports {
+	_dbOnce.Do(func() {
+		_db = NewDB()
+	})
 	return modules.Exports{
 		Named: map[string]interface{}{
-			"db": e.vu.Runtime().ToValue(db),
+			"db": e.vu.Runtime().ToValue(_db),
 		},
 	}
 }

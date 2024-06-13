@@ -14,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html/template"
+	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
@@ -55,6 +56,7 @@ type HttpServer struct {
 	sdkServer      *http.Server
 	envConfig      *EnvConfig
 	inits          []RunInitFunc
+	swagger        *swagger3.Swagger
 }
 
 type OnAppInit func(ctx context2.Context) error
@@ -103,6 +105,7 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		envConfig:      opts.EnvConfig,
 		app:            app,
 		inits:          opts.Inits,
+		swagger:        swagger3.NewSwagger(),
 	}
 
 }
@@ -165,6 +168,10 @@ func (s *HttpServer) Start() error {
 		}
 	}
 
+	if err := s.addSwaggerHandler(app); err != nil {
+		panic(err.Error())
+	}
+
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
 	if err := app.Run(iris.Addr(addr), func(application *iris.Application) {
 		for _, onInit := range _appInits {
@@ -172,6 +179,7 @@ func (s *HttpServer) Start() error {
 				panic(err.Error())
 			}
 		}
+
 		fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
 		if logs.GetLevel() <= logs.DebugLevel {
 			for _, v := range application.GetRoutes() {
@@ -183,6 +191,19 @@ func (s *HttpServer) Start() error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *HttpServer) addSwaggerHandler(app *iris.Application) error {
+	path := "swagger.json"
+	app.Get(path, func(ictx iris.Context) {
+		resource := ictx.URLParam("resource")
+		swagger := s.swagger.Filter(resource)
+		if err := ictx.JSON(swagger); err != nil {
+			ictx.StatusCode(http.StatusInternalServerError)
+			ictx.SetErr(err)
+		}
+	})
 	return nil
 }
 
@@ -297,6 +318,21 @@ func (s *HttpServer) registerQueryHandler(handlers ...ddd.SubscribeHandler) erro
 		}
 	}
 	return nil
+}
+
+func (s *HttpServer) GetSwagger() *swagger3.Swagger {
+	return s.swagger
+}
+func (s *HttpServer) AddSwagger(swg *swagger3.Swagger) {
+	if swg == nil {
+		return
+	}
+	for key, path := range swg.Paths {
+		s.swagger.Paths[key] = path
+	}
+}
+func (s *HttpServer) AddSubscribe(subs ...RegisterSubscribe) {
+	s.subscribes = append(s.subscribes, subs...)
 }
 
 func setOptions(w http.ResponseWriter, r *http.Request) {

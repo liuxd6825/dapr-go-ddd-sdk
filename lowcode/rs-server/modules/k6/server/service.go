@@ -7,5 +7,4 @@ type Service struct {
 	Desc    string
 	server  *Server
 	Service *goja.Object
-	handler *RequestOptions
 }

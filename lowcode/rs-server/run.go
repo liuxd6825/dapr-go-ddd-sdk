@@ -33,13 +33,15 @@ type JsServer struct {
 	reload   bool
 	watcher  watcher.Watcher
 	fsCfg    *FsConfig
+	data     map[string]any
 }
 
-func New(app *iris.Application, fsCfg *FsConfig, mainFile string, reload bool) (*JsServer, error) {
+func New(app *iris.Application, data map[string]any, fsCfg *FsConfig, mainFile string, reload bool) (*JsServer, error) {
 	errs := errors.NewParamsError("rs_server.New()")
 	errs.AddNil("fsCfg", fsCfg)
 	errs.AddNil("app", app)
 	errs.AddNil("mainFile", mainFile)
+
 	if errs.HasError() {
 		return nil, errs
 	}
@@ -56,11 +58,14 @@ func New(app *iris.Application, fsCfg *FsConfig, mainFile string, reload bool) (
 		mainFile: mainFile,
 		fsCfg:    fsCfg,
 		reload:   reload,
+		data:     data,
 	}, nil
 }
 
-func (s *JsServer) Run() error {
-	if err := s.run(); err != nil {
+type RunOption = func(vu lib.VU) error
+
+func (s *JsServer) Run(options ...RunOption) error {
+	if err := s.run(options...); err != nil {
 		return err
 	}
 	if s.reload && s.fsCfg.FileFs.Name() == localfs.Name() {
@@ -69,19 +74,19 @@ func (s *JsServer) Run() error {
 	return nil
 }
 
-func (s *JsServer) run() error {
+func (s *JsServer) run(options ...RunOption) error {
 	file, err := s.fsCfg.FileFs.Open(s.mainFile)
 	if err != nil {
 		return err
 	}
 
-	data, err := ioutil.ReadAll(file)
+	fileData, err := ioutil.ReadAll(file)
 	if err != nil {
 		return err
 	}
 
 	piState := getTestPreInitState(logrus.New())
-	bundle, err := newBundle(s.mainPath, s.mainFile, data, piState, s.app, s.fsCfg)
+	bundle, err := newBundle(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.fsCfg)
 	if err != nil {
 		return err
 	}
@@ -94,10 +99,15 @@ func (s *JsServer) run() error {
 	ctx, _ := context.WithCancel(context.Background())
 	//defer cancel()
 
-	vu, err := runner.NewVU(ctx, 1, 10, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
-		modules := k6.NewModules(s.app)
+	vu, err := runner.NewVU(ctx, 1, 1, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
+		modules := k6.NewModules(s.app, s.data)
 		for k, m := range modules {
 			if err = vu.GetRuntime().Set(k, m); err != nil {
+				return err
+			}
+		}
+		for _, opt := range options {
+			if err := opt(vu); err != nil {
 				return err
 			}
 		}
@@ -108,6 +118,7 @@ func (s *JsServer) run() error {
 	}
 	params := &lib.VUActivationParams{RunContext: ctx}
 	err = vu.Activate(params).RunOnce()
+	fmt.Println("rsServer.Run()")
 	return err
 }
 
@@ -170,9 +181,9 @@ func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {
 	}
 }
 
-func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, fs *FsConfig) (*js.Bundle, error) {
+func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, fs *FsConfig) (*js.Bundle, error) {
 	jsModules := map[string]any{
-		"k6/server": server.New(app),
+		"k6/server": server.New(app, data),
 		"k6/db":     db.New(),
 		"k6/schema": schema.New(),
 		"k6/common": common.New(),

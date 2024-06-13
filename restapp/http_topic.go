@@ -258,7 +258,7 @@ func (s *HttpServer) addSubscription(sub *common.Subscription, fn common.TopicEv
 		Route:      sub.Route,
 	}
 
-	rs := NewRegisterSubscribe(subscribes, func() {})
+	rs := NewRegisterSubscribe(subscribes, nil)
 	s.subscribes = append(s.subscribes, rs)
 	return nil
 }

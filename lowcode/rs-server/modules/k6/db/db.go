@@ -10,8 +10,6 @@ type DB struct {
 	models  map[string]*Model
 }
 
-var db = NewDB()
-
 func NewDB() *DB {
 	return &DB{models: map[string]*Model{}}
 }

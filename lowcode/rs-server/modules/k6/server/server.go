@@ -1,12 +1,11 @@
 package server
 
 import (
-	"fmt"
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/httptest"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
 	"github.com/liuxd6825/k6server/js/modules"
 )
 
@@ -14,31 +13,38 @@ type Server struct {
 	app      *iris.Application
 	vu       modules.VU
 	services map[string]*Service
+	swagger  *swagger3.Swagger
+}
+
+type AddServiceOption struct {
+	Name    string
+	Desc    string
+	Service *goja.Object
 }
 
 func NewServer(app *iris.Application, vu modules.VU) *Server {
-	return &Server{app: app, vu: vu, services: make(map[string]*Service)}
+	return &Server{app: app, vu: vu, services: make(map[string]*Service), swagger: swagger3.NewSwagger()}
 }
 
-func (e *Server) newObject(v map[string]any) *goja.Object {
-	if v == nil {
-		obj := e.vu.Runtime().NewObject()
-		return obj
+func (e *Server) Run() error {
+	if err := e.initSwagger(); err != nil {
+		return err
 	}
-	obj := e.vu.Runtime().NewObject()
-	for k, v := range v {
-		if m, ok := v.(map[string]any); ok {
-			obj.Set(k, e.newObject(m))
-			continue
-		} else if m, ok := v.(common.Object); ok {
-			obj.Set(k, e.newObject(m))
-			continue
-		}
-		if err := obj.Set(k, v); err != nil {
-			fmt.Println(err)
-		}
+	return nil
+}
+
+func (e *Server) initSwagger() error {
+	sb := NewSwaggerBuilder()
+	swagger, err := sb.Build(e)
+	if err != nil {
+		return err
 	}
-	return obj
+	e.swagger = swagger
+	return nil
+}
+
+func (e *Server) Swagger() *swagger3.Swagger {
+	return e.swagger
 }
 
 func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
@@ -53,16 +59,6 @@ func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
 	return common.NewResult[any](v, err)
 }
 
-func (e *Server) CreateOpenApiService() {
-
-}
-
-type AddServiceOption struct {
-	Name    string
-	Desc    string
-	Service *goja.Object
-}
-
 func (e *Server) AddService(opts *AddServiceOption) error {
 	if opts == nil {
 		return errors.New("opts is nil")
@@ -70,36 +66,16 @@ func (e *Server) AddService(opts *AddServiceOption) error {
 	if opts.Service == nil {
 		return errors.New("opts.Service is nil")
 	}
-	e.services[opts.Name] = &Service{
+	service := &Service{
 		Service: opts.Service,
 		Name:    opts.Name,
 		Desc:    opts.Desc,
 		server:  e,
 	}
+	e.services[opts.Name] = service
 	return nil
 }
 
-func catchError(ctx iris.Context, e error, recover any) error {
-	var err error
-	if e != nil {
-		err = e
-	} else if recover != nil {
-		if ve := recover.(error); ve != nil {
-			err = ve
-		} else {
-			err = fmt.Errorf("unknown error %s")
-		}
-	}
-	if err != nil && ctx != nil {
-		setError(ctx, err)
-	}
-	return nil
-}
-
-func setError(ctx iris.Context, err error) {
-	if err != nil && ctx != nil {
-		ctx.SetErr(err)
-		ctx.StatusCode(httptest.StatusInternalServerError)
-		_, _ = ctx.WriteString(err.Error())
-	}
+func (e *Server) newObject(m map[string]any) (*goja.Object, error) {
+	return NewObject(e.vu.Runtime(), m)
 }

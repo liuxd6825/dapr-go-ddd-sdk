@@ -3,6 +3,7 @@ package ddd
 import (
 	"context"
 	"fmt"
+	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
@@ -139,6 +140,18 @@ func callCommandHandler(ctx context.Context, aggregate any, cmd Command) error {
 //	@param metadata
 //	@return error
 func callMethod(ctx context.Context, obj any, methodName string, eventOrCommand any, metadata Metadata) error {
+	if jsObj, ok := obj.(*goja.Object); ok {
+		v := jsObj.Get(methodName)
+		if goja.IsUndefined(v) || goja.IsNaN(v) || goja.IsNull(v) {
+			return errors.New("method: %s is not defined", methodName)
+		}
+		method, ok := goja.AssertFunction(v)
+		if !ok {
+			panic("Not a function")
+		}
+		method(jsObj)
+
+	}
 	return reflectutils.CallMethod(obj, methodName, ctx, eventOrCommand, metadata)
 }
 

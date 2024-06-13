@@ -20,6 +20,7 @@ type Schema struct {
 	Properties  Properties `json:"properties,omitempty"`
 	Definitions Properties `json:"definitions,omitempty"`
 	Required    []string   `json:"required,omitempty"`
+	Default     any        `json:"default,omitempty"`
 	validate    *Validate
 }
 
@@ -114,10 +115,14 @@ func NewSchemaFile(pathFile string) (*Schema, error) {
 	return NewSchema(file)
 }
 
-func (s *Schema) Init() {
+func (s *Schema) Init() *Schema {
 	if s.Properties != nil {
 		s.Properties.Init()
 	}
+	if s.Definitions != nil {
+		s.Definitions.Init()
+	}
+	return s
 }
 
 func (s *Schema) Validate(obj any) error {

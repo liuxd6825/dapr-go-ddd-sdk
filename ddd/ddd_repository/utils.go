@@ -41,6 +41,8 @@ type KeyValue struct {
 	Value string
 }
 
+// RSqlKeyValueToList
+// k1:v1,k2:v2,k3:v3
 func RSqlKeyValueToList(s string) []KeyValue {
 	res := make([]KeyValue, 0)
 	if len(s) == 0 {

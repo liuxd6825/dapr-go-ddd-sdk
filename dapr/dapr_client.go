@@ -179,12 +179,12 @@ func (c *daprClient) tryCall(ctx context.Context, fun func() error, tryCount int
 //	@Description:
 //	@receiver c
 //	@param ctx
-//	@param appID
-//	@param methodName
-//	@param verb
-//	@param request
-//	@param response
-//	@return res
+//	@param appID 服务Id
+//	@param methodName 完整的Url
+//	@param verb dapr服务的版本
+//	@param request Request.Body的内容
+//	@param response 返回对象指针
+//	@return res 返回对象与response参数是同一对象
 //	@return err
 func (c *daprClient) InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (res interface{}, err error) {
 	defer func() {

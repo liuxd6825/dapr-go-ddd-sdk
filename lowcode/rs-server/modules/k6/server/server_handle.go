@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
@@ -22,55 +23,87 @@ func (m MethodType) String() string {
 	return string(m)
 }
 
+type InParamType string
+
+const (
+	InParamType_URL   InParamType = "url"
+	InParamType_Param InParamType = "param"
+	InParamType_Body  InParamType = "body"
+)
+
 type RequestParam struct {
-	Required bool   `json:"required,omitempty"`
-	Type     string `json:"type"`
+	In       string         `json:"in"` // InParamType
+	Required bool           `json:"required"`
+	Type     string         `json:"type"`
+	Desc     string         `json:"desc"`
+	Schema   *schema.Schema `json:"schema"`
+	Example  any            `json:"example"`
 }
 
 type RequestData struct {
-	Data       any            `json:"data,omitempty"`
-	PathParams map[string]any `json:"pathParams,omitempty"`
-	UrlParams  map[string]any `json:"urlParams,omitempty"`
+	Data   *goja.Object   `json:"data"` // 从body中读取的map数据
+	Params map[string]any `json:"params"`
 }
-type RequestOptions struct {
-	ServiceName string                  `json:"serviceName"`
+
+type HandleOptions struct {
 	Method      MethodType              `json:"method"`
 	Path        string                  `json:"path"`
+	Description string                  `json:"description"`
 	Body        *schema.Schema          `json:"body"`
-	PathParams  map[string]RequestParam `json:"pathParams"`
-	UrlParams   map[string]RequestParam `json:"urlParams"`
-	HandleName  string                  `json:"methodName"`
+	Params      map[string]RequestParam `json:"params"`
+	HandleName  string                  `json:"handleName"`
 	Handle      func(cxt *WebContext, requestData *RequestData)
 }
 
-func (e *Server) Get(opt *RequestOptions) {
+func (h HandleOptions) GetMethod() MethodType {
+	return h.Method
+}
+
+func (h *HandleOptions) GetPath() string {
+	return h.Path
+}
+
+func (h *HandleOptions) GetDescription() string {
+	return h.Description
+}
+
+func (h *HandleOptions) GetBody() *schema.Schema {
+	return h.Body
+}
+
+func (h *HandleOptions) GetParams() map[string]RequestParam {
+	return h.Params
+}
+
+func (e *Server) Get(opt *HandleOptions) {
 	opt.Method = GET
 	e.Handle(opt)
 }
 
-func (e *Server) Post(opt *RequestOptions) {
+func (e *Server) Post(opt *HandleOptions) {
 	opt.Method = POST
 	e.Handle(opt)
 }
 
-func (e *Server) Put(opt *RequestOptions) {
+func (e *Server) Put(opt *HandleOptions) {
 	opt.Method = PUT
 	e.Handle(opt)
 }
 
-func (e *Server) Delete(opt *RequestOptions) {
+func (e *Server) Delete(opt *HandleOptions) {
 	opt.Method = DELETE
 	e.Handle(opt)
 }
 
-func (e *Server) Handle(opt *RequestOptions) {
+func (e *Server) Handle(opt *HandleOptions) {
 	if opt.Handle == nil {
 		e.app.Logger().Error("未在%s上设置处理函数", opt.Path)
 		return
 	}
-
+	if opt.Method == "" {
+		opt.Method = GET
+	}
 	method := opt.Method.String()
-
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
 		var err error
 		defer func() {
@@ -86,46 +119,50 @@ func (e *Server) Handle(opt *RequestOptions) {
 				err = errors.NewErr(err, "数据验证失败")
 			}
 		}
-		urlParams := map[string]any{}
-		if val, err := e.GetUrlParams(ictx, opt.UrlParams); err != nil {
+		if err != nil {
+			setError(ictx, err)
 			return
-		} else {
-			urlParams = val
 		}
 
-		pathParams := map[string]any{}
-		if val, err := e.GetPathParams(ictx, opt.PathParams); err != nil {
+		params, err := e.GetParams(ictx, opt.Params)
+		if err != nil {
+			setError(ictx, err)
 			return
-		} else {
-			pathParams = val
 		}
-
+		data, err := e.newObject(obj)
 		if err != nil {
 			setError(ictx, err)
 			return
 		}
 		requestData := &RequestData{
-			Data:       e.newObject(obj),
-			PathParams: pathParams,
-			UrlParams:  urlParams,
+			Data:   data,
+			Params: params,
 		}
+
 		opt.Handle(rctx, requestData)
 	})
 }
 
-func (e *Server) GetUrlParams(ictx iris.Context, params map[string]RequestParam) (map[string]any, error) {
+func (e *Server) GetParams(ictx iris.Context, params map[string]RequestParam) (map[string]any, error) {
 	var err error
 	data := map[string]any{}
 	if len(params) > 0 {
-		for k, v := range params {
-			val := ictx.URLParam(k)
+		for key, v := range params {
+			var val string
+			switch v.In {
+			case "url":
+				val = ictx.URLParam(key)
+			case "path":
+				val = ictx.Params().Get(key)
+			}
+
 			if v.Required && val == "" {
-				err = errors.NewErr(err, "url 参数 %s 缺失", k)
+				err = errors.NewErr(err, "参数 %s 缺失", key)
 			} else {
 				if v, err := types.Convert(v.Type, val); err != nil {
-					data[k] = v
+					data[key] = v
 				} else {
-					err = errors.NewErr(err, "url 参数 %s 类型转换失败", k)
+					err = errors.NewErr(err, "参数 %s 类型转换失败", key)
 				}
 			}
 		}
@@ -136,32 +173,11 @@ func (e *Server) GetUrlParams(ictx iris.Context, params map[string]RequestParam)
 	return data, err
 }
 
-func (e *Server) GetPathParams(ictx iris.Context, params map[string]RequestParam) (map[string]any, error) {
-	var err error
-	data := map[string]any{}
-	if len(params) > 0 {
-		for k, v := range params {
-			val := ictx.Params().Get(k)
-			if v.Required && val == "" {
-				err = errors.NewErr(err, "path 参数 %s 缺失", k)
-			} else {
-				if v, err := types.Convert(v.Type, val); err != nil {
-					data[k] = v
-				} else {
-					err = errors.NewErr(err, "path 参数 %s 类型转换失败", k)
-				}
-			}
-		}
-	}
-	if err != nil {
-		setError(ictx, err)
-	}
-	return data, err
-}
-
-func (e *Server) Handles(handlers []*RequestOptions) error {
+func (e *Server) AddHandles(handlers ...*HandleOptions) error {
 	for _, opt := range handlers {
-		e.Handle(opt)
+		if opt != nil {
+			e.Handle(opt)
+		}
 	}
 	return nil
 }

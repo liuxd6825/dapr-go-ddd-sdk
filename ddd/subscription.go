@@ -21,6 +21,7 @@ type Subscribe struct {
 	Routes *TopicRoutes `json:"routes,omitempty"`
 	// Metadata is the subscription metadata.
 	Metadata map[string]string `json:"metadata,omitempty"`
+	FuncName string            `json:"funcName"`
 }
 
 // TopicRoutes encapsulates the default route and multiple routing rules.
@@ -95,10 +96,23 @@ func NewSubscribeContext(ictx iris.Context) SubscribeContext {
 	return &subscribeContext{ictx: ictx}
 }
 
-func NewSubscribeHandler(subscribes []*Subscribe, queryEventHandler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
+func NewSubscribeHandlerDefault(subscribes []*Subscribe, handlerObject any, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
+	handler, ok := handlerObject.(QueryEventHandler)
+	if !ok {
+		handler = NewQueryEventHandlerDefault(handlerObject)
+	}
 	return &subscribeHandler{
 		subscribes:           subscribes,
-		queryEventHandler:    queryEventHandler,
+		queryEventHandler:    handler,
+		subscribeHandlerFunc: subscribeHandlerFunc,
+		interceptors:         interceptors,
+	}
+}
+
+func NewSubscribeHandler(subscribes []*Subscribe, handler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
+	return &subscribeHandler{
+		subscribes:           subscribes,
+		queryEventHandler:    handler,
 		subscribeHandlerFunc: subscribeHandlerFunc,
 		interceptors:         interceptors,
 	}
@@ -138,20 +152,36 @@ func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeC
 		if err != nil {
 			return err
 		}
-
 		record := result.GetEventRecord()
 		newCtx, err := h.newContext(ctx, record)
 		if err != nil {
 			return errors.New("subscribeHandler.newContext(); error:%s;", err.Error())
 		}
-		err = CallEventHandler(newCtx, h.queryEventHandler, record)
-
+		err = h.CallEventHandler(newCtx, record)
 		return err
 	})
 	if err != nil {
 		sctx.SetErr(err)
 	}
 	return err
+}
+
+// CallEventHandler
+// @Description: 调用领域事件监听器
+// @param ctx
+// @param handler
+// @param record
+// @return error
+func (h *subscribeHandler) CallEventHandler(ctx context.Context, record *dapr.EventRecord) error {
+	if record == nil {
+		return errors.New("package:ddd; func:CallEventHandler(); error: record is nil")
+	}
+	event, err := NewDomainEvent(record)
+	if err != nil {
+		return errors.New("package:ddd; func:CallEventHandler(); error: NewDomainEvent() %v", err.Error())
+	}
+	metadata := record.Metadata
+	return h.queryEventHandler.CallEventHandler(ctx, h.queryEventHandler, record.EventType, record.EventVersion, event, metadata)
 }
 
 func (h *subscribeHandler) newContext(ctx context.Context, record *dapr.EventRecord) (newCtx context.Context, err error) {

@@ -28,22 +28,27 @@ func (c *WebContext) Bool(key string) *common.Result[bool] {
 	v, e := c.ictx.Params().GetBool(key)
 	return common.NewResult[bool](v, e)
 }
+
 func (c *WebContext) Float64(key string) *common.Result[float64] {
 	v, e := c.ictx.Params().GetFloat64(key)
 	return common.NewResult[float64](v, e)
 }
+
 func (c *WebContext) Int(key string) *common.Result[int] {
 	v, e := c.ictx.Params().GetInt(key)
 	return common.NewResult[int](v, e)
 }
+
 func (c *WebContext) Int32(key string) *common.Result[int32] {
 	v, e := c.ictx.Params().GetInt32(key)
 	return common.NewResult[int32](v, e)
 }
+
 func (c *WebContext) Int64(key string) *common.Result[int64] {
 	v, e := c.ictx.Params().GetInt64(key)
 	return common.NewResult[int64](v, e)
 }
+
 func (c *WebContext) Strings(key string) *common.Result[[]string] {
 	val := c.ictx.URLParamSlice(key)
 	return common.NewResult[[]string](val, nil)
