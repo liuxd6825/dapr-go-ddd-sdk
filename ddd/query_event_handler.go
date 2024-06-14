@@ -44,7 +44,7 @@ func (q *QueryEventHandlerDefault) getEventMethodName(eventType string, revision
 //	@param eventType  事件类型
 //	@param eventVersion 事件版本号
 //	@param event 事件对象
-//	@param metadata  事件元数据
+//	@param Metadata  事件元数据
 //	@return error 错误
 func (q *QueryEventHandlerDefault) CallEventHandler(ctx context.Context, handler any, eventType string, eventVersion string, event any, metadata Metadata) error {
 	methodName := getEventMethodName(eventType, eventVersion)

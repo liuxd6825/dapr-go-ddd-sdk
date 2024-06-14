@@ -1,0 +1,83 @@
+package common
+
+import "time"
+
+type Event struct {
+	TenantId     string
+	EventId      string
+	EventType    string
+	EventVersion string
+	CommandId    string
+	AggregateId  string
+	CreatedTime  time.Time
+	IsValidOnly  bool
+	Data         map[string]any
+}
+
+func NewEvent() *Event {
+	return &Event{}
+}
+
+func (c *Event) GetAggregateId() string {
+	return c.AggregateId
+}
+
+func (c *Event) GetEventId() string {
+	return c.EventId
+}
+
+func (c *Event) SetEventId(val string) {
+	c.EventId = val
+}
+
+func (c *Event) GetTenantId() string {
+	return c.TenantId
+}
+
+func (c *Event) SetTenantId(val string) {
+	c.TenantId = val
+}
+
+func (c *Event) GetEventType() string {
+	return c.EventType
+}
+
+func (c *Event) SetEventType(val string) {
+	c.EventType = val
+}
+
+func (c *Event) GetData() any {
+	return c.Data
+}
+
+func (c *Event) SetData(val map[string]any) {
+	c.Data = val
+}
+
+func (c *Event) GetIsValidOnly() bool {
+	return c.IsValidOnly
+}
+
+func (c *Event) SetIsValidOnly(val bool) {
+	c.IsValidOnly = val
+}
+
+func (c *Event) GetCreatedTime() time.Time {
+	return c.CreatedTime
+}
+
+func (c *Event) SetCreatedTime(val time.Time) {
+	c.CreatedTime = val
+}
+
+func (c *Event) GetCommandId() string {
+	return c.CommandId
+}
+
+func (c *Event) SetCommandId(val string) {
+	c.CommandId = val
+}
+
+func (c *Event) GetEventVersion() string {
+	return c.EventVersion
+}

@@ -58,13 +58,14 @@ func (e *Exports) Exports() modules.Exports {
 	server := newServer(e.app, e.vu)
 	feign := NewFeign(server)
 	ctxPkg := NewContextPkg()
+	runtime := e.vu.Runtime()
 	values := map[string]interface{}{
-		"fmt":             e.vu.Runtime().ToValue(NewLogs()),
-		"server":          e.vu.Runtime().ToValue(server),
-		"object":          e.vu.Runtime().ToValue(server.newObject),
-		"feign":           e.vu.Runtime().ToValue(feign),
-		"context":         e.vu.Runtime().ToValue(ctxPkg),
-		"regEventHandler": e.vu.Runtime().ToValue(RegisterSubscribeService),
+		"fmt":     runtime.ToValue(NewLogs()),
+		"server":  runtime.ToValue(server),
+		"object":  runtime.ToValue(server.newObject),
+		"feign":   runtime.ToValue(feign),
+		"context": runtime.ToValue(ctxPkg),
+		"events":  runtime.ToValue(NewEventPkg(e.vu.Runtime())),
 	}
 	for k, v := range e.data {
 		values[k] = e.vu.Runtime().ToValue(v)

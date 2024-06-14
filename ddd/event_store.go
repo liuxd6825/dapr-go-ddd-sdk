@@ -109,7 +109,7 @@ func CallEventHandler(ctx context.Context, handler interface{}, record *dapr.Eve
 //	@param eventType  事件类型
 //	@param eventVersion 事件版本号
 //	@param event 事件对象
-//	@param metadata  事件元数据
+//	@param Metadata  事件元数据
 //	@return error 错误
 func callEventHandler(ctx context.Context, queryHandler any, eventType string, eventVersion string, event any, metadata Metadata) error {
 	methodName := getEventMethodName(eventType, eventVersion)
@@ -137,7 +137,7 @@ func callCommandHandler(ctx context.Context, aggregate any, cmd Command) error {
 //	@param methodName 方法名称
 //	@param ctx
 //	@param eventOrCommand
-//	@param metadata
+//	@param Metadata
 //	@return error
 func callMethod(ctx context.Context, obj any, methodName string, eventOrCommand any, metadata Metadata) error {
 	if jsObj, ok := obj.(*goja.Object); ok {

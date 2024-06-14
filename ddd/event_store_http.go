@@ -145,7 +145,7 @@ func (s *httpEventStore) ApplyEvent(ctx context.Context, req *dapr.ApplyEventReq
 		return nil, errors.New("EventData cannot be null.")
 	}
 	for _, e := range req.Events {
-		if err := ddd_utils.IsEmpty(e.CommandId, "CommandId"); err != nil {
+		if err := ddd_utils.IsEmpty(e.CommandId, "EventId"); err != nil {
 			return nil, err
 		}
 		if err := ddd_utils.IsEmpty(e.PubsubName, "PubsubName"); err != nil {

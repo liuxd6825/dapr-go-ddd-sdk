@@ -213,3 +213,6 @@ replace github.com/liuxd6825/dapr-go-sdk => ../dapr-go-sdk
 replace github.com/liuxd6825/dapr-components-contrib => ../dapr-components-contrib
 
 replace github.com/liuxd6825/k6server => ../../k6server
+
+replace github.com/dop251/goja =>  ../../../liuxd6825/goja
+

@@ -8,8 +8,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"go.mongodb.org/mongo-driver/mongo"
+	"time"
 )
 
 type Model struct {
@@ -52,8 +54,59 @@ func (d *Model) Save(ctx context.Context, setData *ddd.SetData[ddd.MapEntity], o
 	return d.dao.Save(ctx, setData, newOptions(opts)...).GetError()
 }
 
-func (d *Model) Create(ctx context.Context, entity ddd.MapEntity, opts ...*ddd_repository.RepositoryOptions) error {
-	return d.dao.Insert(ctx, entity, newOptions(opts)...).GetError()
+type EventOptions struct {
+	AggId *string
+}
+
+func (d *Model) Create(ctx context.Context, entity ddd.MapEntity, eventOpt *EventOptions, opts ...*ddd_repository.RepositoryOptions) error {
+	err := d.dao.Insert(ctx, entity, newOptions(opts)...).GetError()
+	if err != nil {
+		return err
+	}
+
+	event := d.newEvent(entity, eventOpt)
+	agg := d.newAggregate(entity, eventOpt)
+	res := server.GetEventPkg().CreateEvent(ctx, agg, event)
+	return res.Error
+}
+
+func (d *Model) newEvent(entity ddd.MapEntity, eventOpt *EventOptions) *common.Event {
+	eventType := fmt.Sprintf("%s.%s_create", "restapp.GetAppId()", d.tableName)
+	eventId := entity.GetId()
+	tenantId := entity.GetTenantId()
+	aggId := d.getAggId(entity, eventOpt)
+
+	event := common.NewEvent()
+	event.EventId = eventId
+	event.EventType = eventType
+	event.TenantId = tenantId
+	event.CreatedTime = time.Now()
+	event.AggregateId = aggId
+	event.Data = entity
+	event.CommandId = eventId
+	event.EventVersion = "v1.0"
+	return event
+}
+
+func (d *Model) newAggregate(entity ddd.MapEntity, eventOpt *EventOptions) *server.Aggregate {
+	tenantId := entity.GetTenantId()
+	aggregateId := d.getAggId(entity, eventOpt)
+	agg := server.NewAggregate()
+	agg.TenantId = tenantId
+	agg.AggregateId = aggregateId
+	agg.AggregateVersion = "v1.0"
+	agg.AggregateType = d.tableName
+	return agg
+}
+
+func (d *Model) getAggId(entity ddd.MapEntity, eventOpt *EventOptions) string {
+	aggregateId := entity.GetId()
+	if eventOpt != nil {
+		if eventOpt.AggId != nil {
+			aggregateId = *eventOpt.AggId
+		}
+	}
+	return aggregateId
 }
 
 func (d *Model) CreateByMap(ctx context.Context, tenantId string, data map[string]any, opts ...*ddd_repository.RepositoryOptions) error {
@@ -64,7 +117,7 @@ func (d *Model) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...
 	return d.dao.InsertMany(ctx, entity, newOptions(opts)...).GetError()
 }
 
-func (d *Model) Update(ctx context.Context, entity ddd.MapEntity, opts ...*ddd_repository.RepositoryOptions) error {
+func (d *Model) Update(ctx context.Context, entity ddd.MapEntity, eventOpt *EventOptions, opts ...*ddd_repository.RepositoryOptions) error {
 	return d.dao.Update(ctx, entity, newOptions(opts)...).GetError()
 }
 

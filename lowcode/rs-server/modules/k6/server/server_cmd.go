@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
-type CmdFunc func(ctx context.Context, command Command) error
+type CmdFunc func(ctx context.Context, command *Command) error
 
 func (e *Server) DoCmd(rctx *WebContext, fun CmdFunc, opts ...restapp.DoOptions) *common.Result[any] {
 	err := restapp.DoCmd(rctx.ictx, rctx.GetTenantId(), func(ctx context.Context) error {
@@ -26,7 +26,7 @@ func (e *Server) DoCmdAndQueryOne(rctx *WebContext, queryAppId string, cmdFun Cm
 	return common.NewResult[any](data, err)
 }
 
-func (e *Server) DoCmdAndQueryList(ctx *WebContext, queryAppId string, cmd Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...restapp.CmdAndQueryOption) *common.Result[any] {
+func (e *Server) DoCmdAndQueryList(ctx *WebContext, queryAppId string, cmd *Command, cmdFun CmdFunc, queryFun QueryFunc, opts ...restapp.CmdAndQueryOption) *common.Result[any] {
 	data, _, err := restapp.DoCmdAndQueryList(ctx.ictx, ctx.GetTenantId(), queryAppId, cmd, func(ctx context.Context) error {
 		err := cmdFun(ctx, cmd)
 		return err

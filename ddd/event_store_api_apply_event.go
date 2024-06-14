@@ -11,16 +11,16 @@ import (
 type Metadata = map[string][]string
 
 type ApplyEventOptions struct {
-	pubsubName       *string
-	eventStoreName   *string
-	metadata         Metadata
-	sessionId        *string
-	closeEventSource *bool
+	PubsubName       *string
+	EventStoreName   *string
+	Metadata         Metadata
+	SessionId        *string
+	CloseEventSource *bool
 }
 
 func NewApplyEventOptions(metadata Metadata) *ApplyEventOptions {
 	return &ApplyEventOptions{
-		metadata: metadata,
+		Metadata: metadata,
 	}
 }
 
@@ -30,25 +30,25 @@ func NewApplyEventOptionsNil() *ApplyEventOptions {
 
 func OptionCloseEventSource() *ApplyEventOptions {
 	t := true
-	return &ApplyEventOptions{closeEventSource: &t}
+	return &ApplyEventOptions{CloseEventSource: &t}
 }
 
 func (a *ApplyEventOptions) Merge(opts ...*ApplyEventOptions) *ApplyEventOptions {
 	for _, opt := range opts {
-		if opt.eventStoreName != nil {
-			a.eventStoreName = opt.eventStoreName
+		if opt.EventStoreName != nil {
+			a.EventStoreName = opt.EventStoreName
 		}
-		if opt.metadata != nil {
-			a.metadata = opt.metadata
+		if opt.Metadata != nil {
+			a.Metadata = opt.Metadata
 		}
-		if opt.pubsubName != nil {
-			a.pubsubName = opt.pubsubName
+		if opt.PubsubName != nil {
+			a.PubsubName = opt.PubsubName
 		}
-		if opt.sessionId != nil {
-			a.sessionId = opt.sessionId
+		if opt.SessionId != nil {
+			a.SessionId = opt.SessionId
 		}
-		if opt.closeEventSource != nil {
-			a.closeEventSource = opt.closeEventSource
+		if opt.CloseEventSource != nil {
+			a.CloseEventSource = opt.CloseEventSource
 		}
 	}
 	return a
@@ -59,66 +59,66 @@ func (a *ApplyEventOptions) SetMetadataFromCtx(ctx context.Context) *ApplyEventO
 		return a
 	}
 	if header, ok := appctx.GetHeader(ctx); ok {
-		a.metadata = header
+		a.Metadata = header
 	}
 	if tenantId, ok := appctx.GetTenantId(ctx); ok {
-		a.metadata["TenantId"] = []string{tenantId}
+		a.Metadata["TenantId"] = []string{tenantId}
 	}
 	if auth, ok := appctx.GetAuthToken(ctx); ok {
-		a.metadata[Authorization] = []string{auth.GetToken()}
+		a.Metadata[Authorization] = []string{auth.GetToken()}
 	}
 	return a
 }
 
 func (a *ApplyEventOptions) SetCloseEventSource(v bool) *ApplyEventOptions {
-	a.closeEventSource = &v
+	a.CloseEventSource = &v
 	return a
 }
 
 func (a *ApplyEventOptions) GetCloseEventSource() *bool {
-	return a.closeEventSource
+	return a.CloseEventSource
 }
 
 func (a *ApplyEventOptions) SetPubsubName(pubsubName string) *ApplyEventOptions {
-	a.pubsubName = &pubsubName
+	a.PubsubName = &pubsubName
 	return a
 }
 
 func (a *ApplyEventOptions) GetPubsubName() *string {
-	return a.pubsubName
+	return a.PubsubName
 }
 
 func (a *ApplyEventOptions) SetEventStoreKey(eventStoreName string) *ApplyEventOptions {
-	a.eventStoreName = &eventStoreName
+	a.EventStoreName = &eventStoreName
 	return a
 }
 
 func (a *ApplyEventOptions) GetEventStoreName() string {
-	if a.eventStoreName != nil {
-		return *a.eventStoreName
+	if a.EventStoreName != nil {
+		return *a.EventStoreName
 	}
 	return ""
 }
 
 func (a *ApplyEventOptions) SetMetadata(value Metadata) *ApplyEventOptions {
-	a.metadata = value
+	a.Metadata = value
 	return a
 }
 
 func (a *ApplyEventOptions) GetMetadata() Metadata {
-	if a.metadata == nil {
-		a.metadata = Metadata{}
+	if a.Metadata == nil {
+		a.Metadata = Metadata{}
 	}
-	return a.metadata
+	return a.Metadata
 }
 
 func (a *ApplyEventOptions) SetSessionId(value string) *ApplyEventOptions {
-	a.sessionId = &value
+	a.SessionId = &value
 	return a
 }
 
 func (a *ApplyEventOptions) GetSessionId() *string {
-	return a.sessionId
+	return a.SessionId
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
@@ -245,8 +245,8 @@ func publishEvents(ctx context.Context, callEventType CallEventType, aggregate A
 		}
 
 		// 判断是否需要进行"事件溯源"控制
-		if options.closeEventSource != nil {
-			closeEs := *options.closeEventSource
+		if options.CloseEventSource != nil {
+			closeEs := *options.CloseEventSource
 			defaultIsSourcing = !closeEs
 		}
 
@@ -359,7 +359,7 @@ func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*A
 	return resp, err
 }
 
-/*func createEvent(ctx context.Context, sessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.CreateEventResponse, error) {
+/*func createEvent(ctx context.Context, SessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, events []*daprclient.EventDto) (*daprclient.CreateEventResponse, error) {
 	req := &daprclient.CreateEventRequest{
 
 		TenantId:      tenantId,
@@ -371,7 +371,7 @@ func Rollback(ctx context.Context, tenantId string, sessionId string, opts ...*A
 	return resp, err
 }
 
-func deleteEvent(ctx context.Context, sessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) (*daprclient.DeleteEventResponse, error) {
+func deleteEvent(ctx context.Context, SessionId string, eventStorage EventStorage, tenantId, aggregateId, aggregateType string, event *daprclient.EventDto) (*daprclient.DeleteEventResponse, error) {
 	req := &daprclient.DeleteEventRequest{
 		TenantId:      tenantId,
 		AggregateId:   aggregateId,

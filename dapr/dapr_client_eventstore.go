@@ -211,7 +211,7 @@ func (c *daprClient) newEvents(events []*EventDto) ([]*pb.EventDto, error) {
 }
 
 func (c *daprClient) newEvent(e *EventDto) (*pb.EventDto, error) {
-	if err := IsEmpty(e.CommandId, "CommandId"); err != nil {
+	if err := IsEmpty(e.CommandId, "EventId"); err != nil {
 		return nil, err
 	}
 	if err := IsEmpty(e.PubsubName, "PubsubName"); err != nil {

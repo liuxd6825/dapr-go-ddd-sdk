@@ -6,8 +6,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"time"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
 // EventHandler 事件处理器
@@ -62,46 +61,56 @@ func (h *EventHandler) GetMethodName(eventType string) string {
 	return ""
 }
 
-// Event 领域事件
-type Event map[string]any
+type Subscribe = ddd.Subscribe
 
-// GetTenantId 租户Id
-func (e Event) GetTenantId() string {
-	return common.Object(e).GetString(common.TenantId)
+type RegisterSubscribe = restapp.RegisterSubscribe
+
+type RegisterSubscribeOptions struct {
+	interceptors []ddd.SubscribeInterceptorFunc
 }
 
-// GetCommandId 命令Id
-func (e Event) GetCommandId() string {
-	return common.Object(e).GetString("commandId")
+func newRegisterSubscribeOptions(options ...*RegisterSubscribeOptions) *RegisterSubscribeOptions {
+	r := &RegisterSubscribeOptions{}
+	for _, option := range options {
+		if option != nil && option.interceptors != nil {
+			r.interceptors = append(r.interceptors, option.interceptors...)
+		}
+	}
+	return r
 }
 
-// GetEventId 事件Id
-func (e Event) GetEventId() string {
-	return common.Object(e).GetString("eventId")
+type subscribeService struct {
+	subscribes   []*Subscribe
+	handler      ddd.QueryEventHandler
+	interceptors []ddd.SubscribeInterceptorFunc
 }
 
-// GetEventType 事件类型
-func (e Event) GetEventType() string {
-	return common.Object(e).GetString("eventType")
+var (
+	registerSubscribes []RegisterSubscribe
+)
+
+func RegisterSubscribeService(subscribes []*Subscribe, vm *goja.Runtime, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) RegisterSubscribe {
+	service := &subscribeService{
+		subscribes:   subscribes,
+		handler:      &EventHandler{Object: serviceObj, VM: vm, subscribes: subscribes},
+		interceptors: newRegisterSubscribeOptions(options...).interceptors,
+	}
+	registerSubscribes = append(registerSubscribes, service)
+	return service
 }
 
-// GetEventVersion 事件版本号
-func (e Event) GetEventVersion() string {
-	return common.Object(e).GetString("eventVersion")
+func GetRegisterSubscribe() []RegisterSubscribe {
+	return registerSubscribes
 }
 
-// GetAggregateId 聚合根Id
-func (e Event) GetAggregateId() string {
-	return common.Object(e).GetString("aggregateId")
+func (r *subscribeService) GetSubscribes() []*ddd.Subscribe {
+	return r.subscribes
 }
 
-// GetCreatedTime 创建时间
-func (e Event) GetCreatedTime() time.Time {
-	t, _ := common.Object(e).GetDateTime("createdTime")
-	return t
+func (r *subscribeService) GetHandler() ddd.QueryEventHandler {
+	return r.handler
 }
 
-// GetData 事件数据
-func (e Event) GetData() interface{} {
-	return common.Object(e).Get("data")
+func (r *subscribeService) GetInterceptor() []ddd.SubscribeInterceptorFunc {
+	return r.interceptors
 }

@@ -1,7 +1,6 @@
 package common
 
 import (
-	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/k6server/js/modules"
 )
 
@@ -21,17 +20,13 @@ func New() *RootModule {
 // NewModuleInstance implements the modules.Module interface to return
 // a new instance for each VU.
 func (m *RootModule) NewModuleInstance(vu modules.VU) modules.Instance {
-	return NewExports(vu)
+	return &Exports{
+		vu: vu,
+	}
 }
 
 type Exports struct {
-	vu  modules.VU
-	app *iris.Application
-}
-
-// NewExports returns a new instance of Exports.
-func NewExports(vu modules.VU) *Exports {
-	return &Exports{vu: vu}
+	vu modules.VU
 }
 
 // Exports returns the exports of the k6 module.

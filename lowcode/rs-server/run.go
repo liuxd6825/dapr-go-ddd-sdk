@@ -7,10 +7,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
@@ -118,8 +118,50 @@ func (s *JsServer) run(options ...RunOption) error {
 	}
 	params := &lib.VUActivationParams{RunContext: ctx}
 	err = vu.Activate(params).RunOnce()
-	fmt.Println("rsServer.Run()")
+	if scriptErr, ok := err.(*js.ScriptExceptionError); ok {
+		for _, v := range scriptErr.Inner().Stack() {
+
+			fmt.Println("file://", v.Program().Src().Name())
+			program := v.Program()
+			pos := v.Position().Line + 8
+			lines := strings.Split(program.Src().Source(), "\n")
+			start := pos - 10
+			if start < 0 {
+				start = 0
+			}
+			end := pos + 10
+			if end > len(lines) {
+				end = len(lines)
+			}
+			var errList []string
+			for i := start; i <= end; i++ {
+				var line string
+				if i == pos {
+					line = fmt.Sprint("=> ", i, " : ")
+				} else {
+					line = fmt.Sprint("   ", i, " : ")
+				}
+				line += lines[i]
+				errList = append(errList, line)
+			}
+
+			err = NewCodeError(v.Program().Src().Name(), errList)
+			return err
+		}
+	}
 	return err
+}
+
+type CodeError struct {
+	fileName string
+	lines    []string
+}
+
+func NewCodeError(fileName string, lines []string) *CodeError {
+	return &CodeError{fileName: fileName, lines: lines}
+}
+func (e *CodeError) Error() string {
+	return strings.Join(e.lines, "")
 }
 
 func (s *JsServer) fileWatcher() {

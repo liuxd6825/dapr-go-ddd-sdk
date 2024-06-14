@@ -39,7 +39,7 @@ func (d *DeleteByIdCommand) GetIsValidOnly() bool {
 func (d *DeleteByIdCommand) Validate() error {
 	verify := errors.NewVerifyError()
 	if len(d.CommandId) == 0 {
-		verify.AppendField("CommandId", "不能为空")
+		verify.AppendField("EventId", "不能为空")
 	}
 	if len(d.Data.TenantId) == 0 {
 		verify.AppendField("TenantId", "不能为空")

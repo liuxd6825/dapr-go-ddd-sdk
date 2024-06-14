@@ -19,8 +19,8 @@ type Subscribe struct {
 	Route string `json:"route,omitempty"`
 	// Routes specify multiple routes where topic events should be sent.
 	Routes *TopicRoutes `json:"routes,omitempty"`
-	// Metadata is the subscription metadata.
-	Metadata map[string]string `json:"metadata,omitempty"`
+	// Metadata is the subscription Metadata.
+	Metadata map[string]string `json:"Metadata,omitempty"`
 	FuncName string            `json:"funcName"`
 }
 

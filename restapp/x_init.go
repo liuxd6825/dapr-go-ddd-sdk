@@ -281,6 +281,10 @@ func GetAppId() string {
 	return _envConfig.App.AppId
 }
 
+func GetAppName() string {
+	return _envConfig.App.AppName
+}
+
 func GetAppHttpHost() string {
 	return _envConfig.App.HttpHost
 }
