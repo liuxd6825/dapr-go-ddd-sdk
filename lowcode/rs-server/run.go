@@ -3,6 +3,7 @@ package rs_server
 import (
 	"context"
 	"fmt"
+	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
@@ -120,33 +121,7 @@ func (s *JsServer) run(options ...RunOption) error {
 	err = vu.Activate(params).RunOnce()
 	if scriptErr, ok := err.(*js.ScriptExceptionError); ok {
 		for _, v := range scriptErr.Inner().Stack() {
-
-			fmt.Println("file://", v.Program().Src().Name())
-			program := v.Program()
-			pos := v.Position().Line + 8
-			lines := strings.Split(program.Src().Source(), "\n")
-			start := pos - 10
-			if start < 0 {
-				start = 0
-			}
-			end := pos + 10
-			if end > len(lines) {
-				end = len(lines)
-			}
-			var errList []string
-			for i := start; i <= end; i++ {
-				var line string
-				if i == pos {
-					line = fmt.Sprint("=> ", i, " : ")
-				} else {
-					line = fmt.Sprint("   ", i, " : ")
-				}
-				line += lines[i]
-				errList = append(errList, line)
-			}
-
-			err = NewCodeError(v.Program().Src().Name(), errList)
-			return err
+			return NewCodeError(&v)
 		}
 	}
 	return err
@@ -155,13 +130,42 @@ func (s *JsServer) run(options ...RunOption) error {
 type CodeError struct {
 	fileName string
 	lines    []string
+	position int
+	message  string
 }
 
-func NewCodeError(fileName string, lines []string) *CodeError {
-	return &CodeError{fileName: fileName, lines: lines}
+func NewCodeError(v *goja.StackFrame) *CodeError {
+	program := v.Program()
+	var errList []string
+	pos := v.Position().Line
+	if pos != 0 {
+		pos += 1
+		lines := strings.Split(program.Src().Source(), "\n")
+		start := pos - 10
+		end := pos + 20
+		if end > len(lines) {
+			end = len(lines)
+			start = end - 30
+		}
+		if start < 0 {
+			start = 0
+		}
+		for i := start; i < end; i++ {
+			var line string
+			if i == pos {
+				line = fmt.Sprintf("=>%03d : ", i)
+			} else {
+				line = fmt.Sprintf("  %03d : ", i)
+			}
+			line += lines[i]
+			errList = append(errList, line)
+		}
+	}
+	return &CodeError{fileName: program.Src().Name(), lines: errList, position: pos}
 }
+
 func (e *CodeError) Error() string {
-	return strings.Join(e.lines, "")
+	return fmt.Sprintf("%s:%d\n", e.fileName, e.position) + strings.Join(e.lines, "\n")
 }
 
 func (s *JsServer) fileWatcher() {
