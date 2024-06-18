@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-type Data struct {
+type TestData struct {
 	User User
 }
 type User struct {
@@ -23,7 +23,7 @@ type Address struct {
 
 func Test_NewObject(t *testing.T) {
 	rt := goja.New()
-	obj := &Data{
+	obj := &TestData{
 		User: User{
 			Name:  "name",
 			Age:   10,

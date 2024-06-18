@@ -15,8 +15,11 @@ func catchError(ctx iris.Context, e error, recover any) error {
 	if e != nil {
 		err = e
 	} else if recover != nil {
-		if ve := recover.(error); ve != nil {
+		if ve, ok := recover.(error); ok {
 			err = ve
+		} else if obj, ok := recover.(*goja.Object); ok {
+			eObj := obj.Export()
+			err = fmt.Errorf("unknown error %s", eObj)
 		} else {
 			err = fmt.Errorf("unknown error %s", recover)
 		}
@@ -60,13 +63,7 @@ func NewObject(runtime *goja.Runtime, data any) (*goja.Object, error) {
 				continue
 			}
 			t := reflect.ValueOf(v)
-			if t.Type().Kind() == reflect.Pointer {
-				if m, err := maputils.NewMap(t.Interface()); err != nil {
-					return nil, err
-				} else {
-					obj, err = NewObject(runtime, m)
-				}
-			} else if t.Kind() == reflect.Struct {
+			if t.Kind() == reflect.Struct {
 				if m, err := maputils.NewMap(data); err != nil {
 					return nil, err
 				} else {
@@ -85,4 +82,8 @@ func NewObject(runtime *goja.Runtime, data any) (*goja.Object, error) {
 
 	}
 	return obj, err
+}
+
+func getMap(data map[string]any, key string) any {
+	return data[key]
 }

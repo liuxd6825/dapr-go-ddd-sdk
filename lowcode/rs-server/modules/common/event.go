@@ -3,15 +3,15 @@ package common
 import "time"
 
 type Event struct {
-	TenantId     string
-	EventId      string
-	EventType    string
-	EventVersion string
-	CommandId    string
-	AggregateId  string
-	CreatedTime  time.Time
-	IsValidOnly  bool
-	Data         map[string]any
+	TenantId     string         `json:"tenantId,omitempty"`
+	EventId      string         `json:"eventId,omitempty"`
+	EventType    string         `json:"eventType,omitempty"`
+	EventVersion string         `json:"eventVersion,omitempty"`
+	CommandId    string         `json:"commandId,omitempty"`
+	AggregateId  string         `json:"aggregateId,omitempty"`
+	CreatedTime  time.Time      `json:"createdTime"`
+	IsValidOnly  bool           `json:"isValidOnly,omitempty"`
+	Data         map[string]any `json:"data,omitempty"`
 }
 
 func NewEvent() *Event {

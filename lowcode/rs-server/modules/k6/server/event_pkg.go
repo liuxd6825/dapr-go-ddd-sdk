@@ -30,37 +30,39 @@ func CreateEventPkg(vm *goja.Runtime) *EventPkg {
 	return _eventPkg
 }
 
+type Aggregate = common.Aggregate
+
 func NewEventPkg(vm *goja.Runtime) *EventPkg {
 	return &EventPkg{vm: vm}
 }
 
 func (e *EventPkg) ApplyEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.ApplyEventResponse] {
-	data, err := ddd.ApplyEvent(ctx, agg, event, opts...)
+	data, err := ddd.ApplyEvent(ctx, agg, event, e.newOptions(opts...))
 	return common.NewResult[*dapr.ApplyEventResponse](data, err)
 }
 
 func (e *EventPkg) ApplyEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.ApplyEventResponse] {
-	data, err := ddd.ApplyEvents(ctx, agg, e.newEvents(events), opts...)
+	data, err := ddd.ApplyEvents(ctx, agg, e.newEvents(events), e.newOptions(opts...))
 	return common.NewResult[*dapr.ApplyEventResponse](data, err)
 }
 
 func (e *EventPkg) CreateEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.CreateEventResponse] {
-	data, err := ddd.CreateEvent(ctx, agg, event, opts...)
+	data, err := ddd.CreateEvent(ctx, agg, event, e.newOptions(opts...))
 	return common.NewResult[*dapr.CreateEventResponse](data, err)
 }
 
 func (e *EventPkg) CreateEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.CreateEventResponse] {
-	data, err := ddd.CreateEvents(ctx, agg, e.newEvents(events), opts...)
+	data, err := ddd.CreateEvents(ctx, agg, e.newEvents(events), e.newOptions(opts...))
 	return common.NewResult[*dapr.CreateEventResponse](data, err)
 }
 
 func (e *EventPkg) DeleteEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.DeleteEventResponse] {
-	data, err := ddd.DeleteEvent(ctx, agg, event, opts...)
+	data, err := ddd.DeleteEvent(ctx, agg, event, e.newOptions(opts...))
 	return common.NewResult[*dapr.DeleteEventResponse](data, err)
 }
 
 func (e *EventPkg) DeleteEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.DeleteEventResponse] {
-	data, err := ddd.DeleteEvents(ctx, agg, e.newEvents(events), opts...)
+	data, err := ddd.DeleteEvents(ctx, agg, e.newEvents(events), e.newOptions(opts...))
 	return common.NewResult[*dapr.DeleteEventResponse](data, err)
 }
 
@@ -76,38 +78,11 @@ func (e *EventPkg) newEvents(events []*common.Event) []ddd.DomainEvent {
 	return list
 }
 
-type Aggregate struct {
-	TenantId         string
-	AggregateId      string
-	AggregateType    string
-	AggregateVersion string
-}
-
-func NewAggregate() *Aggregate {
-	return &Aggregate{}
-}
-
-func (a *Aggregate) GetTenantId() string {
-	return a.TenantId
-}
-func (a *Aggregate) GetAggregateId() string {
-	return a.AggregateId
-}
-func (a *Aggregate) GetAggregateType() string {
-	return a.AggregateType
-}
-func (a *Aggregate) GetAggregateVersion() string {
-	return a.AggregateVersion
-}
-func (a *Aggregate) SetTenantId(tenantId string) {
-	a.TenantId = tenantId
-}
-func (a *Aggregate) SetAggregateId(aggregateId string) {
-	a.AggregateId = aggregateId
-}
-func (a *Aggregate) SetAggregateType(aggregateType string) {
-	a.AggregateType = aggregateType
-}
-func (a *Aggregate) SetAggregateVersion(aggregateVersion string) {
-	a.AggregateVersion = aggregateVersion
+func (e *EventPkg) newOptions(opts ...*ddd.ApplyEventOptions) *ddd.ApplyEventOptions {
+	var closeEventSource = true
+	res := ddd.ApplyEventOptions{
+		CloseEventSource: &closeEventSource,
+	}
+	res.Merge(opts...)
+	return &res
 }

@@ -66,6 +66,7 @@ func (e *Exports) Exports() modules.Exports {
 		"feign":   runtime.ToValue(feign),
 		"context": runtime.ToValue(ctxPkg),
 		"events":  runtime.ToValue(NewEventPkg(e.vu.Runtime())),
+		"getMap":  runtime.ToValue(getMap),
 	}
 	for k, v := range e.data {
 		values[k] = e.vu.Runtime().ToValue(v)

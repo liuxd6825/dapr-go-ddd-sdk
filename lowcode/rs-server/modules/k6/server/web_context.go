@@ -6,7 +6,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
 type WebContext struct {
@@ -49,8 +48,8 @@ func (c *WebContext) ReadJson(data ...any) *common.Result[any] {
 	return common.NewResult[any](v, err)
 }
 
-func (c *WebContext) ReadObject(schema *schema.Schema) (common.Object, error) {
-	object := types.NewObject()
+func (c *WebContext) ReadObject(schema *schema.Schema) (map[string]any, error) {
+	object := map[string]any{}
 	var err error
 	if schema != nil {
 		if err = c.ictx.ReadJSON(&object); err == nil {

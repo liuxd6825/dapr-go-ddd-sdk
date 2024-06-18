@@ -59,6 +59,9 @@ type EventOptions struct {
 }
 
 func (d *Model) Create(ctx context.Context, entity ddd.MapEntity, eventOpt *EventOptions, opts ...*ddd_repository.RepositoryOptions) error {
+	if entity == nil {
+		return fmt.Errorf("Model.Create() entity is nil")
+	}
 	err := d.dao.Insert(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		return err
@@ -91,7 +94,7 @@ func (d *Model) newEvent(entity ddd.MapEntity, eventOpt *EventOptions) *common.E
 func (d *Model) newAggregate(entity ddd.MapEntity, eventOpt *EventOptions) *server.Aggregate {
 	tenantId := entity.GetTenantId()
 	aggregateId := d.getAggId(entity, eventOpt)
-	agg := server.NewAggregate()
+	agg := common.NewAggregate()
 	agg.TenantId = tenantId
 	agg.AggregateId = aggregateId
 	agg.AggregateVersion = "v1.0"

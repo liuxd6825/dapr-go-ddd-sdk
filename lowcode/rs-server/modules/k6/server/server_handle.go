@@ -4,7 +4,6 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
@@ -26,9 +25,9 @@ func (m MethodType) String() string {
 type InParamType string
 
 const (
-	InParamType_URL   InParamType = "url"
-	InParamType_Param InParamType = "param"
-	InParamType_Body  InParamType = "body"
+	InParamType_URL  InParamType = "url"
+	InParamType_Path InParamType = "path"
+	InParamType_Body InParamType = "body"
 )
 
 type RequestParam struct {
@@ -52,7 +51,7 @@ type HandleOptions struct {
 	Body        *schema.Schema          `json:"body"`
 	Params      map[string]RequestParam `json:"params"`
 	HandleName  string                  `json:"handleName"`
-	Handle      func(cxt *WebContext, requestData *RequestData)
+	Handle      func(cxt *WebContext, params map[string]any)
 }
 
 func (h HandleOptions) GetMethod() MethodType {
@@ -110,65 +109,55 @@ func (e *Server) Handle(opt *HandleOptions) {
 			_ = catchError(ictx, err, recover())
 		}()
 
-		rctx := NewWebContext(ictx)
-		var obj common.Object
-		if opt.Body != nil {
-			opt.Body.Init()
-			obj, err = rctx.ReadObject(opt.Body)
-			if err != nil {
-				err = errors.NewErr(err, "数据验证失败")
-			}
-		}
+		wctx := NewWebContext(ictx)
+		params, err := e.GetParams(wctx, opt.Params)
 		if err != nil {
 			setError(ictx, err)
 			return
 		}
-
-		params, err := e.GetParams(ictx, opt.Params)
-		if err != nil {
-			setError(ictx, err)
-			return
-		}
-		data, err := e.newObject(obj)
-		if err != nil {
-			setError(ictx, err)
-			return
-		}
-		requestData := &RequestData{
-			Data:   data,
-			Params: params,
-		}
-
-		opt.Handle(rctx, requestData)
+		opt.Handle(wctx, params)
 	})
 }
 
-func (e *Server) GetParams(ictx iris.Context, params map[string]RequestParam) (map[string]any, error) {
+func (e *Server) GetParams(wctx *WebContext, params map[string]RequestParam) (map[string]any, error) {
 	var err error
 	data := map[string]any{}
+	var bodyData any = nil
 	if len(params) > 0 {
 		for key, v := range params {
 			var val string
 			switch v.In {
-			case "url":
-				val = ictx.URLParam(key)
-			case "path":
-				val = ictx.Params().Get(key)
+			case InParamType_URL.String():
+				val = wctx.ictx.URLParam(key)
+			case InParamType_Path.String():
+				val = wctx.ictx.Params().Get(key)
+			case InParamType_Body.String():
+				if v.Schema != nil && bodyData == nil {
+					v.Schema.Init()
+					obj, err1 := wctx.ReadObject(v.Schema)
+					if err1 != nil {
+						err = errors.NewErr(err1, "数据验证失败")
+					}
+					bodyData = obj
+				}
+				data[key] = bodyData
 			}
 
-			if v.Required && val == "" {
-				err = errors.NewErr(err, "参数 %s 缺失", key)
-			} else {
-				if v, err := types.Convert(v.Type, val); err != nil {
-					data[key] = v
+			if v.In == InParamType_URL.String() || v.In == InParamType_Path.String() {
+				if v.Required && val == "" {
+					err = errors.NewErr(err, "参数 %s 缺失", key)
 				} else {
-					err = errors.NewErr(err, "参数 %s 类型转换失败", key)
+					if v, err := types.Convert(v.Type, val); err == nil {
+						data[key] = v
+					} else {
+						err = errors.NewErr(err, "参数 %s 类型转换失败", key)
+					}
 				}
 			}
 		}
 	}
 	if err != nil {
-		setError(ictx, err)
+		setError(wctx.ictx, err)
 	}
 	return data, err
 }

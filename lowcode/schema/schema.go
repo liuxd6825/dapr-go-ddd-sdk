@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"io"
 	"os"
@@ -147,12 +146,12 @@ func (s *Schema) ToJson() string {
 	return string(bs)
 }
 
-func (s *Schema) Convertor(obj types.Object) (common.Object, error) {
+func (s *Schema) Convertor(obj types.Object) (map[string]any, error) {
 	return s.convertor(obj, s.Properties)
 }
 
-func (s *Schema) convertor(source types.Object, props Properties) (common.Object, error) {
-	target := types.NewObject()
+func (s *Schema) convertor(source types.Object, props Properties) (map[string]any, error) {
+	target := map[string]any{}
 	for key, prop := range props {
 		var val any
 		var err error
@@ -186,9 +185,7 @@ func (s *Schema) convertor(source types.Object, props Properties) (common.Object
 		if err != nil {
 			return nil, err
 		}
-		if err = target.Set(key, val); err != nil {
-			return nil, err
-		}
+		target[key] = val
 	}
 	return target, nil
 }
