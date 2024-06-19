@@ -14,6 +14,7 @@ type Server struct {
 	vu       modules.VU
 	services map[string]*Service
 	swagger  *swagger3.Swagger
+	cfg      common.IEnvConfig
 }
 
 type AddServiceOption struct {
@@ -22,8 +23,8 @@ type AddServiceOption struct {
 	Service *goja.Object
 }
 
-func NewServer(app *iris.Application, vu modules.VU) *Server {
-	return &Server{app: app, vu: vu, services: make(map[string]*Service), swagger: swagger3.NewSwagger()}
+func NewServer(app *iris.Application, vu modules.VU, cfg common.IEnvConfig) *Server {
+	return &Server{app: app, vu: vu, services: make(map[string]*Service), swagger: swagger3.NewSwagger(), cfg: cfg}
 }
 
 func (e *Server) Run() error {

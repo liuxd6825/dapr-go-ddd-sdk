@@ -131,33 +131,12 @@ func (s *HttpServer) Start() error {
 		return err
 	}
 
-	// 注册消息订阅
-	if s.subscribes != nil {
-		for _, subscribe := range s.subscribes {
-			if subscribe != nil {
-				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler(), subscribe.GetInterceptor()); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	// 注册控制器
 	if s.controllers != nil {
 		for _, c := range s.controllers {
 			if c != nil {
 				s.registerController(s.webRootPath, c)
 			}
-		}
-	}
-
-	if err := ddd.StartSubscribeHandlers(); err != nil {
-		return err
-	}
-
-	if s.actorFactories != nil {
-		for _, f := range s.actorFactories {
-			s.RegisterActorImplFactoryContext(f)
 		}
 	}
 
@@ -172,12 +151,22 @@ func (s *HttpServer) Start() error {
 		panic(err.Error())
 	}
 
+	if s.actorFactories != nil {
+		for _, f := range s.actorFactories {
+			s.RegisterActorImplFactoryContext(f)
+		}
+	}
+
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
 	if err := app.Run(iris.Addr(addr), func(application *iris.Application) {
 		for _, onInit := range _appInits {
 			if err := onInit(ctx); err != nil {
 				panic(err.Error())
 			}
+		}
+
+		if err := s.startSubscribeHandlers(); err != nil {
+			panic(err.Error())
 		}
 
 		fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
@@ -191,6 +180,22 @@ func (s *HttpServer) Start() error {
 		return err
 	}
 
+	return nil
+}
+func (s *HttpServer) startSubscribeHandlers() error {
+	// 注册消息订阅
+	if s.subscribes != nil {
+		for _, subscribe := range s.subscribes {
+			if subscribe != nil {
+				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler(), subscribe.GetInterceptor()); err != nil {
+					panic(err.Error())
+				}
+			}
+		}
+	}
+	if err := ddd.StartSubscribeHandlers(); err != nil {
+		return err
+	}
 	return nil
 }
 

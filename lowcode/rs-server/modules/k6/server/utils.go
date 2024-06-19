@@ -83,7 +83,3 @@ func NewObject(runtime *goja.Runtime, data any) (*goja.Object, error) {
 	}
 	return obj, err
 }
-
-func getMap(data map[string]any, key string) any {
-	return data[key]
-}

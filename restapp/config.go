@@ -52,6 +52,26 @@ type AppConfig struct {
 	Template  HtmlTemplate      `yaml:"template" json:"template"` // html模板配置
 }
 
+func (a *AppConfig) GetAppId() string {
+	return a.AppId
+}
+
+func (a *AppConfig) GetAppName() string {
+	return a.AppName
+}
+
+func (a *AppConfig) GetHttpHost() string {
+	return a.HttpHost
+}
+
+func (a *AppConfig) GetHttpPort() int {
+	return a.HttpPort
+}
+
+func (a *AppConfig) GetRootUrl() string {
+	return a.RootUrl
+}
+
 // RsServer
 // @Description: 脚本服务配置
 // @Author:       liuxd
@@ -236,27 +256,6 @@ func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
 	return e.fsManager, nil
 }
 
-func (d *DaprConfig) GetHost() string {
-	if d.Host == nil {
-		return ""
-	}
-	return *d.Host
-}
-
-func (d *DaprConfig) GetHttpPort() int64 {
-	if d.HttpPort == nil {
-		return 0
-	}
-	return *d.HttpPort
-}
-
-func (d *DaprConfig) GetGrpcPort() int64 {
-	if d.GrpcPort == nil {
-		return 0
-	}
-	return *d.GrpcPort
-}
-
 func (l *LogConfig) GetLevel() applog.Level {
 	return l.level
 }
@@ -324,6 +323,27 @@ func (c *DaprConfig) init(e *EnvConfig) error {
 
 	return nil
 
+}
+
+func (c *DaprConfig) GetHost() string {
+	if c.Host == nil {
+		return ""
+	}
+	return *c.Host
+}
+
+func (c *DaprConfig) GetHttpPort() int64 {
+	if c.HttpPort == nil {
+		return 0
+	}
+	return *c.HttpPort
+}
+
+func (c *DaprConfig) GetGrpcPort() int64 {
+	if c.GrpcPort == nil {
+		return 0
+	}
+	return *c.GrpcPort
 }
 
 func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {

@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	common2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 
@@ -35,10 +36,11 @@ type JsServer struct {
 	watcher  watcher.Watcher
 	fsCfg    *FsConfig
 	data     map[string]any
+	cfg      common2.IEnvConfig
 }
 
-func New(app *iris.Application, data map[string]any, fsCfg *FsConfig, mainFile string, reload bool) (*JsServer, error) {
-	errs := errors.NewParamsError("rs_server.New()")
+func NewServer(app *iris.Application, data map[string]any, fsCfg *FsConfig, cfg common2.IEnvConfig, mainFile string, reload bool) (*JsServer, error) {
+	errs := errors.NewParamsError("rs_server.NewServer()")
 	errs.AddNil("fsCfg", fsCfg)
 	errs.AddNil("app", app)
 	errs.AddNil("mainFile", mainFile)
@@ -60,6 +62,7 @@ func New(app *iris.Application, data map[string]any, fsCfg *FsConfig, mainFile s
 		fsCfg:    fsCfg,
 		reload:   reload,
 		data:     data,
+		cfg:      cfg,
 	}, nil
 }
 
@@ -87,7 +90,7 @@ func (s *JsServer) run(options ...RunOption) error {
 	}
 
 	piState := getTestPreInitState(logrus.New())
-	bundle, err := newBundle(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.fsCfg)
+	bundle, err := newBundle(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.fsCfg, s.cfg)
 	if err != nil {
 		return err
 	}
@@ -101,7 +104,7 @@ func (s *JsServer) run(options ...RunOption) error {
 	//defer cancel()
 
 	vu, err := runner.NewVU(ctx, 1, 1, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
-		modules := k6.NewModules(s.app, s.data)
+		modules := k6.NewModules(s.app, s.data, s.cfg)
 		for k, m := range modules {
 			if err = vu.GetRuntime().Set(k, m); err != nil {
 				return err
@@ -121,7 +124,7 @@ func (s *JsServer) run(options ...RunOption) error {
 	err = vu.Activate(params).RunOnce()
 	if scriptErr, ok := err.(*js.ScriptExceptionError); ok {
 		for _, v := range scriptErr.Inner().Stack() {
-			return NewCodeError(&v)
+			return NewCodeError(err, &v)
 		}
 	}
 	return err
@@ -134,9 +137,10 @@ type CodeError struct {
 	message  string
 }
 
-func NewCodeError(v *goja.StackFrame) *CodeError {
+func NewCodeError(err error, v *goja.StackFrame) *CodeError {
 	program := v.Program()
 	var errList []string
+	errList = append(errList, err.Error())
 	pos := v.Position().Line
 	if pos != 0 {
 		pos += 1
@@ -161,7 +165,11 @@ func NewCodeError(v *goja.StackFrame) *CodeError {
 			errList = append(errList, line)
 		}
 	}
-	return &CodeError{fileName: program.Src().Name(), lines: errList, position: pos}
+	fileName := ""
+	if program != nil && program.Src() != nil {
+		fileName = program.Src().Name()
+	}
+	return &CodeError{fileName: fileName, lines: errList, position: pos}
 }
 
 func (e *CodeError) Error() string {
@@ -227,10 +235,10 @@ func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {
 	}
 }
 
-func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, fs *FsConfig) (*js.Bundle, error) {
+func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, fs *FsConfig, cfg common2.IEnvConfig) (*js.Bundle, error) {
 	jsModules := map[string]any{
-		"k6/server": server.New(app, data),
-		"k6/db":     db.New(),
+		"k6/server": server.New(app, data, cfg),
+		"k6/db":     db.New(cfg),
 		"k6/schema": schema.New(),
 		"k6/common": common.New(),
 	}

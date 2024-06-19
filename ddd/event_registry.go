@@ -43,6 +43,8 @@ func NewDomainEvent(record *dapr.EventRecord) (interface{}, error) {
 			var err error
 			if item.marshaler != nil {
 				err = item.marshaler(record, event)
+			} else if _, ok := event.(map[string]any); ok {
+				event = record.EventData
 			} else {
 				err = record.Marshal(event)
 			}

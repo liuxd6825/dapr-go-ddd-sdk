@@ -2,7 +2,7 @@ package rs_server
 
 import (
 	"errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/spf13/afero"
@@ -32,33 +32,36 @@ func InitRsServer(httpServer *restapp.HttpServer) error {
 			fileFs = afero.NewBasePathFs(fileFs, env.App.RsServer.BasePath)
 		}
 		fsCfg := NewFsConfig(fileFs, httpFs)
-		envCfg := httpServer.EnvConfig()
-		daprClient, err := dapr.GetClient()
+		appEnv := httpServer.EnvConfig()
+		runtimeEnv := newEnv(appEnv)
+		data, err := runtimeEnv.ToMap()
 		if err != nil {
 			return err
 		}
-		data := map[string]any{
-			"DAPR_HOST":      envCfg.Dapr.Host,
-			"DAPR_HTTP_PORT": envCfg.Dapr.HttpPort,
-			"DAPR_GRPC_PORT": envCfg.Dapr.GrpcPort,
-			"APP_ID":         envCfg.App.AppId,
-			"APP_NAME":       envCfg.App.AppName,
-			"env":            envCfg,
-			"daprClient":     daprClient,
-		}
-		jsServer, err := New(httpServer.App(), data, fsCfg, "/main.js", env.App.RsServer.Reload)
+		jsServer, err := NewServer(httpServer.App(), data, fsCfg, appEnv, "/main.js", appEnv.App.RsServer.Reload)
 		if err != nil {
 			return err
 		}
 		if err = jsServer.Run(); err != nil {
 			return err
 		}
-		SetSwagger(httpServer)
+		initHttpServer(httpServer)
 	}
 	return nil
 }
 
-func SetSwagger(hServer *restapp.HttpServer) {
+func newEnv(envCfg common.IEnvConfig) *common.Environment {
+	return &common.Environment{
+		DaprHost:     envCfg.GetDaprHost(),
+		DaprHttpPort: envCfg.GetDaprHttpPort(),
+		DaprGrpcPort: envCfg.GetDaprGrpcPort(),
+		AppId:        envCfg.GetAppId(),
+		AppName:      envCfg.GetAppName(),
+		EnvCfg:       envCfg,
+	}
+}
+
+func initHttpServer(hServer *restapp.HttpServer) {
 	if hServer == nil {
 		return
 	}

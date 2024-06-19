@@ -63,6 +63,16 @@ func (h *EventHandler) GetMethodName(eventType string) string {
 
 type Subscribe = ddd.Subscribe
 
+type SubscribeItem struct {
+	AppId        string            `json:"appId"`
+	PubsubName   string            `json:"pubsubName"`
+	EventType    string            `json:"eventType"`
+	EventVersion string            `json:"eventVersion"`
+	Route        string            `json:"route,omitempty"`
+	Metadata     map[string]string `json:"metadata,omitempty"`
+	FuncName     string            `json:"funcName"`
+}
+
 type RegisterSubscribe = restapp.RegisterSubscribe
 
 type RegisterSubscribeOptions struct {
@@ -89,7 +99,8 @@ var (
 	registerSubscribes []RegisterSubscribe
 )
 
-func RegisterSubscribeService(subscribes []*Subscribe, vm *goja.Runtime, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) RegisterSubscribe {
+func RegisterSubscribeService(appId string, subscribeItems []*SubscribeItem, vm *goja.Runtime, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) RegisterSubscribe {
+	subscribes := newSubscribes(appId, subscribeItems)
 	service := &subscribeService{
 		subscribes:   subscribes,
 		handler:      &EventHandler{Object: serviceObj, VM: vm, subscribes: subscribes},
@@ -97,6 +108,25 @@ func RegisterSubscribeService(subscribes []*Subscribe, vm *goja.Runtime, service
 	}
 	registerSubscribes = append(registerSubscribes, service)
 	return service
+}
+
+func newSubscribes(appId string, subscribeItems []*SubscribeItem) []*Subscribe {
+	var subscribes []*Subscribe
+	for _, sub := range subscribeItems {
+		aId := sub.AppId
+		if aId == "" {
+			aId = appId
+		}
+		subscribe := &Subscribe{
+			PubsubName: sub.PubsubName,
+			Topic:      fmt.Sprintf("%s.%s", aId, sub.EventType),
+			Route:      sub.Route,
+			Metadata:   sub.Metadata,
+			FuncName:   sub.FuncName,
+		}
+		subscribes = append(subscribes, subscribe)
+	}
+	return subscribes
 }
 
 func GetRegisterSubscribe() []RegisterSubscribe {

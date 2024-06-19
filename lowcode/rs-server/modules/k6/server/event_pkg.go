@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
@@ -10,7 +11,8 @@ import (
 )
 
 type EventPkg struct {
-	vm *goja.Runtime
+	vm     *goja.Runtime
+	config common.IEnvConfig
 }
 
 var _eventPkg *EventPkg
@@ -20,9 +22,9 @@ func GetEventPkg() *EventPkg {
 	return _eventPkg
 }
 
-func CreateEventPkg(vm *goja.Runtime) *EventPkg {
+func CreateEventPkg(vm *goja.Runtime, config common.IEnvConfig) *EventPkg {
 	_eventPkgOnce.Do(func() {
-		_eventPkg = NewEventPkg(vm)
+		_eventPkg = NewEventPkg(vm, config)
 	})
 	if vm != nil {
 		_eventPkg.vm = vm
@@ -32,8 +34,8 @@ func CreateEventPkg(vm *goja.Runtime) *EventPkg {
 
 type Aggregate = common.Aggregate
 
-func NewEventPkg(vm *goja.Runtime) *EventPkg {
-	return &EventPkg{vm: vm}
+func NewEventPkg(vm *goja.Runtime, config common.IEnvConfig) *EventPkg {
+	return &EventPkg{vm: vm, config: config}
 }
 
 func (e *EventPkg) ApplyEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.ApplyEventResponse] {
@@ -66,8 +68,22 @@ func (e *EventPkg) DeleteEvents(ctx context.Context, agg *Aggregate, events []*c
 	return common.NewResult[*dapr.DeleteEventResponse](data, err)
 }
 
-func (e *EventPkg) AddEventHandler(subscribes []*Subscribe, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) {
-	RegisterSubscribeService(subscribes, e.vm, serviceObj, options...)
+func (e *EventPkg) GetEventType(aggName string, opType string) string {
+	return common.GetEventType(e.config.GetAppId(), aggName, opType)
+}
+
+func (e *EventPkg) AddEventHandler(appId string, subscribes []*SubscribeItem, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) error {
+	RegisterSubscribeService(appId, subscribes, e.vm, serviceObj, options...)
+	for _, sub := range subscribes {
+		version := sub.EventVersion
+		if version == "" {
+			version = "v1.0"
+		}
+		if err := e.RegisterEventType(appId+"."+sub.EventType, version); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (e *EventPkg) newEvents(events []*common.Event) []ddd.DomainEvent {
@@ -85,4 +101,22 @@ func (e *EventPkg) newOptions(opts ...*ddd.ApplyEventOptions) *ddd.ApplyEventOpt
 	}
 	res.Merge(opts...)
 	return &res
+}
+
+func (e *EventPkg) RegisterTableEventTypes(tableName string) error {
+	for _, eType := range common.TableEventTypes() {
+		eventType := fmt.Sprintf("%s.%s", tableName, eType)
+		if err := ddd.RegisterEventType(eventType, "v1.0", e.NewDomainEvent); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e *EventPkg) RegisterEventType(eventType string, version string) error {
+	return ddd.RegisterEventType(eventType, version, e.NewDomainEvent)
+}
+
+func (e *EventPkg) NewDomainEvent() any {
+	return map[string]any{}
 }
