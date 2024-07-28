@@ -17,7 +17,7 @@ func main() {
 		panic(err)
 	}
 
-	server, err := rs_server.New(app, fs, "./main.js", true)
+	server, err := rs_server.NewServer(app, nil, fs, nil, "./main.js", true)
 	if err != nil {
 		panic(err)
 	}
