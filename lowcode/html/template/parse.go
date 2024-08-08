@@ -87,9 +87,11 @@ func (p *Parse) initSchema(doc *goquery.Document, res *ParseResult) error {
 		}
 	})
 
-	if err := p.Valid(res); err != nil {
-		return err
-	}
+	/*
+		if err := p.Valid(res); err != nil {
+			return err
+		}
+	*/
 
 	scripts := head.Find("script")
 	scripts.Each(func(i int, selection *goquery.Selection) {
