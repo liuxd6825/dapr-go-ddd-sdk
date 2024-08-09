@@ -34,6 +34,7 @@ func (e *Exports) Exports() modules.Exports {
 	return modules.Exports{
 		Named: map[string]interface{}{
 			"context": e.vu.Runtime().ToValue(NewContextPkg()),
+			"common":  e.vu.Runtime().ToValue(NewCommonPkg()),
 		},
 	}
 }
