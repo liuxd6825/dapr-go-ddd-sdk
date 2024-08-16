@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
 	"github.com/liuxd6825/k6server/js/modules"
+	"sync"
 )
 
 type Server struct {
@@ -15,6 +16,7 @@ type Server struct {
 	services map[string]*Service
 	swagger  *swagger3.Swagger
 	cfg      common.IEnvConfig
+	mux      sync.Mutex
 }
 
 type AddServiceOption struct {

@@ -5,6 +5,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"reflect"
@@ -25,6 +26,7 @@ func catchError(ctx iris.Context, e error, recover any) error {
 		}
 	}
 	if err != nil && ctx != nil {
+		logs.Error(ctx, "", nil, err.Error())
 		setError(ctx, err)
 	}
 	return nil

@@ -75,7 +75,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/davidmz/go-pageant v1.0.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/dlclark/regexp2 v1.11.0 // indirect
+	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/extemporalgenome/slug v0.0.0-20150414033109-0320c85e32e0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
@@ -214,5 +214,4 @@ replace github.com/liuxd6825/dapr-components-contrib => ../dapr-components-contr
 
 replace github.com/liuxd6825/k6server => ../../k6server
 
-replace github.com/dop251/goja =>  ../../../liuxd6825/goja
-
+replace github.com/dop251/goja => ../../../liuxd6825/goja

@@ -104,6 +104,8 @@ func (e *Server) Handle(opt *HandleOptions) {
 	}
 	method := opt.Method.String()
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
+		e.mux.Lock()
+		defer e.mux.Unlock()
 		var err error
 		defer func() {
 			_ = catchError(ictx, err, recover())
@@ -115,6 +117,7 @@ func (e *Server) Handle(opt *HandleOptions) {
 			setError(ictx, err)
 			return
 		}
+
 		opt.Handle(wctx, params)
 	})
 }
