@@ -114,6 +114,7 @@ func (d *Model) Create(ctx context.Context, entity ddd.MapEntity, opts ...*Opera
 	if err != nil {
 		return err
 	}
+	return nil
 
 	agg, event, err := d.newAggregateAndEvent(OperateType_Create, entity, opts...)
 	if err != nil {
@@ -131,6 +132,7 @@ func (d *Model) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Opera
 	if err != nil {
 		return err
 	}
+	return nil
 
 	agg, event, err := d.newAggregateAndEvent(OperateType_Update, entity, opts...)
 	if err != nil {
@@ -145,6 +147,8 @@ func (d *Model) DeleteById(ctx context.Context, tenantId string, id string, opts
 	if err != nil {
 		return err
 	}
+	return nil
+
 	entity := ddd.MapEntity{
 		"tenantId": tenantId,
 		"id":       id,
