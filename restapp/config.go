@@ -77,11 +77,12 @@ func (a *AppConfig) GetRootUrl() string {
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
 type RsServer struct {
-	Enable   bool   `yaml:"enable" json:"enable"`     // 是否启用脚本服务
-	FileFsId string `yaml:"fileFsId" json:"fileFsId"` // 在fs节中配置key
-	HttpFsId string `yaml:"httpFsId" json:"httpFsId"` // 在fs节中配置key
-	BasePath string `yaml:"basePath" json:"basePath"` // 脚本文件路径
-	Reload   bool   `yaml:"reload" json:"reload"`     // 是否自动加载脚本
+	Enable        bool   `yaml:"enable" json:"enable"` // 是否启用脚本服务
+	DefaultFsName string `yaml:"defaultFsName" json:"defaultFsName"`
+	FileFsName    string `yaml:"fileFsName" json:"fileFsName"` // 在fs节中配置key
+	HttpFsName    string `yaml:"httpFsName" json:"httpFsName"` // 在fs节中配置key
+	BasePath      string `yaml:"basePath" json:"basePath"`     // 脚本文件路径
+	Reload        bool   `yaml:"reload" json:"reload"`         // 是否自动加载脚本
 }
 
 // HtmlTemplate
@@ -247,7 +248,7 @@ func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
 		return e.fsManager, nil
 	}
 	if len(e.Fs) != 0 {
-		fsManager, err := fs.NewManagerWithConfigs(e.Fs)
+		fsManager, err := fs.NewManagerWithConfigs(e.Fs, e.App.RsServer.DefaultFsName)
 		if err != nil {
 			return nil, err
 		}

@@ -77,6 +77,10 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 	return ui, err
 }
 
+func ReadFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
+	return readFile(fs, pwd, filename)
+}
+
 // readFile
 //
 //	@Description: 读取文件内容
@@ -86,7 +90,7 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 //	@return []byte 文件内容
 //	@return error
 func readFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
-	fileName := fileutils.AbsPath("", filename)
+	fileName := fileutils.AbsPath(pwd, filename)
 	file, err := fs.Open(fileName)
 	if err != nil {
 		return nil, err

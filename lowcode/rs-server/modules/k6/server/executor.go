@@ -26,7 +26,7 @@ func (e *Executor) init() bool {
 	return e.error == nil
 }
 
-func (e *Executor) DoCommand(fun func(ctx context.Context) error) *Executor {
+func (e *Executor) DoCommand(fun func(ctx context.Context)) *Executor {
 	defer func() {
 		e.error = catchError(e.rctx.ictx, e.error, recover())
 	}()
@@ -35,23 +35,20 @@ func (e *Executor) DoCommand(fun func(ctx context.Context) error) *Executor {
 	}
 
 	if fun != nil {
-		e.error = fun(e.ctx)
+		fun(e.ctx)
 	}
 	return e
 }
 
-func (e *Executor) DoQuery(fun func(ctx context.Context) *common.Result[any]) *Executor {
+func (e *Executor) DoQuery(fun func(ctx context.Context) any) *Executor {
 	defer func() {
 		e.error = catchError(e.rctx.ictx, e.error, recover())
 	}()
 	if !e.init() {
 		return e
 	}
-
 	if fun != nil {
-		r := fun(e.ctx)
-		e.data = r.Data
-		e.error = r.Error
+		e.data = fun(e.ctx)
 	}
 	return e
 }
@@ -62,7 +59,7 @@ func (e *Executor) DoQuery(fun func(ctx context.Context) *common.Result[any]) *E
 //	@receiver e
 //	@param fun
 //	@return *Executor
-func (e *Executor) DoQueryOne(fun func(ctx context.Context) *common.Result[any]) *Executor {
+func (e *Executor) DoQueryOne(fun func(ctx context.Context) any) *Executor {
 	defer func() {
 		e.error = catchError(e.rctx.ictx, e.error, recover())
 	}()
@@ -104,6 +101,6 @@ func (e *Executor) SetResponse() {
 		}
 	}
 	if e.data != nil {
-		_ = e.rctx.WriteJson(e.data)
+		e.rctx.WriteJson(e.data)
 	}
 }

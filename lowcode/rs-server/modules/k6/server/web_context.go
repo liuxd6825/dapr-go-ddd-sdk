@@ -3,19 +3,22 @@ package server
 import (
 	"fmt"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/k6server/js/modules"
 )
 
 type WebContext struct {
 	ictx iris.Context
 	restapp.RestAssembler
 	params *Params
+	vu     modules.VU
 }
 
-func NewWebContext(ictx iris.Context) *WebContext {
-	return &WebContext{ictx: ictx, params: NewParams(ictx)}
+func NewWebContext(ictx iris.Context, vu modules.VU) *WebContext {
+	return &WebContext{ictx: ictx, params: NewParams(ictx), vu: vu}
 }
 
 func (c *WebContext) Params() *Params {
@@ -45,10 +48,13 @@ func (c *WebContext) ReadJson(data ...any) *common.Result[any] {
 	} else {
 		err = c.ictx.ReadJSON(&v)
 	}
+	if err != nil {
+		panic(err)
+	}
 	return common.NewResult[any](v, err)
 }
 
-func (c *WebContext) ReadObject(schema *schema.Schema) (map[string]any, error) {
+func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
 	object := map[string]any{}
 	var err error
 	if schema != nil {
@@ -58,12 +64,33 @@ func (c *WebContext) ReadObject(schema *schema.Schema) (map[string]any, error) {
 			}
 		}
 	}
-	return object, err
+	if err != nil {
+		panic(errors.NewErr(err, "数据验证失败"))
+	}
+	return object
 }
 
-func (c *WebContext) WriteJson(data any) error {
-	c.ictx.StatusCode(iris.StatusOK)
-	return c.ictx.JSON(data)
+func (c *WebContext) WriteJson(data any) {
+	err := c.ictx.JSON(data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (c *WebContext) WriteString(body string) int {
+	res, err := c.ictx.HTML(body)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
+func (c *WebContext) WriteHTML(body string) int {
+	res, err := c.ictx.HTML(body)
+	if err != nil {
+		panic(err)
+	}
+	return res
 }
 
 func (c *WebContext) SetError(err error, httpStatus ...int) {

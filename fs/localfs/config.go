@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Id   string `yaml:"id"`
+	Name string `yaml:"name"`
 	Path string `yaml:"path"`
 }
 
@@ -18,8 +18,8 @@ func NewConfig(metadata map[string]any) (*Config, error) {
 		return nil, err
 	}
 	vErr := errors.NewVerifyError()
-	vErr.Message = fmt.Sprintf("config: %s", cfg.Id)
-	if cfg.Id == "" {
+	vErr.Message = fmt.Sprintf("localfs.config: %s", cfg.Name)
+	if cfg.Name == "" {
 		vErr.AppendField("id", "missing id")
 	}
 	if cfg.Path == "" {

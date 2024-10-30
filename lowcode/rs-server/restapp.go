@@ -20,25 +20,25 @@ func InitRsServer(httpServer *restapp.HttpServer) error {
 		if err != nil {
 			return err
 		}
-		fileFs, fileOk := fsManger.Get(env.App.RsServer.FileFsId)
+		fileFs, fileOk := fsManger.Get(env.App.RsServer.FileFsName)
 		if !fileOk {
-			return errors.New(env.Name + ".app.rsServer fileFsId not found")
+			return errors.New(env.Name + ".app.rsServer fileFsName not found")
 		}
-		httpFs, httpOk := fsManger.Get(env.App.RsServer.HttpFsId)
+		httpFs, httpOk := fsManger.Get(env.App.RsServer.HttpFsName)
 		if !httpOk {
-			return errors.New(env.Name + ".app.rsServer httpFsId not found")
+			return errors.New(env.Name + ".app.rsServer httpFsName not found")
 		}
 		if env.App.RsServer.BasePath != "" {
 			fileFs = afero.NewBasePathFs(fileFs, env.App.RsServer.BasePath)
 		}
-		fsCfg := NewFsConfig(fileFs, httpFs)
+		srcFs := NewSrcFsConfig(fileFs, httpFs)
 		appEnv := httpServer.EnvConfig()
 		runtimeEnv := newEnv(appEnv)
 		data, err := runtimeEnv.ToMap()
 		if err != nil {
 			return err
 		}
-		jsServer, err := NewServer(httpServer.App(), data, fsCfg, appEnv, "/main.js", appEnv.App.RsServer.Reload)
+		jsServer, err := NewServer(httpServer.App(), data, srcFs, appEnv, "/main.js", appEnv.App.RsServer.Reload)
 		if err != nil {
 			return err
 		}

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 )
 
 type Params struct {
@@ -15,43 +14,59 @@ func NewParams(ictx iris.Context) *Params {
 	return &Params{ictx: ictx}
 }
 
-func (c *WebContext) String(key string) *common.Result[string] {
+func (c *WebContext) String(key string) string {
 	v := c.ictx.Params().GetStringTrim(key)
 	var err error
 	if v == "" {
 		err = errors.New(key + " not found")
+		panic(err)
 	}
-	return common.NewResult[string](v, err)
+	return v
 }
 
-func (c *WebContext) Bool(key string) *common.Result[bool] {
-	v, e := c.ictx.Params().GetBool(key)
-	return common.NewResult[bool](v, e)
+func (c *WebContext) Bool(key string) bool {
+	v, err := c.ictx.Params().GetBool(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (c *WebContext) Float64(key string) *common.Result[float64] {
-	v, e := c.ictx.Params().GetFloat64(key)
-	return common.NewResult[float64](v, e)
+func (c *WebContext) Float64(key string) float64 {
+	v, err := c.ictx.Params().GetFloat64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (c *WebContext) Int(key string) *common.Result[int] {
-	v, e := c.ictx.Params().GetInt(key)
-	return common.NewResult[int](v, e)
+func (c *WebContext) Int(key string) int {
+	v, err := c.ictx.Params().GetInt(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (c *WebContext) Int32(key string) *common.Result[int32] {
-	v, e := c.ictx.Params().GetInt32(key)
-	return common.NewResult[int32](v, e)
+func (c *WebContext) Int32(key string) int32 {
+	v, err := c.ictx.Params().GetInt32(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (c *WebContext) Int64(key string) *common.Result[int64] {
-	v, e := c.ictx.Params().GetInt64(key)
-	return common.NewResult[int64](v, e)
+func (c *WebContext) Int64(key string) int64 {
+	v, err := c.ictx.Params().GetInt64(key)
+	if err != nil {
+		panic(err)
+	}
+	return v
 }
 
-func (c *WebContext) Strings(key string) *common.Result[[]string] {
-	val := c.ictx.URLParamSlice(key)
-	return common.NewResult[[]string](val, nil)
+func (c *WebContext) Strings(key string) []string {
+	v := c.ictx.URLParamSlice(key)
+	return v
 }
 
 func (c *WebContext) GetId() string {

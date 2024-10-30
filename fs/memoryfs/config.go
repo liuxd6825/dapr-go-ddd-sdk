@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Id string `yaml:"id"`
+	Name string `yaml:"name"`
 }
 
 func NewConfig(metadata map[string]interface{}) (*Config, error) {
@@ -17,8 +17,8 @@ func NewConfig(metadata map[string]interface{}) (*Config, error) {
 		return nil, err
 	}
 	vErr := errors.NewVerifyError()
-	vErr.Message = fmt.Sprintf("config: %s", cfg.Id)
-	if cfg.Id == "" {
+	vErr.Message = fmt.Sprintf("config: %s", cfg.Name)
+	if cfg.Name == "" {
 		vErr.AppendField("id", "missing id")
 	}
 	if vErr.HasError() {

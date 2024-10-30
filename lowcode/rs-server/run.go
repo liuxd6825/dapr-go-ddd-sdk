@@ -34,14 +34,14 @@ type JsServer struct {
 	mainPath string
 	reload   bool
 	watcher  watcher.Watcher
-	fsCfg    *FsConfig
+	srcFs    *SrcFsConfig // source code file system
 	data     map[string]any
-	cfg      common2.IEnvConfig
+	envCfg   common2.IEnvConfig
 }
 
-func NewServer(app *iris.Application, data map[string]any, fsCfg *FsConfig, cfg common2.IEnvConfig, mainFile string, reload bool) (*JsServer, error) {
+func NewServer(app *iris.Application, data map[string]any, srcFs *SrcFsConfig, envCfg common2.IEnvConfig, mainFile string, reload bool) (*JsServer, error) {
 	errs := errors.NewParamsError("rs_server.NewServer()")
-	errs.AddNil("fsCfg", fsCfg)
+	errs.AddNil("srcFs", srcFs)
 	errs.AddNil("app", app)
 	errs.AddNil("mainFile", mainFile)
 
@@ -59,10 +59,10 @@ func NewServer(app *iris.Application, data map[string]any, fsCfg *FsConfig, cfg 
 		app:      app,
 		mainPath: mainPath,
 		mainFile: mainFile,
-		fsCfg:    fsCfg,
+		srcFs:    srcFs,
 		reload:   reload,
 		data:     data,
-		cfg:      cfg,
+		envCfg:   envCfg,
 	}, nil
 }
 
@@ -72,14 +72,14 @@ func (s *JsServer) Run(options ...RunOption) error {
 	if err := s.run(options...); err != nil {
 		return err
 	}
-	if s.reload && s.fsCfg.FileFs.Name() == localfs.Name() {
+	if s.reload && s.srcFs.FileFs.Name() == localfs.Name() {
 		s.fileWatcher()
 	}
 	return nil
 }
 
 func (s *JsServer) run(options ...RunOption) error {
-	file, err := s.fsCfg.FileFs.Open(s.mainFile)
+	file, err := s.srcFs.FileFs.Open(s.mainFile)
 	if err != nil {
 		return err
 	}
@@ -89,8 +89,13 @@ func (s *JsServer) run(options ...RunOption) error {
 		return err
 	}
 
+	/*fsManager, err := s.envCfg.GetFsManager()
+	if err != nil {
+		return err
+	}*/
+
 	piState := getTestPreInitState(logrus.New())
-	bundle, err := newBundle(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.fsCfg, s.cfg)
+	bundle, err := newBundle(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.srcFs, s.envCfg)
 	if err != nil {
 		return err
 	}
@@ -104,7 +109,7 @@ func (s *JsServer) run(options ...RunOption) error {
 	//defer cancel()
 
 	vu, err := runner.NewVU(ctx, 1, 1, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
-		modules := k6.NewModules(s.app, s.data, s.cfg)
+		modules := k6.NewModules(s.app, s.data, s.envCfg)
 		for k, m := range modules {
 			if err = vu.GetRuntime().Set(k, m); err != nil {
 				return err
@@ -177,7 +182,7 @@ func (e *CodeError) Error() string {
 }
 
 func (s *JsServer) fileWatcher() {
-	f := s.fsCfg.FileFs
+	f := s.srcFs.FileFs
 	if f.Name() != localfs.Name() {
 		return
 	}
@@ -235,13 +240,14 @@ func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {
 	}
 }
 
-func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, fs *FsConfig, cfg common2.IEnvConfig) (*js.Bundle, error) {
+func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, srcFs *SrcFsConfig, cfg common2.IEnvConfig) (*js.Bundle, error) {
 	jsModules := map[string]any{
 		"k6/server": server.New(app, data, cfg),
 		"k6/db":     db.New(cfg),
 		"k6/schema": schema.New(),
 		"k6/common": common.New(),
 	}
+
 	return js.NewBundleFormJsModules(
 		piState,
 		&loader.SourceData{
@@ -249,7 +255,7 @@ func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPr
 			URL:  &url.URL{Path: filename, Scheme: "file"},
 			PWD:  &url.URL{Path: rootPath, Scheme: "file"},
 		},
-		fs.ToMap(),
+		srcFs.ToMap(),
 		jsModules,
 	)
 }

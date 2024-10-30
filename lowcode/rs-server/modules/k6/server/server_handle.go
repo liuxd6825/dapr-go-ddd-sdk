@@ -106,12 +106,13 @@ func (e *Server) Handle(opt *HandleOptions) {
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
 		e.mux.Lock()
 		defer e.mux.Unlock()
+
 		var err error
 		defer func() {
 			_ = catchError(ictx, err, recover())
 		}()
 
-		wctx := NewWebContext(ictx)
+		wctx := NewWebContext(ictx, e.vu)
 		params, err := e.GetParams(wctx, opt.Params)
 		if err != nil {
 			setError(ictx, err)
@@ -137,10 +138,7 @@ func (e *Server) GetParams(wctx *WebContext, params map[string]RequestParam) (ma
 			case InParamType_Body.String():
 				if v.Schema != nil && bodyData == nil {
 					v.Schema.Init()
-					obj, err1 := wctx.ReadObject(v.Schema)
-					if err1 != nil {
-						err = errors.NewErr(err1, "数据验证失败")
-					}
+					obj := wctx.ReadObject(v.Schema)
 					bodyData = obj
 				}
 				data[key] = bodyData

@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	Id       string `yaml:"id"`
+	Name     string `yaml:"name"`
 	Url      string `yaml:"url"`
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
@@ -23,8 +23,8 @@ func NewConfig(metadata map[string]any) (*Config, error) {
 		return nil, err
 	}
 	vErr := errors.NewVerifyError()
-	vErr.Message = fmt.Sprintf("config: %s", cfg.Id)
-	if cfg.Id == "" {
+	vErr.Message = fmt.Sprintf("giteafs.config: %s", cfg.Name)
+	if cfg.Name == "" {
 		vErr.AppendField("id", "missing name")
 	}
 	if cfg.Url == "" {

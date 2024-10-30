@@ -29,11 +29,10 @@ func NewServer(app *iris.Application, vu modules.VU, cfg common.IEnvConfig) *Ser
 	return &Server{app: app, vu: vu, services: make(map[string]*Service), swagger: swagger3.NewSwagger(), cfg: cfg}
 }
 
-func (e *Server) Run() error {
+func (e *Server) Run() {
 	if err := e.initSwagger(); err != nil {
-		return err
+		panic(err)
 	}
-	return nil
 }
 
 func (e *Server) initSwagger() error {
@@ -62,12 +61,12 @@ func (e *Server) ReadJson(ictx iris.Context, data ...any) *common.Result[any] {
 	return common.NewResult[any](v, err)
 }
 
-func (e *Server) AddService(opts *AddServiceOption) error {
+func (e *Server) AddService(opts *AddServiceOption) {
 	if opts == nil {
-		return errors.New("opts is nil")
+		panic(errors.New("opts is nil"))
 	}
 	if opts.Service == nil {
-		return errors.New("opts.Service is nil")
+		panic(errors.New("opts.Service is nil"))
 	}
 	service := &Service{
 		Service: opts.Service,
@@ -76,7 +75,7 @@ func (e *Server) AddService(opts *AddServiceOption) error {
 		server:  e,
 	}
 	e.services[opts.Name] = service
-	return nil
+
 }
 
 func (e *Server) newObject(m map[string]any) (*goja.Object, error) {

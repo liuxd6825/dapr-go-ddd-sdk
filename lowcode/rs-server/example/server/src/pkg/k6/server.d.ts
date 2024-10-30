@@ -96,7 +96,7 @@ export interface WebContext {
     getId():string;
     getFindPaging():FindPagingQuery;
     printf(a1?:any, a2?:any, a3?:any, a4?:any, a5?:any, a6?:any, a7?:any, a8?:any, a9?:any, a10?:any, a11?:any, a12?:any, a13?:any, a14?:any, a15?:any, a16?:any, a17?:any, a18?:any, a19?:any, a20?:any, a21?:any, a22?:any, a23?:any, a24?:any, a25?:any, a26?:any, a27?:any, a28?:any, a29?:any, a30?:any);
-
+    render(filename:string, data:{[key:string]:any}):Result<string>;
 }
 
 export interface Params {

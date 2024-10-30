@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html/template"
 	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
@@ -57,6 +58,7 @@ type HttpServer struct {
 	envConfig      *EnvConfig
 	inits          []RunInitFunc
 	swagger        *swagger3.Swagger
+	fs             *fs.Manager
 }
 
 type OnAppInit func(ctx context2.Context) error

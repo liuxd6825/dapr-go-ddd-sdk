@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-sdk/service/common"
@@ -20,6 +21,7 @@ type RunConfig struct {
 	DaprMaxCallRecvMsgSize *int64
 	DaprClient             dapr.DaprClient
 	EnvConfig              *EnvConfig
+	FsManager              *fs.Manager
 }
 
 type RegisterHandler interface {
@@ -138,6 +140,7 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 		LogLevel:   envConfig.Log.level,
 		DaprClient: daprClient,
 		EnvConfig:  envConfig,
+		FsManager:  envConfig.fsManager,
 	}
 
 	return run(runCfg, envConfig.App.RootUrl, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)

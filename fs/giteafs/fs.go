@@ -2,6 +2,7 @@ package giteafs
 
 import (
 	gitea "code.gitea.io/sdk/gitea"
+	"encoding/base64"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/spf13/afero"
 	"os"
@@ -31,6 +32,25 @@ func NewClient(url, user, password string) (*gitea.Client, error) {
 		return client, err
 	}
 	return client, nil
+}
+
+// Decode
+// 解码
+func (s *Fs) Decode(src []byte) ([]byte, error) {
+	dst := make([]byte, base64.StdEncoding.DecodedLen(len(src)))
+	_, err := base64.StdEncoding.Decode(dst, src)
+	if err != nil {
+		return nil, errors.New("base64 decode failed")
+	}
+	return dst, nil
+}
+
+// Encode
+// 编码
+func (s *Fs) Encode(src []byte) ([]byte, error) {
+	dst := make([]byte, base64.StdEncoding.EncodedLen(len(src)))
+	base64.StdEncoding.Encode(dst, src)
+	return dst, nil
 }
 
 func (s *Fs) AbsFileName(file string) string {

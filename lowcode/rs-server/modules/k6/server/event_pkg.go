@@ -38,41 +38,59 @@ func NewEventPkg(vm *goja.Runtime, config common.IEnvConfig) *EventPkg {
 	return &EventPkg{vm: vm, config: config}
 }
 
-func (e *EventPkg) ApplyEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.ApplyEventResponse] {
+func (e *EventPkg) ApplyEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *dapr.ApplyEventResponse {
 	data, err := ddd.ApplyEvent(ctx, agg, event, e.newOptions(opts...))
-	return common.NewResult[*dapr.ApplyEventResponse](data, err)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (e *EventPkg) ApplyEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.ApplyEventResponse] {
+func (e *EventPkg) ApplyEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *dapr.ApplyEventResponse {
 	data, err := ddd.ApplyEvents(ctx, agg, e.newEvents(events), e.newOptions(opts...))
-	return common.NewResult[*dapr.ApplyEventResponse](data, err)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (e *EventPkg) CreateEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.CreateEventResponse] {
+func (e *EventPkg) CreateEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *dapr.CreateEventResponse {
 	data, err := ddd.CreateEvent(ctx, agg, event, e.newOptions(opts...))
-	return common.NewResult[*dapr.CreateEventResponse](data, err)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (e *EventPkg) CreateEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.CreateEventResponse] {
+func (e *EventPkg) CreateEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *dapr.CreateEventResponse {
 	data, err := ddd.CreateEvents(ctx, agg, e.newEvents(events), e.newOptions(opts...))
-	return common.NewResult[*dapr.CreateEventResponse](data, err)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (e *EventPkg) DeleteEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.DeleteEventResponse] {
+func (e *EventPkg) DeleteEvent(ctx context.Context, agg *Aggregate, event *common.Event, opts ...*ddd.ApplyEventOptions) *dapr.DeleteEventResponse {
 	data, err := ddd.DeleteEvent(ctx, agg, event, e.newOptions(opts...))
-	return common.NewResult[*dapr.DeleteEventResponse](data, err)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (e *EventPkg) DeleteEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *common.Result[*dapr.DeleteEventResponse] {
+func (e *EventPkg) DeleteEvents(ctx context.Context, agg *Aggregate, events []*common.Event, opts ...*ddd.ApplyEventOptions) *dapr.DeleteEventResponse {
 	data, err := ddd.DeleteEvents(ctx, agg, e.newEvents(events), e.newOptions(opts...))
-	return common.NewResult[*dapr.DeleteEventResponse](data, err)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 func (e *EventPkg) GetEventType(aggName string, opType string) string {
 	return common.GetEventType(e.config.GetAppId(), aggName, opType)
 }
 
-func (e *EventPkg) AddEventHandler(appId string, subscribes []*SubscribeItem, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) error {
+func (e *EventPkg) AddEventHandler(appId string, subscribes []*SubscribeItem, serviceObj *goja.Object, options ...*RegisterSubscribeOptions) {
 	RegisterSubscribeService(appId, subscribes, e.vm, serviceObj, options...)
 	for _, sub := range subscribes {
 		version := sub.EventVersion
@@ -80,10 +98,9 @@ func (e *EventPkg) AddEventHandler(appId string, subscribes []*SubscribeItem, se
 			version = "v1.0"
 		}
 		if err := e.RegisterEventType(appId+"."+sub.EventType, version); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
 func (e *EventPkg) newEvents(events []*common.Event) []ddd.DomainEvent {
@@ -103,14 +120,13 @@ func (e *EventPkg) newOptions(opts ...*ddd.ApplyEventOptions) *ddd.ApplyEventOpt
 	return &res
 }
 
-func (e *EventPkg) RegisterTableEventTypes(tableName string) error {
+func (e *EventPkg) RegisterTableEventTypes(tableName string) {
 	for _, eType := range common.TableEventTypes() {
 		eventType := fmt.Sprintf("%s.%s", tableName, eType)
 		if err := ddd.RegisterEventType(eventType, "v1.0", e.NewDomainEvent); err != nil {
-			return err
+			panic(err)
 		}
 	}
-	return nil
 }
 
 func (e *EventPkg) RegisterEventType(eventType string, version string) error {
