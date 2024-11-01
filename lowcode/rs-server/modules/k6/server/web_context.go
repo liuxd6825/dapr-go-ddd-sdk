@@ -1,24 +1,28 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/k6server/js/modules"
 )
 
 type WebContext struct {
 	ictx iris.Context
+	ctx  context.Context
 	restapp.RestAssembler
 	params *Params
 	vu     modules.VU
 }
 
-func NewWebContext(ictx iris.Context, vu modules.VU) *WebContext {
-	return &WebContext{ictx: ictx, params: NewParams(ictx), vu: vu}
+func NewWebContext(ctx context.Context, ictx iris.Context, vu modules.VU) *WebContext {
+	return &WebContext{ictx: ictx, ctx: ctx, params: NewParams(ictx), vu: vu}
 }
 
 func (c *WebContext) Params() *Params {
@@ -54,6 +58,19 @@ func (c *WebContext) ReadJson(data ...any) *common.Result[any] {
 	return common.NewResult[any](v, err)
 }
 
+func (c *WebContext) ReadString() string {
+	bytes := c.ReadBytes()
+	return string(bytes)
+}
+
+func (c *WebContext) ReadBytes() []byte {
+	bytes, err := c.ictx.GetBody()
+	if err != nil {
+		panic(err)
+	}
+	return bytes
+}
+
 func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
 	object := map[string]any{}
 	var err error
@@ -78,7 +95,7 @@ func (c *WebContext) WriteJson(data any) {
 }
 
 func (c *WebContext) WriteString(body string) int {
-	res, err := c.ictx.HTML(body)
+	res, err := c.ictx.WriteString(body)
 	if err != nil {
 		panic(err)
 	}
@@ -93,16 +110,35 @@ func (c *WebContext) WriteHTML(body string) int {
 	return res
 }
 
-func (c *WebContext) SetError(err error, httpStatus ...int) {
+func (c *WebContext) SetStatus(status int) {
+	c.ictx.StatusCode(status)
+}
+
+func (c *WebContext) GetStatus() int {
+	return c.ictx.GetStatusCode()
+}
+
+func (c *WebContext) SetError(errOrMsg any, httpStatus ...int) {
 	status := iris.StatusInternalServerError
-	for _, s := range httpStatus {
-		status = s
+	if len(httpStatus) > 0 {
+		status = httpStatus[0]
 	}
-	c.ictx.SetErr(err)
-	if err != nil {
-		c.ictx.StatusCode(status)
-		_, _ = c.ictx.WriteString(err.Error())
+	var err error
+	errId := idutils.NewId()
+	if e, ok := errOrMsg.(error); ok {
+		err = e
+	} else if msg, ok := errOrMsg.(string); ok {
+		err = errors.New(msg)
+	} else {
+		err = errors.New("未知的错误类型")
 	}
+	logs.Error(c.ctx, "", logs.Fields{"errId": errId, "error": err})
+	if logs.GetLevel() == 0 {
+		c.ictx.SetErr(err)
+	} else {
+		c.ictx.SetErr(errors.ErrorOf("执行时错误，错误编号：%s", errId))
+	}
+	c.ictx.StatusCode(status)
 }
 
 func (c *WebContext) Executor() *Executor {

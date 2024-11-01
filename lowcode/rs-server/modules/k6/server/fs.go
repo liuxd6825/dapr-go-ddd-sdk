@@ -7,8 +7,21 @@ import (
 )
 
 type FsManager struct {
-	base *fs.Manager
-	cfg  common.IEnvConfig
+	base        *fs.Manager
+	cfg         common.IEnvConfig
+	WriteModels *FsWriteModel
+}
+
+type FsWriteModel struct {
+	AllWriteRead       fs.WriteModel
+	SelfWriteOtherRead fs.WriteModel
+}
+
+func NewFsWriteModel() *FsWriteModel {
+	return &FsWriteModel{
+		AllWriteRead:       fs.WriteModelAllWriteRead,
+		SelfWriteOtherRead: fs.WriteModelSelfWriteOtherRead,
+	}
 }
 
 func NewFsManger(cfg common.IEnvConfig) (*FsManager, error) {
@@ -16,9 +29,9 @@ func NewFsManger(cfg common.IEnvConfig) (*FsManager, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs := &FsManager{cfg: cfg}
-	fs.base = fsManager
-	return fs, nil
+	fsm := &FsManager{cfg: cfg, WriteModels: NewFsWriteModel()}
+	fsm.base = fsManager
+	return fsm, nil
 }
 
 func (m *FsManager) ReadFile(filename string, pwd string) []byte {
@@ -29,8 +42,8 @@ func (m *FsManager) ReadFile(filename string, pwd string) []byte {
 	return res
 }
 
-func (m *FsManager) WriteFile(filename string, pwd string, bytes []byte, writeModel fs.WriteModel) {
-	err := m.base.WriteFile(filename, pwd, bytes, writeModel)
+func (m *FsManager) WriteFile(filename string, pwd string, bytes []byte) {
+	err := m.base.WriteFile(filename, pwd, bytes, fs.WriteModelAllWriteRead)
 	if err != nil {
 		panic(err)
 	}

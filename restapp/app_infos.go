@@ -52,7 +52,7 @@ func GetPID() string {
 
 // GetExeName
 //
-//	@Description: 取应用程序名称
+//	@Description: 取可执行文件名称
 //	@return string
 func GetExeName() string {
 	return exeName
@@ -84,7 +84,7 @@ func AbsFileName(val string) string {
 	if val == "" {
 		return ""
 	}
-	val = strings.ReplaceAll(val, "${Appname}", GetExeName())
+	val = strings.ReplaceAll(val, "${ExeName}", GetExeName())
 	val = strings.ReplaceAll(val, "${PID}", GetPID())
 	val = strings.ReplaceAll(val, "${EnvName}", GetEnvName())
 	val, _ = filepath.Abs(val)

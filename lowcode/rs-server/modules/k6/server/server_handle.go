@@ -1,10 +1,12 @@
 package server
 
 import (
+	"context"
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
@@ -104,15 +106,20 @@ func (e *Server) Handle(opt *HandleOptions) {
 	}
 	method := opt.Method.String()
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
+
 		e.mux.Lock()
 		defer e.mux.Unlock()
-
+		var ctx context.Context
 		var err error
 		defer func() {
 			_ = catchError(ictx, err, recover())
 		}()
 
-		wctx := NewWebContext(ictx, e.vu)
+		ctx, err = restapp.NewContext(ictx)
+		if err != nil {
+			return
+		}
+		wctx := NewWebContext(ctx, ictx, e.vu)
 		params, err := e.GetParams(wctx, opt.Params)
 		if err != nil {
 			setError(ictx, err)
