@@ -250,7 +250,7 @@ func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
 	if len(e.Fs) != 0 {
 		fsManager, err := fs.NewManagerWithConfigs(e.Fs, e.App.RsServer.DefaultFsName)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
 		}
 		e.fsManager = fsManager
 	}

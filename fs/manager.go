@@ -43,15 +43,17 @@ func NewManager() *Manager {
 //	@return error
 func NewManagerWithConfigs(maps []map[string]any, defaultFsName string) (*Manager, error) {
 	clist := make(map[string]any)
+	i := 0
 	for _, m := range maps {
+		i++
 		o := types.Object(m)
 		typeVal := o.GetString("type")
 		if typeVal == "" {
-			return nil, errors.New("config type not found in config")
+			return nil, errors.New("maps[%d]. type not found in config")
 		}
 		nameVal := o.GetString("name")
 		if nameVal == "" {
-			return nil, errors.New("config name not found in config")
+			return nil, errors.New("maps[%d].name cannot be empty", i)
 		}
 
 		var cfg any
@@ -66,7 +68,7 @@ func NewManagerWithConfigs(maps []map[string]any, defaultFsName string) (*Manage
 		case memoryfs.Name():
 			cfg, err = memoryfs.NewConfig(m)
 		default:
-			return nil, errors.New("config type not support : " + typeVal)
+			return nil, errors.New(" maps[%d].type not support : " + typeVal)
 		}
 		if err != nil {
 			return nil, err
@@ -89,7 +91,7 @@ func NewManagerWithConfigs(maps []map[string]any, defaultFsName string) (*Manage
 		case *memoryfs.Config:
 			fs, err = memoryfs.NewFs(cfg.(*memoryfs.Config))
 		default:
-			return nil, errors.New("config type not support")
+			return nil, errors.New("fs.NewManagerWithConfigs() fs.config not support")
 		}
 		if err != nil {
 			return nil, err
