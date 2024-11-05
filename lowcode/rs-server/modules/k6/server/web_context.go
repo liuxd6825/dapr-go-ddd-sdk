@@ -129,9 +129,13 @@ func (c *WebContext) SetError(errOrMsg any, httpStatus ...int) {
 		err = e
 	} else if msg, ok := errOrMsg.(string); ok {
 		err = errors.New(msg)
+	} else if data, ok := errOrMsg.(map[string]any); ok {
+		fmt.Println(data)
+		err = errors.New("data")
 	} else {
 		err = errors.New("未知的错误类型")
 	}
+
 	logs.Error(c.ctx, "", logs.Fields{"errId": errId, "error": err})
 	if logs.GetLevel() == 0 {
 		c.ictx.SetErr(err)

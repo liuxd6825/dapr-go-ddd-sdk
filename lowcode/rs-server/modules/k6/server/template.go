@@ -6,7 +6,7 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 )
 
-var tplCache cmap.ConcurrentMap = cmap.New()
+var tplCache = cmap.New()
 
 type Template struct {
 	cfg common.IEnvConfig
