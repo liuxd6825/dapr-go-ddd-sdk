@@ -53,7 +53,7 @@ type HandleOptions struct {
 	Body        *schema.Schema          `json:"body"`
 	Params      map[string]RequestParam `json:"params"`
 	HandleName  string                  `json:"handleName"`
-	Handle      func(cxt *WebContext, params map[string]any)
+	Handle      func(cxt *WebContext, params map[string]any) any
 }
 
 func (h HandleOptions) GetMethod() MethodType {
@@ -126,7 +126,14 @@ func (e *Server) Handle(opt *HandleOptions) {
 			return
 		}
 
-		opt.Handle(wctx, params)
+		res := opt.Handle(wctx, params)
+		if err, ok := res.(error); ok {
+			setError(ictx, err)
+			return
+		}
+		if res != nil {
+			wctx.WriteJson(res)
+		}
 	})
 }
 

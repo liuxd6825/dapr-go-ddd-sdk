@@ -62,7 +62,8 @@ func (e *Template) getTpl(filename string, fun func(*pongo2.Template) error) {
 		}
 	}
 	bytes := GetFsManger().ReadFile(filename, "")
-	tpl, err := pongo2.FromBytes(bytes)
+	txt := replacePercent(string(bytes))
+	tpl, err := pongo2.FromBytes([]byte(txt))
 	if err != nil {
 		panic(err)
 	}
@@ -87,4 +88,28 @@ func DeleteCache(filename string) {
 
 func SetCache(filename string, tpl *pongo2.Template) {
 	tplCache.Set(filename, tpl)
+}
+
+// replacePercent replaces '%' with '%%', except when it appears in '{%' or '%}'
+func replacePercent(input string) string {
+	runes := []rune(input)
+	length := len(runes)
+	var result []rune
+
+	for i := 0; i < length; i++ {
+		if runes[i] == '%' {
+			// Check if this % is part of {% or %}
+			isPartOfTag := (i > 0 && runes[i-1] == '{') || (i < length-1 && runes[i+1] == '}')
+
+			if isPartOfTag {
+				result = append(result, runes[i])
+			} else {
+				result = append(result, '%', '%')
+			}
+		} else {
+			result = append(result, runes[i])
+		}
+	}
+
+	return string(result)
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
@@ -33,29 +32,20 @@ func (c *WebContext) Ictx() iris.Context {
 	return c.ictx
 }
 
-func (c *WebContext) ReadJson(data ...any) *common.Result[any] {
+func (c *WebContext) ReadJson(data ...any) any {
 	var v any
 	for _, d := range data {
 		v = d
 	}
-	isMap := false
 	if v == nil {
 		v = make(map[string]any)
-		isMap = true
-	} else if d, ok := v.(map[string]any); ok {
-		v = d
-		isMap = true
 	}
 	var err error
-	if isMap {
-		err = c.ictx.ReadJSON(v)
-	} else {
-		err = c.ictx.ReadJSON(&v)
-	}
+	err = c.ictx.ReadJSON(&v)
 	if err != nil {
 		panic(err)
 	}
-	return common.NewResult[any](v, err)
+	return v
 }
 
 func (c *WebContext) ReadString() string {
