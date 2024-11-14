@@ -2,12 +2,15 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type Handle func(cxt *WebContext, data any)
@@ -27,9 +30,12 @@ func (m MethodType) String() string {
 type InParamType string
 
 const (
-	InParamType_URL  InParamType = "url"
-	InParamType_Path InParamType = "path"
-	InParamType_Body InParamType = "body"
+	InParamTypeURL        InParamType = "url"        // URL中的参数
+	InParamTypePath       InParamType = "path"       // 路径参数
+	InParamTypeBody       InParamType = "body"       // 请求body参数
+	InParamTypeFormValue  InParamType = "formValue"  // 从FormData中读取string
+	InParamTypeFormObject InParamType = "formObject" // 从FormData中读取json转成对象
+	InParamTypeFormFile   InParamType = "formFile"   // 从FormFile中读取文件
 )
 
 type RequestParam struct {
@@ -52,6 +58,7 @@ type HandleOptions struct {
 	Description string                  `json:"description"`
 	Body        *schema.Schema          `json:"body"`
 	Params      map[string]RequestParam `json:"params"`
+	ParamsUrl   string                  `json:"paramsUrl"`
 	HandleName  string                  `json:"handleName"`
 	Handle      func(cxt *WebContext, params map[string]any) any
 }
@@ -106,11 +113,12 @@ func (e *Server) Handle(opt *HandleOptions) {
 	}
 	method := opt.Method.String()
 	e.app.Handle(method, opt.Path, func(ictx iris.Context) {
-
 		e.mux.Lock()
 		defer e.mux.Unlock()
+
 		var ctx context.Context
 		var err error
+
 		defer func() {
 			_ = catchError(ictx, err, recover())
 		}()
@@ -120,12 +128,7 @@ func (e *Server) Handle(opt *HandleOptions) {
 			return
 		}
 		wctx := NewWebContext(ctx, ictx, e.vu)
-		params, err := e.GetParams(wctx, opt.Params)
-		if err != nil {
-			setError(ictx, err)
-			return
-		}
-
+		params := e.GetParams(wctx, opt.Params, opt.ParamsUrl)
 		res := opt.Handle(wctx, params)
 		if err, ok := res.(error); ok {
 			setError(ictx, err)
@@ -137,44 +140,96 @@ func (e *Server) Handle(opt *HandleOptions) {
 	})
 }
 
-func (e *Server) GetParams(wctx *WebContext, params map[string]RequestParam) (map[string]any, error) {
+func (e *Server) GetUrlParams(ctx iris.Context) map[string]any {
+	params := make(map[string]any)
+	// 获取所有路径参数
+	pathParams := ctx.Params()
+	for _, param := range pathParams.Store {
+		params[param.Key] = param.Value
+	}
+
+	// 获取所有查询参数
+	queryParams := ctx.URLParams()
+	for key, value := range queryParams {
+		params[key] = value
+	}
+
+	return params
+}
+
+// GetParams
+//
+//	@Description: 获取请求的参数，aParamsURL的优先级最高，当为空时aParams参数生效。
+//	@param wctx 请求的web上下文
+//	@param aParams  通过对象定义的参数类型
+//	@param aParamsURL  通过url定义的参数类型,
+//	@return map[string]any 参数
+func (e *Server) GetParams(wctx *WebContext, aParams map[string]RequestParam, aParamsURL string) map[string]any {
 	var err error
+	var params map[string]RequestParam = aParams
+	if aParamsURL != "" {
+		if params == nil {
+			params = map[string]RequestParam{}
+		}
+		schemaFileUrl := aParamsURL
+		urlPars := e.GetUrlParams(wctx.ictx)
+		if (urlPars != nil) && (len(urlPars) > 0) {
+			schemaFileUrl = stringutils.ReplacePlaceholders(aParamsURL, urlPars)
+		}
+
+		bytes := _fs.ReadFile(schemaFileUrl)
+		if err = jsonutils.Unmarshal(bytes, &params); err != nil {
+			panic(err)
+		}
+	}
+
 	data := map[string]any{}
+	ictx := wctx.ictx
+
 	var bodyData any = nil
 	if len(params) > 0 {
 		for key, v := range params {
-			var val string
+			var val any
 			switch v.In {
-			case InParamType_URL.String():
-				val = wctx.ictx.URLParam(key)
-			case InParamType_Path.String():
-				val = wctx.ictx.Params().Get(key)
-			case InParamType_Body.String():
+			case InParamTypeURL.String():
+				val = ictx.URLParam(key)
+			case InParamTypePath.String():
+				val = ictx.Params().Get(key)
+			case InParamTypeBody.String():
 				if v.Schema != nil && bodyData == nil {
-					v.Schema.Init()
 					obj := wctx.ReadObject(v.Schema)
 					bodyData = obj
 				}
 				data[key] = bodyData
+			case InParamTypeFormValue.String():
+				val = wctx.FormValue(key, v.Required)
+				data[key] = val
+			case InParamTypeFormObject.String():
+				val = wctx.FormObject(key, v.Required, v.Schema)
+				data[key] = val
+			case InParamTypeFormFile.String():
+				val = wctx.FormFile(key)
+				data[key] = val
+			default:
+				panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, v.In))
 			}
 
-			if v.In == InParamType_URL.String() || v.In == InParamType_Path.String() {
+			if key == InParamTypeURL.String() || key == InParamTypePath.String() {
 				if v.Required && val == "" {
-					err = errors.NewErr(err, "参数 %s 缺失", key)
+					err = errors.New("The requested parameter %s cannot be empty", key)
+					panic(err)
 				} else {
-					if v, err := types.Convert(v.Type, val); err == nil {
-						data[key] = v
-					} else {
-						err = errors.NewErr(err, "参数 %s 类型转换失败", key)
+					val, err = types.Convert(v.Type, v)
+					if err != nil {
+						panic(err)
 					}
+					data[key] = v
 				}
 			}
+
 		}
 	}
-	if err != nil {
-		setError(wctx.ictx, err)
-	}
-	return data, err
+	return data
 }
 
 func (e *Server) AddHandles(handlers ...*HandleOptions) error {

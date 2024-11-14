@@ -13,6 +13,11 @@ func Marshal(data interface{}) (string, error) {
 	return string(bytes), err
 }
 
+// MarshalBytes  格式化json字符串
+func MarshalBytes(data interface{}) ([]byte, error) {
+	return json.Marshal(data)
+}
+
 // MarshalIndent  转化并格式化json字符串
 func MarshalIndent(data interface{}) (string, error) {
 	bs, err := json.MarshalIndent(data, "", "    ")

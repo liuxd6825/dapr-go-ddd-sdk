@@ -24,6 +24,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5
+	github.com/liuxd6825/jsonschema/v6 v6.0.1
 )
 
 require (
@@ -44,7 +45,6 @@ require (
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
 	github.com/redis/go-redis/v9 v9.5.1
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.0-beta1
 	github.com/snownd/cake v0.6.0
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v1.7.0
@@ -201,6 +201,8 @@ require (
 )
 
 replace go.mongodb.org/mongo-driver => ../../mongo-driver
+
+replace github.com/liuxd6825/jsonschema/v6 => ../../jsonschema
 
 //replace github.com/liuxd6825/dapr => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha2
 //replace github.com/liuxd6825/dapr-go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2

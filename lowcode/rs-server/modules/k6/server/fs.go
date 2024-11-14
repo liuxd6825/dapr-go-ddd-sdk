@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"os"
 )
 
@@ -34,16 +35,38 @@ func NewFsManger(cfg common.IEnvConfig) (*FsManager, error) {
 	return fsm, nil
 }
 
-func (m *FsManager) ReadFile(filename string, pwd string) []byte {
-	res, err := m.base.ReadFile(filename, pwd)
+// ReadFile
+//
+//	@Description: 读取文件内容
+//	@receiver m
+//	@param filename 文件名称
+//	@param basePath 当前目录
+//	@return []byte
+func (m *FsManager) ReadFile(filename string, options ...*fs.Options) []byte {
+	res, err := m.base.ReadFile(filename, options...)
 	if err != nil {
 		panic(err)
 	}
 	return res
 }
 
-func (m *FsManager) WriteFile(filename string, pwd string, bytes []byte) {
-	err := m.base.WriteFile(filename, pwd, bytes, fs.WriteModelAllWriteRead)
+func (m *FsManager) WriteFile(filename string, data any, options ...*fs.Options) {
+	var bytes []byte = nil
+	if str, ok := data.(string); ok {
+		bytes = []byte(str)
+	} else if bs, ok := data.([]byte); ok {
+		bytes = bs
+	} else if mapData, ok := data.(map[string]any); ok {
+		str, err := jsonutils.Marshal(mapData)
+		if err != nil {
+			panic(err)
+		}
+		bytes = []byte(str)
+	} else {
+		panic("WriteFile() invalid data is string or []byte or map[string]any")
+	}
+
+	err := m.base.WriteFile(filename, bytes, fs.WriteModelAllWriteRead, options...)
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +80,7 @@ func (m *FsManager) RemoveFile(filename string) {
 }
 
 func (m *FsManager) RemoveAll(name string) {
-	err := m.base.RemoveFile(name)
+	err := m.base.RemoveAll(name)
 	if err != nil {
 		panic(err)
 	}

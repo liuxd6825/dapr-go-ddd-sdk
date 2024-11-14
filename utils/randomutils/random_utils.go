@@ -2,7 +2,7 @@ package randomutils
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"math"
 	"math/rand"
@@ -288,20 +288,20 @@ func PBoolean() *bool {
 	return &p
 }
 
-func JsonTime() types.JSONTime {
-	return types.JSONTime(Time())
+func JsonTime() times.JSONTime {
+	return times.JSONTime(Time())
 }
 
-func PJsonTime() *types.JSONTime {
+func PJsonTime() *times.JSONTime {
 	value := JsonTime()
 	return &value
 }
 
-func JsonDate() types.JSONDate {
-	return types.JSONDate(Date())
+func JsonDate() times.JSONDate {
+	return times.JSONDate(Date())
 }
 
-func PJsonDate() *types.JSONDate {
+func PJsonDate() *times.JSONDate {
 	value := JsonDate()
 	return &value
 }

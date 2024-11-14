@@ -193,7 +193,7 @@ func (p *Parse) schemaRender(htmlTplFileName string, schema *schema.Schema, uiSc
 		return "", errors.ErrorOf("param schema or uiSchema is nil")
 	}
 	builder := NewUiBuilder(schema, uiSchema)
-	content, err := readFile(p.fs, p.htmlPathName, htmlTplFileName)
+	content, err := readFile(p.fs, htmlTplFileName, p.htmlPathName)
 	if err != nil {
 		return "", err
 	}

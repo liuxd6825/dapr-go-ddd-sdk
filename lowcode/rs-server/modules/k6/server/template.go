@@ -61,7 +61,7 @@ func (e *Template) getTpl(filename string, fun func(*pongo2.Template) error) {
 			panic(err)
 		}
 	}
-	bytes := GetFsManger().ReadFile(filename, "")
+	bytes := GetFsManger().ReadFile(filename)
 	txt := replacePercent(string(bytes))
 	tpl, err := pongo2.FromBytes([]byte(txt))
 	if err != nil {

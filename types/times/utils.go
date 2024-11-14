@@ -1,10 +1,9 @@
-package timeutils
+package times
 
 import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"reflect"
 	"strconv"
@@ -30,6 +29,7 @@ var (
 func Now() time.Time {
 	return now()
 }
+
 func PNow() *time.Time {
 	t := now()
 	return &t
@@ -43,11 +43,11 @@ func now() time.Time {
 	return t
 }
 
-// Time
+// GetTime
 // @Description: 获取毫秒值为0的时间
 // @param t
 // @return *time.Time
-func Time(t *time.Time) *time.Time {
+func GetTime(t *time.Time) *time.Time {
 	if t == nil {
 		return t
 	}
@@ -55,48 +55,61 @@ func Time(t *time.Time) *time.Time {
 	return &v
 }
 
-func AnyToTime(data interface{}, defaultValue time.Time) (res time.Time, err error) {
+func AsDate(data any) (*Date, error) {
+	val, err := AsTime(data)
+	if err != nil {
+		return nil, err
+	}
+	if val != nil {
+		return val.Date(), nil
+	}
+	return nil, nil
+}
+
+// AsTime
+//
+//	@Description:
+//	@param data
+//	@param defaultValue
+//	@return res
+//	@return err
+func AsTime(data any) (res *Time, err error) {
 	if data == nil {
-		return defaultValue, nil
+		return nil, nil
 	}
 	switch data.(type) {
 	case time.Time:
-		res = data.(time.Time)
+		val := data.(time.Time)
+		res = NewTime(&val)
 	case *time.Time:
-		if data == nil {
-			res = defaultValue
-		} else {
-			var timeVal = data.(*time.Time)
-			res = *timeVal
-		}
+		val := data.(*time.Time)
+		res = NewTime(val)
 	case string:
-		res, err = StrToDateTime(data.(string))
+		val, er := StrToDateTime(data.(string))
+		if er != nil {
+			return nil, er
+		}
+		res = NewTime(val)
 	case *string:
 		str := data.(*string)
-		if str == nil {
-			return defaultValue, nil
+		val, er := StrToDateTime(*str)
+		if er != nil {
+			return nil, err
 		}
-		res, err = StrToDateTime(*str)
+		res = NewTime(val)
 	case float64:
-		res, err = time.Unix(0, int64(data.(float64))*int64(time.Millisecond)), nil
+		val := time.Unix(0, int64(data.(float64))*int64(time.Millisecond))
+		res = NewTime(&val)
 	case int64:
-		res, err = time.Unix(0, data.(int64)*int64(time.Millisecond)), nil
+		val := time.Unix(0, data.(int64)*int64(time.Millisecond))
+		res = NewTime(&val)
 	default:
-		res, err = time.Time{}, errors.New("Invalid data type")
+		err = errors.New("Invalid data type")
 	}
 	if err == nil {
-		val := times.NewTime(&res)
-		return val.Time(), nil
+		return res, nil
 	}
-	return defaultValue, nil
-}
-
-func AsTime(data interface{}) (time.Time, error) {
-	return AnyToTime(data, time.Time{})
-}
-
-func AsJsonTime(data interface{}) (time.Time, error) {
-	return AnyToTime(data, time.Time{})
+	return nil, err
 }
 
 // 20180313114933
@@ -108,7 +121,7 @@ func AsJsonTime(data interface{}) (time.Time, error) {
 //	@param str
 //	@return time.Time
 //	@return error
-func StrToDateTime(str string) (res time.Time, err error) {
+func StrToDateTime(str string) (res *time.Time, err error) {
 	format := LocalTimeFormatLine
 
 	// 按空格对字符串进行日期与时间的分割
@@ -116,8 +129,9 @@ func StrToDateTime(str string) (res time.Time, err error) {
 
 	// 对日期部分进行格式化
 	dayVal, err = fmtDateStr(dayVal)
+
 	if err != nil {
-		return time.Time{}, err
+		return nil, err
 	}
 
 	timeIsNil := false
@@ -129,7 +143,7 @@ func StrToDateTime(str string) (res time.Time, err error) {
 		// 对时间部分进行格式化
 		timeVar, err = fmtTimeStr(timeVar)
 		if err != nil {
-			return time.Time{}, err
+			return nil, err
 		}
 		str = dayVal + " " + timeVar
 	}
@@ -150,8 +164,11 @@ func StrToDateTime(str string) (res time.Time, err error) {
 		format = time.RFC3339Nano
 	}
 
-	res, err = time.Parse(format, str)
-	return res, err
+	val, er := time.Parse(format, str)
+	if er != nil {
+		return nil, er
+	}
+	return &val, err
 }
 
 func FormatStr(fmt, str string) (res string, err error) {

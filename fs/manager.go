@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/memoryfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/orcaman/concurrent-map"
 	"github.com/spf13/afero"
 	"io/fs"
@@ -122,43 +123,87 @@ func (m *Manager) Map() map[string]afero.Fs {
 	return data
 }
 
-func (m *Manager) ReadFile(filename string, pwd string) ([]byte, error) {
+func (m *Manager) ReadFile(filename string, opts ...*Options) ([]byte, error) {
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return nil, err
 	}
-	return ReadFile(afs, pwd, fileName)
+	return ReadFile(afs, fileName, opts...)
 }
 
-func (m *Manager) WriteFile(filename string, pwd string, bytes []byte, writeModel WriteModel) error {
+// WriteFile
+//
+//	@Description: 写文件
+//	@receiver m
+//	@param filename 文件名称
+//	@param pwd
+//	@param bytes
+//	@param writeModel
+//	@return error
+func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel, opts ...*Options) error {
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return err
 	}
-	return WriteFile(afs, pwd, fileName, bytes, fs.FileMode(writeModel))
+	return WriteFile(afs, fileName, bytes, fs.FileMode(writeModel), opts...)
 }
 
-func (m *Manager) RemoveFile(filename string) error {
+// RemoveFile
+//
+//	@Description: 删除文件
+//	@receiver m
+//	@param filename 文件名称
+//	@return error
+func (m *Manager) RemoveFile(filename string, opts ...*Options) error {
+	o := NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return err
 	}
+	fileName = fileutils.AbsPath(filename, o.BasePath)
 	return afs.Remove(fileName)
 }
 
-func (m *Manager) RemoveAll(name string) error {
-	afs, name, err := m.parse(name)
+// RemoveAll
+//
+//	@Description: 删除路径
+//	@receiver m
+//	@param path 路径名称
+//	@return error
+func (m *Manager) RemoveAll(path string, basePath ...string) error {
+	afs, path, err := m.parse(path)
 	if err != nil {
 		return err
 	}
-	return afs.RemoveAll(name)
+	path = fileutils.AbsPath(path, basePath...)
+	return afs.RemoveAll(path)
 }
 
-func (m *Manager) Mkdir(name string, perm os.FileMode) error {
-	afs, name, err := m.parse(name)
+// Rename
+//
+//	@Description:  文件重命名
+//	@receiver m
+//	@param oldname 原文件名
+//	@param newname 新文件名
+//	@return error
+func (m *Manager) Rename(aOldName, aNewName string) error {
+	afs, oldName, err := m.parse(aOldName)
 	if err != nil {
 		return err
 	}
+	afs, newName, err := m.parse(aNewName)
+	if err != nil {
+		return err
+	}
+	return afs.Rename(oldName, newName)
+}
+
+func (m *Manager) Mkdir(path string, perm os.FileMode, basePath ...string) error {
+	afs, name, err := m.parse(path)
+	if err != nil {
+		return err
+	}
+	name = fileutils.AbsPath(name, basePath...)
 	return afs.Mkdir(name, perm)
 }
 

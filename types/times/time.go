@@ -1,8 +1,8 @@
-package types
+package times
 
 import "time"
 
-type JSONTime time.Time
+type Time time.Time
 
 type JSONTimeOption struct {
 	time *time.Time
@@ -12,28 +12,19 @@ var (
 	timeJSONFormat = "2006-01-02 15:04:05"
 )
 
-func NewJSONTime(value ...*time.Time) *JSONTime {
-	var v JSONTime
+func NewTime(value ...*time.Time) *Time {
+	var v Time
 	if len(value) == 0 {
-		v = JSONTime(time.Now())
+		v = Time(time.Now())
 	} else {
 		t := *value[0]
-		v = JSONTime(t)
+		v = Time(t)
 	}
 	return &v
 }
 
-func AsJSONTime(value *time.Time) *JSONTime {
-	if value == nil {
-		return nil
-	}
-	t := *value
-	v := JSONTime(t)
-	return &v
-}
-
-func Now() *JSONTime {
-	v := JSONTime(time.Now())
+func NowTime() *Time {
+	v := Time(time.Now())
 	return &v
 }
 
@@ -45,13 +36,13 @@ func GetTimeJSONFormat() string {
 	return timeJSONFormat
 }
 
-func (t *JSONTime) UnmarshalJSON(data []byte) (err error) {
+func (t *Time) UnmarshalJSON(data []byte) (err error) {
 	now, err := time.ParseInLocation(`"`+timeJSONFormat+`"`, string(data), time.Local)
-	*t = JSONTime(now)
+	*t = Time(now)
 	return
 }
 
-func (t *JSONTime) MarshalJSON() ([]byte, error) {
+func (t *Time) MarshalJSON() ([]byte, error) {
 	if t == nil {
 		return []byte(""), nil
 	}
@@ -62,14 +53,14 @@ func (t *JSONTime) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
-func (t *JSONTime) String() string {
+func (t *Time) String() string {
 	if t == nil {
 		return ""
 	}
 	return time.Time(*t).Format(timeJSONFormat)
 }
 
-func (t *JSONTime) PTime() *time.Time {
+func (t *Time) PTime() *time.Time {
 	if t == nil {
 		return nil
 	}
@@ -77,7 +68,7 @@ func (t *JSONTime) PTime() *time.Time {
 	return &v
 }
 
-func (t *JSONTime) Time() time.Time {
+func (t *Time) Time() time.Time {
 	if t == nil {
 		return time.Time{}
 	}
@@ -85,13 +76,13 @@ func (t *JSONTime) Time() time.Time {
 	return v
 }
 
-func (t *JSONTime) AsJSONDate() *JSONDate {
+func (t *Time) Date() *Date {
 	if t == nil {
 		return nil
 	}
-	return NewJSONDate(t.PTime())
+	return NewDate(t.PTime())
 }
 
-func (t *JSONTime) IsNil() bool {
+func (t *Time) IsNil() bool {
 	return t == nil
 }

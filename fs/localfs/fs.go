@@ -38,7 +38,7 @@ func (f *Fs) OpenFile(name string, flag int, perm os.FileMode) (afero.File, erro
 }
 
 func (f *Fs) fileName(name string) string {
-	fileName := fileutils.AbsPath(f.BasePath(), name)
+	fileName := fileutils.AbsPath(name, f.BasePath())
 	return fileName
 }
 

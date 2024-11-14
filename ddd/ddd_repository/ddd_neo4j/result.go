@@ -3,7 +3,7 @@ package ddd_neo4j
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/mitchellh/mapstructure"
@@ -34,7 +34,7 @@ type MappingOptions struct {
 
 const timeLayout = "2006-01-02 15:04:05Z07:00"
 
-var jsonTimeType = reflect.TypeOf(types.NewJSONTime())
+var jsonTimeType = reflect.TypeOf(times.NewJSONTime())
 
 func NewMappingOptions() *MappingOptions {
 	return &MappingOptions{
@@ -325,7 +325,7 @@ func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (inte
 				format = time.RFC3339
 			}
 			res, err := time.Parse(format, sTime)
-			return types.NewJSONTime(&res), err
+			return times.NewJSONTime(&res), err
 		}
 	} else if fromType.Kind() == reflect.String {
 		switch toType.Name() {

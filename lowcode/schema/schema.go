@@ -21,18 +21,21 @@ type Schema struct {
 	Required    []string   `json:"required,omitempty"`
 	Default     any        `json:"default,omitempty"`
 	validate    *Validate
+	init        bool
 }
 
 type Type = string
 
 const (
-	TypeNull    Type = ""
-	TypeObject       = "object"
-	TypeString       = "string"
-	TypeInteger      = "integer"
-	TypeNumber       = "number"
-	TypeArray        = "array"
-	TypeBoolean      = "boolean"
+	TypeNull     Type = ""
+	TypeObject        = "object"
+	TypeString        = "string"
+	TypeInteger       = "integer"
+	TypeNumber        = "number"
+	TypeArray         = "array"
+	TypeBoolean       = "boolean"
+	TypeDate          = "date"
+	TypeDatetime      = "datetime"
 )
 
 type Format = string
@@ -62,27 +65,81 @@ const (
 
 type Properties map[string]*Property
 
-type Property struct {
-	Name             string     `json:"-"`
-	Title            string     `json:"title,omitempty"`
-	Type             Type       `json:"type,omitempty"`
-	Format           Format     `json:"format,omitempty"`
-	Pattern          string     `json:"pattern,omitempty"`
-	Properties       Properties `json:"properties,omitempty"`
-	Required         []string   `json:"required,omitempty"`
-	Description      string     `json:"description,omitempty"`
-	Ref              string     `json:"$ref,omitempty"`
-	Items            *Items     `json:"items,omitempty"`
-	MinItems         *int       `json:"minItems,omitempty"`
-	UniqueItems      *bool      `json:"uniqueItems,omitempty"`
-	ExclusiveMinimum *int       `json:"exclusiveMinimum,omitempty"`
-	Minimum          *int       `json:"minimum,omitempty"`
-	Maximum          *int       `json:"maximum,omitempty"`
+type Enum struct {
 }
 
-type Items struct {
-	Type string `json:"type"`
+type Types struct {
 }
+
+type Property struct {
+	Name        string `json:"-"`
+	Title       string `json:"title,omitempty"`
+	Type        Type   `json:"type,omitempty"`
+	Format      Format `json:"format,omitempty"`
+	Pattern     string `json:"pattern,omitempty"`
+	Description string `json:"description,omitempty"`
+	Ref         string `json:"$ref,omitempty"`
+
+	// object --
+	Properties            Properties `json:"properties,omitempty"`
+	Required              []string   `json:"required,omitempty"`
+	MaxProperties         *int
+	MinProperties         *int
+	PropertyNames         *Schema
+	AdditionalProperties  any            // nil or bool or *Schema
+	Dependencies          map[string]any // value is []string or *Schema
+	DependentRequired     map[string][]string
+	DependentSchemas      map[string]*Schema
+	UnevaluatedProperties *Schema
+
+	// array --
+	MinItems         *int      `json:"minItems,omitempty"`
+	UniqueItems      *bool     `json:"uniqueItems,omitempty"`
+	ExclusiveMinimum *int      `json:"exclusiveMinimum,omitempty"`
+	MaxItems         int       `json:"maxItems"`
+	Contains         *Schema   `json:"contains,omitempty"`
+	MinContains      *int      `json:"minContains,omitempty"`
+	MaxContains      *int      `json:"maxContains,omitempty"`
+	PrefixItems      []*Schema `json:"prefixItems,omitempty"`
+	Items2020        *Schema   `json:"items2020,omitempty"`
+	UnevaluatedItems *Schema   `json:"unevaluatedItems,omitempty"`
+	Items            Items     `json:"items"`           // nil or []*Schema or *Schema
+	AdditionalItems  any       `json:"additionalItems"` // nil or bool or *Schema
+
+	// number --
+	Minimum   *int `json:"minimum,omitempty"`
+	Maximum   *int `json:"maximum,omitempty"`
+	MinLength *int `json:"minLength,omitempty"`
+	MaxLength *int `json:"maxLength,omitempty"`
+
+	// type agnostic --
+	Bool            *bool // boolean schema
+	ID              string
+	Anchor          string
+	RecursiveRef    *Schema
+	RecursiveAnchor bool
+	DynamicAnchor   string // "" if not specified
+	Types           *Types
+	Enum            *Enum
+	Const           *any
+	Not             *Schema
+	AllOf           []*Schema
+	AnyOf           []*Schema
+	OneOf           []*Schema
+	If              *Schema
+	Then            *Schema
+	Else            *Schema
+
+	// annotations --
+	Default    *any   `json:"default,omitempty"`
+	Comment    string `json:"comment,omitempty"`
+	ReadOnly   bool   `json:"readOnly,omitempty"`
+	WriteOnly  bool   `json:"writeOnly,omitempty"`
+	Examples   []any  `json:"examples,omitempty"`
+	Deprecated bool   `json:"deprecated,omitempty"`
+}
+
+type Items = Schema
 
 func NewSchema(reader io.Reader) (*Schema, error) {
 	var data Schema
@@ -115,6 +172,10 @@ func NewSchemaFile(pathFile string) (*Schema, error) {
 }
 
 func (s *Schema) Init() *Schema {
+	if s.init {
+		return s
+	}
+	s.init = true
 	if s.Properties != nil {
 		s.Properties.Init()
 	}
@@ -125,6 +186,7 @@ func (s *Schema) Init() *Schema {
 }
 
 func (s *Schema) Validate(obj any) error {
+	s.Init()
 	if s.validate == nil {
 		s.validate = NewValidate(s)
 	}
@@ -139,6 +201,7 @@ func (p *Property) GetTitle() string {
 }
 
 func (s *Schema) ToJson() string {
+	s.Init()
 	bs, err := json.Marshal(s)
 	if err != nil {
 		return err.Error()
@@ -151,6 +214,7 @@ func (s *Schema) Convertor(obj types.Object) (map[string]any, error) {
 }
 
 func (s *Schema) convertor(source types.Object, props Properties) (map[string]any, error) {
+	s.Init()
 	target := map[string]any{}
 	for key, prop := range props {
 		var val any
@@ -162,25 +226,16 @@ func (s *Schema) convertor(source types.Object, props Properties) (map[string]an
 			if ok {
 				val, err = s.convertor(obj, prop.Properties)
 			}
+		case TypeDate, TypeDatetime:
+			val, err = s.convertValue(prop, source, key)
 		case TypeBoolean:
 			val, err = source.GetBool(key)
 		case TypeInteger:
 			val, err = source.GetInt(key)
 		case TypeNumber:
 			val, err = source.GetFloat(key)
-		case TypeString:
-			switch prop.Format {
-			case FormatDateTime:
-				val, err = source.GetDateTime(key)
-			case FormatDate:
-				val, err = source.GetDateTime(key)
-			default:
-				val = source.Get(key)
-				err = nil
-			}
 		default:
-			val = source.Get(key)
-			err = nil
+			val, err = s.convertValue(prop, source, key)
 		}
 		if err != nil {
 			return nil, err
@@ -188,6 +243,18 @@ func (s *Schema) convertor(source types.Object, props Properties) (map[string]an
 		target[key] = val
 	}
 	return target, nil
+}
+
+func (s *Schema) convertValue(prop *Property, source types.Object, key string) (val any, err error) {
+	switch prop.Format {
+	case FormatDateTime:
+		val, err = source.GetTime(key)
+	case FormatDate:
+		val, err = source.GetDate(key)
+	default:
+		val = source.Get(key)
+	}
+	return val, err
 }
 
 func (p *Properties) Init() {

@@ -1,23 +1,23 @@
-package types
+package times
 
 import "time"
 
-type JSONDate time.Time
+type Date time.Time
 
 var (
 	dateJSONFormat = "2006-01-02"
 )
 
-func NewJSONDate(value ...*time.Time) *JSONDate {
-	var res JSONDate
+func NewDate(value ...*time.Time) *Date {
+	var res Date
 	if len(value) == 0 {
-		res = JSONDate(time.Now())
+		res = Date(time.Now())
 	} else {
 		for _, v := range value {
 			if v != nil {
 				t := *v
 				d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-				res = JSONDate(d)
+				res = Date(d)
 				break
 			}
 		}
@@ -33,13 +33,13 @@ func GetDateJSONFormat() string {
 	return dateJSONFormat
 }
 
-func (t *JSONDate) UnmarshalJSON(data []byte) (err error) {
+func (t *Date) UnmarshalJSON(data []byte) (err error) {
 	now, err := time.ParseInLocation(`"`+dateJSONFormat+`"`, string(data), time.Local)
-	*t = JSONDate(now)
+	*t = Date(now)
 	return
 }
 
-func (t JSONDate) MarshalJSON() ([]byte, error) {
+func (t Date) MarshalJSON() ([]byte, error) {
 	b := make([]byte, 0, len(dateJSONFormat)+2)
 	b = append(b, '"')
 	b = time.Time(t).AppendFormat(b, dateJSONFormat)
@@ -47,11 +47,11 @@ func (t JSONDate) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
-func (t JSONDate) String() string {
+func (t Date) String() string {
 	return time.Time(t).Format(dateJSONFormat)
 }
 
-func (t *JSONDate) PTime() *time.Time {
+func (t *Date) PTime() *time.Time {
 	if t == nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (t *JSONDate) PTime() *time.Time {
 	return &v
 }
 
-func (t *JSONDate) Time() time.Time {
+func (t *Date) Time() time.Time {
 	if t == nil {
 		return time.Time{}
 	}
@@ -67,6 +67,6 @@ func (t *JSONDate) Time() time.Time {
 	return v
 }
 
-func (t *JSONDate) IsNil() bool {
+func (t *Date) IsNil() bool {
 	return t == nil
 }

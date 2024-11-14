@@ -2,8 +2,8 @@ package schema
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/santhosh-tekuri/jsonschema/v6"
-	"github.com/santhosh-tekuri/jsonschema/v6/kind"
+	"github.com/liuxd6825/jsonschema/v6"
+	"github.com/liuxd6825/jsonschema/v6/kind"
 	"strings"
 )
 

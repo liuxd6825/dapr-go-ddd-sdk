@@ -1,6 +1,8 @@
 package ddd
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/types"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+)
 
 type Entity interface {
 	GetTenantId() string

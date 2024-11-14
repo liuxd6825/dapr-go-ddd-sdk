@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/mitchellh/mapstructure"
@@ -27,13 +28,11 @@ func init() {
 	option = getOption()
 }
 
-//
 // Mapper
 // @Description: 进行struct属性复制，支持深度复制
 // @param fromObj 来源
 // @param toObj 目标
 // @return error
-//
 func Mapper(fromObj, toObj interface{}) error {
 	return copier.CopyWithOption(toObj, fromObj, *option)
 }
@@ -63,14 +62,12 @@ func MaskMapperRemove(fromObj, toObj interface{}, mask []string, maskType MaskTy
 	return MaskMapperOptions(fromObj, toObj, &options)
 }
 
-//
 // MaskMapperOptions
 // @Description: 根据指定进行属性复制，不支持深度复制
 // @param fromObj 来源
 // @param toObj 目标
 // @param mask 要复制属性列表
 // @return error
-//
 func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 	var fromMap map[string]interface{}
 	var err error
@@ -173,7 +170,7 @@ func getOption() *copier.Option {
 }
 func getTypeConverters() []copier.TypeConverter {
 	var typeConverters []copier.TypeConverter
-	typeConverters = append(typeConverters, newJsonDateConverter().getTypeConverters()...)
-	typeConverters = append(typeConverters, newJsonTimeConverter().getTypeConverters()...)
+	typeConverters = append(typeConverters, times.NewJsonDateConverter().GetTypeConverters()...)
+	typeConverters = append(typeConverters, times.NewJsonTimeConverter().GetTypeConverters()...)
 	return typeConverters
 }

@@ -7,6 +7,18 @@ import (
 	"strings"
 )
 
+type Options struct {
+	BasePath string
+}
+
+func NewOptions(o ...*Options) *Options {
+	opts := &Options{}
+	for _, o := range o {
+		opts.BasePath = o.BasePath
+	}
+	return opts
+}
+
 // ReadFile
 //
 //	@Description: 读取文件内容
@@ -15,8 +27,9 @@ import (
 //	@param filename string 要读取文件名称
 //	@return []byte 文件内容
 //	@return error
-func ReadFile(afs afero.Fs, pwdPath string, filename string) ([]byte, error) {
-	fileName := fileutils.AbsPath(pwdPath, filename)
+func ReadFile(afs afero.Fs, filename string, opts ...*Options) ([]byte, error) {
+	o := NewOptions(opts...)
+	fileName := fileutils.AbsPath(filename, o.BasePath)
 	context, err := afero.ReadFile(afs, fileName)
 	if err != nil {
 		return nil, err
@@ -35,9 +48,10 @@ func ReadFile(afs afero.Fs, pwdPath string, filename string) ([]byte, error) {
 //	@param filename string 要读取文件名称
 //	@return []byte 文件内容
 //	@return error
-func WriteFile(afs afero.Fs, pwdPath string, filename string, bytes []byte, fileMode fs.FileMode) error {
+func WriteFile(afs afero.Fs, filename string, bytes []byte, fileMode fs.FileMode, opts ...*Options) error {
 	var err error
-	fileName := fileutils.AbsPath(pwdPath, filename)
+	o := NewOptions(opts...)
+	fileName := fileutils.AbsPath(filename, o.BasePath)
 	if encode, ok := afs.(Decode); ok {
 		bytes, err = encode.Encode(bytes)
 		if err != nil {

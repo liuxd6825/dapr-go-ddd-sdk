@@ -91,7 +91,7 @@ func (f *Feign) InvokeMethod(ctx context.Context, opts *FeignOptions, params map
 		var request any
 		var response any
 		for k, v := range opts.Params {
-			if v.In == InParamType_Body.String() {
+			if v.In == InParamTypeBody.String() {
 				request = params[k]
 				break
 			}

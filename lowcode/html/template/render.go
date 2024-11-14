@@ -18,17 +18,17 @@ import (
 //	@param filepath 模板文件路径
 //	@param data 模板数据
 //	@return error 错误信息
-func Render(ctx context.Context, writer io.Writer, fs afero.Fs, filepath string, options ...func(ctx pongo2.Context)) error {
+func Render(ctx context.Context, writer io.Writer, fs afero.Fs, fileName string, options ...func(ctx pongo2.Context)) error {
 	//从gitea中加载文件
-	fileBytes, err := readFile(fs, "", filepath)
+	fileBytes, err := readFile(fs, fileName, "")
 	if err != nil {
 		return err
 	}
 
 	// 解析文件内容
-	parse, err := NewParse(fs, filepath, fileBytes).Parse()
+	parse, err := NewParse(fs, fileName, fileBytes).Parse()
 	if err != nil {
-		return errors.New(fmt.Sprintf("解释 %s 时出错,%s。", filepath, err.Error()))
+		return errors.New(fmt.Sprintf("解释 %s 时出错,%s。", fileName, err.Error()))
 	}
 
 	// 执行服务端代码

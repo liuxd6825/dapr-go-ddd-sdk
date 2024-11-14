@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/inflection"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -64,6 +65,28 @@ func MongoFieldAsJsonName(fieldName string) string {
 
 func Relpace(s string, old string, new string) string {
 	return strings.Replace(s, "._", ".", -1)
+}
+
+// ReplacePlaceholders 使用 map 中的值替换字符串中的占位符
+func ReplacePlaceholders(template string, values map[string]any) string {
+	re := regexp.MustCompile(`\{(\w+)\}`) // 匹配 {key} 格式
+
+	return re.ReplaceAllStringFunc(template, func(placeholder string) string {
+		// 去掉 { 和 } 得到键名
+		key := strings.Trim(placeholder, "{}")
+		if value, exists := values[key]; exists {
+			return fmt.Sprintf("%s", value)
+		}
+		// 如果 map 中没有对应的键，保持原样
+		return placeholder
+	})
+}
+func RelpaceValues(s string, values map[string]any) string {
+	res := s
+	for key, value := range values {
+		strings.ReplaceAll(res, "{"+key+"}", fmt.Sprintf("%s", value))
+	}
+	return res
 }
 
 // FirstUpper

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema/formats"
-	"github.com/santhosh-tekuri/jsonschema/v6"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type Validate struct {

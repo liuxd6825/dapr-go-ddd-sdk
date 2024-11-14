@@ -3,16 +3,21 @@ package fileutils
 import "strings"
 import "path/filepath"
 
+func GetBasePath(basePath ...string) string {
+	if len(basePath) > 0 {
+		return basePath[0]
+	}
+	return ""
+}
+
 // AbsPath
 //
 //	@Description: 取绝对路径
 //	@param pwd 当前路径
 //	@param filename 待相对路径的文件名， 如：../c.txt 或 ./c.txt
 //	@return string 绝对路径
-func AbsPath(pwd string, filename string) string {
-	if pwd == "" {
-		return filename
-	}
+func AbsPath(filename string, basePath ...string) string {
+	pwd := GetBasePath(basePath...)
 	if !strings.Contains(filename, "../") && !strings.Contains(filename, "./") {
 		return filepath.Join(pwd, filename)
 	}

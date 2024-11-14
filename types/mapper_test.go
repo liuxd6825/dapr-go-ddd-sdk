@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"testing"
 	"time"
 )
@@ -73,8 +74,8 @@ func TestAutoMapper(t *testing.T) {
 }
 
 type DateRequest struct {
-	Date *JSONDate
-	Time *JSONTime
+	Date *times.JSONDate
+	Time *times.JSONTime
 }
 
 type DateCommand struct {
@@ -83,8 +84,8 @@ type DateCommand struct {
 }
 
 func Test_Mapper_Date(t *testing.T) {
-	dateValue := JSONDate(time.Now())
-	timeValue := JSONTime(time.Now())
+	dateValue := times.JSONDate(time.Now())
+	timeValue := times.JSONTime(time.Now())
 	// dateValue := types.DateString("2019-10-10")
 	// dateValue := time.Now()
 	req := DateRequest{

@@ -1,9 +1,8 @@
 package formats
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	"github.com/santhosh-tekuri/jsonschema/v6"
-	"time"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 // DateTimeFormat represents a datetime format.
@@ -30,14 +29,11 @@ var DateFormat = &jsonschema.Format{
 	},
 }
 
-func ParseDateTime(v any) (time.Time, error) {
-	return timeutils.AnyToTime(v, time.Now())
+func ParseDateTime(v any) (*times.Date, error) {
+	return times.AsDate(v)
 }
 
-func ParseDate(v any) (time.Time, error) {
-	date, err := timeutils.AnyToTime(v, time.Now())
-	if err != nil {
-		return time.Time{}, err
-	}
-	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.Local), nil
+func ParseDate(v any) (*times.Time, error) {
+	date, err := times.AsTime(v)
+	return date, err
 }

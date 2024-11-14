@@ -129,6 +129,9 @@ func (s *HttpServer) Start() error {
 	}()
 	app := s.app
 
+	// 使用自定义的 JSON 编码器替换 Iris 默认的 JSON 编码器
+	app.Configure(iris.WithOptimizations)
+
 	if err := s.addRenderHandler(app); err != nil {
 		return err
 	}

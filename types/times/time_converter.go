@@ -1,4 +1,4 @@
-package types
+package times
 
 import (
 	"errors"
@@ -7,12 +7,12 @@ import (
 )
 
 type jsonTimeConverter struct {
-	jsonTime  JSONTime
+	jsonTime  Time
 	timeValue time.Time
 }
 
-func newJsonTimeConverter() *jsonTimeConverter {
-	jsonTime := JSONTime{}
+func NewJsonTimeConverter() *jsonTimeConverter {
+	jsonTime := Time{}
 	timeValue := time.Time{}
 	return &jsonTimeConverter{
 		jsonTime:  jsonTime,
@@ -20,7 +20,7 @@ func newJsonTimeConverter() *jsonTimeConverter {
 	}
 }
 
-func (c *jsonTimeConverter) getTypeConverters() []copier.TypeConverter {
+func (c *jsonTimeConverter) GetTypeConverters() []copier.TypeConverter {
 	return []copier.TypeConverter{
 		c.converter(c.jsonTime, c.timeValue),
 		c.converter(c.jsonTime, &c.timeValue),
@@ -40,9 +40,9 @@ func (c *jsonTimeConverter) converter(srcType, dstType interface{}) copier.TypeC
 		DstType: dstType,
 		Fn: func(src interface{}) (interface{}, error) {
 			switch srcType.(type) {
-			case *JSONTime:
+			case *Time:
 				return c.pjsonToTime(src, srcType, dstType)
-			case JSONTime:
+			case Time:
 				return c.jsonToTime(src, srcType, dstType)
 			case *time.Time:
 				return c.ptimeToJson(src, srcType, dstType)
@@ -56,7 +56,7 @@ func (c *jsonTimeConverter) converter(srcType, dstType interface{}) copier.TypeC
 }
 
 func (c *jsonTimeConverter) pjsonToTime(src, srcType, dstType interface{}) (interface{}, error) {
-	s, ok := src.(*JSONTime)
+	s, ok := src.(*Time)
 	if !ok {
 		return nil, errors.New("mapper.jsonTimeConverter() error: src type not matching")
 	}
@@ -75,7 +75,7 @@ func (c *jsonTimeConverter) pjsonToTime(src, srcType, dstType interface{}) (inte
 }
 
 func (c *jsonTimeConverter) jsonToTime(src, srcType, dstType interface{}) (interface{}, error) {
-	s, ok := src.(JSONTime)
+	s, ok := src.(Time)
 	if !ok {
 		return nil, errors.New("mapper.jsonTimeConverter() error: src type not matching")
 	}
@@ -99,13 +99,13 @@ func (c *jsonTimeConverter) ptimeToJson(src, srcType, dstType interface{}) (inte
 		return nil, errors.New("mapper.jsonTimeConverter() error: src type not matching")
 	}
 	switch dstType.(type) {
-	case JSONTime:
+	case Time:
 		{
-			return JSONTime(*s), nil
+			return Time(*s), nil
 		}
-	case *JSONTime:
+	case *Time:
 		{
-			res := JSONTime(*s)
+			res := Time(*s)
 			return &res, nil
 		}
 	}
@@ -118,13 +118,13 @@ func (c *jsonTimeConverter) timeToJson(src, srcType, dstType interface{}) (inter
 		return nil, errors.New("mapper.jsonTimeConverter() error: src type not matching")
 	}
 	switch dstType.(type) {
-	case JSONTime:
+	case Time:
 		{
-			return JSONTime(s), nil
+			return Time(s), nil
 		}
-	case *JSONTime:
+	case *Time:
 		{
-			res := JSONTime(s)
+			res := Time(s)
 			return &res, nil
 		}
 	}

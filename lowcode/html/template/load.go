@@ -21,7 +21,7 @@ import (
 //	@return *schema.Schema schema
 //	@return error
 func loadSchema(fs afero.Fs, pwd string, schemasFile string, schemaName string) (*schema.Schema, error) {
-	bytes, err := readFile(fs, pwd, schemasFile)
+	bytes, err := readFile(fs, schemasFile, pwd)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 		return nil, errors.New("schema instance is nil")
 	}
 
-	bytes, err := readFile(fs, pwd, uiSchemaFile)
+	bytes, err := readFile(fs, uiSchemaFile, pwd)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +77,8 @@ func loadUiSchema(fs afero.Fs, sm *schema.Schema, pwd string, uiSchemaFile strin
 	return ui, err
 }
 
-func ReadFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
-	return readFile(fs, pwd, filename)
+func ReadFile(fs afero.Fs, filename string, pwd string) ([]byte, error) {
+	return readFile(fs, filename, pwd)
 }
 
 // readFile
@@ -89,8 +89,8 @@ func ReadFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
 //	@param filename string 要读取文件名称
 //	@return []byte 文件内容
 //	@return error
-func readFile(fs afero.Fs, pwd string, filename string) ([]byte, error) {
-	fileName := fileutils.AbsPath(pwd, filename)
+func readFile(fs afero.Fs, filename string, pwd string) ([]byte, error) {
+	fileName := fileutils.AbsPath(filename, pwd)
 	file, err := fs.Open(fileName)
 	if err != nil {
 		return nil, err

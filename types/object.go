@@ -4,9 +4,8 @@ import (
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/gookit/goutil/maputil"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	"time"
 )
 
 type Object map[string]any
@@ -68,8 +67,14 @@ func (o Object) GetBool(key string) (bool, error) {
 	return convertor.ToBool(o.GetString(key))
 }
 
-func (o Object) GetDateTime(key string) (time.Time, error) {
-	return timeutils.AsTime(o.Get(key))
+func (o Object) GetDate(key string) (*times.Date, error) {
+	val := o.Get(key)
+	return times.AsDate(val)
+}
+
+func (o Object) GetTime(key string) (*times.Time, error) {
+	val := o.Get(key)
+	return times.AsTime(val)
 }
 
 func (o Object) GetMap(key string) (map[string]any, bool) {
