@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
@@ -14,6 +15,21 @@ type DB struct {
 
 func NewDB(cfg common.IEnvConfig) *DB {
 	return &DB{models: map[string]*Model{}, cfg: cfg}
+}
+
+func newDb(mongodb *ddd_mongodb.MongoDB) *DB {
+	return &DB{mongodb: mongodb, models: map[string]*Model{}, cfg: nil}
+}
+
+func (d *DB) Get(name string) error {
+	db, ok := restapp.GetMongoByKey(name)
+	if !ok {
+		panic(fmt.Sprintf("%s db not found", name))
+	}
+	if db != nil {
+		d.mongodb = db
+	}
+	return nil
 }
 
 func (d *DB) Open(cfg restapp.MongoConfig) error {

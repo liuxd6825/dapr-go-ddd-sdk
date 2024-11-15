@@ -47,6 +47,7 @@ func (e *Exports) Exports() modules.Exports {
 	_dbOnce.Do(func() {
 		_db = NewDB(e.cfg)
 	})
+
 	return modules.Exports{
 		Named: map[string]interface{}{
 			"db": e.vu.Runtime().ToValue(_db),

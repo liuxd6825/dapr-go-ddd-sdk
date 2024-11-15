@@ -1,6 +1,10 @@
 package times
 
-import "time"
+import (
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"time"
+)
 
 type Time time.Time
 
@@ -51,6 +55,14 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	b = time.Time(*t).AppendFormat(b, timeJSONFormat)
 	b = append(b, '"')
 	return b, nil
+}
+
+func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	return bson.MarshalValue(time.Time(t).UTC())
+}
+
+func (t *Time) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {
+	return bson.UnmarshalValue(bt, data, t)
 }
 
 func (t *Time) String() string {

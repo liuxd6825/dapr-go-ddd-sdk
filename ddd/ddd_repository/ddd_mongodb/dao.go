@@ -296,25 +296,25 @@ func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 	return err
 }
 
-func (r *Dao[T]) InsertMany(ctx context.Context, entitits []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	if entitits == nil || len(entitits) == 0 {
-		return ddd_repository.NewSetManyResultError[T](errors.New("entitits is nil"))
+func (r *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+	if entities == nil || len(entities) == 0 {
+		return ddd_repository.NewSetManyResultError[T](errors.New("entities is nil"))
 	}
 
-	for _, e := range entitits {
+	for _, e := range entities {
 		if err := assert.NotEmpty(r.GetTenantId(e), assert.NewOptions("tenantId is empty")); err != nil {
 			return ddd_repository.NewSetManyResultError[T](err)
 		}
 	}
 
 	var docs []interface{}
-	for _, e := range entitits {
+	for _, e := range entities {
 		docs = append(docs, e)
 	}
 
 	return r.DoSetMany(func() ([]T, error) {
 		_, err := r.getCollection(ctx).InsertMany(ctx, docs, getInsertManyOptions(opts...))
-		return entitits, err
+		return entities, err
 	})
 }
 
