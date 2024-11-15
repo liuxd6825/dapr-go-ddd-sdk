@@ -10,60 +10,26 @@ import (
 	"strings"
 )
 
-type Schema struct {
-	Schema      string     `json:"$schema,omitempty"`
-	Id          string     `json:"$id,omitempty"`
-	Title       string     `json:"title,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Type        string     `json:"type,omitempty"`
-	Properties  Properties `json:"properties,omitempty"`
-	Definitions Properties `json:"definitions,omitempty"`
-	Required    []string   `json:"required,omitempty"`
-	Default     any        `json:"default,omitempty"`
-	validate    *Validate
-	init        bool
+type ISchema interface {
+	GetProperties() Properties
+	SetProperties(Properties)
+
+	GetRequired() []string
+	SetRequired([]string)
+	AddRequired(string)
 }
 
-type Type = string
+type Schema struct {
+	Id       string `json:"$id,omitempty"`
+	Schema   string `json:"$schema,omitempty"`
+	validate *Validate
+	init     bool
 
-const (
-	TypeNull     Type = ""
-	TypeObject        = "object"
-	TypeString        = "string"
-	TypeInteger       = "integer"
-	TypeNumber        = "number"
-	TypeArray         = "array"
-	TypeBoolean       = "boolean"
-	TypeDate          = "date"
-	TypeDatetime      = "datetime"
-)
-
-type Format = string
-
-const (
-	FormatNull                Format = ""
-	FormatDateTime                   = "date-time" // 2018-11-13 20:20:39
-	FormatTime                       = "time"      // 20:20:39 00:00
-	FormatDate                       = "date"      // 2018-11-13
-	FormatDuration                   = "duration"
-	FormatEmail                      = "email"
-	FormatIdnEmail                   = "idn-email"
-	FormatHostname                   = "hostname"
-	FormatIdnHostname                = "idn-hostname"
-	FormatIpv4                       = "ipv4"
-	FormatIpv6                       = "ipv6"
-	FormatUuid                       = "uuid"
-	FormatUri                        = "uri"
-	FormatUriReference               = "uri-reference"
-	FormatIri                        = "iri"
-	FormatIriReference               = "iri-reference"
-	FormatUriTemplate                = "uri-template"
-	FormatJsonPointer                = "json-pointer"
-	FormatRelativeJsonPointer        = "relative-json-pointer"
-	FormatRegex                      = "regex"
-)
-
-type Properties map[string]*Property
+	Type       string     `json:"type,omitempty"`
+	Title      string     `json:"title,omitempty"`
+	Properties Properties `json:"properties,omitempty"`
+	Required   []string   `json:"-"`
+}
 
 type Enum struct {
 }
@@ -71,75 +37,7 @@ type Enum struct {
 type Types struct {
 }
 
-type Property struct {
-	Name        string `json:"-"`
-	Title       string `json:"title,omitempty"`
-	Type        Type   `json:"type,omitempty"`
-	Format      Format `json:"format,omitempty"`
-	Pattern     string `json:"pattern,omitempty"`
-	Description string `json:"description,omitempty"`
-	Ref         string `json:"$ref,omitempty"`
-
-	// object --
-	Properties            Properties `json:"properties,omitempty"`
-	Required              []string   `json:"required,omitempty"`
-	MaxProperties         *int
-	MinProperties         *int
-	PropertyNames         *Schema
-	AdditionalProperties  any            // nil or bool or *Schema
-	Dependencies          map[string]any // value is []string or *Schema
-	DependentRequired     map[string][]string
-	DependentSchemas      map[string]*Schema
-	UnevaluatedProperties *Schema
-
-	// array --
-	MinItems         *int      `json:"minItems,omitempty"`
-	UniqueItems      *bool     `json:"uniqueItems,omitempty"`
-	ExclusiveMinimum *int      `json:"exclusiveMinimum,omitempty"`
-	MaxItems         int       `json:"maxItems"`
-	Contains         *Schema   `json:"contains,omitempty"`
-	MinContains      *int      `json:"minContains,omitempty"`
-	MaxContains      *int      `json:"maxContains,omitempty"`
-	PrefixItems      []*Schema `json:"prefixItems,omitempty"`
-	Items2020        *Schema   `json:"items2020,omitempty"`
-	UnevaluatedItems *Schema   `json:"unevaluatedItems,omitempty"`
-	Items            Items     `json:"items"`           // nil or []*Schema or *Schema
-	AdditionalItems  any       `json:"additionalItems"` // nil or bool or *Schema
-
-	// number --
-	Minimum   *int `json:"minimum,omitempty"`
-	Maximum   *int `json:"maximum,omitempty"`
-	MinLength *int `json:"minLength,omitempty"`
-	MaxLength *int `json:"maxLength,omitempty"`
-
-	// type agnostic --
-	Bool            *bool // boolean schema
-	ID              string
-	Anchor          string
-	RecursiveRef    *Schema
-	RecursiveAnchor bool
-	DynamicAnchor   string // "" if not specified
-	Types           *Types
-	Enum            *Enum
-	Const           *any
-	Not             *Schema
-	AllOf           []*Schema
-	AnyOf           []*Schema
-	OneOf           []*Schema
-	If              *Schema
-	Then            *Schema
-	Else            *Schema
-
-	// annotations --
-	Default    *any   `json:"default,omitempty"`
-	Comment    string `json:"comment,omitempty"`
-	ReadOnly   bool   `json:"readOnly,omitempty"`
-	WriteOnly  bool   `json:"writeOnly,omitempty"`
-	Examples   []any  `json:"examples,omitempty"`
-	Deprecated bool   `json:"deprecated,omitempty"`
-}
-
-type Items = Schema
+type Item = Property
 
 func NewSchema(reader io.Reader) (*Schema, error) {
 	var data Schema
@@ -167,7 +65,6 @@ func NewSchemaFile(pathFile string) (*Schema, error) {
 		return nil, errors.New(fmt.Sprintf("Error opening file: %v", err))
 	}
 	defer file.Close()
-
 	return NewSchema(file)
 }
 
@@ -177,11 +74,12 @@ func (s *Schema) Init() *Schema {
 	}
 	s.init = true
 	if s.Properties != nil {
-		s.Properties.Init()
+		s.Properties.Init(s)
 	}
-	if s.Definitions != nil {
-		s.Definitions.Init()
-	}
+	return s
+}
+
+func (s *Schema) GetSchema() ISchema {
 	return s
 }
 
@@ -191,13 +89,6 @@ func (s *Schema) Validate(obj any) error {
 		s.validate = NewValidate(s)
 	}
 	return s.validate.Validate(obj)
-}
-
-func (p *Property) GetTitle() string {
-	if p.Title == "" {
-		return p.Name
-	}
-	return p.Title
 }
 
 func (s *Schema) ToJson() string {
@@ -219,21 +110,20 @@ func (s *Schema) convertor(source types.Object, props Properties) (map[string]an
 	for key, prop := range props {
 		var val any
 		var err error
-		switch prop.Type {
+		propType := prop.GetType()
+		switch propType {
 		case TypeObject:
 			val = source.Get(key)
 			obj, ok := types.AsObject(val)
 			if ok {
 				val, err = s.convertor(obj, prop.Properties)
 			}
-		case TypeDate, TypeDatetime:
-			val, err = s.convertValue(prop, source, key)
 		case TypeBoolean:
-			val, err = source.GetBool(key)
+			val, err = source.GetBool(key, prop.NotNull)
 		case TypeInteger:
-			val, err = source.GetInt(key)
+			val, err = source.GetInt(key, prop.NotNull)
 		case TypeNumber:
-			val, err = source.GetFloat(key)
+			val, err = source.GetFloat(key, prop.NotNull)
 		default:
 			val, err = s.convertValue(prop, source, key)
 		}
@@ -257,8 +147,25 @@ func (s *Schema) convertValue(prop *Property, source types.Object, key string) (
 	return val, err
 }
 
-func (p *Properties) Init() {
-	for key, value := range *p {
-		value.Name = key
+func (s *Schema) GetProperties() Properties {
+	return s.Properties
+}
+
+func (s *Schema) SetProperties(properties Properties) {
+	s.Properties = properties
+	if properties != nil {
+		properties.Init(s)
 	}
+}
+
+func (s *Schema) GetRequired() []string {
+	return s.Required
+}
+
+func (s *Schema) SetRequired(v []string) {
+	s.Required = v
+}
+
+func (s *Schema) AddRequired(v string) {
+	s.Required = append(s.Required, v)
 }

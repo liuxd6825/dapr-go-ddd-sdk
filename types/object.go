@@ -46,25 +46,44 @@ func (o Object) GetString(key string) string {
 	return convertor.ToString(o[key])
 }
 
-func (o Object) GetInt(key string) (int64, error) {
+func (o Object) GetInt(key string, notNull bool) (*int64, error) {
+	var res *int64
+	val := o.Get(key)
+	if !notNull && (val == nil || val == "") {
+		return res, nil
+	}
 	v, err := convertor.ToInt(o[key])
 	if err != nil {
-		return 0, errors.New("%s is not int", key)
+		return nil, errors.New("%s is not int", key)
 	}
-	return int64(v), nil
+	return &v, nil
 }
 
-func (o Object) GetFloat(key string) (float64, error) {
+func (o Object) GetFloat(key string, notNull bool) (*float64, error) {
+	var res *float64
+	val := o.Get(key)
+	if !notNull && (val == nil || val == "") {
+		return res, nil
+	}
 	v, err := convertor.ToFloat(o[key])
 	if err != nil {
-		return 0, errors.New("%s is not float64", key)
+		return nil, errors.New("%s is not float64", key)
 	}
-	return v, nil
+	return &v, nil
 
 }
 
-func (o Object) GetBool(key string) (bool, error) {
-	return convertor.ToBool(o.GetString(key))
+func (o Object) GetBool(key string, notNull bool) (*bool, error) {
+	var res *bool
+	val := o.Get(key)
+	if !notNull && (val == nil || val == "") {
+		return res, nil
+	}
+	b, err := convertor.ToBool(o.GetString(key))
+	if err != nil {
+		return nil, errors.New("%s is not bool", key)
+	}
+	return &b, nil
 }
 
 func (o Object) GetDate(key string) (*times.Date, error) {
