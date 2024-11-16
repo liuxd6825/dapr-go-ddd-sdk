@@ -52,8 +52,7 @@ func (t Date) MarshalJSON() ([]byte, error) {
 }
 
 func (t Date) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	val := t.Time().Add(8 * time.Hour)
-	return bson.MarshalValue(val)
+	return bson.MarshalValue(t.Time().UTC())
 }
 
 func (t *Date) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {

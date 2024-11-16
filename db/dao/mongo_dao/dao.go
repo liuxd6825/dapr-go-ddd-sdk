@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -22,6 +23,10 @@ type GetCollectionCallback func(ctx context.Context) (*ddd_mongodb.MongoDB, *mon
 
 var _mongodb *ddd_mongodb.MongoDB
 
+func init() {
+	//设置bson使用自定义的日期json格式
+	primitive.UseCustomTimeFormat = true
+}
 func NewSession(isWrite bool) ddd_repository.Session {
 	return ddd_mongodb.NewSession(isWrite, GetDB())
 }
