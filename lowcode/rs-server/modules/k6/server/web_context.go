@@ -141,7 +141,6 @@ func getTimeFields(s schema2.ISchema) map[string]any {
 		if p == nil {
 			continue
 		}
-
 		if p.IncludeType(schema2.TypeDate) {
 			timeFields[k] = schema2.TypeDate
 		} else if p.IncludeType(schema2.TypeDatetime) {

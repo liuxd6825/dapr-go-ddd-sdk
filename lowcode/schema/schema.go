@@ -34,6 +34,7 @@ type Schema struct {
 	Required   []string   `json:"-"`
 	ReadOnly   bool       `json:"readOnly,omitempty"`
 	WriteOnly  bool       `json:"writeOnly,omitempty"`
+	types      []string
 	validate   *Validate
 	init       bool
 }
@@ -76,12 +77,37 @@ func (s *Schema) Init(schema ISchema) {
 	if s.init {
 		return
 	}
+	s.InitType()
 	s.init = true
 	if s.Properties != nil {
 		s.Properties.Init(s)
 	}
 	if s.Items != nil {
 		s.Items.Init(s)
+	}
+}
+
+func (p *Schema) InitType() {
+	if p.types != nil {
+		return
+	}
+	if v, ok := p.Type.(string); ok {
+		p.types = []string{v}
+		if !p.NotNull {
+			p.types = append(p.types, TypeNull)
+		}
+	} else if v, ok := p.Type.([]any); ok {
+		hasNull := false
+		for _, vv := range v {
+			item := strings.ToLower(fmt.Sprintf("%s", vv))
+			p.types = append(p.types, item)
+			if vv == TypeNull {
+				hasNull = true
+			}
+		}
+		if !p.NotNull && !hasNull {
+			p.types = append(p.types, TypeNull)
+		}
 	}
 }
 

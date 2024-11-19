@@ -53,8 +53,7 @@ type Property struct {
 	Ref         string     `json:"$ref,omitempty"`
 	Description string     `json:"description,omitempty"`
 	Properties  Properties `json:"properties,omitempty"`
-	Required    []string   `json:"-"`
-	NotNull     bool       `json:"notnull,omitempty"`
+	Required    []string   `json:"required,omitempty"`
 	Items       *Property  `json:"items,omitempty"` // nil or []*Schema or *Schema
 	Minimum     *int       `json:"minimum,omitempty"`
 	Maximum     *int       `json:"maximum,omitempty"`
@@ -64,8 +63,7 @@ type Property struct {
 	WriteOnly   bool       `json:"writeOnly,omitempty"`
 	Examples    []any      `json:"examples,omitempty"`
 	Deprecated  bool       `json:"deprecated,omitempty"`
-
-	types []string
+	types       []string
 }
 
 type Properties map[string]*Property
@@ -89,38 +87,11 @@ func (p *Property) GetTitle() string {
 }
 
 func (p *Property) Init(schema ISchema) {
-	if p != nil {
-		p.InitType()
-	}
 	if p.Properties != nil {
 		p.Properties.Init(p)
 	}
 	if p.Items != nil {
 		p.Items.Init(p)
-	}
-}
-
-func (p *Property) InitType() {
-	if p.types != nil {
-		return
-	}
-	if v, ok := p.Type.(string); ok {
-		p.types = []string{v}
-		if !p.NotNull {
-			p.types = append(p.types, TypeNull)
-		}
-	} else if v, ok := p.Type.([]any); ok {
-		hasNull := false
-		for _, vv := range v {
-			item := strings.ToLower(fmt.Sprintf("%s", vv))
-			p.types = append(p.types, item)
-			if vv == TypeNull {
-				hasNull = true
-			}
-		}
-		if !p.NotNull && !hasNull {
-			p.types = append(p.types, TypeNull)
-		}
 	}
 }
 
@@ -156,8 +127,16 @@ func (p *Property) GetName() string {
 }
 
 func (p *Property) IncludeType(val string) bool {
-	if p != nil {
-		p.InitType()
+	if p.types == nil {
+		p.types = []string{}
+		if v, ok := p.Type.(string); ok {
+			p.types = append(p.types, v)
+		} else if v, ok := p.Type.([]any); ok {
+			for _, vv := range v {
+				item := strings.ToLower(fmt.Sprintf("%s", vv))
+				p.types = append(p.types, item)
+			}
+		}
 	}
 	val = strings.ToLower(val)
 	for _, v := range p.types {
