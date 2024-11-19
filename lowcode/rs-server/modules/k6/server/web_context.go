@@ -7,11 +7,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
+	schema2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/k6server/js/modules"
 	"io"
+	"time"
 )
 
 type WebContext struct {
@@ -84,6 +87,75 @@ func (c *WebContext) ReadBytes() []byte {
 	return bytes
 }
 
+const dateFormat = "2006-01-02"
+const dateTimeFormat = "2006-01-02 15:04:05"
+
+var parseTime = func(val string, key any) (timeVal any, err error) {
+	if val == "" || val == "null" {
+		return nil, nil
+	}
+
+	typeName, ok := key.(string)
+	if !ok || typeName == schema2.TypeDate {
+		tm, er := time.Parse(dateFormat, val)
+		if er != nil {
+			return nil, er
+		}
+		timeVal = times.NewDate(&tm)
+	} else {
+		tm, er := time.Parse(dateTimeFormat, val)
+		if er != nil {
+			return nil, er
+		}
+		timeVal = times.NewTime(&tm)
+	}
+	return timeVal, err
+}
+
+// getTimeFields
+//
+//	@Description: 从schema中读取date类型定义
+//	@param props schema2.Properties
+//	@return map[string]any
+func getTimeFields(s schema2.ISchema) map[string]any {
+	if s == nil {
+		return nil
+	}
+	s.Init(s)
+
+	var props schema2.Properties
+	resFields := map[string]any{}
+	timeFields := resFields
+	dataType := s.GetType()
+	if dataType == "array" {
+		timeFields = map[string]any{}
+		resFields[s.GetName()] = timeFields
+		items := s.GetItems()
+		if items != nil && items.Type == "object" {
+			props = items.GetProperties()
+		}
+	} else if dataType == "object" {
+		props = s.GetProperties()
+	}
+	for k, p := range props {
+		if p == nil {
+			continue
+		}
+
+		if p.IncludeType(schema2.TypeDate) {
+			timeFields[k] = schema2.TypeDate
+		} else if p.IncludeType(schema2.TypeDatetime) {
+			timeFields[k] = schema2.TypeDatetime
+		}
+		if p.Properties != nil || p.Items != nil {
+			if ps := getTimeFields(p); ps != nil {
+				timeFields[k] = ps
+			}
+		}
+	}
+	return timeFields
+}
+
 // ReadObject
 //
 //	@Description: 从body中读取对象
@@ -91,14 +163,25 @@ func (c *WebContext) ReadBytes() []byte {
 //	@param schema 有空：进行验证;  nil:不验证
 //	@return map[string]any
 func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
-	object := map[string]any{}
 	var err error
-	if err = c.ictx.ReadJSON(&object); err == nil {
-		if schema != nil {
-			if err = schema.Validate(object); err == nil {
-				object, err = schema.Convertor(object)
-			}
-		}
+	var timeFields map[string]any
+
+	bytes := c.ReadBytes()
+	if schema != nil {
+		timeFields = getTimeFields(schema)
+	}
+
+	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
+		TimeFields: timeFields,
+		ParseTime:  parseTime,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	object := val.(map[string]any)
+	if schema != nil {
+		err = schema.Validate(object)
 	}
 	if err != nil {
 		panic(err)
@@ -161,25 +244,38 @@ func (c *WebContext) FormObject(name string, required bool, schema *schema.Schem
 	if name == "" {
 		panic("FormObject(name, schema) name parameter is not empty")
 	}
+
+	var err error
+	var timeFields map[string]any
+
 	ictx := c.ictx
 	text := ictx.PostValue(name)
 	if text == "" && required {
 		panic(fmt.Sprintf("%s is required", name))
 	}
-	object := map[string]any{}
+	var object any
 	if text == "" {
 		return object
 	}
 
-	if err := jsonutils.Unmarshal([]byte(text), &object); err != nil {
+	bytes := []byte(text)
+	if schema != nil {
+		timeFields = getTimeFields(schema)
+	}
+
+	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
+		TimeFields: timeFields,
+		ParseTime:  parseTime,
+	})
+	if err != nil {
 		panic(err)
 	}
+
+	object = val
+
 	if schema != nil {
-		if err := schema.Validate(object); err == nil {
-			object, err = schema.Convertor(object)
-			if err != nil {
-				panic(err)
-			}
+		if err = schema.Validate(object); err != nil {
+			panic(err)
 		}
 	}
 	return object

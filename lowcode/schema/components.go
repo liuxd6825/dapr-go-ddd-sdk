@@ -3,9 +3,9 @@ package schema
 import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 
 var components = map[string]*Schema{
-	"string":     &Schema{Type: TypeString},
-	"number":     &Schema{Type: TypeNumber},
-	"boolean":    &Schema{Type: TypeBoolean},
+	"string":     &Schema{Type:  []string{TypeString}},
+	"number":     &Schema{Type:  []string{TypeNumber}},
+	"boolean":    &Schema{Type:  []string{TypeBoolean}},
 	"findPaging": findPaging(),
 }
 
@@ -15,37 +15,37 @@ func Components() map[string]*Schema {
 
 func findPaging() *Schema {
 	return &Schema{
-		Type: TypeObject,
+		Type: []string{TypeObject},
 		Properties: map[string]*Property{
 			"filter": &Property{
 				Description: ddd_repository.FilterDescription,
-				Type:        TypeString,
+				Type:        []string{TypeString},
 			},
 			"sort": &Property{
 				Description: ddd_repository.SortDescription,
-				Type:        TypeString,
+				Type:         []string{TypeString},
 			},
 			"fields": &Property{
 				Description: ddd_repository.FieldsDescription,
-				Type:        TypeString,
+				Type:         []string{TypeString},
 			},
 			"pageNum": &Property{
-				Type: TypeNumber,
+				Type:  []string{TypeNumber},
 			},
 			"pageSize": &Property{
-				Type: TypeNumber,
+				Type:  []string{TypeNumber},
 			},
 			"groupCols": &Property{
 				Description: ddd_repository.GroupColsDescription,
-				Type:        TypeString,
+				Type:         []string{TypeString},
 			},
 			"groupKeys": &Property{
 				Description: ddd_repository.GroupKeysDescription,
-				Type:        TypeString,
+				Type:         []string{TypeString},
 			},
 			"valueCols": &Property{
 				Description: ddd_repository.ValueColsDescription,
-				Type:        TypeString,
+				Type:         []string{TypeString},
 			},
 		},
 	}

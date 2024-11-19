@@ -103,7 +103,7 @@ func (s *SwaggerBuilder) newParameter(param *RequestParam, name string) (*swagge
 	par := &swagger3.Parameter{
 		Name:        name,
 		In:          param.In,
-		Description: param.Desc,
+		Description: param.Description,
 		Required:    param.Required,
 		Example:     param.Example,
 		Schema:      param.Schema,

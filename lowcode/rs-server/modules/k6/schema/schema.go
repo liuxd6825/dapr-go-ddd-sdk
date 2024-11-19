@@ -7,7 +7,10 @@ import (
 type Schema = schema2.Schema
 
 func NewSchema(schema *Schema) *Schema {
-	return schema.Init()
+	if schema != nil {
+		schema.Init(nil)
+	}
+	return schema
 }
 
 type Validate = schema2.Validate

@@ -1,5 +1,10 @@
 package schema
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Type = string
 
 const (
@@ -40,63 +45,27 @@ const (
 )
 
 type Property struct {
-	Name          string     `json:"-"`
-	Type          string     `json:"type,omitempty"`
-	Title         string     `json:"title,omitempty"`
-	Format        Format     `json:"format,omitempty"`
-	Pattern       string     `json:"pattern,omitempty"`
-	Ref           string     `json:"$ref,omitempty"`
-	Description   string     `json:"description,omitempty"`
-	Properties    Properties `json:"properties,omitempty"`
-	MaxProperties *int       `json:"maxProperties,omitempty"`
-	MinProperties *int       `json:"minProperties,omitempty"`
-	Required      []string   `json:"-"`
-	NotNull       bool       `json:"notNull,omitempty"`
+	Name        string     `json:"-"`
+	Type        any        `json:"type,omitempty"`
+	Title       string     `json:"title,omitempty"`
+	Format      Format     `json:"format,omitempty"`
+	Pattern     string     `json:"pattern,omitempty"`
+	Ref         string     `json:"$ref,omitempty"`
+	Description string     `json:"description,omitempty"`
+	Properties  Properties `json:"properties,omitempty"`
+	Required    []string   `json:"-"`
+	NotNull     bool       `json:"notnull,omitempty"`
+	Items       *Property  `json:"items,omitempty"` // nil or []*Schema or *Schema
+	Minimum     *int       `json:"minimum,omitempty"`
+	Maximum     *int       `json:"maximum,omitempty"`
+	MinLength   *int       `json:"minLength,omitempty"`
+	MaxLength   *int       `json:"maxLength,omitempty"`
+	ReadOnly    bool       `json:"readOnly,omitempty"`
+	WriteOnly   bool       `json:"writeOnly,omitempty"`
+	Examples    []any      `json:"examples,omitempty"`
+	Deprecated  bool       `json:"deprecated,omitempty"`
 
-	// array --
-	MinItems         *int        `json:"minItems,omitempty"`
-	UniqueItems      *bool       `json:"uniqueItems,omitempty"`
-	ExclusiveMinimum *int        `json:"exclusiveMinimum,omitempty"`
-	MaxItems         *int        `json:"maxItems,omitempty"`
-	Contains         *Property   `json:"contains,omitempty"`
-	MinContains      *int        `json:"minContains,omitempty"`
-	MaxContains      *int        `json:"maxContains,omitempty"`
-	PrefixItems      []*Property `json:"prefixItems,omitempty"`
-	Items2020        *Property   `json:"items2020,omitempty"`
-	UnevaluatedItems *Property   `json:"unevaluatedItems,omitempty"`
-	Items            *Property   `json:"items,omitempty"` // nil or []*Schema or *Schema
-	AdditionalItems  any         `json:"additionalItems"` // nil or bool or *Schema
-
-	// number --
-	Minimum   *int `json:"minimum,omitempty"`
-	Maximum   *int `json:"maximum,omitempty"`
-	MinLength *int `json:"minLength,omitempty"`
-	MaxLength *int `json:"maxLength,omitempty"`
-
-	// type agnostic --
-	Bool            bool        `json:"bool,omitempty"` // boolean schema
-	ID              string      `json:"id,omitempty"`
-	Anchor          string      `json:"anchor,omitempty"`
-	RecursiveRef    *Property   `json:"recursiveRef,omitempty"`
-	RecursiveAnchor bool        `json:"recursiveAnchor,omitempty"`
-	DynamicAnchor   string      `json:"dynamicAnchor"` // "" if not specified
-	Types           *Types      `json:"types,omitempty"`
-	Enum            *Enum       `json:"enum,omitempty"`
-	Const           *any        `json:"const,omitempty"`
-	Not             *Property   `json:"not,omitempty"`
-	AllOf           []*Property `json:"allOf,omitempty"`
-	AnyOf           []*Property `json:"anyOf,omitempty"`
-	OneOf           []*Property `json:"oneOf,omitempty"`
-	If              *Property   `json:"if,omitempty"`
-	Then            *Property   `json:"then,omitempty"`
-	Else            *Property   `json:"else,omitempty"`
-
-	//
-	Comment    string `json:"comment,omitempty"`
-	ReadOnly   bool   `json:"readOnly,omitempty"`
-	WriteOnly  bool   `json:"writeOnly,omitempty"`
-	Examples   []any  `json:"examples,omitempty"`
-	Deprecated bool   `json:"deprecated,omitempty"`
+	types []string
 }
 
 type Properties map[string]*Property
@@ -104,8 +73,12 @@ type Properties map[string]*Property
 func (p *Properties) Init(schema ISchema) {
 	for key, value := range *p {
 		value.Name = key
-		value.init(schema)
+		value.Init(schema)
 	}
+}
+
+func (p *Property) GetItems() *Property {
+	return p.Items
 }
 
 func (p *Property) GetTitle() string {
@@ -115,33 +88,39 @@ func (p *Property) GetTitle() string {
 	return p.Title
 }
 
-func (p *Property) init(schema ISchema) {
-	if p.Type == "" {
-		p.Type = TypeString
-	}
-	switch p.Type {
-	case TypeDatetime:
-		p.Type = TypeString
-		p.Format = FormatDateTime
-	case TypeDate:
-		p.Type = TypeString
-		p.Format = FormatDate
-	}
-	if p.NotNull {
-		schema.AddRequired(p.Name)
-		if p.Type == TypeString && p.MinLength == nil {
-			minLength := 1
-			p.MinLength = &minLength
-		}
-	} else {
-		p.OneOf = []*Property{
-			&Property{Type: p.Type, Format: p.Format},
-			&Property{Type: TypeNull},
-		}
-		p.Type = ""
+func (p *Property) Init(schema ISchema) {
+	if p != nil {
+		p.InitType()
 	}
 	if p.Properties != nil {
 		p.Properties.Init(p)
+	}
+	if p.Items != nil {
+		p.Items.Init(p)
+	}
+}
+
+func (p *Property) InitType() {
+	if p.types != nil {
+		return
+	}
+	if v, ok := p.Type.(string); ok {
+		p.types = []string{v}
+		if !p.NotNull {
+			p.types = append(p.types, TypeNull)
+		}
+	} else if v, ok := p.Type.([]any); ok {
+		hasNull := false
+		for _, vv := range v {
+			item := strings.ToLower(fmt.Sprintf("%s", vv))
+			p.types = append(p.types, item)
+			if vv == TypeNull {
+				hasNull = true
+			}
+		}
+		if !p.NotNull && !hasNull {
+			p.types = append(p.types, TypeNull)
+		}
 	}
 }
 
@@ -168,9 +147,23 @@ func (p *Property) AddRequired(val string) {
 	p.Required = append(p.Required, val)
 }
 
-func (p *Property) GetType() Type {
-	if len(p.OneOf) > 0 {
-		return p.OneOf[0].Type
-	}
+func (p *Property) GetType() any {
 	return p.Type
+}
+
+func (p *Property) GetName() string {
+	return p.Name
+}
+
+func (p *Property) IncludeType(val string) bool {
+	if p != nil {
+		p.InitType()
+	}
+	val = strings.ToLower(val)
+	for _, v := range p.types {
+		if v == val {
+			return true
+		}
+	}
+	return false
 }

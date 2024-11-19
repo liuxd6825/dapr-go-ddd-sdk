@@ -8,7 +8,7 @@ const (
 	DataTypeFloat    DataType = "float"
 	DataTypeMoney    DataType = "money"
 	DataTypeDate     DataType = "date"
-	DataTypeDateTime DataType = "dateTime"
+	DataTypeDateTime DataType = "datetime"
 	DataTypeBool     DataType = "bool"
 	DataTypeArray    DataType = "array"
 	DataTypeObject   DataType = "object"

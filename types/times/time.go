@@ -1,6 +1,7 @@
 package times
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"time"
@@ -25,6 +26,15 @@ func NewTime(value ...*time.Time) *Time {
 		v = Time(t)
 	}
 	return &v
+}
+
+func NewTimeWithString(val string) (t *Time, err error) {
+	if val == "" {
+		return nil, errors.New("time value is empty")
+	}
+	now, err := time.ParseInLocation(`"`+timeJSONFormat+`"`, val, time.Local)
+	*t = Time(now)
+	return t, err
 }
 
 func NowTime() *Time {
@@ -63,6 +73,14 @@ func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
 
 func (t *Time) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {
 	return bson.UnmarshalValue(bt, data, t)
+}
+
+func (t *Time) GetSchemaType() string {
+	return "datetime"
+}
+
+func (t *Time) IsSchemaDateTime() bool {
+	return true
 }
 
 func (t *Time) String() string {

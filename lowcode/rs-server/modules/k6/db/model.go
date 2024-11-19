@@ -130,6 +130,7 @@ func (d *Model) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Opera
 	if entity == nil {
 		panic(fmt.Errorf("Model.Update() entity is nil"))
 	}
+	delete(entity, "__temp_timestamp")
 	err := d.dao.Update(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)

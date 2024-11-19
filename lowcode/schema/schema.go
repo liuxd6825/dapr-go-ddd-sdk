@@ -11,30 +11,34 @@ import (
 )
 
 type ISchema interface {
+	GetName() string
+	GetType() any
 	GetProperties() Properties
 	SetProperties(Properties)
-
 	GetRequired() []string
 	SetRequired([]string)
 	AddRequired(string)
+	GetItems() *Property
+	Init(schema ISchema)
 }
 
 type Schema struct {
-	Id       string `json:"$id,omitempty"`
-	Schema   string `json:"$schema,omitempty"`
-	validate *Validate
-	init     bool
-
-	Type       string     `json:"type,omitempty"`
+	Id         string     `json:"$id,omitempty"`
+	Schema     string     `json:"$schema,omitempty"`
+	Type       any        `json:"type,omitempty"`
+	NotNull    bool       `json:"notnull,omitempty"`
 	Title      string     `json:"title,omitempty"`
+	Name       string     `json:"name,omitempty"`
 	Properties Properties `json:"properties,omitempty"`
+	Items      *Property  `json:"items,omitempty"`
 	Required   []string   `json:"-"`
+	ReadOnly   bool       `json:"readOnly,omitempty"`
+	WriteOnly  bool       `json:"writeOnly,omitempty"`
+	validate   *Validate
+	init       bool
 }
 
 type Enum struct {
-}
-
-type Types struct {
 }
 
 type Item = Property
@@ -68,15 +72,29 @@ func NewSchemaFile(pathFile string) (*Schema, error) {
 	return NewSchema(file)
 }
 
-func (s *Schema) Init() *Schema {
+func (s *Schema) Init(schema ISchema) {
 	if s.init {
-		return s
+		return
 	}
 	s.init = true
 	if s.Properties != nil {
 		s.Properties.Init(s)
 	}
-	return s
+	if s.Items != nil {
+		s.Items.Init(s)
+	}
+}
+
+func (s *Schema) GetName() string {
+	return s.Name
+}
+
+func (s *Schema) GetType() any {
+	return s.Type
+}
+
+func (s *Schema) GetItems() *Property {
+	return s.Items
 }
 
 func (s *Schema) GetSchema() ISchema {
@@ -84,7 +102,7 @@ func (s *Schema) GetSchema() ISchema {
 }
 
 func (s *Schema) Validate(obj any) error {
-	s.Init()
+	s.Init(s)
 	if s.validate == nil {
 		s.validate = NewValidate(s)
 	}
@@ -92,7 +110,7 @@ func (s *Schema) Validate(obj any) error {
 }
 
 func (s *Schema) ToJson() string {
-	s.Init()
+	s.Init(s)
 	bs, err := json.Marshal(s)
 	if err != nil {
 		return err.Error()
@@ -100,10 +118,13 @@ func (s *Schema) ToJson() string {
 	return string(bs)
 }
 
+/*
 func (s *Schema) Convertor(obj types.Object) (map[string]any, error) {
 	return s.convertor(obj, s.Properties)
 }
+*/
 
+/*
 func (s *Schema) convertor(source types.Object, props Properties) (map[string]any, error) {
 	s.Init()
 	target := map[string]any{}
@@ -134,6 +155,7 @@ func (s *Schema) convertor(source types.Object, props Properties) (map[string]an
 	}
 	return target, nil
 }
+*/
 
 func (s *Schema) convertValue(prop *Property, source types.Object, key string) (val any, err error) {
 	switch prop.Format {
