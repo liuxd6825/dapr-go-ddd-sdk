@@ -206,19 +206,18 @@ func (e *Server) GetParams(wctx *WebContext, aParams map[string]RequestParam, aP
 					obj := wctx.ReadObject(v.Schema)
 					bodyData = obj
 				}
-				data[key] = bodyData
+				val = bodyData
 			case InParamTypeFormValue.String():
 				val = wctx.FormValue(key, v.Required)
-				data[key] = val
 			case InParamTypeFormObject.String():
 				val = wctx.FormObject(key, v.Required, v.Schema)
-				data[key] = val
 			case InParamTypeFormFile.String():
 				val = wctx.FormFile(key)
-				data[key] = val
 			default:
 				panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, v.In))
 			}
+
+			data[key] = val
 
 			if key == InParamTypeURL.String() || key == InParamTypePath.String() {
 				if v.Required && val == "" {
