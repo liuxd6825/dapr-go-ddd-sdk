@@ -33,7 +33,7 @@ func InitRsServer(httpServer *restapp.HttpServer) error {
 		}
 		srcFs := NewSrcFsConfig(fileFs, httpFs)
 		appEnv := httpServer.EnvConfig()
-		runtimeEnv := newEnv(appEnv)
+		runtimeEnv := NewEnv(appEnv)
 		data, err := runtimeEnv.ToMap()
 		if err != nil {
 			return err
@@ -50,7 +50,7 @@ func InitRsServer(httpServer *restapp.HttpServer) error {
 	return nil
 }
 
-func newEnv(envCfg common.IEnvConfig) *common.Environment {
+func NewEnv(envCfg common.IEnvConfig) *common.Environment {
 	return &common.Environment{
 		DaprHost:     envCfg.GetDaprHost(),
 		DaprHttpPort: envCfg.GetDaprHttpPort(),

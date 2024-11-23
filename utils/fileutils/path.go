@@ -18,12 +18,19 @@ func GetBasePath(basePath ...string) string {
 //	@return string 绝对路径
 func AbsPath(filename string, basePath ...string) string {
 	pwd := GetBasePath(basePath...)
+
+	if strings.HasPrefix(filename, pwd) {
+		return filename
+	}
+
 	if !strings.Contains(filename, "../") && !strings.Contains(filename, "./") {
 		return filepath.Join(pwd, filename)
 	}
+
 	if strings.HasPrefix(filename, "/") {
 		return filename
 	}
+
 	var res []string
 	paths := splitFilePath(pwd)
 	names := splitFilePath(filename)

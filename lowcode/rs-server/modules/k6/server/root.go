@@ -48,6 +48,7 @@ var _fs *FsManager
 var _template *Template
 var _feign *Feign
 var _ctxPkg *ContextPkg
+var _jsonUtils *JsonUtils
 
 func newServer(app *iris.Application, vu modules.VU, cfg common.IEnvConfig) *Server {
 	_serverOnce.Do(func() {
@@ -60,6 +61,7 @@ func newServer(app *iris.Application, vu modules.VU, cfg common.IEnvConfig) *Ser
 		_template = NewTemplate(cfg)
 		_feign = NewFeign(_server)
 		_ctxPkg = NewContextPkg()
+		_jsonUtils = NewJsonUtils()
 	})
 	return _server
 }
@@ -91,13 +93,14 @@ func (e *Exports) Exports() modules.Exports {
 	events := NewEventPkg(runtime, e.envCfg)
 
 	values := map[string]interface{}{
-		"fmt":     runtime.ToValue(NewLogs()),
-		"server":  runtime.ToValue(_server),
-		"feign":   runtime.ToValue(_feign),
-		"context": runtime.ToValue(_ctxPkg),
-		"events":  runtime.ToValue(events),
-		"fs":      runtime.ToValue(_fs),
-		"tpl":     runtime.ToValue(_template),
+		"fmt":       runtime.ToValue(NewLogs()),
+		"server":    runtime.ToValue(_server),
+		"feign":     runtime.ToValue(_feign),
+		"context":   runtime.ToValue(_ctxPkg),
+		"events":    runtime.ToValue(events),
+		"fs":        runtime.ToValue(_fs),
+		"tpl":       runtime.ToValue(_template),
+		"jsonUtils": runtime.ToValue(_jsonUtils),
 	}
 
 	for k, v := range e.data {

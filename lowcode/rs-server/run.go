@@ -9,15 +9,15 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
 	common2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
-
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/watcher"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/liuxd6825/k6server/js"
+	"github.com/liuxd6825/k6server/js/modules"
 	"github.com/liuxd6825/k6server/lib"
 	"github.com/liuxd6825/k6server/loader"
 	"github.com/liuxd6825/k6server/metrics"
@@ -26,7 +26,10 @@ import (
 	"net/url"
 	"os/exec"
 	"strings"
+	"time"
 )
+
+type RunOption = func(vu lib.VU) error
 
 type JsServer struct {
 	app      *iris.Application
@@ -37,6 +40,13 @@ type JsServer struct {
 	srcFs    *SrcFsConfig // source code file system
 	data     map[string]any
 	envCfg   common2.IEnvConfig
+}
+
+type CodeError struct {
+	fileName string
+	lines    []string
+	position int
+	message  string
 }
 
 func NewServer(app *iris.Application, data map[string]any, srcFs *SrcFsConfig, envCfg common2.IEnvConfig, mainFile string, reload bool) (*JsServer, error) {
@@ -66,18 +76,82 @@ func NewServer(app *iris.Application, data map[string]any, srcFs *SrcFsConfig, e
 	}, nil
 }
 
-type RunOption = func(vu lib.VU) error
+func (s *JsServer) Run(options ...RunOption) (err error) {
+	useTime("JsServer.Run()", func() {
+		err = s.run2(options...)
+	})
 
-func (s *JsServer) Run(options ...RunOption) error {
-	if err := s.run(options...); err != nil {
+	if err != nil {
 		return err
 	}
+
 	if s.reload && s.srcFs.FileFs.Name() == localfs.Name() {
 		s.fileWatcher()
 	}
 	return nil
 }
 
+func (s *JsServer) run2(options ...RunOption) error {
+	file, err := s.srcFs.FileFs.Open(s.mainFile)
+	if err != nil {
+		return err
+	}
+
+	fileData, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	piState := getTestPreInitState(logrus.New())
+
+	sourceData := &loader.SourceData{
+		Data: fileData,
+		URL:  &url.URL{Path: s.mainFile, Scheme: "file"},
+		PWD:  &url.URL{Path: s.mainPath, Scheme: "file"},
+	}
+	transformES5 := true
+	jsModules := getJsModules(s.app, s.data, s.envCfg)
+	fsMap := s.srcFs.ToMap()
+	runner, err := js.NewFromJsModules(piState, sourceData, fsMap, jsModules, &js.NewBundleOptions{
+		IsInstantiate: false,
+		ResolverOptions: &modules.ResolverOptions{
+			TransformES5: &transformES5,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Println("------------NewFromJsModules---------------")
+	ctx, _ := context.WithCancel(context.Background())
+
+	vu, err := runner.NewVU(ctx, 1, 1, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
+		modules := k6.NewModules(s.app, s.data, s.envCfg)
+		for k, m := range modules {
+			if err = vu.GetRuntime().Set(k, m); err != nil {
+				return err
+			}
+		}
+		for _, opt := range options {
+			if err := opt(vu); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	fmt.Println("------------runner.NewVU---------------")
+	if err != nil {
+		return err
+	}
+
+	params := &lib.VUActivationParams{RunContext: ctx}
+	err = vu.Activate(params).RunOnce()
+
+	if scriptErr, ok := err.(*js.ScriptExceptionError); ok {
+		for _, v := range scriptErr.Inner().Stack() {
+			return NewCodeError(err, &v)
+		}
+	}
+	return err
+}
 func (s *JsServer) run(options ...RunOption) error {
 	file, err := s.srcFs.FileFs.Open(s.mainFile)
 	if err != nil {
@@ -95,7 +169,9 @@ func (s *JsServer) run(options ...RunOption) error {
 	}*/
 
 	piState := getTestPreInitState(logrus.New())
-	bundle, err := newBundle(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.srcFs, s.envCfg)
+	fmt.Println("newBundle() 1")
+	bundle, err := newBundleFormJsModules(s.mainPath, s.mainFile, fileData, piState, s.app, s.data, s.srcFs, s.envCfg)
+	fmt.Println("newBundle() 2")
 	if err != nil {
 		return err
 	}
@@ -107,6 +183,8 @@ func (s *JsServer) run(options ...RunOption) error {
 
 	ctx, _ := context.WithCancel(context.Background())
 	//defer cancel()
+
+	fmt.Println("runner.NewVU(ctx) 1")
 
 	vu, err := runner.NewVU(ctx, 1, 1, make(chan metrics.SampleContainer, 1), func(vu lib.VU) error {
 		modules := k6.NewModules(s.app, s.data, s.envCfg)
@@ -122,11 +200,14 @@ func (s *JsServer) run(options ...RunOption) error {
 		}
 		return nil
 	})
+
+	fmt.Println("runner.NewVU(ctx) 2")
 	if err != nil {
 		return err
 	}
 	params := &lib.VUActivationParams{RunContext: ctx}
 	err = vu.Activate(params).RunOnce()
+
 	if scriptErr, ok := err.(*js.ScriptExceptionError); ok {
 		for _, v := range scriptErr.Inner().Stack() {
 			return NewCodeError(err, &v)
@@ -135,11 +216,28 @@ func (s *JsServer) run(options ...RunOption) error {
 	return err
 }
 
-type CodeError struct {
-	fileName string
-	lines    []string
-	position int
-	message  string
+func getJsModules(app *iris.Application, data map[string]any, cfg common2.IEnvConfig) map[string]any {
+	jsModules := map[string]any{
+		"k6/server": server.New(app, data, cfg),
+		"k6/db":     db.New(cfg),
+		"k6/schema": schema.New(),
+		"k6/common": common.New(),
+	}
+	return jsModules
+}
+
+func newBundleFormJsModules(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, srcFs *SrcFsConfig, cfg common2.IEnvConfig) (*js.Bundle, error) {
+	jsModules := getJsModules(app, data, cfg)
+	return js.NewBundleFormJsModules(
+		piState,
+		&loader.SourceData{
+			Data: jsCodeData,
+			URL:  &url.URL{Path: filename, Scheme: "file"},
+			PWD:  &url.URL{Path: rootPath, Scheme: "file"},
+		},
+		srcFs.ToMap(),
+		jsModules,
+	)
 }
 
 func NewCodeError(err error, v *goja.StackFrame) *CodeError {
@@ -240,22 +338,10 @@ func getTestPreInitState(tb logrus.FieldLogger) *lib.TestPreInitState {
 	}
 }
 
-func newBundle(rootPath, filename string, jsCodeData []byte, piState *lib.TestPreInitState, app *iris.Application, data map[string]any, srcFs *SrcFsConfig, cfg common2.IEnvConfig) (*js.Bundle, error) {
-	jsModules := map[string]any{
-		"k6/server": server.New(app, data, cfg),
-		"k6/db":     db.New(cfg),
-		"k6/schema": schema.New(),
-		"k6/common": common.New(),
-	}
-
-	return js.NewBundleFormJsModules(
-		piState,
-		&loader.SourceData{
-			Data: jsCodeData,
-			URL:  &url.URL{Path: filename, Scheme: "file"},
-			PWD:  &url.URL{Path: rootPath, Scheme: "file"},
-		},
-		srcFs.ToMap(),
-		jsModules,
-	)
+func useTime(loginfo string, do func()) {
+	s := time.Now()
+	do()
+	b := time.Now()
+	d := b.Sub(s)
+	fmt.Printf("\n用时: %f 秒 %s\n", d.Seconds(), loginfo)
 }

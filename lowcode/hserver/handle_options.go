@@ -1,4 +1,4 @@
-package server
+package hserver
 
 import (
 	"github.com/dop251/goja"
@@ -20,6 +20,10 @@ func (m MethodType) String() string {
 }
 
 type InParamType string
+
+func (f InParamType) String() string {
+	return string(f)
+}
 
 const (
 	InParamTypeURL        InParamType = "url"        // URL中的参数

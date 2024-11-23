@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/spf13/afero"
 	"io/fs"
@@ -30,6 +31,7 @@ func NewOptions(o ...*Options) *Options {
 func ReadFile(afs afero.Fs, filename string, opts ...*Options) ([]byte, error) {
 	o := NewOptions(opts...)
 	fileName := fileutils.AbsPath(filename, o.BasePath)
+	fmt.Print(afs.Name())
 	context, err := afero.ReadFile(afs, fileName)
 	if err != nil {
 		return nil, err
