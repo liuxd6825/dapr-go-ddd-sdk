@@ -14,12 +14,22 @@ func NewServiceProxy(service *Service, vm *goja.Runtime) *ServiceProxy {
 	}
 }
 
+func (s *ServiceProxy) InitVM(vm *goja.Runtime) error {
+	return s.service.server.InitVM(vm)
+}
+
 // Get 方法：获取键对应的值
 func (s *ServiceProxy) Get(name string) goja.Value {
-	if value, exists := s.service.data.Get(name); exists {
-		return s.vm.ToValue(value)
+	var res = goja.Undefined()
+	switch name {
+	case "srcPath":
+		res = s.vm.ToValue(s.service.srcPath)
+	default:
+		if value, exists := s.service.data.Get(name); exists {
+			res = s.vm.ToValue(value)
+		}
 	}
-	return goja.Undefined()
+	return res
 }
 
 // Set 方法：设置键值

@@ -1,7 +1,8 @@
-package hserver
+package tpl_pkg
 
 import (
 	"github.com/flosch/pongo2/v6"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	cmap "github.com/orcaman/concurrent-map"
 )
@@ -10,10 +11,10 @@ var tplCache = cmap.New()
 
 type Template struct {
 	cfg    common.IEnvConfig
-	server *Server
+	server pkg.Server
 }
 
-func NewTemplate(cfg common.IEnvConfig, server *Server) *Template {
+func New(cfg common.IEnvConfig, server pkg.Server) *Template {
 	return &Template{
 		cfg:    cfg,
 		server: server,
@@ -65,7 +66,7 @@ func (e *Template) getTpl(filename string, fun func(*pongo2.Template) error) {
 			panic(err)
 		}
 	}
-	bytes := e.server.fs.ReadFile(filename)
+	bytes := e.server.GetFs().ReadFile(filename)
 	txt := replacePercent(string(bytes))
 	tpl, err := pongo2.FromBytes([]byte(txt))
 	if err != nil {

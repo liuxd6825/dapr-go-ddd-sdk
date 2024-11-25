@@ -1,4 +1,4 @@
-package hserver
+package fs_pkg
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
@@ -63,7 +63,7 @@ func (m *FsManager) WriteFile(filename string, data any, options ...*fs.Options)
 		}
 		bytes = []byte(str)
 	} else {
-		panic("WriteFile() invalid data is string or []byte or map[string]any")
+		panic("WriteFile() invalid runValues is string or []byte or map[string]any")
 	}
 
 	err := m.base.WriteFile(filename, bytes, fs.WriteModelAllWriteRead, options...)

@@ -1,12 +1,14 @@
 package hserver
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	rs_server "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server"
-	common2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/schema_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/spf13/afero"
+	"github.com/sirupsen/logrus"
 )
 
 // InitServer
@@ -16,41 +18,34 @@ import (
 //	@return error
 func InitServer(httpServer *restapp.HttpServer) error {
 	env := httpServer.EnvConfig()
-	if env.App.RsServer.Enable {
-		fsManger, err := env.GetFsManager()
-		if err != nil {
-			return err
-		}
-		fileFs, fileOk := fsManger.Get(env.App.RsServer.FileFsName)
-		if !fileOk {
-			return errors.New(env.Name + ".app.rsServer fileFsName not found")
-		}
-		httpFs, httpOk := fsManger.Get(env.App.RsServer.HttpFsName)
-		if !httpOk {
-			return errors.New(env.Name + ".app.rsServer httpFsName not found")
-		}
-		if env.App.RsServer.BasePath != "" {
-			fileFs = afero.NewBasePathFs(fileFs, env.App.RsServer.BasePath)
-		}
-		srcFs := NewSrcFs(fileFs, httpFs)
-		appEnv := httpServer.EnvConfig()
-		runtimeEnv := rs_server.NewEnv(appEnv)
-		data, err := runtimeEnv.ToMap()
-		if err != nil {
-			return err
-		}
-		_, err = initServer(httpServer.App(), data, srcFs, appEnv, "/src-server/xsrc/server.html", appEnv.App.RsServer.Reload)
-		if err != nil {
-			return err
-		}
+	if !env.App.RsServer.Enable {
+		return nil
 	}
-	return nil
-}
+	envCfg := httpServer.EnvConfig()
+	server, err := NewServer(httpServer.App(), "/src-server/xsrc/server.html", envCfg, func(server *Server) {
+		data := map[string]any{
+			"DAPR_HOST":      envCfg.GetDaprHost,
+			"DAPR_HTTP_PORT": envCfg.GetDaprHttpPort,
+			"DAPR_GRPC_PORT": envCfg.GetDaprGrpcPort,
+			"APP_ID":         envCfg.GetAppId,
+			"APP_NAME":       envCfg.GetAppName,
+			"env":            envCfg,
+			"daprClient":     dapr.GetDaprClient(),
+			"console":        newConsole(logrus.New()),
+			"db":             db_pkg.New(envCfg),
+			"template":       tpl_pkg.New(envCfg, server),
+			"feign":          feign_pkg.New(server),
+			"fs":             server.fs,
+			"context":        ctx_pkg.New(),
+			"schemas":        schema_pkg.New(server),
+		}
+		server.SetRunValues(data)
+	})
 
-func initServer(app *iris.Application, data map[string]any, srcFs *SrcFs, envCfg common2.IEnvConfig, mainFileName string, reload bool) (*Server, error) {
-	server, err := NewServer(app, mainFileName, envCfg, data)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return server, nil
+
+	return server.Run()
+
 }

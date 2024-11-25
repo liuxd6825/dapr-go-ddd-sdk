@@ -44,8 +44,8 @@ type RequestParam struct {
 }
 
 type RequestData struct {
-	Data   *goja.Object   `json:"data"`   // 从body中读取的map数据
-	Params map[string]any `json:"params"` // 参数
+	Data   *goja.Object   `json:"runValues"` // 从body中读取的map数据
+	Params map[string]any `json:"params"`    // 参数
 }
 
 type HandleOptions struct {

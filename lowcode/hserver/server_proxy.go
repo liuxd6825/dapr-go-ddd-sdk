@@ -20,34 +20,43 @@ func NewServerProxy(server *Server, vm *goja.Runtime) *ServerProxy {
 
 // Get 方法：获取键对应的值
 func (s *ServerProxy) Get(name string) goja.Value {
-	if name == "tpl" {
-		return s.tpl
+	var res = goja.Undefined()
+	switch name {
+	case "tpl":
+		res = s.tpl
+	case "srcPath":
+		res = s.vm.ToValue(s.server.srcPath)
+	default:
+		if value, exists := s.server.runValues.Get(name); exists {
+			res = s.vm.ToValue(value)
+		}
 	}
-	if value, exists := s.server.data.Get(name); exists {
-		return s.vm.ToValue(value)
-	}
-	return goja.Undefined()
+	return res
 }
 
 // Set 方法：设置键值
 func (s *ServerProxy) Set(name string, val goja.Value) bool {
-	s.server.data.Set(name, val.Export())
+	s.server.runValues.Set(name, val.Export())
 	return true
 }
 
 // Has 方法：检查键是否存在
 func (s *ServerProxy) Has(name string) bool {
-	exists := s.server.data.Has(name)
+	exists := s.server.runValues.Has(name)
 	return exists
 }
 
 // Delete 方法：删除键
 func (s *ServerProxy) Delete(name string) bool {
-	s.server.data.Remove(name)
+	s.server.runValues.Remove(name)
 	return true
 }
 
 // Keys 方法：获取所有键
 func (s *ServerProxy) Keys() []string {
-	return s.server.data.Keys()
+	return s.server.runValues.Keys()
+}
+
+func (s *ServerProxy) InitVM(vm *goja.Runtime) error {
+	return s.server.InitVM(vm)
 }

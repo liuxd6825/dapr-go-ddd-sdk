@@ -2,10 +2,12 @@ package hserver
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/orcaman/concurrent-map"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -14,12 +16,14 @@ type Service struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
 	URL         string  `json:"url"`
-	Code        string  `json:"code"`
 	server      *Server `json:"-"`
 	requests    cmap.ConcurrentMap
 	data        cmap.ConcurrentMap
 	srcFileName string
 	srcPath     string
+	code        string
+	codeType    string
+	scripts     *ScriptManager
 }
 
 // Call 定义调用信息结构
@@ -48,21 +52,22 @@ func NewService(server *Server, html []byte, srcFileName string, data map[string
 		srcFileName: srcFileName,
 		srcPath:     srcPath,
 		requests:    cmap.New(),
+		scripts:     NewScriptManager(server.logger),
 	}
 
 	if err := service.parse(html); err != nil {
 		return nil, err
 	}
 
-	if err := service.init(); err != nil {
-		return nil, err
-	}
-
 	return service, nil
 }
 
+func (s *Service) InitVM(vm *goja.Runtime) error {
+	return nil
+}
+
 func (s *Service) AddRequest(r *Request) {
-	s.requests.Set(r.Name, r)
+	s.requests.Set(r.opts.Name, r)
 }
 
 func (s *Service) GetRequest(name string) *Request {
@@ -88,72 +93,85 @@ func (s *Service) parse(html []byte) error {
 	if err != nil {
 		return err
 	}
-
-	s.URL = doc.Find("service").AttrOr("url", "")
-	s.Name = doc.Find("service").AttrOr("mame", "") // 注意拼写错误 "mame"
-	s.Description = doc.Find("service").AttrOr("description", "")
-
-	code := doc.Find("service > script").Text()
-	if code != "" {
-		s.Code = code
+	serviceEl := doc.Find("body service")
+	if serviceEl == nil {
+		return errors.New("no service found")
 	}
-
-	// 解析 Request 列表
-	doc.Find("service > request").Each(func(i int, sel *goquery.Selection) {
-		request := &Request{
-			Type:        strings.ToUpper(sel.AttrOr("type", "")),
-			Name:        sel.AttrOr("name", ""),
-			URL:         sel.AttrOr("url", ""),
-			AbsURl:      sel.AttrOr("abs-url", ""),
-			Description: sel.AttrOr("description", ""),
-			Params:      sel.Find("params").AttrOr("url", ""),
+	s.URL = serviceEl.AttrOr("url", "")
+	s.Name = serviceEl.AttrOr("mame", "") // 注意拼写错误 "mame"
+	s.Description = serviceEl.AttrOr("description", "")
+	optsList := []RequestOptions{}
+	serviceEl.Children().Each(func(i int, child *goquery.Selection) {
+		node := child.Get(0) // 获取当前节点的 *html.Node
+		if node.Type != 3 {
+			return
 		}
-
-		// 获取 <call> 子节点
-		/*
-			callSel := sel.Find("call")
-			if callSel.Length() > 0 {
-				call := Call{
-					Ref:    callSel.AttrOr("ref", ""),
-					Method: callSel.AttrOr("method", ""),
-					Params: make(map[string]string),
-				}
-				callSel.Find("param").Each(func(i int, paramSel *goquery.Selection) {
-					name := paramSel.AttrOr("name", "")
-					value := paramSel.Text()
-					call.Params[name] = value
-				})
-				request.Call = call
+		switch node.Data {
+		case "script":
+			s.code = child.Text()
+			s.codeType = child.AttrOr("type", "")
+		case "request":
+			// 解析 Request 列表
+			opts := RequestOptions{
+				Type:        strings.ToUpper(child.AttrOr("type", "")),
+				Name:        child.AttrOr("name", ""),
+				URL:         child.AttrOr("url", ""),
+				AbsURl:      child.AttrOr("abs-url", ""),
+				Description: child.AttrOr("description", ""),
+				ParamsUrl:   child.Find("params").AttrOr("url", ""),
 			}
-		*/
-
-		// 获取 <script> 子节点
-		script := sel.Find("script").Text()
-		if script != "" {
-			request.Code = script
+			// 获取 <script> 子节点
+			scriptEl := child.Find("script")
+			if scriptEl != nil {
+				opts.Code = scriptEl.Text()
+				opts.CodeType = scriptEl.AttrOr("type", "")
+			}
+			optsList = append(optsList, opts)
 		}
 
-		s.AddRequest(request)
 	})
 
+	for _, opts := range optsList {
+		request, err := NewRequest(s.server, s, opts)
+		if err != nil {
+			return err
+		}
+		s.AddRequest(request)
+	}
 	return err
 }
 
-func (s *Service) init() error {
-	if s.Code != "" {
-		vm := runtime.NewRuntime()
-		opts := &SetRuntimeOption{
+func (s *Service) Run() error {
+	s.runInitScript()
+	for _, key := range s.GetRequestKeys() {
+		r := s.GetRequest(key)
+		if r != nil {
+			err := r.Run()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Service) runInitScript() error {
+	if s.code != "" {
+		fileName := fmt.Sprintf("service_%s_init.js", s.Name)
+		opts := &RuntimeOption{
 			Server:  s.server,
 			Service: s,
 		}
-		if err := setRuntime(vm, opts); err != nil {
-			return err
-		}
-		if _, err := vm.RunString(s.Code); err != nil {
+		err := RunInitScript(s.scripts, s.code, s.codeType, fileName, opts, s.GetLogger())
+		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (s *Service) GetLogger() logrus.FieldLogger {
+	return s.server.logger
 }
 
 // getFilePath 根据文件名获取文件路径

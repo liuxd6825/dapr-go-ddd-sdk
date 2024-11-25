@@ -47,7 +47,7 @@ func (c *WebContext) Ctx() context.Context {
 //
 //	@Description: 从body中读取map
 //	@receiver c
-//	@param data
+//	@param runValues
 //	@return any
 func (c *WebContext) ReadJson(data ...any) any {
 	var v any
@@ -193,7 +193,7 @@ func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
 //
 //	@Description: 数据认证
 //	@receiver c
-//	@param data
+//	@param runValues
 //	@param schema
 //	@return error
 func (c *WebContext) Valid(data any, schema *schema.Schema) error {
@@ -293,6 +293,14 @@ func (c *WebContext) WriteJson(data any) {
 	}
 }
 
+func (c *WebContext) SetData(data any) {
+	c.WriteJson(data)
+}
+
+func (c *WebContext) SetHTML(html string) {
+	c.WriteHTML(html)
+}
+
 func (c *WebContext) WriteString(body string) int {
 	res, err := c.ictx.WriteString(body)
 	if err != nil {
@@ -330,7 +338,7 @@ func (c *WebContext) SetError(errOrMsg any, httpStatus ...int) {
 		err = errors.New(msg)
 	} else if data, ok := errOrMsg.(map[string]any); ok {
 		fmt.Println(data)
-		err = errors.New("data")
+		err = errors.New("runValues")
 	} else {
 		err = errors.New("未知的错误类型")
 	}
