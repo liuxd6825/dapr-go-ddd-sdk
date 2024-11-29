@@ -7,39 +7,44 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 )
 
 // Server 表示顶层结构
 type Server struct {
+	*Base
 	app       *iris.Application
-	fs        *fs_pkg.FsManager
+	srcFs     afero.Fs
+	fsm       *fs_pkg.FsManager
 	services  cmap.ConcurrentMap
 	envConfig common.IEnvConfig
 	tpl       *tpl_pkg.Template
-	srcPath   string
-	runValues cmap.ConcurrentMap
 	pkg       cmap.ConcurrentMap
-	code      string
-	codeType  string
-	logger    logrus.FieldLogger
-	scripts   *ScriptManager
 }
 
 type NewServerOptions func(server *Server)
 
 // NewServer 解析 HTML 并返回 Server 对象
-func NewServer(app *iris.Application, mainFileName string, envConfig common.IEnvConfig, opts ...NewServerOptions) (*Server, error) {
-	fs, err := fs_pkg.NewFsManger(envConfig)
+func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env common.IEnvConfig, opts ...NewServerOptions) (*Server, error) {
+	fsm, err := fs_pkg.NewFsManger(env)
 	if err != nil {
 		return nil, err
 	}
-	htmlData := fs.ReadFile(mainFileName)
+	//rootPath := env.GetRsServerSrcPath()
+	//filename := rootPath + srcFileName
+	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, "/")
+
+	htmlData, err := fs.ReadFile(srcFs, srcFileName, fsOpts)
+	if err != nil {
+		return nil, err
+	}
 
 	reader := bytes.NewReader(htmlData)
 	// 使用 goquery 解析 HTML
@@ -48,21 +53,22 @@ func NewServer(app *iris.Application, mainFileName string, envConfig common.IEnv
 		return nil, fmt.Errorf("error loading HTML: %w", err)
 	}
 
-	srcPath, err := getFilePath(mainFileName)
+	logger := logrus.StandardLogger()
+	server := &Server{
+		app:       app,
+		services:  cmap.New(),
+		fsm:       fsm,
+		envConfig: env,
+		srcFs:     srcFs,
+	}
+
+	server.Base, err = NewBase(srcFileName, logger, server, fsOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	logger := logrus.StandardLogger()
-	server := &Server{
-		app:       app,
-		runValues: cmap.New(),
-		services:  cmap.New(),
-		fs:        fs,
-		srcPath:   srcPath,
-		envConfig: envConfig,
-		logger:    logger,
-		scripts:   NewScriptManager(logger),
+	if err = server.parse(doc); err != nil {
+		return nil, err
 	}
 
 	for _, opt := range opts {
@@ -71,51 +77,43 @@ func NewServer(app *iris.Application, mainFileName string, envConfig common.IEnv
 		}
 	}
 
-	if err := server.parse(doc); err != nil {
-		return nil, err
-	}
-
 	return server, nil
 }
 
-func (s *Server) Run() error {
-	err := s.runInitScript()
-	if err != nil {
+func (s *Server) GetSrcFs() afero.Fs {
+	return s.srcFs
+}
+
+func (s *Server) ReadSrcFile(fileName string, opts ...*fsopts.Options) ([]byte, error) {
+	return fs.ReadFile(s.srcFs, fileName, opts...)
+}
+
+func (s *Server) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+	data := s.fsm.ReadFile(filename, opts...)
+	return data, nil
+}
+
+func (s *Server) Start() error {
+	runValue := &RunValues{
+		Server: s,
+	}
+	if err := s.RunInitScript(runValue); err != nil {
 		return err
 	}
-
-	for _, key := range s.services.Keys() {
-		item, ok := s.services.Get(key)
-		if ok {
-			service := item.(*Service)
-			service.Run()
-
+	for _, val := range s.services.Items() {
+		if service, ok := val.(*Service); ok {
+			if err := service.Initialize(); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func RunInitScript(scripts *ScriptManager, code, codeType, fileName string, opt *RuntimeOption, logger logrus.FieldLogger) error {
-	if code != "" {
-		err := scripts.AddScript("init", code, codeType, fileName, false, logger)
-		if err != nil {
-			return err
-		}
-		_, err = scripts.RunScript("init", opt, nil)
-		return nil
-	}
-	return nil
-}
-
-func (s *Server) runInitScript() error {
-	if s.code != "" {
-		opts := &RuntimeOption{
-			Server: s,
-		}
-		err := RunInitScript(s.scripts, s.code, s.codeType, "server_init.js", opts, s.GetLogger())
-		if err != nil {
-			return err
-		}
+func (s *Server) GetService(serviceName string) *Service {
+	service, ok := s.services.Get(serviceName)
+	if ok {
+		return service.(*Service)
 	}
 	return nil
 }
@@ -125,32 +123,39 @@ func (s *Server) parse(doc *goquery.Document) error {
 	if serverEl == nil {
 		return errors.New("no server")
 	}
-	serverEl.Find("script").Each(func(i int, sel *goquery.Selection) {
-		s.code += sel.Text()
-		s.codeType = sel.AttrOr("type", "")
-	})
+
+	err := s.ParseInitScript(serverEl)
+	if err != nil {
+		return err
+	}
 
 	// 遍历所有 <service> 节点
-	serverEl.Find("services service").Each(func(i int, sel *goquery.Selection) {
-		// 获取 url 属性
-		url, exists := sel.Attr("url")
-
-		if exists {
-			fileUrl := fileutils.AbsPath(url, s.srcPath)
-			data := s.fs.ReadFile(fileUrl)
-			service, err := NewService(s, data, fileUrl, nil)
-			if err != nil {
-				panic(err)
+	serverEl.Find("services").Children().Each(func(i int, sel *goquery.Selection) {
+		node := sel.Get(0)
+		if node != nil && node.Type == 3 && node.Data == "link" {
+			// 获取 url 属性
+			fileUrl, exists := sel.Attr("href")
+			if exists {
+				data, err := s.ReadSrcFile(fileUrl, s.fsOpts)
+				if err != nil {
+					panic(err)
+				}
+				var service *Service
+				service, err = NewService(s, data, fileUrl, nil)
+				if err != nil {
+					panic(err)
+				}
+				s.services.Set(service.config.Name, service)
 			}
-			s.services.Set(service.Name, service)
 		}
+
 	})
 
 	return nil
 }
 
-func (s *Server) GetFs() *fs_pkg.FsManager {
-	return s.fs
+func (s *Server) GetFsm() *fs_pkg.FsManager {
+	return s.fsm
 }
 
 func (s *Server) GetApp() *iris.Application {
@@ -165,8 +170,12 @@ func (s *Server) GetRunValues() map[string]any {
 	return s.runValues.Items()
 }
 
-func (s *Server) GetSrcPath() string {
-	return s.srcPath
+func (s *Server) GetRootPath() string {
+	return s.fsOpts.RootPath
+}
+
+func (s *Server) GetWorkPath() string {
+	return s.fsOpts.WorkPath
 }
 
 func (s *Server) GetLogger() logrus.FieldLogger {

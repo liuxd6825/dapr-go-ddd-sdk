@@ -2,7 +2,7 @@ package schema_pkg
 
 import (
 	"bytes"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 )
@@ -17,8 +17,8 @@ func New(server pkg.Server) *SchemaPkg {
 	}
 }
 
-func (s *SchemaPkg) LoadFile(fileUrl string, basePath string) *schema.Schema {
-	data := s.server.GetFs().ReadFile(fileUrl, &fs.Options{BasePath: basePath})
+func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *schema.Schema {
+	data := s.server.GetFsm().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
 	if len(data) == 0 {
 		return nil
 	}

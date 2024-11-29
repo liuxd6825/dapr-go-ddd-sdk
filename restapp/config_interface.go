@@ -8,6 +8,8 @@ type IEnvConfig interface {
 	GetDaprHost() string
 	GetDaprHttpPort() int64
 	GetDaprGrpcPort() int64
+	GetRsServerSrcPath() string
+	GetRsServerEnable() bool
 }
 
 func (e *EnvConfig) RsConfig() IEnvConfig {
@@ -40,4 +42,12 @@ func (e *EnvConfig) GetDaprHttpPort() int64 {
 
 func (e *EnvConfig) GetDaprGrpcPort() int64 {
 	return e.Dapr.GetGrpcPort()
+}
+
+func (e *EnvConfig) GetRsServerSrcPath() string {
+	return e.App.RsServer.GetBasePath()
+}
+
+func (e *EnvConfig) GetRsServerEnable() bool {
+	return e.App.RsServer.GetEnable()
 }

@@ -5,10 +5,9 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
-func catchError(ctx iris.Context, e error, recover any) error {
+func RecoverError(e error, recover any) error {
 	var err error
 	if e != nil {
 		err = e
@@ -22,11 +21,7 @@ func catchError(ctx iris.Context, e error, recover any) error {
 			err = fmt.Errorf("unknown error %s", recover)
 		}
 	}
-	if err != nil && ctx != nil {
-		logs.Error(ctx, "", nil, err.Error())
-		setError(ctx, err)
-	}
-	return nil
+	return err
 }
 
 func setError(ctx iris.Context, err error) {

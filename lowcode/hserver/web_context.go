@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -19,16 +20,29 @@ import (
 )
 
 type WebContext struct {
-	ictx iris.Context
-	ctx  context.Context
 	restapp.RestAssembler
-	params  *Params
-	vu      modules.VU
-	closers []io.Closer //资源关闭器
+	authToken appctx.AuthToken
+	ictx      iris.Context
+	ctx       context.Context
+	params    *Params
+	vu        modules.VU
+	closers   []io.Closer //资源关闭器
+
 }
 
 func NewWebContext(ctx context.Context, ictx iris.Context) *WebContext {
-	return &WebContext{ictx: ictx, ctx: ctx, params: NewParams(ictx), closers: make([]io.Closer, 0)}
+	authToken, ok := appctx.GetAuthToken(ctx)
+	if !ok {
+		panic("auth token not found")
+	}
+
+	return &WebContext{
+		authToken: authToken,
+		ictx:      ictx,
+		ctx:       ctx,
+		params:    NewParams(ictx),
+		closers:   make([]io.Closer, 0),
+	}
 }
 
 func (c *WebContext) Params() *Params {
@@ -39,8 +53,40 @@ func (c *WebContext) Ictx() iris.Context {
 	return c.ictx
 }
 
-func (c *WebContext) Ctx() context.Context {
-	return c.ctx
+// GetTokenUser
+//
+//	@Description: 取Token中的用户信息
+//	@receiver c
+//	@return appctx.AuthUser
+func (c *WebContext) GetTokenUser() appctx.AuthUser {
+	return c.authToken.GetUser()
+}
+
+// GetTenantId
+//
+//	@Description: 取租户Id
+//	@receiver c
+//	@return string
+func (c *WebContext) GetTenantId() string {
+	return c.authToken.GetUser().GetTenantId()
+}
+
+// GetTenantName
+//
+//	@Description: 取租户名称
+//	@receiver c
+//	@return string
+func (c *WebContext) GetTenantName() string {
+	return c.authToken.GetUser().GetTenantName()
+}
+
+// GetToken
+//
+//	@Description: 取token信息
+//	@receiver c
+//	@return appctx.AuthToken
+func (c *WebContext) GetToken() appctx.AuthToken {
+	return c.authToken
 }
 
 // ReadJson
@@ -86,74 +132,6 @@ func (c *WebContext) ReadBytes() []byte {
 		panic(err)
 	}
 	return bytes
-}
-
-const dateFormat = "2006-01-02"
-const dateTimeFormat = "2006-01-02 15:04:05"
-
-var parseTime = func(val string, key any) (timeVal any, err error) {
-	if val == "" || val == "null" {
-		return nil, nil
-	}
-
-	typeName, ok := key.(string)
-	if !ok || typeName == schema2.TypeDate {
-		tm, er := time.Parse(dateFormat, val)
-		if er != nil {
-			return nil, er
-		}
-		timeVal = times.NewDate(&tm)
-	} else {
-		tm, er := time.Parse(dateTimeFormat, val)
-		if er != nil {
-			return nil, er
-		}
-		timeVal = times.NewTime(&tm)
-	}
-	return timeVal, err
-}
-
-// getTimeFields
-//
-//	@Description: 从schema中读取date类型定义
-//	@param props schema2.Properties
-//	@return map[string]any
-func getTimeFields(s schema2.ISchema) map[string]any {
-	if s == nil {
-		return nil
-	}
-	s.Init(s)
-
-	var props schema2.Properties
-	resFields := map[string]any{}
-	timeFields := resFields
-	dataType := s.GetType()
-	if dataType == "array" {
-		timeFields = map[string]any{}
-		resFields[s.GetName()] = timeFields
-		items := s.GetItems()
-		if items != nil && items.Type == "object" {
-			props = items.GetProperties()
-		}
-	} else if dataType == "object" {
-		props = s.GetProperties()
-	}
-	for k, p := range props {
-		if p == nil {
-			continue
-		}
-		if p.IncludeType(schema2.TypeDate) {
-			timeFields[k] = schema2.TypeDate
-		} else if p.IncludeType(schema2.TypeDatetime) {
-			timeFields[k] = schema2.TypeDatetime
-		}
-		if p.Properties != nil || p.Items != nil {
-			if ps := getTimeFields(p); ps != nil {
-				timeFields[k] = ps
-			}
-		}
-	}
-	return timeFields
 }
 
 // ReadObject
@@ -423,10 +401,6 @@ func (c *WebContext) GetId() string {
 	return c.ictx.Params().GetString("id")
 }
 
-func (c *WebContext) GetTenantId() string {
-	return c.ictx.Params().GetString("tenantId")
-}
-
 func (c *WebContext) GetCaseId() string {
 	return c.ictx.Params().GetString("caseId")
 }
@@ -434,4 +408,88 @@ func (c *WebContext) GetCaseId() string {
 func (c *WebContext) GetFindPaging() *ddd_repository.FindPagingQueryRequest {
 	v, _ := c.RestAssembler.AsFindPagingRequest(c.ictx)
 	return v
+}
+
+func (c *WebContext) Deadline() (deadline time.Time, ok bool) {
+	return c.ctx.Deadline()
+}
+
+func (c *WebContext) Done() <-chan struct{} {
+	return c.ctx.Done()
+}
+
+func (c *WebContext) Err() error {
+	return c.ctx.Err()
+}
+
+func (c *WebContext) Value(key any) any {
+	return c.ctx.Value(key)
+}
+
+const dateFormat = "2006-01-02"
+const dateTimeFormat = "2006-01-02 15:04:05"
+
+var parseTime = func(val string, key any) (timeVal any, err error) {
+	if val == "" || val == "null" {
+		return nil, nil
+	}
+
+	typeName, ok := key.(string)
+	if !ok || typeName == schema2.TypeDate {
+		tm, er := time.Parse(dateFormat, val)
+		if er != nil {
+			return nil, er
+		}
+		timeVal = times.NewDate(&tm)
+	} else {
+		tm, er := time.Parse(dateTimeFormat, val)
+		if er != nil {
+			return nil, er
+		}
+		timeVal = times.NewTime(&tm)
+	}
+	return timeVal, err
+}
+
+// getTimeFields
+//
+//	@Description: 从schema中读取date类型定义
+//	@param props schema2.Properties
+//	@return map[string]any
+func getTimeFields(s schema2.ISchema) map[string]any {
+	if s == nil {
+		return nil
+	}
+	s.Init(s)
+
+	var props schema2.Properties
+	resFields := map[string]any{}
+	timeFields := resFields
+	dataType := s.GetType()
+	if dataType == "array" {
+		timeFields = map[string]any{}
+		resFields[s.GetName()] = timeFields
+		items := s.GetItems()
+		if items != nil && items.Type == "object" {
+			props = items.GetProperties()
+		}
+	} else if dataType == "object" {
+		props = s.GetProperties()
+	}
+	for k, p := range props {
+		if p == nil {
+			continue
+		}
+		if p.IncludeType(schema2.TypeDate) {
+			timeFields[k] = schema2.TypeDate
+		} else if p.IncludeType(schema2.TypeDatetime) {
+			timeFields[k] = schema2.TypeDatetime
+		}
+		if p.Properties != nil || p.Items != nil {
+			if ps := getTimeFields(p); ps != nil {
+				timeFields[k] = ps
+			}
+		}
+	}
+	return timeFields
 }

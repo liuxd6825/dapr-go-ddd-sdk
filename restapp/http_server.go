@@ -132,9 +132,11 @@ func (s *HttpServer) Start() error {
 	// 使用自定义的 JSON 编码器替换 Iris 默认的 JSON 编码器
 	app.Configure(iris.WithOptimizations)
 
-	if err := s.addRenderHandler(app); err != nil {
-		return err
-	}
+	/*
+		if err := s.addRenderHandler(app); err != nil {
+			return err
+		}
+	*/
 
 	// 注册控制器
 	if s.controllers != nil {
@@ -221,6 +223,7 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	if !s.envConfig.App.Template.Enable {
 		return nil
 	}
+
 	fsKey := s.envConfig.App.Template.FsId
 	if fsKey == "" {
 		return errors.New("template fsKey is empty")

@@ -22,8 +22,8 @@ func (s *ServiceProxy) InitVM(vm *goja.Runtime) error {
 func (s *ServiceProxy) Get(name string) goja.Value {
 	var res = goja.Undefined()
 	switch name {
-	case "srcPath":
-		res = s.vm.ToValue(s.service.srcPath)
+	case "workPath":
+		res = s.vm.ToValue(s.service.fsOpts.WorkPath)
 	default:
 		if value, exists := s.service.data.Get(name); exists {
 			res = s.vm.ToValue(value)

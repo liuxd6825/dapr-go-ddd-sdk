@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -72,6 +73,10 @@ func (a *AppConfig) GetRootUrl() string {
 	return a.RootUrl
 }
 
+func (a *AppConfig) GetSrcPath() string {
+	return a.RsServer.BasePath
+}
+
 // RsServer
 // @Description: 脚本服务配置
 // @Author:       liuxd
@@ -83,6 +88,11 @@ type RsServer struct {
 	HttpFsName    string `yaml:"httpFsName" json:"httpFsName"` // 在fs节中配置key
 	BasePath      string `yaml:"basePath" json:"basePath"`     // 脚本文件路径
 	Reload        bool   `yaml:"reload" json:"reload"`         // 是否自动加载脚本
+}
+
+type IReServer interface {
+	GetEnable() bool
+	GetBasePath() string
 }
 
 // HtmlTemplate
@@ -257,6 +267,18 @@ func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
 	return e.fsManager, nil
 }
 
+func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
+	m, err := e.GetFsManager()
+	if err != nil {
+		panic(err)
+	}
+	fs, ok := m.Get(name)
+	if ok {
+		return fs, nil
+	}
+	return nil, errors.New("fs not exist")
+}
+
 func (l *LogConfig) GetLevel() applog.Level {
 	return l.level
 }
@@ -395,4 +417,12 @@ func searchConfigFile(path, configName string, fileName string) (string, bool, e
 	}
 
 	return searchConfigFile(path+"/..", configName, fileName)
+}
+
+func (s *RsServer) GetEnable() bool {
+	return s.Enable
+}
+
+func (s *RsServer) GetBasePath() string {
+	return s.BasePath
 }

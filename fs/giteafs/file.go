@@ -1,7 +1,7 @@
 package giteafs
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"io"
 	"os"
 )
@@ -24,7 +24,7 @@ func newFile(fs *Fs, name string, flag int, perm os.FileMode) *file {
 
 func (o *file) Close() error {
 	if o.closed {
-		return common.ErrFileClosed
+		return fsopts.ErrFileClosed
 	}
 	o.closed = true
 	if o.flag == os.O_CREATE {
@@ -98,7 +98,7 @@ func (o *file) readAt(p []byte, off int64) (n int, err error) {
 
 func (o *file) Seek(newOffset int64, whence int) (int64, error) {
 	if o.closed {
-		return 0, common.ErrFileClosed
+		return 0, fsopts.ErrFileClosed
 	}
 
 	if (whence == 0 && newOffset == o.fhOffset) || (whence == 1 && newOffset == 0) {
@@ -134,7 +134,7 @@ func (o *file) WriteAt(p []byte, off int64) (n int, err error) {
 		o.flag = os.O_WRONLY
 	}
 	if o.closed {
-		return 0, common.ErrFileClosed
+		return 0, fsopts.ErrFileClosed
 	}
 	written := len(p)
 	o.data = append(o.data, p...)

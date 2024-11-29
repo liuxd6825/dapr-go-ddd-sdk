@@ -3,12 +3,12 @@ package fs
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/giteafs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/httpfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/memoryfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/orcaman/concurrent-map"
 	"github.com/spf13/afero"
 	"io/fs"
@@ -123,12 +123,17 @@ func (m *Manager) Map() map[string]afero.Fs {
 	return data
 }
 
-func (m *Manager) ReadFile(filename string, opts ...*Options) ([]byte, error) {
+func (m *Manager) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return nil, err
 	}
 	return ReadFile(afs, fileName, opts...)
+}
+
+func (m *Manager) GetFsByFileUrl(fileUrl string) (afero.Fs, error) {
+	afs, _, err := m.parse(fileUrl)
+	return afs, err
 }
 
 // WriteFile
@@ -140,7 +145,7 @@ func (m *Manager) ReadFile(filename string, opts ...*Options) ([]byte, error) {
 //	@param bytes
 //	@param writeModel
 //	@return error
-func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel, opts ...*Options) error {
+func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel, opts ...*fsopts.Options) error {
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return err
@@ -154,13 +159,12 @@ func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel
 //	@receiver m
 //	@param filename 文件名称
 //	@return error
-func (m *Manager) RemoveFile(filename string, opts ...*Options) error {
-	o := NewOptions(opts...)
+func (m *Manager) RemoveFile(filename string, opts ...*fsopts.Options) error {
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return err
 	}
-	fileName = fileutils.AbsPath(filename, o.BasePath)
+	fileName = fsopts.GetAbsPath(filename, opts...)
 	return afs.Remove(fileName)
 }
 
@@ -170,12 +174,12 @@ func (m *Manager) RemoveFile(filename string, opts ...*Options) error {
 //	@receiver m
 //	@param path 路径名称
 //	@return error
-func (m *Manager) RemoveAll(path string, basePath ...string) error {
+func (m *Manager) RemoveAll(path string, opts ...*fsopts.Options) error {
 	afs, path, err := m.parse(path)
 	if err != nil {
 		return err
 	}
-	path = fileutils.AbsPath(path, basePath...)
+	path = fsopts.GetAbsPath(path, opts...)
 	return afs.RemoveAll(path)
 }
 
@@ -198,18 +202,18 @@ func (m *Manager) Rename(aOldName, aNewName string) error {
 	return afs.Rename(oldName, newName)
 }
 
-func (m *Manager) Mkdir(path string, perm os.FileMode, basePath ...string) error {
+func (m *Manager) Mkdir(path string, perm os.FileMode, opts ...*fsopts.Options) error {
 	afs, name, err := m.parse(path)
 	if err != nil {
 		return err
 	}
-	name = fileutils.AbsPath(name, basePath...)
+	name = fsopts.GetAbsPath(name, opts...)
 	return afs.Mkdir(name, perm)
 }
 
 func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err error) {
 	var fsName string
-	err = ParseFileName(filename, m.DefaultFsName, func(aFsName, aFileName string) {
+	err = fsopts.ParseFileName(filename, m.DefaultFsName, func(aFsName, aFileName string) {
 		fsName = aFsName
 		fileName = aFileName
 	})

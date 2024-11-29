@@ -1,13 +1,9 @@
 package template
 
 import (
-	"encoding/base64"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/giteafs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/spf13/afero"
-	"io/ioutil"
 	"strings"
 )
 
@@ -90,17 +86,19 @@ func ReadFile(fs afero.Fs, filename string, pwd string) ([]byte, error) {
 //	@return []byte 文件内容
 //	@return error
 func readFile(fs afero.Fs, filename string, pwd string) ([]byte, error) {
-	fileName := fileutils.AbsPath(filename, pwd)
-	file, err := fs.Open(fileName)
-	if err != nil {
-		return nil, err
-	}
-	context, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	if fs.Name() == giteafs.Name() {
-		context, err = base64.StdEncoding.DecodeString(string(context))
-	}
-	return context, err
+	return nil, nil
+	/*
+		file, err := fs.Open(fileName)
+		if err != nil {
+			return nil, err
+		}
+		context, err := ioutil.ReadAll(file)
+		if err != nil {
+			return nil, err
+		}
+		if fs.Name() == giteafs.Name() {
+			context, err = base64.StdEncoding.DecodeString(string(context))
+		}
+		return context, err
+	*/
 }

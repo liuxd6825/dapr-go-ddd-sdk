@@ -2,9 +2,11 @@ package tpl_pkg
 
 import (
 	"github.com/flosch/pongo2/v6"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	cmap "github.com/orcaman/concurrent-map"
+	"github.com/spf13/afero"
 )
 
 var tplCache = cmap.New()
@@ -12,12 +14,14 @@ var tplCache = cmap.New()
 type Template struct {
 	cfg    common.IEnvConfig
 	server pkg.Server
+	fs     afero.Fs
 }
 
-func New(cfg common.IEnvConfig, server pkg.Server) *Template {
+func New(cfg common.IEnvConfig, server pkg.Server, fs afero.Fs) *Template {
 	return &Template{
 		cfg:    cfg,
 		server: server,
+		fs:     fs,
 	}
 }
 
@@ -66,9 +70,13 @@ func (e *Template) getTpl(filename string, fun func(*pongo2.Template) error) {
 			panic(err)
 		}
 	}
-	bytes := e.server.GetFs().ReadFile(filename)
+
+	bytes, err := fs.ReadFile(e.fs, filename)
+	if err != nil {
+		panic(err)
+	}
 	txt := replacePercent(string(bytes))
-	tpl, err := pongo2.FromBytes([]byte(txt))
+	tpl, err = pongo2.FromBytes([]byte(txt))
 	if err != nil {
 		panic(err)
 	}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"os"
@@ -42,7 +43,7 @@ func NewFsManger(cfg common.IEnvConfig) (*FsManager, error) {
 //	@param filename 文件名称
 //	@param basePath 当前目录
 //	@return []byte
-func (m *FsManager) ReadFile(filename string, options ...*fs.Options) []byte {
+func (m *FsManager) ReadFile(filename string, options ...*fsopts.Options) []byte {
 	res, err := m.base.ReadFile(filename, options...)
 	if err != nil {
 		panic(err)
@@ -50,7 +51,7 @@ func (m *FsManager) ReadFile(filename string, options ...*fs.Options) []byte {
 	return res
 }
 
-func (m *FsManager) WriteFile(filename string, data any, options ...*fs.Options) {
+func (m *FsManager) WriteFile(filename string, data any, options ...*fsopts.Options) {
 	var bytes []byte = nil
 	if str, ok := data.(string); ok {
 		bytes = []byte(str)

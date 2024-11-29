@@ -15,7 +15,7 @@ type Fs struct {
 }
 
 func NewFs(cfg *Config) (afero.Fs, error) {
-	client, err := NewClient(cfg.Url, cfg.User, cfg.Password)
+	client, err := NewGiteaClient(cfg.Url, cfg.User, cfg.Password)
 	if err != nil {
 		return nil, errors.New("giteafs.NewFs() %s ", err.Error())
 	}
@@ -23,7 +23,7 @@ func NewFs(cfg *Config) (afero.Fs, error) {
 	return fs, nil
 }
 
-func NewClient(url, user, password string) (*gitea.Client, error) {
+func NewGiteaClient(url, user, password string) (*gitea.Client, error) {
 	client, err := gitea.NewClient(url, func(cli *gitea.Client) error {
 		cli.SetBasicAuth(user, password)
 		return nil

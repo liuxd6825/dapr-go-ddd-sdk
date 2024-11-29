@@ -1,4 +1,4 @@
-package db_pkg
+package mongodb
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-type Model struct {
+type Dao struct {
 	db             *DB
 	tableName      string
 	dao            *ddd_mongodb.Dao[ddd.MapEntity]
@@ -24,52 +24,7 @@ type Model struct {
 
 type ModelOptions = mongo_dao.RepositoryOptions
 
-func NewOperateOptions(opts ...*OperateOptions) *OperateOptions {
-	o := new(OperateOptions)
-	for _, i := range opts {
-		if i.EventVersion != nil {
-			o.EventVersion = i.EventVersion
-		}
-		if i.EventType != nil {
-			o.EventType = i.EventType
-		}
-		if i.AggId != nil {
-			o.AggId = i.AggId
-		}
-	}
-	return o
-}
-
-type OperateOptions struct {
-	AggId        *string
-	EventType    *string
-	EventVersion *string
-	ddd_repository.RepositoryOptions
-}
-
-func (e *OperateOptions) GetAggregateId(defaultValue string) string {
-	if e.AggId == nil {
-		return defaultValue
-	}
-	return *e.AggId
-}
-
-func (e *OperateOptions) GetVersion(defaultValue string) string {
-	if e.EventVersion == nil {
-		return defaultValue
-	}
-	return *e.EventVersion
-}
-
-func newOptions(opts []*OperateOptions) []ddd_repository.Options {
-	var res []ddd_repository.Options
-	for _, o := range opts {
-		res = append(res, o)
-	}
-	return res
-}
-
-func NewModel(db *DB, tableName string, opts ...*ModelOptions) *Model {
+func NewDao(db *DB, tableName string, opts ...*ModelOptions) *Dao {
 	initTableName := tableName
 	opt := mongo_dao.NewRepositoryOptions(opts...)
 	var mongodb *ddd_mongodb.MongoDB
@@ -88,30 +43,30 @@ func NewModel(db *DB, tableName string, opts ...*ModelOptions) *Model {
 	}
 	entBuilder := ddd.NewMapEntityBuilder[ddd.MapEntity]()
 	daoOpts := ddd_mongodb.NewOptions[ddd.MapEntity]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
-	fmt.Print(opts)
+
 	dao := ddd_mongodb.NewDao[ddd.MapEntity](getCollCallback, daoOpts)
-	return &Model{db: db, dao: dao, tableName: tableName}
+	return &Dao{db: db, dao: dao, tableName: tableName}
 }
 
-func (d *Model) SetAggregateField(val string) *Model {
+func (d *Dao) SetAggregateField(val string) *Dao {
 	d.aggregateField = val
 	return d
 }
 
-func (d *Model) Table(ctx context.Context, schema *schema.Schema, opts ...*ddd_repository.RepositoryOptions) *Table {
+func (d *Dao) Table(ctx context.Context, schema *schema.Schema, opts ...*ddd_repository.RepositoryOptions) *Table {
 	return NewTable(d.db, d.tableName, schema)
 }
 
-func (d *Model) Save(ctx context.Context, setData *ddd.SetData[ddd.MapEntity], opts ...*OperateOptions) {
+func (d *Dao) Save(ctx context.Context, setData *ddd.SetData[ddd.MapEntity], opts ...*OperateOptions) {
 	err := d.dao.Save(ctx, setData, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) Create(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
+func (d *Dao) Create(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
 	if entity == nil {
-		panic(fmt.Errorf("Model.Create() entity is nil"))
+		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
 	err := d.dao.Insert(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
@@ -126,11 +81,11 @@ func (d *Model) Create(ctx context.Context, entity ddd.MapEntity, opts ...*Opera
 	server.GetEventPkg().CreateEvent(ctx, agg, event)
 }
 
-func (d *Model) Update(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
+func (d *Dao) Update(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
 	if entity == nil {
-		panic(fmt.Errorf("Model.Update() entity is nil"))
+		panic(fmt.Errorf("Dao.Update() entity is nil"))
 	}
-	delete(entity, "__temp_timestamp")
+
 	err := d.dao.Update(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -144,7 +99,7 @@ func (d *Model) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Opera
 	server.GetEventPkg().ApplyEvent(ctx, agg, event)
 }
 
-func (d *Model) DeleteById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) {
+func (d *Dao) DeleteById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) {
 	err := d.dao.DeleteById(ctx, tenantId, id, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -162,35 +117,35 @@ func (d *Model) DeleteById(ctx context.Context, tenantId string, id string, opts
 	server.GetEventPkg().ApplyEvent(ctx, agg, event)
 }
 
-func (d *Model) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*OperateOptions) {
+func (d *Dao) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*OperateOptions) {
 	err := d.dao.InsertMany(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) {
+func (d *Dao) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) {
 	err := d.dao.DeleteByIds(ctx, tenantId, ids, newOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) UpdateByMap(ctx context.Context, tenantId string, filterMap map[string]any, data any, opts ...*OperateOptions) {
+func (d *Dao) UpdateByMap(ctx context.Context, tenantId string, filterMap map[string]any, data any, opts ...*OperateOptions) {
 	err := d.dao.UpdateMap(ctx, tenantId, filterMap, data, newOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) UpdateMany(ctx context.Context, entities []ddd.MapEntity, opts ...*OperateOptions) {
+func (d *Dao) UpdateMany(ctx context.Context, entities []ddd.MapEntity, opts ...*OperateOptions) {
 	err := d.dao.UpdateManyById(ctx, entities, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*OperateOptions) *ddd_repository.BulkWriteResult {
+func (d *Dao) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*OperateOptions) *ddd_repository.BulkWriteResult {
 	res, err := d.dao.BulkWrite(ctx, models, newOptions(opts)...)
 	if err != nil {
 		panic(err)
@@ -198,35 +153,35 @@ func (d *Model) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts .
 	return res
 }
 
-func (d *Model) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*OperateOptions) {
+func (d *Dao) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*OperateOptions) {
 	err := d.dao.UpdateManyByFilter(ctx, tenantId, filter, data, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) DeleteAll(ctx context.Context, tenantId string, opts ...*OperateOptions) {
+func (d *Dao) DeleteAll(ctx context.Context, tenantId string, opts ...*OperateOptions) {
 	err := d.dao.DeleteAll(ctx, tenantId, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...*OperateOptions) {
+func (d *Dao) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...*OperateOptions) {
 	err := d.dao.DeleteByFilter(ctx, tenantId, filter, newOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*OperateOptions) {
+func (d *Dao) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*OperateOptions) {
 	err := d.dao.DeleteByMap(ctx, tenantId, filterMap, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) FindById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) *common.Result[ddd.MapEntity] {
+func (d *Dao) FindById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) *common.Result[ddd.MapEntity] {
 	res := d.dao.FindById(ctx, tenantId, id, newOptions(opts)...)
 	if res.Err != nil {
 		panic(res.Err)
@@ -234,7 +189,7 @@ func (d *Model) FindById(ctx context.Context, tenantId string, id string, opts .
 	return common.NewResult[ddd.MapEntity](res.Data, res.Err)
 }
 
-func (d *Model) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
+func (d *Dao) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
 	data, _, err := d.dao.FindByIds(ctx, tenantId, ids, newOptions(opts)...).Result()
 	if err != nil {
 		panic(err)
@@ -242,7 +197,7 @@ func (d *Model) FindByIds(ctx context.Context, tenantId string, ids []string, op
 	return common.NewResult[[]ddd.MapEntity](data, err)
 }
 
-func (d *Model) FindAll(ctx context.Context, tenantId string, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+func (d *Dao) FindAll(ctx context.Context, tenantId string, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
 	res := d.dao.FindAll(ctx, tenantId, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -250,7 +205,7 @@ func (d *Model) FindAll(ctx context.Context, tenantId string, opts ...*OperateOp
 	return res
 }
 
-func (d *Model) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+func (d *Dao) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
 	res := d.dao.FindListByMap(ctx, tenantId, filterMap, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -258,7 +213,7 @@ func (d *Model) FindListByMap(ctx context.Context, tenantId string, filterMap ma
 	return res
 }
 
-func (d *Model) FindPaging(ctx context.Context, query *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+func (d *Dao) FindPaging(ctx context.Context, query *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
 	res := d.dao.FindPaging(ctx, query, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -266,7 +221,7 @@ func (d *Model) FindPaging(ctx context.Context, query *ddd_repository.FindPaging
 	return res
 }
 
-func (d *Model) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+func (d *Dao) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
 	res := d.dao.FindAutoComplete(ctx, qry, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -274,7 +229,7 @@ func (d *Model) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAu
 	return res
 }
 
-func (d *Model) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*OperateOptions) *common.Result[*ddd_repository.FindPagingResult[ddd.MapEntity]] {
+func (d *Dao) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*OperateOptions) *common.Result[*ddd_repository.FindPagingResult[ddd.MapEntity]] {
 	data := d.dao.FindDistinct(ctx, qry, newOptions(opts)...)
 	if data.GetError() != nil {
 		panic(data.GetError())
@@ -282,14 +237,14 @@ func (d *Model) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistin
 	return common.NewResult[*ddd_repository.FindPagingResult[ddd.MapEntity]](data, nil)
 }
 
-func (d *Model) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}) {
+func (d *Dao) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}) {
 	err := d.dao.AggregateByPipeline(ctx, pipeline, data)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Model) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
+func (d *Dao) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
 	data, _, err := d.dao.SumEntity(ctx, qry, newOptions(opts)...)
 	if err != nil {
 		panic(err)
@@ -297,7 +252,7 @@ func (d *Model) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQue
 	return common.NewResult[[]ddd.MapEntity](data, err)
 }
 
-func (d *Model) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *common.Result[[]map[string]any] {
+func (d *Dao) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *common.Result[[]map[string]any] {
 	data, _, err := d.dao.SumMap(ctx, qry, newOptions(opts)...)
 	if err != nil {
 		panic(err)
@@ -305,7 +260,7 @@ func (d *Model) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryR
 	return common.NewResult[[]map[string]any](data, err)
 }
 
-func (d *Model) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*OperateOptions) *common.Result[any] {
+func (d *Dao) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*OperateOptions) *common.Result[any] {
 	data, _, err := d.dao.Sum(ctx, qry, data, newOptions(opts)...)
 	if err != nil {
 		panic(err)
@@ -313,7 +268,7 @@ func (d *Model) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequ
 	return common.NewResult[any](data, err)
 }
 
-func (d *Model) GetFilterMap(tenantId string, rsql string) *common.Result[ddd.MapEntity] {
+func (d *Dao) GetFilterMap(tenantId string, rsql string) *common.Result[ddd.MapEntity] {
 	data, err := d.dao.GetFilterMap(tenantId, rsql)
 	if err != nil {
 		panic(err)
@@ -321,7 +276,7 @@ func (d *Model) GetFilterMap(tenantId string, rsql string) *common.Result[ddd.Ma
 	return common.NewResult[ddd.MapEntity](data, err)
 }
 
-func (d *Model) newAggregateAndEvent(operateType OperateType, entity ddd.MapEntity, opts ...*OperateOptions) (*server.Aggregate, *common.Event, error) {
+func (d *Dao) newAggregateAndEvent(operateType OperateType, entity ddd.MapEntity, opts ...*OperateOptions) (*server.Aggregate, *common.Event, error) {
 	opt := NewOperateOptions(opts...)
 	event, err := d.newEvent(operateType, entity, opt)
 	if err != nil {
@@ -334,7 +289,7 @@ func (d *Model) newAggregateAndEvent(operateType OperateType, entity ddd.MapEnti
 	return agg, event, nil
 }
 
-func (d *Model) newEvent(operateType OperateType, entity ddd.MapEntity, opt *OperateOptions) (*common.Event, error) {
+func (d *Dao) newEvent(operateType OperateType, entity ddd.MapEntity, opt *OperateOptions) (*common.Event, error) {
 	o := opt
 	if o == nil {
 		o = &OperateOptions{}
@@ -368,7 +323,7 @@ const (
 	OperateType_Delete OperateType = "delete"
 )
 
-func (d *Model) GetEventType(operateType OperateType, opt *OperateOptions) string {
+func (d *Dao) GetEventType(operateType OperateType, opt *OperateOptions) string {
 	eventType := d.tableName
 	if opt == nil && opt.EventType != nil {
 		eventType = *opt.EventType
@@ -376,7 +331,7 @@ func (d *Model) GetEventType(operateType OperateType, opt *OperateOptions) strin
 	return common.GetEventType(d.db.cfg.GetAppId(), eventType, string(operateType))
 }
 
-func (d *Model) newAggregate(entity ddd.MapEntity, opt *OperateOptions) (*server.Aggregate, error) {
+func (d *Dao) newAggregate(entity ddd.MapEntity, opt *OperateOptions) (*server.Aggregate, error) {
 	tenantId := entity.GetTenantId()
 	aggregateId, err := d.getAggregateId(entity, opt)
 	if err != nil {
@@ -390,7 +345,7 @@ func (d *Model) newAggregate(entity ddd.MapEntity, opt *OperateOptions) (*server
 	return agg, nil
 }
 
-func (d *Model) getAggregateId(entity ddd.MapEntity, opts *OperateOptions) (string, error) {
+func (d *Dao) getAggregateId(entity ddd.MapEntity, opts *OperateOptions) (string, error) {
 	var aggregateId string
 	if opts != nil && opts.AggId != nil {
 		aggregateId = *opts.AggId

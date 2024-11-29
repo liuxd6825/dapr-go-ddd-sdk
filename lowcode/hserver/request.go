@@ -6,9 +6,9 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/sirupsen/logrus"
@@ -16,37 +16,43 @@ import (
 
 // Request 定义单个请求的结构
 type Request struct {
+	*Base
 	server  *Server
 	service *Service
 	params  map[string]RequestParam
-	scripts *ScriptManager
-	opts    RequestOptions
+	config  RequestConfig
+	script  *Script
 }
 
-type RequestOptions struct {
-	Type        string `json:"type"`
-	Name        string `json:"name"`
-	URL         string `json:"url"`
-	AbsURl      string `json:"abs_uri"`
-	Description string `json:"description"`
-	ParamsUrl   string `json:"params"`
-	PoolSize    int    `json:"pool_size"`
-	Code        string `json:"code"`
-	CodeType    string `json:"code_type"`
+type RequestConfig struct {
+	Type        string       `json:"type"`
+	Name        string       `json:"name"`
+	URL         string       `json:"url"`
+	AbsURl      string       `json:"abs_uri"`
+	Description string       `json:"description"`
+	ParamsType  string       `json:"params_type"`
+	ParamsUrl   string       `json:"params_url"`
+	Script      ScriptConfig `json:"script"`
 }
 
-func NewRequest(server *Server, service *Service, opts RequestOptions) (*Request, error) {
+func NewRequest(server *Server, service *Service, srcFileName string, config RequestConfig) (*Request, error) {
+	var err error
 	logger := service.GetLogger()
 	r := &Request{
 		server:  server,
 		service: service,
-		opts:    opts,
-		scripts: NewScriptManager(logger),
+		config:  config,
 	}
-	server.scripts = NewScriptManager(r.GetLogger())
-	if r.opts.Code != "" {
-		srcFileName := fmt.Sprintf("%s_%s.js", service.Name, r.opts.Name)
-		err := r.scripts.AddScript("handler", r.opts.Code, r.opts.CodeType, srcFileName, true, logger)
+	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.GetRootPath())
+	r.Base, err = NewBase(srcFileName, logger, r, fsOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.config.Script.Code != "" {
+		config.Script.FuncName = config.Name
+		config.Script.SrcFileName = srcFileName
+		err := r.scripts.AddScript(&r.config.Script, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -54,12 +60,17 @@ func NewRequest(server *Server, service *Service, opts RequestOptions) (*Request
 	return r, nil
 }
 
-func (r *Request) Run() error {
-	url := r.opts.AbsURl
+func (r *Request) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+	data, err := r.service.ReadFile(filename, opts...)
+	return data, err
+}
+
+func (r *Request) Initialize() error {
+	url := r.config.AbsURl
 	if url == "" {
-		url = r.service.URL + r.opts.URL
+		url = r.service.config.URL + r.config.URL
 	}
-	r.server.app.Handle(r.opts.Type, url, r.Handle)
+	r.server.app.Handle(r.config.Type, url, r.Handle)
 	return nil
 }
 
@@ -72,7 +83,7 @@ func (r *Request) Handle(ictx iris.Context) {
 	var err error
 
 	defer func() {
-		_ = catchError(ictx, err, recover())
+		_ = RecoverError(err, recover())
 	}()
 
 	ctx, err = restapp.NewContext(ictx)
@@ -80,7 +91,7 @@ func (r *Request) Handle(ictx iris.Context) {
 		return
 	}
 	wctx := NewWebContext(ctx, ictx)
-	params := r.GetParams(wctx, r.opts.ParamsUrl)
+	params := r.GetParams(wctx, r.config.ParamsUrl)
 	res := r.handle(wctx, params)
 	if err, ok := res.(error); ok {
 		setError(ictx, err)
@@ -92,18 +103,17 @@ func (r *Request) Handle(ictx iris.Context) {
 }
 
 func (r *Request) handle(wctx *WebContext, params map[string]any) any {
-	opts := &RuntimeOption{
+	values := &RunValues{
 		Server:     r.server,
 		Service:    r.service,
 		Request:    r,
 		WebContext: wctx,
 	}
-	val, err := r.scripts.RunScript("handler", opts, func(vm *goja.Runtime) (map[string]any, error) {
-		vars := map[string]any{
-			"params": params,
-			"ctx":    wctx.ctx,
-		}
-		return vars, nil
+	val, err := r.scripts.RunScript(r.config.Script.FuncName, values, true, func(vm *goja.Runtime) error {
+		_ = vm.Set("params", params)
+		_ = vm.Set("ctx", wctx)
+		_ = vm.Set("tenantId", wctx.GetTenantId())
+		return nil
 	})
 	if err != nil {
 		panic(err)
@@ -138,15 +148,20 @@ func (r *Request) GetUrlParams(ctx iris.Context) map[string]any {
 func (r *Request) GetParams(wctx *WebContext, cfgUrl string) map[string]any {
 	var err error
 	var params = r.params
-
+	fsOpts := &fsopts.Options{
+		RootPath: r.server.GetRootPath(),
+		WorkPath: r.service.fsOpts.WorkPath,
+	}
 	if params == nil && cfgUrl != "" {
-		schemaFileUrl := cfgUrl
+		fileUrl := cfgUrl
 		urlPars := r.GetUrlParams(wctx.ictx)
 		if (urlPars != nil) && (len(urlPars) > 0) {
-			schemaFileUrl = stringutils.ReplacePlaceholders(cfgUrl, urlPars)
+			fileUrl = stringutils.ReplacePlaceholders(cfgUrl, urlPars)
 		}
-		fileUrl := fileutils.AbsPath(schemaFileUrl, r.service.srcPath)
-		bytes := r.server.fs.ReadFile(fileUrl)
+		bytes, err := r.server.ReadFile(fileUrl, fsOpts)
+		if err != nil {
+			panic(err)
+		}
 		if bytes != nil && len(bytes) > 0 {
 			if err = jsonutils.Unmarshal(bytes, &params); err != nil {
 				panic(fmt.Sprintf(" loading %s  error: %s", fileUrl, err.Error()))

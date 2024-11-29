@@ -24,8 +24,8 @@ func (s *ServerProxy) Get(name string) goja.Value {
 	switch name {
 	case "tpl":
 		res = s.tpl
-	case "srcPath":
-		res = s.vm.ToValue(s.server.srcPath)
+	case "workPath":
+		res = s.vm.ToValue(s.server.fsOpts.WorkPath)
 	default:
 		if value, exists := s.server.runValues.Get(name); exists {
 			res = s.vm.ToValue(value)

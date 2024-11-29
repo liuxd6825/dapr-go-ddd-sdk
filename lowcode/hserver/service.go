@@ -6,6 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -13,17 +14,20 @@ import (
 
 // Service 定义服务的基本结构
 type Service struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	URL         string  `json:"url"`
-	server      *Server `json:"-"`
-	requests    cmap.ConcurrentMap
-	data        cmap.ConcurrentMap
-	srcFileName string
-	srcPath     string
-	code        string
-	codeType    string
-	scripts     *ScriptManager
+	*Base
+
+	server   *Server
+	requests cmap.ConcurrentMap
+	data     cmap.ConcurrentMap
+
+	config     ServerConfig
+	initScript *ScriptConfig
+}
+
+type ServerConfig struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
 }
 
 // Call 定义调用信息结构
@@ -34,11 +38,8 @@ type Call struct {
 }
 
 func NewService(server *Server, html []byte, srcFileName string, data map[string]any) (*Service, error) {
-
-	srcPath, err := getFilePath(srcFileName)
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.GetRootPath())
 
 	dataMap := cmap.New()
 	for k, v := range data {
@@ -47,12 +48,14 @@ func NewService(server *Server, html []byte, srcFileName string, data map[string
 
 	// 解析 Service 节点
 	service := &Service{
-		server:      server,
-		data:        dataMap,
-		srcFileName: srcFileName,
-		srcPath:     srcPath,
-		requests:    cmap.New(),
-		scripts:     NewScriptManager(server.logger),
+		server:   server,
+		data:     dataMap,
+		requests: cmap.New(),
+		config:   ServerConfig{},
+	}
+	service.Base, err = NewBase(srcFileName, server.logger, service, fsOpts)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := service.parse(html); err != nil {
@@ -67,7 +70,7 @@ func (s *Service) InitVM(vm *goja.Runtime) error {
 }
 
 func (s *Service) AddRequest(r *Request) {
-	s.requests.Set(r.opts.Name, r)
+	s.requests.Set(r.config.Name, r)
 }
 
 func (s *Service) GetRequest(name string) *Request {
@@ -86,6 +89,11 @@ func (s *Service) GetRequestCount() int {
 	return s.requests.Count()
 }
 
+func (s *Service) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+	data, err := s.server.ReadFile(filename, opts...)
+	return data, err
+}
+
 func (s *Service) parse(html []byte) error {
 	reader := bytes.NewReader(html)
 	// 解析 HTML
@@ -97,42 +105,61 @@ func (s *Service) parse(html []byte) error {
 	if serviceEl == nil {
 		return errors.New("no service found")
 	}
-	s.URL = serviceEl.AttrOr("url", "")
-	s.Name = serviceEl.AttrOr("mame", "") // 注意拼写错误 "mame"
-	s.Description = serviceEl.AttrOr("description", "")
-	optsList := []RequestOptions{}
-	serviceEl.Children().Each(func(i int, child *goquery.Selection) {
-		node := child.Get(0) // 获取当前节点的 *html.Node
+
+	s.config.URL = serviceEl.AttrOr("url", "")
+	s.config.Name = serviceEl.AttrOr("mame", "") // 注意拼写错误 "mame"
+	s.config.Description = serviceEl.AttrOr("description", "")
+
+	var reqConfigs []RequestConfig
+
+	err = s.ParseInitScript(serviceEl)
+	if err != nil {
+		return err
+	}
+
+	serviceEl.Children().Each(func(i int, request *goquery.Selection) {
+		if err != nil {
+			return
+		}
+
+		node := request.Get(0) // 获取当前节点的 *html.Node
 		if node.Type != 3 {
 			return
 		}
 		switch node.Data {
-		case "script":
-			s.code = child.Text()
-			s.codeType = child.AttrOr("type", "")
 		case "request":
 			// 解析 Request 列表
-			opts := RequestOptions{
-				Type:        strings.ToUpper(child.AttrOr("type", "")),
-				Name:        child.AttrOr("name", ""),
-				URL:         child.AttrOr("url", ""),
-				AbsURl:      child.AttrOr("abs-url", ""),
-				Description: child.AttrOr("description", ""),
-				ParamsUrl:   child.Find("params").AttrOr("url", ""),
+			reqCfg := RequestConfig{
+				Type:        strings.ToUpper(request.AttrOr("type", "")),
+				Name:        request.AttrOr("name", ""),
+				URL:         request.AttrOr("url", ""),
+				AbsURl:      request.AttrOr("abs-url", ""),
+				Description: request.AttrOr("description", ""),
+				ParamsType:  request.AttrOr("params-type", ""),
+				ParamsUrl:   request.AttrOr("params-url", ""),
 			}
+			request.Find("link.params").First().Each(func(i int, selection *goquery.Selection) {
+				reqCfg.ParamsUrl = selection.AttrOr("href", "")
+			})
 			// 获取 <script> 子节点
-			scriptEl := child.Find("script")
+			scriptEl := request.Find("script")
 			if scriptEl != nil {
-				opts.Code = scriptEl.Text()
-				opts.CodeType = scriptEl.AttrOr("type", "")
+				funcName := fmt.Sprintf("%s.%s()", s.config.Name, reqCfg.Name)
+				scriptConfig, er := ParseScript(request, "script", funcName, s.srcFileName)
+				if er != nil {
+					err = er
+					return
+				}
+				scriptConfig.UsePool = true
+				reqCfg.Script = *scriptConfig
 			}
-			optsList = append(optsList, opts)
+			reqConfigs = append(reqConfigs, reqCfg)
 		}
 
 	})
 
-	for _, opts := range optsList {
-		request, err := NewRequest(s.server, s, opts)
+	for _, cfg := range reqConfigs {
+		request, err := NewRequest(s.server, s, s.GetSrcFileName(), cfg)
 		if err != nil {
 			return err
 		}
@@ -141,12 +168,19 @@ func (s *Service) parse(html []byte) error {
 	return err
 }
 
-func (s *Service) Run() error {
-	s.runInitScript()
+func (s *Service) Initialize() error {
+	runValues := &RunValues{
+		Server:  s.server,
+		Service: s,
+	}
+	if err := s.RunInitScript(runValues); err != nil {
+		return err
+	}
+
 	for _, key := range s.GetRequestKeys() {
 		r := s.GetRequest(key)
 		if r != nil {
-			err := r.Run()
+			err := r.Initialize()
 			if err != nil {
 				return err
 			}
@@ -155,30 +189,6 @@ func (s *Service) Run() error {
 	return nil
 }
 
-func (s *Service) runInitScript() error {
-	if s.code != "" {
-		fileName := fmt.Sprintf("service_%s_init.js", s.Name)
-		opts := &RuntimeOption{
-			Server:  s.server,
-			Service: s,
-		}
-		err := RunInitScript(s.scripts, s.code, s.codeType, fileName, opts, s.GetLogger())
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *Service) GetLogger() logrus.FieldLogger {
 	return s.server.logger
-}
-
-// getFilePath 根据文件名获取文件路径
-func getFilePath(fileName string) (string, error) {
-	i := strings.LastIndex(fileName, "/")
-	if i == -1 {
-		return "", errors.New("file name not exist")
-	}
-	return fileName[:i], nil
 }

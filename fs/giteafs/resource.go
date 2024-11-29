@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"os"
 )
 
@@ -86,7 +86,7 @@ func readDir(fs *Fs, filename string, count int) (res []os.FileInfo, err error) 
 		return nil, err
 	}
 	for _, item := range list {
-		fileInfo := &common.FileInfo{}
+		fileInfo := &fsopts.FileInfo{}
 		fileInfo.SetName(item.Name)
 		fileInfo.SetSize(item.Size)
 		if item.Type == "file" {

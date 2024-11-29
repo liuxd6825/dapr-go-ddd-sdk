@@ -1,136 +1,97 @@
 package runtime
 
 import (
+	"fmt"
 	"github.com/dop251/goja"
-	"reflect"
-	"strings"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 )
 
-// Pool 封装 goja 的池
-type Pool struct {
-	userPool        bool
-	vm              *goja.Runtime
-	pool            chan *goja.Runtime // 使用 channel 实现池化，限制池大小
-	fieldNameMapper goja.FieldNameMapper
+type Runtime struct {
+	vm          *goja.Runtime
+	moduleCache map[string]*goja.Object
+	reader      fs.Reader
 }
 
-// FieldNameMapper
-type FieldNameMapper struct{}
+// 模块缓存
 
-var fieldNameMapper = &FieldNameMapper{}
 var DefaultPoolSize = 5
+var fieldNameMapper = &FieldNameMapper{}
 
-// NewPool 创建一个带大小限制的 Runtime 池
-func NewPool(userPool bool) *Pool {
-	r := &Pool{
-		userPool:        userPool,
-		fieldNameMapper: &FieldNameMapper{},
+func NewRuntime(reader fs.Reader) *Runtime {
+	vm := goja.New()
+	vm.SetFieldNameMapper(fieldNameMapper)
+	r := &Runtime{
+		vm:          vm,
+		moduleCache: map[string]*goja.Object{},
+		reader:      reader,
 	}
-	if userPool {
-		r.pool = make(chan *goja.Runtime, DefaultPoolSize)
-		// 预热池：创建 poolSize 个 goja.Runtime 实例
-		for i := 0; i < DefaultPoolSize; i++ {
-			r.pool <- NewRuntime()
-		}
-	} else {
-		r.pool = nil
-		r.vm = NewRuntime()
-	}
+	r.setRequire(r.vm, reader)
 	return r
 }
 
-func NewRuntime() *goja.Runtime {
-	vm := goja.New()
-	vm.SetFieldNameMapper(fieldNameMapper)
-	return vm
+// 注册自定义 require 函数
+func (r *Runtime) setRequire(vm *goja.Runtime, fsReader fs.Reader) {
+	_ = vm.Set("require", func(call goja.FunctionCall) goja.Value {
+		modulePath := call.Argument(0).String()
+		value, err := r.require(fsReader, modulePath)
+		if err != nil {
+			panic(vm.ToValue(err.Error()))
+		}
+		return value
+	})
 }
 
-// Run 执行 JavaScript 代码，并传递参数，返回结果
-func (r *Pool) Run(code string, opts ...func(vm *goja.Runtime) error) (any, error) {
-	var vm *goja.Runtime
+// 自定义 require 函数
+func (r *Runtime) require(reader fs.Reader, modulePath string) (val goja.Value, err error) {
+	defer func() {
+		err = RecoverError(err, recover())
+	}()
 
-	//  当不启用pool模式时
-	if r.userPool {
-		// 从池中获取一个实例（阻塞等待）
-		select {
-		case vm = <-r.pool:
-			// 获取到实例
-		default:
-			// 创建新实例（仅在池耗尽时创建，避免阻塞过久）
-			vm = NewRuntime()
-		}
-
-		// 确保实例归还池
-		defer func() {
-			select {
-			case r.pool <- vm: // 归还实例
-			default: // 池已满时丢弃实例
-			}
-		}()
-	} else {
-		vm = r.vm
+	moduleName := modulePath
+	// 检查缓存
+	if cachedModule, ok := r.moduleCache[modulePath]; ok {
+		return cachedModule, nil
 	}
 
-	return r.run(vm, code, opts...)
-}
+	// 读取模块文件内容
+	content, err := reader.ReadFile(modulePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load module %s: %v", modulePath, err)
+	}
 
-// run
-//
-//	@Description:
-//	@receiver r
-//	@param vm
-//	@param code
-//	@param opts
-//	@return any
-//	@return error
-func (r *Pool) run(vm *goja.Runtime, code string, opts ...func(vm *goja.Runtime) error) (any, error) {
-	err := r.initVM(vm, opts...)
+	// 创建新的 Runtime
+	moduleVM := goja.New()
+
+	// 创建 module 和 exports 对象
+	exports := moduleVM.NewObject()
+	moduleObject := moduleVM.NewObject()
+	_ = moduleObject.Set("exports", exports)
+
+	// 注入 module 和 exports
+	_ = moduleVM.Set("module", moduleObject)
+	_ = moduleVM.Set("exports", exports)
+
+	// 绑定 require 函数，让模块内可以嵌套调用
+	r.setRequire(moduleVM, reader)
+
+	// 包装模块代码，注入 require、module 和 exports
+	wrappedCode := fmt.Sprintf(`
+		(function(require, module, exports) {
+			%s
+		})(require, module, module.exports);
+	`, string(content))
+
+	// 执行模块代码
+	_, err = moduleVM.RunString(wrappedCode)
 	if err != nil {
 		return nil, err
 	}
-	// 执行 JavaScript 代码
-	result, err := vm.RunString(code)
-	if err != nil {
-		return nil, err
-	}
-	if result != nil {
-		return result.Export(), nil
-	}
-	return result, err
+
+	// 缓存模块
+	r.moduleCache[moduleName] = moduleObject.Get("exports").(*goja.Object)
+	return moduleObject.Get("exports"), nil
 }
 
-// initVM
-//
-//	@Description:
-//	@receiver r
-//	@param vm
-//	@param opts
-//	@return error
-func (r *Pool) initVM(vm *goja.Runtime, opts ...func(vm *goja.Runtime) error) error {
-	for _, opt := range opts {
-		if opt != nil {
-			if err := opt(vm); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// FieldName 映射字段名称
-func (m *FieldNameMapper) FieldName(t reflect.Type, f reflect.StructField) string {
-	return m.lowerFirstLetter(f.Name) // 将字段名转换为小写
-}
-
-// MethodName 映射方法名称
-func (m *FieldNameMapper) MethodName(t reflect.Type, mtd reflect.Method) string {
-	return m.lowerFirstLetter(mtd.Name) // 将方法名转换为小写
-}
-
-// 辅助函数：将首字母转换为小写
-func (m *FieldNameMapper) lowerFirstLetter(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	return strings.ToLower(s[:1]) + s[1:]
+func (r *Runtime) RunString(code string) (goja.Value, error) {
+	return r.vm.RunString(code)
 }

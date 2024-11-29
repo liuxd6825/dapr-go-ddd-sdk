@@ -16,8 +16,12 @@ func GetBasePath(basePath ...string) string {
 //	@param pwd 当前路径
 //	@param filename 待相对路径的文件名， 如：../c.txt 或 ./c.txt
 //	@return string 绝对路径
-func AbsPath(filename string, basePath ...string) string {
-	pwd := GetBasePath(basePath...)
+func AbsPath(filename string, opts ...*ReadOptions) string {
+	opt := newReadOption(opts...)
+	pwd := GetBasePath(opt.WorkPath)
+	if strings.HasPrefix(filename, "/") {
+		return opt.RootPath + filename
+	}
 
 	if strings.HasPrefix(filename, pwd) {
 		return filename
@@ -25,10 +29,6 @@ func AbsPath(filename string, basePath ...string) string {
 
 	if !strings.Contains(filename, "../") && !strings.Contains(filename, "./") {
 		return filepath.Join(pwd, filename)
-	}
-
-	if strings.HasPrefix(filename, "/") {
-		return filename
 	}
 
 	var res []string
