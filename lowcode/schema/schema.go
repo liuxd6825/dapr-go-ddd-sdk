@@ -87,26 +87,26 @@ func (s *Schema) Init(schema ISchema) {
 	}
 }
 
-func (p *Schema) InitType() {
-	if p.types != nil {
+func (s *Schema) InitType() {
+	if s.types != nil {
 		return
 	}
-	if v, ok := p.Type.(string); ok {
-		p.types = []string{v}
-		if !p.NotNull {
-			p.types = append(p.types, TypeNull)
+	if v, ok := s.Type.(string); ok {
+		s.types = []string{v}
+		if !s.NotNull {
+			s.types = append(s.types, TypeNull)
 		}
-	} else if v, ok := p.Type.([]any); ok {
+	} else if v, ok := s.Type.([]any); ok {
 		hasNull := false
 		for _, vv := range v {
 			item := strings.ToLower(fmt.Sprintf("%s", vv))
-			p.types = append(p.types, item)
+			s.types = append(s.types, item)
 			if vv == TypeNull {
 				hasNull = true
 			}
 		}
-		if !p.NotNull && !hasNull {
-			p.types = append(p.types, TypeNull)
+		if !s.NotNull && !hasNull {
+			s.types = append(s.types, TypeNull)
 		}
 	}
 }
@@ -127,12 +127,15 @@ func (s *Schema) GetSchema() ISchema {
 	return s
 }
 
-func (s *Schema) Validate(obj any) error {
+func (s *Schema) Validate(obj any) {
 	s.Init(s)
 	if s.validate == nil {
 		s.validate = NewValidate(s)
 	}
-	return s.validate.Validate(obj)
+	err := s.validate.Validate(obj)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (s *Schema) ToJson() string {

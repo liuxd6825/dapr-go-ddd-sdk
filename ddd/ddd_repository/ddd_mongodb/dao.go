@@ -684,7 +684,11 @@ func (r *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 			return nil, false, err
 		}
 		err = cursor.All(ctx, &list)
-		return list, len(list) > 0, err
+		count := len(list)
+		if count == 0 {
+			list = []T{}
+		}
+		return list, count > 0, err
 	})
 }
 
@@ -697,6 +701,10 @@ func (r *Dao[T]) FindListByBsonM(ctx context.Context, tenantId string, filter bs
 			return nil, false, err
 		}
 		err = cursor.All(ctx, &list)
+		count := len(list)
+		if count == 0 {
+			list = []T{}
+		}
 		return list, len(list) > 0, err
 	})
 }
@@ -710,6 +718,10 @@ func (r *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rsql string, o
 			return nil, false, err
 		}
 		err = cursor.All(ctx, &list)
+		count := len(list)
+		if count == 0 {
+			list = []T{}
+		}
 		return list, len(list) > 0, err
 	})
 }

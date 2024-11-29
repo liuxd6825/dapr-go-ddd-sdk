@@ -110,10 +110,6 @@ func (a *RestAssembler) AsFindPagingRequest(ictx iris.Context) (*ddd_query.FindP
 	return a.assFindPagingRequest(ictx)
 }
 func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
 	pageNum := ictx.URLParamInt64Default("page-num", 0)
 	pageSize := ictx.URLParamInt64Default("page-size", 20)
 	filter := ictx.URLParamDefault("filter", "")
@@ -129,7 +125,6 @@ func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*ddd_query.Find
 	mustFilter := ictx.URLParamDefault("must-filter", "")
 
 	req := ddd_repository.FindPagingQueryDTO{
-		TenantId:    tenantId,
 		PageNum:     pageNum,
 		PageSize:    pageSize,
 		Filter:      filter,

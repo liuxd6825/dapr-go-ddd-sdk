@@ -31,9 +31,9 @@ func RecoverError(e error, recover any) error {
 //	@return error
 func TransformTSCodeToJS(tsCode string) (string, error) {
 	// 正则表达式匹配 namespace 块
-	namespaceRegex := regexp.MustCompile(`(?s)namespace\s+\w+\s*{\s*(.*?)\s*}`)
+	//namespaceRegex := regexp.MustCompile(`(?s)namespace\s+\w+\s*{\s*(.*?)\s*}`)
 	// 替换 namespace 块，仅保留其内部内容
-	tsCode = namespaceRegex.ReplaceAllString(tsCode, "$1")
+	//tsCode = namespaceRegex.ReplaceAllString(tsCode, "$1")
 
 	// 匹配以 *.d.ts 结尾的 import 语句
 	dtsImportRegex := regexp.MustCompile(`(?m)^\s*import\s+.*?from\s+["'].*?\.d\.ts["'];?\s*$`)
@@ -78,8 +78,8 @@ func TransformTSCodeToJS(tsCode string) (string, error) {
 	tsCode = typeAnnotationRegex.ReplaceAllString(tsCode, "")
 
 	// 清理多余的空行和缩进
-	cleanupRegex := regexp.MustCompile(`(?m)^\s*}\s*$`) // 匹配单独的 } 并删除
-	tsCode = cleanupRegex.ReplaceAllString(tsCode, "")
+	//cleanupRegex := regexp.MustCompile(`(?m)^\s*}\s*$`) // 匹配单独的 } 并删除
+	//tsCode = cleanupRegex.ReplaceAllString(tsCode, "")
 
 	// 删除多余空行
 	emptyLinesRegex = regexp.MustCompile(`(?m)^\s*$\n`)

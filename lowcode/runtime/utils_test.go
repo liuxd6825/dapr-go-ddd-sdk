@@ -12,12 +12,19 @@ import (
 
 func Test_TransformTSCodeToJS(t *testing.T) {
 	tsCode := `
-		import { createCommand } from "./human.d.ts";
-		namespace create {
-			import { createCommand } from "./human.d.ts";
-			service.dao.create(ctx, createCommand.body.data);
-		}
+		(function () {
+			import { createParams as params } from "./human-service.d.ts";
+			let data = params.cmd.data;
+			data.tenantId = tenantId;
+			let err = service.schema.validate(data);
+			if (err != null){
+				return err;
+			}
+			service.dao.create(ctx, data);
+			return data
+		})()
 	`
+
 	jsCode, err := TransformTSCodeToJS(tsCode)
 	if err != nil {
 		t.Fatal(err)

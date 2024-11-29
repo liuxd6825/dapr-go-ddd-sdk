@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
@@ -92,33 +93,39 @@ func (r *Request) Handle(ictx iris.Context) {
 	}
 	wctx := NewWebContext(ctx, ictx)
 	params := r.GetParams(wctx, r.config.ParamsUrl)
-	res := r.handle(wctx, params)
-	if err, ok := res.(error); ok {
-		setError(ictx, err)
-		return
-	}
-	if res != nil {
-		wctx.WriteJson(res)
-	}
+	r.runScript(wctx, params)
 }
 
-func (r *Request) handle(wctx *WebContext, params map[string]any) any {
+func (r *Request) runScript(wctx *WebContext, params any) {
 	values := &RunValues{
 		Server:     r.server,
 		Service:    r.service,
 		Request:    r,
 		WebContext: wctx,
 	}
+	findPaging := wctx.GetFindPaging()
+	fmt.Sprintf("%v", findPaging)
+	tenantId := wctx.GetTenantId()
 	val, err := r.scripts.RunScript(r.config.Script.FuncName, values, true, func(vm *goja.Runtime) error {
 		_ = vm.Set("params", params)
 		_ = vm.Set("ctx", wctx)
-		_ = vm.Set("tenantId", wctx.GetTenantId())
+		_ = vm.Set("tenantId", tenantId)
+		_ = vm.Set("tokenUser", wctx.GetTokenUser())
 		return nil
 	})
 	if err != nil {
-		panic(err)
+		logs.Error(wctx, tenantId, logs.Fields{"code": r.config.Script.Code})
+		wctx.SetError(err)
 	}
-	return val
+	if val != nil {
+		if err, ok := val.(error); ok {
+			wctx.SetError(err)
+		} else if v, ok := val.(goja.Value); ok {
+			wctx.SetData(v.Export())
+		} else {
+			wctx.SetData(val)
+		}
+	}
 }
 
 func (r *Request) GetUrlParams(ctx iris.Context) map[string]any {

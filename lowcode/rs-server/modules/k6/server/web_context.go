@@ -179,12 +179,7 @@ func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
 	}
 
 	object := val.(map[string]any)
-	if schema != nil {
-		err = schema.Validate(object)
-	}
-	if err != nil {
-		panic(err)
-	}
+	schema.Validate(object)
 	return object
 }
 
@@ -195,11 +190,8 @@ func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
 //	@param data
 //	@param schema
 //	@return error
-func (c *WebContext) Valid(data any, schema *schema.Schema) error {
-	if schema != nil {
-		return schema.Validate(data)
-	}
-	return nil
+func (c *WebContext) Valid(data any, schema *schema.Schema) {
+	schema.Validate(data)
 }
 
 // FormFile
@@ -273,9 +265,7 @@ func (c *WebContext) FormObject(name string, required bool, schema *schema.Schem
 	object = val
 
 	if schema != nil {
-		if err = schema.Validate(object); err != nil {
-			panic(err)
-		}
+		schema.Validate(object)
 	}
 	return object
 }
