@@ -14,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
+	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/liuxd6825/k6server/js/modules"
 	"io"
 	"time"
@@ -24,29 +25,24 @@ type WebContext struct {
 	authToken appctx.AuthToken
 	ictx      iris.Context
 	ctx       context.Context
-	params    *Params
 	vu        modules.VU
 	closers   []io.Closer //资源关闭器
-
+	request   *Request
 }
 
-func NewWebContext(ctx context.Context, ictx iris.Context) *WebContext {
+func NewWebContext(ctx context.Context, ictx iris.Context, request *Request) *WebContext {
 	authToken, ok := appctx.GetAuthToken(ctx)
 	if !ok {
 		panic("auth token not found")
 	}
 
 	return &WebContext{
+		request:   request,
 		authToken: authToken,
 		ictx:      ictx,
 		ctx:       ctx,
-		params:    NewParams(ictx),
 		closers:   make([]io.Closer, 0),
 	}
-}
-
-func (c *WebContext) Params() *Params {
-	return c.params
 }
 
 func (c *WebContext) Ictx() iris.Context {
@@ -140,13 +136,13 @@ func (c *WebContext) ReadBytes() []byte {
 //	@receiver c
 //	@param schema 有空：进行验证;  nil:不验证
 //	@return map[string]any
-func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
+func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
 	var err error
-	var timeFields map[string]any
+	timeFields := map[string]any{}
 
 	bytes := c.ReadBytes()
 	if schema != nil {
-		timeFields = getTimeFields(schema)
+		getTimeFields2(schema, timeFields)
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
@@ -159,7 +155,7 @@ func (c *WebContext) ReadObject(schema *schema.Schema) map[string]any {
 
 	object := val.(map[string]any)
 	if schema != nil {
-		schema.Validate(object)
+		err = schema.Validate(object)
 	}
 	if err != nil {
 		panic(err)
@@ -215,13 +211,13 @@ func (c *WebContext) FormValue(name string, required bool) string {
 //	@param name formValue中的name名称
 //	@param schema 有值:验证数据;
 //	@return any
-func (c *WebContext) FormObject(name string, required bool, schema *schema.Schema) any {
+func (c *WebContext) FormObject(name string, required bool, schema *jsonschema.Schema) any {
 	if name == "" {
 		panic("FormObject(name, schema) name parameter is not empty")
 	}
 
 	var err error
-	var timeFields map[string]any
+	timeFields := map[string]any{}
 
 	ictx := c.ictx
 	text := ictx.PostValue(name)
@@ -234,8 +230,9 @@ func (c *WebContext) FormObject(name string, required bool, schema *schema.Schem
 	}
 
 	bytes := []byte(text)
+
 	if schema != nil {
-		timeFields = getTimeFields(schema)
+		getTimeFields2(schema, timeFields)
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
@@ -249,7 +246,9 @@ func (c *WebContext) FormObject(name string, required bool, schema *schema.Schem
 	object = val
 
 	if schema != nil {
-		schema.Validate(object)
+		if err = schema.Validate(object); err != nil {
+			panic(err)
+		}
 	}
 	return object
 }
@@ -487,4 +486,62 @@ func getTimeFields(s schema2.ISchema) map[string]any {
 		}
 	}
 	return timeFields
+}
+
+func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any) {
+	if s == nil {
+		return
+	}
+
+	if s.Types != nil {
+		if s.Types.Contains(jsonschema.JsonType_ArrayType) {
+			items := s.Items2020
+			if items != nil && items.Types.Contains(jsonschema.JsonType_ObjectType) {
+				propsTimeFields := map[string]any{}
+				getTimeFieldsProps2(items.Properties, propsTimeFields)
+				if len(propsTimeFields) > 0 {
+					timeFields[s.ID] = timeFields
+				}
+			}
+		} else if s.Types.Contains(jsonschema.JsonType_ObjectType) {
+			getTimeFieldsProps2(s.Properties, timeFields)
+		}
+	}
+	if s.Ref != nil {
+		getTimeFields2(s.Ref, timeFields)
+	}
+
+}
+
+func getTimeFieldsProps2(props map[string]*jsonschema.Schema, timeFields map[string]any) {
+	if props == nil {
+		return
+	}
+
+	for k, p := range props {
+		if p == nil {
+			continue
+		}
+		if p.Types != nil {
+			if p.Types.Contains(jsonschema.JsonType_DateType) {
+				timeFields[k] = schema2.TypeDate
+			} else if p.Types.Contains(jsonschema.JsonType_DateTimeType) {
+				timeFields[k] = schema2.TypeDatetime
+			}
+		}
+		if p.Ref != nil {
+			propsFields := map[string]any{}
+			getTimeFields2(p.Ref, propsFields)
+			if len(propsFields) > 0 {
+				timeFields[k] = propsFields
+			}
+		}
+		if p.Properties != nil || p.Items != nil {
+			propsFields := map[string]any{}
+			getTimeFields2(p, propsFields)
+			if len(propsFields) > 0 {
+				timeFields[k] = propsFields
+			}
+		}
+	}
 }

@@ -15,7 +15,7 @@ func Test_NewSchemasWithJsFile(t *testing.T) {
 	} else {
 		fmt.Println(currentDir)
 	}
-	fs, err := localfs.NewFs(&localfs.Config{Id: "test", Path: currentDir})
+	fs, err := localfs.NewFs(localfs.Config{Path: currentDir})
 	if err != nil {
 		t.Fatal(err)
 		return

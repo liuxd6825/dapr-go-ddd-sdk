@@ -9,30 +9,41 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	cmap "github.com/orcaman/concurrent-map"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+
+	iofs "io/fs"
 )
 
 // Server 表示顶层结构
 type Server struct {
 	*Base
-	app       *iris.Application
-	srcFs     afero.Fs
-	fsm       *fs_pkg.FsManager
-	services  cmap.ConcurrentMap
-	envConfig common.IEnvConfig
-	tpl       *tpl_pkg.Template
-	pkg       cmap.ConcurrentMap
+	app          *iris.Application
+	srcFs        afero.Fs
+	fsm          *fs_pkg.FsManager
+	services     *xtype.Map[*Service] // 服务Map
+	envConfig    common.IEnvConfig    // 环境变量
+	tpl          *tpl_pkg.Template    // 模板渲染服务
+	definition   *definition.Definition
+	cacheEnable  bool // 是否启用缓存
+	schemaLoader schema.URLLoader
 }
 
 type NewServerOptions func(server *Server)
 
 // NewServer 解析 HTML 并返回 Server 对象
 func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env common.IEnvConfig, opts ...NewServerOptions) (*Server, error) {
+	fsma, err := env.GetFsManager()
+	if err != nil {
+		return nil, err
+	}
 	fsm, err := fs_pkg.NewFsManger(env)
 	if err != nil {
 		return nil, err
@@ -55,11 +66,17 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 
 	logger := logrus.StandardLogger()
 	server := &Server{
-		app:       app,
-		services:  cmap.New(),
-		fsm:       fsm,
-		envConfig: env,
-		srcFs:     srcFs,
+		app:          app,
+		services:     xtype.NewMap[*Service](),
+		fsm:          fsm,
+		envConfig:    env,
+		srcFs:        srcFs,
+		cacheEnable:  true,
+		schemaLoader: schema_utils.NewSchemaLoader(fsma),
+	}
+	server.definition, err = definition.NewDefinition(srcFs, "/definition/params")
+	if err != nil {
+		return nil, err
 	}
 
 	server.Base, err = NewBase(srcFileName, logger, server, fsOpts)
@@ -77,7 +94,23 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 		}
 	}
 
-	return server, nil
+	// 使用 afero.Walk 遍历
+	err = afero.Walk(srcFs, "/definition/params", func(path string, info iofs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// 打印文件路径（忽略目录）
+		if !info.IsDir() {
+			fmt.Println("File:", path)
+		}
+		return nil
+	})
+
+	return server, err
+}
+
+func (s *Server) GetCacheEnable() bool {
+	return s.cacheEnable
 }
 
 func (s *Server) GetSrcFs() afero.Fs {
@@ -88,11 +121,24 @@ func (s *Server) ReadSrcFile(fileName string, opts ...*fsopts.Options) ([]byte, 
 	return fs.ReadFile(s.srcFs, fileName, opts...)
 }
 
+// ReadFile
+//
+//	@Description: 读取文件内容
+//	@receiver s
+//	@param filename
+//	@param opts
+//	@return []byte
+//	@return error
 func (s *Server) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
 	data := s.fsm.ReadFile(filename, opts...)
 	return data, nil
 }
 
+// Start
+//
+//	@Description: 启动服务
+//	@receiver s
+//	@return error
 func (s *Server) Start() error {
 	runValue := &RunValues{
 		Server: s,
@@ -110,14 +156,26 @@ func (s *Server) Start() error {
 	return nil
 }
 
+// GetService
+//
+//	@Description: 取得服务
+//	@receiver s
+//	@param serviceName
+//	@return *Service
 func (s *Server) GetService(serviceName string) *Service {
 	service, ok := s.services.Get(serviceName)
 	if ok {
-		return service.(*Service)
+		return service
 	}
 	return nil
 }
 
+// parse
+//
+//	@Description: html内容解析
+//	@receiver s
+//	@param doc
+//	@return error
 func (s *Server) parse(doc *goquery.Document) error {
 	serverEl := doc.Find("body server")
 	if serverEl == nil {
@@ -148,16 +206,25 @@ func (s *Server) parse(doc *goquery.Document) error {
 				s.services.Set(service.config.Name, service)
 			}
 		}
-
 	})
 
 	return nil
 }
 
+// GetFsm
+//
+//	@Description: 取得文件管理器
+//	@receiver s
+//	@return *fs_pkg.FsManager
 func (s *Server) GetFsm() *fs_pkg.FsManager {
 	return s.fsm
 }
 
+// GetApp
+//
+//	@Description: 取iris.Application
+//	@receiver s
+//	@return *iris.Application
 func (s *Server) GetApp() *iris.Application {
 	return s.app
 }
@@ -192,12 +259,19 @@ func (s *Server) SetRunValue(key string, value any) {
 	s.runValues.Set(key, value)
 }
 
+// SetRunValues
+//
+//	@Description: 添加运行时变量
+//	@receiver s
+//	@param data
 func (s *Server) SetRunValues(data map[string]any) {
 	s.runValues.MSet(data)
 }
 
 func (s *Server) InitVM(vm *goja.Runtime) error {
 	values := s.runValues.Items()
-	addRuntimeValues(vm, values)
+	if err := addRuntimeValues(vm, values); err != nil {
+		return err
+	}
 	return nil
 }

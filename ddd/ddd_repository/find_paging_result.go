@@ -36,19 +36,19 @@ type FindPagingResult[T any] struct {
 }
 
 type FindPagingResultOptions[T interface{}] struct {
-	Data        *[]T
-	SumData     *[]T
-	TotalRows   int64
-	TotalPages  int64
-	PageNum     int64
-	PageSize    int64
-	Filter      string
-	Fields      string
-	Sort        string
-	IsFound     bool
-	IsTotalRows bool
-	IsSum       bool
-	Error       error
+	Data        *[]T   `json:"data"`
+	SumData     *[]T   `json:"sumData"`
+	TotalRows   int64  `json:"totalRows"`
+	TotalPages  int64  `json:"totalPages"`
+	PageNum     int64  `json:"pageNum"`
+	PageSize    int64  `json:"pageSize"`
+	Filter      string `json:"filter"`
+	Fields      string `json:"fields"`
+	Sort        string `json:"sort"`
+	IsFound     bool   `json:"isFound"`
+	IsTotalRows bool   `json:"isTotalRows"`
+	IsSum       bool   `json:"isSum"`
+	Error       error  `json:"error,omitempty"`
 }
 
 func NewFindPagingSumResult[T ddd.Entity](data []T, sumData []T, totalRows *int64, query FindPagingQuery, err error, sumErr error) *FindPagingResult[T] {

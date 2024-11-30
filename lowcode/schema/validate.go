@@ -10,42 +10,50 @@ import (
 )
 
 type Validate struct {
-	schema   *Schema
-	validate *jsonschema.Schema
+	schema    *Schema
+	validator *jsonschema.Schema
+	compiler  *jsonschema.Compiler
 }
 
 func NewValidate(schema *Schema) *Validate {
-	return &Validate{schema: schema}
+	compiler := jsonschema.NewCompiler()
+	compiler.AssertFormat()
+	compiler.AssertContent()
+	compiler.RegisterFormat(formats.DateTimeFormat)
+	compiler.RegisterFormat(formats.DateFormat)
+	return &Validate{schema: schema, compiler: jsonschema.NewCompiler()}
+}
+func (v *Validate) UseLoader(loader URLLoader) {
+	v.compiler.UseLoader(loader)
 }
 
-func (v *Validate) Compiler() error {
+func (v *Validate) Compile() error {
 	bs, err := json.Marshal(v.schema)
 	if err != nil {
 		return err
 	}
-	jsschema, err := jsonschema.UnmarshalJSON(bytes.NewReader(bs))
+	data, err := jsonschema.UnmarshalJSON(bytes.NewReader(bs))
 	if err != nil {
 		return err
 	}
-	c := jsonschema.NewCompiler()
-	c.AssertFormat()
-	c.AssertContent()
-	c.RegisterFormat(formats.DateTimeFormat)
-	c.RegisterFormat(formats.DateFormat)
-	if err := c.AddResource("schema.json", jsschema); err != nil {
+	fileName := v.schema.FileName
+	if fileName == "" {
+		fileName = "schema.json"
+	}
+	if err := v.compiler.AddResource(fileName, data); err != nil {
 		return err
 	}
-	validate, err := c.Compile("schema.json")
+	validator, err := v.compiler.Compile(fileName)
 	if err != nil {
 		return err
 	}
-	v.validate = validate
+	v.validator = validator
 	return nil
 }
 
 func (v *Validate) Validate(val any) error {
-	if v.validate == nil {
-		if err := v.Compiler(); err != nil {
+	if v.validator == nil {
+		if err := v.Compile(); err != nil {
 			var sErr *jsonschema.SchemaValidationError
 			if errors.As(err, &sErr) {
 				return NewSchemaError(sErr)
@@ -56,7 +64,7 @@ func (v *Validate) Validate(val any) error {
 	if m, ok := val.(common.Object); ok {
 		val = m.AsMap()
 	}
-	err := v.validate.Validate(val)
+	err := v.validator.Validate(val)
 	var validateError *jsonschema.ValidationError
 	if errors.As(err, &validateError) {
 		return NewFieldsError(validateError)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/jsonschema/v6"
 	"io"
 	"os"
 	"strings"
@@ -23,20 +24,22 @@ type ISchema interface {
 }
 
 type Schema struct {
+	FileName   string     `json:"fileName,omitempty"`
+	Ref        string     `json:"$ref,omitempty"`
 	Id         string     `json:"$id,omitempty"`
 	Schema     string     `json:"$schema,omitempty"`
 	Type       any        `json:"type,omitempty"`
-	NotNull    bool       `json:"notnull,omitempty"`
 	Title      string     `json:"title,omitempty"`
 	Name       string     `json:"name,omitempty"`
 	Properties Properties `json:"properties,omitempty"`
 	Items      *Property  `json:"items,omitempty"`
-	Required   []string   `json:"-"`
+	Required   []string   `json:"required,omitempty"`
 	ReadOnly   bool       `json:"readOnly,omitempty"`
 	WriteOnly  bool       `json:"writeOnly,omitempty"`
 	types      []string
 	validate   *Validate
 	init       bool
+	loader     URLLoader
 }
 
 type Enum struct {
@@ -44,7 +47,7 @@ type Enum struct {
 
 type Item = Property
 
-func NewSchema(reader io.Reader) (*Schema, error) {
+func NewSchema(fileName string, reader io.Reader) (*Schema, error) {
 	var data Schema
 	var err error
 	// 解码 JSON 数据到结构体中
@@ -55,22 +58,27 @@ func NewSchema(reader io.Reader) (*Schema, error) {
 	for key, property := range data.Properties {
 		property.Name = key
 	}
+	data.FileName = fileName
 	return &data, err
 }
 
-func NewSchemaWithJson(json string) (*Schema, error) {
+func NewSchemaWithJson(fileName string, json string) (*Schema, error) {
 	var reader = strings.NewReader(json)
-	return NewSchema(reader)
+	return NewSchema(fileName, reader)
 }
 
-func NewSchemaFile(pathFile string) (*Schema, error) {
+func NewSchemaFile(fileName string) (*Schema, error) {
 	// 打开 JSON 文件
-	file, err := os.Open(pathFile)
+	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error opening file: %v", err))
 	}
-	defer file.Close()
-	return NewSchema(file)
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	return NewSchema(fileName, file)
 }
 
 func (s *Schema) Init(schema ISchema) {
@@ -87,28 +95,54 @@ func (s *Schema) Init(schema ISchema) {
 	}
 }
 
+func (s *Schema) UseLoader(loader URLLoader) error {
+	s.loader = loader
+	if s.validate != nil {
+		s.validate.UseLoader(s.loader)
+	}
+	return nil
+}
+
+func (s *Schema) Compile() error {
+	s.Init(s)
+	if s.validate == nil {
+		s.validate = NewValidate(s)
+
+	}
+	if s.loader != nil {
+		s.validate.UseLoader(s.loader)
+	}
+
+	return s.validate.Compile()
+}
+
+func (s *Schema) GetJsonSchema() *jsonschema.Schema {
+	return s.validate.validator
+}
+
 func (s *Schema) InitType() {
-	if s.types != nil {
-		return
-	}
-	if v, ok := s.Type.(string); ok {
-		s.types = []string{v}
-		if !s.NotNull {
-			s.types = append(s.types, TypeNull)
+	/*
+		if s.types != nil {
+			return
 		}
-	} else if v, ok := s.Type.([]any); ok {
-		hasNull := false
-		for _, vv := range v {
-			item := strings.ToLower(fmt.Sprintf("%s", vv))
-			s.types = append(s.types, item)
-			if vv == TypeNull {
-				hasNull = true
+		if v, ok := s.Type.(string); ok {
+			s.types = []string{v}
+			if !s.NotNull {
+				s.types = append(s.types, TypeNull)
 			}
-		}
-		if !s.NotNull && !hasNull {
-			s.types = append(s.types, TypeNull)
-		}
-	}
+		} else if v, ok := s.Type.([]any); ok {
+			hasNull := false
+			for _, vv := range v {
+				item := strings.ToLower(fmt.Sprintf("%s", vv))
+				s.types = append(s.types, item)
+				if vv == TypeNull {
+					hasNull = true
+				}
+			}
+			if !s.NotNull && !hasNull {
+				s.types = append(s.types, TypeNull)
+			}
+		}*/
 }
 
 func (s *Schema) GetName() string {
@@ -127,11 +161,7 @@ func (s *Schema) GetSchema() ISchema {
 	return s
 }
 
-func (s *Schema) Validate(obj any) {
-	s.Init(s)
-	if s.validate == nil {
-		s.validate = NewValidate(s)
-	}
+func (s *Schema) Validate(obj any, opts ...func(*Validate) error) {
 	err := s.validate.Validate(obj)
 	if err != nil {
 		panic(err)

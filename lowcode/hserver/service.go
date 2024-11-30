@@ -136,10 +136,9 @@ func (s *Service) parse(html []byte) error {
 				AbsURl:      request.AttrOr("abs-url", ""),
 				Description: request.AttrOr("description", ""),
 				ParamsType:  request.AttrOr("params-type", ""),
-				ParamsUrl:   request.AttrOr("params-url", ""),
 			}
 			request.Find("link.params").First().Each(func(i int, selection *goquery.Selection) {
-				reqCfg.ParamsUrl = selection.AttrOr("href", "")
+				reqCfg.LinkParamsUrl = selection.AttrOr("href", "")
 			})
 			// 获取 <script> 子节点
 			scriptEl := request.Find("script")

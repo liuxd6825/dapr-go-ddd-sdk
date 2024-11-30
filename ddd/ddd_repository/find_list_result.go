@@ -1,58 +1,58 @@
 package ddd_repository
 
 type FindListResult[T interface{}] struct {
-	err     error
-	data    []T
-	isFound bool
+	Error   error `json:"error"`
+	Data    []T   `json:"data"`
+	IsFound bool  `json:"isFound"`
 }
 
 func NewFindListResult[T interface{}](data []T, isFound bool, err error) *FindListResult[T] {
 	return &FindListResult[T]{
-		data:    data,
-		isFound: isFound,
-		err:     err,
+		Data:    data,
+		IsFound: isFound,
+		Error:   err,
 	}
 }
 
 func NewFindListResultError[T any](err error) *FindListResult[T] {
 	return &FindListResult[T]{
-		err: err,
+		Error: err,
 	}
 }
 
 func (f *FindListResult[T]) GetError() error {
-	return f.err
+	return f.Error
 }
 
 func (f *FindListResult[T]) GetData() []T {
-	return f.data
+	return f.Data
 }
 
-func (f *FindListResult[T]) IsFound() bool {
-	return f.isFound
+func (f *FindListResult[T]) GetIsFound() bool {
+	return f.IsFound
 }
 
 func (f *FindListResult[T]) Result() ([]T, bool, error) {
-	return f.data, f.isFound, f.err
+	return f.Data, f.IsFound, f.Error
 }
 
 func (f *FindListResult[T]) OnSuccess(success OnSuccessList[T]) *FindListResult[T] {
-	if f.err == nil && success != nil && f.isFound {
-		f.err = success(f.data)
+	if f.Error == nil && success != nil && f.IsFound {
+		f.Error = success(f.Data)
 	}
 	return f
 }
 
 func (f *FindListResult[T]) OnError(onErr OnError) *FindListResult[T] {
-	if f.err != nil && onErr != nil {
-		f.err = onErr(f.err)
+	if f.Error != nil && onErr != nil {
+		f.Error = onErr(f.Error)
 	}
 	return f
 }
 
 func (f *FindListResult[T]) OnNotFond(fond OnIsFond) *FindListResult[T] {
-	if f.err == nil && !f.isFound && fond != nil {
-		f.err = fond()
+	if f.Error == nil && !f.IsFound && fond != nil {
+		f.Error = fond()
 	}
 	return f
 }

@@ -14,7 +14,7 @@ type Config struct {
 }
 
 type Fs struct {
-	afero.Fs
+	*afero.OsFs
 	cfg      Config
 	rootPath string
 }
@@ -40,8 +40,11 @@ func NewConfig(metadata map[string]any) (*Config, error) {
 }
 
 func NewFs(cfg Config) (afero.Fs, error) {
-	osFs := afero.NewOsFs()
-	return &Fs{Fs: osFs, cfg: cfg, rootPath: cfg.Path}, nil
+	osFs, ok := afero.NewOsFs().(*afero.OsFs)
+	if !ok {
+		return nil, fmt.Errorf("localfs is not a OsFs")
+	}
+	return &Fs{OsFs: osFs, cfg: cfg, rootPath: cfg.Path}, nil
 }
 
 func (f *Fs) GetFsType() string {
@@ -62,13 +65,17 @@ func (f *Fs) SetRootPath(path string) {
 
 // Open opens a file, returning it or an error, if any happens.
 func (f *Fs) Open(filename string) (afero.File, error) {
-	file, err := f.Fs.Open(f.rootPath + filename)
+	file, err := f.OsFs.Open(f.rootPath + filename)
 	return file, err
 }
 
 // OpenFile opens a file using the given flags and the given mode.
 func (f *Fs) OpenFile(filename string, flag int, perm os.FileMode) (afero.File, error) {
-	return f.Fs.OpenFile(f.rootPath+filename, flag, perm)
+	return f.OsFs.OpenFile(f.rootPath+filename, flag, perm)
+}
+
+func (f *Fs) LstatIfPossible(name string) (os.FileInfo, bool, error) {
+	return f.OsFs.LstatIfPossible(f.rootPath + name)
 }
 
 func Name() string {

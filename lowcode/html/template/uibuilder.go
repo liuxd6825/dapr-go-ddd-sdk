@@ -46,7 +46,7 @@ func (b *UiBuilder) init(schema *schema.Schema, uiSchema *schema.UiSchema) error
 }
 
 func (b *UiBuilder) LoadBytes(schemaByte []byte, uiSchemaByte []byte) error {
-	s, err := schema.NewSchema(strings.NewReader(string(schemaByte)))
+	s, err := schema.NewSchema("", strings.NewReader(string(schemaByte)))
 	if err != nil {
 		return err
 	}

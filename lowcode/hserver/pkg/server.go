@@ -10,4 +10,5 @@ type Server interface {
 	GetFsm() *fs_pkg.FsManager
 	GetSrcFs() afero.Fs
 	ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error)
+	GetCacheEnable() bool
 }

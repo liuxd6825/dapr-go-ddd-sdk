@@ -16,13 +16,13 @@ import (
 //	@param schemaName string schema名称
 //	@return *schema.Schema schema
 //	@return error
-func loadSchema(fs afero.Fs, pwd string, schemasFile string, schemaName string) (*schema.Schema, error) {
-	bytes, err := readFile(fs, schemasFile, pwd)
+func loadSchema(fs afero.Fs, pwd string, schemaFile string, schemaName string) (*schema.Schema, error) {
+	bytes, err := readFile(fs, schemaFile, pwd)
 	if err != nil {
 		return nil, err
 	}
 	// 是js文件 则加载js文件
-	if strings.HasSuffix(schemasFile, ".js") {
+	if strings.HasSuffix(schemaFile, ".js") {
 		schemas := schema.NewSchemasLibrary()
 		if err = schemas.LoadJavaScript(bytes); err != nil {
 			return nil, err
@@ -31,7 +31,7 @@ func loadSchema(fs afero.Fs, pwd string, schemasFile string, schemaName string) 
 		return s, err
 	}
 	// 默认json文件
-	s, err := schema.NewSchemaWithJson(string(bytes))
+	s, err := schema.NewSchemaWithJson(schemaFile, string(bytes))
 	return s, err
 }
 

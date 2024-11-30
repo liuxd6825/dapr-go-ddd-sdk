@@ -183,10 +183,10 @@ func (d *Dao) DeleteByMap(ctx context.Context, tenantId string, filterMap map[st
 
 func (d *Dao) FindById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) *common.Result[ddd.MapEntity] {
 	res := d.dao.FindById(ctx, tenantId, id, newOptions(opts)...)
-	if res.Err != nil {
-		panic(res.Err)
+	if res.Error != nil {
+		panic(res.Error)
 	}
-	return common.NewResult[ddd.MapEntity](res.Data, res.Err)
+	return common.NewResult[ddd.MapEntity](res.Data, res.Error)
 }
 
 func (d *Dao) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
