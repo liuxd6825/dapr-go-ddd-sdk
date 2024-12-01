@@ -3,6 +3,7 @@ package hserver
 import (
 	"context"
 	"fmt"
+
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
@@ -21,11 +22,12 @@ import (
 // Request 定义单个请求的结构
 type Request struct {
 	*Base
-	server         *Server
-	service        *Service
-	config         RequestConfig
-	script         *Script
-	paramsTypeFile string
+	server          *Server
+	service         *Service
+	config          RequestConfig
+	script          *Script
+	paramsTypeCache *xtype.Map[xtype.ParamsType]
+	schemaCache     *xtype.Map[*jsonschema.Schema]
 }
 
 type RequestConfig struct {
@@ -43,9 +45,11 @@ func NewRequest(server *Server, service *Service, srcFileName string, config Req
 	var err error
 	logger := service.GetLogger()
 	r := &Request{
-		server:  server,
-		service: service,
-		config:  config,
+		server:          server,
+		service:         service,
+		config:          config,
+		paramsTypeCache: xtype.NewMap[xtype.ParamsType](),
+		schemaCache:     xtype.NewMap[*jsonschema.Schema](),
 	}
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.GetRootPath())
 	r.Base, err = NewBase(srcFileName, logger, r, fsOpts)
@@ -167,6 +171,10 @@ func (r *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 		if (urlPars != nil) && (len(urlPars) > 0) {
 			fileUrl = stringutils.ReplacePlaceholders(fileUrl, urlPars)
 		}
+		paramsTypeFile = r.service.GetWorkPath() + fileUrl
+		if pType, ok := r.paramsTypeCache.Get(paramsTypeFile); ok {
+			return paramsTypeFile, pType
+		}
 		bytes, err := r.server.ReadFile(fileUrl, fsOpts)
 		if err != nil {
 			panic(err)
@@ -175,11 +183,16 @@ func (r *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 			if err = jsonutils.Unmarshal(bytes, &paramsType); err != nil {
 				panic(fmt.Sprintf(" loading %s  error: %s", fileUrl, err.Error()))
 			}
+			r.paramsTypeCache.Set(paramsTypeFile, paramsType)
 		}
-		paramsTypeFile = r.service.GetWorkPath() + fileUrl
+
 	} else if r.config.ParamsType != "" {
 		paramsTypeFile = "/definition/params/" + r.config.ParamsType
+		if pType, ok := r.paramsTypeCache.Get(paramsTypeFile); ok {
+			return paramsTypeFile, pType
+		}
 		paramsType = r.server.definition.GetParamsType(r.config.ParamsType)
+		r.paramsTypeCache.Set(paramsTypeFile, paramsType)
 	}
 
 	return paramsTypeFile, paramsType
@@ -214,12 +227,16 @@ func (r *Request) GetParamsValue(wctx *WebContext) map[string]any {
 			val = ictx.Params().Get(key)
 		case InParamTypeBody.String():
 			if v.Schema != nil && bodyData == nil {
-				schema, err := schema_utils.Compile(paramsTypeFileName, v.Schema, func(c *jsonschema.Compiler) error {
-					c.UseLoader(r.server.schemaLoader)
-					return nil
-				})
-				if err != nil {
-					panic(err)
+				var schema *jsonschema.Schema
+				var ok bool
+				if schema, ok = r.schemaCache.Get(paramsTypeFileName); !ok {
+					schema, err = schema_utils.Compile(paramsTypeFileName, v.Schema, func(c *jsonschema.Compiler) error {
+						c.UseLoader(r.server.schemaLoader)
+						return nil
+					})
+					if err != nil {
+						panic(err)
+					}
 				}
 				obj := wctx.ReadObject(schema)
 				bodyData = obj
