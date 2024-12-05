@@ -58,6 +58,8 @@ func NewService(server *Server, html []byte, srcFileName string, data map[string
 		return nil, err
 	}
 
+	service.SetPkg(server.GetPkg())
+
 	if err := service.parse(html); err != nil {
 		return nil, err
 	}

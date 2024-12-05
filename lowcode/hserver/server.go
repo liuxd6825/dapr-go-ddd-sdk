@@ -34,6 +34,7 @@ type Server struct {
 	definition   *definition.Definition
 	cacheEnable  bool // 是否启用缓存
 	schemaLoader schema.URLLoader
+	pkg          any
 }
 
 type NewServerOptions func(server *Server)
@@ -44,24 +45,12 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 	if err != nil {
 		return nil, err
 	}
+
+	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, "/")
+
 	fsm, err := fs_pkg.NewFsManger(env)
 	if err != nil {
 		return nil, err
-	}
-	//rootPath := env.GetRsServerSrcPath()
-	//filename := rootPath + srcFileName
-	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, "/")
-
-	htmlData, err := fs.ReadFile(srcFs, srcFileName, fsOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	reader := bytes.NewReader(htmlData)
-	// 使用 goquery 解析 HTML
-	doc, err := goquery.NewDocumentFromReader(reader)
-	if err != nil {
-		return nil, fmt.Errorf("error loading HTML: %w", err)
 	}
 
 	logger := logrus.StandardLogger()
@@ -81,10 +70,6 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 
 	server.Base, err = NewBase(srcFileName, logger, server, fsOpts)
 	if err != nil {
-		return nil, err
-	}
-
-	if err = server.parse(doc); err != nil {
 		return nil, err
 	}
 
@@ -140,6 +125,22 @@ func (s *Server) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, err
 //	@receiver s
 //	@return error
 func (s *Server) Start() error {
+	htmlData, err := fs.ReadFile(s.srcFs, s.srcFileName, s.fsOpts)
+	if err != nil {
+		return err
+	}
+
+	reader := bytes.NewReader(htmlData)
+	// 使用 goquery 解析 HTML
+	doc, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		return fmt.Errorf("error loading HTML: %w", err)
+	}
+
+	if err = s.parse(doc); err != nil {
+		return err
+	}
+
 	runValue := &RunValues{
 		WorkPath: s.GetWorkPath(),
 		Self:     s,

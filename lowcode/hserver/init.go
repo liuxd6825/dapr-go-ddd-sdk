@@ -34,22 +34,21 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 		return fmt.Errorf("tplFs %s not exists", tplFsName)
 	}
 
-	server, err := NewServer(httpServer.App(), fileName, srcFs, envCfg, func(server *Server) {
-		pkg := map[string]any{
-			"mongo":    mongodb.New(envCfg),
-			"template": tpl_pkg.New(envCfg, server, tplFs),
-			"feign":    feign_pkg.New(server),
-			"fs":       server.fsm,
-			"context":  ctx_pkg.New(),
-			"schema":   schema_pkg.New(server),
-			"params":   params_pkg.New(server),
-		}
-		data := map[string]any{
-			"env":     envCfg,
-			"console": NewConsole(logrus.New()),
-			"pkg":     pkg,
-		}
-		server.SetRunValues(data)
+	server, err := NewServer(httpServer.App(), fileName, srcFs, envCfg)
+
+	server.SetPkg(map[string]any{
+		"mongo":    mongodb.New(envCfg),
+		"template": tpl_pkg.New(envCfg, server, tplFs),
+		"feign":    feign_pkg.New(server),
+		"fs":       server.fsm,
+		"context":  ctx_pkg.New(),
+		"schema":   schema_pkg.New(server),
+		"params":   params_pkg.New(server),
+		"env":      envCfg,
+	})
+
+	server.SetRunValues(map[string]any{
+		"console": NewConsole(logrus.New()),
 	})
 
 	if err != nil {

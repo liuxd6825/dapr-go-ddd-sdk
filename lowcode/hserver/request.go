@@ -55,11 +55,12 @@ func NewRequest(server *Server, service *Service, srcFileName string, config Req
 	if err != nil {
 		return nil, err
 	}
+	r.SetPkg(server.GetPkg())
 
 	if r.config.Script.Code != "" {
 		config.Script.FuncName = config.Name
 		config.Script.SrcFileName = srcFileName
-		err := r.scripts.AddScript(&r.config.Script, logger)
+		err := r.scripts.AddScript(&r.config.Script, logger, r.pkg)
 		if err != nil {
 			return nil, err
 		}

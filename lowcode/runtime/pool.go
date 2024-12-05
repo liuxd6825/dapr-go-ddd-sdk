@@ -11,25 +11,27 @@ type Pool struct {
 	vm       *Runtime
 	pool     chan *Runtime // 使用 channel 实现池化，限制池大小
 	reader   fs.Reader
+	pkg      any
 }
 
 type RunOptions = func(vm *goja.Runtime) error
 
 // NewPool 创建一个带大小限制的 Runtime 池
-func NewPool(userPool bool, reader fs.Reader) *Pool {
+func NewPool(userPool bool, reader fs.Reader, pkg any) *Pool {
 	r := &Pool{
 		userPool: userPool,
 		reader:   reader,
+		pkg:      pkg,
 	}
 	if userPool {
 		r.pool = make(chan *Runtime, DefaultPoolSize)
 		// 预热池：创建 poolSize 个 goja.Runtime 实例
 		for i := 0; i < DefaultPoolSize; i++ {
-			r.pool <- NewRuntime(reader)
+			r.pool <- NewRuntime(reader, pkg)
 		}
 	} else {
 		r.pool = nil
-		r.vm = NewRuntime(reader)
+		r.vm = NewRuntime(reader, pkg)
 	}
 	return r
 }
@@ -49,7 +51,7 @@ func (p *Pool) Run(code string, opts ...RunOptions) (resVal any, err error) {
 		// 获取到实例
 		default:
 			// 创建新实例（仅在池耗尽时创建，避免阻塞过久）
-			vm = NewRuntime(p.reader)
+			vm = NewRuntime(p.reader, p.pkg)
 		}
 
 		// 确保实例归还池

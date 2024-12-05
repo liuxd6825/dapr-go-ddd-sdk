@@ -11,6 +11,7 @@ type Runtime struct {
 	vm          *goja.Runtime
 	moduleCache map[string]*goja.Object
 	reader      fs.Reader
+	pkg         any
 }
 
 // 模块缓存
@@ -18,19 +19,22 @@ type Runtime struct {
 var DefaultPoolSize = 5
 var fieldNameMapper = &FieldNameMapper{}
 
-func NewRuntime(reader fs.Reader) *Runtime {
+func NewRuntime(reader fs.Reader, pkg any) *Runtime {
 	vm := goja.New()
 	vm.SetFieldNameMapper(fieldNameMapper)
 	r := &Runtime{
 		vm:          vm,
 		moduleCache: map[string]*goja.Object{},
 		reader:      reader,
+		pkg:         pkg,
 	}
 	r.setRequire(r.vm, reader)
+	r.Set("pkg", pkg)
 	return r
 }
 
 func (r *Runtime) RunString(code string) (goja.Value, error) {
+
 	return r.vm.RunString(code)
 }
 

@@ -18,6 +18,7 @@ type Base struct {
 	srcFileName string
 	fsOpts      *fsopts.Options
 	reader      fs.Reader
+	pkg         any
 }
 
 func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fsOpts *fsopts.Options) (*Base, error) {
@@ -55,7 +56,7 @@ func (b *Base) ParseInitScript(parentEl *goquery.Selection) error {
 	}
 	if opts != nil {
 		opts.UsePool = false
-		return b.scripts.AddScript(opts, b.logger)
+		return b.scripts.AddScript(opts, b.logger, b.pkg)
 	}
 	return err
 }
@@ -69,7 +70,7 @@ func (b *Base) RunInitScript(values *RunValues, opts ...RunOptions) error {
 	return err
 }
 
-func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *RunValues, logger logrus.FieldLogger, opts ...RunOptions) error {
+func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *RunValues, logger logrus.FieldLogger, pkg any, opts ...RunOptions) error {
 	if code != "" {
 		addOpts := &ScriptConfig{
 			FuncName:    funcName,
@@ -78,7 +79,7 @@ func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *Run
 			SrcFileName: fileName,
 			UsePool:     false,
 		}
-		err := b.scripts.AddScript(addOpts, logger)
+		err := b.scripts.AddScript(addOpts, logger, pkg)
 		if err != nil {
 			return err
 		}
@@ -86,4 +87,12 @@ func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *Run
 		return nil
 	}
 	return nil
+}
+
+func (b *Base) SetPkg(pkg any) {
+	b.pkg = pkg
+}
+
+func (b *Base) GetPkg() any {
+	return b.pkg
 }

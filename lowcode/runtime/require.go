@@ -71,11 +71,13 @@ func (r *Runtime) require(reader fs.Reader, modulePath string) (val goja.Value, 
 	// 创建 module 和 exports 对象
 	exports := moduleVM.NewObject()
 	moduleObject := moduleVM.NewObject()
+
 	_ = moduleObject.Set("exports", exports)
 
 	// 注入 module 和 exports
 	_ = moduleVM.Set("module", moduleObject)
 	_ = moduleVM.Set("exports", exports)
+	_ = moduleVM.Set("pkg", r.GetVM().ToValue(r.pkg))
 
 	// 绑定 require 函数，让模块内可以嵌套调用
 	r.setRequire(moduleVM, reader)

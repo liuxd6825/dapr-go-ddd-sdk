@@ -59,7 +59,7 @@ func NewScriptManager(logger logrus.FieldLogger, reader fs.Reader) *ScriptManage
 	}
 }
 
-func NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader) (*Script, error) {
+func NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader, pkg any) (*Script, error) {
 	var err error
 	if config == nil {
 		return nil, errors.New("config is nil")
@@ -72,7 +72,7 @@ func NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader
 	config.Code = string(codes)
 
 	return &Script{
-		runtime: runtime.NewPool(config.UsePool, reader),
+		runtime: runtime.NewPool(config.UsePool, reader, pkg),
 		config:  *config,
 		logger:  logger,
 	}, nil
@@ -99,7 +99,7 @@ func ParseScript(parentEl *goquery.Selection, selector string, funcName string, 
 	return cfg, err
 }
 
-func (b *ScriptManager) AddScript(config *ScriptConfig, logger logrus.FieldLogger) error {
+func (b *ScriptManager) AddScript(config *ScriptConfig, logger logrus.FieldLogger, pkg any) error {
 	var err error
 	if config == nil {
 		return errors.New("AddScript() no config provided")
@@ -118,7 +118,7 @@ func (b *ScriptManager) AddScript(config *ScriptConfig, logger logrus.FieldLogge
 
 	config.Code = string(code)
 
-	script, err := NewScript(config, logger, b.reader)
+	script, err := NewScript(config, logger, b.reader, pkg)
 	if err != nil {
 		return err
 	}
