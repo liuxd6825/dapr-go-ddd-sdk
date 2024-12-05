@@ -107,8 +107,11 @@ func (s *Service) parse(html []byte) error {
 	}
 
 	s.config.URL = serviceEl.AttrOr("url", "")
-	s.config.Name = serviceEl.AttrOr("mame", "") // 注意拼写错误 "mame"
+	s.config.Name = serviceEl.AttrOr("name", "")
 	s.config.Description = serviceEl.AttrOr("description", "")
+	if len(s.config.Name) == 0 {
+		panic(errors.New("service name is empty in %s", s.srcFileName))
+	}
 
 	var reqConfigs []RequestConfig
 
@@ -169,8 +172,9 @@ func (s *Service) parse(html []byte) error {
 
 func (s *Service) Initialize() error {
 	runValues := &RunValues{
-		Server:  s.server,
-		Service: s,
+		Server:   s.server,
+		Self:     s,
+		WorkPath: s.GetWorkPath(),
 	}
 	if err := s.RunInitScript(runValues); err != nil {
 		return err
@@ -190,4 +194,13 @@ func (s *Service) Initialize() error {
 
 func (s *Service) GetLogger() logrus.FieldLogger {
 	return s.server.logger
+}
+
+func (s *Service) SetSelfVMValue(name string, vm *goja.Runtime) error {
+	obj := vm.NewDynamicObject(NewServiceProxy(s, vm))
+	_ = vm.Set(name, obj)
+	if err := s.InitVM(vm); err != nil {
+		return err
+	}
+	return nil
 }

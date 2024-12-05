@@ -2,10 +2,10 @@ package hserver
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/params_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/schema_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
@@ -35,21 +35,19 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 	}
 
 	server, err := NewServer(httpServer.App(), fileName, srcFs, envCfg, func(server *Server) {
+		pkg := map[string]any{
+			"mongo":    mongodb.New(envCfg),
+			"template": tpl_pkg.New(envCfg, server, tplFs),
+			"feign":    feign_pkg.New(server),
+			"fs":       server.fsm,
+			"context":  ctx_pkg.New(),
+			"schema":   schema_pkg.New(server),
+			"params":   params_pkg.New(server),
+		}
 		data := map[string]any{
-			"DAPR_HOST":      envCfg.GetDaprHost,
-			"DAPR_HTTP_PORT": envCfg.GetDaprHttpPort,
-			"DAPR_GRPC_PORT": envCfg.GetDaprGrpcPort,
-			"APP_ID":         envCfg.GetAppId,
-			"APP_NAME":       envCfg.GetAppName,
-			"env":            envCfg,
-			"daprClient":     dapr.GetDaprClient(),
-			"console":        newConsole(logrus.New()),
-			"mongodb":        mongodb.New(envCfg),
-			"template":       tpl_pkg.New(envCfg, server, tplFs),
-			"feign":          feign_pkg.New(server),
-			"fsm":            server.fsm,
-			"context":        ctx_pkg.New(),
-			"schemas":        schema_pkg.New(server),
+			"env":     envCfg,
+			"console": NewConsole(logrus.New()),
+			"pkg":     pkg,
 		}
 		server.SetRunValues(data)
 	})

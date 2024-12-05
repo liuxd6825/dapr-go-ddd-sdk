@@ -1,5 +1,0 @@
-@startuml bank
-class Bank {
-
-}
-@enduml

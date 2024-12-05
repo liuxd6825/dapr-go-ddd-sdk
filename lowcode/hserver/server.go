@@ -141,7 +141,8 @@ func (s *Server) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, err
 //	@return error
 func (s *Server) Start() error {
 	runValue := &RunValues{
-		Server: s,
+		WorkPath: s.GetWorkPath(),
+		Self:     s,
 	}
 	if err := s.RunInitScript(runValue); err != nil {
 		return err
@@ -202,6 +203,10 @@ func (s *Server) parse(doc *goquery.Document) error {
 				service, err = NewService(s, data, fileUrl, nil)
 				if err != nil {
 					panic(err)
+				}
+				isHas := s.services.Has(service.config.Name)
+				if isHas {
+					panic(errors.New(fmt.Sprintf("%s", service.config.Name)))
 				}
 				s.services.Set(service.config.Name, service)
 			}
@@ -271,6 +276,15 @@ func (s *Server) SetRunValues(data map[string]any) {
 func (s *Server) InitVM(vm *goja.Runtime) error {
 	values := s.runValues.Items()
 	if err := addRuntimeValues(vm, values); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) SetSelfVMValue(name string, vm *goja.Runtime) error {
+	obj := vm.NewDynamicObject(NewServerProxy(s, vm))
+	_ = vm.Set(name, obj)
+	if err := s.InitVM(vm); err != nil {
 		return err
 	}
 	return nil

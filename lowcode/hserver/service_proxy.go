@@ -1,6 +1,7 @@
 package hserver
 
 import "github.com/dop251/goja"
+import "fmt"
 
 type ServiceProxy struct {
 	service *Service
@@ -25,8 +26,14 @@ func (s *ServiceProxy) Get(name string) goja.Value {
 	case "workPath":
 		res = s.vm.ToValue(s.service.fsOpts.WorkPath)
 	default:
-		if value, exists := s.service.data.Get(name); exists {
-			res = s.vm.ToValue(value)
+		if val, exists := s.service.data.Get(name); exists {
+			if value, ok := val.(goja.Value); ok {
+				res = value
+				obj := value.ToObject(s.vm).Export()
+				fmt.Println(obj)
+			} else {
+				res = s.vm.ToValue(value)
+			}
 		}
 	}
 	return res
@@ -34,7 +41,7 @@ func (s *ServiceProxy) Get(name string) goja.Value {
 
 // Set 方法：设置键值
 func (s *ServiceProxy) Set(name string, val goja.Value) bool {
-	s.service.data.Set(name, val.Export())
+	s.service.data.Set(name, val)
 	return true
 }
 

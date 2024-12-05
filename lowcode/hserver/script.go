@@ -6,6 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
@@ -40,6 +41,8 @@ type RunValues struct {
 	WebContext *WebContext
 	Request    *Request
 	Alias      Alias
+	WorkPath   string
+	Self       any
 }
 
 type RunOptions = func(vm *goja.Runtime) error
@@ -62,10 +65,11 @@ func NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader
 		return nil, errors.New("config is nil")
 	}
 
-	config.Code, err = runtime.TransformTSCodeToJS(config.Code)
+	codes, err := runtime.TransformTSCodeToJS(config.Code)
 	if err != nil {
 		return nil, err
 	}
+	config.Code = string(codes)
 
 	return &Script{
 		runtime: runtime.NewPool(config.UsePool, reader),
@@ -107,17 +111,19 @@ func (b *ScriptManager) AddScript(config *ScriptConfig, logger logrus.FieldLogge
 		return errors.New("AddScript() no config.SrcFileName provided")
 	}
 
-	config.Code, err = runtime.TransformTSCodeToJS(config.Code)
+	code, err := runtime.TransformTSCodeToJS(config.Code)
 	if err != nil {
 		return err
 	}
+
+	config.Code = string(code)
+
 	script, err := NewScript(config, logger, b.reader)
 	if err != nil {
 		return err
 	}
 
 	b.scriptMap.Set(config.FuncName, script)
-
 	return nil
 }
 
@@ -162,9 +168,9 @@ func (b *ScriptManager) RunScript(funcName string, runValues *RunValues, checkHa
 	srcFileName = script.config.SrcFileName
 
 	opts = append(opts, func(vm *goja.Runtime) error {
-		err := setRunValues(vm, runValues)
-		return err
+		return setRunValues(vm, runValues)
 	})
+
 	val, err = script.Run(opts...)
 	return val, err
 }
@@ -183,7 +189,7 @@ func (r *Script) Run(opts ...RunOptions) (res any, err error) {
 			for oldName, newName := range r.config.Alias {
 				value := vm.Get(oldName)
 				if value != nil {
-					vm.Set(newName, value)
+					_ = vm.Set(newName, value)
 				}
 			}
 			return nil
@@ -195,6 +201,7 @@ func (r *Script) Run(opts ...RunOptions) (res any, err error) {
 		return nil, errors.New(fmt.Sprintf("run error:%v in %s %s", err, r.config.FuncName, r.config.SrcFileName))
 	}
 	r.logger.Printf("run %s return %v in %s", r.config.FuncName, data, r.config.SrcFileName)
+
 	return data, err
 }
 
@@ -202,22 +209,30 @@ func setRunValues(vm *goja.Runtime, runValues *RunValues, data ...map[string]any
 
 	if runValues != nil {
 		if runValues.Server != nil {
-			obj := vm.NewDynamicObject(NewServerProxy(runValues.Server, vm))
-			_ = vm.Set("server", obj)
-			if err := runValues.Server.InitVM(vm); err != nil {
+			if err := runValues.Server.SetSelfVMValue("server", vm); err != nil {
 				return err
 			}
 		}
 		if runValues.Service != nil {
-			obj := vm.NewDynamicObject(NewServiceProxy(runValues.Service, vm))
-			_ = vm.Set("service", obj)
-			if err := runValues.Service.InitVM(vm); err != nil {
+			if err := runValues.Service.SetSelfVMValue("service", vm); err != nil {
 				return err
+			}
+		}
+		if runValues.Self != nil {
+			self, ok := runValues.Self.(Self)
+			if ok {
+				if err := self.SetSelfVMValue("self", vm); err != nil {
+					return err
+				}
 			}
 		}
 
 		if runValues.WebContext != nil {
-			_ = vm.Set("wctx", runValues.WebContext)
+			_ = vm.Set("ctx", runValues.WebContext)
+		}
+
+		if runValues.WorkPath != "" {
+			_ = vm.Set("workPath", runValues.WorkPath)
 		}
 	}
 
@@ -243,6 +258,8 @@ func addRuntimeValues(vm *goja.Runtime, data ...map[string]any) error {
 			}
 			if obj, ok := v.(goja.DynamicObject); ok {
 				_ = vm.Set(k, vm.NewDynamicObject(obj))
+			} else if pkgVal, ok := v.(pkg.Package); ok {
+				_ = vm.Set(k, vm.NewDynamicObject(pkgVal.NewProxy(vm)))
 			} else {
 				_ = vm.Set(k, v)
 			}

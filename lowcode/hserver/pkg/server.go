@@ -11,4 +11,5 @@ type Server interface {
 	GetSrcFs() afero.Fs
 	ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error)
 	GetCacheEnable() bool
+	SetRunValue(key string, value any)
 }

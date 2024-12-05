@@ -12,7 +12,7 @@ import (
 
 func Test_TransformTSCodeToJS(t *testing.T) {
 	tsCode := `
-		(function () {
+		(function (self: Server) {
 			import { createParams as params } from "./human-service.d.ts";
 			let data = params.cmd.data;
 			data.tenantId = tenantId;

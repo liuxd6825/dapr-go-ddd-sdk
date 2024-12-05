@@ -14,7 +14,7 @@ type console struct {
 }
 
 // Creates a console with the standard logrus logger.
-func newConsole(logger logrus.FieldLogger) *console {
+func NewConsole(logger logrus.FieldLogger) *console {
 	return &console{logger.WithField("source", "console")}
 }
 

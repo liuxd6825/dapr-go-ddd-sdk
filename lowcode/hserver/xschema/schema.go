@@ -1,19 +1,10 @@
 package xschema
 
-type Schema struct {
-	FileName   string     `json:"fileName,omitempty"`
-	Ref        string     `json:"$ref,omitempty"`
-	Id         string     `json:"$id,omitempty"`
-	Schema     string     `json:"$schema,omitempty"`
-	Type       any        `json:"type,omitempty"`
-	Title      string     `json:"title,omitempty"`
-	Name       string     `json:"name,omitempty"`
-	Properties Properties `json:"properties,omitempty"`
-	Items      *Property  `json:"items,omitempty"`
-	Required   []string   `json:"required,omitempty"`
-	ReadOnly   bool       `json:"readOnly,omitempty"`
-	WriteOnly  bool       `json:"writeOnly,omitempty"`
-}
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/jsonschema/v6"
+)
 
 type Type = string
 
@@ -76,4 +67,38 @@ type Property struct {
 	Examples    []any      `json:"examples,omitempty"`
 	Deprecated  bool       `json:"deprecated,omitempty"`
 	types       []string
+}
+
+type Schema struct {
+	FileName   string     `json:"fileName,omitempty"`
+	Ref        string     `json:"$ref,omitempty"`
+	Id         string     `json:"$id,omitempty"`
+	Schema     string     `json:"$schema,omitempty"`
+	Type       any        `json:"type,omitempty"`
+	Title      string     `json:"title,omitempty"`
+	Name       string     `json:"name,omitempty"`
+	Properties Properties `json:"properties,omitempty"`
+	Items      *Property  `json:"items,omitempty"`
+	Required   []string   `json:"required,omitempty"`
+	ReadOnly   bool       `json:"readOnly,omitempty"`
+	WriteOnly  bool       `json:"writeOnly,omitempty"`
+
+	jsonschema *jsonschema.Schema
+}
+
+var schemaLoader schema.URLLoader
+
+func (s *Schema) GetJsonSchema(fileName string, schemaLoader schema.URLLoader) *jsonschema.Schema {
+	if s.jsonschema != nil {
+		return s.jsonschema
+	}
+	jsonschema, err := schema_utils.Compile(fileName, s, func(c *jsonschema.Compiler) error {
+		c.UseLoader(schemaLoader)
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	s.jsonschema = jsonschema
+	return jsonschema
 }

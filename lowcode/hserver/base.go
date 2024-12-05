@@ -49,7 +49,7 @@ func (b *Base) GetWorkPath() string {
 
 func (b *Base) ParseInitScript(parentEl *goquery.Selection) error {
 	var err error
-	opts, err := ParseScript(parentEl, "script", "init", b.srcFileName)
+	opts, err := ParseScript(parentEl, "script", "init()", b.srcFileName)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (b *Base) RunInitScript(values *RunValues, opts ...RunOptions) error {
 		_ = vm.Set("ctx", context.Background())
 		return nil
 	})
-	_, err := b.scripts.RunScript("init", values, false, opts...)
+	_, err := b.scripts.RunScript("init()", values, false, opts...)
 	return err
 }
 

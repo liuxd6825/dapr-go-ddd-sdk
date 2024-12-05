@@ -2,71 +2,104 @@ package feign_pkg
 
 import (
 	"context"
+	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"strings"
 )
 
 type Feign struct {
 	server pkg.Server
+	values map[string]any
+}
+
+type FeignParam struct {
+	In       string         `json:"in"` // InParamType
+	Required bool           `json:"required"`
+	Type     string         `json:"type"`
+	Desc     string         `json:"desc"`
+	Schema   *schema.Schema `json:"schema"`
+}
+
+type FeignOptions struct {
+	Method string //MethodType
+	Url    string
+	Params map[string]FeignParam
 }
 
 func New(server pkg.Server) *Feign {
-	return &Feign{server: server}
+	return newFeign(server)
 }
 
-func (f *Feign) Call(ctx context.Context, options *Options, params map[string]any) *common.Result[any] {
-	return f.InvokeMethod(ctx, options, params)
+func newFeign(server pkg.Server) *Feign {
+	feign := &Feign{server: server}
+	feign.values = map[string]any{
+		"call":   feign.Call,
+		"get":    feign.Get,
+		"put":    feign.Put,
+		"delete": feign.Delete,
+		"patch":  feign.Patch,
+		"post":   feign.Post,
+	}
+	return feign
 }
 
-func (f *Feign) Get(ctx context.Context, options *Options, params map[string]any) *common.Result[any] {
+func (f *Feign) NewProxy(vm *goja.Runtime, workPath string) *pkg.Proxy {
+	return pkg.NewProxy(f.server, vm, workPath, f.values)
+}
+
+func (f *Feign) Call(ctx context.Context, options *FeignOptions, params map[string]any) any {
+	return f.invoke(ctx, options, params)
+}
+
+func (f *Feign) Get(ctx context.Context, options *FeignOptions, params map[string]any) any {
 	options.Method = "get"
-	return f.InvokeMethod(ctx, options, params)
+	return f.invoke(ctx, options, params)
 }
 
-func (f *Feign) Post(ctx context.Context, options *Options, params map[string]any) *common.Result[any] {
+func (f *Feign) Post(ctx context.Context, options *FeignOptions, params map[string]any) any {
 	options.Method = "post"
-	return f.InvokeMethod(ctx, options, params)
+	return f.invoke(ctx, options, params)
 }
 
-func (f *Feign) Put(ctx context.Context, options *Options, params map[string]any) *common.Result[any] {
+func (f *Feign) Put(ctx context.Context, options *FeignOptions, params map[string]any) any {
 	options.Method = "put"
-	return f.InvokeMethod(ctx, options, params)
+	return f.invoke(ctx, options, params)
 }
 
-func (f *Feign) Delete(ctx context.Context, options *Options, params map[string]any) *common.Result[any] {
+func (f *Feign) Delete(ctx context.Context, options *FeignOptions, params map[string]any) any {
 	options.Method = "delete"
-	return f.InvokeMethod(ctx, options, params)
+	return f.invoke(ctx, options, params)
 }
 
-func (f *Feign) Patch(ctx context.Context, options *Options, params map[string]any) *common.Result[any] {
+func (f *Feign) Patch(ctx context.Context, options *FeignOptions, params map[string]any) any {
 	options.Method = "patch"
-	return f.InvokeMethod(ctx, options, params)
+	return f.invoke(ctx, options, params)
 }
 
-func (f *Feign) InvokeMethod(ctx context.Context, opts *Options, params map[string]any) (res *common.Result[any]) {
+func (f *Feign) invoke(ctx context.Context, opts *FeignOptions, params map[string]any) any {
 	var err error
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
-			res = common.NewResult[any](nil, err)
+			panic(err.Error())
 		}
 	}()
 
 	if opts == nil {
-		return common.NewResult[any](nil, errors.New("Feign.InvokeMethod() opts is nil"))
+		panic(errors.New("Feign.InvokeMethod() opts is nil"))
 	}
 	if opts.Url == "" {
-		return common.NewResult[any](nil, errors.New("Feign.InvokeMethod() opts.URL is nil"))
+		panic(errors.New("Feign.InvokeMethod() opts.URL is nil"))
 	}
 	if opts.Method == "" {
-		return common.NewResult[any](nil, errors.New("Feign.InvokeMethod() opts.Method is nil"))
+		panic(errors.New("Feign.InvokeMethod() opts.Method is nil"))
 	}
 	methodType := strings.ToLower(opts.Method)
 	url, e := NewURLParser(opts.Url)
 	if e != nil {
-		return common.NewResult[any](nil, e)
+		return e
 	}
 	switch url.Protocol {
 	case Protocol_Dapr:
@@ -80,69 +113,12 @@ func (f *Feign) InvokeMethod(ctx context.Context, opts *Options, params map[stri
 		}
 		var data any
 		data, err = dapr.GetDaprClient().InvokeService(ctx, url.ServiceName, url.Path, methodType, request, &response)
-		return common.NewResult[any](data, err)
+		if err != nil {
+			panic(err)
+		}
+		return data
 	default:
 		err = errors.ErrorOf("unsupported protocol: %s", url.Protocol)
-		return common.NewResult[any](nil, err)
+		panic(err.Error())
 	}
-}
-
-type Protocol string
-
-const (
-	Protocol_Dapr  Protocol = "dapr"
-	Protocol_Http  Protocol = "http"
-	Protocol_Grpc  Protocol = "grpc"
-	Protocol_Https Protocol = "https"
-)
-
-func (p Protocol) String() string {
-	return string(p)
-}
-
-type URLParser struct {
-	Protocol    Protocol `json:"protocol,omitempty"`
-	ServiceName string   `json:"serviceName,omitempty"`
-	Port        string   `json:"port,omitempty"`
-	Path        string   `json:"path,omitempty"`
-}
-
-// NewURLParser
-//
-//	@Description:
-//	@param str   http://user-service:8080/api/v1/users
-//	@return *URLParser
-func NewURLParser(str string) (*URLParser, error) {
-	protocol := Protocol_Dapr
-	s := strings.ToLower(str)
-	if strings.HasPrefix(s, Protocol_Dapr.String()+"://") {
-		protocol = Protocol_Dapr
-	} else if strings.HasPrefix(s, Protocol_Http.String()+"://") {
-		protocol = Protocol_Http
-	} else if strings.HasPrefix(s, Protocol_Grpc.String()+"://") {
-		protocol = Protocol_Grpc
-	} else if strings.HasPrefix(s, Protocol_Https.String()+"://") {
-		protocol = Protocol_Https
-	}
-	serviceName := ""
-	port := ""
-	path := ""
-	s = str[len(protocol.String())+3:]
-	list := strings.Split(s, "/")
-	count := len(list)
-	if count == 0 {
-		return nil, errors.New("")
-	} else if count >= 1 { // user-service:8080
-		l := strings.Split(list[0], ":")
-		c := len(l)
-		if c == 1 {
-			serviceName = l[0]
-		} else if c >= 2 {
-			serviceName = l[0]
-			port = l[1]
-		}
-		path = "/" + strings.Join(list[1:], "/")
-	}
-
-	return &URLParser{Protocol: Protocol(protocol), ServiceName: serviceName, Port: port, Path: path}, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -68,25 +67,25 @@ func NewRequest(server *Server, service *Service, srcFileName string, config Req
 	return r, nil
 }
 
-func (r *Request) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
-	data, err := r.service.ReadFile(filename, opts...)
+func (s *Request) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+	data, err := s.service.ReadFile(filename, opts...)
 	return data, err
 }
 
-func (r *Request) Initialize() error {
-	url := r.config.AbsURl
+func (s *Request) Initialize() error {
+	url := s.config.AbsURl
 	if url == "" {
-		url = r.service.config.URL + r.config.URL
+		url = s.service.config.URL + s.config.URL
 	}
-	r.server.app.Handle(r.config.Type, url, r.Handle)
+	s.server.app.Handle(s.config.Type, url, s.Handle)
 	return nil
 }
 
-func (r *Request) GetLogger() logrus.FieldLogger {
-	return r.service.GetLogger()
+func (s *Request) GetLogger() logrus.FieldLogger {
+	return s.service.GetLogger()
 }
 
-func (r *Request) Handle(ictx iris.Context) {
+func (s *Request) Handle(ictx iris.Context) {
 	var ctx context.Context
 	var err error
 
@@ -101,26 +100,26 @@ func (r *Request) Handle(ictx iris.Context) {
 	if err != nil {
 		return
 	}
-	wctx := NewWebContext(ctx, ictx, r)
-	r.runScript(wctx, r.GetParamsValue(wctx))
+	wctx := NewWebContext(ctx, ictx, s)
+	s.runScript(wctx, s.GetParamsValue(wctx))
 }
 
-func (r *Request) runScript(wctx *WebContext, params any) {
+func (s *Request) runScript(wctx *WebContext, params any) {
 	values := &RunValues{
-		Server:     r.server,
-		Service:    r.service,
-		Request:    r,
+		Server:     s.server,
+		Self:       s.service,
 		WebContext: wctx,
+		WorkPath:   s.GetWorkPath(),
 	}
 	tenantId := wctx.GetTenantId()
-	val, err := r.scripts.RunScript(r.config.Script.FuncName, values, true, func(vm *goja.Runtime) error {
+	val, err := s.scripts.RunScript(s.config.Script.FuncName, values, true, func(vm *goja.Runtime) error {
 		_ = vm.Set("params", params)
 		_ = vm.Set("ctx", wctx)
 		_ = vm.Set("tenantId", tenantId)
 		return nil
 	})
 	if err != nil {
-		logs.Error(wctx, tenantId, logs.Fields{"code": r.config.Script.Code})
+		logs.Error(wctx, tenantId, logs.Fields{"code": s.config.Script.Code})
 		wctx.SetError(err)
 	}
 	if val != nil {
@@ -140,7 +139,7 @@ func (r *Request) runScript(wctx *WebContext, params any) {
 //	@receiver r
 //	@param ctx
 //	@return map[string]any
-func (r *Request) GetUrlParams(ctx iris.Context) map[string]any {
+func (s *Request) GetUrlParams(ctx iris.Context) map[string]any {
 	p := make(map[string]any)
 	// 获取所有路径参数
 	pathParams := ctx.Params()
@@ -157,25 +156,32 @@ func (r *Request) GetUrlParams(ctx iris.Context) map[string]any {
 	return p
 }
 
-func (r *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
+// GetParamsType
+//
+//	@Description: 获取参数类型定义
+//	@receiver r
+//	@param ictx
+//	@return string
+//	@return xtype.ParamsType
+func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 	fsOpts := &fsopts.Options{
-		RootPath: r.server.GetRootPath(),
-		WorkPath: r.service.fsOpts.WorkPath,
+		RootPath: s.server.GetRootPath(),
+		WorkPath: s.service.fsOpts.WorkPath,
 	}
 	var paramsTypeFile string
 	var paramsType xtype.ParamsType
 
-	if r.config.LinkParamsUrl != "" {
-		fileUrl := r.config.LinkParamsUrl
-		urlPars := r.GetUrlParams(ictx)
+	if s.config.LinkParamsUrl != "" {
+		fileUrl := s.config.LinkParamsUrl
+		urlPars := s.GetUrlParams(ictx)
 		if (urlPars != nil) && (len(urlPars) > 0) {
 			fileUrl = stringutils.ReplacePlaceholders(fileUrl, urlPars)
 		}
-		paramsTypeFile = r.service.GetWorkPath() + fileUrl
-		if pType, ok := r.paramsTypeCache.Get(paramsTypeFile); ok {
+		paramsTypeFile = s.service.GetWorkPath() + fileUrl
+		if pType, ok := s.paramsTypeCache.Get(paramsTypeFile); ok {
 			return paramsTypeFile, pType
 		}
-		bytes, err := r.server.ReadFile(fileUrl, fsOpts)
+		bytes, err := s.server.ReadFile(fileUrl, fsOpts)
 		if err != nil {
 			panic(err)
 		}
@@ -183,16 +189,16 @@ func (r *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 			if err = jsonutils.Unmarshal(bytes, &paramsType); err != nil {
 				panic(fmt.Sprintf(" loading %s  error: %s", fileUrl, err.Error()))
 			}
-			r.paramsTypeCache.Set(paramsTypeFile, paramsType)
+			s.paramsTypeCache.Set(paramsTypeFile, paramsType)
 		}
 
-	} else if r.config.ParamsType != "" {
-		paramsTypeFile = "/definition/params/" + r.config.ParamsType
-		if pType, ok := r.paramsTypeCache.Get(paramsTypeFile); ok {
+	} else if s.config.ParamsType != "" {
+		paramsTypeFile = "/definition/params/" + s.config.ParamsType
+		if pType, ok := s.paramsTypeCache.Get(paramsTypeFile); ok {
 			return paramsTypeFile, pType
 		}
-		paramsType = r.server.definition.GetParamsType(r.config.ParamsType)
-		r.paramsTypeCache.Set(paramsTypeFile, paramsType)
+		paramsType = s.server.definition.GetParamsType(s.config.ParamsType)
+		s.paramsTypeCache.Set(paramsTypeFile, paramsType)
 	}
 
 	return paramsTypeFile, paramsType
@@ -200,16 +206,16 @@ func (r *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 
 // GetParamsValue
 //
-//	@Description: 获取请求的参数，aParamsURL的优先级最高，当为空时aParams参数生效。
+//	@Description: 获取请求的参数
 //	@param wctx 请求的web上下文
 //	@param aParams  通过对象定义的参数类型
 //	@param cfgUrl  通过url定义的参数类型,
 //	@return map[string]any 参数
-func (r *Request) GetParamsValue(wctx *WebContext) map[string]any {
+func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
 	var err error
 	data := map[string]any{}
 
-	paramsTypeFileName, paramsType := r.GetParamsType(wctx.ictx)
+	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ictx)
 	if paramsType == nil {
 		return data
 	}
@@ -227,32 +233,17 @@ func (r *Request) GetParamsValue(wctx *WebContext) map[string]any {
 			val = ictx.Params().Get(key)
 		case InParamTypeBody.String():
 			if v.Schema != nil && bodyData == nil {
-				var schema *jsonschema.Schema
-				var ok bool
-				if schema, ok = r.schemaCache.Get(paramsTypeFileName); !ok {
-					schema, err = schema_utils.Compile(paramsTypeFileName, v.Schema, func(c *jsonschema.Compiler) error {
-						c.UseLoader(r.server.schemaLoader)
-						return nil
-					})
-					if err != nil {
-						panic(err)
-					}
-				}
-				obj := wctx.ReadObject(schema)
-				bodyData = obj
+				schema := v.Schema.GetJsonSchema(paramsTypeFileName, s.server.schemaLoader)
+				bodyData = wctx.ReadObject(schema)
 			}
 			val = bodyData
 		case InParamTypeFormValue.String():
 			val = wctx.FormValue(key, v.Required)
 		case InParamTypeFormObject.String():
-			schema, err := schema_utils.Compile(paramsTypeFileName, v.Schema, func(c *jsonschema.Compiler) error {
-				c.UseLoader(r.server.schemaLoader)
-				return nil
-			})
-			if err != nil {
-				panic(err)
+			if v.Schema != nil {
+				schema := v.Schema.GetJsonSchema(paramsTypeFileName, s.server.schemaLoader)
+				val = wctx.FormObject(key, v.Required, schema)
 			}
-			val = wctx.FormObject(key, v.Required, schema)
 		case InParamTypeFormFile.String():
 			val = wctx.FormFile(key)
 		default:
@@ -273,8 +264,10 @@ func (r *Request) GetParamsValue(wctx *WebContext) map[string]any {
 				data[key] = v
 			}
 		}
-
 	}
-
 	return data
+}
+
+func (s *Request) SetSelfVMValue(name string, vm *goja.Runtime) error {
+	return nil
 }
