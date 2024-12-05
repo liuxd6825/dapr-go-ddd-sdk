@@ -77,20 +77,20 @@ func (r *Runtime) require(reader fs.Reader, modulePath string) (val goja.Value, 
 	// 注入 module 和 exports
 	_ = moduleVM.Set("module", moduleObject)
 	_ = moduleVM.Set("exports", exports)
-	_ = moduleVM.Set("pkg", r.GetVM().ToValue(r.pkg))
+	_ = moduleVM.Set("pkg", r.pkg)
 
 	// 绑定 require 函数，让模块内可以嵌套调用
 	r.setRequire(moduleVM, reader)
 
 	// 包装模块代码，注入 require、module 和 exports
-	wrappedCode := fmt.Sprintf(`
+	code := fmt.Sprintf(`
 	(function(require, module, exports) {
 		%s
 	})(require, module, module.exports);
 	`, string(content))
 
 	// 执行模块代码
-	_, err = moduleVM.RunString(wrappedCode)
+	_, err = moduleVM.RunString(code)
 	if err != nil {
 		if err, ok := err.(*goja.Exception); ok {
 			return nil, fmt.Errorf("%s", err.String())

@@ -31,6 +31,9 @@ var constSpecificRegex = regexp.MustCompile(`(?m)^\s*const\s+\w+\s*:\s*\w+\s*;?\
 // 正则表达式匹配 TypeScript 类型标注并移除
 var typeAnnotationRegex = regexp.MustCompile(`:\s*\w+`)
 
+// 正则表达式匹配 "let pkg: PKG;" 格式的代码行
+var letPkgRegex = regexp.MustCompile(`(?m)^\s*let\s+pkg\s*:\s*PKG\s*;\s*$`)
+
 // Transform
 //
 //	@Description: 将typescript代码转换为js
@@ -41,6 +44,10 @@ func Transform(tsCode string) ([]byte, error) {
 
 	// 替换为仅保留 function()
 	tsCode = funcRe.ReplaceAllString(tsCode, `(function ()`)
+
+	// 删除匹配的行
+	tsCode = letPkgRegex.ReplaceAllString(tsCode, "")
+
 	/*
 		// 替换匹配的 import 语句为空字符串
 		tsCode = dtsImportRegex.ReplaceAllString(tsCode, "")
