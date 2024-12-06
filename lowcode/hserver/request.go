@@ -25,8 +25,8 @@ type Request struct {
 	service         *Service
 	config          RequestConfig
 	script          *Script
-	paramsTypeCache *xtype.Map[xtype.ParamsType]
-	schemaCache     *xtype.Map[*jsonschema.Schema]
+	paramsTypeCache *types.CMap[xtype.ParamsType]
+	schemaCache     *types.CMap[*jsonschema.Schema]
 }
 
 type RequestConfig struct {
@@ -47,8 +47,8 @@ func NewRequest(server *Server, service *Service, srcFileName string, config Req
 		server:          server,
 		service:         service,
 		config:          config,
-		paramsTypeCache: xtype.NewMap[xtype.ParamsType](),
-		schemaCache:     xtype.NewMap[*jsonschema.Schema](),
+		paramsTypeCache: types.NewCMap[xtype.ParamsType](),
+		schemaCache:     types.NewCMap[*jsonschema.Schema](),
 	}
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.GetRootPath())
 	r.Base, err = NewBase(srcFileName, logger, r, fsOpts)

@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -59,7 +60,7 @@ func NewScriptManager(logger logrus.FieldLogger, reader fs.Reader) *ScriptManage
 	}
 }
 
-func NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader, pkg any) (*Script, error) {
+func NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (*Script, error) {
 	var err error
 	if config == nil {
 		return nil, errors.New("config is nil")
@@ -99,7 +100,7 @@ func ParseScript(parentEl *goquery.Selection, selector string, funcName string, 
 	return cfg, err
 }
 
-func (b *ScriptManager) AddScript(config *ScriptConfig, logger logrus.FieldLogger, pkg any) error {
+func (b *ScriptManager) AddScript(config *ScriptConfig, logger logrus.FieldLogger, pkg *types.CMap[any]) error {
 	var err error
 	if config == nil {
 		return errors.New("AddScript() no config provided")

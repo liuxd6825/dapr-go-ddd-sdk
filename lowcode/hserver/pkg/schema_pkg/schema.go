@@ -3,20 +3,20 @@ package schema_pkg
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type SchemaPkg struct {
 	server pkg.Server
-	cache  *xtype.Map[*jsonschema.Schema]
+	cache  *types.CMap[*jsonschema.Schema]
 }
 
 func New(server pkg.Server) *SchemaPkg {
 	return &SchemaPkg{
 		server: server,
-		cache:  xtype.NewMap[*jsonschema.Schema](),
+		cache:  types.NewCMap[*jsonschema.Schema](),
 	}
 }
 

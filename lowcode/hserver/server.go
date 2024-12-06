@@ -13,9 +13,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
@@ -28,9 +28,9 @@ type Server struct {
 	app          *iris.Application
 	srcFs        afero.Fs
 	fsm          *fs_pkg.FsManager
-	services     *xtype.Map[*Service] // 服务Map
-	envConfig    common.IEnvConfig    // 环境变量
-	tpl          *tpl_pkg.Template    // 模板渲染服务
+	services     *types.CMap[*Service] // 服务Map
+	envConfig    common.IEnvConfig     // 环境变量
+	tpl          *tpl_pkg.Template     // 模板渲染服务
 	definition   *definition.Definition
 	cacheEnable  bool // 是否启用缓存
 	schemaLoader schema.URLLoader
@@ -56,7 +56,7 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 	logger := logrus.StandardLogger()
 	server := &Server{
 		app:          app,
-		services:     xtype.NewMap[*Service](),
+		services:     types.NewCMap[*Service](),
 		fsm:          fsm,
 		envConfig:    env,
 		srcFs:        srcFs,

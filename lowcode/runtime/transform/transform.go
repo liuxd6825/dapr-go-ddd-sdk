@@ -34,6 +34,9 @@ var typeAnnotationRegex = regexp.MustCompile(`:\s*\w+`)
 // 正则表达式匹配 "let pkg: PKG;" 格式的代码行
 var letPkgRegex = regexp.MustCompile(`(?m)^\s*let\s+pkg\s*:\s*PKG\s*;\s*$`)
 
+// 定义正则表达式匹配 `//` 与 `@go-runtime` 之间有多个空格的情况，并删除下一行
+var goRuntimeRegex = regexp.MustCompile(`(?m)^\s*//\s*@go-runtime.*\n.*\n`)
+
 // Transform
 //
 //	@Description: 将typescript代码转换为js
@@ -41,37 +44,37 @@ var letPkgRegex = regexp.MustCompile(`(?m)^\s*let\s+pkg\s*:\s*PKG\s*;\s*$`)
 //	@return string
 //	@return error
 func Transform(tsCode string) ([]byte, error) {
-
 	// 替换为仅保留 function()
 	tsCode = funcRe.ReplaceAllString(tsCode, `(function ()`)
-
-	// 删除匹配的行
-	tsCode = letPkgRegex.ReplaceAllString(tsCode, "")
-
-	/*
-		// 替换匹配的 import 语句为空字符串
-		tsCode = dtsImportRegex.ReplaceAllString(tsCode, "")
-		//
-		tsCode = emptyLinesRegex.ReplaceAllString(tsCode, "")
-		// 删除 interface 定义
-		tsCode = interfaceRegex.ReplaceAllString(tsCode, "")
-		// 删除 class 定义
-		tsCode = classRegex.ReplaceAllString(tsCode, "")
-		// 删除特定的 const 定义
-		tsCode = constSpecificRegex.ReplaceAllString(tsCode, "")
-		// 替换为无类型注解的形式
-		tsCode = letRegex.ReplaceAllString(tsCode, `let $1 = `)
-		// 将 let 替换为 var
-		//tsCode = variableRegex.ReplaceAllString(tsCode, "var")
-		// 移除类型标注
-		tsCode = typeAnnotationRegex.ReplaceAllString(tsCode, "")
-
-		tsCode = emptyLinesRegex.ReplaceAllString(tsCode, "")
-	*/
+	// 替换匹配的内容为空
+	tsCode = goRuntimeRegex.ReplaceAllString(tsCode, "\n")
 	if tsc == nil {
 		tsc = NewTsc()
 	}
-
 	es5Code, err := tsc.TransformEs5(tsCode)
 	return es5Code, err
 }
+
+// 删除匹配的行
+//tsCode = letPkgRegex.ReplaceAllString(tsCode, "")
+
+/*
+// 替换匹配的 import 语句为空字符串
+tsCode = dtsImportRegex.ReplaceAllString(tsCode, "")
+//
+tsCode = emptyLinesRegex.ReplaceAllString(tsCode, "")
+// 删除 interface 定义
+tsCode = interfaceRegex.ReplaceAllString(tsCode, "")
+// 删除 class 定义
+tsCode = classRegex.ReplaceAllString(tsCode, "")
+// 删除特定的 const 定义
+tsCode = constSpecificRegex.ReplaceAllString(tsCode, "")
+// 替换为无类型注解的形式
+tsCode = letRegex.ReplaceAllString(tsCode, `let $1 = `)
+// 将 let 替换为 var
+//tsCode = variableRegex.ReplaceAllString(tsCode, "var")
+// 移除类型标注
+tsCode = typeAnnotationRegex.ReplaceAllString(tsCode, "")
+
+tsCode = emptyLinesRegex.ReplaceAllString(tsCode, "")
+*/

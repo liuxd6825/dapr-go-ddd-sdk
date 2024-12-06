@@ -7,7 +7,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
-	"github.com/orcaman/concurrent-map"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
@@ -15,11 +15,9 @@ import (
 // Service 定义服务的基本结构
 type Service struct {
 	*Base
-
-	server   *Server
-	requests cmap.ConcurrentMap
-	data     cmap.ConcurrentMap
-
+	server     *Server
+	requests   *types.CMap[*Request]
+	data       *types.CMap[any]
 	config     ServerConfig
 	initScript *ScriptConfig
 }
@@ -41,7 +39,7 @@ func NewService(server *Server, html []byte, srcFileName string, data map[string
 	var err error
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.GetRootPath())
 
-	dataMap := cmap.New()
+	dataMap := types.NewCMap[any]()
 	for k, v := range data {
 		dataMap.Set(k, v)
 	}
@@ -50,7 +48,7 @@ func NewService(server *Server, html []byte, srcFileName string, data map[string
 	service := &Service{
 		server:   server,
 		data:     dataMap,
-		requests: cmap.New(),
+		requests: types.NewCMap[*Request](),
 		config:   ServerConfig{},
 	}
 	service.Base, err = NewBase(srcFileName, server.logger, service, fsOpts)
@@ -80,7 +78,7 @@ func (s *Service) GetRequest(name string) *Request {
 	if !ok {
 		return nil
 	}
-	return r.(*Request)
+	return r
 }
 
 func (s *Service) GetRequestKeys() []string {

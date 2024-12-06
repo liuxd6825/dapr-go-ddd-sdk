@@ -3,13 +3,13 @@ package runtime
 import (
 	"fmt"
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
 type PkgValue struct {
 	hostVm  *goja.Runtime
 	objIns  *goja.Object
-	methods *xtype.Map[*goja.Callable]
+	methods *types.CMap[*goja.Callable]
 }
 
 func NewPkgValue(hostVm *goja.Runtime, value goja.Value) *PkgValue {
@@ -17,8 +17,8 @@ func NewPkgValue(hostVm *goja.Runtime, value goja.Value) *PkgValue {
 	return &PkgValue{hostVm: hostVm, objIns: objInst}
 }
 
-func getMethods(obj *goja.Object) *xtype.Map[*goja.Callable] {
-	methods := xtype.NewMap[*goja.Callable]()
+func getMethods(obj *goja.Object) *types.CMap[*goja.Callable] {
+	methods := types.NewCMap[*goja.Callable]()
 	Prototype := obj.Prototype()
 	protoKeys := Prototype.Keys()
 	for _, key := range protoKeys {

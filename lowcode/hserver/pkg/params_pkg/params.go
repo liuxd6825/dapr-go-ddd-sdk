@@ -5,12 +5,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 )
 
 type ParamsPkg struct {
 	server pkg.Server
-	cache  *xtype.Map[*xtype.ParamsType]
+	cache  *types.CMap[*xtype.ParamsType]
 }
 
 func New(server pkg.Server) *ParamsPkg {
@@ -20,7 +21,7 @@ func New(server pkg.Server) *ParamsPkg {
 func NewParamsPkg(server pkg.Server) *ParamsPkg {
 	return &ParamsPkg{
 		server: server,
-		cache:  xtype.NewMap[*xtype.ParamsType](),
+		cache:  types.NewCMap[*xtype.ParamsType](),
 	}
 }
 

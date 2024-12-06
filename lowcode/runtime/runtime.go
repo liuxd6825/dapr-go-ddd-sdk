@@ -3,6 +3,7 @@ package runtime
 import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"reflect"
 	"strings"
 )
@@ -11,7 +12,7 @@ type Runtime struct {
 	vm          *goja.Runtime
 	moduleCache map[string]*goja.Object
 	reader      fs.Reader
-	pkg         any
+	pkg         *types.CMap[any]
 }
 
 // 模块缓存
@@ -19,7 +20,7 @@ type Runtime struct {
 var DefaultPoolSize = 5
 var fieldNameMapper = &FieldNameMapper{}
 
-func NewRuntime(reader fs.Reader, pkg any) *Runtime {
+func NewRuntime(reader fs.Reader, pkg *types.CMap[any]) *Runtime {
 	vm := goja.New()
 	vm.SetFieldNameMapper(fieldNameMapper)
 	r := &Runtime{
@@ -29,12 +30,15 @@ func NewRuntime(reader fs.Reader, pkg any) *Runtime {
 		pkg:         pkg,
 	}
 	r.setRequire(r.vm, reader)
-	r.Set("pkg", pkg)
+	r.SetPkg(r.vm, r.pkg)
 	return r
 }
 
-func (r *Runtime) RunString(code string) (goja.Value, error) {
+func (r *Runtime) SetPkg(vm *goja.Runtime, pkg *types.CMap[any]) error {
+	return vm.Set("pkg", vm.NewDynamicObject(NewObjectProxy(vm, pkg)))
+}
 
+func (r *Runtime) RunString(code string) (goja.Value, error) {
 	return r.vm.RunString(code)
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/sirupsen/logrus"
 )
@@ -18,7 +19,7 @@ type Base struct {
 	srcFileName string
 	fsOpts      *fsopts.Options
 	reader      fs.Reader
-	pkg         any
+	pkg         *types.CMap[any]
 }
 
 func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fsOpts *fsopts.Options) (*Base, error) {
@@ -70,7 +71,7 @@ func (b *Base) RunInitScript(values *RunValues, opts ...RunOptions) error {
 	return err
 }
 
-func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *RunValues, logger logrus.FieldLogger, pkg any, opts ...RunOptions) error {
+func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *RunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error {
 	if code != "" {
 		addOpts := &ScriptConfig{
 			FuncName:    funcName,
@@ -89,10 +90,10 @@ func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *Run
 	return nil
 }
 
-func (b *Base) SetPkg(pkg any) {
+func (b *Base) SetPkg(pkg *types.CMap[any]) {
 	b.pkg = pkg
 }
 
-func (b *Base) GetPkg() any {
+func (b *Base) GetPkg() *types.CMap[any] {
 	return b.pkg
 }

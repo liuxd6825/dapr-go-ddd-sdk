@@ -3,6 +3,7 @@ package runtime
 import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
 // Pool 封装 goja 的池
@@ -11,13 +12,13 @@ type Pool struct {
 	vm       *Runtime
 	pool     chan *Runtime // 使用 channel 实现池化，限制池大小
 	reader   fs.Reader
-	pkg      any
+	pkg      *types.CMap[any]
 }
 
 type RunOptions = func(vm *goja.Runtime) error
 
 // NewPool 创建一个带大小限制的 Runtime 池
-func NewPool(userPool bool, reader fs.Reader, pkg any) *Pool {
+func NewPool(userPool bool, reader fs.Reader, pkg *types.CMap[any]) *Pool {
 	r := &Pool{
 		userPool: userPool,
 		reader:   reader,

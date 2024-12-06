@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/schema_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,17 +36,18 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 	}
 
 	server, err := NewServer(httpServer.App(), fileName, srcFs, envCfg)
+	pkg := types.NewCMap[any]()
 
-	server.SetPkg(map[string]any{
-		"mongo":    mongodb.New(envCfg),
-		"template": tpl_pkg.New(envCfg, server, tplFs),
-		"feign":    feign_pkg.New(server),
-		"fs":       server.fsm,
-		"context":  ctx_pkg.New(),
-		"schema":   schema_pkg.New(server),
-		"params":   params_pkg.New(server),
-		"env":      envCfg,
-	})
+	pkg.Set("mongo", mongodb.New(envCfg))
+	pkg.Set("template", tpl_pkg.New(envCfg, server, tplFs))
+	pkg.Set("feign", feign_pkg.New(server))
+	pkg.Set("fs", server.fsm)
+	pkg.Set("context", ctx_pkg.New())
+	pkg.Set("schema", schema_pkg.New(server))
+	pkg.Set("params", params_pkg.New(server))
+	pkg.Set("env", envCfg)
+
+	server.SetPkg(pkg)
 
 	server.SetRunValues(map[string]any{
 		"console": NewConsole(logrus.New()),
