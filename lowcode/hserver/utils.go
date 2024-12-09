@@ -29,5 +29,6 @@ func setError(ctx iris.Context, err error) {
 		ctx.SetErr(err)
 		ctx.StatusCode(httptest.StatusInternalServerError)
 		_, _ = ctx.WriteString(err.Error())
+
 	}
 }

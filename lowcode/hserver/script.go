@@ -126,7 +126,7 @@ func (r *Script) Run(opts ...RunOptions) (res any, err error) {
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("run error:%v in %s %s", err, r.config.FuncName, r.config.SrcFileName))
 	}
-	r.logger.Printf("run %s return %v in %s", r.config.FuncName, data, r.config.SrcFileName)
+	//r.logger.Printf("run %s return %v in %s", r.config.FuncName, data, r.config.SrcFileName)
 
 	return data, err
 }

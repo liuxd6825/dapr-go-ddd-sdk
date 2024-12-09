@@ -8,7 +8,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -120,7 +119,6 @@ func (s *Request) runScript(wctx *WebContext, params any) {
 		return nil
 	})
 	if err != nil {
-		logs.Error(wctx, tenantId, logs.Fields{"code": s.config.Script.Code})
 		wctx.SetError(err)
 	}
 	if val != nil {

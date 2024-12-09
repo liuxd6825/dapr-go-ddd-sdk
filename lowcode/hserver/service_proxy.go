@@ -1,7 +1,6 @@
 package hserver
 
 import "github.com/dop251/goja"
-import "fmt"
 
 type ServiceProxy struct {
 	service *Service
@@ -29,8 +28,6 @@ func (s *ServiceProxy) Get(name string) goja.Value {
 		if val, exists := s.service.data.Get(name); exists {
 			if value, ok := val.(goja.Value); ok {
 				res = value
-				obj := value.ToObject(s.vm).Export()
-				fmt.Println(obj)
 			} else {
 				res = s.vm.ToValue(value)
 			}

@@ -22,12 +22,13 @@ import (
 
 type WebContext struct {
 	restapp.RestAssembler
-	authToken appctx.AuthToken
-	ictx      iris.Context
-	ctx       context.Context
-	vu        modules.VU
-	closers   []io.Closer //资源关闭器
-	request   *Request
+	authToken  appctx.AuthToken
+	ictx       iris.Context
+	ctx        context.Context
+	vu         modules.VU
+	closers    []io.Closer //资源关闭器
+	request    *Request
+	timeFields map[string]any
 }
 
 func NewWebContext(ctx context.Context, ictx iris.Context, request *Request) *WebContext {
@@ -138,15 +139,17 @@ func (c *WebContext) ReadBytes() []byte {
 //	@return map[string]any
 func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
 	var err error
-	timeFields := map[string]any{}
 
 	bytes := c.ReadBytes()
 	if schema != nil {
-		getTimeFields2(schema, timeFields, "")
+		if c.timeFields == nil {
+			c.timeFields = make(map[string]any)
+		}
+		getTimeFields2(schema, c.timeFields, "")
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
-		TimeFields: timeFields,
+		TimeFields: c.timeFields,
 		ParseTime:  parseTime,
 	})
 	if err != nil {
@@ -309,13 +312,17 @@ func (c *WebContext) SetError(errOrMsg any, httpStatus ...int) {
 	} else if msg, ok := errOrMsg.(string); ok {
 		err = errors.New(msg)
 	} else if data, ok := errOrMsg.(map[string]any); ok {
-		fmt.Println(data)
-		err = errors.New("runValues")
+		msgData, err := jsonutils.MarshalBytes(data)
+		if err != nil {
+			err = errors.New(string(msgData))
+		} else {
+			err = errors.New(fmt.Sprintf("%s", err.Error()))
+		}
 	} else {
 		err = errors.New("未知的错误类型")
 	}
 
-	logs.Error(c.ctx, "", logs.Fields{"errId": errId, "error": err})
+	logs.Error(c.ctx, c.GetTenantId(), logs.Fields{"errorId": errId, "error": err})
 	if logs.GetLevel() == 0 {
 		c.ictx.SetErr(err)
 	} else {
