@@ -23,13 +23,27 @@ func RecoverError(e error, recover any) error {
 	return err
 }
 
-// TransformTSCodeToJS
+type TransformType = int
+
+const (
+	TransformTypeTypeScript TransformType = iota
+	TransformTypeES6
+)
+
+// TransformCode
 //
 //	@Description: 将typescript代码转换为js
 //	@param tsCode
 //	@return string
 //	@return error
-func TransformTSCodeToJS(tsCode string) ([]byte, error) {
-	jscode, err := transform.Transform(tsCode)
-	return jscode, err
+func TransformCode(tsCode string, fileName string, transType TransformType) ([]byte, error) {
+	var codeBytes []byte
+	var err error
+	switch transType {
+	case TransformTypeTypeScript:
+		codeBytes, err = transform.TransformFromTypeScript(tsCode, fileName)
+	case TransformTypeES6:
+		codeBytes, err = transform.TransformFromEs6(tsCode, fileName)
+	}
+	return codeBytes, err
 }

@@ -4,6 +4,8 @@ import "regexp"
 
 var tsc *Tsc
 
+var babel *Babel
+
 // 正则表达式匹配第一个 function 的参数部分，仅修改第一个匿名函数
 var funcRe = regexp.MustCompile(`\(function\s*\([^)]*\)`)
 
@@ -26,55 +28,72 @@ var letRegex = regexp.MustCompile(`\blet\s+(\w+)\s*:\s*[^=]+\s*=\s*`)
 var constSpecificRegex = regexp.MustCompile(`(?m)^\s*const\s+\w+\s*:\s*\w+\s*;?\s*$`)
 
 // 正则表达式匹配所有变量定义（let），将其替换为 var
-//variableRegex := regexp.MustCompile(`\blet\b`)
+var variableRegex = regexp.MustCompile(`\blet\b`)
 
 // 正则表达式匹配 TypeScript 类型标注并移除
 var typeAnnotationRegex = regexp.MustCompile(`:\s*\w+`)
 
-// 正则表达式匹配 "let pkg: PKG;" 格式的代码行
-var letPkgRegex = regexp.MustCompile(`(?m)^\s*let\s+pkg\s*:\s*PKG\s*;\s*$`)
-
 // 定义正则表达式匹配 `//` 与 `@go-runtime` 之间有多个空格的情况，并删除下一行
 var goRuntimeRegex = regexp.MustCompile(`(?m)^\s*//\s*@go-runtime.*\n.*\n`)
 
-// Transform
+// TransformFromTypeScript
 //
 //	@Description: 将typescript代码转换为js
 //	@param tsCode
 //	@return string
 //	@return error
-func Transform(tsCode string) ([]byte, error) {
+func TransformFromTypeScript(tsCode string, fileName string) ([]byte, error) {
 	// 替换为仅保留 function()
 	tsCode = funcRe.ReplaceAllString(tsCode, `(function ()`)
-	// 替换匹配的内容为空
+	// 删除import语句
+	tsCode = dtsImportRegex.ReplaceAllString(tsCode, ``)
+	// 删除 // @go-runtime 行
 	tsCode = goRuntimeRegex.ReplaceAllString(tsCode, "\n")
 	if tsc == nil {
 		tsc = NewTsc()
 	}
-	es5Code, err := tsc.TransformEs5(tsCode)
+	es5Code, err := tsc.TransformEs5(tsCode, fileName)
 	return es5Code, err
 }
 
-// 删除匹配的行
-//tsCode = letPkgRegex.ReplaceAllString(tsCode, "")
-
-/*
-// 替换匹配的 import 语句为空字符串
-tsCode = dtsImportRegex.ReplaceAllString(tsCode, "")
+// TransformFromEs6
 //
-tsCode = emptyLinesRegex.ReplaceAllString(tsCode, "")
-// 删除 interface 定义
-tsCode = interfaceRegex.ReplaceAllString(tsCode, "")
-// 删除 class 定义
-tsCode = classRegex.ReplaceAllString(tsCode, "")
-// 删除特定的 const 定义
-tsCode = constSpecificRegex.ReplaceAllString(tsCode, "")
-// 替换为无类型注解的形式
-tsCode = letRegex.ReplaceAllString(tsCode, `let $1 = `)
-// 将 let 替换为 var
-//tsCode = variableRegex.ReplaceAllString(tsCode, "var")
-// 移除类型标注
-tsCode = typeAnnotationRegex.ReplaceAllString(tsCode, "")
+//	@Description:
+//	@param es6Code
+//	@param fileName
+//	@return []byte
+//	@return error
+func TransformFromEs6(es6Code string, fileName string) ([]byte, error) {
+	// 替换为仅保留 function()
+	es6Code = funcRe.ReplaceAllString(es6Code, `(function ()`)
+	// 删除import语句
+	es6Code = dtsImportRegex.ReplaceAllString(es6Code, ``)
+	//
+	es6Code = emptyLinesRegex.ReplaceAllString(es6Code, "")
+	// 删除 // @go-runtime 行
+	es6Code = goRuntimeRegex.ReplaceAllString(es6Code, "\n")
+	// 删除 interface 定义
+	es6Code = interfaceRegex.ReplaceAllString(es6Code, "")
+	// 删除 class 定义
+	es6Code = classRegex.ReplaceAllString(es6Code, "")
+	// 删除特定的 const 定义
+	es6Code = constSpecificRegex.ReplaceAllString(es6Code, "")
+	// 替换为无类型注解的形式
+	es6Code = letRegex.ReplaceAllString(es6Code, `let $1 = `)
+	// 将 let 替换为 var
+	es6Code = variableRegex.ReplaceAllString(es6Code, "var")
+	// 移除类型标注
+	es6Code = typeAnnotationRegex.ReplaceAllString(es6Code, "")
+	//
+	es6Code = emptyLinesRegex.ReplaceAllString(es6Code, "")
+	// 替换匹配的内容为空
+	es6Code = goRuntimeRegex.ReplaceAllString(es6Code, "\n")
 
-tsCode = emptyLinesRegex.ReplaceAllString(tsCode, "")
-*/
+	if babel == nil {
+		var err error
+		if babel, err = NewBabel(); err != nil {
+			return nil, err
+		}
+	}
+	return babel.Transform(es6Code, fileName, false, nil)
+}

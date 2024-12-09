@@ -207,7 +207,8 @@ func (s *Server) parse(doc *goquery.Document) error {
 				}
 				isHas := s.services.Has(service.config.Name)
 				if isHas {
-					panic(errors.New(fmt.Sprintf("%s", service.config.Name)))
+					errMsg := fmt.Sprintf("service %s already exists", service.config.Name)
+					panic(errMsg)
 				}
 				s.services.Set(service.config.Name, service)
 			}

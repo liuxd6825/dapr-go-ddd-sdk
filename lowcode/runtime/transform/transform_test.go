@@ -15,7 +15,7 @@ func Test_Transform(t *testing.T) {
 	})()
 		`
 
-	code, err := Transform(tsCode)
+	code, err := TransformCode(tsCode)
 	if err != nil {
 		t.Error(err)
 	}

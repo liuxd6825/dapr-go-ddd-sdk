@@ -60,9 +60,10 @@ func (r *Runtime) require(reader fs.Reader, modulePath string) (val goja.Value, 
 		return nil, fmt.Errorf("failed to load module %s: %v", modulePath, err)
 	}
 
-	content, err = TransformTSCodeToJS(string(content))
+	pkgFileName := workPath + moduleName
+	content, err = TransformCode(string(content), pkgFileName, TransformTypeTypeScript)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load module %s: %v", modulePath, err)
+		return nil, fmt.Errorf("failed to load module %s: %v", pkgFileName, err)
 	}
 
 	// 创建新的 Runtime

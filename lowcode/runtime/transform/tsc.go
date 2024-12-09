@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"fmt"
 	"github.com/evanw/esbuild/pkg/api"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"strings"
@@ -32,8 +33,8 @@ const (
 	ES2024
 )
 
-func (t *Tsc) TransformEs5(tsCode string) ([]byte, error) {
-	return t.Transform(tsCode, "", ES5)
+func (t *Tsc) TransformEs5(tsCode string, fileName string) ([]byte, error) {
+	return t.Transform(tsCode, fileName, ES5)
 }
 
 // Transform
@@ -60,11 +61,11 @@ func (t *Tsc) Transform(tsCode string, fileName string, target TscTransformTarge
 		for _, err := range esbuildResult.Errors {
 			msgList = append(msgList, err.Text)
 		}
-		return nil, errors.New(strings.Join(msgList, "\n"))
+		errMsg := fmt.Sprintf("error transforming TypeScript: %s in %s", strings.Join(msgList, "\n"), fileName)
+		return nil, errors.New(errMsg)
 	}
 
 	es6Code := string(esbuildResult.Code)
-
 	if target == ES5 {
 		if t.babel == nil {
 			var err error
@@ -72,7 +73,11 @@ func (t *Tsc) Transform(tsCode string, fileName string, target TscTransformTarge
 				return nil, err
 			}
 		}
-		return t.babel.Transform(es6Code, fileName, false, nil)
+		date, err := t.babel.Transform(es6Code, fileName, false, nil)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("error transforming ES6: %s in %s", err.Error(), fileName))
+		}
+		return date, nil
 	}
 	return []byte(es6Code), nil
 }

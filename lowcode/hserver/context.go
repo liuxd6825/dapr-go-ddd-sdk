@@ -142,7 +142,7 @@ func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
 
 	bytes := c.ReadBytes()
 	if schema != nil {
-		getTimeFields2(schema, timeFields)
+		getTimeFields2(schema, timeFields, "")
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
@@ -232,7 +232,7 @@ func (c *WebContext) FormObject(name string, required bool, schema *jsonschema.S
 	bytes := []byte(text)
 
 	if schema != nil {
-		getTimeFields2(schema, timeFields)
+		getTimeFields2(schema, timeFields, "")
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
@@ -488,7 +488,7 @@ func getTimeFields(s schema2.ISchema) map[string]any {
 	return timeFields
 }
 
-func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any) {
+func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any, propName string) {
 	if s == nil {
 		return
 	}
@@ -499,8 +499,8 @@ func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any) {
 			if items != nil && items.Types.Contains(jsonschema.JsonType_ObjectType) {
 				propsTimeFields := map[string]any{}
 				getTimeFieldsProps2(items.Properties, propsTimeFields)
-				if len(propsTimeFields) > 0 {
-					timeFields[s.ID] = timeFields
+				for k, v := range propsTimeFields {
+					timeFields[k] = v
 				}
 			}
 		} else if s.Types.Contains(jsonschema.JsonType_ObjectType) {
@@ -508,7 +508,7 @@ func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any) {
 		}
 	}
 	if s.Ref != nil {
-		getTimeFields2(s.Ref, timeFields)
+		getTimeFields2(s.Ref, timeFields, propName)
 	}
 
 }
@@ -529,16 +529,9 @@ func getTimeFieldsProps2(props map[string]*jsonschema.Schema, timeFields map[str
 				timeFields[k] = schema2.TypeDatetime
 			}
 		}
-		if p.Ref != nil {
+		if p.Properties != nil || p.Items != nil || p.Ref != nil || p.Items2020 != nil {
 			propsFields := map[string]any{}
-			getTimeFields2(p.Ref, propsFields)
-			if len(propsFields) > 0 {
-				timeFields[k] = propsFields
-			}
-		}
-		if p.Properties != nil || p.Items != nil {
-			propsFields := map[string]any{}
-			getTimeFields2(p, propsFields)
+			getTimeFields2(p, propsFields, k)
 			if len(propsFields) > 0 {
 				timeFields[k] = propsFields
 			}
