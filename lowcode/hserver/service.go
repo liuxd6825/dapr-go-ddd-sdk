@@ -140,7 +140,7 @@ func (s *Service) parse(html []byte) error {
 				Description: request.AttrOr("description", ""),
 				ParamsType:  request.AttrOr("params-type", ""),
 			}
-			request.Find("link.params").First().Each(func(i int, selection *goquery.Selection) {
+			request.Find("a.params").First().Each(func(i int, selection *goquery.Selection) {
 				reqCfg.LinkParamsUrl = selection.AttrOr("href", "")
 			})
 			// 获取 <script> 子节点

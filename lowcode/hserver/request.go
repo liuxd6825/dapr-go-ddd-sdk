@@ -192,11 +192,11 @@ func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 		}
 
 	} else if s.config.ParamsType != "" {
-		paramsTypeFile = "/definition/params/" + s.config.ParamsType
+		paramsTypeFile = fmt.Sprintf("/definition/params/%s.json", s.config.ParamsType)
 		if pType, ok := s.paramsTypeCache.Get(paramsTypeFile); ok {
 			return paramsTypeFile, pType
 		}
-		paramsType = s.server.definition.GetParamsType(s.config.ParamsType)
+		paramsType = s.server.definition.GetParamsType(s.config.ParamsType + ".json")
 		s.paramsTypeCache.Set(paramsTypeFile, paramsType)
 	}
 

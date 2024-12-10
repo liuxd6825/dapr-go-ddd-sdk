@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"strings"
 )
 
@@ -54,6 +55,7 @@ type FindPagingQueryBuilder interface {
 	SetGroupCols([]*GroupCol) FindPagingQueryBuilder
 	SetValueCols([]*ValueCol) FindPagingQueryBuilder
 	SetGroupKeys([]any) FindPagingQueryBuilder
+	SetMapToQuery(map[string]any) FindPagingQueryBuilder
 	Build() FindPagingQuery
 }
 
@@ -417,6 +419,41 @@ func (f *findPagingQueryBuilder) SetValueCols(cols []*ValueCol) FindPagingQueryB
 
 func (f *findPagingQueryBuilder) SetGroupKeys(value []any) FindPagingQueryBuilder {
 	f.query.SetGroupKeys(value)
+	return f
+}
+
+func (f *findPagingQueryBuilder) SetMapToQuery(m map[string]any) FindPagingQueryBuilder {
+
+	tenantId, err := maputils.GetString(m, "tenantId", "")
+	if err != nil {
+		panic(err)
+	}
+	f.SetTenantId(tenantId)
+
+	filter, err := maputils.GetString(m, "filter", "")
+	if err != nil {
+		panic(err)
+	}
+	f.SetFilter(filter)
+
+	fields, err := maputils.GetString(m, "fields", "")
+	if err != nil {
+		panic(err)
+	}
+	f.SetFields(fields)
+
+	pageNum, err := maputils.GetInt64(m, "pageNum", 0)
+	if err != nil {
+		panic(err)
+	}
+	f.SetPageNum(pageNum)
+
+	pageSize, err := maputils.GetInt64(m, "pageSize", 20)
+	if err != nil {
+		panic(err)
+	}
+	f.SetPageSize(pageSize)
+
 	return f
 }
 

@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dao/mongo_dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -58,6 +59,7 @@ func (d *Dao) Table(ctx context.Context, schema *schema.Schema, opts ...*ddd_rep
 }
 
 func (d *Dao) Save(ctx context.Context, setData *ddd.SetData[ddd.MapEntity], opts ...*OperateOptions) {
+	//tenantId := d.getTenantId(ctx)
 	err := d.dao.Save(ctx, setData, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -68,6 +70,9 @@ func (d *Dao) Create(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
+	tenantId := d.getTenantId(ctx)
+	entity.SetTenantId(tenantId)
+
 	err := d.dao.Insert(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -85,7 +90,8 @@ func (d *Dao) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Update() entity is nil"))
 	}
-
+	tenantId := d.getTenantId(ctx)
+	entity.SetTenantId(tenantId)
 	err := d.dao.Update(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -99,7 +105,8 @@ func (d *Dao) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	server.GetEventPkg().ApplyEvent(ctx, agg, event)
 }
 
-func (d *Dao) DeleteById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) {
+func (d *Dao) DeleteById(ctx context.Context, id string, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.DeleteById(ctx, tenantId, id, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -124,14 +131,16 @@ func (d *Dao) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*O
 	}
 }
 
-func (d *Dao) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) {
+func (d *Dao) DeleteByIds(ctx context.Context, ids []string, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.DeleteByIds(ctx, tenantId, ids, newOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Dao) UpdateByMap(ctx context.Context, tenantId string, filterMap map[string]any, data any, opts ...*OperateOptions) {
+func (d *Dao) UpdateByMap(ctx context.Context, filterMap map[string]any, data any, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.UpdateMap(ctx, tenantId, filterMap, data, newOptions(opts)...)
 	if err != nil {
 		panic(err)
@@ -153,35 +162,40 @@ func (d *Dao) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...
 	return res
 }
 
-func (d *Dao) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...*OperateOptions) {
+func (d *Dao) UpdateManyByFilter(ctx context.Context, filter string, data interface{}, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.UpdateManyByFilter(ctx, tenantId, filter, data, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Dao) DeleteAll(ctx context.Context, tenantId string, opts ...*OperateOptions) {
+func (d *Dao) DeleteAll(ctx context.Context, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.DeleteAll(ctx, tenantId, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Dao) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...*OperateOptions) {
+func (d *Dao) DeleteByFilter(ctx context.Context, filter string, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.DeleteByFilter(ctx, tenantId, filter, newOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Dao) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*OperateOptions) {
+func (d *Dao) DeleteByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
 	err := d.dao.DeleteByMap(ctx, tenantId, filterMap, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *Dao) FindById(ctx context.Context, tenantId string, id string, opts ...*OperateOptions) *common.Result[ddd.MapEntity] {
+func (d *Dao) FindById(ctx context.Context, id string, opts ...*OperateOptions) *common.Result[ddd.MapEntity] {
+	tenantId := d.getTenantId(ctx)
 	res := d.dao.FindById(ctx, tenantId, id, newOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
@@ -189,7 +203,8 @@ func (d *Dao) FindById(ctx context.Context, tenantId string, id string, opts ...
 	return common.NewResult[ddd.MapEntity](res.Data, res.Error)
 }
 
-func (d *Dao) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
+func (d *Dao) FindByIds(ctx context.Context, ids []string, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {
+	tenantId := d.getTenantId(ctx)
 	data, _, err := d.dao.FindByIds(ctx, tenantId, ids, newOptions(opts)...).Result()
 	if err != nil {
 		panic(err)
@@ -197,7 +212,8 @@ func (d *Dao) FindByIds(ctx context.Context, tenantId string, ids []string, opts
 	return common.NewResult[[]ddd.MapEntity](data, err)
 }
 
-func (d *Dao) FindAll(ctx context.Context, tenantId string, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+func (d *Dao) FindAll(ctx context.Context, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+	tenantId := d.getTenantId(ctx)
 	res := d.dao.FindAll(ctx, tenantId, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -205,7 +221,8 @@ func (d *Dao) FindAll(ctx context.Context, tenantId string, opts ...*OperateOpti
 	return res
 }
 
-func (d *Dao) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+func (d *Dao) FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*OperateOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+	tenantId := d.getTenantId(ctx)
 	res := d.dao.FindListByMap(ctx, tenantId, filterMap, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -213,8 +230,19 @@ func (d *Dao) FindListByMap(ctx context.Context, tenantId string, filterMap map[
 	return res
 }
 
-func (d *Dao) FindPaging(ctx context.Context, query *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
-	res := d.dao.FindPaging(ctx, query, newOptions(opts)...)
+func (d *Dao) FindPaging(ctx context.Context, findPagingMap any, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+	var findQuery ddd_repository.FindPagingQuery
+	if mapData, ok := findPagingMap.(map[string]any); ok {
+		builder := ddd_repository.NewFindPagingQueryBuilder()
+		findQuery = builder.SetMapToQuery(mapData).Build()
+	} else if query, ok := findPagingMap.(ddd_repository.FindPagingQuery); ok {
+		findQuery = query
+	} else {
+		panic("FindPaging(findPagingMap:any) findPagingMap is map[string]any or ddd_repository.FindPagingQuery ")
+	}
+	tenantId := d.getTenantId(ctx)
+	findQuery.SetTenantId(tenantId)
+	res := d.dao.FindPaging(ctx, findQuery, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
 	}
@@ -222,6 +250,11 @@ func (d *Dao) FindPaging(ctx context.Context, query *ddd_repository.FindPagingQu
 }
 
 func (d *Dao) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*OperateOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+	if qry == nil {
+		panic(errors.New("FindAutoComplete query is nil"))
+	}
+	tenantId := d.getTenantId(ctx)
+	qry.SetTenantId(tenantId)
 	res := d.dao.FindAutoComplete(ctx, qry, newOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
@@ -230,6 +263,9 @@ func (d *Dao) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAuto
 }
 
 func (d *Dao) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*OperateOptions) *common.Result[*ddd_repository.FindPagingResult[ddd.MapEntity]] {
+	if qry == nil {
+		panic(errors.New("FindDistinctQueryRequest query is nil"))
+	}
 	data := d.dao.FindDistinct(ctx, qry, newOptions(opts)...)
 	if data.GetError() != nil {
 		panic(data.GetError())
@@ -242,6 +278,20 @@ func (d *Dao) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, 
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (d *Dao) getTenantId(ctx context.Context) string {
+	if user, ok := appctx.GetAuthUser(ctx); ok {
+		return user.GetTenantId()
+	}
+	panic("token is error")
+}
+
+func (d *Dao) getAuthUser(ctx context.Context) appctx.AuthUser {
+	if user, ok := appctx.GetAuthUser(ctx); ok {
+		return user
+	}
+	panic("token is error")
 }
 
 func (d *Dao) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*OperateOptions) *common.Result[[]ddd.MapEntity] {

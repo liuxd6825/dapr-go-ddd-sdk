@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -56,6 +57,7 @@ func GetKeysToFirstLower(data map[string]any) []string {
 	return keys
 }
 
+/*
 func GetString(m map[string]interface{}, key string, result *string, def string) (bool, error) {
 	if v, ok := m[key]; ok {
 		str := fmt.Sprintf("%v", v)
@@ -65,17 +67,35 @@ func GetString(m map[string]interface{}, key string, result *string, def string)
 	str := def
 	result = &str
 	return false, nil
+}*/
+
+func GetString(m map[string]interface{}, key string, def string) (string, error) {
+	resutl := def
+	if v, ok := m[key]; ok {
+		resutl = fmt.Sprintf("%v", v)
+	}
+	return resutl, nil
 }
 
-func GetInt64(m map[string]interface{}, key string, result *int64, def int64) (bool, error) {
+func GetInt64(m map[string]interface{}, key string, def int64) (int64, error) {
+	var result = def
 	if v, ok := m[key]; ok {
-		str := v.(int64)
-		result = &str
-		return ok, nil
+		if val, ok := v.(int64); ok {
+			result = val
+		} else if val, ok := v.(*int64); ok {
+			result = *val
+		} else if str, ok := v.(string); ok {
+			if str != "" {
+				// 转换为 int64
+				num, err := strconv.ParseInt(str, 10, 64)
+				if err != nil {
+					return 0, err
+				}
+				result = num
+			}
+		}
 	}
-	str := def
-	result = &str
-	return false, nil
+	return result, nil
 }
 
 func Decode(input interface{}, out interface{}) error {
