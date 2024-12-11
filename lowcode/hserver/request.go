@@ -212,13 +212,12 @@ func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 //	@return map[string]any 参数
 func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
 	var err error
-	data := map[string]any{}
-
 	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ictx)
 	if paramsType == nil {
-		return data
+		return nil
 	}
 
+	data := map[string]any{}
 	ictx := wctx.ictx
 
 	var bodyData any = nil
