@@ -4,33 +4,37 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/test"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/spf13/afero"
 )
 
 type TestServer struct {
-	FsPkg  pkg.FsPkg
-	SrcFs  afero.Fs
-	EnvCfg common.IEnvConfig
+	FsPkg        pkg.FsPkg
+	SrcFs        afero.Fs
+	EnvCfg       common.IEnvConfig
+	SchemaLoader *schema_utils.SchemaLoader
 }
 
-type Options func(*TestServer)
+type Options func(*TestServer) error
 
-func NewServer(srcPath string, opts ...Options) (pkg.Server, error) {
-	fs, err := test.NewFsManager()
+func NewServer(rootPath string, opts ...Options) (pkg.Server, error) {
+	fs, err := test.NewFsManager(rootPath)
 	if err != nil {
 		return nil, err
 	}
 
-	envCfg := NewEnvConfig(fs, srcPath)
+	envCfg := NewEnvConfig(fs, rootPath)
 	server, err := NewTestServer(envCfg)
-	for _, opt := range opts {
-		opt(server)
-	}
-
 	if err != nil {
-
 		return nil, err
+	}
+	server.SchemaLoader = schema_utils.NewSchemaLoader(fs)
+	for _, opt := range opts {
+		if err = opt(server); err != nil {
+			return nil, err
+		}
 	}
 	return server, nil
 }
@@ -66,4 +70,8 @@ func (s *TestServer) GetCacheEnable() bool {
 
 func (s *TestServer) SetRunValue(key string, value any) {
 
+}
+
+func (s *TestServer) GetSchemaLoader() schema.URLLoader {
+	return s.SchemaLoader
 }

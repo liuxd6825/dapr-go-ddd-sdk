@@ -1,18 +1,23 @@
 package schema_pkg
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/test"
 	"testing"
 )
 
 func TestSchemaPkg_LoadFile(t *testing.T) {
-	server, err := test.NewServer("")
+	server, err := test.NewServer("/testfile", func(server *test.TestServer) error {
+		fsPkg, err := fs_pkg.NewFsPkg(server.GetEnvConfig())
+		server.FsPkg = fsPkg
+		return err
+	})
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 	schemaPkg := New(server)
-	schema := schemaPkg.LoadFile("/testfile/human.json", "")
+	schema := schemaPkg.LoadFile("/human.json", "")
 
 	data := map[string]any{
 		"id":       "0",

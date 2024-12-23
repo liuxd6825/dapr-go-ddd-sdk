@@ -7,7 +7,7 @@ import (
 )
 
 func TestFs_LoadFile(t *testing.T) {
-	fsm, err := fstest.NewFsManager()
+	fsm, err := fstest.NewFsManager("")
 	if err != nil {
 		t.Fatal(err)
 		return

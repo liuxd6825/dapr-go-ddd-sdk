@@ -125,9 +125,9 @@ func (s *Request) runScript(wctx *WebContext, params any) {
 		if err, ok := val.(error); ok {
 			wctx.SetError(err)
 		} else if v, ok := val.(goja.Value); ok {
-			wctx.SetData(v.Export())
+			wctx.WriteJson(v.Export())
 		} else {
-			wctx.SetData(val)
+			wctx.WriteJson(val)
 		}
 	}
 }

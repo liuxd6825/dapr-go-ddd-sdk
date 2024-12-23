@@ -107,6 +107,10 @@ func (s *Server) ReadSrcFile(fileName string, opts ...*fsopts.Options) ([]byte, 
 	return fs.ReadFile(s.srcFs, fileName, opts...)
 }
 
+func (s *Server) GetSchemaLoader() schema.URLLoader {
+	return s.schemaLoader
+}
+
 // ReadFile
 //
 //	@Description: 读取文件内容

@@ -8,7 +8,7 @@
       "type": "string",
       "name": "id",
       "title": "主键",
-      "minLength":10,
+      "minLength":10
     },
     "tenantId": {
       "type": "string",

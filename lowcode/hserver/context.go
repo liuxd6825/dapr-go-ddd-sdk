@@ -265,16 +265,16 @@ func (c *WebContext) WriteJson(data any) {
 	}
 }
 
-func (c *WebContext) SetData(data any) {
-	c.WriteJson(data)
-}
-
-func (c *WebContext) SetHTML(html string) {
-	c.WriteHTML(html)
-}
-
 func (c *WebContext) WriteString(body string) int {
 	res, err := c.ictx.WriteString(body)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
+func (c *WebContext) WriteBytes(data []byte) int {
+	res, err := c.ictx.Write(data)
 	if err != nil {
 		panic(err)
 	}
@@ -287,6 +287,14 @@ func (c *WebContext) WriteHTML(body string) int {
 		panic(err)
 	}
 	return res
+}
+
+func (c *WebContext) SetContentType(cType string) {
+	c.ictx.ContentType(cType)
+}
+
+func (c *WebContext) GetContentType() string {
+	return c.ictx.GetContentType()
 }
 
 func (c *WebContext) SetStatus(status int) {

@@ -1,10 +1,10 @@
 package schema_pkg
 
 import (
+	"bytes"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -27,16 +27,27 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 			return val
 		}
 	}
+
 	data := s.server.GetFsPkg().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
 	if len(data) == 0 {
 		return nil
 	}
-	var schema *jsonschema.Schema
-	err := jsonutils.Unmarshal(data, &schema)
+	reader, err := jsonschema.UnmarshalJSON(bytes.NewReader(data))
+	if err != nil {
+		panic(err)
+	}
+	schemaFile := "schema.json"
+	compiler := jsonschema.NewCompiler()
+	compiler.UseLoader(s.server.GetSchemaLoader())
+
+	if err := compiler.AddResource(schemaFile, reader); err != nil {
+		panic(err)
+	}
+	sch, err := compiler.Compile(schemaFile)
 	if err != nil {
 		panic(err)
 	}
 
-	s.cache.Set(fileUrl, schema)
-	return schema
+	s.cache.Set(fileUrl, sch)
+	return sch
 }

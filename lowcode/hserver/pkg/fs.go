@@ -6,12 +6,12 @@ import (
 )
 
 type FileInfo struct {
-	IsDir     bool        `json:"isDir"`
-	Name      string      `json:"name"`
-	Size      int64       `json:"size"`
-	Path      string      `json:"path"`
-	SubFiles  []*FileInfo `json:"subFiles"`
-	SizeTitle string      `json:"sizeTitle"`
+	IsDir     bool        `json:"isDir,omitempty"`
+	Name      string      `json:"name,omitempty"`
+	Size      int64       `json:"size,omitempty"`
+	Path      string      `json:"path,omitempty"`
+	SubFiles  []*FileInfo `json:"subFiles,omitempty"`
+	SizeTitle string      `json:"sizeTitle,omitempty"`
 }
 
 type FsPkg interface {

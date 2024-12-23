@@ -11,7 +11,7 @@ import (
 //	@Description:创建一个测试对象
 //	@return *fs.Manager
 //	@return error
-func NewFsManager() (*fs.Manager, error) {
+func NewFsManager(rootPath string) (*fs.Manager, error) {
 	// 获取当前工作目录
 	path, err := os.Getwd()
 	if err != nil {
@@ -21,7 +21,7 @@ func NewFsManager() (*fs.Manager, error) {
 	fsm := fs.NewManager()
 	fsCfg := localfs.Config{
 		Name: "file",
-		Path: path,
+		Path: path + rootPath,
 	}
 	lfs, err := localfs.NewFs(fsCfg)
 	if err != nil {
