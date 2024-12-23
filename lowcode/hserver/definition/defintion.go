@@ -1,49 +1,70 @@
 package definition
 
 import (
-	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xtype"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/spf13/afero"
-	iofs "io/fs"
+	"path/filepath"
+	"strings"
 )
 
 type Definition struct {
 	fs       afero.Fs
-	requests map[string]xtype.ParamsType `json:"requests"`
+	rootPath string
+	params   map[string]xtype.ParamsType
 }
 
-func NewDefinition(srcFs afero.Fs, path string) (*Definition, error) {
-	requests := map[string]xtype.ParamsType{}
-	err := afero.Walk(srcFs, path, func(path string, info iofs.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// 打印文件路径（忽略目录）
-		if !info.IsDir() {
-			data, err := fs.ReadFile(srcFs, path)
+func NewDefinition(srcFs afero.Fs, rootPath string) (*Definition, error) {
+	params := map[string]xtype.ParamsType{}
+	d := &Definition{fs: srcFs, params: params, rootPath: rootPath}
+	if err := d.addParamsType(params, srcFs, rootPath); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+func (d *Definition) addParamsType(params map[string]xtype.ParamsType, srcFs afero.Fs, path string) error {
+	fileInfos, err := afero.ReadDir(srcFs, path)
+	if err != nil {
+		return err
+	}
+	for _, fileInfo := range fileInfos {
+		fileName := filepath.Join(path, fileInfo.Name())
+		if fileInfo.IsDir() {
+			if err := d.addParamsType(params, srcFs, fileName); err != nil {
+				return err
+			}
+		} else {
+			paramsType, err := d.newParamsType(srcFs, fileName)
 			if err != nil {
 				return err
 			}
-			if data != nil && len(data) > 0 {
-				var paramsType xtype.ParamsType
-				if err = jsonutils.Unmarshal(data, &paramsType); err != nil {
-					panic(fmt.Sprintf(" loading %s  error: %s", path, err.Error()))
-				}
-				requests[info.Name()] = paramsType
-			}
+			name := strings.Replace(fileName, d.rootPath+"/", "", 1)
+			params[name] = paramsType
 		}
-		return nil
-	})
+	}
+	return nil
+}
+
+func (d *Definition) newParamsType(srcFs afero.Fs, fileName string) (xtype.ParamsType, error) {
+	data, err := fs.ReadFile(srcFs, fileName)
 	if err != nil {
 		return nil, err
 	}
-	return &Definition{fs: srcFs, requests: requests}, nil
+	if data != nil && len(data) > 0 {
+		var paramsType xtype.ParamsType
+		if err = jsonutils.Unmarshal(data, &paramsType); err != nil {
+			return nil, errors.New(" loading %s  error: %s", fileName, err.Error())
+		}
+		return paramsType, nil
+	}
+	return nil, nil
 }
 
 func (d *Definition) GetParamsType(key string) xtype.ParamsType {
-	params, ok := d.requests[key]
+	params, ok := d.params[key]
 	if !ok {
 		return nil
 	}

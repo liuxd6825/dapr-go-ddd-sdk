@@ -1,0 +1,50 @@
+{
+    "filter": {
+        "in": "url",
+        "desc": "过滤条件",
+        "required": false,
+        "example": "name=='lxd' and address~='c%' and name!='001' "
+    },
+    "fields": {
+        "in": "url",
+        "desc": "要返回的字段",
+        "required": false,
+        "example": "field1, field2, field3, ..."
+    },
+    "sort": {
+        "in": "url",
+        "desc": "排序",
+        "required": false,
+        "example": "name:desc,address:asc"
+    },
+    "pageNum": {
+        "in": "url",
+        "desc": "页号",
+        "required": false,
+        "type": "number"
+    },
+    "pageSize": {
+        "in": "url",
+        "desc": "页大小",
+        "required": false,
+        "type": "number"
+    },
+    "groupCols": {
+        "in": "url",
+        "desc": "可分组字段和类型",
+        "required": false,
+        "example": "field1:$type, field2:$type, ...  $type = string | int | float | money | date | dateTime | bool | array | object | year | month | day "
+    },
+    "groupKeys": {
+        "in": "url",
+        "desc": "当前分组字段",
+        "required": false,
+        "example": "field1, field2, field3, ..."
+    },
+    "valueCols": {
+        "in": "url",
+        "desc": "汇总字段",
+        "required": false,
+        "example": "payout:$func,income:$func,amount:$func;$func=sum|count|avg|first|last|max|min|zer "
+    }
+}
