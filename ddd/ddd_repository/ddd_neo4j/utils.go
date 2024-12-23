@@ -6,7 +6,7 @@ func GetNodes[T any](list []T, lables ...string) []Node {
 	for _, i := range list {
 		var a any = i
 		if node, ok := a.(Node); ok {
-			if count>0{
+			if count > 0 {
 				node.SetLabels(lables)
 			}
 			nodes = append(nodes, node)

@@ -10,3 +10,7 @@ func TestNewSchemaString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, schema)
 }
+
+func Test_AllOf(t *testing.T) {
+
+}

@@ -1,0 +1,45 @@
+{
+  "name": "base",
+  "type": "object",
+  "required": ["id"],
+  "description": "项目",
+  "properties": {
+    "id": {
+      "type": "string",
+      "name": "id",
+      "title": "主键",
+      "minLength":10
+    },
+    "tenantId": {
+      "type": "string",
+      "name": "tenantId",
+      "title": "租户Id",
+      "notNull": true
+    },
+    "name": {
+      "type": "string",
+      "name": "name",
+      "title": "名称"
+    },
+    "code": {
+      "type": ["string", "null"],
+      "name": "code",
+      "title": "项目编号"
+    },
+    "remark": {
+      "type": ["string", "null"],
+      "name": "remark",
+      "title": "备注"
+    },
+    "createTime":{
+      "type": ["date", "null"],
+      "name": "createTime",
+      "title": "创建时间"
+    },
+    "updateTime":{
+      "type": ["datetime", "null"],
+      "name": "updateTime",
+      "title": "修改时间"
+    }
+  }
+}

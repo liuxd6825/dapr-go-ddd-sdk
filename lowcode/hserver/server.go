@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
@@ -27,7 +28,7 @@ type Server struct {
 	*Base
 	app          *iris.Application
 	srcFs        afero.Fs
-	fsm          *fs_pkg.FsManager
+	fsPkg        *fs_pkg.FsPkg
 	services     *types.CMap[*Service] // 服务Map
 	envConfig    common.IEnvConfig     // 环境变量
 	tpl          *tpl_pkg.Template     // 模板渲染服务
@@ -48,7 +49,7 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, "/")
 
-	fsm, err := fs_pkg.NewFsManger(env)
+	fsPkg, err := fs_pkg.NewFsPkg(env)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +58,7 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 	server := &Server{
 		app:          app,
 		services:     types.NewCMap[*Service](),
-		fsm:          fsm,
+		fsPkg:        fsPkg,
 		envConfig:    env,
 		srcFs:        srcFs,
 		cacheEnable:  true,
@@ -115,7 +116,7 @@ func (s *Server) ReadSrcFile(fileName string, opts ...*fsopts.Options) ([]byte, 
 //	@return []byte
 //	@return error
 func (s *Server) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
-	data := s.fsm.ReadFile(filename, opts...)
+	data := s.fsPkg.ReadFile(filename, opts...)
 	return data, nil
 }
 
@@ -218,13 +219,13 @@ func (s *Server) parse(doc *goquery.Document) error {
 	return nil
 }
 
-// GetFsm
+// GetFsPkg
 //
 //	@Description: 取得文件管理器
 //	@receiver s
 //	@return *fs_pkg.FsManager
-func (s *Server) GetFsm() *fs_pkg.FsManager {
-	return s.fsm
+func (s *Server) GetFsPkg() pkg.FsPkg {
+	return s.fsPkg
 }
 
 // GetApp

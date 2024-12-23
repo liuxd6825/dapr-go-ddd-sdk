@@ -39,7 +39,7 @@ func (s *ParamsPkg) LoadFile(fileUrl string, workPath string) *xtype.ParamsType 
 			return val
 		}
 	}
-	data := s.server.GetFsm().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
+	data := s.server.GetFsPkg().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
 	if len(data) == 0 {
 		return nil
 	}

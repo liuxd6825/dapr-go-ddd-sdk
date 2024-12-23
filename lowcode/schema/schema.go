@@ -36,10 +36,15 @@ type Schema struct {
 	Required   []string   `json:"required,omitempty"`
 	ReadOnly   bool       `json:"readOnly,omitempty"`
 	WriteOnly  bool       `json:"writeOnly,omitempty"`
+	AllOf      []*Ref     `json:"allOf,omitempty"`
 	types      []string
 	validate   *Validate
 	init       bool
 	loader     URLLoader
+}
+
+type Ref struct {
+	Ref string `json:"$ref"`
 }
 
 type Enum struct {

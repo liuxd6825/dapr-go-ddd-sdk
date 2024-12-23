@@ -3,6 +3,7 @@ package xschema
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -45,30 +46,6 @@ const (
 	FormatRegex                      = "regex"
 )
 
-type Properties map[string]*Property
-
-type Property struct {
-	Name        string     `json:"-"`
-	Type        any        `json:"type,omitempty"`
-	Title       string     `json:"title,omitempty"`
-	Format      Format     `json:"format,omitempty"`
-	Pattern     string     `json:"pattern,omitempty"`
-	Ref         string     `json:"$ref,omitempty"`
-	Description string     `json:"description,omitempty"`
-	Properties  Properties `json:"properties,omitempty"`
-	Required    []string   `json:"required,omitempty"`
-	Items       *Property  `json:"items,omitempty"` // nil or []*Schema or *Schema
-	Minimum     *int       `json:"minimum,omitempty"`
-	Maximum     *int       `json:"maximum,omitempty"`
-	MinLength   *int       `json:"minLength,omitempty"`
-	MaxLength   *int       `json:"maxLength,omitempty"`
-	ReadOnly    bool       `json:"readOnly,omitempty"`
-	WriteOnly   bool       `json:"writeOnly,omitempty"`
-	Examples    []any      `json:"examples,omitempty"`
-	Deprecated  bool       `json:"deprecated,omitempty"`
-	types       []string
-}
-
 type Schema struct {
 	FileName   string     `json:"fileName,omitempty"`
 	Ref        string     `json:"$ref,omitempty"`
@@ -82,23 +59,30 @@ type Schema struct {
 	Required   []string   `json:"required,omitempty"`
 	ReadOnly   bool       `json:"readOnly,omitempty"`
 	WriteOnly  bool       `json:"writeOnly,omitempty"`
+	AllOf      []*Schema  `json:"allOf,omitempty"`
 
 	jsonschema *jsonschema.Schema
 }
 
-var schemaLoader schema.URLLoader
+func NewSchema() *Schema {
+	return &Schema{}
+}
 
-func (s *Schema) GetJsonSchema(fileName string, schemaLoader schema.URLLoader) *jsonschema.Schema {
-	if s.jsonschema != nil {
-		return s.jsonschema
+func (sch *Schema) Init(fileName string, schemaLoader schema.URLLoader) *jsonschema.Schema {
+	if sch.jsonschema != nil {
+		return sch.jsonschema
 	}
-	jsonschema, err := schema_utils.Compile(fileName, s, func(c *jsonschema.Compiler) error {
+	scm, err := schema_utils.Compile(fileName, sch, func(c *jsonschema.Compiler) error {
 		c.UseLoader(schemaLoader)
 		return nil
 	})
 	if err != nil {
 		panic(err)
 	}
-	s.jsonschema = jsonschema
-	return jsonschema
+	sch.jsonschema = scm
+	return scm
+}
+
+func (sch *Schema) GetSchema() *jsonschema.Schema {
+	return sch.jsonschema
 }

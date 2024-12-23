@@ -23,7 +23,7 @@ type Cypher interface {
 	DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error)
 	DeleteByTenantId(ctx context.Context, tenantId string) (CypherResult, error)
 	DeleteByLabels(ctx context.Context, tenantId string, label ...string) (CypherResult, error)
-	
+
 	DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)
 	DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error)
 

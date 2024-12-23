@@ -9,34 +9,33 @@ type CypherResult interface {
 }
 
 type cypherBuilderResult struct {
-	cypher    string
+	cypher      string
 	countCypher string
-	params    map[string]any
-	resultKey []string
+	params      map[string]any
+	resultKey   []string
 }
 
-type CypherResultOptions  struct{
+type CypherResultOptions struct {
 	CountCypher *string
 }
 
-
-func NewCypherBuilderResult(cypher string,  params map[string]any, resultKey []string, opts ...*CypherResultOptions ) CypherResult {
+func NewCypherBuilderResult(cypher string, params map[string]any, resultKey []string, opts ...*CypherResultOptions) CypherResult {
 	res := &cypherBuilderResult{
-		cypher:    cypher,
+		cypher:      cypher,
 		countCypher: "",
-		params:    params,
-		resultKey: resultKey,
+		params:      params,
+		resultKey:   resultKey,
 	}
 
 	for _, o := range opts {
-		if o==nil{
+		if o == nil {
 			continue
 		}
-		if o.CountCypher!=nil{
+		if o.CountCypher != nil {
 			res.countCypher = *o.CountCypher
 		}
 	}
-	return res;
+	return res
 }
 
 func (c *cypherBuilderResult) Cypher() string {
@@ -47,8 +46,8 @@ func (c *cypherBuilderResult) GetCountCypher() string {
 	return c.countCypher
 }
 
-func (c *cypherBuilderResult) SetCountCypher(value string)   {
-	 c.countCypher = value
+func (c *cypherBuilderResult) SetCountCypher(value string) {
+	c.countCypher = value
 }
 
 func (c *cypherBuilderResult) Params() map[string]any {
@@ -66,20 +65,18 @@ func (c *cypherBuilderResult) ResultOneKey() string {
 	return ""
 }
 
-
 func NewCypherResultOptions() *CypherResultOptions {
-	return  &CypherResultOptions{}
+	return &CypherResultOptions{}
 }
 
-func (c *CypherResultOptions) SetCountCypher(v string) *CypherResultOptions{
-	c.CountCypher = &v;
+func (c *CypherResultOptions) SetCountCypher(v string) *CypherResultOptions {
+	c.CountCypher = &v
 	return c
 }
 
-func (c *CypherResultOptions) GetCountCypher() string{
-	if c.CountCypher==nil{
+func (c *CypherResultOptions) GetCountCypher() string {
+	if c.CountCypher == nil {
 		return ""
 	}
 	return *c.CountCypher
 }
-

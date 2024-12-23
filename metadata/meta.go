@@ -2,10 +2,8 @@ package metadata
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/types"
 
-//
 // Base
 // @Description:  元数据基类
-//
 type Base struct {
 	Id      string   `json:"id,omitempty" bson:"id"`
 	Name    string   `json:"name,omitempty" bson:"name"`
@@ -14,30 +12,24 @@ type Base struct {
 	Extends []string `json:"extends,omitempty" bson:"extends"`
 }
 
-//
 // Help
 // @Description:  帮助信息
-//
 type Help struct {
 	CN string `json:"cn,omitempty" bson:"cn"`
 	EN string `json:"en,omitempty" bson:"en"`
 	DE string `json:"de,omitempty" bson:"de"`
 }
 
-//
 // Title
 // @Description: 标题
-//
 type Title struct {
 	CN string `json:"cn,omitempty" bson:"cn"`
 	EN string `json:"en,omitempty" bson:"en"`
 	DE string `json:"de,omitempty" bson:"de"`
 }
 
-//
 // Library
 // @Description: 库
-//
 type Library struct {
 	Namespace string           `json:"namespace,omitempty" bson:"namespace"`
 	Models    map[string]Model `json:"models,omitempty" bson:"models"`
@@ -50,10 +42,8 @@ type Tables = map[string]Grid
 type Forms = map[string]Form
 type Queries = map[string]Query
 
-//
 // Model
 // @Description: 实体对象
-//
 type Model struct {
 	Base
 	Fields  Fields  `json:"fields,omitempty" bson:"fields"`
@@ -62,10 +52,8 @@ type Model struct {
 	Queries Queries `json:"queries,omitempty" bson:"queries"`
 }
 
-//
 // Field
 // @Description: 字段
-//
 type Field struct {
 	PK       bool      `json:"pk,omitempty" bson:"pk"`
 	DataType DataType  `json:"dataType,omitempty" bson:"data_type"`
@@ -75,10 +63,8 @@ type Field struct {
 	Query    QueryItem `json:"query,omitempty" bson:"query"`
 }
 
-//
 // Foreign
 // @Description: 字段外键
-//
 type Foreign struct {
 	Base
 	Model      string `json:"model,omitempty" bson:"model"`
@@ -86,19 +72,15 @@ type Foreign struct {
 	TitleField string `json:"titleField,omitempty" bson:"title_field"`
 }
 
-//
 // Grid
 // @Description: 表格
-//
 type Grid struct {
 	Base
 	Columns Columns `json:"columns,omitempty" bson:"columns"`
 }
 
-//
 // Column
 // @Description: 表格列
-//
 type Column struct {
 	Field         string   `json:"field,omitempty,omitempty" bson:"field"`
 	Width         int64    `json:"width,omitempty" bson:"width"`
@@ -127,10 +109,8 @@ type Column struct {
 	AllowNull       bool `json:"allowNull,omitempty" bson:"allow_null"`
 }
 
-//
 // Editor
 // @Description: 表格编辑器
-//
 type Editor struct {
 	Title `json:"title,omitempty" bson:"title"`
 	Help  `json:"help,omitempty" bson:"help"`
@@ -138,18 +118,14 @@ type Editor struct {
 
 type QueryItems = map[string]QueryItem
 
-//
 // Query
 // @Description: 查询
-//
 type Query struct {
 	Base
 }
 
-//
 // QueryItem
 // @Description: 查询字段
-//
 type QueryItem struct {
 	Base
 	Field    string `json:"field,omitempty" bson:"field"`
@@ -157,10 +133,8 @@ type QueryItem struct {
 	Value    any    `json:"value,omitempty" bson:"value"`
 }
 
-//
 // Form
 // @Description: 表单
-//
 type Form struct {
 	Base
 	Name   string              `json:"name,omitempty" bson:"name"`
@@ -169,10 +143,8 @@ type Form struct {
 	Fields map[string]FormItem `json:"fields,omitempty" bson:"fields"`
 }
 
-//
 // FormItem
 // @Description: 表单项
-//
 type FormItem struct {
 	Field         string `json:"field,omitempty" bson:"field"`
 	IsEdit        bool   `json:"isEdit,omitempty" bson:"is_edit"`

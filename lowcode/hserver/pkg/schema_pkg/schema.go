@@ -10,7 +10,7 @@ import (
 
 type SchemaPkg struct {
 	server pkg.Server
-	cache  *types.CMap[*jsonschema.Schema]
+	cache  *types.CMap[*jsonschema.Schema] //缓存
 }
 
 func New(server pkg.Server) *SchemaPkg {
@@ -27,7 +27,7 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 			return val
 		}
 	}
-	data := s.server.GetFsm().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
+	data := s.server.GetFsPkg().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
 	if len(data) == 0 {
 		return nil
 	}
@@ -36,6 +36,7 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 	if err != nil {
 		panic(err)
 	}
+
 	s.cache.Set(fileUrl, schema)
 	return schema
 }

@@ -12,35 +12,29 @@ type Verify interface {
 	Validate() error
 }
 
-//
 // ValidateCreateCommand
 // @Description: 验证创建接口
 // @param data
 // @param verifyError 值可以为nil
 // @return *errors.VerifyError
-//
 func ValidateCreateCommand(data CreateCommand, verifyError *errors.VerifyError) *errors.VerifyError {
 	return ValidateCommand(data, verifyError)
 }
 
-//
 // ValidateUpdateCommand
 // @Description: 验证更新接口
 // @param data
 // @param verifyError 值可以为nil
 // @return *errors.VerifyError
-//
 func ValidateUpdateCommand(data UpdateCommand, verifyError *errors.VerifyError) *errors.VerifyError {
 	return ValidateCommand(data, verifyError)
 }
 
-//
 // ValidateDeleteCommand
 // @Description: 验证删除接口
 // @param data
 // @param verifyError 值可以为nil
 // @return *errors.VerifyError
-//
 func ValidateDeleteCommand(data DeleteCommand, verifyError *errors.VerifyError) *errors.VerifyError {
 	return ValidateCommand(data, verifyError)
 }

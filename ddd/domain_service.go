@@ -27,7 +27,6 @@ func (s *CommandDomainService[T]) ValidateCommand(cmd interface{}) error {
 	return nil
 }
 
-//
 // DoCommand
 // @Description: fcj
 // @receiver s
@@ -35,7 +34,6 @@ func (s *CommandDomainService[T]) ValidateCommand(cmd interface{}) error {
 // @param cmd
 // @return *model.SolutionAggregate
 // @return error
-//
 func (s *CommandDomainService[T]) DoCommand(ctx context.Context, cmd Command, opts ...DoCommandOption) (T, error) {
 	var null T
 	option := NewDoCommandOptionMerges(opts...)
@@ -65,7 +63,6 @@ func (s *CommandDomainService[T]) DoCommand(ctx context.Context, cmd Command, op
 	return agg, nil
 }
 
-//
 // GetAggregateById
 // @Description: 获取聚合对象
 // @receiver s
@@ -75,7 +72,6 @@ func (s *CommandDomainService[T]) DoCommand(ctx context.Context, cmd Command, op
 // @return *graph_model.SolutionCommandDomainService  聚合对象
 // @return bool 是否找到聚合根对象
 // @return error 错误对象
-//
 func (s *CommandDomainService[T]) GetAggregateById(ctx context.Context, tenantId string, id string) (T, bool, error) {
 	var null T
 	agg, err := s.NewAggregate()

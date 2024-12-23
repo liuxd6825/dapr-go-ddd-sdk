@@ -12,6 +12,7 @@ import (
 	"github.com/orcaman/concurrent-map"
 	"github.com/spf13/afero"
 	"io/fs"
+	iofs "io/fs"
 	"os"
 )
 
@@ -225,4 +226,19 @@ func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err err
 		return nil, "", errors.New(fmt.Sprintf("file %s not found in config", fsName))
 	}
 	return fs, fileName, nil
+}
+
+// ReadDir
+//
+//	@Description: 取得所有子目录与文件
+//	@receiver m
+//	@param path
+//	@return []iofs.FileInfo
+//	@return error
+func (m *Manager) ReadDir(path string) ([]iofs.FileInfo, error) {
+	afs, _, err := m.parse(path)
+	if err != nil {
+		return nil, err
+	}
+	return afero.ReadDir(afs, path)
 }

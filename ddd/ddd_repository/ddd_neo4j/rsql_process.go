@@ -33,7 +33,6 @@ type RsqlProcess interface {
 	OnNotIsNull(name string, value interface{}, rValue rsql.Value)
 	OnStart(name string, value interface{}, rValue rsql.Value)
 	OnEnd(name string, value interface{}, rValue rsql.Value)
-
 }
 
 type rsqlProcess struct {
@@ -112,7 +111,6 @@ func (p *rsqlProcess) OnStart(name string, value interface{}, rValue rsql.Value)
 func (p *rsqlProcess) OnEnd(name string, value interface{}, rValue rsql.Value) {
 	p.str = fmt.Sprintf("%s %s.%s like '%s*", p.str, p.dataKey, name, value)
 }
-
 
 func (p *rsqlProcess) OnAndItem() {
 	p.str = fmt.Sprintf("%s and ", p.str)

@@ -2,14 +2,15 @@ package pkg
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/spf13/afero"
 )
 
 type Server interface {
-	GetFsm() *fs_pkg.FsManager
+	GetFsPkg() FsPkg
 	GetSrcFs() afero.Fs
 	ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error)
 	GetCacheEnable() bool
 	SetRunValue(key string, value any)
+	GetEnvConfig() common.IEnvConfig
 }

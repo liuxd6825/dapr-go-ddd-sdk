@@ -42,7 +42,7 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 	pkg.Set("mongo", mongodb.New(envCfg))
 	pkg.Set("template", tpl_pkg.New(envCfg, server, tplFs))
 	pkg.Set("feign", feign_pkg.New(server))
-	pkg.Set("fs", server.fsm)
+	pkg.Set("fs", server.fsPkg)
 	pkg.Set("context", ctx_pkg.New())
 	pkg.Set("schema", schema_pkg.New(server))
 	pkg.Set("params", params_pkg.New(server))

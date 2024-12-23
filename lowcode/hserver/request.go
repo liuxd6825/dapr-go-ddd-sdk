@@ -160,8 +160,8 @@ func (s *Request) GetUrlParams(ctx iris.Context) map[string]any {
 //	@Description: 获取参数类型定义
 //	@receiver r
 //	@param ictx
-//	@return string
-//	@return xtype.ParamsType
+//	@return string  参数文件名
+//	@return xtype.ParamsType  参数配置类型
 func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 	fsOpts := &fsopts.Options{
 		RootPath: s.server.GetRootPath(),
@@ -170,6 +170,7 @@ func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 	var paramsTypeFile string
 	var paramsType xtype.ParamsType
 
+	// 引用Schema文件
 	if s.config.LinkParamsUrl != "" {
 		fileUrl := s.config.LinkParamsUrl
 		urlPars := s.GetUrlParams(ictx)
@@ -192,6 +193,7 @@ func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 		}
 
 	} else if s.config.ParamsType != "" {
+		// 引用系统中的schema定义文件
 		paramsTypeFile = fmt.Sprintf("/definition/params/%s.json", s.config.ParamsType)
 		if pType, ok := s.paramsTypeCache.Get(paramsTypeFile); ok {
 			return paramsTypeFile, pType
@@ -231,7 +233,7 @@ func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
 			val = ictx.Params().Get(key)
 		case InParamTypeBody.String():
 			if v.Schema != nil && bodyData == nil {
-				schema := v.Schema.GetJsonSchema(paramsTypeFileName, s.server.schemaLoader)
+				schema := v.Schema.Init(paramsTypeFileName, s.server.schemaLoader)
 				bodyData = wctx.ReadObject(schema)
 			}
 			val = bodyData
@@ -239,7 +241,7 @@ func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
 			val = wctx.FormValue(key, v.Required)
 		case InParamTypeFormObject.String():
 			if v.Schema != nil {
-				schema := v.Schema.GetJsonSchema(paramsTypeFileName, s.server.schemaLoader)
+				schema := v.Schema.Init(paramsTypeFileName, s.server.schemaLoader)
 				val = wctx.FormObject(key, v.Required, schema)
 			}
 		case InParamTypeFormFile.String():

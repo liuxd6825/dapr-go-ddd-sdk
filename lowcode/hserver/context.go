@@ -141,11 +141,8 @@ func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
 	var err error
 
 	bytes := c.ReadBytes()
-	if schema != nil {
-		if c.timeFields == nil {
-			c.timeFields = make(map[string]any)
-		}
-		getTimeFields2(schema, c.timeFields, "")
+	if schema != nil && c.timeFields == nil {
+		c.timeFields = schema.GetFields(jsonschema.JsonType_DateTimeType, jsonschema.JsonType_DateType)
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
