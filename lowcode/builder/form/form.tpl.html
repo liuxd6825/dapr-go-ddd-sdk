@@ -1,0 +1,14 @@
+<ui5-form>
+    {%- for field in fields %}
+    <ui5-form-item>
+        <ui5-label for="{{ field.Name }}">{{ field.Title }}</ui5-label>
+        {%- if field.Type == "string" %}
+        <ui5-input id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-input>
+        {%- elif field.Type == "email" %}
+        <ui5-input id="{{ field.Name }}" type="Email" {% if field.Required %} required {% endif %}></ui5-input>
+        {%- elif field.Type == "date" %}
+        <ui5-date-picker id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-date-picker>
+        {%- endif %}
+    </ui5-form-item>
+    {%- endfor %}
+</ui5-form>
