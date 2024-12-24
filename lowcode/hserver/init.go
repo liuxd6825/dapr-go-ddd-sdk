@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/logs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/params_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/schema_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/strings_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -50,6 +51,7 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 	pkg.Set("env", envCfg)
 	pkg.Set("logs", logs_pkg.New())
 	pkg.Set("json", json_pkg.New())
+	pkg.Set("strings", strings_pkg.New())
 
 	server.SetPkg(pkg)
 
