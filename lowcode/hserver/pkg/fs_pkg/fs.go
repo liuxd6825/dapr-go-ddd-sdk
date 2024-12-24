@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"os"
+	"sort"
 )
 
 type FsPkg struct {
@@ -130,5 +131,25 @@ func (m *FsPkg) ReadAllDir(path string, opts ...*fsopts.Options) []*pkg.FileInfo
 			file.SubFiles = m.ReadDir(file.Path+"/"+file.Name, opts...)
 		}
 	}
+	m.SortFileInfos(fileInfos)
 	return fileInfos
+}
+
+// SortFileInfos
+//
+//	@Description: sorts a slice of *FileInfo by Name and IsDir, and recursively sorts SubFiles.
+//	@param files
+func (m *FsPkg) SortFileInfos(files []*pkg.FileInfo) {
+	sort.Slice(files, func(i, j int) bool {
+		if files[i].IsDir != files[j].IsDir {
+			return files[i].IsDir // Directories come first
+		}
+		return files[i].Name < files[j].Name // Then sort by name
+	})
+
+	for _, file := range files {
+		if file.IsDir && len(file.SubFiles) > 0 {
+			m.SortFileInfos(file.SubFiles) // Recursively sort SubFiles
+		}
+	}
 }
