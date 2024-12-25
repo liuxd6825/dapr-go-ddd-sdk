@@ -1,0 +1,20 @@
+<ui5e-form>
+    {%- for field in fields %}
+    <ui5e-form-item>
+        <ui5-label for="{{ field.Name }}">{{ field.Title }}</ui5-label>
+        {%- if field.Type == "string" %}
+        <ui5-input name="{{ field.Name }}" id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-input>
+        {%- elif field.Type == "email" %}
+        <ui5-input name="{{ field.Name }}" id="{{ field.Name }}" type="Email" {% if field.Required %} required {% endif %}></ui5-input>
+        {%- elif field.Type == "date" %}
+        <ui5-date-picker name="{{ field.Name }}" id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-date-picker>
+        {%- elif field.Type == "number" %}
+        <ui5-input name="{{ field.Name }}" id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-input>
+        {%- elif field.Type == "integer" %}
+        <ui5-input name="{{ field.Name }}" id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-input>
+        {%- elif field.Type == "array" %}
+        <ui5-select name="{{ field.Name }}" id="{{ field.Name }}" {% if field.Required %} required {% endif %}></ui5-select>
+        {%- endif %}
+    </ui5e-form-item>
+    {%- endfor %}
+</ui5e-form>

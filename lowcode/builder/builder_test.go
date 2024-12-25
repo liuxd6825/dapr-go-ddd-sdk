@@ -1,4 +1,4 @@
-package form
+package builder
 
 import (
 	"bytes"
@@ -35,9 +35,9 @@ func TestGenerateHTML(t *testing.T) {
 	}
 
 	builder := NewBuilder()
-	html, err := builder.CreateHTML(sch)
+	html, err := builder.CreateHTML(sch, TplTypeForm)
 	if err != nil {
 		panic(err)
 	}
-	t.Log(html)
+	t.Log(string(html))
 }
