@@ -66,6 +66,18 @@ func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
 	return file
 }
 
+// Rename
+//
+//	@Description: 文件改名
+//	@receiver m
+//	@param oldName 原名
+//	@param newName 新名
+//	@param opts
+//	@return error
+func (m *FsPkg) Rename(oldName, newName string, opts ...*fsopts.Options) error {
+	return m.base.Rename(oldName, newName)
+}
+
 // ReadFile
 //
 //	@Description: 读取文件内容

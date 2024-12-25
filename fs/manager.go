@@ -199,7 +199,7 @@ func (m *Manager) RemoveAll(path string, opts ...*fsopts.Options) error {
 //	@param aOldName 原文件名
 //	@param aNewName 新文件名
 //	@return error
-func (m *Manager) Rename(aOldName, aNewName string) error {
+func (m *Manager) Rename(aOldName, aNewName string, opts ...*fsopts.Options) error {
 	afs, oldName, err := m.parse(aOldName)
 	if err != nil {
 		return err
