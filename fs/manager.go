@@ -124,17 +124,25 @@ func (m *Manager) Map() map[string]afero.Fs {
 	return data
 }
 
+func (m *Manager) GetFsByFileUrl(fileUrl string) (afero.Fs, error) {
+	afs, _, err := m.parse(fileUrl)
+	return afs, err
+}
+
+func (m *Manager) Create(filename string, opts ...*fsopts.Options) (afero.File, error) {
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return nil, err
+	}
+	return Create(afs, fileName, opts...)
+}
+
 func (m *Manager) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return nil, err
 	}
 	return ReadFile(afs, fileName, opts...)
-}
-
-func (m *Manager) GetFsByFileUrl(fileUrl string) (afero.Fs, error) {
-	afs, _, err := m.parse(fileUrl)
-	return afs, err
 }
 
 // WriteFile
@@ -156,7 +164,7 @@ func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel
 
 // RemoveFile
 //
-//	@Description: 删除文件
+//	@Description: removes a file identified by name, returning an error, if any
 //	@receiver m
 //	@param filename 文件名称
 //	@return error
@@ -171,7 +179,7 @@ func (m *Manager) RemoveFile(filename string, opts ...*fsopts.Options) error {
 
 // RemoveAll
 //
-//	@Description: 删除路径
+//	@Description:  RemoveAll removes a directory path and any children it contains. It
 //	@receiver m
 //	@param path 路径名称
 //	@return error
@@ -188,8 +196,8 @@ func (m *Manager) RemoveAll(path string, opts ...*fsopts.Options) error {
 //
 //	@Description:  文件重命名
 //	@receiver m
-//	@param oldname 原文件名
-//	@param newname 新文件名
+//	@param aOldName 原文件名
+//	@param aNewName 新文件名
 //	@return error
 func (m *Manager) Rename(aOldName, aNewName string) error {
 	afs, oldName, err := m.parse(aOldName)
@@ -203,6 +211,14 @@ func (m *Manager) Rename(aOldName, aNewName string) error {
 	return afs.Rename(oldName, newName)
 }
 
+// Mkdir
+//
+//	@Description:
+//	@receiver m
+//	@param path
+//	@param perm
+//	@param opts
+//	@return error
 func (m *Manager) Mkdir(path string, perm os.FileMode, opts ...*fsopts.Options) error {
 	afs, name, err := m.parse(path)
 	if err != nil {
@@ -210,6 +226,37 @@ func (m *Manager) Mkdir(path string, perm os.FileMode, opts ...*fsopts.Options) 
 	}
 	name = fsopts.GetAbsPath(name, opts...)
 	return afs.Mkdir(name, perm)
+}
+
+// MkdirAll
+//
+//	@Description:
+//	@receiver m
+//	@param filename
+//	@param fileMode
+//	@param opts
+//	@return error
+func (m *Manager) MkdirAll(filename string, fileMode fs.FileMode, opts ...*fsopts.Options) error {
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return err
+	}
+	return MkdirAll(afs, fileName, fileMode, opts...)
+}
+
+// ReadDir
+//
+//	@Description: 取得所有子目录与文件
+//	@receiver m
+//	@param path
+//	@return []iofs.FileInfo
+//	@return error
+func (m *Manager) ReadDir(path string) ([]iofs.FileInfo, error) {
+	afs, _, err := m.parse(path)
+	if err != nil {
+		return nil, err
+	}
+	return afero.ReadDir(afs, path)
 }
 
 func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err error) {
@@ -226,19 +273,4 @@ func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err err
 		return nil, "", errors.New(fmt.Sprintf("file %s not found in config", fsName))
 	}
 	return fs, fileName, nil
-}
-
-// ReadDir
-//
-//	@Description: 取得所有子目录与文件
-//	@receiver m
-//	@param path
-//	@return []iofs.FileInfo
-//	@return error
-func (m *Manager) ReadDir(path string) ([]iofs.FileInfo, error) {
-	afs, _, err := m.parse(path)
-	if err != nil {
-		return nil, err
-	}
-	return afero.ReadDir(afs, path)
 }

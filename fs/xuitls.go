@@ -6,6 +6,45 @@ import (
 	"io/fs"
 )
 
+// IsDir
+//
+//	@Description:
+//	@param afs
+//	@param filename
+//	@param opts
+//	@return bool
+//	@return error
+func IsDir(afs afero.Fs, filename string, opts ...*fsopts.Options) (bool, error) {
+	fileName := fsopts.GetAbsPath(filename, opts...)
+	return afero.IsDir(afs, fileName)
+}
+
+// IsEmpty
+//
+//	@Description:
+//	@param afs
+//	@param filename
+//	@param opts
+//	@return bool
+//	@return error
+func IsEmpty(afs afero.Fs, filename string, opts ...*fsopts.Options) (bool, error) {
+	fileName := fsopts.GetAbsPath(filename, opts...)
+	return afero.IsEmpty(afs, fileName)
+}
+
+// Create
+//
+//	@Description:
+//	@param afs
+//	@param filename
+//	@param opts
+//	@return bool
+//	@return error
+func Create(afs afero.Fs, filename string, opts ...*fsopts.Options) (afero.File, error) {
+	fileName := fsopts.GetAbsPath(filename, opts...)
+	return afs.Create(fileName)
+}
+
 // ReadFile
 //
 //	@Description: 读取文件内容
@@ -44,5 +83,12 @@ func WriteFile(afs afero.Fs, filename string, bytes []byte, fileMode fs.FileMode
 		}
 	}
 	err = afero.WriteFile(afs, fileName, bytes, fileMode)
+	return err
+}
+
+func MkdirAll(afs afero.Fs, path string, fileMode fs.FileMode, opts ...*fsopts.Options) error {
+	var err error
+	fileName := fsopts.GetAbsPath(path, opts...)
+	err = afs.MkdirAll(fileName, fileMode)
 	return err
 }

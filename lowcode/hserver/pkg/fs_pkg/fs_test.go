@@ -24,3 +24,18 @@ func TestFs_LoadFile(t *testing.T) {
 		t.Log(fileInfo)
 	}
 }
+
+func TestFs_RemoveFile(t *testing.T) {
+	fsm, err := fstest.NewFsManager("")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""))
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	fsPkg.RemoveFile("/testfile/master/remove.txt")
+}

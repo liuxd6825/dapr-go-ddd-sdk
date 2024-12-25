@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/json_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
+	"github.com/spf13/afero"
 	"os"
 	"sort"
 )
@@ -49,6 +50,20 @@ func NewFsPkg(cfg common.IEnvConfig) (*FsPkg, error) {
 	fsm := &FsPkg{cfg: cfg, WriteModels: NewFsWriteModel()}
 	fsm.base = fsManager
 	return fsm, nil
+}
+
+// Create
+//
+//	@Description: 创建文件
+//	@receiver m
+//	@param name
+//	@param opts
+func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
+	file, err := m.base.Create(name, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return file
 }
 
 // ReadFile
@@ -113,7 +128,7 @@ func (m *FsPkg) RemoveFile(filename string, opts ...*fsopts.Options) {
 
 // RemoveAll
 //
-//	@Description: 删除所有文件
+//	@Description: 删除所有子目录与在内的所有文件
 //	@receiver m
 //	@param name
 //	@param opts

@@ -69,7 +69,34 @@ func (f *Fs) Open(filename string) (afero.File, error) {
 	return file, err
 }
 
-// OpenFile opens a file using the given flags and the given mode.
+func (f *Fs) Create(name string) (afero.File, error) {
+	return f.OsFs.Create(f.rootPath + name)
+}
+
+func (f *Fs) Mkdir(filename string, perm os.FileMode) error {
+	return f.OsFs.Mkdir(f.rootPath+filename, perm)
+}
+
+func (f *Fs) RemoveAll(filename string) error {
+	return f.OsFs.RemoveAll(f.rootPath + filename)
+}
+
+func (f *Fs) Remove(filename string) error {
+	return f.OsFs.Remove(f.rootPath + filename)
+}
+
+func (f *Fs) MkdirAll(filename string, mode os.FileMode) error {
+	return f.OsFs.MkdirAll(f.rootPath+filename, mode)
+}
+
+func (f *Fs) Rename(oldName, newName string) error {
+	return f.OsFs.Rename(f.rootPath+oldName, f.rootPath+newName)
+}
+
+func (f *Fs) Stat(name string) (os.FileInfo, error) {
+	return f.OsFs.Stat(f.rootPath + name)
+}
+
 func (f *Fs) OpenFile(filename string, flag int, perm os.FileMode) (afero.File, error) {
 	return f.OsFs.OpenFile(f.rootPath+filename, flag, perm)
 }
