@@ -35,7 +35,13 @@ func NewBuilder() *Builder {
 	return &Builder{tmpl: tmpl}
 }
 
-// CreateHTML generates HTML code for ui5-form based on JsonSchema
+// CreateHTML
+//
+//	@Description: generates HTML code for ui5-form based on JsonSchema
+//	@receiver b
+//	@param schema
+//	@return string
+//	@return error
 func (b *Builder) CreateHTML(schema *jsonschema.Schema) (string, error) {
 
 	props := schema.GetAllProperties()
@@ -52,8 +58,7 @@ func (b *Builder) CreateHTML(schema *jsonschema.Schema) (string, error) {
 
 	// Prepare the context for the template
 	context := pongo2.Context{
-		"fields":     formSchema.Fields,
-		"formSchema": formSchema,
+		"fields": formSchema.Fields,
 	}
 
 	// Render the template with the provided schema
