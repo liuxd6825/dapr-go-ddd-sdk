@@ -23,16 +23,16 @@ func NewBuilder() *Builder {
 //	@return error
 func (b *Builder) CreateHTML(schema *jsonschema.Schema, tplType TplType, opts ...map[string]any) (string, error) {
 	// 取得所有属性
-	props := schema.GetAllProperties()
+	props := schema.GetSortProperties()
 
 	// 将属性转换成Field类型
 	fields := make([]Field, 0)
-	for key, prop := range props {
+	for _, prop := range props {
 		formField := Field{
-			Name:     key,
+			Name:     prop.Name,
 			Title:    prop.Title,
 			Type:     prop.GetType(),
-			Required: schema.IsRequired(key),
+			Required: schema.IsRequired(prop.Name),
 		}
 		fields = append(fields, formField)
 	}

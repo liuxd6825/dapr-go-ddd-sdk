@@ -24,11 +24,12 @@ func TestGenerateHTML(t *testing.T) {
 		panic(err)
 	}
 	schemaFile := "schema.json"
-	compiler := jsonschema.NewCompiler()
 
+	compiler := jsonschema.NewCompiler()
 	if err := compiler.AddResource(schemaFile, reader); err != nil {
 		panic(err)
 	}
+
 	sch, err := compiler.Compile(schemaFile)
 	if err != nil {
 		panic(err)
@@ -39,5 +40,5 @@ func TestGenerateHTML(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	t.Log(string(html))
+	t.Log(html)
 }

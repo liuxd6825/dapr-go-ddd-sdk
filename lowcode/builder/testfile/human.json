@@ -8,18 +8,21 @@
       "type": "array",
       "items": { "type": "string" },
       "name": "peopleType",
-      "title": "人员类型"
-    },
-    "remark": {
-      "type": ["string", "null"],
-      "name": "remark",
-      "title": "备注"
+      "title": "人员类型",
+      "order": 1
     },
     "tags": {
       "name": "tags",
       "title": "标签",
       "type": "array",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "order":2
+    },
+    "remark": {
+      "type": ["string", "null"],
+      "name": "remark",
+      "title": "备注",
+      "order": 3
     }
   }
 
