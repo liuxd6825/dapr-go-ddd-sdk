@@ -1,6 +1,9 @@
 package builder
 
-import _ "embed"
+import (
+	_ "embed"
+	"strings"
+)
 
 //go:embed tpl/form.tpl.html
 var formFile []byte
@@ -13,7 +16,8 @@ var gridTpl *Tpl
 type TplType int
 
 const (
-	TplTypeForm = TplType(iota)
+	TplTypeNull TplType = iota
+	TplTypeForm
 	TplTypeGrid
 )
 
@@ -25,19 +29,33 @@ func init() {
 func (t TplType) String() string {
 	switch t {
 	case TplTypeForm:
-		return "Form"
+		return "form"
 	case TplTypeGrid:
-		return "Grid"
+		return "grid"
+	default:
+		return ""
 	}
-	return ""
 }
 
+func GetTplType(name string) TplType {
+	n := strings.ToLower(name)
+	switch n {
+	case "form":
+		return TplTypeForm
+	case "grid":
+		return TplTypeGrid
+	default:
+		return TplTypeNull
+	}
+
+}
 func (t TplType) GetTpl() *Tpl {
 	switch t {
 	case TplTypeForm:
 		return formTpl
 	case TplTypeGrid:
 		return gridTpl
+	default:
+		return nil
 	}
-	return nil
 }

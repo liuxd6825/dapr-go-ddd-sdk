@@ -17,6 +17,7 @@ import (
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
@@ -295,4 +296,10 @@ func (s *Server) SetSelfVMValue(name string, vm *goja.Runtime) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Server) NewSchemaCompiler() *jsonschema.Compiler {
+	compiler := jsonschema.NewCompiler()
+	compiler.UseLoader(s.schemaLoader)
+	return compiler
 }
