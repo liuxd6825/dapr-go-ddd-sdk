@@ -21,7 +21,7 @@ func NewBuilder() *Builder {
 //	@param schema
 //	@return string
 //	@return error
-func (b *Builder) CreateHTML(schema *jsonschema.Schema, tplType TplType, opts ...map[string]any) (string, error) {
+func (b *Builder) CreateHTML(schema *jsonschema.Schema, templateType TemplateType, opts ...map[string]any) (string, error) {
 	// 取得所有属性
 	props := schema.GetSortProperties()
 
@@ -41,10 +41,11 @@ func (b *Builder) CreateHTML(schema *jsonschema.Schema, tplType TplType, opts ..
 	context := pongo2.Context{
 		"fields": fields,
 		"opts":   b.getOpts(opts...),
+		"schema": schema,
 	}
 
 	// 取得类型的模板对象
-	tpl := tplType.GetTpl()
+	tpl := templateType.GetTemplate()
 	if tpl == nil {
 		return "", fmt.Errorf("tpl cannot be nil")
 	}

@@ -5,7 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/html_builder_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/html_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/json_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/logs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/params_pkg"
@@ -53,7 +53,7 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 	pkg.Set("logs", logs_pkg.New())
 	pkg.Set("json", json_pkg.New())
 	pkg.Set("strings", strings_pkg.New())
-	pkg.Set("htmlBuilder", html_builder_pkg.New(server))
+	pkg.Set("html", html_pkg.New(server))
 
 	server.SetPkg(pkg)
 
