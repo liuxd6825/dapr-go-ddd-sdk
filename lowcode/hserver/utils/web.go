@@ -1,4 +1,4 @@
-package hserver
+package utils
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ func RecoverError(e error, recover any) error {
 	return err
 }
 
-func setError(ctx iris.Context, err error) {
+func SetError(ctx iris.Context, err error) {
 	if err != nil && ctx != nil {
 		ctx.SetErr(err)
 		ctx.StatusCode(httptest.StatusInternalServerError)

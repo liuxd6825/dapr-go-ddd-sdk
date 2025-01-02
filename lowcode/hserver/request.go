@@ -3,6 +3,7 @@ package hserver
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
@@ -90,9 +91,9 @@ func (s *Request) Handle(ictx iris.Context) {
 	var err error
 
 	defer func() {
-		err = RecoverError(err, recover())
+		err = utils.RecoverError(err, recover())
 		if err != nil {
-			setError(ictx, err)
+			utils.SetError(ictx, err)
 		}
 	}()
 

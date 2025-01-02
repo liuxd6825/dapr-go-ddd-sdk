@@ -1,0 +1,132 @@
+<!-- dynamic-page -->
+<ui5e-form id="base" xd-html="工具栏" x-ref="basic" method="post" url="/api/v1.0/human/basic" layout="S1 M2 L3 XL4" label-span="S12 M12 L12 XL12">
+    <ui5e-form-item>
+        <ui5-label slot="labelContent" required>姓名</ui5-label>
+        <ui5-input name="name" style="width: 100%;">
+            <ui5e-valid data-type="string" method="required"></ui5e-valid>
+        </ui5-input>
+    </ui5e-form-item>
+
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">出生日期</ui5-label>
+        <ui5-date-picker name="birthday" format-pattern="yyyy-MM-dd" style="width: 100%;" show-clear-icon="true">
+            <ui5e-valid data-type="date" method="required"></ui5e-valid>
+        </ui5-date-picker>
+    </ui5e-form-item>
+
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">年龄</ui5-label>
+        <ui5-input type="Number" name="age" style="width: 100%;"></ui5-input>
+    </ui5e-form-item>
+
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">性别</ui5-label>
+        <ui5-select name="gender" x-ref="gender" show-clear-icon="true" style="width:100%;">
+            <div slot="valueStateMessage"></div>
+            <ui5-option value="men" icon="laptop">男</ui5-option>
+            <ui5-option value="women" icon="ipad">女</ui5-option>
+            <script x-on="change" type="text/typescript">
+                if ($self.value === 'men') {
+                    $refs.analyseStatusItem.show();
+                } else {
+                    $refs.analyseStatusItem.hide();
+                }
+            </script>
+        </ui5-select>
+    </ui5e-form-item>
+
+    <ui5e-form-item x-ref="analyseStatusItem">
+        <ui5-label slot="labelContent">分析状态</ui5-label>
+        <ui5-select name="analyse" x-ref="analyseStatus" show-clear-icon="true" x-on:change="$refs.peopleType.xprocess.render()">
+            <template x-ref="tAnalyseStatus" x-data="$data.items" x-for="">
+                {% verbatim %}
+                <ui5-option value="{{data.id}}">{{data.name}}</ui5-option>
+                {% endverbatim %}
+            </template>
+        </ui5-select>
+    </ui5e-form-item>
+
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">人员类型</ui5-label>
+        <ui5-multi-combobox name="peopleType" x-ref="peopleType" style="width:100%;" show-select-all="" show-clear-icon="true"
+            x-tpl="{get:'/api/v1.0/human/people-type', column:{value:'value', text:'text'}}">
+            <template x-data="$request.get(`/api/v1.0/human/people-type`)">
+                {% verbatim %}
+                {% for item in data %}
+                <ui5-mcb-item value="{{item.id}}" text="{{item.name}}"></ui5-mcb-item>
+                {% endfor %}
+                {% endverbatim %}
+            </template>
+        </ui5-multi-combobox>
+    </ui5e-form-item>
+
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">标签</ui5-label>
+        <ui5e-dropdown-grid name="tags" id="dropdown-grid-test" row-model-type="serverSide" pagination="" row-selection="multiple" text-field="firstName" id-field="id" readonly=""
+            style="width: 100%;">
+            <x-request x-prop="queryRequest" method="get" url="/api/v1.0/tenants/${$data.tenantId}/human"></x-request>
+            <ui5e-grid-column name="id" title="id" pk="true" data-type="string"></ui5e-grid-column>
+            <ui5e-grid-column name="name" title="name" data-type="string"></ui5e-grid-column>
+            <ui5e-grid-column name="age" title="age" data-type="number"></ui5e-grid-column>
+            <ui5e-grid-column name="birth" title="birth" data-type="date"></ui5e-grid-column>
+            <ui5e-grid-column name="addr" title="addr" data-type="string"></ui5e-grid-column>
+        </ui5e-dropdown-grid>
+    </ui5e-form-item>
+
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">备注</ui5-label>
+        <ui5-textarea name="remark" x-event="input" show-clear-icon="">
+        </ui5-textarea>
+    </ui5e-form-item>
+
+    <x-request x-prop="$create" title="创建" method="post" url="/api/v1.0/human" data="$self.getValue()" validate="$self.valid(true)">
+        <script x-func="$submit" type="text/typescript">
+            $self.submit({
+                data:(data)=>{
+                    data.id=$xutil.newId();
+                    let res = {
+                        commandId:$xutil.newId(),
+                        data:data,
+                    }
+                    console.log("data=",res);
+                    return res;
+                },
+                ok: (data) => {
+                    console.log("data=",data);
+                    data.remark = data.remark+"-备注";
+                    $refs.basic.setValue(data);
+                    alert("保存成功");
+                },
+                error: (err) => {
+                    console.log("error:"+err);
+                    alert("执行错误，原因：" + err);
+                }
+            })
+        </script>
+    </x-request>
+
+    <x-request x-prop="$updateList" title="创建" method="put" url="/api/v1.0/human/basic/update-list" data="$self.getValue()" validate="$self.valid(true)">
+        <script x-func="$submit" type="text/typescript">
+            $self.submit({
+                data:(data)=>{
+                    let formData = new FormData();
+                    formData.append("commandId",$xutil.newId());
+                    formData.append("list", JSON.stringify([data]))
+                    console.log("formData=",formData);
+                    return formData;
+                },
+                ok: (data) => {
+                    alert("更新列表成功");
+                },
+                error: (err) => {
+                    console.log("error:"+err);
+                    alert("执行错误，原因：" + err);
+                }
+            })
+        </script>
+    </x-request>
+
+    <x-request x-prop="$update" title="更新" method="put" url="/api/v1.0/human/basic">
+    </x-request>
+
+</ui5e-form>

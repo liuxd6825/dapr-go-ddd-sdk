@@ -2,6 +2,7 @@ package hserver
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
@@ -64,6 +65,9 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 	if err != nil {
 		return err
 	}
+
+	fileHandler := file.NewHandler(srcFs, httpServer.App())
+	httpServer.App().Get("/{file:path}", fileHandler.Handle)
 
 	return server.Start()
 

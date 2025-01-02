@@ -6,6 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
@@ -107,7 +108,7 @@ func (r *Script) BuildCode() error {
 
 func (r *Script) Run(opts ...RunOptions) (res any, err error) {
 	defer func() {
-		err = RecoverError(err, recover())
+		err = utils.RecoverError(err, recover())
 	}()
 
 	if r != nil {
