@@ -2,7 +2,7 @@ package hserver
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
@@ -16,6 +16,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 )
 
 // InitServer
@@ -23,7 +24,7 @@ import (
 //	@Description: 添加到restapp的初始化函数 Options.Init
 //	@param s
 //	@return error
-func InitServer(fileName string, srcFsName string, tplFsName string, httpServer *restapp.HttpServer) error {
+func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp.HttpServer) error {
 	env := httpServer.EnvConfig()
 	if !env.App.RsServer.Enable {
 		return nil
@@ -32,19 +33,27 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 
 	srcFs, err := httpServer.EnvConfig().GetFs(srcFsName)
 	if err != nil {
-		return fmt.Errorf("srcFs %s not exists", srcFsName)
+		return fmt.Errorf("%s fs not exists", srcFsName)
 	}
 
-	tplFs, err := httpServer.EnvConfig().GetFs(tplFsName)
-	if err != nil {
-		return fmt.Errorf("tplFs %s not exists", tplFsName)
+	var webFs afero.Fs
+	if webFsName != "" {
+		webFs, err = httpServer.EnvConfig().GetFs(webFsName)
+		if err != nil {
+			return fmt.Errorf(" %s fs not exists", webFsName)
+		}
 	}
 
 	server, err := NewServer(httpServer.App(), fileName, srcFs, envCfg)
+	if err != nil {
+		return err
+	}
 	pkg := types.NewCMap[any]()
 
 	pkg.Set("mongo", mongodb.New(envCfg))
-	pkg.Set("template", tpl_pkg.New(envCfg, server, tplFs))
+	if webFs != nil {
+		pkg.Set("template", tpl_pkg.New(envCfg, server, webFs))
+	}
 	pkg.Set("feign", feign_pkg.New(server))
 	pkg.Set("fs", server.fsPkg)
 	pkg.Set("context", ctx_pkg.New())
@@ -66,9 +75,14 @@ func InitServer(fileName string, srcFsName string, tplFsName string, httpServer 
 		return err
 	}
 
-	fileHandler := file.NewHandler(srcFs, httpServer.App())
-	httpServer.App().Get("/{file:path}", fileHandler.Handle)
-
+	vData := map[string]any{
+		"server": server,
+		"pkg":    server.GetPkg().Items(),
+	}
+	vApp := httpServer.App()
+	if webFs != nil {
+		fileHandler := file_handler.NewHandler(webFs, vApp, vData)
+		httpServer.App().Get("/{file:path}", fileHandler.Handle)
+	}
 	return server.Start()
-
 }

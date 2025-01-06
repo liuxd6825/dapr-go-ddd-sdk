@@ -1,4 +1,4 @@
-package file
+package file_handler
 
 import (
 	"github.com/flosch/pongo2/v6"

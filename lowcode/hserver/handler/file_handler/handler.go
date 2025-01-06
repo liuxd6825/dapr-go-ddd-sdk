@@ -1,4 +1,4 @@
-package file
+package file_handler
 
 import (
 	"context"
@@ -13,13 +13,15 @@ type Handler struct {
 	fs        afero.Fs
 	pageCache *types.CMap[bool]
 	app       *iris.Application
+	vdata     map[string]any
 }
 
-func NewHandler(srcFs afero.Fs, app *iris.Application) *Handler {
+func NewHandler(srcFs afero.Fs, app *iris.Application, data map[string]any) *Handler {
 	f := &Handler{
 		app:       app,
 		fs:        srcFs,
 		pageCache: types.NewCMap[bool](),
+		vdata:     data,
 	}
 	ctx := context.Background()
 	if err := f.preloadDynamicPages(ctx, "/"); err != nil {
@@ -47,6 +49,8 @@ func (h *Handler) Handle(ictx iris.Context) {
 	fileName := "/" + ictx.Params().Get("file")
 	if fileName == "" || fileName == "/" {
 		fileName = "/index.html" // 默认页面
+	} else if !strings.Contains(fileName, ".") {
+		fileName = fileName + ".html"
 	}
 
 	// 检查目录中存在文件
@@ -78,10 +82,7 @@ func (h *Handler) renderFile(ctx context.Context, ictx iris.Context, fileName st
 	isRender, err := isDynamicPage(ctx, h.fs, fileName)
 	if isRender {
 		// 动态渲染模板
-		err = ictx.View(fileName, iris.Map{
-			"Title": "Dynamic Page",
-			"User":  "Dynamic User",
-		})
+		err = ictx.View(fileName, h.vdata)
 		return true, err
 	}
 	return false, nil

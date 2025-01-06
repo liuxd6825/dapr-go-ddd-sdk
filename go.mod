@@ -32,6 +32,7 @@ require (
 	code.gitea.io/sdk/gitea v0.18.0
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/allegro/bigcache v1.2.1
+	github.com/casbin/casbin/v2 v2.103.0
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
@@ -67,7 +68,9 @@ require (
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/bufbuild/protocompile v0.8.0 // indirect
+	github.com/casbin/govaluate v1.3.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chromedp/cdproto v0.0.0-20221023212508-67ada9507fb2 // indirect

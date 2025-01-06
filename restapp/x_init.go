@@ -73,7 +73,7 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	}
 
 	if len(env.Fs) != 0 {
-		fsManager, err := fs.NewManagerWithConfigs(env.Fs, env.App.RsServer.DefaultFsName)
+		fsManager, err := fs.NewManagerWithConfigs(env.Fs, env.App.RsServer.SrcName)
 		if err != nil {
 			return errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
 		}
@@ -149,7 +149,7 @@ func setCpuMemory(envName string, config *AppConfig) error {
 	if config.CPU != nil {
 		cpu, err := setCpu(*config.CPU)
 		if err != nil {
-			logs.Errorf(ctx, "", fields, "ctype=app; cpu=%v; error=%s ", envName, cpu, err.Error())
+			logs.Errorf(ctx, "", fields, "ctype=app; envName=%s; cpu=%v; error=%s ", envName, cpu, err.Error())
 			return err
 		} else {
 			logs.Infof(ctx, "", fields, "ctype=app; cpu=%v;", cpu)

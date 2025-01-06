@@ -9,8 +9,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -82,12 +82,11 @@ func (a *AppConfig) GetSrcPath() string {
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
 type RsServer struct {
-	Enable        bool   `yaml:"enable" json:"enable"` // 是否启用脚本服务
-	DefaultFsName string `yaml:"defaultFsName" json:"defaultFsName"`
-	FileFsName    string `yaml:"fileFsName" json:"fileFsName"` // 在fs节中配置key
-	HttpFsName    string `yaml:"httpFsName" json:"httpFsName"` // 在fs节中配置key
-	BasePath      string `yaml:"basePath" json:"basePath"`     // 脚本文件路径
-	Reload        bool   `yaml:"reload" json:"reload"`         // 是否自动加载脚本
+	Enable   bool   `yaml:"enable" json:"enable"`     // 是否启用脚本服务
+	SrcName  string `yaml:"srcName" json:"srcName"`   // API源码文件系统名称
+	WebName  string `yaml:"webName" json:"webName"`   // Web源码文件系统名称
+	BasePath string `yaml:"basePath" json:"basePath"` // 脚本文件路径
+	Reload   bool   `yaml:"reload" json:"reload"`     // 是否自动加载脚本
 }
 
 type IReServer interface {
@@ -180,7 +179,9 @@ func NewConfigByFile(fileName string) (*Config, error) {
 		}
 		filename = v
 	}
-	yamlFile, err := ioutil.ReadFile(filename)
+	// 转换为绝对路径
+	filename, err := filepath.Abs(filename)
+	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -201,6 +202,13 @@ func NewConfigByFile(fileName string) (*Config, error) {
 
 func (e *EnvConfig) Init(name string) error {
 	e.Name = name
+	for _, m := range e.Fs {
+		for k, v := range m {
+			if s, ok := v.(string); ok {
+				m[k] = ReplaceSysValues(s)
+			}
+		}
+	}
 	if len(e.App.HttpHost) == 0 {
 		e.App.HttpHost = "0.0.0.0"
 	}
@@ -258,7 +266,7 @@ func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
 		return e.fsManager, nil
 	}
 	if len(e.Fs) != 0 {
-		fsManager, err := fs.NewManagerWithConfigs(e.Fs, e.App.RsServer.DefaultFsName)
+		fsManager, err := fs.NewManagerWithConfigs(e.Fs, e.App.RsServer.SrcName)
 		if err != nil {
 			return nil, errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
 		}
@@ -270,13 +278,13 @@ func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
 func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
 	m, err := e.GetFsManager()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	fs, ok := m.Get(name)
 	if ok {
 		return fs, nil
 	}
-	return nil, errors.New("fs not exist")
+	return nil, errors.New(" %s fs not exist", name)
 }
 
 func (l *LogConfig) GetLevel() applog.Level {
@@ -394,7 +402,7 @@ func initResources(resCfg map[string]*ResourceConfig) error {
 }
 
 func searchConfigFile(path, configName string, fileName string) (string, bool, error) {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return "", false, err
 	}
@@ -404,7 +412,7 @@ func searchConfigFile(path, configName string, fileName string) (string, bool, e
 	for _, file := range files {
 		name := file.Name()
 		if file.IsDir() && name == configName {
-			list, err := ioutil.ReadDir(path + "/" + file.Name())
+			list, err := os.ReadDir(path + "/" + file.Name())
 			if err != nil {
 				return "", false, err
 			}

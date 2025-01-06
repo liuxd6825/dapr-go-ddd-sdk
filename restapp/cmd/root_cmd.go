@@ -17,6 +17,12 @@ type Option struct {
 }
 type Options func(opts *Option)
 
+var rootCmd = &cobra.Command{
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("请使用 start, status, stop, init-db, sql-file, version, help 命令")
+	},
+}
+
 func Start(config string, fun func(flag *restapp.RunFlag) error, options ...Options) {
 	opt := &Option{Version: "", AppTitle: "应用服务"}
 	for _, o := range options {
@@ -30,7 +36,7 @@ func Start(config string, fun func(flag *restapp.RunFlag) error, options ...Opti
 	restapp.GitHead = opt.GitHead
 
 	runFunc = fun
-	rootCmd := newRootCmd(config, opt.AppTitle)
+	rootCmd = newRootCmd(config, opt.AppTitle)
 	rootCmd.AddCommand(newStartCmd())
 	rootCmd.AddCommand(newStatusCmd())
 	rootCmd.AddCommand(newStopCmd())
@@ -44,14 +50,9 @@ func Start(config string, fun func(flag *restapp.RunFlag) error, options ...Opti
 
 func newRootCmd(config string, appTitle string) *cobra.Command {
 	name := restapp.GetExeName()
-	var rootCmd = &cobra.Command{
-		Use:   name,
-		Short: appTitle,
-		Long:  appTitle,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("请使用 start, status, stop, init-db, sql-file, version, help 命令")
-		},
-	}
+	rootCmd.Use = name
+	rootCmd.Short = appTitle
+	rootCmd.Long = appTitle
 	rootCmd.PersistentFlags().StringVarP(&runFlag.Config, "config", "c", config, "配置文件名")
 	rootCmd.PersistentFlags().StringVarP(&runFlag.Env, "env", "e", "", "配置文件中定义的env环境名称")
 	return rootCmd

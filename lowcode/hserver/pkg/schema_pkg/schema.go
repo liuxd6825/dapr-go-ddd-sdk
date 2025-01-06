@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
+	"github.com/spf13/afero"
 )
 
 type SchemaPkg struct {
@@ -20,6 +21,15 @@ func New(server pkg.Server) *SchemaPkg {
 	}
 }
 
+func (s *SchemaPkg) openFile(fileUrl string, workPath string) ([]byte, error) {
+	fs := s.server.GetSrcFs()
+	data, err := afero.ReadFile(fs, fileUrl)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema {
 	if s.server.GetCacheEnable() {
 		val, ok := s.cache.Get(fileUrl)
@@ -32,6 +42,7 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 	if len(data) == 0 {
 		return nil
 	}
+
 	reader, err := jsonschema.UnmarshalJSON(bytes.NewReader(data))
 	if err != nil {
 		panic(err)

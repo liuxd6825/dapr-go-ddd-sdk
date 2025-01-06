@@ -1,0 +1,33 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub
+  namespace:
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: host
+      value: "amqp://rabbitmq:rabbitmq_15671@192.168.122.230:5672"
+    - name: consumerID
+      value: "master_query_service"
+    - name: queueName
+      value: "master_query_service"
+    - name: enableDeadLetter
+      value: "true"
+    - name: durable
+      value: "true"
+    - name: deletedWhenUnused
+      value: "false"
+    - name: autoAck
+      value: "true"
+    - name: deliveryMode
+      value: "0"
+    - name: requeueInFailure
+      value: "true"
+    - name: prefetchCount
+      value: "0"
+    - name: reconnectWait
+      value: "0"
+    - name: concurrencyMode
+      value: single

@@ -78,9 +78,8 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 		})
 	*/
 
-	opt := NewRunOptions(options...)
 	var err error
-
+	opt := NewRunOptions(options...)
 	runType := RunTypeStart
 	if opt.runType != nil {
 		runType = *opt.runType
@@ -127,8 +126,13 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 		return nil, err
 	}
 
+	var eventType []RegisterEventType
+	if eventsFunc != nil {
+		eventType = eventsFunc()
+	}
+
 	// 初始化应用
-	if err = InitApplication(context.Background(), envConfig, eventsFunc(), false, nil); err != nil {
+	if err = InitApplication(context.Background(), envConfig, eventType, false, nil); err != nil {
 		return nil, err
 	}
 
@@ -173,16 +177,37 @@ func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscr
 	if opt.level != nil {
 		level = *opt.level
 	}
+
+	var subscribes []RegisterSubscribe
+	if subsFunc != nil {
+		subscribes = subsFunc()
+	}
+
+	var controlles []Controller
+	if controllersFunc != nil {
+		controlles = controllersFunc()
+	}
+
+	var actorFactories []actor.FactoryContext
+	if actorsFunc != nil {
+		actorFactories = actorsFunc()
+	}
+
+	var eventTypes []RegisterEventType
+	if eventTypesFunc != nil {
+		eventTypes = eventTypesFunc()
+	}
+
 	serverOptions := &ServiceOptions{
 		AppId:      runCfg.AppId,
 		HttpHost:   runCfg.HttpHost,
 		HttpPort:   runCfg.HttpPort,
 		LogLevel:   level,
-		EventTypes: eventTypesFunc(),
+		EventTypes: eventTypes,
 
-		Subscribes:     subsFunc(),
-		Controllers:    controllersFunc(),
-		ActorFactories: actorsFunc(),
+		Subscribes:     subscribes,
+		Controllers:    controlles,
+		ActorFactories: actorFactories,
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
 		EnvConfig:      runCfg.EnvConfig,

@@ -109,7 +109,10 @@ func (m *Manager) Add(name string, fs afero.Fs) {
 
 func (m *Manager) Get(name string) (afero.Fs, bool) {
 	fs, ok := m.fsMap.Get(name)
-	return fs.(afero.Fs), ok
+	if !ok {
+		return nil, false
+	}
+	return fs.(afero.Fs), true
 }
 
 func (m *Manager) Remove(name string) {
@@ -270,7 +273,7 @@ func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err err
 	}
 	fs, ok := m.Get(fsName)
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("file %s not found in config", fsName))
+		return nil, "", errors.New(fmt.Sprintf("fs name \"%s\" not found", fsName))
 	}
 	return fs, fileName, nil
 }

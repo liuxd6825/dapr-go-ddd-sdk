@@ -77,7 +77,11 @@ func (p *Pool) Run(code string, opts ...RunOptions) (resVal any, err error) {
 //	@param opts
 //	@return any
 //	@return error
-func (p *Pool) run(runtime *Runtime, code string, opts ...RunOptions) (any, error) {
+func (p *Pool) run(runtime *Runtime, code string, opts ...RunOptions) (dat any, err error) {
+
+	defer func() {
+		err = RecoverError(err, recover())
+	}()
 	for _, opt := range opts {
 		if opt != nil {
 			if err := opt(runtime.vm); err != nil {

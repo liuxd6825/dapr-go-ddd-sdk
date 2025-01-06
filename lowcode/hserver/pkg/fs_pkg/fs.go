@@ -1,6 +1,7 @@
 package fs_pkg
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
@@ -88,7 +89,7 @@ func (m *FsPkg) Rename(oldName, newName string, opts ...*fsopts.Options) error {
 func (m *FsPkg) ReadFile(filename string, opts ...*fsopts.Options) []byte {
 	res, err := m.base.ReadFile(filename, opts...)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("fsPkg.readFile() %s %s ", filename, err.Error()))
 	}
 	return res
 }

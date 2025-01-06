@@ -1,6 +1,8 @@
 package restapp
 
 import (
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -19,6 +21,7 @@ var (
 	Version   = "" // 应用版本号
 	BuildTime = "" // 编译时间
 	GitHead   = "" // Git
+	sysPaths  *types.CMap[string]
 )
 
 func init() {
@@ -28,6 +31,13 @@ func init() {
 	path, _ := os.Executable()
 	pathName, exeName = filepath.Split(path)
 	SetExeName(exeName)
+
+	sysPaths = types.NewCMap[string]()
+	sysPaths.Set("ExeName", exeName)
+}
+
+func GetSysPaths() *types.CMap[string] {
+	return sysPaths
 }
 
 func GetPathName() string {
@@ -80,13 +90,40 @@ func SetExeName(name string) {
 //	@Description: 取绝对路径
 //	@param val
 //	@return string
-func AbsFileName(val string) string {
-	if val == "" {
+func AbsFileName(filename string) string {
+	if filename == "" {
 		return ""
 	}
-	val = strings.ReplaceAll(val, "${ExeName}", GetExeName())
-	val = strings.ReplaceAll(val, "${PID}", GetPID())
-	val = strings.ReplaceAll(val, "${EnvName}", GetEnvName())
-	val, _ = filepath.Abs(val)
-	return val
+	filename = strings.ReplaceAll(filename, "${ExeName}", GetExeName())
+	filename = strings.ReplaceAll(filename, "${PID}", GetPID())
+	filename = strings.ReplaceAll(filename, "${EnvName}", GetEnvName())
+	for _, k := range sysPaths.Keys() {
+		if v, ok := sysPaths.Get(k); ok {
+			key := fmt.Sprintf("${%s}", k)
+			filename = strings.ReplaceAll(filename, key, v)
+		}
+	}
+	filename, _ = filepath.Abs(filename)
+	return filename
+}
+
+// ReplaceSysValues
+//
+//	@Description: 取绝对路径
+//	@param val
+//	@return string
+func ReplaceSysValues(filename string) string {
+	if filename == "" {
+		return ""
+	}
+	filename = strings.ReplaceAll(filename, "${ExeName}", GetExeName())
+	filename = strings.ReplaceAll(filename, "${PID}", GetPID())
+	filename = strings.ReplaceAll(filename, "${EnvName}", GetEnvName())
+	for _, k := range sysPaths.Keys() {
+		if v, ok := sysPaths.Get(k); ok {
+			key := fmt.Sprintf("${%s}", k)
+			filename = strings.ReplaceAll(filename, key, v)
+		}
+	}
+	return filename
 }
