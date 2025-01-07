@@ -3,15 +3,15 @@ package schema_utils
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"net/url"
 )
 
 type SchemaLoader struct {
-	fsm *fs.Manager
+	fsm *fsm.Manager
 }
 
-func NewSchemaLoader(fsm *fs.Manager) *SchemaLoader {
+func NewSchemaLoader(fsm *fsm.Manager) *SchemaLoader {
 	return &SchemaLoader{fsm: fsm}
 }
 

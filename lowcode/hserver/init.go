@@ -2,6 +2,7 @@ package hserver
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
@@ -71,10 +72,6 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 		"console": NewConsole(logrus.New()),
 	})
 
-	if err != nil {
-		return err
-	}
-
 	vData := map[string]any{
 		"server": server,
 		"pkg":    server.GetPkg().Items(),
@@ -83,6 +80,37 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	if webFs != nil {
 		fileHandler := file_handler.NewHandler(webFs, vApp, vData)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)
+		//NewWatcher(server, webFs)
 	}
+	if srcFs != nil {
+		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {
+			server.Logs(logrus.InfoLevel, "server.restart()")
+			return server.Restart()
+		})
+	}
+
 	return server.Start()
+}
+
+// Watcher
+// @Description: 监控服务目录，当文件修改时重新启动服务
+type Watcher struct {
+	server *Server
+	fs     afero.Fs
+}
+
+type WatcherHandler = func(rootPath, fileName string, eventType fs.WatcherEventType) error
+
+func NewWatcher(server *Server, afs afero.Fs, handler WatcherHandler) *Watcher {
+	w := &Watcher{server: server, fs: afs}
+	if wfs, ok := afs.(fs.WatcherFs); ok {
+		watcher, err := wfs.NewWatcher()
+		if err != nil {
+			panic(err)
+		}
+		if err = watcher.Start(handler); err != nil {
+			panic(err)
+		}
+	}
+	return w
 }

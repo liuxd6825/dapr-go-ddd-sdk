@@ -1,7 +1,7 @@
 package rs_server
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/spf13/afero"
 )
 
@@ -23,8 +23,8 @@ func (c *SrcFsConfig) ToMap() map[string]afero.Fs {
 	}
 }
 
-func (c *SrcFsConfig) NewFsManager() *fs.Manager {
-	m := &fs.Manager{}
+func (c *SrcFsConfig) NewFsManager() *fsm.Manager {
+	m := &fsm.Manager{}
 	m.Add("file", c.FileFs)
 	m.Add("http", c.HttpFs)
 	return m

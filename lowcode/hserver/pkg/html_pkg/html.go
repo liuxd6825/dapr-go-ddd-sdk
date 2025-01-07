@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html/builder"
 	"github.com/liuxd6825/jsonschema/v6"
 )
@@ -11,6 +12,7 @@ import (
 type HtmlPkg struct {
 	server  pkg.Server
 	builder *builder.Builder
+	*fs_pkg.FsPkg
 }
 
 func New(server pkg.Server) *HtmlPkg {
@@ -18,9 +20,14 @@ func New(server pkg.Server) *HtmlPkg {
 }
 
 func NewHtmlPkg(server pkg.Server) *HtmlPkg {
+	fsPkg, err := fs_pkg.NewFsPkg(server.GetEnvConfig(), "web")
+	if err != nil {
+		panic(err)
+	}
 	fsm := &HtmlPkg{
 		server:  server,
 		builder: builder.NewBuilder(),
+		FsPkg:   fsPkg,
 	}
 	return fsm
 }

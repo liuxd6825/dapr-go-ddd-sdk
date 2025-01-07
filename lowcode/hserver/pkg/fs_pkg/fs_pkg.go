@@ -2,7 +2,7 @@ package fs_pkg
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/json_pkg"
@@ -16,9 +16,11 @@ import (
 // FsPkg
 // @Description:  文件系统
 type FsPkg struct {
-	base        *fs.Manager
+	base        *fsm.Manager
 	cfg         common.IEnvConfig
 	WriteModels *FsWriteModel
+	fsName      string
+	fs          afero.Fs
 }
 
 var jsonPkg *json_pkg.JsonPkg = json_pkg.NewJsonPkg()
@@ -26,14 +28,14 @@ var jsonPkg *json_pkg.JsonPkg = json_pkg.NewJsonPkg()
 // FsWriteModel
 // @Description: 读写权限
 type FsWriteModel struct {
-	AllWriteRead       fs.WriteModel
-	SelfWriteOtherRead fs.WriteModel
+	AllWriteRead       fsm.WriteModel
+	SelfWriteOtherRead fsm.WriteModel
 }
 
 func NewFsWriteModel() *FsWriteModel {
 	return &FsWriteModel{
-		AllWriteRead:       fs.WriteModelAllWriteRead,
-		SelfWriteOtherRead: fs.WriteModelSelfWriteOtherRead,
+		AllWriteRead:       fsm.WriteModelAllWriteRead,
+		SelfWriteOtherRead: fsm.WriteModelSelfWriteOtherRead,
 	}
 }
 
@@ -43,12 +45,23 @@ func NewFsWriteModel() *FsWriteModel {
 //	@param cfg
 //	@return *FsPkg
 //	@return error
-func NewFsPkg(cfg common.IEnvConfig) (*FsPkg, error) {
+func NewFsPkg(cfg common.IEnvConfig, fsName string) (*FsPkg, error) {
 	fsManager, err := cfg.GetFsManager()
 	if err != nil {
 		return nil, err
 	}
-	fsm := &FsPkg{cfg: cfg, WriteModels: NewFsWriteModel()}
+
+	fsm := &FsPkg{
+		cfg:         cfg,
+		fsName:      fsName,
+		WriteModels: NewFsWriteModel(),
+	}
+	if fsName != "" {
+		fs, ok := fsManager.Get(fsName)
+		if ok {
+			fsm.fs = fs
+		}
+	}
 	fsm.base = fsManager
 	return fsm, nil
 }
@@ -60,11 +73,20 @@ func NewFsPkg(cfg common.IEnvConfig) (*FsPkg, error) {
 //	@param name
 //	@param opts
 func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
+
 	file, err := m.base.Create(name, opts...)
 	if err != nil {
 		panic(err)
 	}
 	return file
+}
+
+func (m *FsPkg) newOptions(opts ...*fsopts.Options) *fsopts.Options {
+	opt := fsopts.NewOptions(opts...)
+	if m.fs != nil {
+		opt.Fs = m.fs
+	}
+	return opt
 }
 
 // Rename
@@ -105,7 +127,7 @@ func (m *FsPkg) WriteJson(filename string, data any, opts ...*fsopts.Options) {
 	var bytes = pkg.ToBytes(data)
 
 	bytes = jsonPkg.Format(bytes)
-	err := m.base.WriteFile(filename, bytes, fs.WriteModelAllWriteRead, opts...)
+	err := m.base.WriteFile(filename, bytes, fsm.WriteModelAllWriteRead, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +142,7 @@ func (m *FsPkg) WriteJson(filename string, data any, opts ...*fsopts.Options) {
 //	@param opts
 func (m *FsPkg) WriteFile(filename string, data any, opts ...*fsopts.Options) {
 	var bytes = pkg.ToBytes(data)
-	err := m.base.WriteFile(filename, bytes, fs.WriteModelAllWriteRead, opts...)
+	err := m.base.WriteFile(filename, bytes, fsm.WriteModelAllWriteRead, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -180,7 +202,13 @@ func (m *FsPkg) ReadDir(path string, opts ...*fsopts.Options) []*pkg.FileInfo {
 		panic(err)
 	}
 	for _, file := range files {
-		fileInfo := &pkg.FileInfo{IsDir: file.IsDir(), Name: file.Name(), Size: file.Size(), Path: path, SizeTitle: intutils.GetFileSizeTitle(file.Size())}
+		fileInfo := &pkg.FileInfo{
+			IsDir:     file.IsDir(),
+			Name:      file.Name(),
+			Size:      file.Size(),
+			Path:      path,
+			SizeTitle: intutils.GetFileSizeTitle(file.Size()),
+		}
 		res = append(res, fileInfo)
 	}
 	return res

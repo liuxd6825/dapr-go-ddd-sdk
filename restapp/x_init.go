@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs/userlog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
@@ -73,7 +73,7 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	}
 
 	if len(env.Fs) != 0 {
-		fsManager, err := fs.NewManagerWithConfigs(env.Fs, env.App.RsServer.SrcName)
+		fsManager, err := fsm.NewManagerWithConfigs(env.Fs, env.App.RsServer.SrcName)
 		if err != nil {
 			return errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
 		}

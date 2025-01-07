@@ -3,7 +3,7 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"net/url"
 )
 
@@ -14,10 +14,10 @@ type URLLoader interface {
 }
 
 type JSONLoader struct {
-	fsm *fs.Manager
+	fsm *fsm.Manager
 }
 
-func NewJSONLoader(fsm *fs.Manager) *JSONLoader {
+func NewJSONLoader(fsm *fsm.Manager) *JSONLoader {
 	return &JSONLoader{fsm: fsm}
 }
 

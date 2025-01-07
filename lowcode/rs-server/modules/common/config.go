@@ -1,6 +1,8 @@
 package common
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
+)
 
 type IEnvConfig interface {
 	GetAppId() string
@@ -11,7 +13,7 @@ type IEnvConfig interface {
 	GetDaprHost() string
 	GetDaprHttpPort() int64
 	GetDaprGrpcPort() int64
-	GetFsManager() (*fs.Manager, error)
+	GetFsManager() (*fsm.Manager, error)
 
 	GetRsServerSrcPath() string
 	GetRsServerEnable() bool

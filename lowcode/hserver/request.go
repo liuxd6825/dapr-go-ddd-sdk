@@ -251,20 +251,20 @@ func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
 			panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, v.In))
 		}
 
-		data[key] = val
-
-		if key == InParamTypeURL.String() || key == InParamTypePath.String() {
-			if v.Required && val == "" {
-				err = errors.New("The requested parameter %s cannot be empty", key)
-				panic(err)
-			} else {
-				val, err = types.Convert(v.Type, v)
-				if err != nil {
-					panic(err)
-				}
-				data[key] = v
-			}
+		if (val == nil || val == "") && v.Default != nil {
+			val = v.Default
 		}
+
+		val, err = types.Convert(v.Type, val)
+		if err != nil {
+			panic(fmt.Sprintf("params.%s types.Convert() error: %s", key, err.Error()))
+		}
+
+		if v.Required && (val == "" || val == nil) {
+			err = errors.New("The requested parameter %s cannot be empty", key)
+			panic(err)
+		}
+		data[key] = val
 	}
 	return data
 }

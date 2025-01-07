@@ -18,9 +18,9 @@ var mainFile = "./main.html"
 var workPath = ""
 
 func main() {
-	appcmd.StartCmd.Flags().StringVar(&workPath, "workPath", "", "config file (default is $HOME/config/config.yaml)")
+	appcmd.StartCmd.Flags().StringVar(&workPath, "workPath", "", "src path")
 	appcmd.StartCmd.Flags().StringVar(&config, "config", "./config/config.yaml", "config file (default is $HOME/config/config.yaml)")
-	appcmd.StartCmd.Flags().StringVar(&mainFile, "mainFile", "main.html", "config file (default is $HOME/main.html)")
+	appcmd.StartCmd.Flags().StringVar(&mainFile, "mainFile", "main.html", "main file (default is $HOME/main.html)")
 	appcmd.Start(config, func(flag *restapp.RunFlag) error {
 		opts := restapp.NewRunOptions().SetFlag(flag).SetTable(nil)
 		opts.SetInitFunc(func(server *restapp.HttpServer) error {

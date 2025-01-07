@@ -64,6 +64,7 @@ func (h *Handler) Handle(ictx iris.Context) {
 		isRender := false
 		isHtml := strings.HasSuffix(fileName, ".html")
 		if isHtml {
+			// isRender是否已经进行了HTML渲染
 			if isRender, err = h.renderFile(ctx, ictx, fileName); err != nil {
 				return
 			}

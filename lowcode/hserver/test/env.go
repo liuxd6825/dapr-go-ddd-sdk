@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 )
 
 type EnvConfig struct {
@@ -14,10 +14,10 @@ type EnvConfig struct {
 	DaprGrpcPort    int64
 	RsServerSrcPath string
 	RsServerEnable  bool
-	Fsm             *fs.Manager
+	Fsm             *fsm.Manager
 }
 
-func NewEnvConfig(fsm *fs.Manager, srcPath string) *EnvConfig {
+func NewEnvConfig(fsm *fsm.Manager, srcPath string) *EnvConfig {
 	return &EnvConfig{
 		AppId:           "test",
 		AppName:         "test",
@@ -60,7 +60,7 @@ func (c *EnvConfig) GetDaprGrpcPort() int64 {
 	return c.DaprGrpcPort
 }
 
-func (c *EnvConfig) GetFsManager() (*fs.Manager, error) {
+func (c *EnvConfig) GetFsManager() (*fsm.Manager, error) {
 	return c.Fsm, nil
 }
 

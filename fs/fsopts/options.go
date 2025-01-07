@@ -2,12 +2,14 @@ package fsopts
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
+	"github.com/spf13/afero"
 	"strings"
 )
 
 type Options struct {
 	RootPath string // 根目录
 	WorkPath string // 当前工作目录
+	Fs       afero.Fs
 }
 
 func NewOptionsWidthFileName(fileName string, rootPath string) *Options {
@@ -21,8 +23,15 @@ func NewOptionsWidthFileName(fileName string, rootPath string) *Options {
 func NewOptions(o ...*Options) *Options {
 	opts := &Options{}
 	for _, o := range o {
-		opts.RootPath = o.RootPath
-		opts.WorkPath = o.WorkPath
+		if o.RootPath != "" {
+			opts.RootPath = o.RootPath
+		}
+		if o.WorkPath != "" {
+			opts.WorkPath = o.WorkPath
+		}
+		if o.Fs != nil {
+			opts.Fs = o.Fs
+		}
 	}
 	return opts
 }

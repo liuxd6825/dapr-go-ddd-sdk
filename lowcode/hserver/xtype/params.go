@@ -15,4 +15,5 @@ type RequestParam struct {
 	Description string          `json:"description"` // 说明
 	Example     any             `json:"example"`     // 数据示例
 	Schema      *xschema.Schema `json:"schema"`      // 数据定义
+	Default     any             `json:"default"`     // 默认值
 }

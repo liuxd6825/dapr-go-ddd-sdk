@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
@@ -9,20 +9,20 @@ import (
 )
 
 type FsManager struct {
-	base        *fs.Manager
+	base        *fsm.Manager
 	cfg         common.IEnvConfig
 	WriteModels *FsWriteModel
 }
 
 type FsWriteModel struct {
-	AllWriteRead       fs.WriteModel
-	SelfWriteOtherRead fs.WriteModel
+	AllWriteRead       fsm.WriteModel
+	SelfWriteOtherRead fsm.WriteModel
 }
 
 func NewFsWriteModel() *FsWriteModel {
 	return &FsWriteModel{
-		AllWriteRead:       fs.WriteModelAllWriteRead,
-		SelfWriteOtherRead: fs.WriteModelSelfWriteOtherRead,
+		AllWriteRead:       fsm.WriteModelAllWriteRead,
+		SelfWriteOtherRead: fsm.WriteModelSelfWriteOtherRead,
 	}
 }
 
@@ -67,7 +67,7 @@ func (m *FsManager) WriteFile(filename string, data any, options ...*fsopts.Opti
 		panic("WriteFile() invalid data is string or []byte or map[string]any")
 	}
 
-	err := m.base.WriteFile(filename, bytes, fs.WriteModelAllWriteRead, options...)
+	err := m.base.WriteFile(filename, bytes, fsm.WriteModelAllWriteRead, options...)
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package localfs
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
 	"github.com/spf13/afero"
 	"os"
@@ -45,6 +46,10 @@ func NewFs(cfg Config) (afero.Fs, error) {
 		return nil, fmt.Errorf("localfs is not a OsFs")
 	}
 	return &Fs{OsFs: osFs, cfg: cfg, rootPath: cfg.Path}, nil
+}
+
+func (f *Fs) NewWatcher() (fs.Watcher, error) {
+	return NewFileWatcher(f), nil
 }
 
 func (f *Fs) GetFsType() string {

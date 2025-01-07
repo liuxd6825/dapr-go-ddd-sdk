@@ -36,6 +36,7 @@ type Call struct {
 }
 
 func NewService(server *Server, html []byte, srcFileName string, data map[string]any) (*Service, error) {
+
 	var err error
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.GetRootPath())
 
@@ -140,9 +141,13 @@ func (s *Service) parse(html []byte) error {
 				Description: request.AttrOr("description", ""),
 				ParamsType:  request.AttrOr("params-type", ""),
 			}
+
+			s.server.Logs(logrus.InfoLevel, "service.parse() request %s.%s()", s.config.Name, reqCfg.Name)
+
 			request.Find("a.params").First().Each(func(i int, selection *goquery.Selection) {
 				reqCfg.LinkParamsUrl = selection.AttrOr("href", "")
 			})
+
 			// 获取 <script> 子节点
 			scriptEl := request.Find("script")
 			if scriptEl != nil {
@@ -152,12 +157,13 @@ func (s *Service) parse(html []byte) error {
 					err = er
 					return
 				}
-				scriptConfig.UsePool = true
-				reqCfg.Script = *scriptConfig
+				if scriptConfig != nil {
+					scriptConfig.UsePool = true
+					reqCfg.Script = *scriptConfig
+					reqConfigs = append(reqConfigs, reqCfg)
+				}
 			}
-			reqConfigs = append(reqConfigs, reqCfg)
 		}
-
 	})
 
 	for _, cfg := range reqConfigs {

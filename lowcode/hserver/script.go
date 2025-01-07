@@ -86,6 +86,8 @@ func ParseScript(parentEl *goquery.Selection, selector string, funcName string, 
 		cfg.CodeType = scripts.AttrOr("type", "")
 		alias := scripts.AttrOr("alias", "")
 		cfg.Alias, err = ParseAlias(alias)
+	} else {
+		return nil, errors.New("<script> must have a selector")
 	}
 	return cfg, err
 }

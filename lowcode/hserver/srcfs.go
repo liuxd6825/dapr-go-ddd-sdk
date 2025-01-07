@@ -1,7 +1,7 @@
 package hserver
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/spf13/afero"
 )
 
@@ -23,8 +23,8 @@ func (c *SrcFs) ToMap() map[string]afero.Fs {
 	}
 }
 
-func (c *SrcFs) NewFsManager() *fs.Manager {
-	m := fs.NewManager()
+func (c *SrcFs) NewFsManager() *fsm.Manager {
+	m := fsm.NewManager()
 	m.DefaultFsName = "file"
 	m.Add("file", c.FileFs)
 	m.Add("http", c.HttpFs)

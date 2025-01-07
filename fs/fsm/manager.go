@@ -1,8 +1,9 @@
-package fs
+package fsm
 
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	fs2 "github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/giteafs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/httpfs"
@@ -133,19 +134,27 @@ func (m *Manager) GetFsByFileUrl(fileUrl string) (afero.Fs, error) {
 }
 
 func (m *Manager) Create(filename string, opts ...*fsopts.Options) (afero.File, error) {
+	opt := fsopts.NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return nil, err
 	}
-	return Create(afs, fileName, opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.Create(afs, fileName, opt)
 }
 
 func (m *Manager) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+	opt := fsopts.NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return nil, err
 	}
-	return ReadFile(afs, fileName, opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.ReadFile(afs, fileName, opt)
 }
 
 // WriteFile
@@ -158,11 +167,15 @@ func (m *Manager) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, er
 //	@param writeModel
 //	@return error
 func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel, opts ...*fsopts.Options) error {
+	opt := fsopts.NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return err
 	}
-	return WriteFile(afs, fileName, bytes, fs.FileMode(writeModel), opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.WriteFile(afs, fileName, bytes, fs.FileMode(writeModel), opt)
 }
 
 // RemoveFile
@@ -172,11 +185,15 @@ func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel
 //	@param filename 文件名称
 //	@return error
 func (m *Manager) RemoveFile(filename string, opts ...*fsopts.Options) error {
+	opt := fsopts.NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
 		return err
 	}
-	fileName = fsopts.GetAbsPath(filename, opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	fileName = fsopts.GetAbsPath(filename, opt)
 	return afs.Remove(fileName)
 }
 
@@ -187,11 +204,15 @@ func (m *Manager) RemoveFile(filename string, opts ...*fsopts.Options) error {
 //	@param path 路径名称
 //	@return error
 func (m *Manager) RemoveAll(path string, opts ...*fsopts.Options) error {
+	opt := fsopts.NewOptions(opts...)
 	afs, path, err := m.parse(path)
 	if err != nil {
 		return err
 	}
-	path = fsopts.GetAbsPath(path, opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	path = fsopts.GetAbsPath(path, opt)
 	return afs.RemoveAll(path)
 }
 
@@ -211,6 +232,11 @@ func (m *Manager) Rename(aOldName, aNewName string, opts ...*fsopts.Options) err
 	if err != nil {
 		return err
 	}
+
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
 	return afs.Rename(oldName, newName)
 }
 
@@ -227,7 +253,13 @@ func (m *Manager) Mkdir(path string, perm os.FileMode, opts ...*fsopts.Options) 
 	if err != nil {
 		return err
 	}
-	name = fsopts.GetAbsPath(name, opts...)
+
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+
+	name = fsopts.GetAbsPath(name, opt)
 	return afs.Mkdir(name, perm)
 }
 
@@ -244,7 +276,11 @@ func (m *Manager) MkdirAll(filename string, fileMode fs.FileMode, opts ...*fsopt
 	if err != nil {
 		return err
 	}
-	return MkdirAll(afs, fileName, fileMode, opts...)
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.MkdirAll(afs, fileName, fileMode, opts...)
 }
 
 // ReadDir
@@ -254,11 +290,17 @@ func (m *Manager) MkdirAll(filename string, fileMode fs.FileMode, opts ...*fsopt
 //	@param path
 //	@return []iofs.FileInfo
 //	@return error
-func (m *Manager) ReadDir(path string) ([]iofs.FileInfo, error) {
+func (m *Manager) ReadDir(path string, opts ...*fsopts.Options) ([]iofs.FileInfo, error) {
 	afs, _, err := m.parse(path)
 	if err != nil {
 		return nil, err
 	}
+
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+
 	return afero.ReadDir(afs, path)
 }
 

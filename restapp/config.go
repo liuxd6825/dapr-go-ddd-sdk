@@ -5,7 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
@@ -32,7 +32,7 @@ type EnvConfig struct {
 	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
 	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
 	Fs        []map[string]any           `yaml:"fs" json:"fs"`
-	fsManager *fs.Manager                `yaml:"-" json:"-"`
+	fsManager *fsm.Manager               `yaml:"-" json:"-"`
 }
 
 // AppConfig
@@ -261,12 +261,12 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 	return &value
 }
 
-func (e *EnvConfig) GetFsManager() (*fs.Manager, error) {
+func (e *EnvConfig) GetFsManager() (*fsm.Manager, error) {
 	if e.fsManager != nil {
 		return e.fsManager, nil
 	}
 	if len(e.Fs) != 0 {
-		fsManager, err := fs.NewManagerWithConfigs(e.Fs, e.App.RsServer.SrcName)
+		fsManager, err := fsm.NewManagerWithConfigs(e.Fs, e.App.RsServer.SrcName)
 		if err != nil {
 			return nil, errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
 		}

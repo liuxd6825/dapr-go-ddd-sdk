@@ -2,17 +2,18 @@ package hserver
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
@@ -37,6 +38,8 @@ type Server struct {
 	cacheEnable  bool // 是否启用缓存
 	schemaLoader schema.URLLoader
 	pkg          any
+	srcFileName  string
+	opts         []NewServerOptions
 }
 
 type NewServerOptions func(server *Server)
@@ -48,15 +51,15 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 		return nil, err
 	}
 
-	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, "/")
-
-	fsPkg, err := fs_pkg.NewFsPkg(env)
+	fsPkg, err := fs_pkg.NewFsPkg(env, "")
 	if err != nil {
 		return nil, err
 	}
 
 	logger := logrus.StandardLogger()
 	server := &Server{
+		srcFileName:  srcFileName,
+		opts:         opts,
 		app:          app,
 		services:     types.NewCMap[*Service](),
 		fsPkg:        fsPkg,
@@ -65,14 +68,33 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 		cacheEnable:  true,
 		schemaLoader: schema_utils.NewSchemaLoader(fsma),
 	}
-	server.definition, err = definition.NewDefinition(srcFs, "/definition/params")
-	if err != nil {
+
+	if err := server.init(logger); err != nil {
 		return nil, err
 	}
+	return server, err
+}
 
-	server.Base, err = NewBase(srcFileName, logger, server, fsOpts)
+func (s *Server) Restart() error {
+	return s.init(s.logger)
+}
+
+func (s *Server) init(logger logrus.FieldLogger) error {
+	server := s
+	srcFs := server.srcFs
+	opts := server.opts
+
+	var err error
+	fsOpts := fsopts.NewOptionsWidthFileName(server.srcFileName, "/")
+
+	server.definition, err = definition.NewDefinition(srcFs, "/definition/params")
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	server.Base, err = NewBase(server.srcFileName, logger, server, fsOpts)
+	if err != nil {
+		return err
 	}
 
 	for _, opt := range opts {
@@ -92,14 +114,23 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, env co
 		}
 		return nil
 	})
-
-	return server, err
+	return nil
 }
 
+// GetCacheEnable
+//
+//	@Description: 是否启用缓存模式
+//	@receiver s
+//	@return bool
 func (s *Server) GetCacheEnable() bool {
 	return s.cacheEnable
 }
 
+// GetSrcFs
+//
+//	@Description: 取得源代码文件FS
+//	@receiver s
+//	@return afero.Fs
 func (s *Server) GetSrcFs() afero.Fs {
 	return s.srcFs
 }
@@ -108,6 +139,11 @@ func (s *Server) ReadSrcFile(fileName string, opts ...*fsopts.Options) ([]byte, 
 	return fs.ReadFile(s.srcFs, fileName, opts...)
 }
 
+// GetSchemaLoader
+//
+//	@Description: 取得Schema加载器，实现对引用schema文件加载
+//	@receiver s
+//	@return schema.URLLoader
 func (s *Server) GetSchemaLoader() schema.URLLoader {
 	return s.schemaLoader
 }
@@ -125,12 +161,23 @@ func (s *Server) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, err
 	return data, nil
 }
 
+func (s *Server) Start() (err error) {
+	defer func() {
+		err = utils.RecoverError(err, recover())
+		if err != nil {
+			err = errors.New("Start : %s", err.Error())
+		}
+	}()
+	err = s.start()
+	return err
+}
+
 // Start
 //
 //	@Description: 启动服务
 //	@receiver s
 //	@return error
-func (s *Server) Start() error {
+func (s *Server) start() error {
 	htmlData, err := fs.ReadFile(s.srcFs, s.srcFileName, s.fsOpts)
 	if err != nil {
 		return err
@@ -202,6 +249,7 @@ func (s *Server) parse(doc *goquery.Document) error {
 			// 获取 url 属性
 			fileUrl, exists := sel.Attr("href")
 			if exists {
+				s.Logs(logrus.InfoLevel, "server.parse() %s ", fileUrl)
 				data, err := s.ReadSrcFile(fileUrl, s.fsOpts)
 				if err != nil {
 					panic(err)
@@ -211,17 +259,36 @@ func (s *Server) parse(doc *goquery.Document) error {
 				if err != nil {
 					panic(err)
 				}
+
 				isHas := s.services.Has(service.config.Name)
 				if isHas {
 					errMsg := fmt.Sprintf("service %s already exists", service.config.Name)
 					panic(errMsg)
 				}
+				s.Logs(logrus.InfoLevel, "service name=%s; url=%s;", service.config.Name, service.config.URL)
 				s.services.Set(service.config.Name, service)
 			}
 		}
 	})
 
 	return nil
+}
+
+func (s *Server) Logs(level logrus.Level, format string, args ...interface{}) {
+	switch level {
+	case logrus.DebugLevel:
+		s.logger.Debugf(format, args...)
+	case logrus.InfoLevel:
+		s.logger.Infof(format, args...)
+	case logrus.WarnLevel:
+		s.logger.Warnf(format, args...)
+	case logrus.ErrorLevel:
+		s.logger.Errorf(format, args...)
+	case logrus.FatalLevel:
+		s.logger.Fatalf(format, args...)
+	case logrus.PanicLevel:
+		s.logger.Panicf(format, args...)
+	}
 }
 
 // GetFsPkg
