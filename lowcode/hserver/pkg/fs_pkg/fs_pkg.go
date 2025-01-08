@@ -66,6 +66,14 @@ func NewFsPkg(cfg common.IEnvConfig, fsName string) (*FsPkg, error) {
 	return fsm, nil
 }
 
+func (m *FsPkg) NewFs(fsName string) *FsPkg {
+	fs, err := NewFsPkg(m.cfg, fsName)
+	if err != nil {
+		panic(err)
+	}
+	return fs
+}
+
 // Create
 //
 //	@Description: 创建文件

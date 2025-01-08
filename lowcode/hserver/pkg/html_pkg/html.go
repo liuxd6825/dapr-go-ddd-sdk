@@ -20,14 +20,9 @@ func New(server pkg.Server) *HtmlPkg {
 }
 
 func NewHtmlPkg(server pkg.Server) *HtmlPkg {
-	fsPkg, err := fs_pkg.NewFsPkg(server.GetEnvConfig(), "web")
-	if err != nil {
-		panic(err)
-	}
 	fsm := &HtmlPkg{
 		server:  server,
 		builder: builder.NewBuilder(),
-		FsPkg:   fsPkg,
 	}
 	return fsm
 }
