@@ -13,7 +13,7 @@ func TestFs_LoadFile(t *testing.T) {
 		return
 	}
 
-	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""))
+	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""), "")
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -32,7 +32,7 @@ func TestFs_RemoveFile(t *testing.T) {
 		return
 	}
 
-	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""))
+	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""), "")
 	if err != nil {
 		t.Fatal(err)
 		return
