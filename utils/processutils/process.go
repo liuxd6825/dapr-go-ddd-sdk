@@ -1,7 +1,7 @@
 package processutils
 
 import (
-	"context"
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -16,7 +16,7 @@ import (
 type Process interface {
 	Start() error
 	Kill() (string, error)
-	CheckRunning() (string, error)
+	CheckRunning() (pid string, err error, isFound bool)
 	GetProcessInfo() ([]*ProcessInfo, error)
 }
 
@@ -35,12 +35,17 @@ func NewProcess(cmdName string, args []string, checkArgs ...string) Process {
 	return r
 }
 
+func logInfo(format string, args ...interface{}) {
+	logs.Infof(nil, "", nil, format, args)
+}
+
+func logError(format string, args ...interface{}) {
+	logs.Errorf(nil, "", nil, format, args)
+}
+
 func (p *process) Start() error {
-	ctx := context.Background()
-	cmd := exec.Command(p.cmdName, p.args...)
-	//cmd.Stdin = os.Stdin
-	//cmd.Stdout = os.Stdout
-	//cmd.Stderr = os.Stderr
+	var cmd *exec.Cmd
+	line := p.cmdName + " " + strings.Join(p.args, " ")
 
 	cmdLine := p.cmdName
 	count := len(p.args)
@@ -48,19 +53,21 @@ func (p *process) Start() error {
 		cmdLine = fmt.Sprintf("%s %s ", cmdLine, p.args[i])
 	}
 
-	logs.Infof(context.Background(), "", nil, cmdLine)
-	_, err := p.CheckRunning()
+	logInfo(cmdLine)
+	_, err, _ := p.CheckRunning()
 	if err != nil && !errors.Is(err, ErrNotFoundProcess) {
-		logs.Errorf(ctx, "", nil, "dapr start() error = %s", err.Error())
+		fmt.Printf("dapr start() error = %s \n", err.Error())
 		return err
 	}
 
-	err = cmd.Start()
+	cmd, err = runCmd(p.cmdName, line)
+	_, stderr := getCmdOuts(cmd)
 	if err != nil {
+		if stderr.Len() > 0 {
+			logError("dapr start() error = %s \n", stderr.String())
+		}
 		return errors.New(fmt.Sprintf("start %s process fail, error %s", p.cmdName, err.Error()))
 	}
-	logs.Debugfmt(context.Background(), "", "dapr process id = %v ", cmd.Process.Pid)
-
 	return err
 }
 
@@ -85,7 +92,7 @@ func (p *process) Kill() (pid string, err error) {
 		}
 	}()
 
-	pid, err = p.CheckRunning()
+	pid, err, _ = p.CheckRunning()
 	if err != nil {
 		return pid, err
 	}
@@ -109,18 +116,21 @@ func (p *process) kill(pid string) error {
 }
 
 // CheckRunning 根据进程名判断进程是否运行
-func (p *process) CheckRunning() (string, error) {
-	pid, err := runCommand(p.cmdName, p.check)
+func (p *process) CheckRunning() (pid string, err error, isFound bool) {
+	pid, err = runCmdPid(p.cmdName, p.check)
 	if err != nil {
-		return "", err
+		if exit, ok := err.(*exec.ExitError); ok {
+			return "", errors.New(string(exit.Stderr)), false
+		}
+		return "", err, false
 	}
-	return pid, nil
+	return pid, nil, true
 }
 
 // GetPid 根据进程名称获取进程ID
 func (p *process) GetPid() (pid int, err error) {
 	var pidStr string
-	if pidStr, err = runCommand(p.cmdName, p.check); err != nil {
+	if pidStr, err = runCmdPid(p.cmdName, p.check); err != nil {
 		return
 	}
 	pid, err = strconv.Atoi(pidStr)
@@ -129,50 +139,69 @@ func (p *process) GetPid() (pid int, err error) {
 
 // GetProcessInfo 根据进程名称获取进程ID
 func (p *process) GetProcessInfo() ([]*ProcessInfo, error) {
-	var result []byte
 	var err error
-	fmt.Println("  " + p.check)
-	if runtime.GOOS == "windows" {
-		result, err = exec.Command("cmd", "/c", p.check).Output()
-	} else {
-		result, err = exec.Command("/bin/sh", "-c", p.check).Output()
-	}
+	logInfo(p.check)
+	cmd, err := runCmd(p.cmdName, p.check)
 	if err != nil {
+
 		return nil, err
 	}
-	res := getPids(string(result), p.cmdName)
+	stderr, _ := getCmdOuts(cmd)
+	res := getPids(stderr.String(), p.cmdName)
 	return res, nil
 }
 
-func runCommand(cmdName string, cmdLine string) (string, error) {
+func getCmdOuts(cmd *exec.Cmd) (stdout *bytes.Buffer, stderr *bytes.Buffer) {
+	stdout = cmd.Stdout.(*bytes.Buffer)
+	stderr = cmd.Stderr.(*bytes.Buffer)
+	return stdout, stderr
+}
+
+func runCmdPid(cmdName string, cmdLine string) (string, error) {
+	var stdout *bytes.Buffer
+	cmd, err := runCmd(cmdName, cmdLine)
+	if err != nil {
+		return "", err
+	}
+	stdout, _ = getCmdOuts(cmd)
+
+	pInfos := getPids(stdout.String(), cmdName)
+	if len(pInfos) > 0 {
+		return pInfos[0].PID, nil
+	}
+	return "", ErrNotFoundProcess
+}
+
+func runCmd(cmdName string, cmdLine string) (*exec.Cmd, error) {
+	var stderr bytes.Buffer
+	var stdout bytes.Buffer
+	cmd := newCmd(cmdLine)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Start()
+	if err != nil {
+		logError("runCmd() error = %s \n", err.Error())
+		return nil, err
+	}
+	return cmd, nil
+}
+
+func newCmd(cmdLine string) *exec.Cmd {
+	var cmd *exec.Cmd
+	if isWindowsOS() {
+		cmd = exec.Command("powershell", "-NoProfile", "-Command", cmdLine)
+	} else {
+		cmd = exec.Command("/bin/sh", "-c", cmdLine)
+	}
+
+	return cmd
+}
+
+func isWindowsOS() bool {
 	if runtime.GOOS == "windows" {
-		return runInWindows(cmdName, cmdLine)
+		return true
 	}
-	return runInLinux(cmdName, cmdLine)
-}
-
-func runInWindows(cmdName string, cmdLine string) (string, error) {
-	result, err := exec.Command("cmd", "/c", cmdLine).Output()
-	if err != nil {
-		return "", err
-	}
-	pinfos := getPids(string(result), cmdName)
-	if len(pinfos) > 0 {
-		return pinfos[0].PID, nil
-	}
-	return "", ErrNotFoundProcess
-}
-
-func runInLinux(cmdName string, cmdLine string) (string, error) {
-	result, err := exec.Command("/bin/sh", "-c", cmdLine).Output()
-	if err != nil {
-		return "", err
-	}
-	pinfos := getPids(string(result), cmdName)
-	if len(pinfos) > 0 {
-		return pinfos[0].PID, nil
-	}
-	return "", ErrNotFoundProcess
+	return false
 }
 
 func getPids(outText string, cmdName string) []*ProcessInfo {

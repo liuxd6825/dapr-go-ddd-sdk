@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/processutils"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func start(env *EnvConfig) {
@@ -126,6 +127,10 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	}
 
 	ctx := context.Background()
+
+	line := strings.Join(args, " ")
+	logs.InfoMsg(ctx, "", "daprd "+line)
+
 	errCount := 0
 	if !fileutils.IsExist(config) {
 		logs.Errorf(ctx, "", nil, "dapr -config=%s not exist", config)
