@@ -46,31 +46,25 @@ func NewFsWriteModel() *FsWriteModel {
 //	@return *FsPkg
 //	@return error
 func NewFsPkg(cfg common.IEnvConfig, fsName string) (*FsPkg, error) {
-	fsManager, err := cfg.GetFsManager()
+	fsM, err := cfg.GetFsManager()
 	if err != nil {
 		return nil, err
 	}
 
-	var fs afero.Fs
-	var fsM *fsm.Manager = fsManager
 	if fsName != "" {
-		var ok bool
-		fs, ok = fsManager.GetFs(fsName)
-		if ok {
-			fsM = fsm.NewManager()
-			fsM.DefaultFsName = fsName
-			fsM.AddFs(fsName, fs)
+		fsM, err = fsM.NewFsm(fsName)
+		if err != nil {
+			panic(err)
 		}
 	}
 
 	fsPkg := &FsPkg{
 		cfg:         cfg,
 		fsName:      fsName,
-		fs:          fs,
 		WriteModels: NewFsWriteModel(),
+		base:        fsM,
 	}
 
-	fsPkg.base = fsM
 	return fsPkg, nil
 }
 
