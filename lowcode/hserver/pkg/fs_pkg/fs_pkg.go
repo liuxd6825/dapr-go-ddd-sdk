@@ -55,11 +55,11 @@ func NewFsPkg(cfg common.IEnvConfig, fsName string) (*FsPkg, error) {
 	var fsM *fsm.Manager = fsManager
 	if fsName != "" {
 		var ok bool
-		fs, ok = fsManager.Get(fsName)
+		fs, ok = fsManager.GetFs(fsName)
 		if ok {
 			fsM = fsm.NewManager()
 			fsM.DefaultFsName = fsName
-			fsM.Add(fsName, fs)
+			fsM.AddFs(fsName, fs)
 		}
 	}
 
@@ -89,8 +89,7 @@ func (m *FsPkg) NewFs(fsName string) *FsPkg {
 //	@param name
 //	@param opts
 func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
-
-	file, err := m.base.Create(name, opts...)
+	file, err := m.base.CreateFile(name, opts...)
 	if err != nil {
 		panic(err)
 	}

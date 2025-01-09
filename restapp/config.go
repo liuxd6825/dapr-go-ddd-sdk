@@ -280,7 +280,7 @@ func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
 	if err != nil {
 		return nil, err
 	}
-	fs, ok := m.Get(name)
+	fs, ok := m.GetFs(name)
 	if ok {
 		return fs, nil
 	}

@@ -228,7 +228,7 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	if fsKey == "" {
 		return errors.New("template fsKey is empty")
 	}
-	fs, ok := s.envConfig.fsManager.Get(fsKey)
+	fs, ok := s.envConfig.fsManager.GetFs(fsKey)
 	if !ok {
 		return errors.New("template fsManager fs key not found %s", fsKey)
 	}

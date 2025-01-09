@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var StartCmd = &cobra.Command{
+var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "启动",
 	Long:  "启动应用进程与dapr守护进程",
@@ -21,6 +21,7 @@ var StartCmd = &cobra.Command{
 	},
 }
 
-func newStartCmd() *cobra.Command {
-	return StartCmd
+func getStartCmd() *cobra.Command {
+
+	return startCmd
 }

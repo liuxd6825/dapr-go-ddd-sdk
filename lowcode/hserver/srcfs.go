@@ -26,7 +26,7 @@ func (c *SrcFs) ToMap() map[string]afero.Fs {
 func (c *SrcFs) NewFsManager() *fsm.Manager {
 	m := fsm.NewManager()
 	m.DefaultFsName = "file"
-	m.Add("file", c.FileFs)
-	m.Add("http", c.HttpFs)
+	m.AddFs("file", c.FileFs)
+	m.AddFs("http", c.HttpFs)
 	return m
 }

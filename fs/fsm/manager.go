@@ -99,16 +99,31 @@ func NewManagerWithConfigs(maps []map[string]any, defaultFsName string) (*Manage
 		if err != nil {
 			return nil, err
 		}
-		manger.Add(id, fs)
+		manger.AddFs(id, fs)
 	}
 	return manger, nil
 }
 
-func (m *Manager) Add(name string, fs afero.Fs) {
+func (m *Manager) NewFsm(fsName string) (*Manager, error) {
+	fsm := NewManager()
+	fsm.DefaultFsName = fsName
+	for _, name := range m.fsMap.Keys() {
+		if v, ok := m.GetFs(name); ok {
+			fsm.AddFs(name, v)
+		}
+	}
+	return fsm, nil
+}
+
+func (m *Manager) HasFs(name string) bool {
+	return m.fsMap.Has(name)
+}
+
+func (m *Manager) AddFs(name string, fs afero.Fs) {
 	m.fsMap.Set(name, fs)
 }
 
-func (m *Manager) Get(name string) (afero.Fs, bool) {
+func (m *Manager) GetFs(name string) (afero.Fs, bool) {
 	fs, ok := m.fsMap.Get(name)
 	if !ok {
 		return nil, false
@@ -116,11 +131,11 @@ func (m *Manager) Get(name string) (afero.Fs, bool) {
 	return fs.(afero.Fs), true
 }
 
-func (m *Manager) Remove(name string) {
+func (m *Manager) RemoveFs(name string) {
 	m.fsMap.Remove(name)
 }
 
-func (m *Manager) Map() map[string]afero.Fs {
+func (m *Manager) MapFs() map[string]afero.Fs {
 	data := make(map[string]afero.Fs)
 	for k, v := range m.fsMap.Items() {
 		data[k] = v.(afero.Fs)
@@ -133,7 +148,7 @@ func (m *Manager) GetFsByFileUrl(fileUrl string) (afero.Fs, error) {
 	return afs, err
 }
 
-func (m *Manager) Create(filename string, opts ...*fsopts.Options) (afero.File, error) {
+func (m *Manager) CreateFile(filename string, opts ...*fsopts.Options) (afero.File, error) {
 	opt := fsopts.NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)
 	if err != nil {
@@ -313,7 +328,7 @@ func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err err
 	if err != nil {
 		return nil, "", err
 	}
-	fs, ok := m.Get(fsName)
+	fs, ok := m.GetFs(fsName)
 	if !ok {
 		return nil, "", errors.New(fmt.Sprintf("fs name \"%s\" not found", fsName))
 	}
