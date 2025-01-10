@@ -22,6 +22,14 @@ var startCmd = &cobra.Command{
 }
 
 func getStartCmd() *cobra.Command {
+	homePath, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 
+	startCmd.PersistentFlags().StringVar(&runFlag.Config, "config", "./config/config.yaml", "配置文件名")
+	startCmd.PersistentFlags().StringVar(&runFlag.Env, "env", "", "配置文件中定义的env环境名称")
+	startCmd.PersistentFlags().StringVar(&runFlag.HomePath, "homePath", homePath, "home path")
+	startCmd.PersistentFlags().StringVar(&runFlag.MainFile, "mainFile", "main.html", "main file (default is main.html)")
 	return startCmd
 }

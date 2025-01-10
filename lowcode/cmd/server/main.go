@@ -21,7 +21,7 @@ func main() {
 			webName := envCfg.WebName
 			return hserver.InitServer(flag.MainFile, srcName, webName, server)
 		})
-		restapp.GetSysPaths().Set("WorkPath", flag.WorkPath)
+		restapp.GetSysPaths().Set("WorkPath", flag.HomePath)
 		_, err := restapp.RunWithConfig(flag.Env, flag.Config, nil, nil, nil, nil, opts)
 		return err
 	}, func(opts *appcmd.Option) {

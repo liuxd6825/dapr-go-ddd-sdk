@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var runFlag = &restapp.RunFlag{}
@@ -25,7 +24,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Start(fun func(flag *restapp.RunFlag) error, options ...Options) {
-	opt := &Option{Version: "", AppTitle: "应用服务"}
+	opt := &Option{Version: "1.0.0", AppTitle: "应用服务"}
 	for _, o := range options {
 		if o != nil {
 			o(opt)
@@ -50,18 +49,9 @@ func Start(fun func(flag *restapp.RunFlag) error, options ...Options) {
 }
 
 func newRootCmd(appTitle string) *cobra.Command {
-	workPath, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
 	name := restapp.GetExeName()
 	rootCmd.Use = name
 	rootCmd.Short = appTitle
 	rootCmd.Long = appTitle
-	rootCmd.PersistentFlags().StringVarP(&runFlag.Config, "config", "c", "./config/config.yaml", "配置文件名")
-	rootCmd.PersistentFlags().StringVarP(&runFlag.Env, "env", "e", "", "配置文件中定义的env环境名称")
-	rootCmd.PersistentFlags().StringVarP(&runFlag.WorkPath, "workPath", "w", workPath, "src path")
-	rootCmd.PersistentFlags().StringVarP(&runFlag.MainFile, "mainFile", "m", "main.html", "main file (default is $HOME/main.html)")
 	return rootCmd
 }

@@ -28,9 +28,15 @@ type RegisterHandler interface {
 	RegisterHandler(app *iris.Application)
 }
 
-func RunWithConfig(envName string, configFile string, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
-	options ...*RunOptions) (common.Service, error) {
+func RunWithConfig(
+	envName string,
+	configFile string,
+	subsFunc func() []RegisterSubscribe,
+	controllersFunc func() []Controller,
+	eventsFunc func() []RegisterEventType,
+	actorsFunc func() []actor.FactoryContext,
+	options ...*RunOptions,
+) (common.Service, error) {
 
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
@@ -160,9 +166,15 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 // @param eventStorages
 // @param eventTypesFunc
 // @return error
-func run(runCfg *RunConfig, webRootPath string, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventTypesFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext,
-	runOptions ...*RunOptions) (res common.Service, err error) {
+func run(
+	runCfg *RunConfig,
+	webRootPath string,
+	subsFunc func() []RegisterSubscribe,
+	controllersFunc func() []Controller,
+	eventTypesFunc func() []RegisterEventType,
+	actorsFunc func() []actor.FactoryContext,
+	runOptions ...*RunOptions,
+) (res common.Service, err error) {
 
 	defer func() {
 		err = errors.GetRecoverError(err, recover())

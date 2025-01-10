@@ -15,6 +15,7 @@ var (
 	pathName     = "" // 当前应用路径
 	pid          = "" // 当前进程PID
 	envName      = ""
+	workPath     = ""
 )
 var (
 	AppTitle  = "" // 应用名称
@@ -34,6 +35,13 @@ func init() {
 
 	sysPaths = types.NewCMap[string]()
 	sysPaths.Set("ExeName", exeName)
+
+	wPath, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	workPath = wPath
+	sysPaths.Set("WorkPath", workPath)
 }
 
 func GetSysPaths() *types.CMap[string] {
@@ -74,6 +82,10 @@ func GetExeName() string {
 //	@return string
 func GetNoExtExeName() string {
 	return noExtExeName
+}
+
+func GetWorkPath() string {
+	return workPath
 }
 
 func SetExeName(name string) {

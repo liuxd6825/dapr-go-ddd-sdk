@@ -21,7 +21,7 @@ func newInitDbCmd() *cobra.Command {
 			}
 		},
 	}
-	initCmd.LocalFlags().StringVarP(&runFlag.DbKey, "db-key", "d", "", "配置文件中数据库的关键字")
-	initCmd.LocalFlags().StringVarP(&runFlag.Prefix, "prefix", "o", "", "数据表名的前缀符")
+	initCmd.LocalFlags().StringVar(&runFlag.DbKey, "db-key", "", "配置文件中数据库的关键字")
+	initCmd.LocalFlags().StringVar(&runFlag.Prefix, "prefix", "", "数据表名的前缀符")
 	return initCmd
 }

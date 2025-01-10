@@ -7,7 +7,7 @@ type RunFlag struct {
 	Env      string
 	Config   string
 	MainFile string // hServer主文件
-	WorkPath string // hServer项目目录
+	HomePath string // hServer项目目录
 	SqlFile  string
 	DbKey    string
 	Prefix   string
