@@ -6,7 +6,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/spf13/afero"
-	"io"
 	"path/filepath"
 	"strings"
 )
@@ -121,8 +120,16 @@ func (h *Handler) writeFile(ictx iris.Context, fileName string) error {
 		return err
 	}
 	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		ictx.StatusCode(iris.StatusInternalServerError)
+		_, err = ictx.WriteString("Error reading template file")
+		return err
+	}
+
 	// 将文件流写入响应
-	_, err = io.Copy(ictx, file)
+	//_, err = io.Copy(ictx, file)
+	ictx.ServeContentWithRate(file, fileName, info.ModTime(), 0, 0)
 	return err
 }
 
@@ -160,7 +167,7 @@ func setContentType(ctx iris.Context, filename string) {
 		ctx.ContentType("text/html; charset=utf-8")
 	case ".css":
 		ctx.ContentType("text/css; charset=utf-8")
-	case ".min.js", ".js":
+	case ".js":
 		ctx.ContentType("application/javascript; charset=utf-8")
 	case ".jpg", ".jpeg":
 		ctx.ContentType("image/jpeg; charset=utf-8")
