@@ -119,6 +119,7 @@ func (h *Handler) writeFile(ictx iris.Context, fileName string) error {
 		_, err = ictx.WriteString("Error reading template file")
 		return err
 	}
+
 	defer file.Close()
 	info, err := file.Stat()
 	if err != nil {
