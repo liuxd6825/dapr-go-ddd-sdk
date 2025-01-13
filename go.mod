@@ -5,6 +5,9 @@ go 1.23.1
 toolchain go1.23.4
 
 require (
+	github.com/dapr/components-contrib v1.15.2
+	github.com/dapr/dapr v1.14.1
+	github.com/dapr/go-sdk v1.11.0
 	github.com/evanw/esbuild v0.24.0
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/goccy/go-json v0.10.2
@@ -12,9 +15,6 @@ require (
 	github.com/iris-contrib/swagger/v12 v12.0.1
 	github.com/jinzhu/copier v0.3.5
 	github.com/kataras/iris/v12 v12.2.11
-	github.com/liuxd6825/dapr v1.12.0
-	github.com/liuxd6825/dapr-components-contrib v1.12.0
-	github.com/liuxd6825/dapr-go-sdk v1.9.0
 	github.com/liuxd6825/jsonschema/v6 v6.0.1
 	github.com/liuxd6825/k6server v1.9.0
 	//github.com/mitchellh/mapstructure v1.5.0
@@ -211,11 +211,11 @@ replace github.com/liuxd6825/jsonschema/v6 => ../../jsonschema
 //replace github.com/liuxd6825/dapr-go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
 //replace github.com/liuxd6825/dapr-components-contrib => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
 
-replace github.com/liuxd6825/dapr => ../dapr
+replace github.com/dapr/dapr => ../dapr
 
-replace github.com/liuxd6825/dapr-go-sdk => ../dapr-go-sdk
+replace github.com/dapr/go-sdk => ../dapr-go-sdk
 
-replace github.com/liuxd6825/dapr-components-contrib => ../dapr-components-contrib
+replace github.com/dapr/components-contrib => ../dapr-components-contrib
 
 replace github.com/liuxd6825/k6server => ../../k6server
 
