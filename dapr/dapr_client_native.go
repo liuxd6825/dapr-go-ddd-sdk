@@ -2,11 +2,12 @@ package dapr
 
 import (
 	"context"
-	daprsdk "github.com/liuxd6825/dapr-go-sdk/client"
+	daprsdk "github.com/dapr/go-sdk/client"
 )
 
 type Client = daprsdk.Client
-type ClientOption = daprsdk.ClientOption
+
+//type ClientOption = daprsdk.ClientOption
 
 func newClient() (client Client, err error) {
 	return daprsdk.NewClient()
@@ -25,8 +26,8 @@ func newClientWithAddress(address string) (client Client, err error) {
 
 // NewClientWithAddressContext instantiates Dapr using specific address (including port).
 // Uses the provided context to create the connection.
-func newClientWithAddressContext(ctx context.Context, address string, opts ...ClientOption) (client Client, err error) {
-	return daprsdk.NewClientWithAddressContext(ctx, address, opts...)
+func newClientWithAddressContext(ctx context.Context, address string) (client Client, err error) {
+	return daprsdk.NewClientWithAddressContext(ctx, address)
 }
 
 // SetMaxCallRecvMsgSize

@@ -22,7 +22,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/liuxd6825/dapr-go-sdk/service/common"
+	"github.com/dapr/go-sdk/service/common"
 )
 
 const (
@@ -346,8 +346,8 @@ func (s *HttpServer) AddTopicEventHandler(sub *common.Subscription, fn common.To
 	return nil
 }
 
-func writeStatus(w http.ResponseWriter, s string) {
-	status := &common.SubscriptionResponse{Status: s}
+func writeStatus(w http.ResponseWriter, respStatus common.SubscriptionResponseStatus) {
+	status := &common.SubscriptionResponse{Status: respStatus}
 	if err := json.NewEncoder(w).Encode(status); err != nil {
 		http.Error(w, err.Error(), PubSubHandlerRetryStatusCode)
 	}

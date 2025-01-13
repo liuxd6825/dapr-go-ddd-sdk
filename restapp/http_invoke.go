@@ -21,7 +21,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/liuxd6825/dapr-go-sdk/service/common"
+	"github.com/dapr/go-sdk/service/common"
 )
 
 // AddServiceInvocationHandler appends provided service invocation handler with its route to the service.

@@ -3,6 +3,9 @@ package restapp
 import (
 	context2 "context"
 	"fmt"
+	"github.com/dapr/go-sdk/actor"
+	"github.com/dapr/go-sdk/actor/runtime"
+	"github.com/dapr/go-sdk/service/common"
 	"github.com/iris-contrib/swagger/v12"
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
 	"github.com/kataras/iris/v12"
@@ -16,9 +19,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html2/template"
 	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
-	"github.com/liuxd6825/dapr-go-sdk/actor"
-	"github.com/liuxd6825/dapr-go-sdk/actor/runtime"
-	"github.com/liuxd6825/dapr-go-sdk/service/common"
 	"net/http"
 	"strings"
 	"time"
@@ -41,24 +41,25 @@ type ServiceOptions struct {
 }
 
 type HttpServer struct {
-	app            *iris.Application
-	appId          string
-	httpHost       string
-	httpPort       int
-	logLevel       applog.Level
-	daprDddClient  dapr.DaprClient
-	eventStores    map[string]ddd.EventStore
-	actorFactories []actor.FactoryContext
-	subscribes     []RegisterSubscribe
-	controllers    []Controller
-	eventTypes     []RegisterEventType
-	authToken      string
-	webRootPath    string
-	sdkServer      *http.Server
-	envConfig      *EnvConfig
-	inits          []RunInitFunc
-	swagger        *swagger3.Swagger
-	fs             *fsm.Manager
+	app              *iris.Application
+	appId            string
+	httpHost         string
+	httpPort         int
+	logLevel         applog.Level
+	daprDddClient    dapr.DaprClient
+	eventStores      map[string]ddd.EventStore
+	actorFactories   []actor.FactoryContext
+	subscribes       []RegisterSubscribe
+	controllers      []Controller
+	eventTypes       []RegisterEventType
+	jobEventHandlers map[string]common.JobEventHandler
+	authToken        string
+	webRootPath      string
+	sdkServer        *http.Server
+	envConfig        *EnvConfig
+	inits            []RunInitFunc
+	swagger          *swagger3.Swagger
+	fs               *fsm.Manager
 }
 
 type OnAppInit func(ctx context2.Context) error
@@ -74,6 +75,7 @@ func RegisterOnAppInit(init OnAppInit) {
 func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.Service {
 	actorRuntime := runtime.GetActorRuntimeInstanceContext()
 	envConfig := opts.EnvConfig
+
 	if opts.EnvConfig != nil {
 		actorConfig := actorRuntime.Config()
 		actorConfig.DrainOngingCallTimeout = envConfig.Dapr.Actor.DrainOngingCallTimeout
@@ -93,23 +95,44 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 	//app.RegisterView(tmpl)
 
 	return &HttpServer{
-		httpPort:       opts.HttpPort,
-		httpHost:       opts.HttpHost,
-		appId:          opts.AppId,
-		logLevel:       opts.LogLevel,
-		daprDddClient:  daprDddClient,
-		actorFactories: opts.ActorFactories,
-		subscribes:     opts.Subscribes,
-		controllers:    opts.Controllers,
-		eventTypes:     opts.EventTypes,
-		authToken:      opts.AuthToken,
-		webRootPath:    opts.WebRootPath,
-		envConfig:      opts.EnvConfig,
-		app:            app,
-		inits:          opts.Inits,
-		swagger:        swagger3.NewSwagger(),
+		httpPort:         opts.HttpPort,
+		httpHost:         opts.HttpHost,
+		appId:            opts.AppId,
+		logLevel:         opts.LogLevel,
+		daprDddClient:    daprDddClient,
+		actorFactories:   opts.ActorFactories,
+		subscribes:       opts.Subscribes,
+		controllers:      opts.Controllers,
+		eventTypes:       opts.EventTypes,
+		authToken:        opts.AuthToken,
+		webRootPath:      opts.WebRootPath,
+		envConfig:        opts.EnvConfig,
+		app:              app,
+		inits:            opts.Inits,
+		swagger:          swagger3.NewSwagger(),
+		jobEventHandlers: make(map[string]common.JobEventHandler),
 	}
 
+}
+
+// AddJobEventHandler
+//
+//	@Description:  Dapr服务方法
+//	@receiver s
+//	@param name
+//	@param fn
+//	@return error
+func (s *HttpServer) AddJobEventHandler(name string, fn common.JobEventHandler) error {
+	if name == "" {
+		return errors.New("job event name cannot be empty")
+	}
+
+	if fn == nil {
+		return errors.New("job event handler not supplied")
+	}
+
+	s.jobEventHandlers[name] = fn
+	return nil
 }
 
 func (s *HttpServer) EnvConfig() *EnvConfig {

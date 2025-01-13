@@ -3,7 +3,7 @@ package ddd_mongodb
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-components-contrib/liuxd/common/utils"
+	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"

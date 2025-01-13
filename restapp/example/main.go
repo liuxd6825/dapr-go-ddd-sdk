@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/dapr/go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp/cmd"
-	"github.com/liuxd6825/dapr-go-sdk/actor"
 )
 
 var (

@@ -3,8 +3,8 @@ package dapr
 import (
 	"context"
 	"encoding/json"
+	pb "github.com/dapr/dapr/pkg/proto/runtime/v1"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 )
 
 func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {

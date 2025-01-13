@@ -1,9 +1,9 @@
 package restapp
 
 import (
+	"github.com/dapr/go-sdk/actor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-sdk/actor"
 	"sync"
 )
 

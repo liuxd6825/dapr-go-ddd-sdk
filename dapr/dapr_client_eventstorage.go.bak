@@ -3,7 +3,7 @@ package daprclient
 import (
 	"context"
 	"errors"
-	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
+	pb "github.com/dapr/dapr/pkg/proto/runtime/v1"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
 )
 

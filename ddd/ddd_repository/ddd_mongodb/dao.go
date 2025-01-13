@@ -2,7 +2,7 @@ package ddd_mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-components-contrib/liuxd/common/utils"
+	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"

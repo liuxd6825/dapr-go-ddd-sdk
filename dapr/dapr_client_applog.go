@@ -2,8 +2,8 @@ package dapr
 
 import (
 	"context"
+	pb "github.com/dapr/dapr/pkg/proto/runtime/v1"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	pb "github.com/liuxd6825/dapr/pkg/proto/runtime/v1"
 	"time"
 )
 
