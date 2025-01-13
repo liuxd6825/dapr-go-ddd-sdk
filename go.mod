@@ -26,8 +26,8 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.mongodb.org/mongo-driver v1.15.0
 	gopkg.in/yaml.v3 v3.0.1
-	gorm.io/driver/mysql v1.5.2
-	gorm.io/gorm v1.25.5
+	gorm.io/driver/mysql v1.5.7
+	gorm.io/gorm v1.25.12
 )
 
 require (
