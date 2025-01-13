@@ -195,9 +195,9 @@ func run(
 		subscribes = subsFunc()
 	}
 
-	var controlles []Controller
+	var controllers []Controller
 	if controllersFunc != nil {
-		controlles = controllersFunc()
+		controllers = controllersFunc()
 	}
 
 	var actorFactories []actor.FactoryContext
@@ -218,7 +218,7 @@ func run(
 		EventTypes: eventTypes,
 
 		Subscribes:     subscribes,
-		Controllers:    controlles,
+		Controllers:    controllers,
 		ActorFactories: actorFactories,
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
