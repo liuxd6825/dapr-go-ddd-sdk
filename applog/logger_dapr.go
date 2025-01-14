@@ -31,15 +31,18 @@ func (l *logger) GetEventLogByCommandId(ctx context.Context, req *GetEventLogByC
 }
 
 func (l *logger) WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error) {
-	return l.daprClient.WriteAppLog(ctx, req)
+	//return l.daprClient.WriteAppLog(ctx, req)
+	return nil, nil
 }
 
 func (l *logger) UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error) {
-	return l.daprClient.UpdateAppLog(ctx, req)
+	//return l.daprClient.UpdateAppLog(ctx, req)
+	return nil, nil
 }
 
 func (l *logger) GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error) {
-	return l.daprClient.GetAppLogById(ctx, req)
+	//return l.daprClient.GetAppLogById(ctx, req)
+	return nil, nil
 }
 
 func (l *logger) SetLevel(level Level) {

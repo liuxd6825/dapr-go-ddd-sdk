@@ -20,7 +20,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html2/template"
 	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -94,6 +93,7 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 	// this will load the templates.
 	//app.RegisterView(tmpl)
 
+	app.GetRoutes()
 	return &HttpServer{
 		httpPort:         opts.HttpPort,
 		httpHost:         opts.HttpHost,
@@ -113,26 +113,6 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		jobEventHandlers: make(map[string]common.JobEventHandler),
 	}
 
-}
-
-// AddJobEventHandler
-//
-//	@Description:  Dapr服务方法
-//	@receiver s
-//	@param name
-//	@param fn
-//	@return error
-func (s *HttpServer) AddJobEventHandler(name string, fn common.JobEventHandler) error {
-	if name == "" {
-		return errors.New("job event name cannot be empty")
-	}
-
-	if fn == nil {
-		return errors.New("job event handler not supplied")
-	}
-
-	s.jobEventHandlers[name] = fn
-	return nil
 }
 
 func (s *HttpServer) EnvConfig() *EnvConfig {
@@ -264,28 +244,6 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 		filePath := ictx.Params().Get("filePath")
 		render(ictx, filePath)
 	})
-	return nil
-}
-
-// AddHealthCheckHandler appends provided app health check handler.
-func (s *HttpServer) AddHealthCheckHandler(route string, fn common.HealthCheckHandler) error {
-	if fn == nil {
-		return fmt.Errorf("health check handler required")
-	}
-
-	if !strings.HasPrefix(route, "/") {
-		route = fmt.Sprintf("/%s", route)
-	}
-
-	s.app.HandleMany("ALL", route, optionsHandler(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			if err := fn(r.Context()); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			w.WriteHeader(http.StatusNoContent)
-		})))
 	return nil
 }
 

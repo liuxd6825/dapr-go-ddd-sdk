@@ -226,6 +226,7 @@ func (c *daprClient) GetEventLogByCommandId(ctx context.Context, req *GetEventLo
 	return response, nil
 }
 
+/*
 func (c *daprClient) WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error) {
 	request := &pb.WriteAppLogRequest{
 		Headers:  newRequstHeaders(&req.Headers),
@@ -291,3 +292,4 @@ func (c *daprClient) GetAppLogById(ctx context.Context, req *GetAppLogByIdReques
 	}
 	return resp, nil
 }
+*/

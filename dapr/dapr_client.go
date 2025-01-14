@@ -35,6 +35,7 @@ type DaprHttpOptions struct {
 // DaprClient
 // @Description: Dapr客户端
 type DaprClient interface {
+	daprsdkclient.Client
 	HttpGet(ctx context.Context, url string) *HttpResponse
 	HttpPost(ctx context.Context, url string, reqData interface{}) *HttpResponse
 	HttpPut(ctx context.Context, url string, reqData interface{}) *HttpResponse
@@ -43,9 +44,11 @@ type DaprClient interface {
 	WriteEventLog(ctx context.Context, req *WriteEventLogRequest) (resp *WriteEventLogResponse, resErr error)
 	UpdateEventLog(ctx context.Context, req *UpdateEventLogRequest) (resp *UpdateEventLogResponse, resErr error)
 	GetEventLogByCommandId(ctx context.Context, req *GetEventLogByCommandIdRequest) (resp *GetEventLogByCommandIdResponse, resErr error)
-	WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error)
-	UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error)
-	GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error)
+	/*
+		WriteAppLog(ctx context.Context, req *WriteAppLogRequest) (resp *WriteAppLogResponse, resErr error)
+		UpdateAppLog(ctx context.Context, req *UpdateAppLogRequest) (resp *UpdateAppLogResponse, resErr error)
+		GetAppLogById(ctx context.Context, req *GetAppLogByIdRequest) (resp *GetAppLogByIdResponse, resErr error)
+	*/
 
 	InvokeService(ctx context.Context, appID, methodName, verb string, request interface{}, response interface{}) (interface{}, error)
 	LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error)
