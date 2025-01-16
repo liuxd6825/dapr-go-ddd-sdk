@@ -245,6 +245,9 @@ func (s *HttpServer) registerBaseHandler() {
 	// register actor reminder invoke handler
 	s.app.Put("/actors/{actorType}/{actorId}/method/timer/{timerName}", s.actorTimerInvokeHandler)
 
+	s.app.HandleMany("ALL", "/jobs/{name}", func(context *iris_context.Context) {
+		println("/jobs/{name}")
+	})
 	// register swagger doc
 	s.registerSwagger()
 

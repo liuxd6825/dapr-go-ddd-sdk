@@ -14,6 +14,7 @@ var startCmd = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.ExactArgs(0)),
 	Run: func(cmd *cobra.Command, args []string) {
 		runFlag.RunType = restapp.RunTypeStart
+		restapp.GetSysPaths().Set("HomePath", runFlag.HomePath)
 		if err := runFunc(runFlag); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(0)
@@ -31,5 +32,6 @@ func getStartCmd() *cobra.Command {
 	startCmd.PersistentFlags().StringVar(&runFlag.Env, "env", "", "配置文件中定义的env环境名称")
 	startCmd.PersistentFlags().StringVar(&runFlag.HomePath, "homePath", homePath, "home path")
 	startCmd.PersistentFlags().StringVar(&runFlag.MainFile, "mainFile", "main.html", "main file (default is main.html)")
+
 	return startCmd
 }

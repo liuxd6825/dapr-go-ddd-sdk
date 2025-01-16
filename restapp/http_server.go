@@ -10,6 +10,7 @@ import (
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/core/host"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
@@ -36,7 +37,8 @@ type ServiceOptions struct {
 	WebRootPath    string
 	SwaggerDoc     string
 	EnvConfig      *EnvConfig
-	Inits          []RunInitFunc
+	OnInitEvents   []OnInitEvent
+	OnStartEvents  []OnStartEvent
 }
 
 type HttpServer struct {
@@ -54,20 +56,23 @@ type HttpServer struct {
 	jobEventHandlers map[string]common.JobEventHandler
 	authToken        string
 	webRootPath      string
-	sdkServer        *http.Server
 	envConfig        *EnvConfig
-	inits            []RunInitFunc
+	onInitEvents     []OnInitEvent
+	onStartEvents    []OnStartEvent
 	swagger          *swagger3.Swagger
 	fs               *fsm.Manager
+
+	httpServer *http.Server
+	daprServer common.Service
 }
 
-type OnAppInit func(ctx context2.Context) error
+type OnStartEvent func(server *HttpServer) error
 
-var _appInits []OnAppInit
+var _startEvents []OnStartEvent
 
-func RegisterOnAppInit(init OnAppInit) {
-	if init != nil {
-		_appInits = append(_appInits, init)
+func RegisterOnStartInit(startEvent OnStartEvent) {
+	if startEvent != nil {
+		_startEvents = append(_startEvents, startEvent)
 	}
 }
 
@@ -83,18 +88,8 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		actorConfig.DrainBalancedActors = envConfig.Dapr.Actor.DrainBalancedActors
 	}
 
-	app := iris.New()
-	//tmpl := iris.HTML("./views", ".html")
-
-	// Enable re-build on local template files changes.
-	//tmpl.Reload(true)
-
-	// Register the view engine to the views,
-	// this will load the templates.
-	//app.RegisterView(tmpl)
-
-	app.GetRoutes()
 	return &HttpServer{
+		app:              iris.New(),
 		httpPort:         opts.HttpPort,
 		httpHost:         opts.HttpHost,
 		appId:            opts.AppId,
@@ -107,22 +102,47 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		authToken:        opts.AuthToken,
 		webRootPath:      opts.WebRootPath,
 		envConfig:        opts.EnvConfig,
-		app:              app,
-		inits:            opts.Inits,
+		onInitEvents:     opts.OnInitEvents,
+		onStartEvents:    opts.OnStartEvents,
 		swagger:          swagger3.NewSwagger(),
 		jobEventHandlers: make(map[string]common.JobEventHandler),
 	}
 
 }
 
+// EnvConfig
+//
+//	@Description:
+//	@receiver s
+//	@return *EnvConfig
 func (s *HttpServer) EnvConfig() *EnvConfig {
 	return s.envConfig
 }
 
+// App
+//
+//	@Description:
+//	@receiver s
+//	@return *iris.Application
 func (s *HttpServer) App() *iris.Application {
 	return s.app
 }
 
+// DaprClient
+//
+//	@Description:
+//	@receiver s
+//	@return dapr.DaprClient
+func (s *HttpServer) DaprClient() dapr.DaprClient {
+	return s.daprDddClient
+}
+
+// Start
+//
+//	@Description:
+//	@Description:
+//	@receiver s
+//	@return error
 func (s *HttpServer) Start() error {
 	ctx := logs.NewContext(context2.Background())
 	defer func() {
@@ -151,7 +171,7 @@ func (s *HttpServer) Start() error {
 	}
 
 	s.registerBaseHandler()
-	for _, init := range s.inits {
+	for _, init := range s.onInitEvents {
 		if err := init(s); err != nil {
 			return err
 		}
@@ -161,37 +181,54 @@ func (s *HttpServer) Start() error {
 		panic(err.Error())
 	}
 
-	if s.actorFactories != nil {
-		for _, f := range s.actorFactories {
-			s.RegisterActorImplFactoryContext(f)
-		}
+	var actors []actor.FactoryContext
+	actors = append(actors, s.actorFactories...)
+	actors = append(actors, GetActors()...)
+	for _, f := range actors {
+		s.RegisterActorImplFactoryContext(f)
 	}
 
+	app.ConfigureHost(func(su *host.Supervisor) {
+		// httpServer:=su.Server
+		// println("httpServer", httpServer)
+	})
+
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
-	if err := app.Run(iris.Addr(addr), func(application *iris.Application) {
-		for _, onInit := range _appInits {
-			if err := onInit(ctx); err != nil {
-				panic(err.Error())
-			}
+	if err := app.Run(iris.Addr(addr), func(app *iris.Application) {
+		if err := s.doOnStartEvents(ctx, app); err != nil {
+			panic(err)
 		}
-
-		if err := s.startSubscribeHandlers(); err != nil {
-			panic(err.Error())
-		}
-
-		fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
-		if logs.GetLevel() <= logs.DebugLevel {
-			for _, v := range application.GetRoutes() {
-				logs.Debug(ctx, "", logs.Fields{"route": v.Method + " " + v.Path})
-			}
-		}
-
 	}); err != nil {
 		return err
 	}
 
 	return nil
 }
+
+func (s *HttpServer) doOnStartEvents(ctx context2.Context, app *iris.Application) error {
+	if err := s.startSubscribeHandlers(); err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
+	if logs.GetLevel() <= logs.DebugLevel {
+		for _, v := range app.GetRoutes() {
+			logs.Debug(ctx, "", logs.Fields{"route": v.Method + " " + v.Path})
+		}
+	}
+
+	var startEvents []OnStartEvent
+	startEvents = append(startEvents, _startEvents...)
+	startEvents = append(startEvents, s.onStartEvents...)
+
+	for _, event := range startEvents {
+		if err := event(s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *HttpServer) startSubscribeHandlers() error {
 	// 注册消息订阅
 	if s.subscribes != nil {
@@ -231,14 +268,17 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	if fsKey == "" {
 		return errors.New("template fsKey is empty")
 	}
+
 	fs, ok := s.envConfig.fsManager.GetFs(fsKey)
 	if !ok {
 		return errors.New("template fsManager fs key not found %s", fsKey)
 	}
+
 	render, err := template.NewHandler(fs)
 	if err != nil {
 		return err
 	}
+
 	apiUrl := fmt.Sprintf("%s/{filePath:path}", s.envConfig.App.Template.ApiUrl)
 	app.Get(apiUrl, func(ictx iris.Context) {
 		filePath := ictx.Params().Get("filePath")

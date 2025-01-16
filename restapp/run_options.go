@@ -2,19 +2,19 @@ package restapp
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 
-type RunInitFunc func(server *HttpServer) error
+type OnInitEvent func(server *HttpServer) error
 
 type RunOptions struct {
-	runType *RunType
-	tables  *Tables
-	sqlFile *string
-	prefix  *string
-	dbKey   *string
-	level   *logs.Level
-	status  *bool
-	stop    *bool
-	init    RunInitFunc
-	inits   []RunInitFunc
+	runType       *RunType
+	tables        *Tables
+	sqlFile       *string
+	prefix        *string
+	dbKey         *string
+	level         *logs.Level
+	status        *bool
+	stop          *bool
+	onInitEvents  []OnInitEvent
+	onStartEvents []OnStartEvent
 }
 
 func NewRunOptions(opts ...*RunOptions) *RunOptions {
@@ -43,8 +43,11 @@ func NewRunOptions(opts ...*RunOptions) *RunOptions {
 		if item.stop != nil {
 			o.stop = item.stop
 		}
-		if item.init != nil {
-			o.inits = append(o.inits, item.init)
+		for _, event := range item.onInitEvents {
+			o.onInitEvents = append(o.onInitEvents, event)
+		}
+		for _, event := range item.onStartEvents {
+			o.onStartEvents = append(o.onStartEvents, event)
 		}
 	}
 	return o
@@ -148,11 +151,20 @@ func (o *RunOptions) SetFlag(flag *RunFlag) *RunOptions {
 	return o
 }
 
-func (o *RunOptions) GetInit() func(server *HttpServer) error {
-	return o.init
+func (o *RunOptions) GetOnInitEvents() []OnInitEvent {
+	return o.onInitEvents
 }
 
-func (o *RunOptions) SetInitFunc(init func(server *HttpServer) error) *RunOptions {
-	o.init = init
+func (o *RunOptions) AddOnInitEvent(e OnInitEvent) *RunOptions {
+	if e != nil {
+		o.onInitEvents = append(o.onInitEvents, e)
+	}
+	return o
+}
+
+func (o *RunOptions) AddOnStartEvent(e OnStartEvent) *RunOptions {
+	if e != nil {
+		o.onStartEvents = append(o.onStartEvents, e)
+	}
 	return o
 }

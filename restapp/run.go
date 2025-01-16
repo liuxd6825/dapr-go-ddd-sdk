@@ -224,7 +224,8 @@ func run(
 		WebRootPath:    webRootPath,
 		EnvConfig:      runCfg.EnvConfig,
 
-		Inits: opt.inits,
+		OnInitEvents:  opt.onInitEvents,
+		OnStartEvents: opt.onStartEvents,
 	}
 	_envConfig = runCfg.EnvConfig
 	// 启动HTTP服务器

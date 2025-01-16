@@ -23,7 +23,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func Start(fun func(flag *restapp.RunFlag) error, options ...Options) {
+func StartCmd(fun func(flag *restapp.RunFlag) error, options ...Options) {
 	opt := &Option{Version: "1.0.0", AppTitle: "应用服务"}
 	for _, o := range options {
 		if o != nil {
