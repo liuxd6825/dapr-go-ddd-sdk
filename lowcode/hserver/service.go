@@ -16,7 +16,7 @@ import (
 type Service struct {
 	*Base
 	server     *Server
-	requests   *types.CMap[*Request]
+	requests   *types.CMap[*RequestHandler]
 	data       *types.CMap[any]
 	config     ServerConfig
 	initScript *ScriptConfig
@@ -49,7 +49,7 @@ func NewService(server *Server, html []byte, srcFileName string, data map[string
 	service := &Service{
 		server:   server,
 		data:     dataMap,
-		requests: types.NewCMap[*Request](),
+		requests: types.NewCMap[*RequestHandler](),
 		config:   ServerConfig{},
 	}
 	service.Base, err = NewBase(srcFileName, server.logger, service, fsOpts)
@@ -70,11 +70,11 @@ func (s *Service) InitVM(vm *goja.Runtime) error {
 	return nil
 }
 
-func (s *Service) AddRequest(r *Request) {
+func (s *Service) AddRequest(r *RequestHandler) {
 	s.requests.Set(r.config.Name, r)
 }
 
-func (s *Service) GetRequest(name string) *Request {
+func (s *Service) GetRequest(name string) *RequestHandler {
 	r, ok := s.requests.Get(name)
 	if !ok {
 		return nil
@@ -167,7 +167,7 @@ func (s *Service) parse(html []byte) error {
 	})
 
 	for _, cfg := range reqConfigs {
-		request, err := NewRequest(s.server, s, s.GetSrcFileName(), cfg)
+		request, err := NewRequestHandler(s.server, s, s.GetSrcFileName(), cfg)
 		if err != nil {
 			return err
 		}

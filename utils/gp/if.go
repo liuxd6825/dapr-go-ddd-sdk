@@ -1,4 +1,4 @@
-package goplus
+package gp
 
 // IfElse 若expr成立，则返回a；否则返回b。
 func IfElse[T any](expr bool, a, b T) T {

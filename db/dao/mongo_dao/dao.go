@@ -73,6 +73,9 @@ func NewDao[T ddd.Entity](collectionName string, opts ...*RepositoryOptions) *Da
 	}
 }
 
+func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
+	return d.dao.Count(ctx, tenantId, rsql, opts...)
+}
 func (d *Dao[T]) Save(ctx context.Context, setData *ddd.SetData[T], opts ...ddd_repository.Options) error {
 	return d.dao.Save(ctx, setData, opts...).GetError()
 }
@@ -111,6 +114,10 @@ func (d *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 
 func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error {
 	return d.dao.DeleteById(ctx, tenantId, id, opts...).GetError()
+}
+
+func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Options) error {
+	return d.dao.Delete(ctx, entity, opts...).GetError()
 }
 
 func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {

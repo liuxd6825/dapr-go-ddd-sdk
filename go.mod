@@ -35,6 +35,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/allegro/bigcache v1.2.1
 	github.com/casbin/casbin/v2 v2.103.0
+	github.com/dapr/durabletask-go v0.5.1-0.20241216172832-16da3e7c3530
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
@@ -48,6 +49,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
 	github.com/redis/go-redis/v9 v9.5.1
+	github.com/samber/lo v1.47.0
 	github.com/snownd/cake v0.6.0
 	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v1.8.1
@@ -85,7 +87,6 @@ require (
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/flosch/pongo2/v4 v4.0.2 // indirect
-	github.com/go-chi/chi/v5 v5.1.0 // indirect
 	github.com/go-fed/httpsig v1.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

@@ -217,8 +217,14 @@ func Infof(ctx context.Context, tenantId string, fields Fields, fmt string, args
 }
 
 func InfoMsg(ctx context.Context, tenantId string, args ...any) {
-	write(ctx, tenantId, nil, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
+	write(ctx, tenantId, nil, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Info(args...)
+	})
+}
+
+func Infofmt(ctx context.Context, tenantId string, fmt string, args ...any) {
+	write(ctx, tenantId, nil, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
+		l.Infof(fmt, args...)
 	})
 }
 

@@ -1,4 +1,4 @@
-package goplus
+package gp
 
 import "time"
 

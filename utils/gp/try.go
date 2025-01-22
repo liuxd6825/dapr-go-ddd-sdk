@@ -1,22 +1,19 @@
-package goplus
+package gp
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 
 // const string with rethrow message
 const gotry_rethrow = "----> Founded an Exception!!!\n"
 
-// Exception interface
-type Exception error
-
 // GoTry object
 type GoTry struct {
-	catch   func(Exception)
+	catch   func(error)
 	finally func()
-	Error   Exception
+	Error   error
 }
 
 // Throw function (return or rethrow an exception)
-func Throw(e Exception) {
+func Throw(e error) {
 	if e == nil {
 		panic(gotry_rethrow)
 	} else {
@@ -39,7 +36,7 @@ func Try(funcToTry func() error) (o *GoTry) {
 }
 
 // Catch function
-func (o *GoTry) Catch(funcCatched func(err Exception)) *GoTry {
+func (o *GoTry) Catch(funcCatched func(err error)) *GoTry {
 	o.catch = funcCatched
 	if o.Error != nil {
 		defer func() {

@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"github.com/dapr/go-sdk/client"
 	"github.com/dapr/go-sdk/workflow"
+	iris_context "github.com/kataras/iris/v12/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/restapp/cmd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/samber/lo"
 	"log"
 	"time"
 )
@@ -31,15 +34,43 @@ func main() {
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
 			println("---- OnStartEvent ----")
-			/*
-				daprClient := server.DaprClient()
-				w, err := workflow.NewWorker(workflow.WorkerWithDaprClient(daprClient))
-				if err != nil {
-					return err
-				}
+
+			daprClient := server.DaprClient()
+			w, err := workflow.NewWorker(workflow.WorkerWithDaprClient(daprClient))
+			if err != nil {
+				return err
+			}
+
+			go func() {
 				newWorkflow(w, daprClient)
 				fmt.Println("Worker initialized")
-			*/
+			}()
+
+			server.App().Get("/api/v1.0/workflow", func(ictx *iris_context.Context) {
+				iid := idutils.NewId()
+				lo.TryCatchWithErrorValue(func() error {
+					ctx := context.Background()
+					// Start workflow test
+					respStart, e := daprClient.StartWorkflowBeta1(ctx, &client.StartWorkflowRequest{
+						InstanceID:        iid,
+						WorkflowComponent: workflowComponent,
+						WorkflowName:      "TestWorkflow",
+						Options:           nil,
+						Input:             1,
+						SendRawInput:      false,
+					})
+					if e == nil && respStart != nil {
+						fmt.Printf("workflow started with id: %v\n", respStart.InstanceID)
+					}
+					return err
+				}, func(e any) {
+					if v, ok := e.(error); ok {
+						ictx.SetErr(v)
+					}
+					ictx.StatusCode(500)
+				})
+				println("/api/v1.0/workflow")
+			})
 			return nil
 		},
 	})
@@ -75,34 +106,6 @@ func newWorkflow(w *workflow.WorkflowWorker, daprClient dapr.Client) {
 		log.Fatal(err)
 	}
 	fmt.Println("runner started")
-
-	defer daprClient.Close()
-	ctx := context.Background()
-
-	wfClient, err := workflow.NewClient(workflow.WithDaprClient(daprClient))
-	if err != nil {
-		log.Fatalf("failed to intialise client: %v", err)
-	}
-	// Start workflow test
-	instanceID, err := wfClient.ScheduleNewWorkflow(ctx, "TestWorkflow", workflow.WithInstanceID("a7a4168d-3a1c-41da-8a4f-e7f6d9c718d9"), workflow.WithInput(1))
-	if err != nil {
-		log.Fatalf("failed to start workflow: %v", err)
-	}
-	fmt.Printf("workflow started with id: %v\n", instanceID)
-
-	// Start workflow test
-	respStart, err := daprClient.StartWorkflowBeta1(ctx, &client.StartWorkflowRequest{
-		InstanceID:        "a7a4168d-3a1c-41da-8a4f-e7f6d9c718d9",
-		WorkflowComponent: workflowComponent,
-		WorkflowName:      "TestWorkflow",
-		Options:           nil,
-		Input:             1,
-		SendRawInput:      false,
-	})
-	if err != nil {
-		log.Fatalf("failed to start workflow: %v", err)
-	}
-	fmt.Printf("workflow started with id: %v\n", respStart.InstanceID)
 
 }
 

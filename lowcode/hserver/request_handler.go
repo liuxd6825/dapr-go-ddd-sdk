@@ -3,6 +3,7 @@ package hserver
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 
 	"github.com/dop251/goja"
@@ -18,8 +19,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Request 定义单个请求的结构
-type Request struct {
+// RequestHandler 定义单个请求的结构
+type RequestHandler struct {
 	*Base
 	server          *Server
 	service         *Service
@@ -29,21 +30,10 @@ type Request struct {
 	schemaCache     *types.CMap[*jsonschema.Schema]
 }
 
-type RequestConfig struct {
-	Type          string       `json:"type"`
-	Name          string       `json:"name"`
-	URL           string       `json:"url"`
-	AbsURl        string       `json:"abs_uri"`
-	Description   string       `json:"description"`
-	ParamsType    string       `json:"params_type"`
-	LinkParamsUrl string       `json:"link_params_url"`
-	Script        ScriptConfig `json:"script"`
-}
-
-func NewRequest(server *Server, service *Service, srcFileName string, config RequestConfig) (*Request, error) {
+func NewRequestHandler(server *Server, service *Service, srcFileName string, config RequestConfig) (*RequestHandler, error) {
 	var err error
 	logger := service.GetLogger()
-	r := &Request{
+	r := &RequestHandler{
 		server:          server,
 		service:         service,
 		config:          config,
@@ -68,12 +58,12 @@ func NewRequest(server *Server, service *Service, srcFileName string, config Req
 	return r, nil
 }
 
-func (s *Request) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+func (s *RequestHandler) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
 	data, err := s.service.ReadFile(filename, opts...)
 	return data, err
 }
 
-func (s *Request) Initialize() error {
+func (s *RequestHandler) Initialize() error {
 	url := s.config.AbsURl
 	if url == "" {
 		url = s.service.config.URL + s.config.URL
@@ -82,11 +72,11 @@ func (s *Request) Initialize() error {
 	return nil
 }
 
-func (s *Request) GetLogger() logrus.FieldLogger {
+func (s *RequestHandler) GetLogger() logrus.FieldLogger {
 	return s.service.GetLogger()
 }
 
-func (s *Request) Handle(ictx iris.Context) {
+func (s *RequestHandler) Handle(ictx iris.Context) {
 	var ctx context.Context
 	var err error
 
@@ -94,10 +84,12 @@ func (s *Request) Handle(ictx iris.Context) {
 		err = utils.RecoverError(err, recover())
 		if err != nil {
 			utils.SetError(ictx, err)
+			logs.Errorfmt(ctx, "", "%s error:%s", ictx.Request().RequestURI, err.Error())
 		}
 	}()
 
 	ctx, err = restapp.NewContext(ictx)
+	logs.InfoMsg(ctx, "", "request %s", ictx.Request().RequestURI)
 	if err != nil {
 		return
 	}
@@ -105,7 +97,7 @@ func (s *Request) Handle(ictx iris.Context) {
 	s.runScript(wctx, s.GetParamsValue(wctx))
 }
 
-func (s *Request) runScript(wctx *WebContext, params any) {
+func (s *RequestHandler) runScript(wctx *WebContext, params any) {
 	values := &RunValues{
 		Server:     s.server,
 		Self:       s.service,
@@ -139,7 +131,7 @@ func (s *Request) runScript(wctx *WebContext, params any) {
 //	@receiver r
 //	@param ctx
 //	@return map[string]any
-func (s *Request) GetUrlParams(ctx iris.Context) map[string]any {
+func (s *RequestHandler) GetUrlParams(ctx iris.Context) map[string]any {
 	p := make(map[string]any)
 	// 获取所有路径参数
 	pathParams := ctx.Params()
@@ -163,7 +155,7 @@ func (s *Request) GetUrlParams(ctx iris.Context) map[string]any {
 //	@param ictx
 //	@return string  参数文件名
 //	@return xtype.ParamsType  参数配置类型
-func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
+func (s *RequestHandler) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 	fsOpts := &fsopts.Options{
 		RootPath: s.server.GetRootPath(),
 		WorkPath: s.service.fsOpts.WorkPath,
@@ -213,7 +205,7 @@ func (s *Request) GetParamsType(ictx iris.Context) (string, xtype.ParamsType) {
 //	@param aParams  通过对象定义的参数类型
 //	@param cfgUrl  通过url定义的参数类型,
 //	@return map[string]any 参数
-func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
+func (s *RequestHandler) GetParamsValue(wctx *WebContext) map[string]any {
 	var err error
 	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ictx)
 	if paramsType == nil {
@@ -269,6 +261,6 @@ func (s *Request) GetParamsValue(wctx *WebContext) map[string]any {
 	return data
 }
 
-func (s *Request) SetSelfVMValue(name string, vm *goja.Runtime) error {
+func (s *RequestHandler) SetSelfVMValue(name string, vm *goja.Runtime) error {
 	return nil
 }

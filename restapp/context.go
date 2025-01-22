@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/goplus"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"strings"
 )
 
@@ -40,7 +40,7 @@ func NewLoggerContext(ctx context.Context) context.Context {
 //	@return err
 func NewContextNoAuth(ictx iris.Context) (newCtx context.Context, err error) {
 	return NewContext(ictx, func(opt *ContextOption) {
-		opt.CheckAuth = goplus.PBool(false)
+		opt.CheckAuth = gp.PBool(false)
 		opt.TenantId = nil
 	})
 }
@@ -80,7 +80,7 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 
 	//添加 租户 上下文
 	if opt.TenantId != nil {
-		newCtx = appctx.NewTenantContext(newCtx, goplus.String(opt.TenantId, ""))
+		newCtx = appctx.NewTenantContext(newCtx, gp.String(opt.TenantId, ""))
 	}
 
 	// 添加 Header 上下文
@@ -88,7 +88,7 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 	newCtx = appctx.NewHeaderContext(newCtx, header)
 
 	//添加 用户认证 上下文
-	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], goplus.Bool(opt.CheckAuth))
+	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], gp.Bool(opt.CheckAuth))
 	if err != nil {
 		return nil, err
 	}

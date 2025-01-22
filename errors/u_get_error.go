@@ -31,16 +31,12 @@ func GetError(re any) (err error) {
 	err = nil
 	if re != nil {
 		switch re.(type) {
-		case string:
-			{
-				msg, _ := re.(string)
-				err = errors.New(msg)
-			}
 		case error:
-			{
-				e, _ := re.(error)
-				err = e
-			}
+			e, _ := re.(error)
+			err = e
+		case string:
+			msg, _ := re.(string)
+			err = errors.New(msg)
 		}
 	}
 	return

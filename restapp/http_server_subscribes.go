@@ -5,7 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/goplus"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
 // registerSubscribeHandler
@@ -21,7 +21,7 @@ func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, query
 
 		s.app.Handle("POST", subscribe.Route, func(ictx *context.Context) {
 			ctx, err := NewContext(ictx, func(option *ContextOption) {
-				option.CheckAuth = goplus.PBool(false)
+				option.CheckAuth = gp.PBool(false)
 			})
 			if err != nil {
 				err = errors.ErrorOf("处理subscribe,调用NewContext()出错。错误:%s", err.Error())
