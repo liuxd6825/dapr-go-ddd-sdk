@@ -11,6 +11,7 @@ import (
 type ConvertType = string
 
 const (
+	ConvertTypeNumber   ConvertType = "number"
 	ConvertTypeInt      ConvertType = "int"
 	ConvertTypeFloat    ConvertType = "float"
 	ConvertTypeString   ConvertType = "string"
@@ -22,7 +23,7 @@ const (
 
 func Convert(convType ConvertType, value any) (any, error) {
 	switch convType {
-	case ConvertTypeInt:
+	case ConvertTypeNumber, ConvertTypeInt:
 		return ConvertInt(value)
 	case ConvertTypeFloat:
 		return ConvertFloat(value)
@@ -46,6 +47,15 @@ func ConvertString(value any) (string, error) {
 }
 
 func ConvertInt(value any) (int64, error) {
+	if value == nil {
+		return 0, nil
+	}
+	if s, ok := value.(string); ok {
+		if s == "" {
+			return 0, nil
+		}
+		value = s
+	}
 	v, err := convertor.ToInt(value)
 	if err != nil {
 		return 0, errors.New("%sv is not int", v)

@@ -5,13 +5,13 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	"strings"
 )
 
 type Feign struct {
-	server pkg.Server
+	server element.Server
 	values map[string]any
 }
 
@@ -29,11 +29,11 @@ type FeignOptions struct {
 	Params map[string]FeignParam
 }
 
-func New(server pkg.Server) *Feign {
+func New(server element.Server) *Feign {
 	return newFeign(server)
 }
 
-func newFeign(server pkg.Server) *Feign {
+func newFeign(server element.Server) *Feign {
 	feign := &Feign{server: server}
 	feign.values = map[string]any{
 		"call":   feign.Call,
@@ -46,8 +46,8 @@ func newFeign(server pkg.Server) *Feign {
 	return feign
 }
 
-func (f *Feign) NewProxy(vm *goja.Runtime, workPath string) *pkg.Proxy {
-	return pkg.NewProxy(f.server, vm, workPath, f.values)
+func (f *Feign) NewProxy(vm *goja.Runtime, workPath string) *element.Proxy {
+	return element.NewProxy(f.server, vm, workPath, f.values)
 }
 
 func (f *Feign) Call(ctx context.Context, options *FeignOptions, params map[string]any) any {

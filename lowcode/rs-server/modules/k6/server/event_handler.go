@@ -144,3 +144,7 @@ func (r *subscribeService) GetHandler() ddd.QueryEventHandler {
 func (r *subscribeService) GetInterceptor() []ddd.SubscribeInterceptorFunc {
 	return r.interceptors
 }
+
+func (r *subscribeService) GetEventHandler() ddd.QueryEventHandler {
+	return r.handler
+}

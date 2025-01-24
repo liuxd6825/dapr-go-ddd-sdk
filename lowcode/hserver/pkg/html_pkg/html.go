@@ -3,23 +3,23 @@ package html_pkg
 import (
 	"bytes"
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html/builder"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type HtmlPkg struct {
-	server  pkg.Server
+	server  element.Server
 	builder *builder.Builder
 	*fs_pkg.FsPkg
 }
 
-func New(server pkg.Server) *HtmlPkg {
+func New(server element.Server) *HtmlPkg {
 	return NewHtmlPkg(server)
 }
 
-func NewHtmlPkg(server pkg.Server) *HtmlPkg {
+func NewHtmlPkg(server element.Server) *HtmlPkg {
 	fsm := &HtmlPkg{
 		server:  server,
 		builder: builder.NewBuilder(),

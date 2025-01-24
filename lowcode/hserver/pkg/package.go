@@ -1,13 +1,16 @@
 package pkg
 
-import "github.com/dop251/goja"
+import (
+	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
+)
 
 type PackageOptions struct {
 	WorkPath string
 }
 
 type Package interface {
-	NewProxy(vm *goja.Runtime, opts ...*PackageOptions) *Proxy
+	NewProxy(vm *goja.Runtime, opts ...*PackageOptions) *element.Proxy
 }
 
 func NewPackageOptions() *PackageOptions {

@@ -12,6 +12,12 @@ func NewCMap[T any]() *CMap[T] {
 	}
 }
 
+func (m *CMap[T]) MSet(v map[string]T) {
+	for key, value := range v {
+		m.data.Set(key, value)
+	}
+}
+
 func (m *CMap[T]) Set(key string, value T) {
 	m.data.Set(key, value)
 }
@@ -40,9 +46,13 @@ func (m *CMap[T]) Has(key string) bool {
 	return m.data.Has(key)
 }
 
-func (m *CMap[T]) Items() map[string]any {
+func (m *CMap[T]) Items() map[string]T {
 	data := m.data.Items()
-	return data
+	values := make(map[string]T, len(data))
+	for key, value := range data {
+		values[key] = value.(T)
+	}
+	return values
 }
 
 func (m *CMap[T]) Keys() []string {

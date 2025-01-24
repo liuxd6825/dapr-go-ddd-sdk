@@ -50,10 +50,10 @@ type HttpServer struct {
 	daprDddClient    dapr.DaprClient
 	eventStores      map[string]ddd.EventStore
 	actorFactories   []actor.FactoryContext
-	subscribes       []RegisterSubscribe
+	subscribes       []RegisterSubscribe //事件订阅器
 	controllers      []Controller
 	eventTypes       []RegisterEventType
-	jobEventHandlers map[string]common.JobEventHandler
+	jobEventHandlers map[string]common.JobEventHandler // 任务
 	authToken        string
 	webRootPath      string
 	envConfig        *EnvConfig
@@ -210,13 +210,6 @@ func (s *HttpServer) doOnStartEvents(ctx context2.Context, app *iris.Application
 		panic(err.Error())
 	}
 
-	fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
-	if logs.GetLevel() <= logs.DebugLevel {
-		for _, v := range app.GetRoutes() {
-			logs.Debug(ctx, "", logs.Fields{"route": v.Method + " " + v.Path})
-		}
-	}
-
 	var startEvents []OnStartEvent
 	startEvents = append(startEvents, _startEvents...)
 	startEvents = append(startEvents, s.onStartEvents...)
@@ -226,6 +219,14 @@ func (s *HttpServer) doOnStartEvents(ctx context2.Context, app *iris.Application
 			return err
 		}
 	}
+
+	fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
+	if logs.GetLevel() <= logs.DebugLevel {
+		for _, v := range app.GetRoutes() {
+			fmt.Printf("> %-8s %s \r\n", v.Method+":", v.Path)
+		}
+	}
+	fmt.Println()
 	return nil
 }
 
@@ -234,7 +235,7 @@ func (s *HttpServer) startSubscribeHandlers() error {
 	if s.subscribes != nil {
 		for _, subscribe := range s.subscribes {
 			if subscribe != nil {
-				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetHandler(), subscribe.GetInterceptor()); err != nil {
+				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetEventHandler(), subscribe.GetInterceptor()); err != nil {
 					panic(err.Error())
 				}
 			}

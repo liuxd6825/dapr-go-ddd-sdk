@@ -87,7 +87,7 @@ type SubscribeInterceptorFunc func(ctx context.Context, sctx SubscribeContext) (
 // SubscribeHandler 消息订阅处理器
 type subscribeHandler struct {
 	subscribes           []*Subscribe
-	queryEventHandler    QueryEventHandler
+	queryEventHandler    QueryEventHandler // 事件处理器
 	subscribeHandlerFunc SubscribeHandlerFunc
 	interceptors         []SubscribeInterceptorFunc
 }
@@ -96,23 +96,23 @@ func NewSubscribeContext(ictx iris.Context) SubscribeContext {
 	return &subscribeContext{ictx: ictx}
 }
 
-func NewSubscribeHandlerDefault(subscribes []*Subscribe, handlerObject any, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
-	handler, ok := handlerObject.(QueryEventHandler)
+func NewSubscribeHandlerDefault(subscribes []*Subscribe, eventHandler any, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
+	queryEventHandler, ok := eventHandler.(QueryEventHandler)
 	if !ok {
-		handler = NewQueryEventHandlerDefault(handlerObject)
+		queryEventHandler = NewQueryEventHandlerDefault(queryEventHandler)
 	}
 	return &subscribeHandler{
 		subscribes:           subscribes,
-		queryEventHandler:    handler,
+		queryEventHandler:    queryEventHandler,
 		subscribeHandlerFunc: subscribeHandlerFunc,
 		interceptors:         interceptors,
 	}
 }
 
-func NewSubscribeHandler(subscribes []*Subscribe, handler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
+func NewSubscribeHandler(subscribes []*Subscribe, eventHandler QueryEventHandler, subscribeHandlerFunc SubscribeHandlerFunc, interceptors []SubscribeInterceptorFunc) SubscribeHandler {
 	return &subscribeHandler{
 		subscribes:           subscribes,
-		queryEventHandler:    handler,
+		queryEventHandler:    eventHandler,
 		subscribeHandlerFunc: subscribeHandlerFunc,
 		interceptors:         interceptors,
 	}

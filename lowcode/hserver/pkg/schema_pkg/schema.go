@@ -3,18 +3,18 @@ package schema_pkg
 import (
 	"bytes"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/spf13/afero"
 )
 
 type SchemaPkg struct {
-	server pkg.Server
+	server element.Server
 	cache  *types.CMap[*jsonschema.Schema] //缓存
 }
 
-func New(server pkg.Server) *SchemaPkg {
+func New(server element.Server) *SchemaPkg {
 	return &SchemaPkg{
 		server: server,
 		cache:  types.NewCMap[*jsonschema.Schema](),
@@ -22,7 +22,7 @@ func New(server pkg.Server) *SchemaPkg {
 }
 
 func (s *SchemaPkg) openFile(fileUrl string, workPath string) ([]byte, error) {
-	fs := s.server.GetSrcFs()
+	fs := s.server.SrcFs()
 	data, err := afero.ReadFile(fs, fileUrl)
 	if err != nil {
 		return nil, err
@@ -31,14 +31,14 @@ func (s *SchemaPkg) openFile(fileUrl string, workPath string) ([]byte, error) {
 }
 
 func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema {
-	if s.server.GetCacheEnable() {
+	if s.server.CacheEnable() {
 		val, ok := s.cache.Get(fileUrl)
 		if ok {
 			return val
 		}
 	}
 
-	data := s.server.GetFsPkg().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
+	data := s.server.FsPkg().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
 	if len(data) == 0 {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 	}
 	schemaFile := "schema.json"
 	compiler := jsonschema.NewCompiler()
-	compiler.UseLoader(s.server.GetSchemaLoader())
+	compiler.UseLoader(s.server.SchemaLoader())
 
 	if err := compiler.AddResource(schemaFile, reader); err != nil {
 		panic(err)

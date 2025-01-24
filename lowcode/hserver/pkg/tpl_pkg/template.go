@@ -3,7 +3,7 @@ package tpl_pkg
 import (
 	"github.com/flosch/pongo2/v6"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/spf13/afero"
@@ -13,11 +13,11 @@ var tplCache = cmap.New()
 
 type Template struct {
 	cfg    common.IEnvConfig
-	server pkg.Server
+	server element.Server
 	fs     afero.Fs
 }
 
-func New(cfg common.IEnvConfig, server pkg.Server, fs afero.Fs) *Template {
+func New(cfg common.IEnvConfig, server element.Server, fs afero.Fs) *Template {
 	return &Template{
 		cfg:    cfg,
 		server: server,

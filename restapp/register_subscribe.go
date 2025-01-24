@@ -6,15 +6,17 @@ type RegisterSubscribeOptions struct {
 	interceptors []ddd.SubscribeInterceptorFunc
 }
 
+// RegisterSubscribe
+// @Description: 注册订阅事件
 type RegisterSubscribe interface {
 	GetSubscribes() []*ddd.Subscribe
-	GetHandler() ddd.QueryEventHandler
+	GetEventHandler() ddd.QueryEventHandler
 	GetInterceptor() []ddd.SubscribeInterceptorFunc
 }
 
 type registerSubscribe struct {
 	subscribes   []*ddd.Subscribe
-	handler      ddd.QueryEventHandler
+	eventHandler any
 	interceptors []ddd.SubscribeInterceptorFunc
 }
 
@@ -34,11 +36,11 @@ func NewRegisterSubscribeOptions(opts ...*RegisterSubscribeOptions) *RegisterSub
 	return o
 }
 
-func NewRegisterSubscribe(subscribes []*ddd.Subscribe, handler ddd.QueryEventHandler, options ...*RegisterSubscribeOptions) RegisterSubscribe {
+func NewRegisterSubscribe(subscribes []*ddd.Subscribe, eventHandler any, options ...*RegisterSubscribeOptions) RegisterSubscribe {
 	opt := NewRegisterSubscribeOptions(options...)
 	return &registerSubscribe{
 		subscribes:   subscribes,
-		handler:      handler,
+		eventHandler: eventHandler,
 		interceptors: opt.interceptors,
 	}
 }
@@ -51,8 +53,12 @@ func (r *registerSubscribe) GetSubscribes() []*ddd.Subscribe {
 	return r.subscribes
 }
 
-func (r *registerSubscribe) GetHandler() ddd.QueryEventHandler {
-	return r.handler
+func (r *registerSubscribe) GetEventHandler() ddd.QueryEventHandler {
+	h, ok := r.eventHandler.(ddd.QueryEventHandler)
+	if ok {
+		return h
+	}
+	return nil
 }
 
 func (o *RegisterSubscribeOptions) SetInterceptors(v []ddd.SubscribeInterceptorFunc) *RegisterSubscribeOptions {

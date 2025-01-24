@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/json_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"github.com/spf13/afero"
@@ -45,7 +47,7 @@ func NewFsWriteModel() *FsWriteModel {
 //	@param cfg
 //	@return *FsPkg
 //	@return error
-func NewFsPkg(cfg common.IEnvConfig, fsName string) (*FsPkg, error) {
+func NewFsPkg(cfg common.IEnvConfig, fsName string) (element.FsPkg, error) {
 	fsM, err := cfg.GetFsManager()
 	if err != nil {
 		return nil, err
@@ -68,7 +70,7 @@ func NewFsPkg(cfg common.IEnvConfig, fsName string) (*FsPkg, error) {
 	return fsPkg, nil
 }
 
-func (m *FsPkg) NewFs(fsName string) *FsPkg {
+func (m *FsPkg) NewFs(fsName string) element.FsPkg {
 	fs, err := NewFsPkg(m.cfg, fsName)
 	if err != nil {
 		panic(err)
@@ -204,14 +206,14 @@ func (m *FsPkg) Mkdir(name string, perm os.FileMode, opts ...*fsopts.Options) {
 //	@param path
 //	@param opts
 //	@return []*FileInfo
-func (m *FsPkg) ReadDir(path string, opts ...*fsopts.Options) []*pkg.FileInfo {
-	res := make([]*pkg.FileInfo, 0)
+func (m *FsPkg) ReadDir(path string, opts ...*fsopts.Options) []*types.FileInfo {
+	res := make([]*types.FileInfo, 0)
 	files, err := m.base.ReadDir(path)
 	if err != nil {
 		panic(err)
 	}
 	for _, file := range files {
-		fileInfo := &pkg.FileInfo{
+		fileInfo := &types.FileInfo{
 			IsDir:     file.IsDir(),
 			Name:      file.Name(),
 			Size:      file.Size(),
@@ -230,7 +232,7 @@ func (m *FsPkg) ReadDir(path string, opts ...*fsopts.Options) []*pkg.FileInfo {
 //	@param path
 //	@param opts
 //	@return []*FileInfo
-func (m *FsPkg) ReadAllDir(path string, opts ...*fsopts.Options) []*pkg.FileInfo {
+func (m *FsPkg) ReadAllDir(path string, opts ...*fsopts.Options) []*types.FileInfo {
 	fileInfos := m.ReadDir(path, opts...)
 	for _, file := range fileInfos {
 		if file.IsDir {
@@ -245,7 +247,7 @@ func (m *FsPkg) ReadAllDir(path string, opts ...*fsopts.Options) []*pkg.FileInfo
 //
 //	@Description: sorts a slice of *FileInfo by Name and IsDir, and recursively sorts SubFiles.
 //	@param files
-func (m *FsPkg) SortFileInfos(files []*pkg.FileInfo) {
+func (m *FsPkg) SortFileInfos(files []*types.FileInfo) {
 	sort.Slice(files, func(i, j int) bool {
 		if files[i].IsDir != files[j].IsDir {
 			return files[i].IsDir // Directories come first

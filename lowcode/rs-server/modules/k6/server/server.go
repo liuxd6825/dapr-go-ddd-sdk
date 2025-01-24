@@ -90,25 +90,25 @@ func (e *Server) newObject(m map[string]any) (*goja.Object, error) {
 
 func (e *Server) Get(opt *HandleOptions) {
 	opt.Method = GET
-	e.Handle(opt)
+	e.SetHandle(opt)
 }
 
 func (e *Server) Post(opt *HandleOptions) {
 	opt.Method = POST
-	e.Handle(opt)
+	e.SetHandle(opt)
 }
 
 func (e *Server) Put(opt *HandleOptions) {
 	opt.Method = PUT
-	e.Handle(opt)
+	e.SetHandle(opt)
 }
 
 func (e *Server) Delete(opt *HandleOptions) {
 	opt.Method = DELETE
-	e.Handle(opt)
+	e.SetHandle(opt)
 }
 
-func (e *Server) Handle(opt *HandleOptions) {
+func (e *Server) SetHandle(opt *HandleOptions) {
 	if opt.Handle == nil {
 		e.app.Logger().Error("未在%s上设置处理函数", opt.Path)
 		return
@@ -247,7 +247,7 @@ func (e *Server) GetParams(wctx *WebContext, aParams map[string]RequestParam, aP
 func (e *Server) AddHandles(handlers ...*HandleOptions) error {
 	for _, opt := range handlers {
 		if opt != nil {
-			e.Handle(opt)
+			e.SetHandle(opt)
 		}
 	}
 	return nil

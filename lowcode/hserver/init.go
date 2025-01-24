@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/console_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
@@ -22,10 +23,14 @@ import (
 
 // InitServer
 //
-//	@Description: 添加到restapp的初始化函数 Options.Init
-//	@param s
+//	@Description:
+//	@param fileName
+//	@param srcFsName
+//	@param webFsName
+//	@param httpServer
 //	@return error
 func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp.HttpServer) error {
+	fact := NewFactory()
 	env := httpServer.EnvConfig()
 	if !env.App.RsServer.Enable {
 		return nil
@@ -44,8 +49,8 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 			return fmt.Errorf(" %s fs not exists", webFsName)
 		}
 	}
-
-	server, err := NewServer(httpServer.App(), fileName, srcFs, envCfg)
+	fmt.Println("lowcode HServer")
+	server, err := fact.NewServer(httpServer.App(), fileName, srcFs, fact, envCfg)
 	if err != nil {
 		return err
 	}
@@ -56,7 +61,7 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 		pkg.Set("template", tpl_pkg.New(envCfg, server, webFs))
 	}
 	pkg.Set("feign", feign_pkg.New(server))
-	pkg.Set("fs", server.fsPkg)
+	pkg.Set("fs", server.FsPkg())
 	pkg.Set("context", ctx_pkg.New())
 	pkg.Set("schema", schema_pkg.New(server))
 	pkg.Set("params", params_pkg.New(server))
@@ -69,14 +74,15 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	server.SetPkg(pkg)
 
 	server.SetRunValues(map[string]any{
-		"console": NewConsole(logrus.New()),
+		"console": console_pkg.NewConsole(logrus.New()),
 	})
 
 	vData := map[string]any{
 		"server": server,
-		"pkg":    server.GetPkg().Items(),
+		"pkg":    server.Pkg().Items(),
 	}
 	vApp := httpServer.App()
+
 	if webFs != nil {
 		fileHandler := file_handler.NewHandler(webFs, vApp, vData)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)
@@ -90,27 +96,4 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	}
 
 	return server.Start()
-}
-
-// Watcher
-// @Description: 监控服务目录，当文件修改时重新启动服务
-type Watcher struct {
-	server *Server
-	fs     afero.Fs
-}
-
-type WatcherHandler = func(rootPath, fileName string, eventType fs.WatcherEventType) error
-
-func NewWatcher(server *Server, afs afero.Fs, handler WatcherHandler) *Watcher {
-	w := &Watcher{server: server, fs: afs}
-	if wfs, ok := afs.(fs.WatcherFs); ok {
-		watcher, err := wfs.NewWatcher()
-		if err != nil {
-			panic(err)
-		}
-		if err = watcher.Start(handler); err != nil {
-			panic(err)
-		}
-	}
-	return w
 }

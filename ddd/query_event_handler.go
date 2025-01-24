@@ -7,10 +7,14 @@ import (
 	"strings"
 )
 
+// QueryEventHandler
+// @Description: CQRS模型中的Query端事件处理器
 type QueryEventHandler interface {
 	CallEventHandler(ctx context.Context, handler any, eventType string, eventVersion string, event any, metadata Metadata) error
 }
 
+// QueryEventHandlerDefault
+// @Description: 默认的事件处理器， 通过反射查找handler中的方法名称
 type QueryEventHandlerDefault struct {
 	handler any
 }

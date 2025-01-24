@@ -33,6 +33,7 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
+			return nil
 			println("---- OnStartEvent ----")
 
 			daprClient := server.DaprClient()
