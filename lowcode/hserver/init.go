@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/console_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
@@ -73,10 +72,6 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 
 	server.SetPkg(pkg)
 
-	server.SetRunValues(map[string]any{
-		"console": console_pkg.NewConsole(logrus.New()),
-	})
-
 	vData := map[string]any{
 		"server": server,
 		"pkg":    server.Pkg().Items(),
@@ -86,7 +81,6 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	if webFs != nil {
 		fileHandler := file_handler.NewHandler(webFs, vApp, vData)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)
-		//NewWatcher(server, webFs)
 	}
 	if srcFs != nil {
 		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {

@@ -48,7 +48,11 @@ func NewWebContext(ctx context.Context, ictx iris.Context, request element.Reque
 	}
 }
 
-func (c *WebContext) Ictx() iris.Context {
+func (c *WebContext) Ctx() context.Context {
+	return c.ctx
+}
+
+func (c *WebContext) ICtx() iris.Context {
 	return c.ictx
 }
 
@@ -350,7 +354,7 @@ func (c *WebContext) Close() {
 	}
 }
 
-func (c *WebContext) String(key string) string {
+func (c *WebContext) ValueString(key string) string {
 	v := c.ictx.Params().GetStringTrim(key)
 	var err error
 	if v == "" {
@@ -360,7 +364,7 @@ func (c *WebContext) String(key string) string {
 	return v
 }
 
-func (c *WebContext) Bool(key string) bool {
+func (c *WebContext) ValueBool(key string) bool {
 	v, err := c.ictx.Params().GetBool(key)
 	if err != nil {
 		panic(err)
@@ -368,7 +372,7 @@ func (c *WebContext) Bool(key string) bool {
 	return v
 }
 
-func (c *WebContext) Float64(key string) float64 {
+func (c *WebContext) ValueFloat64(key string) float64 {
 	v, err := c.ictx.Params().GetFloat64(key)
 	if err != nil {
 		panic(err)
@@ -376,7 +380,7 @@ func (c *WebContext) Float64(key string) float64 {
 	return v
 }
 
-func (c *WebContext) Int(key string) int {
+func (c *WebContext) ValueInt(key string) int {
 	v, err := c.ictx.Params().GetInt(key)
 	if err != nil {
 		panic(err)
@@ -384,7 +388,7 @@ func (c *WebContext) Int(key string) int {
 	return v
 }
 
-func (c *WebContext) Int32(key string) int32 {
+func (c *WebContext) ValueInt32(key string) int32 {
 	v, err := c.ictx.Params().GetInt32(key)
 	if err != nil {
 		panic(err)
@@ -392,7 +396,7 @@ func (c *WebContext) Int32(key string) int32 {
 	return v
 }
 
-func (c *WebContext) Int64(key string) int64 {
+func (c *WebContext) ValueInt64(key string) int64 {
 	v, err := c.ictx.Params().GetInt64(key)
 	if err != nil {
 		panic(err)
@@ -400,7 +404,7 @@ func (c *WebContext) Int64(key string) int64 {
 	return v
 }
 
-func (c *WebContext) Strings(key string) []string {
+func (c *WebContext) ValueStrings(key string) []string {
 	v := c.ictx.URLParamSlice(key)
 	return v
 }
@@ -416,22 +420,6 @@ func (c *WebContext) GetCaseId() string {
 func (c *WebContext) GetFindPaging() *ddd_repository.FindPagingQueryRequest {
 	v, _ := c.RestAssembler.AsFindPagingRequest(c.ictx)
 	return v
-}
-
-func (c *WebContext) Deadline() (deadline time.Time, ok bool) {
-	return c.ctx.Deadline()
-}
-
-func (c *WebContext) Done() <-chan struct{} {
-	return c.ctx.Done()
-}
-
-func (c *WebContext) Err() error {
-	return c.ctx.Err()
-}
-
-func (c *WebContext) Value(key any) any {
-	return c.ctx.Value(key)
 }
 
 const dateFormat = "2006-01-02"

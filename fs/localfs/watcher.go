@@ -5,12 +5,14 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"os"
 	"path/filepath"
 	"strings"
 )
 
 type fileWatcher struct {
-	f *Fs
+	f       *Fs
+	watcher *fsnotify.Watcher
 }
 
 func NewFileWatcher(f *Fs) fs.Watcher {
@@ -23,7 +25,7 @@ func (w *fileWatcher) Start(opts ...fs.Option) error {
 	if err != nil {
 		fmt.Printf("Fail to create new Watcher[ %s ]\n", err)
 	}
-
+	w.watcher = watcher
 	rootPath, err := filepath.Abs(w.f.GetRootPath() + "/")
 	if err != nil {
 		return err
@@ -68,9 +70,24 @@ func (w *fileWatcher) Start(opts ...fs.Option) error {
 	}()
 
 	// 2、将需要监听的文件加入到watcher的监听队列中
-	err = watcher.Add(rootPath) //将文件加入监听
-	if err != nil {
+	if err = w.addWatchRecursive(rootPath); err != nil {
 		return errors.New(fmt.Sprintf("Fail to watch directory[ %s ]", err))
 	}
 	return nil
+}
+
+// addWatchRecursive 添加目录及其所有子目录到 fsnotify 监控
+func (w *fileWatcher) addWatchRecursive(dir string) error {
+	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			err := w.watcher.Add(path)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
+	"strings"
 
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
@@ -109,7 +110,8 @@ func (s *Request) runScript(wctx element.WebContext, params any) {
 	tenantId := wctx.GetTenantId()
 	val, err := s.Scripts().RunScript(s.config.Script.FuncName, values, true, func(vm *goja.Runtime) error {
 		_ = vm.Set("params", params)
-		_ = vm.Set("ctx", wctx)
+		_ = vm.Set("wctx", wctx)
+		_ = vm.Set("ctx", wctx.Ctx())
 		_ = vm.Set("tenantId", tenantId)
 		return nil
 	})
@@ -209,17 +211,24 @@ func (s *Request) GetParamsType(ictx iris.Context) (string, common.ParamsType) {
 //	@return map[string]any 参数
 func (s *Request) GetParamsValue(wctx element.WebContext) map[string]any {
 	var err error
-	paramsTypeFileName, paramsType := s.GetParamsType(wctx.Ictx())
+	// 当参数类型是findPaging时，当
+	if s.config.ParamsType == "findPaging" {
+		return wctx.GetFindPaging().AsMap()
+	}
+
+	// 获取参数文件与参数类型
+	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ICtx())
 	if paramsType == nil {
 		return nil
 	}
 
+	// 要返回的值
 	data := map[string]any{}
-	ictx := wctx.Ictx()
 
-	var bodyData any = nil
+	ictx := wctx.ICtx()
 
 	for key, v := range paramsType {
+		key = strings.ToLower(key)
 		var val any
 		switch v.In {
 		case InParamTypeURL.String():
@@ -227,11 +236,12 @@ func (s *Request) GetParamsValue(wctx element.WebContext) map[string]any {
 		case InParamTypePath.String():
 			val = ictx.Params().Get(key)
 		case InParamTypeBody.String():
-			if v.Schema != nil && bodyData == nil {
+			if v.Schema != nil {
 				schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
-				bodyData = wctx.ReadObject(schema)
+				val = wctx.ReadObject(schema)
+			} else {
+				panic(errors.New("paramType %s is no schema defined", key))
 			}
-			val = bodyData
 		case InParamTypeFormValue.String():
 			val = wctx.FormValue(key, v.Required)
 		case InParamTypeFormObject.String():

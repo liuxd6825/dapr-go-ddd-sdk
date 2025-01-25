@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/script"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/console_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
@@ -137,6 +138,9 @@ func (s *Server) init(logger logrus.FieldLogger) error {
 		}
 		return nil
 	})
+
+	server.SetRunValue("console", console_pkg.NewConsole(logrus.New()))
+
 	return nil
 }
 

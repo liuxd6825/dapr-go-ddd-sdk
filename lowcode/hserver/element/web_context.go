@@ -1,6 +1,7 @@
 package element
 
 import (
+	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -10,7 +11,9 @@ import (
 )
 
 type WebContext interface {
-	Ictx() iris.Context
+	ICtx() iris.Context
+	Ctx() context.Context
+
 	GetTokenUser() appctx.AuthUser
 	GetTenantId() string
 	GetTenantName() string
@@ -18,8 +21,12 @@ type WebContext interface {
 	ReadJson(data ...any) any
 	ReadString() string
 	ReadBytes() []byte
-
 	ReadObject(schema *jsonschema.Schema) map[string]any
+
+	GetId() string
+	GetCaseId() string
+	GetFindPaging() *ddd_repository.FindPagingQueryRequest
+
 	Valid(data any, schema *schema.Schema)
 	FormFile(key string) *common.FormFile
 	FormValue(name string, required bool) string
@@ -34,16 +41,12 @@ type WebContext interface {
 	GetStatus() int
 	SetError(errOrMsg any, httpStatus ...int)
 	Close()
-	String(key string) string
-	Bool(key string) bool
-	Float64(key string) float64
-	Int(key string) int
-	Int32(key string) int32
-	Int64(key string) int64
-	Strings(key string) []string
-	GetId() string
-	GetCaseId() string
-	GetFindPaging() *ddd_repository.FindPagingQueryRequest
-	Err() error
-	Value(key any) any
+
+	ValueString(key string) string
+	ValueBool(key string) bool
+	ValueFloat64(key string) float64
+	ValueInt(key string) int
+	ValueInt32(key string) int32
+	ValueInt64(key string) int64
+	ValueStrings(key string) []string
 }

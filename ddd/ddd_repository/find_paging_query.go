@@ -132,11 +132,11 @@ type ValueCol struct {
 }
 
 type GroupCols struct {
-	cols []*GroupCol
+	Cols []*GroupCol `json:"cols"`
 }
 
 type ValueCols struct {
-	cols []*ValueCol
+	Cols []*ValueCol `json:"cols"`
 }
 
 func NewFindPagingQueryBuilder() FindPagingQueryBuilder {
@@ -156,7 +156,7 @@ func NewFindPagingQueryDTO() *FindPagingQueryDTO {
 
 func NewGroupCols(s string) *GroupCols {
 	groupCols := &GroupCols{
-		cols: make([]*GroupCol, 0),
+		Cols: make([]*GroupCol, 0),
 	}
 	if len(s) > 0 {
 		cols := make([]*GroupCol, 0)
@@ -168,14 +168,14 @@ func NewGroupCols(s string) *GroupCols {
 			}
 			cols = append(cols, col)
 		}
-		groupCols.cols = cols
+		groupCols.Cols = cols
 	}
 	return groupCols
 }
 
 func NewValueCols() *ValueCols {
 	return &ValueCols{
-		cols: make([]*ValueCol, 0),
+		Cols: make([]*ValueCol, 0),
 	}
 }
 
@@ -241,21 +241,21 @@ func (d *FindPagingQueryDTO) newValueCols(s string) []*ValueCol {
 }
 
 func (s *GroupCols) Add(field string, dataType types.DataType) *GroupCols {
-	s.cols = append(s.cols, &GroupCol{Field: field, DataType: dataType})
+	s.Cols = append(s.Cols, &GroupCol{Field: field, DataType: dataType})
 	return s
 }
 
-func (s *GroupCols) Cols() []*GroupCol {
-	return s.cols
+func (s *GroupCols) GetCols() []*GroupCol {
+	return s.Cols
 }
 
 func (s *ValueCols) Add(field string, aggFunc AggFunc) *ValueCols {
-	s.cols = append(s.cols, &ValueCol{Field: field, AggFunc: aggFunc})
+	s.Cols = append(s.Cols, &ValueCol{Field: field, AggFunc: aggFunc})
 	return s
 }
 
-func (s *ValueCols) Cols() []*ValueCol {
-	return s.cols
+func (s *ValueCols) GetCols() []*ValueCol {
+	return s.Cols
 }
 
 func (q *FindPagingQueryRequest) GetTenantId() string {
@@ -343,6 +343,14 @@ func (q *FindPagingQueryRequest) GetGroupKeys() []any {
 
 func (q *FindPagingQueryRequest) GetGroupCols() []*GroupCol {
 	return q.GroupCols
+}
+
+func (q *FindPagingQueryRequest) AsMap() map[string]any {
+	data, err := maputils.NewMapJsonKey(q)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 // Validate

@@ -71,7 +71,7 @@ func (f *FindDistinctQueryDTO) GetQuery() FindDistinctQuery {
 
 	r.Filter = f.Filter
 	r.Fields = f.Fields
-	r.GroupCols = NewGroupCols(f.GroupCols).Cols()
+	r.GroupCols = NewGroupCols(f.GroupCols).GetCols()
 	return r
 }
 
