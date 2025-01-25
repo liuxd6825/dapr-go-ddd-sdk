@@ -15,4 +15,5 @@ type Request interface {
 	GetParamsValue(wctx WebContext) map[string]any
 	Config() *RequestConfig
 	Initialize() error
+	Close() error
 }

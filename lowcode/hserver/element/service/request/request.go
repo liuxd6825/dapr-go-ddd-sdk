@@ -280,3 +280,11 @@ func (s *Request) Logger() logrus.FieldLogger {
 func (s *Request) SetSelfVMValue(name string, vm *goja.Runtime) error {
 	return nil
 }
+
+func (s *Request) Close() error {
+	route := s.server.App().Get(s.Config().AbsURl, s.handle)
+	if route != nil {
+		route.RemoveHandler(s.handle)
+	}
+	return nil
+}

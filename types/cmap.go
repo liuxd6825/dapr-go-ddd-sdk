@@ -58,3 +58,11 @@ func (m *CMap[T]) Items() map[string]T {
 func (m *CMap[T]) Keys() []string {
 	return m.data.Keys()
 }
+
+func (m *CMap[T]) Clear() {
+	m.data.Clear()
+}
+
+func (m *CMap[T]) MarshalJSON() ([]byte, error) {
+	return m.data.MarshalJSON()
+}

@@ -16,6 +16,8 @@ var (
 	pid          = "" // 当前进程PID
 	envName      = ""
 	workPath     = ""
+	exeFullName  = ""
+	startPath    = "" // 启动目录
 )
 var (
 	AppTitle  = "" // 应用名称
@@ -33,6 +35,8 @@ func init() {
 	pathName, exeName = filepath.Split(path)
 	SetExeName(exeName)
 
+	exeFullName = path
+
 	sysPaths = types.NewCMap[string]()
 	sysPaths.Set("ExeName", exeName)
 
@@ -41,6 +45,7 @@ func init() {
 		panic(err)
 	}
 	workPath = wPath
+	startPath = wPath
 	sysPaths.Set("WorkPath", workPath)
 }
 
@@ -58,6 +63,14 @@ func GetEnvName() string {
 
 func SetEnvName(val string) {
 	envName = val
+}
+
+func GetExeFullName() string {
+	return exeFullName
+}
+
+func GetStartPath() string {
+	return startPath
 }
 
 // GetPID

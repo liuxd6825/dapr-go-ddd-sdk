@@ -19,4 +19,5 @@ type Service interface {
 	Logger() logrus.FieldLogger
 	SetSelfVMValue(name string, vm *goja.Runtime) error
 	Initialize() error
+	Close() error
 }

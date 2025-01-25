@@ -211,3 +211,16 @@ func (s *Service) SetSelfVMValue(name string, vm *goja.Runtime) error {
 	}
 	return nil
 }
+
+func (s *Service) Close() error {
+	errs := errors.NewErrors()
+	for _, req := range s.requests.Items() {
+		if err := req.Close(); err != nil {
+			errs.AddError(err)
+		}
+	}
+	if errs.IsEmpty() {
+		return nil
+	}
+	return errs
+}

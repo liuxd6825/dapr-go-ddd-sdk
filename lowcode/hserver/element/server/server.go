@@ -77,32 +77,6 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, factor
 	return server, err
 }
 
-// GetSchemaLoader
-//
-//	@Description: 取得Schema加载器，实现对引用schema文件加载
-//	@receiver s
-//	@return schema.URLLoader
-
-func (s *Server) SchemaLoader() schema.URLLoader {
-	return s.schemaLoader
-}
-
-func (s *Server) App() *iris.Application {
-	return s.app
-}
-
-func (s *Server) Restart() error {
-	return s.init(s.Logger())
-}
-
-func (s *Server) FsPkg() element.FsPkg {
-	return s.fsPkg
-}
-
-func (s *Server) Definition() *definition.Definition {
-	return s.definition
-}
-
 func (s *Server) init(logger logrus.FieldLogger) error {
 	server := s
 	srcFs := server.srcFs
@@ -142,6 +116,28 @@ func (s *Server) init(logger logrus.FieldLogger) error {
 	server.SetRunValue("console", console_pkg.NewConsole(logrus.New()))
 
 	return nil
+}
+
+// GetSchemaLoader
+//
+//	@Description: 取得Schema加载器，实现对引用schema文件加载
+//	@receiver s
+//	@return schema.URLLoader
+
+func (s *Server) SchemaLoader() schema.URLLoader {
+	return s.schemaLoader
+}
+
+func (s *Server) App() *iris.Application {
+	return s.app
+}
+
+func (s *Server) FsPkg() element.FsPkg {
+	return s.fsPkg
+}
+
+func (s *Server) Definition() *definition.Definition {
+	return s.definition
 }
 
 // CacheEnable
@@ -229,6 +225,23 @@ func (s *Server) start() error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) Restart() error {
+	if err := s.init(s.Logger()); err != nil {
+		return err
+	}
+	errs := errors.NewErrors()
+	for _, service := range s.services.Items() {
+		if e := service.Close(); e != nil {
+			errs.AddError(e)
+		}
+	}
+	if !errs.IsEmpty() {
+		return errs
+	}
+	s.services.Clear()
+	return s.Start()
 }
 
 // GetService

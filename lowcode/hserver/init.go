@@ -28,7 +28,7 @@ import (
 //	@param webFsName
 //	@param httpServer
 //	@return error
-func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp.HttpServer) error {
+func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp.HttpServer, autoRestart bool) error {
 	fact := NewFactory()
 	env := httpServer.EnvConfig()
 	if !env.App.RsServer.Enable {
@@ -82,10 +82,10 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 		fileHandler := file_handler.NewHandler(webFs, vApp, vData)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)
 	}
-	if srcFs != nil {
+	if srcFs != nil && autoRestart {
 		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {
 			server.Logs(logrus.InfoLevel, "server.restart()")
-			return server.Restart()
+			return restapp.Restart()
 		})
 	}
 
