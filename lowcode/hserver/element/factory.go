@@ -2,10 +2,12 @@ package element
 
 import (
 	"context"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -37,10 +39,10 @@ type Factory interface {
 	//  @return Server
 	//  @return error
 	//
-	NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, factory Factory, env common.IEnvConfig, opts ...NewServerOptions) (Server, error)
+	NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory Factory, env common.IEnvConfig, opts ...NewServerOptions) (Server, error)
 
 	//
-	// NewService
+	// NewApiService
 	//  @Description:
 	//  @param server
 	//  @param html
@@ -49,10 +51,10 @@ type Factory interface {
 	//  @return Service
 	//  @return error
 	//
-	NewService(server Server, html []byte, srcFileName string, data map[string]any) (Service, error)
+	NewApiService(server Server, sel *goquery.Selection, srcFileName string, data map[string]any) (ApiService, error)
 
 	//
-	// NewRequest
+	// NewApiRequest
 	//  @Description:
 	//  @param server
 	//  @param service
@@ -61,7 +63,11 @@ type Factory interface {
 	//  @return Request
 	//  @return error
 	//
-	NewRequest(server Server, service Service, srcFileName string, config *RequestConfig) (Request, error)
+	NewApiRequest(server Server, service ApiService, srcFileName string, config *ApiRequestConfig) (ApiRequest, error)
+
+	NewSubService(server Server, sel *goquery.Selection, srcFileName string, data map[string]any) (SubService, error)
+
+	NewSubEvent(server Server, service SubService, srcFileName string, config *SubEventConfig) (SubEvent, error)
 
 	//
 	// NewScript
@@ -85,5 +91,5 @@ type Factory interface {
 	//
 	NewScriptManager(logger logrus.FieldLogger, reader fs.Reader) ScriptManager
 
-	NewWebContext(ctx context.Context, ictx iris.Context, request Request) WebContext
+	NewWebContext(ctx context.Context, ictx iris.Context, request ApiRequest) WebContext
 }

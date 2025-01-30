@@ -9,9 +9,9 @@ type RegisterSubscribeOptions struct {
 // RegisterSubscribe
 // @Description: 注册订阅事件
 type RegisterSubscribe interface {
-	GetSubscribes() []*ddd.Subscribe
-	GetEventHandler() ddd.QueryEventHandler
-	GetInterceptor() []ddd.SubscribeInterceptorFunc
+	GetSubscribes() []*ddd.Subscribe                // 消息订阅器
+	GetEventHandler() ddd.QueryEventHandler         // 领域事件处理器
+	GetInterceptor() []ddd.SubscribeInterceptorFunc // 消息拦截器
 }
 
 type registerSubscribe struct {

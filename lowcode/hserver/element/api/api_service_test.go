@@ -1,4 +1,4 @@
-package service
+package api
 
 import "testing"
 
@@ -58,7 +58,7 @@ var html = `
 `
 
 func Test_parseHTML(t *testing.T) {
-	server, err := NewService([]byte(html))
+	server, err := NewApiService(nil, []byte(html), "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

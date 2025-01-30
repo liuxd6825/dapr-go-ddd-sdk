@@ -29,11 +29,11 @@ type WebContext struct {
 	ctx        context.Context
 	vu         modules.VU
 	closers    []io.Closer //资源关闭器
-	request    element.Request
+	request    element.ApiRequest
 	timeFields map[string]any
 }
 
-func NewWebContext(ctx context.Context, ictx iris.Context, request element.Request) *WebContext {
+func NewWebContext(ctx context.Context, ictx iris.Context, request element.ApiRequest) *WebContext {
 	authToken, ok := appctx.GetAuthToken(ctx)
 	if !ok {
 		panic("auth token not found")

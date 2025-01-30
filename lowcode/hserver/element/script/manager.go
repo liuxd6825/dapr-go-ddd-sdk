@@ -63,7 +63,7 @@ func (b *Manager) DeleteScript(scriptName string) error {
 //	@param config
 //	@return res
 //	@return err
-func (b *Manager) RunScript(funcName string, runValues *element.RunValues, checkHave bool, opts ...RunOptions) (res any, err error) {
+func (b *Manager) RunScript(funcName string, runValues *element.ApiRunValues, checkHave bool, opts ...RunOptions) (res any, err error) {
 	srcFileName := ""
 
 	defer func() {
@@ -91,7 +91,7 @@ func (b *Manager) RunScript(funcName string, runValues *element.RunValues, check
 	return val, err
 }
 
-func SetRunValues(vm *goja.Runtime, runValues *element.RunValues, data ...map[string]any) error {
+func SetRunValues(vm *goja.Runtime, runValues *element.ApiRunValues, data ...map[string]any) error {
 
 	if runValues != nil {
 		if runValues.Server != nil {
@@ -99,8 +99,8 @@ func SetRunValues(vm *goja.Runtime, runValues *element.RunValues, data ...map[st
 				return err
 			}
 		}
-		if runValues.Service != nil {
-			if err := runValues.Service.SetSelfVMValue("service", vm); err != nil {
+		if runValues.ApiService != nil {
+			if err := runValues.ApiService.SetSelfVMValue("service", vm); err != nil {
 				return err
 			}
 		}

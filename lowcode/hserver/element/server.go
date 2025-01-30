@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -32,4 +33,5 @@ type Server interface {
 	SetSelfVMValue(name string, vm *goja.Runtime) error
 	SetRunValues(data map[string]any)
 	Start() error
+	HttpServer() *restapp.HttpServer
 }

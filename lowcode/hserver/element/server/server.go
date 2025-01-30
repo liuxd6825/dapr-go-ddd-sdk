@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/script"
@@ -17,13 +18,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
-	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-
 	iofs "io/fs"
 )
 
@@ -33,20 +33,22 @@ type Server struct {
 	app          *iris.Application
 	srcFs        afero.Fs
 	fsPkg        element.FsPkg
-	services     *types.CMap[element.Service] // 服务Map
-	envConfig    common.IEnvConfig            // 环境变量
-	tpl          *tpl_pkg.Template            // 模板渲染服务
+	subServices  *types.CMap[element.SubService] // 服务Map
+	apiServices  *types.CMap[element.ApiService] // 服务Map
+	envConfig    common.IEnvConfig               // 环境变量
+	tpl          *tpl_pkg.Template               // 模板渲染服务
 	definition   *definition.Definition
 	cacheEnable  bool // 是否启用缓存
 	schemaLoader schema.URLLoader
 	pkg          any
 	srcFileName  string
 	factory      element.Factory
+	httpServer   *restapp.HttpServer
 	opts         []element.NewServerOptions
 }
 
 // NewServer 解析 HTML 并返回 Server 对象
-func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
+func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
 	fsma, err := env.GetFsManager()
 	if err != nil {
 		return nil, err
@@ -61,8 +63,10 @@ func NewServer(app *iris.Application, srcFileName string, srcFs afero.Fs, factor
 	server := &Server{
 		srcFileName:  srcFileName,
 		opts:         opts,
-		app:          app,
-		services:     types.NewCMap[element.Service](),
+		httpServer:   httpServer,
+		app:          httpServer.App(),
+		apiServices:  types.NewCMap[element.ApiService](),
+		subServices:  types.NewCMap[element.SubService](),
 		fsPkg:        fsPkg,
 		envConfig:    env,
 		srcFs:        srcFs,
@@ -140,6 +144,10 @@ func (s *Server) Definition() *definition.Definition {
 	return s.definition
 }
 
+func (s *Server) HttpServer() *restapp.HttpServer {
+	return s.httpServer
+}
+
 // CacheEnable
 //
 //	@Description: 是否启用缓存模式
@@ -212,14 +220,19 @@ func (s *Server) start() error {
 		return err
 	}
 
-	runValue := &element.RunValues{
+	runValue := &element.ApiRunValues{
 		WorkPath: s.WorkPath(),
 		Self:     s,
 	}
 	if err := s.RunInitScript(runValue); err != nil {
 		return err
 	}
-	for _, service := range s.services.Items() {
+	for _, service := range s.apiServices.Items() {
+		if err := service.Initialize(); err != nil {
+			return err
+		}
+	}
+	for _, service := range s.subServices.Items() {
 		if err := service.Initialize(); err != nil {
 			return err
 		}
@@ -232,7 +245,7 @@ func (s *Server) Restart() error {
 		return err
 	}
 	errs := errors.NewErrors()
-	for _, service := range s.services.Items() {
+	for _, service := range s.apiServices.Items() {
 		if e := service.Close(); e != nil {
 			errs.AddError(e)
 		}
@@ -240,18 +253,18 @@ func (s *Server) Restart() error {
 	if !errs.IsEmpty() {
 		return errs
 	}
-	s.services.Clear()
+	s.apiServices.Clear()
 	return s.Start()
 }
 
-// GetService
+// GetApiService
 //
 //	@Description: 取得服务
 //	@receiver s
 //	@param serviceName
 //	@return *Service
-func (s *Server) GetService(serviceName string) element.Service {
-	service, ok := s.services.Get(serviceName)
+func (s *Server) GetApiService(apiServiceName string) element.ApiService {
+	service, ok := s.apiServices.Get(apiServiceName)
 	if ok {
 		return service
 	}
@@ -275,35 +288,88 @@ func (s *Server) parse(doc *goquery.Document) error {
 		return err
 	}
 
-	// 遍历所有 <service> 节点
-	serverEl.Find("services").Children().Each(func(i int, sel *goquery.Selection) {
+	linksNodes := serverEl.Find(common.NodeType_Links)
+	linksNodes.Each(func(i int, linkSel *goquery.Selection) {
+		err = s.parseLinks(linkSel)
+		if err != nil {
+			panic(err)
+		}
+	})
+	return nil
+}
+
+func (s *Server) parseLinks(linkSel *goquery.Selection) error {
+	link := linkSel.Get(0)
+	if link == nil {
+		return nil
+	}
+	if _, exists := linkSel.Attr("close"); exists {
+		return nil
+	}
+
+	linkSel.Children().Each(func(i int, sel *goquery.Selection) {
 		node := sel.Get(0)
-		if node != nil && node.Type == 3 && node.Data == "link" {
+		if node != nil && node.Type == 3 && node.Data == common.NodeType_Link {
 			// 获取 url 属性
 			fileUrl, exists := sel.Attr("href")
 			if exists {
-				s.Logs(logrus.InfoLevel, "server.parse() %s ", fileUrl)
-				data, err := s.ReadSrcFile(fileUrl, s.FsOpts())
-				if err != nil {
-					panic(err)
-				}
-				var service element.Service
-				service, err = s.factory.NewService(s, data, fileUrl, nil)
+				s.Logs(logrus.InfoLevel, "api-server.parse() %s ", fileUrl)
+				fileData, err := s.ReadSrcFile(fileUrl, s.FsOpts())
 				if err != nil {
 					panic(err)
 				}
 
-				isHas := s.services.Has(service.Config().Name)
-				if isHas {
-					errMsg := fmt.Sprintf("service %s already exists", service.Config().Name)
-					panic(errMsg)
+				fileReader := bytes.NewReader(fileData)
+				// 使用 goquery 解析 HTML
+				fileDoc, err := goquery.NewDocumentFromReader(fileReader)
+				if err != nil {
+					panic(err)
 				}
-				s.Logs(logrus.InfoLevel, "service name=%s; url=%s;", service.Config().Name, service.Config().URL)
-				s.services.Set(service.Config().Name, service)
+				fileDoc.Find(common.NodeType_Service).Each(func(i int, serviceSel *goquery.Selection) {
+					if err = s.addApiService(serviceSel, fileUrl); err != nil {
+						panic(err)
+					}
+				})
+				fileDoc.Find(common.NodeType_Sub).Each(func(i int, subSel *goquery.Selection) {
+					if err = s.addSubService(subSel, fileUrl); err != nil {
+						panic(err)
+					}
+				})
 			}
 		}
 	})
+	return nil
+}
 
+func (s *Server) addApiService(sel *goquery.Selection, fileUrl string) error {
+	apiService, err := s.factory.NewApiService(s, sel, fileUrl, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var config = apiService.Config()
+	isHas := s.apiServices.Has(config.Name)
+	if isHas {
+		errMsg := fmt.Sprintf("Service %s already exists", config.Name)
+		panic(errMsg)
+	}
+	s.Logs(logrus.InfoLevel, "Service name=%s; url=%s;", config.Name, config.URL)
+	s.apiServices.Set(config.Name, apiService)
+	return nil
+}
+
+func (s *Server) addSubService(sel *goquery.Selection, fileUrl string) error {
+	service, err := s.factory.NewSubService(s, sel, fileUrl, nil)
+	if err != nil {
+		panic(err)
+	}
+	var config = service.Config()
+	isHas := s.subServices.Has(config.Name)
+	if isHas {
+		errMsg := fmt.Sprintf("Sub %s already exists", config.Name)
+		panic(errMsg)
+	}
+	s.subServices.Set(config.Name, service)
 	return nil
 }
 
@@ -322,6 +388,8 @@ func (s *Server) Logs(level logrus.Level, format string, args ...interface{}) {
 		logger.Fatalf(format, args...)
 	case logrus.PanicLevel:
 		logger.Panicf(format, args...)
+	default:
+		panic("unhandled default case")
 	}
 }
 

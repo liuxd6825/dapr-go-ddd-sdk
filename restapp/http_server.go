@@ -235,7 +235,7 @@ func (s *HttpServer) startSubscribeHandlers() error {
 	if s.subscribes != nil {
 		for _, subscribe := range s.subscribes {
 			if subscribe != nil {
-				if _, err := s.registerSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetEventHandler(), subscribe.GetInterceptor()); err != nil {
+				if _, err := s.RegisterSubscribeHandler(subscribe.GetSubscribes(), subscribe.GetEventHandler(), subscribe.GetInterceptor()); err != nil {
 					panic(err.Error())
 				}
 			}

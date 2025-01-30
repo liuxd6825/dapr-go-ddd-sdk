@@ -8,12 +8,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
-// registerSubscribeHandler
+// RegisterSubscribeHandler
 // @Description: 新建领域事件控制器
 // @param subscribes
 // @param queryEventHandler
 // @return ddd.SubscribeHandler
-func (s *HttpServer) registerSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
+func (s *HttpServer) RegisterSubscribeHandler(subscribes []*ddd.Subscribe, queryEventHandler ddd.QueryEventHandler, interceptors []ddd.SubscribeInterceptorFunc) (ddd.SubscribeHandler, error) {
 	subscribesHandler := func(sh ddd.SubscribeHandler, subscribe *ddd.Subscribe) (err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())

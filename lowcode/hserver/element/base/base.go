@@ -40,7 +40,7 @@ func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fa
 
 func (b *Base) ParseInitScript(parentEl *goquery.Selection) error {
 	var err error
-	opts, err := element.ParseScriptConfig(parentEl, "script", "init()", b.srcFileName)
+	opts, _, err := element.GetScriptConfig(parentEl, "init()", b.srcFileName)
 	if err != nil {
 		return err
 	}
@@ -51,7 +51,7 @@ func (b *Base) ParseInitScript(parentEl *goquery.Selection) error {
 	return err
 }
 
-func (b *Base) RunInitScript(values *element.RunValues, opts ...element.RunOptions) error {
+func (b *Base) RunInitScript(values *element.ApiRunValues, opts ...element.RunOptions) error {
 	opts = append(opts, func(vm *goja.Runtime) error {
 		_ = vm.Set("ctx", context.Background())
 		return nil
@@ -60,7 +60,7 @@ func (b *Base) RunInitScript(values *element.RunValues, opts ...element.RunOptio
 	return err
 }
 
-func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *element.RunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...element.RunOptions) error {
+func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *element.ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...element.RunOptions) error {
 	if code != "" {
 		addOpts := &element.ScriptConfig{
 			FuncName:    funcName,

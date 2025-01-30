@@ -26,14 +26,14 @@ import (
 type Request struct {
 	element.Base
 	server          element.Server
-	service         element.Service
-	config          *element.RequestConfig
+	service         element.ApiService
+	config          *element.ApiRequestConfig
 	script          *script.Script
 	paramsTypeCache *types.CMap[common.ParamsType]
 	schemaCache     *types.CMap[*jsonschema.Schema]
 }
 
-func NewRequest(server element.Server, service element.Service, srcFileName string, config *element.RequestConfig) (element.Request, error) {
+func NewApiRequest(server element.Server, service element.ApiService, srcFileName string, config *element.ApiRequestConfig) (element.ApiRequest, error) {
 	var err error
 	logger := service.Logger()
 	r := &Request{
@@ -44,7 +44,7 @@ func NewRequest(server element.Server, service element.Service, srcFileName stri
 		schemaCache:     types.NewCMap[*jsonschema.Schema](),
 	}
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.RootPath())
-	r.Base, err = server.Factory().NewBase(srcFileName, logger, r, server.Factory(), fsOpts)
+	r.Base, err = server.Factory().NewBase(srcFileName, logger, server, server.Factory(), fsOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -61,13 +61,8 @@ func NewRequest(server element.Server, service element.Service, srcFileName stri
 	return r, nil
 }
 
-func (s *Request) Config() *element.RequestConfig {
+func (s *Request) Config() *element.ApiRequestConfig {
 	return s.config
-}
-
-func (s *Request) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
-	data, err := s.service.ReadFile(filename, opts...)
-	return data, err
 }
 
 func (s *Request) Initialize() error {
@@ -101,7 +96,7 @@ func (s *Request) handle(ictx iris.Context) {
 }
 
 func (s *Request) runScript(wctx element.WebContext, params any) {
-	values := &element.RunValues{
+	values := &element.ApiRunValues{
 		Server:     s.server,
 		Self:       s.service,
 		WebContext: wctx,

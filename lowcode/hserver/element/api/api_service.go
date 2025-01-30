@@ -1,12 +1,12 @@
-package service
+package api
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/subevents"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -15,12 +15,12 @@ import (
 )
 
 // Service 定义服务的基本结构
-type Service struct {
+type ApiService struct {
 	element.Base
 	server     element.Server
-	requests   *types.CMap[element.Request]
+	requests   *types.CMap[element.ApiRequest]
 	data       *types.CMap[any]
-	config     *element.ServerConfig
+	config     *element.ApiServerConfig
 	initScript *element.ScriptConfig
 	subEvents  *types.CMap[*subevents.SubEvents]
 }
@@ -32,7 +32,7 @@ type Call struct {
 	Params map[string]string `json:"params"`
 }
 
-func NewService(server element.Server, html []byte, srcFileName string, data map[string]any) (element.Service, error) {
+func NewApiService(server element.Server, sel *goquery.Selection, srcFileName string, data map[string]any) (element.ApiService, error) {
 	var err error
 	fsOpts := fsopts.NewOptionsWidthFileName(srcFileName, server.RootPath())
 
@@ -42,11 +42,11 @@ func NewService(server element.Server, html []byte, srcFileName string, data map
 	}
 
 	// 解析 Service 节点
-	service := &Service{
+	service := &ApiService{
 		server:    server,
 		data:      dataMap,
-		requests:  types.NewCMap[element.Request](),
-		config:    &element.ServerConfig{},
+		requests:  types.NewCMap[element.ApiRequest](),
+		config:    &element.ApiServerConfig{},
 		subEvents: types.NewCMap[*subevents.SubEvents](),
 	}
 	service.Base, err = server.Factory().NewBase(srcFileName, server.Logger(), service, server.Factory(), fsOpts)
@@ -56,26 +56,26 @@ func NewService(server element.Server, html []byte, srcFileName string, data map
 
 	service.SetPkg(server.Pkg())
 
-	if err := service.parse(html); err != nil {
+	if err := service.parse(sel); err != nil {
 		return nil, err
 	}
 
 	return service, nil
 }
 
-func (s *Service) Config() *element.ServerConfig {
+func (s *ApiService) Config() *element.ApiServerConfig {
 	return s.config
 }
 
-func (s *Service) InitVM(vm *goja.Runtime) error {
+func (s *ApiService) InitVM(vm *goja.Runtime) error {
 	return nil
 }
 
-func (s *Service) AddRequest(r element.Request) {
+func (s *ApiService) AddRequest(r element.ApiRequest) {
 	s.requests.Set(r.Config().Name, r)
 }
 
-func (s *Service) GetRequest(name string) element.Request {
+func (s *ApiService) GetRequest(name string) element.ApiRequest {
 	r, ok := s.requests.Get(name)
 	if !ok {
 		return nil
@@ -83,30 +83,20 @@ func (s *Service) GetRequest(name string) element.Request {
 	return r
 }
 
-func (s *Service) GetRequestKeys() []string {
+func (s *ApiService) GetRequestKeys() []string {
 	return s.requests.Keys()
 }
 
-func (s *Service) GetRequestCount() int {
+func (s *ApiService) GetRequestCount() int {
 	return s.requests.Count()
 }
 
-func (s *Service) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+func (s *ApiService) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
 	data, err := s.server.ReadFile(filename, opts...)
 	return data, err
 }
 
-func (s *Service) parse(html []byte) error {
-	reader := bytes.NewReader(html)
-	// 解析 HTML
-	doc, err := goquery.NewDocumentFromReader(reader)
-	if err != nil {
-		return err
-	}
-	serviceEl := doc.Find("body service")
-	if serviceEl == nil {
-		return errors.New("no service found")
-	}
+func (s *ApiService) parse(serviceEl *goquery.Selection) error {
 
 	s.config.URL = serviceEl.AttrOr("url", "")
 	s.config.Name = serviceEl.AttrOr("name", "")
@@ -115,9 +105,9 @@ func (s *Service) parse(html []byte) error {
 		panic(errors.New("service name is empty in %s", s.SrcFileName()))
 	}
 
-	var reqConfigs []element.RequestConfig
+	var reqConfigs []element.ApiRequestConfig
 
-	err = s.ParseInitScript(serviceEl)
+	err := s.ParseInitScript(serviceEl)
 	if err != nil {
 		return err
 	}
@@ -132,9 +122,9 @@ func (s *Service) parse(html []byte) error {
 			return
 		}
 		switch node.Data {
-		case "request":
+		case common.NodeType_Request:
 			// 解析 Request 列表
-			reqCfg := element.RequestConfig{
+			reqCfg := element.ApiRequestConfig{
 				Type:        strings.ToUpper(req.AttrOr("type", "")),
 				Name:        req.AttrOr("name", ""),
 				URL:         req.AttrOr("url", ""),
@@ -153,7 +143,7 @@ func (s *Service) parse(html []byte) error {
 			scriptEl := req.Find("script")
 			if scriptEl != nil {
 				funcName := fmt.Sprintf("%s.%s()", s.config.Name, reqCfg.Name)
-				scriptConfig, er := element.ParseScriptConfig(req, "script", funcName, s.SrcFileName())
+				scriptConfig, _, er := element.GetScriptConfig(req, funcName, s.SrcFileName())
 				if er != nil {
 					err = er
 					return
@@ -168,7 +158,7 @@ func (s *Service) parse(html []byte) error {
 	})
 
 	for _, cfg := range reqConfigs {
-		request, err := s.server.Factory().NewRequest(s.server, s, s.SrcFileName(), &cfg)
+		request, err := s.server.Factory().NewApiRequest(s.server, s, s.SrcFileName(), &cfg)
 		if err != nil {
 			return err
 		}
@@ -177,8 +167,8 @@ func (s *Service) parse(html []byte) error {
 	return err
 }
 
-func (s *Service) Initialize() error {
-	runValues := &element.RunValues{
+func (s *ApiService) Initialize() error {
+	runValues := &element.ApiRunValues{
 		Server:   s.server,
 		Self:     s,
 		WorkPath: s.WorkPath(),
@@ -199,11 +189,11 @@ func (s *Service) Initialize() error {
 	return nil
 }
 
-func (s *Service) Logger() logrus.FieldLogger {
+func (s *ApiService) Logger() logrus.FieldLogger {
 	return s.server.Logger()
 }
 
-func (s *Service) SetSelfVMValue(name string, vm *goja.Runtime) error {
+func (s *ApiService) SetSelfVMValue(name string, vm *goja.Runtime) error {
 	obj := vm.NewDynamicObject(NewServiceProxy(s, vm))
 	_ = vm.Set(name, obj)
 	if err := s.InitVM(vm); err != nil {
@@ -212,7 +202,7 @@ func (s *Service) SetSelfVMValue(name string, vm *goja.Runtime) error {
 	return nil
 }
 
-func (s *Service) Close() error {
+func (s *ApiService) Close() error {
 	errs := errors.NewErrors()
 	for _, req := range s.requests.Items() {
 		if err := req.Close(); err != nil {

@@ -23,23 +23,31 @@ func RegisterOptionMarshaler(marshaler JsonMarshaler) RegisterOption {
 	}
 }
 
-func RegisterEventType(eventType string, eventVersion string, newFunc NewEventFunc, options ...RegisterOption) error {
+// RegisterEventType
+// @Description: 添加事件类型
+// @receiver r
+// @param eventType 事件类型
+// @param eventVersion 事件版本号
+// @param newFunc 事件方法
+// @param options 选项
+// @return error 错误
+func RegisterEventType(eventType string, eventVersion string, newEventFunc NewEventFunc, options ...RegisterOption) error {
 	if err := assert.NotEmpty(eventType, assert.NewOptions("ddd.RegisterEventType() eventType is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotEmpty(eventVersion, assert.NewOptions("ddd.RegisterEventType() eventType is nil")); err != nil {
+	if err := assert.NotEmpty(eventVersion, assert.NewOptions("ddd.RegisterEventType() eventVersion is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(newFunc, assert.NewOptions("ddd.RegisterEventType() newFunc is nil")); err != nil {
+	if err := assert.NotNil(newEventFunc, assert.NewOptions("ddd.RegisterEventType() newEventFunc is nil")); err != nil {
 		return err
 	}
-	return _eventTypeRegistry.add(eventType, eventVersion, newFunc, options...)
+	return _eventTypeRegistry.add(eventType, eventVersion, newEventFunc, options...)
 }
 
 func NewDomainEvent(record *dapr.EventRecord) (interface{}, error) {
 	if eventTypes, ok := _eventTypeRegistry.typeMap[record.EventType]; ok {
 		if item, ok := eventTypes.versionMap[record.EventVersion]; ok {
-			event := item.newFunc()
+			event := item.newFunc() // 新建一个事件对象
 			var err error
 			if item.marshaler != nil {
 				err = item.marshaler(record, event)

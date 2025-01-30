@@ -23,6 +23,6 @@ type Base interface {
 	Pkg() *types.CMap[any]
 	RunValues() *types.CMap[any]
 	ParseInitScript(parentEl *goquery.Selection) error
-	RunInitScript(values *RunValues, opts ...RunOptions) error
-	RunOnce(funcName, code, codeType, fileName string, runValues *RunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error
+	RunInitScript(values *ApiRunValues, opts ...RunOptions) error
+	RunOnce(funcName, code, codeType, fileName string, runValues *ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error
 }
