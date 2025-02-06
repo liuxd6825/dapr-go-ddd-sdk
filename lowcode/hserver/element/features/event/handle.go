@@ -26,6 +26,16 @@ type Handle struct {
 	config  *Config
 }
 
+func Register(service element.Service, fun element.Func, tag *element.FuncTag) {
+	h, err := NewHandle(service, fun, tag)
+	if err != nil {
+		panic(err)
+	}
+	if err = h.Initialize(); err != nil {
+		panic(err)
+	}
+}
+
 func NewHandle(service element.Service, fun element.Func, tag *element.FuncTag) (*Handle, error) {
 	h := &Handle{
 		service: service,
@@ -34,7 +44,6 @@ func NewHandle(service element.Service, fun element.Func, tag *element.FuncTag) 
 		config:  NewConfig(tag),
 	}
 	return h, nil
-
 }
 
 func (e *Handle) Close() error {
@@ -69,7 +78,7 @@ func (e *Handle) run(ctx context.Context, eventType string, eventVersion string,
 }
 
 func (e *Handle) WorkPath() string {
-	return ""
+	return e.service.WorkPath()
 }
 
 func (e *Handle) Initialize() error {

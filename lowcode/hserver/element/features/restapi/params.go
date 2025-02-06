@@ -1,4 +1,4 @@
-package rest_api
+package restapi
 
 import (
 	"github.com/dop251/goja"
@@ -28,6 +28,7 @@ func (f InParamType) String() string {
 }
 
 const (
+	InParamTypeNone       InParamType = ""           // 无
 	InParamTypeURL        InParamType = "url"        // URL中的参数
 	InParamTypePath       InParamType = "path"       // 路径参数
 	InParamTypeBody       InParamType = "body"       // 请求body参数

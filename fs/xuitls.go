@@ -19,6 +19,12 @@ func IsDir(afs afero.Fs, filename string, opts ...*fsopts.Options) (bool, error)
 	return afero.IsDir(afs, fileName)
 }
 
+// Exists 文件是否存在
+func Exists(afs afero.Fs, filename string, opts ...*fsopts.Options) (bool, error) {
+	fileName := fsopts.GetAbsPath(filename, opts...)
+	return afero.Exists(afs, fileName)
+}
+
 // IsEmpty
 //
 //	@Description:

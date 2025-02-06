@@ -1,4 +1,4 @@
-package rest_api
+package restapi
 
 import (
 	"context"
@@ -6,15 +6,12 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/jsonschema/v6"
 	"strings"
 )
@@ -27,6 +24,13 @@ type ApiHandle struct {
 	paramsTypeCache *types.CMap[common.ParamsType]
 	schemaCache     *types.CMap[*jsonschema.Schema]
 	config          *RestConfig
+}
+
+func Register(service element.Service, fun element.Func, tag *element.FuncTag) {
+	h := NewApiHandle(service, tag, fun)
+	if err := h.Initialize(); err != nil {
+		panic(err)
+	}
 }
 
 func NewApiHandle(service element.Service, tag *element.FuncTag, fun element.Func) *ApiHandle {
@@ -70,10 +74,10 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 		return
 	}
 	wctx := s.server.Factory().NewWebContext(ctx, ictx)
-	s.runScript(wctx, s.GetParamsValue(wctx))
+	s.run(wctx, s.GetParamsValue(wctx))
 }
 
-func (s *ApiHandle) runScript(wctx element.WebContext, params any) {
+func (s *ApiHandle) run(wctx element.WebContext, params any) {
 	values := &element.ApiRunValues{
 		Server:     s.server,
 		Self:       s.service,
@@ -113,10 +117,6 @@ func (s *ApiHandle) runScript(wctx element.WebContext, params any) {
 //	@return map[string]any 参数
 func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 	var err error
-	// 当参数类型是findPaging时，当
-	if s.config.ParamsType() == "findPaging" {
-		return wctx.GetFindPaging().AsMap()
-	}
 
 	// 获取参数文件与参数类型
 	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ICtx())
@@ -126,7 +126,6 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 
 	// 要返回的值
 	data := map[string]any{}
-
 	ictx := wctx.ICtx()
 
 	for key, v := range paramsType {
@@ -183,47 +182,8 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 //	@return string  参数文件名
 //	@return xtype.ParamsType  参数配置类型
 func (s *ApiHandle) GetParamsType(ictx iris.Context) (string, common.ParamsType) {
-	fsOpts := &fsopts.Options{
-		RootPath: s.server.RootPath(),
-		WorkPath: s.service.FsOpts().WorkPath,
-	}
-	var paramsTypeFile string
-	var paramsType common.ParamsType
-
-	// 引用Schema文件
-	if s.config.ParamsUrl() != "" {
-		fileUrl := s.config.ParamsUrl()
-		urlPars := s.GetUrlParams(ictx)
-		if (urlPars != nil) && (len(urlPars) > 0) {
-			fileUrl = stringutils.ReplacePlaceholders(fileUrl, urlPars)
-		}
-		paramsTypeFile = s.service.WorkPath() + fileUrl
-		if pType, ok := s.paramsTypeCache.Get(paramsTypeFile); ok {
-			return paramsTypeFile, pType
-		}
-		bytes, err := s.server.ReadFile(fileUrl, fsOpts)
-		if err != nil {
-			panic(err)
-		}
-		if bytes != nil && len(bytes) > 0 {
-			if err = jsonutils.Unmarshal(bytes, &paramsType); err != nil {
-				panic(fmt.Sprintf(" loading %s  error: %s", fileUrl, err.Error()))
-			}
-			s.paramsTypeCache.Set(paramsTypeFile, paramsType)
-		}
-
-	} else if s.config.ParamsType() != "" {
-		pt := s.config.ParamsType()
-		// 引用系统中的schema定义文件
-		paramsTypeFile = fmt.Sprintf("/definition/params/%s.json", pt)
-		if pType, ok := s.paramsTypeCache.Get(paramsTypeFile); ok {
-			return paramsTypeFile, pType
-		}
-		paramsType = s.server.Definition().GetParamsType(pt + ".json")
-		s.paramsTypeCache.Set(paramsTypeFile, paramsType)
-	}
-
-	return paramsTypeFile, paramsType
+	urlPars := s.GetUrlParams(ictx)
+	return s.fun.GetParamsType(urlPars, s.service.FsOpts())
 }
 
 // GetUrlParams

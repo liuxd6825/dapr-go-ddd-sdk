@@ -9,6 +9,7 @@ import (
 
 type FsPkg interface {
 	NewFs(fsName string) FsPkg
+	Exists(fileName string, opts ...*fsopts.Options) bool
 	Create(name string, opts ...*fsopts.Options) afero.File
 	Rename(oldName, newName string, opts ...*fsopts.Options) error
 	ReadFile(filename string, opts ...*fsopts.Options) []byte

@@ -86,7 +86,7 @@ func (b *Base) ParseFunc(sel *goquery.Selection, server element.Server) error {
 
 	for _, cfg := range funcConfigs {
 		fmt.Println("func = ", cfg.FuncName)
-		fun, err := server.Factory().NewFunc(cfg, b.Logger(), server, b.Pkg())
+		fun, err := server.Factory().NewFunc(server, cfg, b.Logger(), server, b.Pkg())
 		if err != nil {
 			return err
 		}

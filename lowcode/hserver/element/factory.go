@@ -63,7 +63,7 @@ type Factory interface {
 	//  @return *Script
 	//  @return error
 	//
-	NewFunc(config *FuncConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (Func, error)
+	NewFunc(server Server, config *FuncConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (Func, error)
 
 	//
 	// NewFuncManager

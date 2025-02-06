@@ -30,8 +30,8 @@ func (f *factory) NewBase(srcFileName string, logger logrus.FieldLogger, reader 
 	return base.NewBase(srcFileName, logger, reader, factory, fsOpts)
 }
 
-func (f *factory) NewFunc(config *element.FuncConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (element.Func, error) {
-	return funcs.NewFunc(config, logger, reader, pkg)
+func (f *factory) NewFunc(server element.Server, config *element.FuncConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (element.Func, error) {
+	return funcs.NewFunc(server, config, logger, reader, pkg)
 }
 
 func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {

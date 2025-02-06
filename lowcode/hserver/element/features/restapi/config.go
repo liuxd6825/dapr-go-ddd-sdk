@@ -1,4 +1,4 @@
-package rest_api
+package restapi
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 

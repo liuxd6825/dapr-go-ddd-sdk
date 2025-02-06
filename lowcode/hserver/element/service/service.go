@@ -6,8 +6,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/event"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/rest_api"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/features/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/features/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 )
@@ -96,29 +96,20 @@ func (s *Service) Initialize() error {
 
 	for _, fun := range s.Funcs().Items() {
 		for _, tag := range fun.Config().Tags {
-			s.registerHandle(tag, fun)
+			s.register(tag, fun)
 		}
 	}
 	return nil
 }
 
 // registerHandle 注册服务各类控制器
-func (s *Service) registerHandle(tag *element.FuncTag, fun element.Func) {
+func (s *Service) register(tag *element.FuncTag, fun element.Func) {
 	tagType := tag.GetType()
 	switch tagType {
 	case element.FuncTag_DomainEvent:
-		h, err := event.NewHandle(s, fun, tag)
-		if err != nil {
-			panic(err)
-		}
-		if err = h.Initialize(); err != nil {
-			panic(err)
-		}
+		event.Register(s, fun, tag)
 	case element.FuncTag_RestApi:
-		h := rest_api.NewApiHandle(s, tag, fun)
-		if err := h.Initialize(); err != nil {
-			panic(err)
-		}
+		restapi.Register(s, fun, tag)
 	}
 }
 

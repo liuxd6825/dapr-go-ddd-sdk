@@ -199,6 +199,14 @@ func (m *FsPkg) Mkdir(name string, perm os.FileMode, opts ...*fsopts.Options) {
 	}
 }
 
+func (m *FsPkg) Exists(fileName string, opts ...*fsopts.Options) bool {
+	v, err := m.base.Exists(fileName, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 // ReadDir
 //
 //	@Description: 读取指定目录中的子目录与文件。

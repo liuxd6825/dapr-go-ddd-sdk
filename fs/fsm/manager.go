@@ -298,6 +298,15 @@ func (m *Manager) MkdirAll(filename string, fileMode fs.FileMode, opts ...*fsopt
 	return fs2.MkdirAll(afs, fileName, fileMode, opts...)
 }
 
+// Exists 文件是否存在
+func (m *Manager) Exists(filename string, opts ...*fsopts.Options) (bool, error) {
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return false, err
+	}
+	return fs2.Exists(afs, fileName)
+}
+
 // ReadDir
 //
 //	@Description: 取得所有子目录与文件

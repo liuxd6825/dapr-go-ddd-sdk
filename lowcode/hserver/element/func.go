@@ -3,6 +3,8 @@ package element
 import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/sirupsen/logrus"
 )
@@ -13,7 +15,8 @@ type FuncConfig struct {
 	CodeType    string
 	SrcFileName string
 	UsePool     bool
-	Params      string                // 方法参数定义
+	ParamsUrl   string // 方法参数定义
+	ParamsType  string
 	TransType   runtime.TransformType //转换类型
 	Tags        []*FuncTag
 	Selection   *goquery.Selection
@@ -24,6 +27,7 @@ type Func interface {
 	BuildCode() error
 	Run(opts ...RunOptions) (res any, err error)
 	Config() *FuncConfig
+	GetParamsType(urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType)
 }
 
 type FuncManager interface {
@@ -45,7 +49,8 @@ func NewFuncConfig(scriptEl *goquery.Selection, srcFileName string, tags []*Func
 		Selection:   scriptEl,
 		Tags:        tags,
 		SrcFileName: srcFileName,
-		Params:      scriptEl.AttrOr("params", ""),
+		ParamsUrl:   scriptEl.AttrOr("params-url", ""),
+		ParamsType:  scriptEl.AttrOr("params-type", ""),
 		FuncName:    scriptEl.AttrOr("name", ""),
 		CodeType:    scriptEl.AttrOr("type", ""),
 		Code:        scriptEl.Text(),
