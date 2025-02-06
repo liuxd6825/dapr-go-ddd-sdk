@@ -12,7 +12,7 @@ import (
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/script"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/funcs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/console_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
@@ -33,10 +33,9 @@ type Server struct {
 	app          *iris.Application
 	srcFs        afero.Fs
 	fsPkg        element.FsPkg
-	subServices  *types.CMap[element.SubService] // 服务Map
-	apiServices  *types.CMap[element.ApiService] // 服务Map
-	envConfig    common.IEnvConfig               // 环境变量
-	tpl          *tpl_pkg.Template               // 模板渲染服务
+	services     *types.CMap[element.Service] // 服务Map
+	envConfig    common.IEnvConfig            // 环境变量
+	tpl          *tpl_pkg.Template            // 模板渲染服务
 	definition   *definition.Definition
 	cacheEnable  bool // 是否启用缓存
 	schemaLoader schema.URLLoader
@@ -65,8 +64,7 @@ func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.F
 		opts:         opts,
 		httpServer:   httpServer,
 		app:          httpServer.App(),
-		apiServices:  types.NewCMap[element.ApiService](),
-		subServices:  types.NewCMap[element.SubService](),
+		services:     types.NewCMap[element.Service](),
 		fsPkg:        fsPkg,
 		envConfig:    env,
 		srcFs:        srcFs,
@@ -227,12 +225,7 @@ func (s *Server) start() error {
 	if err := s.RunInitScript(runValue); err != nil {
 		return err
 	}
-	for _, service := range s.apiServices.Items() {
-		if err := service.Initialize(); err != nil {
-			return err
-		}
-	}
-	for _, service := range s.subServices.Items() {
+	for _, service := range s.services.Items() {
 		if err := service.Initialize(); err != nil {
 			return err
 		}
@@ -245,7 +238,7 @@ func (s *Server) Restart() error {
 		return err
 	}
 	errs := errors.NewErrors()
-	for _, service := range s.apiServices.Items() {
+	for _, service := range s.services.Items() {
 		if e := service.Close(); e != nil {
 			errs.AddError(e)
 		}
@@ -253,18 +246,18 @@ func (s *Server) Restart() error {
 	if !errs.IsEmpty() {
 		return errs
 	}
-	s.apiServices.Clear()
+	s.services.Clear()
 	return s.Start()
 }
 
-// GetApiService
+// GetService
 //
 //	@Description: 取得服务
 //	@receiver s
 //	@param serviceName
 //	@return *Service
-func (s *Server) GetApiService(apiServiceName string) element.ApiService {
-	service, ok := s.apiServices.Get(apiServiceName)
+func (s *Server) GetService(apiServiceName string) element.Service {
+	service, ok := s.services.Get(apiServiceName)
 	if ok {
 		return service
 	}
@@ -278,19 +271,18 @@ func (s *Server) GetApiService(apiServiceName string) element.ApiService {
 //	@param doc
 //	@return error
 func (s *Server) parse(doc *goquery.Document) error {
-	serverEl := doc.Find("body server")
-	if serverEl == nil {
+	rootEl := doc.Find("body server")
+	if rootEl == nil {
 		return errors.New("no server")
 	}
 
-	err := s.ParseInitScript(serverEl)
-	if err != nil {
+	if err := s.ParseFunc(rootEl, s); err != nil {
 		return err
 	}
 
-	linksNodes := serverEl.Find(common.NodeType_Links)
+	linksNodes := rootEl.Find(common.NodeType_Links)
 	linksNodes.Each(func(i int, linkSel *goquery.Selection) {
-		err = s.parseLinks(linkSel)
+		err := s.parseLinks(linkSel)
 		if err != nil {
 			panic(err)
 		}
@@ -313,7 +305,7 @@ func (s *Server) parseLinks(linkSel *goquery.Selection) error {
 			// 获取 url 属性
 			fileUrl, exists := sel.Attr("href")
 			if exists {
-				s.Logs(logrus.InfoLevel, "api-server.parse() %s ", fileUrl)
+				s.Logs(logrus.InfoLevel, "service.parse() %s ", fileUrl)
 				fileData, err := s.ReadSrcFile(fileUrl, s.FsOpts())
 				if err != nil {
 					panic(err)
@@ -326,12 +318,7 @@ func (s *Server) parseLinks(linkSel *goquery.Selection) error {
 					panic(err)
 				}
 				fileDoc.Find(common.NodeType_Service).Each(func(i int, serviceSel *goquery.Selection) {
-					if err = s.addApiService(serviceSel, fileUrl); err != nil {
-						panic(err)
-					}
-				})
-				fileDoc.Find(common.NodeType_Sub).Each(func(i int, subSel *goquery.Selection) {
-					if err = s.addSubService(subSel, fileUrl); err != nil {
+					if err = s.addService(serviceSel, fileUrl); err != nil {
 						panic(err)
 					}
 				})
@@ -341,35 +328,20 @@ func (s *Server) parseLinks(linkSel *goquery.Selection) error {
 	return nil
 }
 
-func (s *Server) addApiService(sel *goquery.Selection, fileUrl string) error {
-	apiService, err := s.factory.NewApiService(s, sel, fileUrl, nil)
+func (s *Server) addService(sel *goquery.Selection, fileUrl string) error {
+	apiService, err := s.factory.NewService(s, sel, fileUrl, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	var config = apiService.Config()
-	isHas := s.apiServices.Has(config.Name)
+	isHas := s.services.Has(config.Name())
 	if isHas {
 		errMsg := fmt.Sprintf("Service %s already exists", config.Name)
 		panic(errMsg)
 	}
-	s.Logs(logrus.InfoLevel, "Service name=%s; url=%s;", config.Name, config.URL)
-	s.apiServices.Set(config.Name, apiService)
-	return nil
-}
-
-func (s *Server) addSubService(sel *goquery.Selection, fileUrl string) error {
-	service, err := s.factory.NewSubService(s, sel, fileUrl, nil)
-	if err != nil {
-		panic(err)
-	}
-	var config = service.Config()
-	isHas := s.subServices.Has(config.Name)
-	if isHas {
-		errMsg := fmt.Sprintf("Sub %s already exists", config.Name)
-		panic(errMsg)
-	}
-	s.subServices.Set(config.Name, service)
+	s.Logs(logrus.InfoLevel, "Service name=%s; url=%s;", config.Name, config.Url())
+	s.services.Set(config.Name(), apiService)
 	return nil
 }
 
@@ -430,7 +402,7 @@ func (s *Server) SetRunValues(data map[string]any) {
 
 func (s *Server) InitVM(vm *goja.Runtime) error {
 	values := s.RunValues().Items()
-	if err := script.AddRuntimeValues(vm, values); err != nil {
+	if err := funcs.AddRuntimeValues(vm, values); err != nil {
 		return err
 	}
 	return nil

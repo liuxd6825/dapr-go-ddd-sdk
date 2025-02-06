@@ -1,13 +1,13 @@
-package api
+package service
 
 import "github.com/dop251/goja"
 
 type ServiceProxy struct {
-	service *ApiService
+	service *Service
 	vm      *goja.Runtime
 }
 
-func NewServiceProxy(service *ApiService, vm *goja.Runtime) *ServiceProxy {
+func NewServiceProxy(service *Service, vm *goja.Runtime) *ServiceProxy {
 	return &ServiceProxy{
 		service: service,
 		vm:      vm,

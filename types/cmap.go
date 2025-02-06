@@ -1,6 +1,10 @@
 package types
 
-import cmap "github.com/orcaman/concurrent-map"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	cmap "github.com/orcaman/concurrent-map"
+	"strings"
+)
 
 type CMap[T any] struct {
 	data cmap.ConcurrentMap
@@ -14,15 +18,27 @@ func NewCMap[T any]() *CMap[T] {
 
 func (m *CMap[T]) MSet(v map[string]T) {
 	for key, value := range v {
+		key = strings.Trim(key, " ")
 		m.data.Set(key, value)
 	}
 }
 
 func (m *CMap[T]) Set(key string, value T) {
+	key = strings.Trim(key, " ")
+	m.data.Set(key, value)
+}
+
+func (m *CMap[T]) Add(key string, value T) {
+	key = strings.Trim(key, " ")
+	has := m.data.Has(key)
+	if has {
+		panic(errors.New("key already exists %s", key))
+	}
 	m.data.Set(key, value)
 }
 
 func (m *CMap[T]) Get(key string) (T, bool) {
+	key = strings.Trim(key, " ")
 	if v, ok := m.data.Get(key); ok {
 		return v.(T), ok
 	}

@@ -122,7 +122,7 @@ func (a *ApplyEventOptions) GetSessionId() *string {
 }
 
 func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
-	res, err := publishEvents(ctx, EventApply, aggregate, []DomainEvent{event}, opts...)
+	res, err := PublishEvents(ctx, EventApply, aggregate, []DomainEvent{event}, opts...)
 	if resp, ok := res.(*dapr.ApplyEventResponse); ok {
 		return resp, err
 	}
@@ -130,7 +130,7 @@ func ApplyEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opt
 }
 
 func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
-	res, err := publishEvents(ctx, EventApply, aggregate, events, opts...)
+	res, err := PublishEvents(ctx, EventApply, aggregate, events, opts...)
 	if resp, ok := res.(*dapr.ApplyEventResponse); ok {
 		return resp, err
 	}
@@ -138,7 +138,7 @@ func ApplyEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent,
 }
 
 func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
-	res, err := publishEvents(ctx, EventCreate, aggregate, []DomainEvent{event}, opts...)
+	res, err := PublishEvents(ctx, EventCreate, aggregate, []DomainEvent{event}, opts...)
 	if resp, ok := res.(*dapr.CreateEventResponse); ok {
 		return resp, err
 	}
@@ -146,7 +146,7 @@ func CreateEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 }
 
 func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
-	res, err := publishEvents(ctx, EventCreate, aggregate, events, opts...)
+	res, err := PublishEvents(ctx, EventCreate, aggregate, events, opts...)
 	if resp, ok := res.(*dapr.CreateEventResponse); ok {
 		return resp, err
 	}
@@ -154,7 +154,7 @@ func CreateEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent
 }
 
 func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
-	res, err := publishEvents(ctx, EventDelete, aggregate, []DomainEvent{event}, opts...)
+	res, err := PublishEvents(ctx, EventDelete, aggregate, []DomainEvent{event}, opts...)
 	if resp, ok := res.(*dapr.DeleteEventResponse); ok {
 		return resp, err
 	}
@@ -162,21 +162,21 @@ func DeleteEvent(ctx context.Context, aggregate Aggregate, event DomainEvent, op
 }
 
 func DeleteEvents(ctx context.Context, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
-	res, err := publishEvents(ctx, EventDelete, aggregate, events, opts...)
+	res, err := PublishEvents(ctx, EventDelete, aggregate, events, opts...)
 	if resp, ok := res.(*dapr.DeleteEventResponse); ok {
 		return resp, err
 	}
 	return nil, err
 }
 
-// callDaprEventMethod
+// PublishEvents
 // @Description: 应用领域事件
 // @param ctx
 // @param agg
 // @param event
 // @param options
 // @return err
-func publishEvents(ctx context.Context, callEventType CallEventType, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
+func PublishEvents(ctx context.Context, callEventType CallEventType, aggregate Aggregate, events []DomainEvent, opts ...*ApplyEventOptions) (resAny any, resErr error) {
 	defer func() {
 		resErr = errors.GetRecoverError(resErr, recover())
 	}()

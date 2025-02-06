@@ -14,7 +14,8 @@ type RunOptions = func(vm *goja.Runtime) error
 // @Description: Element基础类
 type Base interface {
 	FsOpts() *fsopts.Options
-	Scripts() ScriptManager
+	ParseFunc(sel *goquery.Selection, server Server) error
+	Funcs() FuncManager
 	Logger() logrus.FieldLogger
 	SrcFileName() string
 	RootPath() string
@@ -22,7 +23,6 @@ type Base interface {
 	SetPkg(pkg *types.CMap[any])
 	Pkg() *types.CMap[any]
 	RunValues() *types.CMap[any]
-	ParseInitScript(parentEl *goquery.Selection) error
 	RunInitScript(values *ApiRunValues, opts ...RunOptions) error
 	RunOnce(funcName, code, codeType, fileName string, runValues *ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error
 }

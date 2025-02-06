@@ -1,12 +1,12 @@
 package element
 
 type SubEventConfig struct {
-	Name          string        `json:"name"`
-	ParamsType    string        `json:"paramsType"`
-	Description   string        `json:"description"`
-	LinkParamsUrl string        `json:"linkParamsUrl"`
-	Script        *ScriptConfig `json:"script"`
-	Version       string        `json:"version"`
+	Name          string      `json:"name"`
+	ParamsType    string      `json:"paramsType"`
+	Description   string      `json:"description"`
+	LinkParamsUrl string      `json:"linkParamsUrl"`
+	Script        *FuncConfig `json:"script"`
+	Version       string      `json:"version"`
 }
 
 type SubEvent interface {

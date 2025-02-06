@@ -42,7 +42,7 @@ type Factory interface {
 	NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory Factory, env common.IEnvConfig, opts ...NewServerOptions) (Server, error)
 
 	//
-	// NewApiService
+	// NewService
 	//  @Description:
 	//  @param server
 	//  @param html
@@ -51,27 +51,10 @@ type Factory interface {
 	//  @return Service
 	//  @return error
 	//
-	NewApiService(server Server, sel *goquery.Selection, srcFileName string, data map[string]any) (ApiService, error)
+	NewService(server Server, sel *goquery.Selection, srcFileName string, data map[string]any) (Service, error)
 
 	//
-	// NewApiRequest
-	//  @Description:
-	//  @param server
-	//  @param service
-	//  @param srcFileName
-	//  @param config
-	//  @return Request
-	//  @return error
-	//
-	NewApiRequest(server Server, service ApiService, srcFileName string, config *ApiRequestConfig) (ApiRequest, error)
-
-	NewSubService(server Server, sel *goquery.Selection, srcFileName string, data map[string]any) (SubService, error)
-
-	NewSubEvent(server Server, service SubService, srcFileName string, config *SubEventConfig) (SubEvent, error)
-
-	//
-	// NewScript
-	//  @Description:
+	// NewFunc
 	//  @Description:
 	//  @param config
 	//  @param logger
@@ -80,16 +63,16 @@ type Factory interface {
 	//  @return *Script
 	//  @return error
 	//
-	NewScript(config *ScriptConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (Script, error)
+	NewFunc(config *FuncConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (Func, error)
 
 	//
-	// NewScriptManager
+	// NewFuncManager
 	//  @Description:
 	//  @param logger
 	//  @param reader
 	//  @return *ScriptManager
 	//
-	NewScriptManager(logger logrus.FieldLogger, reader fs.Reader) ScriptManager
+	NewFuncManager(logger logrus.FieldLogger, reader fs.Reader) FuncManager
 
-	NewWebContext(ctx context.Context, ictx iris.Context, request ApiRequest) WebContext
+	NewWebContext(ctx context.Context, ictx iris.Context) WebContext
 }

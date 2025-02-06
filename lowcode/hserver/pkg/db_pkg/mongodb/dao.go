@@ -72,13 +72,14 @@ func (d *Dao) Create(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	}
 	tenantId := d.getTenantId(ctx)
 	entity.SetTenantId(tenantId)
-
 	err := d.dao.Insert(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
-	return
+}
 
+func (d *Dao) ECreate(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
+	d.Create(ctx, entity, opts...)
 	agg, event, err := d.newAggregateAndEvent(OperateType_Create, entity, opts...)
 	if err != nil {
 		panic(err)
@@ -98,6 +99,9 @@ func (d *Dao) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	}
 	return
 
+}
+
+func (d *Dao) EUpdate(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
 	agg, event, err := d.newAggregateAndEvent(OperateType_Update, entity, opts...)
 	if err != nil {
 		panic(err)
@@ -111,8 +115,11 @@ func (d *Dao) DeleteById(ctx context.Context, id string, opts ...*OperateOptions
 	if err != nil {
 		panic(err)
 	}
-	return
+}
 
+func (d *Dao) EDeleteById(ctx context.Context, id string, opts ...*OperateOptions) {
+	tenantId := d.getTenantId(ctx)
+	d.DeleteById(ctx, id, opts...)
 	entity := ddd.MapEntity{
 		"tenantId": tenantId,
 		"id":       id,

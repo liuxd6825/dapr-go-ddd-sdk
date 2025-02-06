@@ -1,4 +1,4 @@
-package script
+package funcs
 
 import (
 	"errors"
@@ -13,10 +13,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-type Script struct {
+type Func struct {
 	runCode     string
 	runtime     *runtime.Pool
-	config      *element.ScriptConfig
+	config      *element.FuncConfig
 	fs          afero.Fs
 	transType   runtime.TransformType //转换类型
 	isBuildCode bool
@@ -29,35 +29,35 @@ type InitVM interface {
 	InitVM(vm *goja.Runtime) error
 }
 
-func NewScript(config *element.ScriptConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (element.Script, error) {
+func NewFunc(config *element.FuncConfig, logger logrus.FieldLogger, reader fs.Reader, pkg *types.CMap[any]) (element.Func, error) {
 	if config == nil {
 		return nil, errors.New("config is nil")
 	}
 
-	script := &Script{
+	fun := &Func{
 		runtime:   runtime.NewPool(config.UsePool, reader, pkg),
 		config:    config,
 		logger:    logger,
 		transType: config.TransType,
 	}
 
-	err := script.BuildCode()
+	err := fun.BuildCode()
 	if err != nil {
 		panic(err)
 	}
 
-	return script, nil
+	return fun, nil
 }
 
-func (r *Script) Logger() logrus.FieldLogger {
+func (r *Func) Logger() logrus.FieldLogger {
 	return r.logger
 }
 
-func (r *Script) Config() *element.ScriptConfig {
+func (r *Func) Config() *element.FuncConfig {
 	return r.config
 }
 
-func (r *Script) BuildCode() error {
+func (r *Func) BuildCode() error {
 	if !r.isBuildCode {
 		codeBytes, err := runtime.TransformCode(r.config.Code, r.config.SrcFileName, r.config.TransType)
 		if err != nil {
@@ -69,19 +69,13 @@ func (r *Script) BuildCode() error {
 	return nil
 }
 
-func (r *Script) Run(opts ...RunOptions) (res any, err error) {
+func (r *Func) Run(opts ...RunOptions) (res any, err error) {
 	defer func() {
 		err = utils.RecoverError(err, recover())
 	}()
 
 	if r != nil {
 		opts = append(opts, func(vm *goja.Runtime) error {
-			for oldName, newName := range r.config.Alias {
-				value := vm.Get(oldName)
-				if value != nil {
-					_ = vm.Set(newName, value)
-				}
-			}
 			return nil
 		})
 	}
@@ -91,6 +85,5 @@ func (r *Script) Run(opts ...RunOptions) (res any, err error) {
 		return nil, errors.New(fmt.Sprintf("run error:%v in %s %s", err, r.config.FuncName, r.config.SrcFileName))
 	}
 	//r.logger.Printf("run %s return %v in %s", r.config.FuncName, data, r.config.SrcFileName)
-
 	return data, err
 }

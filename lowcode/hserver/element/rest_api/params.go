@@ -1,4 +1,4 @@
-package request
+package rest_api
 
 import (
 	"github.com/dop251/goja"

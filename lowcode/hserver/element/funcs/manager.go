@@ -1,7 +1,6 @@
-package script
+package funcs
 
 import (
-	"errors"
 	"fmt"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
@@ -13,47 +12,35 @@ import (
 )
 
 type Manager struct {
-	scriptMap *types.CMap[element.Script]
+	funcs     *types.CMap[element.Func]
 	logger    logrus.FieldLogger
 	reader    fs.Reader
 	transType runtime.TransformType
 }
 
-func NewScriptManager(logger logrus.FieldLogger, reader fs.Reader) *Manager {
+func NewFuncManager(logger logrus.FieldLogger, reader fs.Reader) *Manager {
 	return &Manager{
-		scriptMap: types.NewCMap[element.Script](),
-		logger:    logger,
-		reader:    reader,
+		funcs:  types.NewCMap[element.Func](),
+		logger: logger,
+		reader: reader,
 	}
 }
 
-func (b *Manager) AddScript(config *element.ScriptConfig, logger logrus.FieldLogger, pkg *types.CMap[any]) error {
-	var err error
-	if config == nil {
-		return errors.New("AddScript() no config provided")
-	}
-	if config.FuncName == "" {
-		return errors.New("AddScript() no config.FuncName provided")
-	}
-	if config.SrcFileName == "" {
-		return errors.New("AddScript() no config.SrcFileName provided")
-	}
+func (b *Manager) Items() map[string]element.Func {
+	return b.funcs.Items()
+}
 
-	script, err := NewScript(config, logger, b.reader, pkg)
-	if err != nil {
-		return err
-	}
-
-	b.scriptMap.Set(config.FuncName, script)
+func (b *Manager) Add(fun element.Func) error {
+	b.funcs.Set(fun.Config().FuncName, fun)
 	return nil
 }
 
-func (b *Manager) DeleteScript(scriptName string) error {
-	b.scriptMap.Remove(scriptName)
+func (b *Manager) Delete(scriptName string) error {
+	b.funcs.Remove(scriptName)
 	return nil
 }
 
-// RunScript
+// Run
 //
 //	@Description: 运行脚本
 //	@receiver b
@@ -63,7 +50,7 @@ func (b *Manager) DeleteScript(scriptName string) error {
 //	@param config
 //	@return res
 //	@return err
-func (b *Manager) RunScript(funcName string, runValues *element.ApiRunValues, checkHave bool, opts ...RunOptions) (res any, err error) {
+func (b *Manager) Run(funcName string, runValues *element.ApiRunValues, checkHave bool, opts ...RunOptions) (res any, err error) {
 	srcFileName := ""
 
 	defer func() {
@@ -73,7 +60,7 @@ func (b *Manager) RunScript(funcName string, runValues *element.ApiRunValues, ch
 		}
 	}()
 
-	script, ok := b.scriptMap.Get(funcName)
+	script, ok := b.funcs.Get(funcName)
 	if !ok {
 		if checkHave {
 			return nil, fmt.Errorf("script %s not found", funcName)
@@ -92,7 +79,6 @@ func (b *Manager) RunScript(funcName string, runValues *element.ApiRunValues, ch
 }
 
 func SetRunValues(vm *goja.Runtime, runValues *element.ApiRunValues, data ...map[string]any) error {
-
 	if runValues != nil {
 		if runValues.Server != nil {
 			if err := runValues.Server.SetSelfVMValue("server", vm); err != nil {

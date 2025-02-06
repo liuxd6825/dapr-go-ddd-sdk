@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
 	schema2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
@@ -29,18 +28,16 @@ type WebContext struct {
 	ctx        context.Context
 	vu         modules.VU
 	closers    []io.Closer //资源关闭器
-	request    element.ApiRequest
 	timeFields map[string]any
 }
 
-func NewWebContext(ctx context.Context, ictx iris.Context, request element.ApiRequest) *WebContext {
+func NewWebContext(ctx context.Context, ictx iris.Context) *WebContext {
 	authToken, ok := appctx.GetAuthToken(ctx)
 	if !ok {
 		panic("auth token not found")
 	}
 
 	return &WebContext{
-		request:   request,
 		authToken: authToken,
 		ictx:      ictx,
 		ctx:       ctx,

@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
@@ -13,9 +14,9 @@ import (
 
 type Base struct {
 	srcFileName string
-	scripts     element.ScriptManager
+	funcs       element.FuncManager
 	logger      logrus.FieldLogger
-	initScript  element.Script
+	initFunc    element.Func
 	fsOpts      *fsopts.Options
 	reader      fs.Reader
 	runValues   *types.CMap[any]
@@ -29,7 +30,7 @@ func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fa
 	}*/
 	return &Base{
 		reader:      reader,
-		scripts:     factory.NewScriptManager(logger, reader),
+		funcs:       factory.NewFuncManager(logger, reader),
 		logger:      logger,
 		runValues:   types.NewCMap[any](),
 		srcFileName: srcFileName,
@@ -38,43 +39,60 @@ func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fa
 	}, nil
 }
 
-func (b *Base) ParseInitScript(parentEl *goquery.Selection) error {
-	var err error
-	opts, _, err := element.GetScriptConfig(parentEl, "init()", b.srcFileName)
-	if err != nil {
-		return err
-	}
-	if opts != nil {
-		opts.UsePool = false
-		return b.scripts.AddScript(opts, b.logger, b.pkg)
-	}
-	return err
-}
-
 func (b *Base) RunInitScript(values *element.ApiRunValues, opts ...element.RunOptions) error {
 	opts = append(opts, func(vm *goja.Runtime) error {
 		_ = vm.Set("ctx", context.Background())
 		return nil
 	})
-	_, err := b.scripts.RunScript("init()", values, false, opts...)
+	_, err := b.funcs.Run("init", values, false, opts...)
 	return err
 }
 
 func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *element.ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...element.RunOptions) error {
+	var err error
 	if code != "" {
-		addOpts := &element.ScriptConfig{
-			FuncName:    funcName,
-			Code:        code,
-			CodeType:    codeType,
-			SrcFileName: fileName,
-			UsePool:     false,
+		_, err = b.funcs.Run(funcName, runValues, false, opts...)
+	}
+	return err
+}
+
+func (b *Base) ParseFunc(sel *goquery.Selection, server element.Server) error {
+	funcConfigs := make([]*element.FuncConfig, 0)
+	tags := make([]*element.FuncTag, 0)
+	sel.Children().Each(func(i int, sel *goquery.Selection) {
+		node := sel.Get(0) // 获取当前节点的 *html.Node
+		if node.Type != 3 {
+			return
 		}
-		err := b.scripts.AddScript(addOpts, logger, pkg)
+
+		switch node.Data {
+		case "script":
+			{
+				funConfig, isFound, err := element.NewFuncConfig(sel, b.SrcFileName(), tags)
+				tags = make([]*element.FuncTag, 0)
+				if err != nil {
+					panic(err)
+				}
+				if !isFound {
+					panic("invalid script tag")
+				}
+				funcConfigs = append(funcConfigs, funConfig)
+			}
+		default:
+			tag := element.NewFuncTag(node)
+			tags = append(tags, tag)
+		}
+	})
+
+	for _, cfg := range funcConfigs {
+		fmt.Println("func = ", cfg.FuncName)
+		fun, err := server.Factory().NewFunc(cfg, b.Logger(), server, b.Pkg())
 		if err != nil {
 			return err
 		}
-		_, err = b.scripts.RunScript(funcName, runValues, true, opts...)
-		return nil
+		if err = b.Funcs().Add(fun); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -91,8 +109,8 @@ func (b *Base) FsOpts() *fsopts.Options {
 	return b.fsOpts
 }
 
-func (b *Base) Scripts() element.ScriptManager {
-	return b.scripts
+func (b *Base) Funcs() element.FuncManager {
+	return b.funcs
 }
 
 func (b *Base) Logger() logrus.FieldLogger {
@@ -102,6 +120,7 @@ func (b *Base) Logger() logrus.FieldLogger {
 func (b *Base) SrcFileName() string {
 	return b.srcFileName
 }
+
 func (b *Base) RunValues() *types.CMap[any] {
 	return b.runValues
 }

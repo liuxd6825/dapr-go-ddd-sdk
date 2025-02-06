@@ -3,57 +3,62 @@ module github.com/liuxd6825/dapr-go-ddd-sdk
 go 1.23.4
 
 require (
-	github.com/dapr/components-contrib v1.15.2  // indirect
-	github.com/dapr/dapr v1.14.1  // indirect
-	github.com/dapr/go-sdk v1.11.0  // indirect
-	github.com/evanw/esbuild v0.24.0  // indirect
-	github.com/go-playground/validator/v10 v10.11.0  // indirect
-	github.com/goccy/go-json v0.10.2  // indirect
-	github.com/google/uuid v1.6.0  // indirect
-	github.com/iris-contrib/swagger/v12 v12.0.1  // indirect
-	github.com/jinzhu/copier v0.3.5  // indirect
-	github.com/kataras/iris/v12 v12.2.11  // indirect
-	github.com/liuxd6825/jsonschema/v6 v6.0.1  // indirect
-	github.com/liuxd6825/k6server v1.9.0  // indirect
+	github.com/dapr/components-contrib v1.15.2
+	github.com/dapr/dapr v1.14.1
+	github.com/dapr/go-sdk v1.11.0
+	github.com/evanw/esbuild v0.24.0
+	github.com/go-playground/validator/v10 v10.11.0
+	github.com/goccy/go-json v0.10.2
+	github.com/google/uuid v1.6.0
+	github.com/iris-contrib/swagger/v12 v12.0.1
+	github.com/jinzhu/copier v0.3.5
+	github.com/kataras/iris/v12 v12.2.11
+	github.com/liuxd6825/jsonschema/v6 v6.0.1
+	github.com/liuxd6825/k6server v1.9.0 // indirect
 	//github.com/mitchellh/mapstructure v1.5.0  // indirect
-	github.com/neo4j/neo4j-go-driver/v5 v5.15.0  // indirect
-	github.com/orcaman/concurrent-map v1.0.0  // indirect
-	github.com/pkg/errors v0.9.1  // indirect
-	github.com/sirupsen/logrus v1.9.3  // indirect
-	github.com/stretchr/testify v1.9.0  // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0  // indirect
-	go.mongodb.org/mongo-driver v1.15.0  // indirect
-	gopkg.in/yaml.v3 v3.0.1  // indirect
-	gorm.io/driver/mysql v1.5.7  // indirect
-	gorm.io/gorm v1.25.12  // indirect
+	github.com/neo4j/neo4j-go-driver/v5 v5.15.0
+	github.com/orcaman/concurrent-map v1.0.0
+	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.9.3
+	github.com/stretchr/testify v1.9.0 // indirect
+	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
+	go.mongodb.org/mongo-driver v1.15.0
+	gopkg.in/yaml.v3 v3.0.1
+	gorm.io/driver/mysql v1.5.7
+	gorm.io/gorm v1.25.12
 )
 
 require (
-	code.gitea.io/sdk/gitea v0.18.0 // indirect
-	github.com/PuerkitoBio/goquery v1.9.1 // indirect
-	github.com/allegro/bigcache v1.2.1  // indirect
+	code.gitea.io/sdk/gitea v0.18.0
+	github.com/PuerkitoBio/goquery v1.9.1
+	github.com/allegro/bigcache v1.2.1 // indirect
 	github.com/casbin/casbin/v2 v2.103.0 // indirect
 	github.com/dapr/durabletask-go v0.5.1-0.20241216172832-16da3e7c3530 // indirect
-	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204 // indirect
-	github.com/duke-git/lancet/v2 v2.3.1  // indirect
-	github.com/flosch/pongo2/v6 v6.0.0 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/go-resty/resty/v2 v2.7.0 // indirect
-	github.com/gookit/goutil v0.6.15 // indirect
+	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
+	github.com/duke-git/lancet/v2 v2.3.1
+	github.com/flosch/pongo2/v6 v6.0.0
+	github.com/fsnotify/fsnotify v1.7.0
+	github.com/go-resty/resty/v2 v2.7.0
+	github.com/gookit/goutil v0.6.15
 	github.com/iris-contrib/httpexpect/v2 v2.15.2 // indirect
-	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible  // indirect
-	github.com/matoous/go-nanoid/v2 v2.0.0  // indirect
-	github.com/minio/minio-go/v7 v7.0.59  // indirect
-	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4 // indirect
-	github.com/redis/go-redis/v9 v9.5.1 // indirect
+	github.com/json-iterator/go v1.1.12
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/matoous/go-nanoid/v2 v2.0.0
+	github.com/minio/minio-go/v7 v7.0.59
+	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
+	github.com/redis/go-redis/v9 v9.5.1
 	github.com/samber/lo v1.47.0 // indirect
 	github.com/snownd/cake v0.6.0 // indirect
-	github.com/spf13/afero v1.1.2 // indirect
+	github.com/spf13/afero v1.1.2
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/tealeg/xlsx v1.0.5 // indirect
-	google.golang.org/grpc v1.68.1 // indirect
-	google.golang.org/protobuf v1.35.2  // indirect
+	google.golang.org/grpc v1.68.1
+	google.golang.org/protobuf v1.35.2
+)
+
+require (
+	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca
+	golang.org/x/net v0.32.0
 )
 
 require (
@@ -189,7 +194,6 @@ require (
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d // indirect
-	golang.org/x/net v0.32.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
