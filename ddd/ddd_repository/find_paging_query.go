@@ -432,6 +432,12 @@ func (f *findPagingQueryBuilder) SetGroupKeys(value []any) FindPagingQueryBuilde
 
 func (f *findPagingQueryBuilder) SetMapToQuery(m map[string]any) FindPagingQueryBuilder {
 
+	sort, err := maputils.GetString(m, "sort", "")
+	if err != nil {
+		panic(err)
+	}
+	f.SetSort(sort)
+
 	tenantId, err := maputils.GetString(m, "tenantId", "")
 	if err != nil {
 		panic(err)

@@ -124,6 +124,10 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 		return nil
 	}
 
+	if paramsTypeFileName == "/definition/params/findPaging.json" {
+		return wctx.GetFindPaging().AsMap()
+	}
+
 	// 要返回的值
 	data := map[string]any{}
 	ictx := wctx.ICtx()

@@ -416,6 +416,7 @@ func (c *WebContext) GetCaseId() string {
 
 func (c *WebContext) GetFindPaging() *ddd_repository.FindPagingQueryRequest {
 	v, _ := c.RestAssembler.AsFindPagingRequest(c.ictx)
+	v.TenantId = c.GetTenantId()
 	return v
 }
 
