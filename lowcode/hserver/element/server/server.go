@@ -34,16 +34,16 @@ type Server struct {
 	srcFs        afero.Fs
 	fsPkg        element.FsPkg
 	services     *types.CMap[element.Service] // 服务Map
-	envConfig    common.IEnvConfig            // 环境变量
+	envCfg       common.IEnvConfig            // 环境变量
 	tpl          *tpl_pkg.Template            // 模板渲染服务
 	definition   *definition.Definition
 	cacheEnable  bool // 是否启用缓存
 	schemaLoader schema.URLLoader
-	pkg          any
 	srcFileName  string
 	factory      element.Factory
 	httpServer   *restapp.HttpServer
 	opts         []element.NewServerOptions
+	pkgSetup     PkgSetup
 }
 
 // NewServer 解析 HTML 并返回 Server 对象
@@ -66,12 +66,13 @@ func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.F
 		app:          httpServer.App(),
 		services:     types.NewCMap[element.Service](),
 		fsPkg:        fsPkg,
-		envConfig:    env,
+		envCfg:       env,
 		srcFs:        srcFs,
 		cacheEnable:  true,
 		factory:      factory,
 		schemaLoader: schema_utils.NewSchemaLoader(fsma),
 	}
+	server.SetPkgSetup(NewPkgSetup(server))
 
 	if err := server.init(logger); err != nil {
 		return nil, err
@@ -115,8 +116,9 @@ func (s *Server) init(logger logrus.FieldLogger) error {
 		return nil
 	})
 
-	server.SetRunValue("console", console_pkg.NewConsole(logrus.New()))
-
+	logs := server.Logger()
+	server.SetRunValue("console", console_pkg.NewConsole(logs))
+	server.SetRunValue("logs", logs)
 	return nil
 }
 
@@ -225,6 +227,11 @@ func (s *Server) start() error {
 	if err := s.RunInitScript(runValue); err != nil {
 		return err
 	}
+
+	if s.Pkg().Count() == 0 {
+		s.LoadPkg("all")
+	}
+
 	for _, service := range s.services.Items() {
 		if err := service.Initialize(); err != nil {
 			return err
@@ -366,7 +373,7 @@ func (s *Server) Logs(level logrus.Level, format string, args ...interface{}) {
 }
 
 func (s *Server) EnvConfig() common.IEnvConfig {
-	return s.envConfig
+	return s.envCfg
 }
 
 func (s *Server) RootPath() string {
@@ -421,4 +428,16 @@ func (s *Server) NewSchemaCompiler() *jsonschema.Compiler {
 	compiler := jsonschema.NewCompiler()
 	compiler.UseLoader(s.schemaLoader)
 	return compiler
+}
+
+func (s *Server) LoadPkg(names ...string) {
+	s.pkgSetup.Setup(names...)
+}
+
+func (s *Server) GetPkgSetup() PkgSetup {
+	return s.pkgSetup
+}
+
+func (s *Server) SetPkgSetup(setup PkgSetup) {
+	s.pkgSetup = setup
 }

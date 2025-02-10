@@ -51,14 +51,6 @@ func NewService(server element.Server, sel *goquery.Selection, srcFileName strin
 	return service, nil
 }
 
-func (s *Service) Config() *element.ServiceConfig {
-	return s.config
-}
-
-func (s *Service) InitVM(vm *goja.Runtime) error {
-	return nil
-}
-
 func (s *Service) FindFunc(tagType string) []element.Func {
 	funcs := make([]element.Func, 0)
 	for _, fun := range s.Funcs().Items() {
@@ -136,4 +128,12 @@ func (s *Service) Close() error {
 
 func (s *Service) Server() element.Server {
 	return s.server
+}
+
+func (s *Service) Config() *element.ServiceConfig {
+	return s.config
+}
+
+func (s *Service) InitVM(vm *goja.Runtime) error {
+	return nil
 }

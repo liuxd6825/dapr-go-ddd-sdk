@@ -65,6 +65,7 @@ func (s *Func) Config() *element.FuncConfig {
 	return s.config
 }
 
+// BuildCode 构建es5源代码
 func (s *Func) BuildCode() error {
 	if !s.isBuildCode {
 		codeBytes, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
@@ -124,6 +125,7 @@ func (s *Func) GetParamsType(urlPars map[string]any, fsOpt *fsopts.Options) (par
 	return s.paramsTypeFile, s.paramsType
 }
 
+// getParamsTypeByType 在definition中查找参数类型定义
 func (s *Func) getParamsTypeByType(aParamsType string, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType) {
 	fileName := fmt.Sprintf("/definition/params/%s.json", aParamsType)
 	if pt := s.server.Definition().GetParamsType(aParamsType + ".json"); pt != nil {
@@ -134,6 +136,7 @@ func (s *Func) getParamsTypeByType(aParamsType string, fsOpt *fsopts.Options) (p
 	return paramsTypeFile, paramsType
 }
 
+// getParamsTypeByUrl 在文件中查找参数类型定义
 func (s *Func) getParamsTypeByUrl(paramsUrl string, urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType) {
 	fsOpts := &fsopts.Options{
 		RootPath: s.server.RootPath(),
@@ -156,7 +159,6 @@ func (s *Func) getParamsTypeByUrl(paramsUrl string, urlPars map[string]any, fsOp
 		if err = jsonutils.Unmarshal(bytes, &paramsType); err != nil {
 			panic(fmt.Sprintf(" loading %s  error: %s", fileUrl, err.Error()))
 		}
-		paramsType = paramsType
 	}
 	return paramsTypeFile, paramsType
 }

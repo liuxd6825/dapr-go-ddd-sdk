@@ -1,4 +1,4 @@
-package ddd_pkg
+package eventbus_pkg
 
 type Aggregate struct {
 }

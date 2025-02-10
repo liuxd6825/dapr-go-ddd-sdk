@@ -9,32 +9,60 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
 type Dao struct {
-	db             *DB
-	tableName      string
-	dao            *ddd_mongodb.Dao[ddd.MapEntity]
-	aggregateField string
+	db        *DB
+	tableName string
+	dao       *ddd_mongodb.Dao[ddd.MapEntity]
+	aggField  string // 聚合根ID字段
+	daoType   DaoType
 }
 
 type ModelOptions = mongo_dao.RepositoryOptions
 
-func NewDao(db *DB, tableName string, opts ...*ModelOptions) *Dao {
-	initTableName := tableName
-	opt := mongo_dao.NewRepositoryOptions(opts...)
+type DaoType string
+
+const (
+	DaoType_None  DaoType = ""
+	DaoType_SQL   DaoType = "sql"
+	DaoType_Event DaoType = "event"
+)
+
+type DaoOptions struct {
+	DB        *DB
+	TableName string
+	DaoType   DaoType
+	AggField  string
+	// mongo
+	MongoDB         *ddd_mongodb.MongoDB
+	GetCollCallback mongo_dao.GetCollectionCallback
+	RepositoryType  *mongo_dao.RepositoryType
+}
+
+func NewDao(opts *DaoOptions) *Dao {
+	tableName := opts.TableName
+
+	opt := mongo_dao.NewRepositoryOptions(&mongo_dao.RepositoryOptions{
+		MongoDB:         opts.MongoDB,
+		GetCollCallback: opts.GetCollCallback,
+		RepositoryType:  opts.RepositoryType,
+	})
+
 	var mongodb *ddd_mongodb.MongoDB
 	var coll *mongo.Collection
 
 	getCollCallback := func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection) {
 		if mongodb == nil || coll == nil {
 			mongodb = opt.MongoDB
-			coll = opt.MongoDB.GetCollection(initTableName)
+			coll = opt.MongoDB.GetCollection(tableName)
 		}
 		return mongodb, coll
 	}
@@ -45,26 +73,45 @@ func NewDao(db *DB, tableName string, opts ...*ModelOptions) *Dao {
 	entBuilder := ddd.NewMapEntityBuilder[ddd.MapEntity]()
 	daoOpts := ddd_mongodb.NewOptions[ddd.MapEntity]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
 
+	daoType := DaoType_SQL
+	if opts.DaoType == DaoType_Event {
+		daoType = DaoType_Event
+	}
+	aggField := opts.AggField
+	if aggField == "" {
+		aggField = "id"
+	}
+
 	dao := ddd_mongodb.NewDao[ddd.MapEntity](getCollCallback, daoOpts)
-	return &Dao{db: db, dao: dao, tableName: tableName}
+	return &Dao{
+		db:        opts.DB,
+		dao:       dao,
+		tableName: tableName,
+		daoType:   daoType,
+		aggField:  aggField,
+	}
 }
 
-func (d *Dao) SetAggregateField(val string) *Dao {
-	d.aggregateField = val
+func (d *Dao) SetAggField(val string) *Dao {
+	d.aggField = val
 	return d
+}
+
+func (d *Dao) GetAggField(val string) string {
+	return d.aggField
 }
 
 func (d *Dao) Table(ctx context.Context, schema *schema.Schema, opts ...*ddd_repository.RepositoryOptions) *Table {
 	return NewTable(d.db, d.tableName, schema)
 }
 
+/*
 func (d *Dao) Save(ctx context.Context, setData *ddd.SetData[ddd.MapEntity], opts ...*OperateOptions) {
-	//tenantId := d.getTenantId(ctx)
 	err := d.dao.Save(ctx, setData, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
-}
+}*/
 
 func (d *Dao) Create(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
 	if entity == nil {
@@ -76,15 +123,26 @@ func (d *Dao) Create(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	if err != nil {
 		panic(err)
 	}
+	if d.daoType == DaoType_Event {
+		d.pub(ctx, OperateType_Create, entity, opts...)
+	}
 }
 
-func (d *Dao) ECreate(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
-	d.Create(ctx, entity, opts...)
-	agg, event, err := d.newAggregateAndEvent(OperateType_Create, entity, opts...)
+func (d *Dao) pub(ctx context.Context, opeType OperateType, entity ddd.MapEntity, opts ...*OperateOptions) {
+	agg, event, err := d.newAggregateAndEvent(opeType, entity, opts...)
 	if err != nil {
 		panic(err)
 	}
-	server.GetEventPkg().CreateEvent(ctx, agg, event)
+	logs.Info(ctx, "", logs.Fields{"eventId": event.EventId, "eventType": event.EventType, "commandId": event.CommandId, "aggregateId": event.AggregateId, "tenantId": d.getTenantId(ctx)})
+	switch opeType {
+	case OperateType_Create:
+		server.GetEventPkg().CreateEvent(ctx, agg, event)
+	case OperateType_Update:
+		server.GetEventPkg().ApplyEvent(ctx, agg, event)
+	case OperateType_Delete:
+		server.GetEventPkg().ApplyEvent(ctx, agg, event)
+	}
+
 }
 
 func (d *Dao) Update(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
@@ -97,16 +155,9 @@ func (d *Dao) Update(ctx context.Context, entity ddd.MapEntity, opts ...*Operate
 	if err != nil {
 		panic(err)
 	}
-	return
-
-}
-
-func (d *Dao) EUpdate(ctx context.Context, entity ddd.MapEntity, opts ...*OperateOptions) {
-	agg, event, err := d.newAggregateAndEvent(OperateType_Update, entity, opts...)
-	if err != nil {
-		panic(err)
+	if d.daoType == DaoType_Event {
+		d.pub(ctx, OperateType_Update, entity, opts...)
 	}
-	server.GetEventPkg().ApplyEvent(ctx, agg, event)
 }
 
 func (d *Dao) DeleteById(ctx context.Context, id string, opts ...*OperateOptions) {
@@ -115,23 +166,24 @@ func (d *Dao) DeleteById(ctx context.Context, id string, opts ...*OperateOptions
 	if err != nil {
 		panic(err)
 	}
-}
 
-func (d *Dao) EDeleteById(ctx context.Context, id string, opts ...*OperateOptions) {
-	tenantId := d.getTenantId(ctx)
-	d.DeleteById(ctx, id, opts...)
-	entity := ddd.MapEntity{
-		"tenantId": tenantId,
-		"id":       id,
+	if d.daoType == DaoType_Event {
+		entity := ddd.MapEntity{
+			"tenantId": tenantId,
+			"id":       id,
+		}
+		d.pub(ctx, OperateType_Delete, entity, opts...)
 	}
-	agg, event, err := d.newAggregateAndEvent(OperateType_Delete, entity, opts...)
-	if err != nil {
-		panic(err)
-	}
-	server.GetEventPkg().ApplyEvent(ctx, agg, event)
 }
 
 func (d *Dao) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*OperateOptions) {
+	if d.daoType == DaoType_Event {
+		for _, entity := range entity {
+			d.Create(ctx, entity, opts...)
+		}
+		return
+	}
+
 	err := d.dao.InsertMany(ctx, entity, newOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -139,6 +191,13 @@ func (d *Dao) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*O
 }
 
 func (d *Dao) DeleteByIds(ctx context.Context, ids []string, opts ...*OperateOptions) {
+	if d.daoType == DaoType_Event {
+		for _, id := range ids {
+			d.DeleteById(ctx, id, opts...)
+		}
+		return
+	}
+
 	tenantId := d.getTenantId(ctx)
 	err := d.dao.DeleteByIds(ctx, tenantId, ids, newOptions(opts)...)
 	if err != nil {
@@ -146,7 +205,21 @@ func (d *Dao) DeleteByIds(ctx context.Context, ids []string, opts ...*OperateOpt
 	}
 }
 
-func (d *Dao) UpdateByMap(ctx context.Context, filterMap map[string]any, data any, opts ...*OperateOptions) {
+func (d *Dao) UpdateByMap(ctx context.Context, filterMap map[string]any, data map[string]any, opts ...*OperateOptions) {
+	if d.daoType == DaoType_Event {
+		res := d.FindListByMap(ctx, filterMap, opts...)
+		if res.Error != nil {
+			panic(res.Error.Error())
+		}
+		for _, entity := range res.Data {
+			err := d.dao.UpdateMapById(ctx, entity.GetTenantId(), entity.GetId(), data)
+			if err != nil {
+				panic(err)
+			}
+		}
+		return
+	}
+
 	tenantId := d.getTenantId(ctx)
 	err := d.dao.UpdateMap(ctx, tenantId, filterMap, data, newOptions(opts)...)
 	if err != nil {
@@ -347,11 +420,8 @@ func (d *Dao) newAggregateAndEvent(operateType OperateType, entity ddd.MapEntity
 }
 
 func (d *Dao) newEvent(operateType OperateType, entity ddd.MapEntity, opt *OperateOptions) (*common.Event, error) {
-	o := opt
-	if o == nil {
-		o = &OperateOptions{}
-	}
-	eventId := entity.GetId()
+	o := NewOperateOptions(opt)
+	eventId := idutils.NewId()
 	tenantId := entity.GetTenantId()
 	aggId, err := d.getAggregateId(entity, opt)
 	if err != nil {
@@ -360,14 +430,14 @@ func (d *Dao) newEvent(operateType OperateType, entity ddd.MapEntity, opt *Opera
 	eventType := d.GetEventType(operateType, opt)
 
 	event := common.NewEvent()
+	event.CommandId = o.GetCommandId(idutils.NewId())
 	event.EventId = eventId
 	event.EventType = eventType
 	event.TenantId = tenantId
 	event.CreatedTime = time.Now()
 	event.AggregateId = aggId
 	event.Data = entity
-	event.CommandId = eventId
-	event.EventVersion = o.GetVersion("v1.0")
+	event.EventVersion = o.GetEventVersion("v1.0")
 
 	return event, nil
 }
@@ -403,17 +473,17 @@ func (d *Dao) newAggregate(entity ddd.MapEntity, opt *OperateOptions) (*server.A
 }
 
 func (d *Dao) getAggregateId(entity ddd.MapEntity, opts *OperateOptions) (string, error) {
-	var aggregateId string
+	var aggId string
 	if opts != nil && opts.AggId != nil {
-		aggregateId = *opts.AggId
-	} else if d.aggregateField != "" {
-		if id, ok := entity[d.aggregateField].(string); ok {
-			aggregateId = id
+		aggId = *opts.AggId
+	} else if d.aggField != "" {
+		if id, ok := entity[d.aggField].(string); ok {
+			aggId = id
 		} else {
-			return "", errors.New(fmt.Sprintf("Aggregate field %s is not string", d.aggregateField))
+			return "", errors.New(fmt.Sprintf("Aggregate field %s is not string", d.aggField))
 		}
 	} else {
-		aggregateId = entity.GetId()
+		aggId = entity.GetId()
 	}
-	return aggregateId, nil
+	return aggId, nil
 }

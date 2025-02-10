@@ -217,6 +217,7 @@ func (s *HttpServer) registerBaseHandler() {
 }
 */
 
+// registerBaseHandler 注册基础控制器
 func (s *HttpServer) registerBaseHandler() {
 	//app.Use(GlobalJsonSerialization)
 	// register subscribe handler

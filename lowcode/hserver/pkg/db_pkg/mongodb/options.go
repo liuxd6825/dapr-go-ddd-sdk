@@ -6,6 +6,7 @@ type OperateOptions struct {
 	AggId        *string
 	EventType    *string
 	EventVersion *string
+	CommandId    *string
 	ddd_repository.RepositoryOptions
 }
 
@@ -25,18 +26,25 @@ func NewOperateOptions(opts ...*OperateOptions) *OperateOptions {
 	return o
 }
 
-func (e *OperateOptions) GetAggregateId(defaultValue string) string {
-	if e.AggId == nil {
-		return defaultValue
+func (e *OperateOptions) GetAggId(defVal string) string {
+	if e != nil && e.AggId == nil {
+		return defVal
 	}
 	return *e.AggId
 }
 
-func (e *OperateOptions) GetVersion(defaultValue string) string {
-	if e.EventVersion == nil {
-		return defaultValue
+func (e *OperateOptions) GetEventVersion(defVal string) string {
+	if e != nil && e.EventVersion == nil {
+		return defVal
 	}
 	return *e.EventVersion
+}
+
+func (e *OperateOptions) GetCommandId(defVal string) string {
+	if e != nil && e.CommandId != nil {
+		return *e.CommandId
+	}
+	return defVal
 }
 
 func newOptions(opts []*OperateOptions) []ddd_repository.Options {

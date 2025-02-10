@@ -170,17 +170,15 @@ func (s *HttpServer) Start() error {
 		}
 	}
 
+	// 注册基础控制器
 	s.registerBaseHandler()
-	for _, init := range s.onInitEvents {
-		if err := init(s); err != nil {
-			return err
-		}
-	}
 
+	// 注册Swagger控制器
 	if err := s.addSwaggerHandler(app); err != nil {
 		panic(err.Error())
 	}
 
+	// 注册actor服务
 	var actors []actor.FactoryContext
 	actors = append(actors, s.actorFactories...)
 	actors = append(actors, GetActors()...)
@@ -192,6 +190,13 @@ func (s *HttpServer) Start() error {
 		// httpServer:=su.Server
 		// println("httpServer", httpServer)
 	})
+
+	// 调用初始化
+	for _, init := range s.onInitEvents {
+		if err := init(s); err != nil {
+			return err
+		}
+	}
 
 	addr := fmt.Sprintf("%s:%d", s.httpHost, s.httpPort)
 	if err := app.Run(iris.Addr(addr), func(app *iris.Application) {
@@ -340,11 +345,11 @@ func (s *HttpServer) registerSwagger() {
 	s.app.Get("/swagger/{any:path}", swagger.CustomWrapHandler(cfg, swaggerFiles.Handler))
 }
 
-// registerQueryHandler
+// registerDomainEventHandler
 // @Description: 注册领域事件控制器
 // @param handlers
 // @return error
-func (s *HttpServer) registerQueryHandler(handlers ...ddd.SubscribeHandler) error {
+func (s *HttpServer) registerDomainEventHandler(handlers ...ddd.SubscribeHandler) error {
 	// 注册User消息处理器
 	for _, h := range handlers {
 		err := ddd.RegisterQueryHandler(h, ddd.GetEventStoreDefaultPubsubName())

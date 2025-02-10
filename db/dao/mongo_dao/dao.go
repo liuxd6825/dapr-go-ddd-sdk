@@ -10,16 +10,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type GetCollectionCallback func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection)
+
 type Dao[T ddd.Entity] struct {
 	dao *ddd_mongodb.Dao[T]
 }
 
+type RepositoryType int
+
 type RepositoryOptions struct {
 	MongoDB         *ddd_mongodb.MongoDB
 	GetCollCallback GetCollectionCallback
+	RepositoryType  *RepositoryType
 }
 
-type GetCollectionCallback func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection)
+const (
+	RepositoryTypeSQL RepositoryType = 0
+	RepositoryTypeDDD RepositoryType = 1
+)
 
 var _mongodb *ddd_mongodb.MongoDB
 

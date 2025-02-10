@@ -74,7 +74,8 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 		return
 	}
 	wctx := s.server.Factory().NewWebContext(ctx, ictx)
-	s.run(wctx, s.GetParamsValue(wctx))
+	params := s.GetParamsValue(wctx)
+	s.run(wctx, params)
 }
 
 func (s *ApiHandle) run(wctx element.WebContext, params any) {
@@ -164,11 +165,12 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 			val = v.Default
 		}
 
-		val, err = types.Convert(v.Type, val)
-		if err != nil {
-			panic(fmt.Sprintf("params.%s types.Convert() error: %s", key, err.Error()))
+		if v.Type != "" {
+			val, err = types.Convert(v.Type, val)
+			if err != nil {
+				panic(fmt.Sprintf("params.%s types.Convert() error: %s", key, err.Error()))
+			}
 		}
-
 		if v.Required && (val == "" || val == nil) {
 			err = errors.New("The requested parameter %s cannot be empty", key)
 			panic(err)

@@ -65,13 +65,7 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 
 	if logs.GetLevel() >= logs.InfoLevel {
 		for _, s := range subscribes {
-			fields := logs.Fields{
-				"dapr":   "subscribes",
-				"pubsub": s.PubsubName,
-				"topic":  s.Topic,
-				"route":  s.Route,
-			}
-			logs.Info(ctx, "", fields)
+			logs.Infofmt(ctx, "", "dapr subscribes: pubsub=%s,topic=%s,route=%s ", s.PubsubName, s.Topic, s.Route)
 		}
 	}
 

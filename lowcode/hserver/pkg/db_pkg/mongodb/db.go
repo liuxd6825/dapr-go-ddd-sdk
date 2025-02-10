@@ -20,13 +20,28 @@ func New(cfg common.IEnvConfig) *MongoDB {
 	return &MongoDB{cfg: cfg}
 }
 
-func (d *MongoDB) NewDao(dbName, tableName string) *Dao {
-	mongoBb, ok := restapp.GetMongoByKey(dbName)
+type NewDaoOptions struct {
+	DbName    string
+	TableName string
+	DaoType   DaoType
+	AggField  string
+}
+
+func (d *MongoDB) NewDao(opts *NewDaoOptions) *Dao {
+	mongoBb, ok := restapp.GetMongoByKey(opts.DbName)
 	if !ok {
-		panic(fmt.Sprintf("%s db not found", dbName))
+		panic(fmt.Sprintf("%s db not found", opts.DbName))
 	}
 	db := &DB{cfg: d.cfg, mongodb: mongoBb}
-	return NewDao(db, tableName, &ModelOptions{MongoDB: mongoBb})
+
+	daoOpts := &DaoOptions{
+		DB:        db,
+		TableName: opts.TableName,
+		MongoDB:   db.mongodb,
+		AggField:  opts.AggField,
+		DaoType:   opts.DaoType,
+	}
+	return NewDao(daoOpts)
 }
 
 /*func (d *DB) Get(name string) error {

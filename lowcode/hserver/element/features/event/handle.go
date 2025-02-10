@@ -6,6 +6,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"time"
 )
@@ -54,10 +55,16 @@ func (e *Handle) newEvent() interface{} {
 	return &EventData{}
 }
 
-func (e *Handle) CallEventHandler(ctx context.Context, handler any, eventType string, eventVersion string, event any, metadata ddd.Metadata) error {
+// CallEventHandler 事件接收器
+func (e *Handle) CallEventHandler(ctx context.Context, handler any, eventType string, eventVersion string, event any, metadata ddd.Metadata) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	logs.Debugfmt(ctx, "", "Event Handler: eventType=%s; eventVersion:%s; \n", eventType, eventVersion)
 	return e.run(ctx, eventType, eventVersion, event, metadata)
 }
 
+// run 业务事件处理器
 func (e *Handle) run(ctx context.Context, eventType string, eventVersion string, event any, metadata ddd.Metadata) error {
 	values := &element.ApiRunValues{
 		Server:   e.service.Server(),
@@ -69,8 +76,6 @@ func (e *Handle) run(ctx context.Context, eventType string, eventVersion string,
 		_ = vm.Set("tenantId", tenantId)
 		_ = vm.Set("ctx", ctx)
 		_ = vm.Set("event", event)
-		_ = vm.Set("eventVersion", eventVersion)
-		_ = vm.Set("eventType", eventType)
 		_ = vm.Set("metadata", metadata)
 		return nil
 	})

@@ -304,7 +304,12 @@ func (m *Manager) Exists(filename string, opts ...*fsopts.Options) (bool, error)
 	if err != nil {
 		return false, err
 	}
-	return fs2.Exists(afs, fileName)
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+ 
+	return fs2.Exists(afs, fileName, opt)
 }
 
 // ReadDir
