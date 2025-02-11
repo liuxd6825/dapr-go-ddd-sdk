@@ -35,6 +35,11 @@ type EnvConfig struct {
 	fsManager *fsm.Manager               `yaml:"-" json:"-"`
 }
 
+// FsRootPath fs文件系统取根路径
+type FsRootPath interface {
+	GetRootPath() string
+}
+
 // AppConfig
 // @Description:  应用配置
 // @Author:       liuxd
@@ -49,7 +54,7 @@ type AppConfig struct {
 	Memory    *string           `yaml:"memory" json:"memory"`
 	Values    map[string]string `yaml:"values" json:"values"`
 	AuthToken string            `yaml:"authToken" json:"authToken"`
-	RsServer  RsServer          `yaml:"rsServer" json:"rsServer"` // 脚本服务配置
+	HServer   HServer           `yaml:"hServer" json:"hServer"`   // 脚本服务配置
 	Template  HtmlTemplate      `yaml:"template" json:"template"` // html模板配置
 }
 
@@ -74,14 +79,14 @@ func (a *AppConfig) GetRootUrl() string {
 }
 
 func (a *AppConfig) GetSrcPath() string {
-	return a.RsServer.BasePath
+	return a.HServer.BasePath
 }
 
-// RsServer
+// HServer
 // @Description: 脚本服务配置
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
-type RsServer struct {
+type HServer struct {
 	Enable       bool   `yaml:"enable" json:"enable"`             // 是否启用脚本服务
 	SrcName      string `yaml:"srcName" json:"srcName"`           // API源码文件系统名称
 	WebName      string `yaml:"webName" json:"webName"`           // Web源码文件系统名称
@@ -90,7 +95,7 @@ type RsServer struct {
 	WatchRestart bool   `yaml:"watchRestart" json:"watchRestart"` // 检查文件变化，重新启动
 }
 
-type IReServer interface {
+type IHServer interface {
 	GetEnable() bool
 	GetBasePath() string
 }
@@ -129,16 +134,17 @@ type DaprConfig struct {
 
 // DaprServerConfig dapr服务端参数
 type DaprServerConfig struct {
-	Start                bool   `yaml:"start" json:"start"` //是否启动Daprd
-	EnableMetrics        bool   `yaml:"enableMetrics" json:"enableMetrics"`
-	Config               string `yaml:"config" json:"config"`
-	ComponentsPath       string `yaml:"componentsPath" json:"componentsPath"`
-	PlacementHostAddress string `yaml:"placementHostAddress" json:"placementHostAddress"`
-	LogLevel             string `yaml:"logLevel" json:"logLevel"`
-	LogFile              string `yaml:"logFile" json:"logFile"`
-	LogOutputType        string `yaml:"logOutputType" json:"logOutputType"`
+	Start                bool   `yaml:"start" json:"start"`                               //是否启动Dapr
+	EnableMetrics        bool   `yaml:"enableMetrics" json:"enableMetrics"`               //是否健康检测
+	Config               string `yaml:"config" json:"config"`                             // 配置文件参数
+	ComponentsPath       string `yaml:"componentsPath" json:"componentsPath"`             // 组件参数
+	PlacementHostAddress string `yaml:"placementHostAddress" json:"placementHostAddress"` // placement地址
+	LogLevel             string `yaml:"logLevel" json:"logLevel"`                         // 日志级别
+	LogFile              string `yaml:"logFile" json:"logFile"`                           // 日志文件
+	LogOutputType        string `yaml:"logOutputType" json:"logOutputType"`               // 输出日期类型
 }
 
+// ActorConfig dapr actor配置
 type ActorConfig struct {
 	ActorIdleTimeout       string `yaml:"actorIdleTimeout" json:"actorIdleTimeout"`
 	ActorScanInterval      string `yaml:"actorScanInterval" json:"actorScanInterval"`
@@ -146,11 +152,13 @@ type ActorConfig struct {
 	DrainBalancedActors    bool   `yaml:"drainRebalancedActors" json:"drainBalancedActors"`
 }
 
+// EventStore 事件存储
 type EventStore struct {
 	CompName   string `yaml:"name" json:"name"`     // Dapr EventStarge 组件名称
 	PubsubName string `yaml:"pubsub" json:"pubsub"` // Dapr Pubsub 组件名称
 }
 
+// LogConfig 日志配置
 type LogConfig struct {
 	Level      string `yaml:"level" json:"level"`
 	SaveDays   int    `yaml:"saveDays" json:"saveDays"`   //日志保存的天数
@@ -262,30 +270,35 @@ func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
 	return &value
 }
 
-func (e *EnvConfig) GetFsManager() (*fsm.Manager, error) {
+func (e *EnvConfig) GetFsManager() *fsm.Manager {
 	if e.fsManager != nil {
-		return e.fsManager, nil
+		return e.fsManager
 	}
 	if len(e.Fs) != 0 {
-		fsManager, err := fsm.NewManagerWithConfigs(e.Fs, e.App.RsServer.SrcName)
+		fsManager, err := fsm.NewManagerWithConfigs(e.Fs, e.App.HServer.SrcName)
 		if err != nil {
-			return nil, errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
+			panic(errors.New("fs.NewManagerWithConfigs() err: %s", err.Error()))
 		}
 		e.fsManager = fsManager
 	}
-	return e.fsManager, nil
+	return e.fsManager
 }
 
 func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
-	m, err := e.GetFsManager()
-	if err != nil {
-		return nil, err
-	}
+	m := e.GetFsManager()
 	fs, ok := m.GetFs(name)
 	if ok {
 		return fs, nil
 	}
 	return nil, errors.New(" %s fs not exist", name)
+}
+
+func (s *HServer) GetEnable() bool {
+	return s.Enable
+}
+
+func (s *HServer) GetBasePath() string {
+	return s.BasePath
 }
 
 func (l *LogConfig) GetLevel() applog.Level {
@@ -426,12 +439,4 @@ func searchConfigFile(path, configName string, fileName string) (string, bool, e
 	}
 
 	return searchConfigFile(path+"/..", configName, fileName)
-}
-
-func (s *RsServer) GetEnable() bool {
-	return s.Enable
-}
-
-func (s *RsServer) GetBasePath() string {
-	return s.BasePath
 }

@@ -30,7 +30,7 @@ func StartApp(opts *AppStartOptions) {
 	StartCmd(func(flag *restapp.RunFlag) error {
 		runOpts := restapp.NewRunOptions().SetFlag(flag).SetTable(nil)
 		runOpts.AddOnInitEvent(func(server *restapp.HttpServer) error {
-			envCfg := server.EnvConfig().App.RsServer
+			envCfg := server.EnvConfig().App.HServer
 			if envCfg.Enable {
 				srcName := envCfg.SrcName
 				webName := envCfg.WebName

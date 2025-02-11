@@ -4,6 +4,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
@@ -13,6 +14,11 @@ import (
 )
 
 type NewServerOptions func(server Server)
+
+type ServerInitOptions struct {
+	IsPubEvent  *bool
+	EventPrefix *string
+}
 
 type Server interface {
 	Base
@@ -31,7 +37,11 @@ type Server interface {
 	Factory() Factory
 	InitVM(vm *goja.Runtime) error
 	SetSelfVMValue(name string, vm *goja.Runtime) error
-	SetRunValues(data map[string]any)
-	Start() error
-	HttpServer() *restapp.HttpServer
+	SetRunValues(data map[string]any) //设置运行时变量
+	Start() error                     // 启动服务
+	HttpServer() *restapp.HttpServer  // 取得HTTP服务实例
+	GetEventPrefix() string           // 取得事件前缀
+	GetIsPubEvent() bool              // 取得DAO更新数据时，是否发布事件的默认值
+	GetEnvCfg() common.IEnvConfig     // 取当前配置环境变量
+	Init(opts *ServerInitOptions)     // 初始化参数
 }

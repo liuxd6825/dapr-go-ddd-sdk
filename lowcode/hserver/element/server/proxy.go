@@ -2,65 +2,47 @@ package server
 
 import (
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 )
 
 type Proxy struct {
 	server *Server
 	vm     *goja.Runtime
-	*runtime.Proxy[*Server]
+	funcs  map[string]goja.Value
 }
 
 func NewProxy(server *Server, vm *goja.Runtime) *Proxy {
-	base := runtime.NewProxy[*Server](server, vm)
 	p := &Proxy{
-		Proxy:  base,
 		vm:     vm,
 		server: server,
 	}
-	err := p.AddMethods(server)
-	if err != nil {
-		panic(err)
-	}
+	p.init()
 	return p
+}
+
+func (s *Proxy) init() {
+	s.funcs = map[string]goja.Value{}
+	s.funcs["init"] = s.vm.ToValue(s.server.Init)
+	s.funcs["loadPkg"] = s.vm.ToValue(s.server.LoadPkg)
+	s.funcs["workPath"] = s.vm.ToValue(s.server.FsOpts().WorkPath)
+	s.funcs["logs"] = s.vm.ToValue(s.server.Logs)
+	s.funcs["app"] = s.vm.ToValue(s.server.App)
 }
 
 // Get 方法：获取键对应的值
 func (s *Proxy) Get(name string) goja.Value {
 	var res = goja.Undefined()
-	if value, ok := s.Values()[name]; ok {
-		return s.vm.ToValue(value)
-	}
-	if value, exists := s.server.RunValues().Get(name); exists {
+	if v, ok := s.funcs[name]; ok {
+		res = v
+	} else if value, exists := s.server.RunValues().Get(name); exists {
 		res = s.vm.ToValue(value)
 	}
 	return res
 
-	/*
-		var res = goja.Undefined()
-		switch name {
-		case "tpl":
-			res = s.tpl
-		case "workPath":
-			res = s.vm.ToValue(s.server.FsOpts().WorkPath)
-		case "loadPkg":
-			res = s.vm.ToValue(s.server.LoadPkg)
-		case "logs":
-			res = s.vm.ToValue(s.server.Logs)
-		case "app":
-			res = s.vm.ToValue(s.server.App)
-		default:
-			if value, exists := s.server.RunValues().Get(name); exists {
-				res = s.vm.ToValue(value)
-			}
-		}
-		return res
-	*/
 }
 
 // Set 方法：设置键值
 func (s *Proxy) Set(name string, val goja.Value) bool {
-	s.Obj().RunValues().Set(name, val.Export())
+	s.server.RunValues().Set(name, val.Export())
 	return true
 }
 

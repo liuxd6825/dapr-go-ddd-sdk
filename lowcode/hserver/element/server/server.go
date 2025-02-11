@@ -30,40 +30,40 @@ import (
 // Server 表示顶层结构
 type Server struct {
 	element.Base
-	app          *iris.Application
-	srcFs        afero.Fs
-	fsPkg        element.FsPkg
+	app          *iris.Application            // App应用实例
+	httpServer   *restapp.HttpServer          // Http服务实例
+	srcFs        afero.Fs                     // 源代码文件系统
+	fsPkg        element.FsPkg                // 文件系统管理器
 	services     *types.CMap[element.Service] // 服务Map
 	envCfg       common.IEnvConfig            // 环境变量
 	tpl          *tpl_pkg.Template            // 模板渲染服务
-	definition   *definition.Definition
-	cacheEnable  bool // 是否启用缓存
-	schemaLoader schema.URLLoader
-	srcFileName  string
-	factory      element.Factory
-	httpServer   *restapp.HttpServer
-	opts         []element.NewServerOptions
-	pkgSetup     PkgSetup
+	definition   *definition.Definition       // 系统定义类
+	cacheEnable  bool                         // 是否启用缓存
+	schemaLoader schema.URLLoader             // schema加载器
+	srcFileName  string                       // 源代码文件名
+	factory      element.Factory              // 工厂类
+	opts         []element.NewServerOptions   // 选项
+	pkgSetup     PkgSetup                     // 包安装类
+	eventPrefix  string                       // 事件前缀
+	isPubEvent   bool                         // DAO是否发布事件的默认值
 }
 
 // NewServer 解析 HTML 并返回 Server 对象
 func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
-	fsma, err := env.GetFsManager()
-	if err != nil {
-		return nil, err
-	}
+	fsma := env.GetFsManager()
 
 	fsPkg, err := fs_pkg.NewFsPkg(env, "")
 	if err != nil {
 		return nil, err
 	}
 
+	app := httpServer.App()
 	logger := logrus.StandardLogger()
 	server := &Server{
 		srcFileName:  srcFileName,
 		opts:         opts,
 		httpServer:   httpServer,
-		app:          httpServer.App(),
+		app:          app,
 		services:     types.NewCMap[element.Service](),
 		fsPkg:        fsPkg,
 		envCfg:       env,
@@ -71,6 +71,7 @@ func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.F
 		cacheEnable:  true,
 		factory:      factory,
 		schemaLoader: schema_utils.NewSchemaLoader(fsma),
+		eventPrefix:  env.GetAppId(),
 	}
 	server.SetPkgSetup(NewPkgSetup(server))
 
@@ -223,6 +224,7 @@ func (s *Server) start() error {
 	runValue := &element.ApiRunValues{
 		WorkPath: s.WorkPath(),
 		Self:     s,
+		Server:   s,
 	}
 	if err := s.RunInitScript(runValue); err != nil {
 		return err
@@ -440,4 +442,30 @@ func (s *Server) GetPkgSetup() PkgSetup {
 
 func (s *Server) SetPkgSetup(setup PkgSetup) {
 	s.pkgSetup = setup
+}
+
+// GetEventPrefix 事件前缀
+func (s *Server) GetEventPrefix() string {
+	return s.eventPrefix
+}
+
+// GetIsPubEvent 取DAO是否发布事件的默认值
+func (s *Server) GetIsPubEvent() bool {
+	return s.isPubEvent
+}
+
+func (s *Server) GetEnvCfg() common.IEnvConfig {
+	return s.envCfg
+}
+
+func (s *Server) Init(opts *element.ServerInitOptions) {
+	if opts == nil {
+		return
+	}
+	if opts.IsPubEvent == nil {
+		s.isPubEvent = *opts.IsPubEvent
+	}
+	if opts.EventPrefix == nil {
+		s.eventPrefix = *opts.EventPrefix
+	}
 }

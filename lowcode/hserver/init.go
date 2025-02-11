@@ -21,7 +21,7 @@ import (
 func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp.HttpServer, autoRestart bool) error {
 	fact := NewFactory()
 	env := httpServer.EnvConfig()
-	if !env.App.RsServer.Enable {
+	if !env.App.HServer.Enable {
 		return nil
 	}
 	envCfg := httpServer.EnvConfig()

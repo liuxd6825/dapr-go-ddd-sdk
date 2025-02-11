@@ -11,8 +11,8 @@ type IEnvConfig interface {
 	GetDaprHost() string
 	GetDaprHttpPort() int64
 	GetDaprGrpcPort() int64
-	GetFsManager() (*fsm.Manager, error)
+	GetFsManager() *fsm.Manager
 
-	GetRsServerSrcPath() string
-	GetRsServerEnable() bool
+	GetHServerSrcPath() string
+	GetHServerEnable() bool
 }

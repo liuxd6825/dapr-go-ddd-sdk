@@ -8,8 +8,8 @@ type IEnvConfig interface {
 	GetDaprHost() string
 	GetDaprHttpPort() int64
 	GetDaprGrpcPort() int64
-	GetRsServerSrcPath() string
-	GetRsServerEnable() bool
+	GetHServerSrcPath() string
+	GetHServerEnable() bool
 }
 
 func (e *EnvConfig) RsConfig() IEnvConfig {
@@ -44,10 +44,32 @@ func (e *EnvConfig) GetDaprGrpcPort() int64 {
 	return e.Dapr.GetGrpcPort()
 }
 
-func (e *EnvConfig) GetRsServerSrcPath() string {
-	return e.App.RsServer.GetBasePath()
+/*
+func (e *EnvConfig) GetHServerSrcPath() string {
+	return e.App.HServer.GetBasePath()
 }
 
-func (e *EnvConfig) GetRsServerEnable() bool {
-	return e.App.RsServer.GetEnable()
+func (e *EnvConfig) GetHServerEnable() bool {
+	return e.App.HServer.GetEnable()
+}
+*/
+
+func (e *EnvConfig) GetHServerSrcPath() string {
+	return e.App.HServer.GetBasePath()
+	/*
+		fsName := e.App.HServer.SrcName
+		fsVal, ok := e.fsManager.GetFs(fsName)
+		if !ok {
+			return ""
+		}
+		if path, ok := fsVal.(FsRootPath); ok {
+			return path.GetRootPath()
+		} else {
+			panic(fmt.Sprintf("fs \"%s\" does not have a GetRootPath() method", fsName))
+		}
+		return "" */
+}
+
+func (e *EnvConfig) GetHServerEnable() bool {
+	return e.App.HServer.Enable
 }

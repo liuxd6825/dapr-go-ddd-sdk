@@ -3,12 +3,13 @@ package mongodb
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
 type MongoDB struct {
-	cfg common.IEnvConfig
+	server element.Server
 }
 
 type DB struct {
@@ -16,15 +17,15 @@ type DB struct {
 	cfg     common.IEnvConfig
 }
 
-func New(cfg common.IEnvConfig) *MongoDB {
-	return &MongoDB{cfg: cfg}
+type NewDaoOptions struct {
+	DbName     string
+	TableName  string
+	IsPubEvent bool
+	AggField   string
 }
 
-type NewDaoOptions struct {
-	DbName    string
-	TableName string
-	DaoType   DaoType
-	AggField  string
+func New(server element.Server) *MongoDB {
+	return &MongoDB{server: server}
 }
 
 func (d *MongoDB) NewDao(opts *NewDaoOptions) *Dao {
@@ -32,14 +33,15 @@ func (d *MongoDB) NewDao(opts *NewDaoOptions) *Dao {
 	if !ok {
 		panic(fmt.Sprintf("%s db not found", opts.DbName))
 	}
-	db := &DB{cfg: d.cfg, mongodb: mongoBb}
+	db := &DB{cfg: d.server.GetEnvCfg(), mongodb: mongoBb}
 
 	daoOpts := &DaoOptions{
-		DB:        db,
-		TableName: opts.TableName,
-		MongoDB:   db.mongodb,
-		AggField:  opts.AggField,
-		DaoType:   opts.DaoType,
+		DB:         db,
+		TableName:  opts.TableName,
+		MongoDB:    db.mongodb,
+		AggField:   opts.AggField,
+		IsPubEvent: opts.IsPubEvent,
+		Server:     d.server,
 	}
 	return NewDao(daoOpts)
 }

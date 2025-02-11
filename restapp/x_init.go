@@ -73,7 +73,7 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	}
 
 	if len(env.Fs) != 0 {
-		fsManager, err := fsm.NewManagerWithConfigs(env.Fs, env.App.RsServer.SrcName)
+		fsManager, err := fsm.NewManagerWithConfigs(env.Fs, env.App.HServer.SrcName)
 		if err != nil {
 			return errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
 		}

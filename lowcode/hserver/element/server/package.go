@@ -65,7 +65,7 @@ func (p *pkgSetup) Setup(keys ...string) {
 }
 
 func (p *pkgSetup) mongo() any {
-	return mongodb.New(p.server.envCfg)
+	return mongodb.New(p.server)
 }
 
 func (p *pkgSetup) feign() any {

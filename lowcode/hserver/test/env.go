@@ -64,10 +64,10 @@ func (c *EnvConfig) GetFsManager() (*fsm.Manager, error) {
 	return c.Fsm, nil
 }
 
-func (c *EnvConfig) GetRsServerSrcPath() string {
+func (c *EnvConfig) GetHServerSrcPath() string {
 	return c.RsServerSrcPath
 }
 
-func (c *EnvConfig) GetRsServerEnable() bool {
+func (c *EnvConfig) GetHServerEnable() bool {
 	return c.RsServerEnable
 }

@@ -27,10 +27,7 @@ func NewFsWriteModel() *FsWriteModel {
 }
 
 func NewFsManger(cfg common.IEnvConfig) (*FsManager, error) {
-	fsManager, err := cfg.GetFsManager()
-	if err != nil {
-		return nil, err
-	}
+	fsManager := cfg.GetFsManager()
 	fsm := &FsManager{cfg: cfg, WriteModels: NewFsWriteModel()}
 	fsm.base = fsManager
 	return fsm, nil

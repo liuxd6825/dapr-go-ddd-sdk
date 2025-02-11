@@ -48,10 +48,8 @@ func NewFsWriteModel() *FsWriteModel {
 //	@return *FsPkg
 //	@return error
 func NewFsPkg(cfg common.IEnvConfig, fsName string) (element.FsPkg, error) {
-	fsM, err := cfg.GetFsManager()
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	fsM := cfg.GetFsManager()
 
 	if fsName != "" {
 		fsM, err = fsM.NewFsm(fsName)
