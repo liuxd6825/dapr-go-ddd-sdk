@@ -30,101 +30,113 @@ type Process interface {
 	OnEnd(name string, value interface{}, rValue Value)
 }
 
-type process struct {
+type SqlProcess struct {
 	str string
 }
 
-func (p *process) OnNotEquals(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnNotEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s != (%v)", p.str, name, value)
 }
 
-func (p *process) OnLike(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnLike(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s like (%v)", p.str, name, value)
 }
 
-func (p *process) OnNotLike(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnNotLike(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s not like %v", p.str, name, value)
 }
 
-func (p *process) OnGreaterThan(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnGreaterThan(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s>%v", p.str, name, value)
 }
 
-func (p *process) OnGreaterThanOrEquals(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s>=%v", p.str, name, value)
 }
 
-func (p *process) OnLessThan(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnLessThan(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s<%v", p.str, name, value)
 }
 
-func (p *process) OnLessThanOrEquals(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnLessThanOrEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s <= %v", p.str, name, value)
 }
 
-func (p *process) OnIn(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnIn(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s in %v", p.str, name, value)
 }
 
-func (p *process) OnNotIn(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnNotIn(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s not in %v", p.str, name, value)
 }
 
-func (p *process) OnEquals(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s=%v", p.str, name, value)
 }
 
-func (p *process) NotEquals(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) NotEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s=%v", p.str, name, value)
 }
 
-func (p *process) OnContains(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnContains(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s like (%v)", p.str, name, value)
 }
 
-func (p *process) OnNotContains(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnNotContains(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s not like (%v)", p.str, name, value)
 }
 
-func (p *process) OnStart(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnStart(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s like %v*", p.str, name, value)
 }
 
-func (p *process) OnEnd(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnEnd(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s like *%v", p.str, name, value)
 }
 
-func (p *process) OnAndItem() {
+func (p *SqlProcess) OnAndItem() {
 	p.str = fmt.Sprintf("%s and ", p.str)
 }
 
-func (p *process) OnAndStart() {
+func (p *SqlProcess) OnAndStart() {
 	p.str = fmt.Sprintf("%s(", p.str)
 }
 
-func (p *process) OnAndEnd() {
+func (p *SqlProcess) OnAndEnd() {
 	p.str = fmt.Sprintf("%s)", p.str)
 }
-func (p *process) OnOrItem() {
+func (p *SqlProcess) OnOrItem() {
 	p.str = fmt.Sprintf("%s or ", p.str)
 }
-func (p *process) OnOrStart() {
+func (p *SqlProcess) OnOrStart() {
 	p.str = fmt.Sprintf("%s(", p.str)
 }
-func (p *process) OnOrEnd() {
+func (p *SqlProcess) OnOrEnd() {
 	p.str = fmt.Sprintf("%s)", p.str)
 }
 
-func (p *process) OnIsNull(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnIsNull(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s is null", p.str, name)
 }
 
-func (p *process) OnNotIsNull(name string, value interface{}, rValue Value) {
+func (p *SqlProcess) OnNotIsNull(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s is not null", p.str, name)
 }
 
-func (p *process) Print() {
+func (p *SqlProcess) Print() {
 	fmt.Print(p.str)
+}
+
+func (p *SqlProcess) GetStr() string {
+	return p.str
+}
+
+func SqlParseProcess(input string) (string, error) {
+	p := &SqlProcess{}
+	if err := ParseProcess(input, p); err != nil {
+		return "", err
+	}
+	return p.str, nil
 }
 
 func ParseProcess(input string, process Process) error {
