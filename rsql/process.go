@@ -131,6 +131,9 @@ func (p *SqlProcess) GetStr() string {
 	return p.str
 }
 
+func NewSqlProcess() *SqlProcess {
+	return &SqlProcess{str: ""}
+}
 func SqlParseProcess(input string) (string, error) {
 	p := &SqlProcess{}
 	if err := ParseProcess(input, p); err != nil {

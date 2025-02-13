@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -237,7 +238,7 @@ func (d *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts 
 func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	var data []T
 	table := d.table(ctx)
-	res := table.Where("id in [?] and tenant_id=?", ids, tenantId).Find(&data)
+	res := table.Where("id in ? and tenant_id=?", ids, tenantId).Find(&data)
 	isFound := false
 	if res.RowsAffected > 0 {
 		isFound = true
@@ -296,33 +297,144 @@ func (d *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repos
 }
 
 func (d *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (result *ddd_repository.FindPagingResult[T]) {
-	//TODO implement me
-	panic("implement me")
+	return d.findPaging(ctx, qry, opts...)
+}
+
+func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
+	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
+		list, err := d.entityBuilder.NewEntityList()
+		if err != nil {
+			return nil, false, err
+		}
+		tx := d.table(ctx)
+
+		if len(sqlWhere) > 0 {
+			tx = tx.Where(sqlWhere)
+		}
+
+		if query.GetPageSize() > 0 {
+			tx = tx.Limit(int(query.GetPageSize()))
+		}
+
+		if query.GetPageNum() > 0 {
+			tx = tx.Offset(int(query.GetPageSize() * query.GetPageNum()))
+		}
+
+		if len(query.GetSort()) > 0 {
+			tx = tx.Order(query.GetSort())
+		}
+
+		if err = tx.Find(&list).Error; err != nil {
+			return nil, false, err
+		}
+
+		var totalRows int64 = -1
+		if query.GetIsTotalRows() {
+			tx := d.table(ctx)
+			if len(sqlWhere) > 0 {
+				tx = tx.Where(sqlWhere)
+			}
+			if err := tx.Count(&totalRows).Error; err != nil {
+				return nil, false, err
+			}
+		}
+
+		findData := ddd_repository.NewFindPagingResult[T](list, &totalRows, query, err)
+		return findData, true, err
+	})
+
 }
 
 func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry ddd_repository.FindAutoCompleteQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	//TODO implement me
-	panic("implement me")
+	f := ddd_repository.NewFindPagingQuery()
+	groupCols := []*ddd_repository.GroupCol{
+		{Field: qry.GetField(), DataType: types.DataTypeString},
+	}
+
+	f.SetGroupCols(groupCols)
+	f.SetTenantId(qry.GetTenantId())
+	f.SetFields(qry.GetFields())
+	f.SetFilter(qry.GetFilter())
+	f.SetMustFilter(qry.GetMustWhere())
+
+	f.SetPageNum(qry.GetPageNum())
+	f.SetPageSize(qry.GetPageSize())
+	f.SetSort(qry.GetSort())
+	f.SetIsTotalRows(false)
+
+	return d.FindPaging(ctx, f, opts...)
 }
 
 func (d *Dao[T]) FindDistinct(ctx context.Context, qry ddd_repository.FindDistinctQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	//TODO implement me
-	panic("implement me")
+	f := ddd_repository.NewFindPagingQuery()
+
+	f.SetGroupCols(qry.GetGroupCols())
+	f.SetTenantId(qry.GetTenantId())
+	f.SetFields(qry.GetFields())
+	f.SetFilter(qry.GetFilter())
+	f.SetMustFilter(qry.GetMustWhere())
+
+	f.SetPageNum(qry.GetPageNum())
+	f.SetPageSize(qry.GetPageSize())
+	f.SetSort(qry.GetSort())
+	f.SetIsTotalRows(false)
+
+	return d.FindPaging(ctx, f, opts...)
 }
 
 func (d *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
-	//TODO implement me
-	panic("implement me")
+	data, err := d.NewEntityList()
+	if err != nil {
+		return nil, false, err
+	}
+	_, found, err := d.Sum(ctx, qry, &data, opts...)
+	return data, found, err
 }
 
 func (d *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
-	//TODO implement me
-	panic("implement me")
+	data := make([]map[string]any, 0)
+	_, found, err := d.Sum(ctx, qry, &data, opts...)
+	return data, found, err
 }
 
-func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error) {
-	//TODO implement me
-	panic("implement me")
+func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+	if len(qry.GetValueCols()) == 0 {
+		return nil, false, nil
+	}
+
+	var err error
+
+	f1 := qry.GetFilter()
+	f2 := qry.GetMustFilter()
+	f3 := ""
+	mustWhere, ok := qry.(ddd_repository.FindPagingQueryMustWhere)
+	if ok {
+		f3, err = mustWhere.GetMustWhere()
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	filter := getRsqlAnds(f1, f2, f3)
+
+	res, found, err := d.sum(ctx, filter, qry.GetValueCols(), resData, opts...)
+	return res, found, err
+}
+
+func (d *Dao[T]) sum(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+	p := NewSqlProcess()
+	if err := ParseProcess(rSql, p); err != nil {
+		return nil, false, err
+	}
+	sql := p.GetStr()
+	table := d.table(ctx)
+	sumFields := make([]string, 0)
+	for _, col := range valueCols {
+		sumFields = append(sumFields, fmt.Sprintf("sum(%s) as %s", col.Field, col.Field))
+	}
+	sumSql := strings.Join(sumFields, ", ")
+
+	res := table.Where(sql).Select(sumSql).Scan(resData)
+	return resData, res.Error != nil, nil
 }
 
 func (d *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
@@ -331,8 +443,13 @@ func (d *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any,
 }
 
 func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+	var count int64
+	res := d.DoFilter(tenantId, rsql, func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
+		table := d.table(ctx)
+		res := table.Select("count(*) as total").Scan(&count)
+		return ddd_repository.NewFindPagingResultEmpty[T]().SetError(res.Error), res.Error == nil, nil
+	})
+	return count, res.Error
 }
 
 func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gorm.DB {
@@ -340,10 +457,8 @@ func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gor
 	if tx != nil {
 		return tx.Table(d.tableName)
 	}
-	if d._table == nil {
-		d._table = d.db.Table(d.tableName)
-	}
-	return d._table
+
+	return d.db.Table(d.tableName)
 }
 
 func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, sqlFunc func(sql string) error) error {
@@ -359,7 +474,7 @@ func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, s
 	return errors.New("filter data type is not string")
 }
 
-func (r *Dao[T]) mapAsSql(tenantId string, filterMap map[string]interface{}) string {
+func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]interface{}) string {
 	if filterMap == nil || len(filterMap) == 0 {
 		return fmt.Sprintf(`tenant_id='%s'`, tenantId)
 	}
@@ -384,4 +499,44 @@ func (r *Dao[T]) mapAsSql(tenantId string, filterMap map[string]interface{}) str
 func (d *Dao[T]) getSql(rSql string) (string, error) {
 	res, err := rsql.SqlParseProcess(rSql)
 	return res, err
+}
+
+func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+	if tenantId == "" {
+		return ddd_repository.NewFindPagingResultWithError[T](errors.New("tenantId can not be empty"))
+	}
+	var sqlWhere string
+	if filter == "" {
+		sqlWhere = fmt.Sprintf("tenant_id='%s'", tenantId)
+	} else {
+		p := NewSqlProcess()
+		if err := ParseProcess(filter, p); err != nil {
+			return ddd_repository.NewFindPagingResultWithError[T](err)
+		}
+		sqlWhere = fmt.Sprintf("tenant_id='%s' and (%s)", tenantId, p.GetStr())
+	}
+	data, _, err := fun(sqlWhere)
+	if err != nil {
+		err = nil
+	}
+	return data
+}
+
+func getRsqlAnds(s ...string) string {
+	res := ""
+	for _, item := range s {
+		res = getRsqlAnd(res, item)
+	}
+	return res
+}
+
+func getRsqlAnd(s1 string, s2 string) string {
+	b1 := len(s1) > 0
+	b2 := len(s2) > 0
+	if b1 && b2 {
+		return fmt.Sprintf("(%s) and (%s)", s1, s2)
+	} else if b1 {
+		return s1
+	}
+	return s2
 }

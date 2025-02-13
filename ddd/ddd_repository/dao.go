@@ -53,7 +53,7 @@ type Dao[T any] interface {
 
 	SumEntity(ctx context.Context, qry FindPagingQuery, opts ...Options) ([]T, bool, error)
 	SumMap(ctx context.Context, qry FindPagingQuery, opts ...Options) ([]map[string]any, bool, error)
-	Sum(ctx context.Context, qry FindPagingQuery, data any, opts ...Options) (any, bool, error)
+	Sum(ctx context.Context, qry FindPagingQuery, resData any, opts ...Options) (any, bool, error)
 
 	// 总数
 

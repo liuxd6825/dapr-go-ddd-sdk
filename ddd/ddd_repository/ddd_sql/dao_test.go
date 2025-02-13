@@ -2,6 +2,10 @@ package ddd_sql
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -14,22 +18,17 @@ type User struct {
 	ID       string
 	Name     string
 	Age      int
+	Score    int
 	Email    string
 	TenantID string
 }
 
-func Test_Insert(t *testing.T) {
+const test = "test"
+
+func Test_Dao(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		t.Fatalf("数据库连接失败: %v", err)
-		return
-	}
-
-	entityBuilder := NewMapEntityBuilder()
-
-	err = db.AutoMigrate(&User{})
-	if err != nil {
-		t.Error(err)
 		return
 	}
 
@@ -39,6 +38,7 @@ func Test_Insert(t *testing.T) {
             tenant_id TEXT,
             name TEXT,
             age INTEGER,
+            score INTEGER,
             email TEXT
         )
 	`).Error
@@ -47,30 +47,103 @@ func Test_Insert(t *testing.T) {
 		return
 	}
 
-	dao := NewDao[MapEntity](db, entityBuilder, "users")
+	eb := NewMapEntityBuilder()
+	dao := NewDao[MapEntity](db, eb, "users")
 	ctx := context.Background()
+	id := "7MC10GTPH63KJJN19YYAREZDS5CJMF"
 
-	user := NewMapEntity()
-	user["tenant_id"] = "test"
-	user["name"] = "name"
-	user["id"] = idutils.NewId()
-	res := dao.Insert(ctx, user)
-	if res.Error != nil {
-		t.Error(res.Error)
-		return
-	}
+	t.Run("Insert", func(t *testing.T) {
+		user := NewMapEntity()
+		user["tenant_id"] = "test"
+		user["name"] = idutils.NewId()
+		user["id"] = idutils.NewId()
+		res := dao.Insert(ctx, user)
+		if res.Error != nil {
+			t.Error(res.Error)
+		}
+	})
 
-	listRes := dao.FindAll(ctx, "test")
-	if listRes.Error != nil {
-		t.Error(listRes.Error)
-		return
-	}
-	print(listRes.Data)
+	t.Run("FindAll", func(t *testing.T) {
+		listRes := dao.FindAll(ctx, test)
+		if listRes.Error != nil {
+			t.Error(listRes.Error)
+			return
+		}
+		t.Log(marshal(listRes.Data))
+	})
 
-	idRes := dao.FindById(ctx, "test", "7MC10GTPH63KJJN19YYAREZDS5CJMF")
-	if idRes.Error != nil {
-		t.Error(idRes.Error)
-		return
-	}
-	print(idRes.Data)
+	t.Run("FindById", func(t *testing.T) {
+		idRes := dao.FindById(ctx, test, id)
+		if idRes.Error != nil {
+			t.Error(idRes.Error)
+			return
+		}
+		t.Log(marshal(idRes.Data))
+	})
+
+	t.Run("FindPaging", func(t *testing.T) {
+		qry := ddd_query.NewFindPagingQuery()
+		qry.SetTenantId(test)
+		qry.SetFilter(fmt.Sprintf("id==\"%s\"", id))
+		pagingRes := dao.FindPaging(ctx, qry)
+		if pagingRes.Error != nil {
+			t.Error(pagingRes.Error)
+			return
+		}
+		if pagingRes.Data == nil {
+			t.Error("pagingRes.Data is nil")
+			return
+		}
+		t.Log(marshal(pagingRes.Data))
+	})
+
+	t.Run("Count", func(t *testing.T) {
+		count, err := dao.Count(ctx, test, "")
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		t.Log("count = ", count)
+	})
+
+	t.Run("FindByIds", func(t *testing.T) {
+		idsRes := dao.FindByIds(ctx, test, []string{id})
+		if idsRes.Error != nil {
+			t.Error(idsRes.Error)
+			return
+		}
+		t.Log(marshal(idsRes.Data))
+	})
+
+	t.Run("Sum", func(t *testing.T) {
+		qry := ddd_query.NewFindPagingQuery()
+		qry.SetTenantId(test)
+		valueCols := []*ddd_repository.ValueCol{}
+		valueCols = append(valueCols, &ddd_repository.ValueCol{AggFunc: ddd_repository.AggFuncSum, Field: "age"})
+		valueCols = append(valueCols, &ddd_repository.ValueCol{AggFunc: ddd_repository.AggFuncSum, Field: "score"})
+		qry.SetValueCols(valueCols)
+		sumData := map[string]any{}
+		sumRes, _, sumErr := dao.Sum(ctx, qry, &sumData)
+		if sumErr != nil {
+			t.Error(sumErr)
+			return
+		}
+		t.Log(marshal(sumRes))
+	})
+
+	t.Run("FindAutoComplete", func(t *testing.T) {
+		qry := ddd_query.NewFindAutoCompleteQuery()
+		qry.SetTenantId(test)
+		qry.SetFilter(fmt.Sprintf("name~=\"%s\"", id))
+		res := dao.FindAutoComplete(ctx, qry)
+		if res.Error != nil {
+			t.Error(res.Error)
+		}
+	})
+
+}
+
+func marshal(data any) string {
+	dataJson, _ := json.Marshal(data)
+	return string(dataJson)
 }
