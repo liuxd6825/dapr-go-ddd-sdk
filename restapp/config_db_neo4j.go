@@ -49,6 +49,7 @@ func initNeo4j(configs map[string]*Neo4jConfig) error {
 		config.DbKey = key
 		_neo4js[key] = driver
 		_neo4jDefault = driver
+		addNeo4j(key, driver)
 	}
 	return nil
 }
@@ -76,4 +77,14 @@ func CloseAllNeo4j(ctx context.Context) error {
 		_ = c(d)
 	}
 	return nil
+}
+
+func addNeo4j(dbKey string, neo4jDb neo4j.DriverWithContext) DBItem {
+	item := &dbItem{
+		dbKey:  dbKey,
+		dbType: DbType_Neo4j,
+		neo4j:  neo4jDb,
+	}
+	addDb(item)
+	return item
 }

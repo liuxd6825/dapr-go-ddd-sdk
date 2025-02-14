@@ -3,7 +3,6 @@ package ddd_sql
 import (
 	"context"
 	"fmt"
-	"github.com/dapr/components-contrib/liuxd/eventstore/impl/gorm_impl/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
@@ -414,7 +413,7 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 			return nil, false, err
 		}
 	}
-	filter := getRsqlAnds(f1, f2, f3)
+	filter := getSqlAnds(f1, f2, f3)
 
 	res, found, err := d.sum(ctx, filter, qry.GetValueCols(), resData, opts...)
 	return res, found, err
@@ -438,26 +437,39 @@ func (d *Dao[T]) sum(ctx context.Context, rSql string, valueCols []*ddd_reposito
 }
 
 func (d *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+	var count int64
+	filterMap, ok := filterData.(map[string]any)
+	var sql string
+	if ok {
+		sql = d.mapAsSql(tenantId, filterMap)
+	} else if where, ok := filterData.(string); ok {
+		sql = where
+	}
+	table := d.table(ctx)
+	if sql == "" {
+		sql = fmt.Sprintf("tenant_id='%s'", tenantId)
+	} else {
+		sql = fmt.Sprintf("tenant_id='%s' and (%s)", tenantId, sql)
+	}
+	res := table.Where(sql).Select("count(*) as total").Scan(&count)
+	return count, res.Error
 }
 
 func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
 	var count int64
 	res := d.DoFilter(tenantId, rsql, func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
 		table := d.table(ctx)
-		res := table.Select("count(*) as total").Scan(&count)
+		res := table.Where(sqlWhere).Select("count(*) as total").Scan(&count)
 		return ddd_repository.NewFindPagingResultEmpty[T]().SetError(res.Error), res.Error == nil, nil
 	})
 	return count, res.Error
 }
 
 func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gorm.DB {
-	tx := db.GetTransaction(ctx)
+	tx := GetTx(ctx, d.db.Name())
 	if tx != nil {
 		return tx.Table(d.tableName)
 	}
-
 	return d.db.Table(d.tableName)
 }
 
@@ -522,15 +534,28 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*d
 	return data
 }
 
-func getRsqlAnds(s ...string) string {
+func (d *Dao[T]) StartTx(ctx context.Context, fun ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
+	tx := GetTx(ctx, d.db.Name())
+	if tx == nil {
+		err = d.db.Transaction(func(txDb *gorm.DB) error {
+			txCtx := NewContext(ctx, txDb, d.db.Name())
+			return fun(txCtx)
+		})
+	} else {
+		err = fun(ctx)
+	}
+	return err
+}
+
+func getSqlAnds(s ...string) string {
 	res := ""
 	for _, item := range s {
-		res = getRsqlAnd(res, item)
+		res = getSqlAnd(res, item)
 	}
 	return res
 }
 
-func getRsqlAnd(s1 string, s2 string) string {
+func getSqlAnd(s1 string, s2 string) string {
 	b1 := len(s1) > 0
 	b2 := len(s2) > 0
 	if b1 && b2 {

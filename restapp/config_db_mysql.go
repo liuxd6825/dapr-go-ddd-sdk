@@ -48,8 +48,11 @@ func initMySql(configs map[string]*MySqlConfig) {
 			logs.Errorf(context.Background(), "", nil, "连接mysql失败, error:%s", err.Error())
 			os.Exit(0)
 		}
-		_mysqlList[strings.ToLower(key)] = db
+
+		_mysqlList[key] = db
 		_mysqlDefault = db
+
+		addMysql(key, db)
 	}
 }
 
@@ -76,4 +79,14 @@ func CloseAllMySql(ctx context.Context) error {
 		_ = c(d)
 	}
 	return nil
+}
+
+func addMysql(dbKey string, mysqlDb *gorm.DB) DBItem {
+	item := &dbItem{
+		dbKey:  dbKey,
+		dbType: DbType_MySQL,
+		mysql:  mysqlDb,
+	}
+	addDb(item)
+	return item
 }

@@ -73,6 +73,7 @@ func initRedis(configs map[string]*RedisConfig) error {
 		dbKey := strings.ToLower(k)
 		_redisDbs[dbKey] = rdb
 		_redisDefault = rdb
+		addRedis(dbKey, rdb)
 	}
 	if len(_redisDbs) > 1 {
 		_redisDefault = nil
@@ -132,4 +133,14 @@ func CloseRedis(ctx context.Context) error {
 		_ = c(d)
 	}
 	return nil
+}
+
+func addRedis(dbKey string, redisDb *redis.Client) DBItem {
+	item := &dbItem{
+		dbKey:  dbKey,
+		dbType: DbType_Redis,
+		redis:  redisDb,
+	}
+	addDb(item)
+	return item
 }

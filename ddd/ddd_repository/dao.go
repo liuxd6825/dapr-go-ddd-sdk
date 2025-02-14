@@ -2,6 +2,8 @@ package ddd_repository
 
 import "context"
 
+type TxFunc func(ctx context.Context) error
+
 type Dao[T any] interface {
 	NewEntity() (T, error)
 	NewEntityList() ([]T, error)
@@ -59,4 +61,6 @@ type Dao[T any] interface {
 
 	CountRows(ctx context.Context, tenantId string, filterData any, opts ...Options) (int64, error)
 	Count(ctx context.Context, tenantId string, rsql string, opts ...Options) (int64, error)
+
+	StartTx(ctx context.Context, fun TxFunc, options ...*SessionOptions) error
 }

@@ -134,11 +134,12 @@ func Test_Dao(t *testing.T) {
 	t.Run("FindAutoComplete", func(t *testing.T) {
 		qry := ddd_query.NewFindAutoCompleteQuery()
 		qry.SetTenantId(test)
-		qry.SetFilter(fmt.Sprintf("name~=\"%s\"", id))
+		qry.SetFilter(fmt.Sprintf("name ==~ \"%s\"", "K"))
 		res := dao.FindAutoComplete(ctx, qry)
 		if res.Error != nil {
 			t.Error(res.Error)
 		}
+		t.Log(marshal(res.Data))
 	})
 
 }

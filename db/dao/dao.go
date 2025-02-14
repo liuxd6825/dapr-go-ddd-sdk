@@ -38,4 +38,6 @@ type Dao[T any] interface {
 	SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error)
 	Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error)
 	GetFilterMap(tenantId string, rsqlstr string) (map[string]interface{}, error)
+
+	StartTx(ctx context.Context, fun TxFunc, options ...*ddd_repository.SessionOptions) error
 }
