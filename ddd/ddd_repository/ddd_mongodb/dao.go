@@ -1197,7 +1197,7 @@ func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	if err := rsql.ParseProcess(filter, p); err != nil {
 		return nil, false, err
 	}
-	filterMap, err := p.GetFilter(qry.GetTenantId())
+	filterMap, err := p.GetFilterMap(qry.GetTenantId())
 	if err != nil {
 		return nil, false, err
 	}
@@ -1302,16 +1302,20 @@ func (r *Dao[T]) DoFilter(tenantId, rsql string, fun func(filter map[string]inte
 	return data
 }
 
-func (r *Dao[T]) GetFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {
-	return r.getFilterMap(tenantId, rsqlstr)
+func (r *Dao[T]) GetFilterMap(tenantId, rsql string) map[string]any {
+	data, err := r.getFilterMap(tenantId, rsql)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (r *Dao[T]) getFilterMap(tenantId, rsqlstr string) (map[string]interface{}, error) {
+func (r *Dao[T]) getFilterMap(tenantId, rSql string) (map[string]any, error) {
 	p := NewMongoProcess()
-	if err := rsql.ParseProcess(rsqlstr, p); err != nil {
+	if err := rsql.ParseProcess(rSql, p); err != nil {
 		return nil, err
 	}
-	filterMap, err := p.GetFilter(tenantId)
+	filterMap, err := p.GetFilterMap(tenantId)
 	if err != nil {
 		return nil, err
 	}
@@ -1356,46 +1360,7 @@ func (r *Dao[T]) DoSetManyCount(fun func() (*mongo.UpdateResult, error)) *ddd_re
 }
 
 func (r *Dao[T]) StartTx(ctx context.Context, txFun ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
-	txCtx := getSessionContext(ctx, r.mongodb.database.Name())
-	if txCtx == nil {
-		err = r.startTx(ctx, txFun)
-	} else {
-		err = txFun(txCtx)
-	}
-	return err
-}
-
-func (r *Dao[T]) startTx(ctx context.Context, fun ddd_repository.TxFunc) error {
-	sOpts := &mongo_options.SessionOptions{}
-	client := r.mongodb.client
-	serverCount := r.mongodb.config.ServerCount()
-	// 事务处理
-	err := client.UseSessionWithOptions(ctx, sOpts, func(txCtx mongo.SessionContext) error {
-		var tranErr error
-		newCtx := NewContext(ctx, txCtx, r.mongodb.database.Name())
-		if serverCount == 1 {
-			return fun(newCtx)
-		}
-
-		err := txCtx.StartTransaction()
-		// 开启事务
-		if err != nil {
-			return err
-		}
-
-		// 执行业务
-		if err = fun(newCtx); err != nil {
-			tranErr = txCtx.AbortTransaction(ctx)
-		} else {
-			tranErr = txCtx.CommitTransaction(ctx)
-		}
-		if err != nil {
-			return err
-		}
-		return tranErr
-
-	})
-	return err
+	return StartTx(ctx, r.mongodb, r.mongodb.Name(), txFun, options...)
 }
 
 /*

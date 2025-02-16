@@ -71,6 +71,12 @@ func (b *Manager) Run(funcName string, runValues *element.ApiRunValues, checkHav
 	srcFileName = script.Config().SrcFileName
 
 	opts = append(opts, func(vm *goja.Runtime) error {
+		pkgMap := runValues.Server.Pkg().Items()
+		pkgObj := goja.NewSharedDynamicObject(element.NewProxy(runValues.Server, vm, runValues.WorkPath, pkgMap))
+		if err := vm.Set("pkg", pkgObj); err != nil {
+			return err
+		}
+
 		return SetRunValues(vm, runValues)
 	})
 
@@ -85,8 +91,8 @@ func SetRunValues(vm *goja.Runtime, runValues *element.ApiRunValues, data ...map
 				return err
 			}
 		}
-		if runValues.ApiService != nil {
-			if err := runValues.ApiService.SetSelfVMValue("service", vm); err != nil {
+		if runValues.Service != nil {
+			if err := runValues.Service.SetSelfVMValue("service", vm); err != nil {
 				return err
 			}
 		}

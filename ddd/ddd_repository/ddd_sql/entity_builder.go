@@ -20,7 +20,7 @@ func (m *MapEntityBuilder[T]) NewEntityList() ([]T, error) {
 }
 
 func (m *MapEntityBuilder[T]) GetTenantId(entity T) string {
-	v, ok := entity["tenant_id"]
+	v, ok := entity["tenantId"]
 	if ok {
 		return v.(string)
 	}
@@ -28,7 +28,7 @@ func (m *MapEntityBuilder[T]) GetTenantId(entity T) string {
 }
 
 func (m *MapEntityBuilder[T]) SetTenantId(entity T, tenantId string) {
-	entity["tenant_id"] = tenantId
+	entity["tenantId"] = tenantId
 }
 
 func (m *MapEntityBuilder[T]) GetId(entity T) string {

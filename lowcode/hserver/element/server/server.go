@@ -99,6 +99,11 @@ func (s *Server) init(logger logrus.FieldLogger) error {
 		return err
 	}
 
+	if server.Pkg().Count() == 0 {
+		server.LoadPkg("all")
+		print("pkg.count = ", server.Pkg().Count())
+	}
+
 	for _, opt := range opts {
 		if opt != nil {
 			opt(server)

@@ -22,6 +22,7 @@ type Base interface {
 	WorkPath() string
 	SetPkg(pkg *types.CMap[any])
 	Pkg() *types.CMap[any]
+	AddPkg(key string, pkg any)
 	RunValues() *types.CMap[any]
 	RunInitScript(values *ApiRunValues, opts ...RunOptions) error
 	RunOnce(funcName, code, codeType, fileName string, runValues *ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error

@@ -21,15 +21,15 @@ func GetTx(ctx ctx.Context, dbKey string) *gorm.DB {
 	return db
 }
 
-func StartTx(ctx context.Context, db *gorm.DB, dbKey string, fun ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
+func StartTx(ctx context.Context, db *gorm.DB, dbKey string, fun ddd_repository.TxFunc, opts ...*ddd_repository.SessionOptions) (err error) {
 	tx := GetTx(ctx, dbKey)
-	if tx == nil {
-		err = db.Transaction(func(txDb *gorm.DB) error {
-			txCtx := NewContext(ctx, txDb, dbKey)
-			return fun(txCtx)
-		})
-	} else {
-		err = fun(ctx)
+	if tx != nil {
+		return fun(ctx, opts...)
 	}
+
+	err = db.Transaction(func(txDb *gorm.DB) error {
+		txCtx := NewContext(ctx, txDb, dbKey)
+		return fun(txCtx, opts...)
+	})
 	return err
 }

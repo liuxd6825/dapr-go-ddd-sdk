@@ -48,7 +48,7 @@ func Test_Dao(t *testing.T) {
 	}
 
 	eb := NewMapEntityBuilder()
-	dao := NewDao[MapEntity](db, eb, "users")
+	dao := NewDao[MapEntity](db, "dbKey", eb, "users")
 	ctx := context.Background()
 	id := "7MC10GTPH63KJJN19YYAREZDS5CJMF"
 

@@ -16,18 +16,10 @@ type Dao[T ddd.Entity] struct {
 	dao *ddd_mongodb.Dao[T]
 }
 
-type RepositoryType int
-
 type RepositoryOptions struct {
 	MongoDB         *ddd_mongodb.MongoDB
 	GetCollCallback GetCollectionCallback
-	RepositoryType  *RepositoryType
 }
-
-const (
-	RepositoryTypeSQL RepositoryType = 0
-	RepositoryTypeDDD RepositoryType = 1
-)
 
 var _mongodb *ddd_mongodb.MongoDB
 
@@ -188,7 +180,7 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	return d.dao.Sum(ctx, qry, data, opts...)
 }
 
-func (d *Dao[T]) GetFilterMap(tenantId string, rsqlstr string) (map[string]interface{}, error) {
+func (d *Dao[T]) GetFilterMap(tenantId string, rsqlstr string) map[string]any {
 	return d.dao.GetFilterMap(tenantId, rsqlstr)
 }
 

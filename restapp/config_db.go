@@ -26,9 +26,9 @@ type DBItem interface {
 	GetDBType() DbType
 	GetDBKey() string
 
-	GetRedisDb() *redis.Client
-	GetNeo4jDb() neo4j.DriverWithContext
-	GetMongoDb() *ddd_mongodb.MongoDB
+	GetRedis() *redis.Client
+	GetNeo4j() neo4j.DriverWithContext
+	GetMongo() *ddd_mongodb.MongoDB
 
 	GetPostgres() *gorm.DB
 	GetSqlite() *gorm.DB
@@ -36,6 +36,7 @@ type DBItem interface {
 	GetMsSQL() *gorm.DB
 	GetOracle() *gorm.DB
 
+	GetDB() any
 	CloseDB(ctx context.Context) error
 }
 type dbItem struct {
@@ -57,6 +58,29 @@ var _dbs map[string]DBItem
 
 func init() {
 	_dbs = make(map[string]DBItem)
+}
+
+func (d *dbItem) GetDB() any {
+	switch d.dbType {
+	case DbType_Postgres:
+		return d.postgres
+	case DbType_MySQL:
+		return d.mysql
+	case DbType_Sqlite:
+		return d.sqlite
+	case DbType_Neo4j:
+		return d.neo4j
+	case DbType_Redis:
+		return d.redis
+	case DbType_MongoDB:
+		return d.mongo
+	case DbType_MsSQL:
+		return d.mysql
+	case DbType_Oracle:
+		return d.oracle
+	default:
+		panic("db type not supported")
+	}
 }
 
 func (d *dbItem) GetDBType() DbType {

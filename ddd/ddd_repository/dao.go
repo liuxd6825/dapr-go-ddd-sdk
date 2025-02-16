@@ -2,7 +2,7 @@ package ddd_repository
 
 import "context"
 
-type TxFunc func(ctx context.Context) error
+type TxFunc func(ctx context.Context, options ...*SessionOptions) error
 
 type Dao[T any] interface {
 	NewEntity() (T, error)

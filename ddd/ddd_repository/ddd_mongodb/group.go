@@ -175,7 +175,7 @@ func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 	if err := rsql.ParseProcess(b.Filter, p); err != nil {
 		return nil, err
 	}
-	return p.GetFilter(b.TenantId)
+	return p.GetFilterMap(b.TenantId)
 }
 
 // GetGroupExpandFilter

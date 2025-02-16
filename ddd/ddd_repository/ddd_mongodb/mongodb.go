@@ -183,6 +183,10 @@ func (m *MongoDB) CreateCollection(collectionName string) error {
 	return m.database.CreateCollection(context.Background(), collectionName, ops)
 }
 
+func (m *MongoDB) Client() *mongo.Client {
+	return m.client
+}
+
 func (m *MongoDB) Close(ctx context.Context) error {
 	return m.client.Disconnect(ctx)
 }

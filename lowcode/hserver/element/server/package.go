@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/ctx_pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/eventbus_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/feign_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/html_pkg"
@@ -25,7 +25,7 @@ type pkgSetup struct {
 
 func NewPkgSetup(server *Server) PkgSetup {
 	s := &pkgSetup{server: server, keys: make(map[string]func() any)}
-	s.Add("mongo", s.mongo)
+	s.Add("db", s.db)
 	s.Add("feign", s.feign)
 	s.Add("fs", s.fs)
 	s.Add("json", s.json)
@@ -35,7 +35,6 @@ func NewPkgSetup(server *Server) PkgSetup {
 	s.Add("strings", s.strings)
 	s.Add("env", s.env)
 	s.Add("html", s.html)
-	s.Add("eventbus", s.eventbus)
 	s.Add("logs", s.logs)
 	return s
 }
@@ -51,21 +50,21 @@ func (p *pkgSetup) Setup(keys ...string) {
 		key = strings.ToLower(key)
 		if !p.server.Pkg().Has(key) {
 			if newFun, ok := p.keys[key]; ok && newFun != nil {
-				p.server.Pkg().Add(key, newFun())
+				p.server.AddPkg(key, newFun())
 			}
 		}
 
 		if key == "all" {
 			for k, v := range p.keys {
-				p.server.Pkg().Add(k, v())
+				p.server.AddPkg(k, v())
 			}
 			break
 		}
 	}
 }
 
-func (p *pkgSetup) mongo() any {
-	return mongodb.New(p.server)
+func (p *pkgSetup) db() any {
+	return db_pkg.New(p.server)
 }
 
 func (p *pkgSetup) feign() any {

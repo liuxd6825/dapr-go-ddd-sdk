@@ -1,4 +1,4 @@
-package db_pkg
+package db
 
 // AccessType DAO数据访问类型
 type AccessType string

@@ -5,7 +5,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -43,9 +42,6 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	if err != nil {
 		return err
 	}
-	pkg := types.NewCMap[any]()
-	server.SetPkg(pkg)
-
 	vData := map[string]any{
 		"server": server,
 		"pkg":    server.Pkg().Items(),

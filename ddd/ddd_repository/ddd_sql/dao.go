@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"gorm.io/gorm"
@@ -22,6 +23,7 @@ type Dao[T any] struct {
 	options       *Options[T]
 	entityBuilder ddd.EntityBuilder[T] // 实体构造器
 	db            *gorm.DB
+	dbKey         string
 	entity        T
 	tableName     string
 	_table        *gorm.DB
@@ -32,7 +34,30 @@ const (
 	Id       = "id"
 )
 
-func NewDao[T any](db *gorm.DB, entityBuilder ddd.EntityBuilder[T], tableName string) ddd_repository.Dao[T] {
+func NewDaoWithDbKey[T any](dbKey string, eb ddd.EntityBuilder[T], tableName string) ddd_repository.Dao[T] {
+	item := restapp.GetDb(dbKey)
+	if item == nil {
+		panic(errors.New(fmt.Sprintf("db key %s not found", dbKey)))
+	}
+	var db *gorm.DB
+	switch item.GetDBType() {
+	case restapp.DbType_Postgres:
+		db = item.GetPostgres()
+	case restapp.DbType_MySQL:
+		db = item.GetMySQL()
+	case restapp.DbType_Sqlite:
+		db = item.GetSqlite()
+	case restapp.DbType_MsSQL:
+		db = item.GetMsSQL()
+	case restapp.DbType_Oracle:
+		db = item.GetOracle()
+	default:
+		panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))
+	}
+	return NewDao[T](db, dbKey, eb, tableName)
+}
+
+func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T], tableName string) *Dao[T] {
 	entity, err := entityBuilder.NewEntity()
 	if err != nil {
 		panic(err)
@@ -40,6 +65,21 @@ func NewDao[T any](db *gorm.DB, entityBuilder ddd.EntityBuilder[T], tableName st
 	return &Dao[T]{
 		entityBuilder: entityBuilder,
 		db:            db,
+		dbKey:         dbKey,
+		entity:        entity,
+		tableName:     tableName,
+	}
+}
+
+func newDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T], tableName string) *Dao[T] {
+	entity, err := entityBuilder.NewEntity()
+	if err != nil {
+		panic(err)
+	}
+	return &Dao[T]{
+		entityBuilder: entityBuilder,
+		db:            db,
+		dbKey:         dbKey,
 		entity:        entity,
 		tableName:     tableName,
 	}
@@ -486,7 +526,11 @@ func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, s
 	return errors.New("filter data type is not string")
 }
 
-func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]interface{}) string {
+func (d *Dao[T]) GetFilterMap(tenantId string, rSql string) map[string]any {
+	return map[string]any{}
+}
+
+func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]any) string {
 	if filterMap == nil || len(filterMap) == 0 {
 		return fmt.Sprintf(`tenant_id='%s'`, tenantId)
 	}
@@ -535,16 +579,7 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*d
 }
 
 func (d *Dao[T]) StartTx(ctx context.Context, fun ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
-	tx := GetTx(ctx, d.db.Name())
-	if tx == nil {
-		err = d.db.Transaction(func(txDb *gorm.DB) error {
-			txCtx := NewContext(ctx, txDb, d.db.Name())
-			return fun(txCtx)
-		})
-	} else {
-		err = fun(ctx)
-	}
-	return err
+	return StartTx(ctx, d.db, d.dbKey, fun, options...)
 }
 
 func getSqlAnds(s ...string) string {

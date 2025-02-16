@@ -32,9 +32,9 @@ func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fa
 		reader:      reader,
 		funcs:       factory.NewFuncManager(logger, reader),
 		logger:      logger,
-		runValues:   types.NewCMap[any](),
 		srcFileName: srcFileName,
 		fsOpts:      fsOpts,
+		runValues:   types.NewCMap[any](),
 		pkg:         types.NewCMap[any](),
 	}, nil
 }
@@ -103,6 +103,10 @@ func (b *Base) SetPkg(pkg *types.CMap[any]) {
 
 func (b *Base) Pkg() *types.CMap[any] {
 	return b.pkg
+}
+
+func (b *Base) AddPkg(key string, pkg any) {
+	b.pkg.Set(key, pkg)
 }
 
 func (b *Base) FsOpts() *fsopts.Options {

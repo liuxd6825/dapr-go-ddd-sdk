@@ -55,8 +55,8 @@ func (m *MongoProcess) init() {
 	m.current = m.item
 }
 
-func (m *MongoProcess) GetFilter(tenantId string) (map[string]interface{}, error) {
-	data := make(map[string]interface{})
+func (m *MongoProcess) GetFilterMap(tenantId string) (map[string]any, error) {
+	data := make(map[string]any)
 	if len(m.errList) > 0 {
 		msg := strings.Join(m.errList, " ")
 		return nil, errors.New(msg)
@@ -65,7 +65,7 @@ func (m *MongoProcess) GetFilter(tenantId string) (map[string]interface{}, error
 	m.item.getValues(data)
 	m1, ok := data[""]
 	if ok {
-		d1 := m1.(map[string]interface{})
+		d1 := m1.(map[string]any)
 		d1[ConstTenantIdField] = tenantId
 	} else if len(data) == 0 {
 		data[ConstTenantIdField] = tenantId

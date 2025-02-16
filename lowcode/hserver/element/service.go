@@ -26,7 +26,7 @@ type Service interface {
 
 type ApiRunValues struct {
 	Server     Server
-	ApiService Service
+	Service    Service
 	WebContext WebContext
 	WorkPath   string
 	Self       any
