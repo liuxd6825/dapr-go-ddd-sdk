@@ -18,10 +18,9 @@ func NewDBSchema(dest *schema.Schema) (*dbschema.Schema, error) {
 	s := newDbSchema(dest)
 	var primaryField *dbschema.Field
 	for _, p := range dest.Properties {
-		var dataType dbschema.DataType
+		dataType := getDataType(p)
 		name := stringutils.AsFieldName(p.Name)
 		field := newDbField(s, name, dataType)
-		field.NotNull = !p.IsTypeNull()
 		setDbField(field, p.Field)
 		if field.PrimaryKey {
 			primaryField = field
@@ -47,7 +46,24 @@ func newDbSchema(dest *schema.Schema) *dbschema.Schema {
 	}
 	return s
 }
-
+func getDataType(property *schema.Property) dbschema.DataType {
+	if property == nil {
+		panic("getDataType: property is nil")
+	}
+	if property.IsTypeDate() {
+		return dbschema.Time
+	}
+	if property.IsTypeInteger() {
+		return dbschema.Int
+	}
+	if property.IsTypeBoolean() {
+		return dbschema.Bool
+	}
+	if property.IsTypeString() {
+		return dbschema.String
+	}
+	return dbschema.String
+}
 func newDbField(s *dbschema.Schema, name string, dataType dbschema.DataType) *dbschema.Field {
 	fieldType := getFieldType(dataType)
 	field := &dbschema.Field{

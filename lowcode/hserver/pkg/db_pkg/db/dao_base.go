@@ -11,7 +11,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"time"
@@ -42,7 +41,7 @@ func NewDaoBase(dao ddd_repository.Dao[ddd.MapEntity], cfg *DaoConfig) *DaoBase 
 		dao:         dao,
 		dbKey:       cfg.DbKey,
 		tableName:   tableName,
-		appId:       restapp.GetAppId(),
+		appId:       cfg.GetEnv().GetAppId(),
 		isPubEvent:  cfg.GetIsPubEvent(),
 		aggField:    aggField,
 		eventPrefix: "eventPrefix",

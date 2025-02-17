@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -123,8 +124,12 @@ func (d *Dao[T]) SetId(entity T, id string) {
 	d.entityBuilder.SetId(entity, id)
 }
 
-func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	err := d.table(ctx).Model(entity).Create(entity).Error
+func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
+	err := gp.Try(func() error {
+		db := d.table(ctx)
+		db = db.Model(d.tableName)
+		return db.Create(entity).Error
+	}).Error
 	return ddd_repository.NewSetResult[T](entity, err)
 }
 

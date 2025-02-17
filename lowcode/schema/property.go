@@ -64,13 +64,11 @@ type Property struct {
 	WriteOnly   bool       `json:"writeOnly,omitempty"`
 	Examples    []any      `json:"examples,omitempty"`
 	Deprecated  bool       `json:"deprecated,omitempty"`
-	// liuxd
-	types map[string]string
-	Field *Field `json:"field,omitempty"`
+	Field       *Field     `json:"field,omitempty"`
+	types       map[string]string
 }
 
-/* liuxd */
-// Field
+// Field 数据库字段
 type Field struct {
 	PrimaryKey   bool   `json:"primaryKey,omitempty"`
 	Unique       bool   `json:"unique,omitempty"`

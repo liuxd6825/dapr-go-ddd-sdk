@@ -11,17 +11,18 @@ type DaoConfig struct {
 	AggField   string            `json:"aggField"`
 	Env        common.IEnvConfig `json:"env"`
 	Schema     *schema.Schema    `json:"schema"`
+	Database   any               `json:"database"`
 }
 
 func (c *DaoConfig) Valid() {
 	if c.DbKey == "" {
-		panic("empty dbKey")
+		panic("DaoConfig empty dbKey")
 	}
 	if c.Env == nil {
-		panic("empty env")
+		panic("DaoConfig empty env")
 	}
 	if c.Schema == nil {
-		panic("empty schema")
+		panic("DaoConfig empty schema")
 	}
 }
 

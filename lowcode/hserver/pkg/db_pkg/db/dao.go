@@ -10,7 +10,7 @@ import (
 type Dao interface {
 	GetSchema() *schema.Schema
 	GetAggField() string
-	
+
 	Create(ctx context.Context, entity ddd.MapEntity, opts ...*CallOptions)
 	Update(ctx context.Context, entity ddd.MapEntity, opts ...*CallOptions)
 	DeleteById(ctx context.Context, id string, opts ...*CallOptions)
@@ -35,6 +35,7 @@ type Dao interface {
 	SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
 
+	Table() Table
 	//GetFilterMap(tenantId string, rSql string) map[string]any
 }
 

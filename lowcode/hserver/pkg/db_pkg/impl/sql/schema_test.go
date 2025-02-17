@@ -6,38 +6,9 @@ import (
 	"gorm.io/gorm"
 	dbschema "gorm.io/gorm/schema"
 	"testing"
-	"time"
 )
 
-type Human struct {
-	Name       string    `gorm:"name"`
-	Age        int       `gorm:"age"`
-	Analyse    string    `gorm:"analyse"`
-	Birthday   time.Time `gorm:"birthday"`
-	PeopleType []string  `gorm:"people_type;type:json"`
-}
-
-func Test_CreateTable(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("数据库连接失败: %v", err)
-		return
-	}
-	err = db.Migrator().CreateTable(&Human{})
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func Test_Schema(t *testing.T) {
-
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("数据库连接失败: %v", err)
-		return
-	}
-
-	jsonSchema := `
+const HumanSchema = `
 	{
 	  "name": "humans",
 	  "type": "object",
@@ -87,7 +58,28 @@ func Test_Schema(t *testing.T) {
 	  }
 	}
 	`
-	dest, err := schema.NewSchemaWithJson("human.json", jsonSchema)
+
+func Test_CreateTable(t *testing.T) {
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("数据库连接失败: %v", err)
+		return
+	}
+	err = db.Migrator().CreateTable(&Human{})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_Schema(t *testing.T) {
+
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("数据库连接失败: %v", err)
+		return
+	}
+
+	dest, err := schema.NewSchemaWithJson("human.json", HumanSchema)
 	if err != nil {
 		t.Error(err)
 		return

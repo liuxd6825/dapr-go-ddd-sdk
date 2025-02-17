@@ -50,6 +50,11 @@ func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collecti
 	default:
 		r.decoder = NewMapDecoder[T]()
 	}
+	ctx := context.Background()
+	mongodb, coll := initFun(ctx)
+	if err := r.Init(ctx, mongodb, coll); err != nil {
+		panic(err)
+	}
 	return r
 }
 

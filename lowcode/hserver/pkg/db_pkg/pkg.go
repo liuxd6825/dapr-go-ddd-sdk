@@ -23,7 +23,6 @@ type Pkg struct {
 
 type NewDaoConfig struct {
 	DbKey      string         `json:"dbKey"`
-	TableName  string         `json:"tableName"`
 	IsPubEvent *bool          `json:"isPubEvent"`
 	AggField   string         `json:"aggField"`
 	Schema     *schema.Schema `json:"schema"`
@@ -38,17 +37,14 @@ func New(server element.Server) *Pkg {
 
 func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 	dbKey := opts.DbKey
-	tableName := opts.TableName
 	if dbKey == "" {
 		dbKey = "default"
-	}
-	if tableName == "" {
-		panic("db.NewDao() args tableName is required")
 	}
 	if opts.Schema == nil {
 		panic("db.NewDao() args schema is required")
 	}
 
+	tableName := opts.Schema.GetTableName()
 	daoKey := fmt.Sprintf("%s-%s", dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
 		return v.(db.Dao)

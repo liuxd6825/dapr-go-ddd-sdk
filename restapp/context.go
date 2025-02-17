@@ -26,6 +26,7 @@ const (
 
 var (
 	DefaultAuthToken = ""
+	TestToken        = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk`
 )
 
 func NewLoggerContext(ctx context.Context) context.Context {
@@ -40,9 +41,43 @@ func NewLoggerContext(ctx context.Context) context.Context {
 //	@return err
 func NewContextNoAuth(ictx iris.Context) (newCtx context.Context, err error) {
 	return NewContext(ictx, func(opt *ContextOption) {
+		tenantId := "test"
 		opt.CheckAuth = gp.PBool(false)
-		opt.TenantId = nil
+		opt.TenantId = &tenantId
 	})
+}
+
+// NewTestContext
+//
+//	@Description:
+//	@param ctx
+//	@return newCtx
+//	@return err
+func NewTestContext(ctx context.Context, opts ...ContextOptions) (newCtx context.Context, err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	var pCtx context.Context = ctx
+
+	// 添加 日志 上下文
+	newCtx = logs.NewContext(pCtx)
+
+	opt := newContextOption(opts...)
+	for _, fun := range opts {
+		fun(opt)
+	}
+
+	//添加 租户 上下文
+	if opt.TenantId != nil {
+		newCtx = appctx.NewTenantContext(newCtx, gp.String(opt.TenantId, ""))
+	}
+
+	newCtx, err = appctx.NewAuthContext(newCtx, TestToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCtx, err
 }
 
 func newContextOption(opts ...ContextOptions) *ContextOption {
