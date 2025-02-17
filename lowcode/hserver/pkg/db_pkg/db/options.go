@@ -7,7 +7,6 @@ import (
 
 type DaoConfig struct {
 	DbKey      string            `json:"dbKey"`
-	TableName  string            `json:"tableName"`
 	IsPubEvent *bool             `json:"isPubEvent"`
 	AggField   string            `json:"aggField"`
 	Env        common.IEnvConfig `json:"env"`
@@ -17,9 +16,6 @@ type DaoConfig struct {
 func (c *DaoConfig) Valid() {
 	if c.DbKey == "" {
 		panic("empty dbKey")
-	}
-	if c.TableName == "" {
-		panic("empty tableName")
 	}
 	if c.Env == nil {
 		panic("empty env")
@@ -31,10 +27,6 @@ func (c *DaoConfig) Valid() {
 
 func (c *DaoConfig) GetDbKey() string {
 	return c.DbKey
-}
-
-func (c *DaoConfig) GetTableName() string {
-	return c.TableName
 }
 
 func (c *DaoConfig) GetIsPubEvent() bool {

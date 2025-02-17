@@ -6,22 +6,33 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"gorm.io/gorm"
+	dbschema "gorm.io/gorm/schema"
 	"reflect"
 	"time"
 )
 
 type Table struct {
-	name   string
-	schema *schema.Schema
-	db     *gorm.DB
+	tableName string
+	schema    *schema.Schema
+	dbSchema  *dbschema.Schema
+	db        *gorm.DB
 }
 
-func NewTable(db *gorm.DB, name string, schema *schema.Schema) *Table {
-	return &Table{db: db, name: name, schema: schema}
+func NewTable(db *gorm.DB, schema *schema.Schema) *Table {
+	dbSchema, err := NewDBSchema(schema)
+	if err != nil {
+		panic(err)
+	}
+	return newTable(db, schema, dbSchema)
 }
 
-func (t *Table) GetName() string {
-	return t.name
+func newTable(db *gorm.DB, schema *schema.Schema, dbSchema *dbschema.Schema) *Table {
+	tableName := dbSchema.Table
+	return &Table{db: db, tableName: tableName, schema: schema, dbSchema: dbSchema}
+}
+
+func (t *Table) GetTableName() string {
+	return t.tableName
 }
 
 func (t *Table) GetSchema() *schema.Schema {
@@ -32,8 +43,7 @@ func (t *Table) AutoMigrate(ctx context.Context) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	model := t.newModel(t.schema)
-	err := t.db.AutoMigrate(model)
+	err := t.db.AutoMigrate(t.dbSchema)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +54,7 @@ func (t *Table) Exist(ctx context.Context) bool {
 		ctx = context.Background()
 	}
 	var result interface{}
-	err := t.db.Table(t.name).First(&result).Error
+	err := t.db.Table(t.dbSchema.Table).First(&result).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 表存在但没有数据
@@ -61,7 +71,7 @@ func (t *Table) Drop(ctx context.Context) {
 		ctx = context.Background()
 	}
 	migrator := t.db.Migrator()
-	err := migrator.DropTable(t.name)
+	err := migrator.DropTable(t.dbSchema.Table)
 	if err != nil {
 		panic(err)
 	}
@@ -71,30 +81,37 @@ func (t *Table) newModel(schema *schema.Schema) interface{} {
 	type DynamicModel struct {
 		ID string `gorm:"primaryKey"`
 	}
+	obj := &DynamicModel{}
+	val := reflect.ValueOf(obj).Elem()
 
 	for fieldName, field := range schema.Properties {
 		fieldType := reflect.TypeOf("")
-		if field.Type == "string" {
+		switch field.Type {
+		case nil, "string":
 			fieldType = reflect.TypeOf("")
-		} else if field.Type == "integer" {
+			break
+		case "int", "number", "integer":
 			fieldType = reflect.TypeOf(0)
-		} else if field.Type == "int" {
-			fieldType = reflect.TypeOf(0)
-		} else if field.Type == "number" {
-			fieldType = reflect.TypeOf(0)
-		} else if field.Type == "date" {
-			fieldType = reflect.TypeOf(time.Time{})
-		} else if field.Type == "dateTime" {
-			fieldType = reflect.TypeOf(time.Time{})
-		} else if field.Type == "bool" {
+			break
+		case "bool":
 			fieldType = reflect.TypeOf(false)
+			break
+		case "float", "double":
+			fieldType = reflect.TypeOf(float64(0))
+			break
+		case "datetime", "time", "date":
+			fieldType = reflect.TypeOf(time.Time{})
+			break
+		default:
+			err := errors.New(fmt.Sprintf("unsupported schema type %v ", fieldType))
+			panic(err)
 		}
 		fieldStruct := reflect.StructField{
 			Name: fieldName,
 			Type: fieldType,
 			Tag:  reflect.StructTag(fmt.Sprintf(`json:"%s"`, fieldName)),
 		}
-		reflect.ValueOf(&DynamicModel{}).Elem().FieldByName(fieldName).Set(reflect.New(fieldStruct.Type).Elem())
+		val.Set(reflect.Append(val, reflect.New(fieldStruct.Type)))
 	}
 	return DynamicModel{}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/jsonschema/v6"
 	"io"
 	"os"
@@ -106,6 +107,10 @@ func (s *Schema) UseLoader(loader URLLoader) error {
 		s.validate.UseLoader(s.loader)
 	}
 	return nil
+}
+
+func (s *Schema) GetTableName() string {
+	return stringutils.AsFieldName(s.Name)
 }
 
 func (s *Schema) Compile() error {

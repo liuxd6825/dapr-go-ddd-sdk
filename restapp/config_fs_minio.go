@@ -66,7 +66,7 @@ func SetMinioClient(miniClient *minio.Client) {
 
 func GetMinioClientByKey(key string) (*minio.Client, bool) {
 	if len(key) == 0 {
-		return _minioDefault, _mysqlDefault != nil
+		return _minioDefault, _minioDefault != nil
 	}
 	d, ok := _minioList[strings.ToLower(key)]
 	return d, ok

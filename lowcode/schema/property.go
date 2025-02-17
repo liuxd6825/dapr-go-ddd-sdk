@@ -17,6 +17,7 @@ const (
 	TypeBoolean       = "boolean"
 	TypeDate          = "date"
 	TypeDatetime      = "datetime"
+	TypeBytes         = "bytes"
 )
 
 type Format = string
@@ -63,7 +64,20 @@ type Property struct {
 	WriteOnly   bool       `json:"writeOnly,omitempty"`
 	Examples    []any      `json:"examples,omitempty"`
 	Deprecated  bool       `json:"deprecated,omitempty"`
-	types       []string
+	// liuxd
+	types map[string]string
+	Field *Field `json:"field,omitempty"`
+}
+
+/* liuxd */
+// Field
+type Field struct {
+	PrimaryKey   bool   `json:"primaryKey,omitempty"`
+	Unique       bool   `json:"unique,omitempty"`
+	DefaultValue string `json:"defaultValue,omitempty"`
+	NotNull      bool   `json:"notNull,omitempty"`
+	Comment      string `json:"comment,omitempty"`
+	Size         *int   `json:"size,omitempty"`
 }
 
 type Properties map[string]*Property
@@ -126,23 +140,77 @@ func (p *Property) GetName() string {
 	return p.Name
 }
 
-func (p *Property) IncludeType(val string) bool {
+func (p *Property) GetDescription() string {
+	return p.Description
+}
+
+func (p *Property) GetFormat() Format {
+	return p.Format
+}
+
+func (p *Property) initTypes() {
 	if p.types == nil {
-		p.types = []string{}
+		p.types = make(map[string]string)
 		if v, ok := p.Type.(string); ok {
-			p.types = append(p.types, v)
+			p.types[v] = v
 		} else if v, ok := p.Type.([]any); ok {
 			for _, vv := range v {
 				item := strings.ToLower(fmt.Sprintf("%s", vv))
-				p.types = append(p.types, item)
+				p.types[item] = item
 			}
 		}
 	}
+}
+
+// IncludeType 是否包含的类型
+func (p *Property) IncludeType(val string) bool {
+	p.initTypes()
 	val = strings.ToLower(val)
-	for _, v := range p.types {
-		if v == val {
-			return true
-		}
+	_, res := p.types[val]
+	return res
+}
+
+func (p *Property) GetTypes() []string {
+	p.initTypes()
+	var types []string
+	for _, k := range p.types {
+		types = append(types, k)
 	}
-	return false
+	return types
+}
+
+func (p *Property) IsTypeNumber() bool {
+	return p.IncludeType(TypeNumber)
+}
+
+func (p *Property) IsTypeBoolean() bool {
+	return p.IncludeType(TypeBoolean)
+}
+
+func (p *Property) IsTypeDate() bool {
+	return p.IncludeType(TypeDate)
+}
+
+func (p *Property) IsTypeDatetime() bool {
+	return p.IncludeType(TypeDatetime)
+}
+
+func (p *Property) IsTypeNull() bool {
+	return p.IncludeType(TypeNull)
+}
+
+func (p *Property) IsTypeObject() bool {
+	return p.IncludeType(TypeObject)
+}
+
+func (p *Property) IsTypeString() bool {
+	return p.IncludeType(TypeString)
+}
+
+func (p *Property) IsTypeArray() bool {
+	return p.IncludeType(TypeArray)
+}
+
+func (p *Property) IsTypeInteger() bool {
+	return p.IncludeType(TypeInteger)
 }

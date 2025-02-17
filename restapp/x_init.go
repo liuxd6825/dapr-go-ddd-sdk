@@ -68,6 +68,10 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 		return err
 	}
 
+	if err := initMySql(env.Mysql); err != nil {
+		return err
+	}
+
 	if env.App.AuthToken != "" {
 		DefaultAuthToken = env.App.AuthToken
 	}

@@ -264,3 +264,5 @@ replace github.com/dapr/components-contrib => ../dapr-components-contrib
 replace github.com/liuxd6825/k6server => ../../k6server
 
 replace github.com/dop251/goja => ../../../liuxd6825/goja
+
+replace gorm.io/gorm => ../../../liuxd6825/gorm

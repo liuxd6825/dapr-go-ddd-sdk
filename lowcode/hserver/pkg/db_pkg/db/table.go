@@ -6,7 +6,7 @@ import (
 )
 
 type Table interface {
-	GetName() string
+	GetTableName() string
 	GetSchema() *schema.Schema
 	AutoMigrate(ctx context.Context)
 	Exist(ctx context.Context) bool

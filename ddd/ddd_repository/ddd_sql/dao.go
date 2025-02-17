@@ -34,6 +34,8 @@ const (
 	Id       = "id"
 )
 
+var initializePlugin bool = false
+
 func NewDaoWithDbKey[T any](dbKey string, eb ddd.EntityBuilder[T], tableName string) ddd_repository.Dao[T] {
 	item := restapp.GetDb(dbKey)
 	if item == nil {
@@ -62,6 +64,14 @@ func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T]
 	if err != nil {
 		panic(err)
 	}
+
+	if !initializePlugin {
+		initializePlugin = true
+		if err := db.Use(NewFieldPlugin()); err != nil {
+			panic(err)
+		}
+	}
+
 	return &Dao[T]{
 		entityBuilder: entityBuilder,
 		db:            db,

@@ -56,7 +56,6 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 
 	cfg := &db.DaoConfig{
 		DbKey:      opts.DbKey,
-		TableName:  opts.TableName,
 		IsPubEvent: opts.IsPubEvent,
 		AggField:   opts.AggField,
 		Env:        p.server.GetEnvCfg(),
@@ -95,12 +94,8 @@ type NewTableOptions struct {
 
 func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
 	dbKey := opts.DbKey
-	tableName := opts.TableName
 	if dbKey == "" {
 		dbKey = "default"
-	}
-	if tableName == "" {
-		panic("db.NewTable() args tableName is required")
 	}
 
 	var table db.Table
@@ -108,7 +103,7 @@ func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
 
 	switch item.GetDBType() {
 	case restapp.DbType_MongoDB:
-		table = mongodb.NewTable(item.GetMongo(), opts.TableName, opts.Schema)
+		table = mongodb.NewTable(item.GetMongo(), opts.Schema)
 	case restapp.DbType_Sqlite,
 		restapp.DbType_Oracle,
 		restapp.DbType_Postgres,
@@ -118,7 +113,7 @@ func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
 		if ok {
 			panic(errors.New(fmt.Sprintf("%s database nonsupport gorm.DB", dbKey)))
 		}
-		table = sql.NewTable(database, opts.TableName, opts.Schema)
+		table = sql.NewTable(database, opts.Schema)
 	case restapp.DbType_Redis:
 		panic(errors.New(fmt.Sprintf("%s database nonsupport Redis", dbKey)))
 	case restapp.DbType_Neo4j:

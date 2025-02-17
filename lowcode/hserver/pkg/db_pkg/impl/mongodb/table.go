@@ -4,20 +4,22 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type Table struct {
-	name   string
-	schema *schema.Schema
-	db     *ddd_mongodb.MongoDB
+	tableName string
+	schema    *schema.Schema
+	db        *ddd_mongodb.MongoDB
 }
 
-func NewTable(db *ddd_mongodb.MongoDB, name string, schema *schema.Schema) *Table {
-	return &Table{db: db, name: name, schema: schema}
+func NewTable(db *ddd_mongodb.MongoDB, schema *schema.Schema) *Table {
+	tableName := stringutils.AsFieldName(schema.Name)
+	return &Table{db: db, tableName: tableName, schema: schema}
 }
 
-func (t *Table) GetName() string {
-	return t.name
+func (t *Table) GetTableName() string {
+	return t.tableName
 }
 
 func (t *Table) GetSchema() *schema.Schema {
@@ -29,10 +31,10 @@ func (t *Table) AutoMigrate(ctx context.Context) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if isExist, e := t.db.ExistCollection(ctx, t.name); e != nil {
+	if isExist, e := t.db.ExistCollection(ctx, t.tableName); e != nil {
 		err = e
 	} else if !isExist {
-		err = t.db.CreateCollection(t.name)
+		err = t.db.CreateCollection(t.tableName)
 	}
 	if err != nil {
 		panic(err)
@@ -43,7 +45,7 @@ func (t *Table) Exist(ctx context.Context) bool {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	isExist, err := t.db.ExistCollection(ctx, t.name)
+	isExist, err := t.db.ExistCollection(ctx, t.tableName)
 	if err != nil {
 		panic(err)
 	}
@@ -55,10 +57,10 @@ func (t *Table) Drop(ctx context.Context) {
 		ctx = context.Background()
 	}
 	var err error
-	if isExist, e := t.db.ExistCollection(ctx, t.name); e != nil {
+	if isExist, e := t.db.ExistCollection(ctx, t.tableName); e != nil {
 		err = e
 	} else if isExist {
-		err = t.db.GetCollection(t.name).Drop(ctx)
+		err = t.db.GetCollection(t.tableName).Drop(ctx)
 	}
 	if err != nil {
 		panic(err)

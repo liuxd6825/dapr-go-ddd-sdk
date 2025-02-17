@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"time"
 )
 
@@ -36,10 +37,11 @@ func NewDaoBase(dao ddd_repository.Dao[ddd.MapEntity], cfg *DaoConfig) *DaoBase 
 	if aggField == "" {
 		aggField = "id"
 	}
+	tableName := stringutils.AsFieldName(cfg.Schema.Name)
 	return &DaoBase{
 		dao:         dao,
 		dbKey:       cfg.DbKey,
-		tableName:   cfg.TableName,
+		tableName:   tableName,
 		appId:       restapp.GetAppId(),
 		isPubEvent:  cfg.GetIsPubEvent(),
 		aggField:    aggField,

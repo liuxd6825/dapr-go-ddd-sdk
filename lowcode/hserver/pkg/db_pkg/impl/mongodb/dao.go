@@ -35,7 +35,7 @@ type DaoOptions struct {
 func NewDao(cfg *db.DaoConfig) *Dao {
 	cfg.Valid()
 
-	tableName := cfg.TableName
+	tableName := cfg.Schema.GetTableName()
 	item := restapp.GetDb(cfg.DbKey)
 	if item == nil {
 		panic(errors.New(" %s database not found", cfg.DbKey))
@@ -75,5 +75,9 @@ func NewDao(cfg *db.DaoConfig) *Dao {
 }
 
 func (d *Dao) Table() db.Table {
-	return NewTable(d.db, d.cfg.GetTableName(), d.cfg.Schema)
+	return NewTable(d.db, d.cfg.Schema)
+}
+
+func (d *Dao) GetTableName() string {
+	return d.cfg.Schema.GetTableName()
 }
