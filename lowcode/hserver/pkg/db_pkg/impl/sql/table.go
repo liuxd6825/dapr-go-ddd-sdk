@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/jsonschema/v6"
 	"gorm.io/gorm"
 	dbschema "gorm.io/gorm/schema"
 	"reflect"
@@ -13,12 +14,12 @@ import (
 
 type Table struct {
 	tableName string
-	schema    *schema.Schema
+	schema    *jsonschema.Schema
 	dbSchema  *dbschema.Schema
 	db        *gorm.DB
 }
 
-func NewTable(db *gorm.DB, schema *schema.Schema) *Table {
+func NewTable(db *gorm.DB, schema *jsonschema.Schema) *Table {
 	dbSchema, err := NewDBSchema(schema)
 	if err != nil {
 		panic(err)
@@ -26,7 +27,7 @@ func NewTable(db *gorm.DB, schema *schema.Schema) *Table {
 	return newTable(db, schema, dbSchema)
 }
 
-func newTable(db *gorm.DB, schema *schema.Schema, dbSchema *dbschema.Schema) *Table {
+func newTable(db *gorm.DB, schema *jsonschema.Schema, dbSchema *dbschema.Schema) *Table {
 	tableName := dbSchema.Table
 	return &Table{db: db, tableName: tableName, schema: schema, dbSchema: dbSchema}
 }
@@ -35,7 +36,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *schema.Schema {
+func (t *Table) GetSchema() *jsonschema.Schema {
 	return t.schema
 }
 

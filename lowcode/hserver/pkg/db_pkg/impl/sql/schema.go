@@ -2,15 +2,15 @@ package sql
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/jsonschema/v6"
 	dbschema "gorm.io/gorm/schema"
 	"reflect"
 	"time"
 )
 
 // NewDBSchema get data type from dialector with extra schema table
-func NewDBSchema(dest *schema.Schema) (*dbschema.Schema, error) {
+func NewDBSchema(dest *jsonschema.Schema) (*dbschema.Schema, error) {
 	if dest == nil {
 		return nil, fmt.Errorf("%w: %+v", dbschema.ErrUnsupportedDataType, dest)
 	}
@@ -20,7 +20,7 @@ func NewDBSchema(dest *schema.Schema) (*dbschema.Schema, error) {
 	for _, p := range dest.Properties {
 		dataType := getDataType(p)
 		field := addDbField(s, p.Name, dataType)
-		setDbField(field, p.Field)
+		setDbField(field, p)
 		if field.PrimaryKey {
 			primaryField = field
 		}
@@ -44,7 +44,7 @@ func initDbSchema(s *dbschema.Schema) {
 	}
 }
 
-func newDbSchema(dest *schema.Schema) *dbschema.Schema {
+func newDbSchema(dest *jsonschema.Schema) *dbschema.Schema {
 	tableName := stringutils.AsFieldName(dest.Name)
 	s := &dbschema.Schema{
 		Name:                dest.Name,
@@ -62,26 +62,27 @@ func newDbSchema(dest *schema.Schema) *dbschema.Schema {
 	addDbField(s, "tenantId", dbschema.String)
 	return s
 }
-func getDataType(property *schema.Property) dbschema.DataType {
+func getDataType(property *jsonschema.Schema) dbschema.DataType {
 	if property == nil {
 		panic("getDataType: property is nil")
 	}
-	if property.IsTypeDate() {
+
+	if property.Types.Contains(jsonschema.JsonType_DateType) {
 		return dbschema.Time
 	}
-	if property.IsTypeInteger() {
+	if property.Types.Contains(jsonschema.JsonType_IntegerType) {
 		return dbschema.Int
 	}
-	if property.IsTypeBoolean() {
+	if property.Types.Contains(jsonschema.JsonType_BooleanType) {
 		return dbschema.Bool
 	}
-	if property.IsTypeString() {
+	if property.Types.Contains(jsonschema.JsonType_StringType) {
 		return dbschema.String
 	}
-	if property.IsTypeObject() {
+	if property.Types.Contains(jsonschema.JsonType_ObjectType) {
 		return dbschema.Object
 	}
-	if property.IsTypeArray() {
+	if property.Types.Contains(jsonschema.JsonType_ArrayType) {
 		return dbschema.Array
 	}
 	return dbschema.String
@@ -106,17 +107,20 @@ func addDbField(s *dbschema.Schema, name string, dataType dbschema.DataType) *db
 	return field
 }
 
-func setDbField(field *dbschema.Field, propField *schema.Field) {
+func setDbField(field *dbschema.Field, propField *jsonschema.Schema) {
 	if field == nil || propField == nil {
 		return
 	}
-	field.PrimaryKey = propField.PrimaryKey
-	field.NotNull = propField.NotNull
-	field.DefaultValue = propField.DefaultValue
-	if propField.Size != nil {
-		field.Size = *propField.Size
-	}
-	field.Unique = propField.Unique
+	/*
+		field.PrimaryKey = propField.PrimaryKey
+		field.NotNull = propField.NotNull
+		field.DefaultValue = propField.DefaultValue
+		if propField.Size != nil {
+			field.Size = *propField.Size
+		}
+		field.Unique = propField.Unique
+
+	*/
 }
 
 func getFieldType(dbType dbschema.DataType) reflect.Type {
@@ -132,9 +136,9 @@ func getFieldType(dbType dbschema.DataType) reflect.Type {
 	case dbschema.Time:
 		return reflect.TypeOf(time.Time{})
 	case dbschema.Object:
-		return reflect.TypeOf(map[string]any{})
+		return reflect.TypeOf("map[string]any{}")
 	case dbschema.Array:
-		return reflect.TypeOf([]any{})
+		return reflect.TypeOf("[]any{}")
 	default:
 		return reflect.TypeOf("")
 	}

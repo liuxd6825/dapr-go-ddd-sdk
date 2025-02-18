@@ -3,17 +3,17 @@ package mongodb
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type Table struct {
 	tableName string
-	schema    *schema.Schema
+	schema    *jsonschema.Schema
 	db        *ddd_mongodb.MongoDB
 }
 
-func NewTable(db *ddd_mongodb.MongoDB, schema *schema.Schema) *Table {
+func NewTable(db *ddd_mongodb.MongoDB, schema *jsonschema.Schema) *Table {
 	tableName := stringutils.AsFieldName(schema.Name)
 	return &Table{db: db, tableName: tableName, schema: schema}
 }
@@ -22,7 +22,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *schema.Schema {
+func (t *Table) GetSchema() *jsonschema.Schema {
 	return t.schema
 }
 

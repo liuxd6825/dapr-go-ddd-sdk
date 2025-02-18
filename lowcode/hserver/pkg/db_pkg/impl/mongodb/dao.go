@@ -16,7 +16,7 @@ import (
 type Dao struct {
 	*impl.DaoBase
 	db  *ddd_mongodb.MongoDB
-	dao *ddd_mongodb.Dao[ddd.MapEntity] // 数据访问对象
+	dao *ddd_mongodb.Dao[map[string]any] // 数据访问对象
 	cfg *db.DaoConfig
 }
 
@@ -36,7 +36,7 @@ type DaoOptions struct {
 func NewDao(cfg *db.DaoConfig) *Dao {
 	cfg.Valid()
 
-	tableName := cfg.Schema.GetTableName()
+	tableName := cfg.Schema.Name
 	item := restapp.GetDb(cfg.DbKey)
 	if item == nil {
 		panic(errors.New(" %s database not found", cfg.DbKey))
@@ -62,10 +62,10 @@ func NewDao(cfg *db.DaoConfig) *Dao {
 	if opt.GetCollCallback != nil {
 		getCollCallback = opt.GetCollCallback
 	}
-	entBuilder := ddd.NewMapEntityBuilder[ddd.MapEntity]()
-	daoOpts := ddd_mongodb.NewOptions[ddd.MapEntity]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
+	entBuilder := ddd.NewMapEntityBuilder[map[string]any]()
+	daoOpts := ddd_mongodb.NewOptions[map[string]any]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
 
-	dao := ddd_mongodb.NewDao[ddd.MapEntity](getCollCallback, daoOpts)
+	dao := ddd_mongodb.NewDao[map[string]any](getCollCallback, daoOpts)
 	res := &Dao{
 		dao:     dao,
 		DaoBase: impl.NewDaoBase(dao, cfg),
@@ -80,5 +80,5 @@ func (d *Dao) Table() db.Table {
 }
 
 func (d *Dao) GetTableName() string {
-	return d.cfg.Schema.GetTableName()
+	return d.cfg.Schema.Name
 }

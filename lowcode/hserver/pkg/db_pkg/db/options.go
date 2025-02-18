@@ -2,16 +2,16 @@ package db
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type DaoConfig struct {
-	DbKey      string            `json:"dbKey"`
-	IsPubEvent bool              `json:"isPubEvent"`
-	AggField   string            `json:"aggField"`
-	Env        common.IEnvConfig `json:"env"`
-	Schema     *schema.Schema    `json:"schema"`
-	Database   any               `json:"database"`
+	DbKey      string             `json:"dbKey"`
+	IsPubEvent bool               `json:"isPubEvent"`
+	AggField   string             `json:"aggField"`
+	Env        common.IEnvConfig  `json:"env"`
+	Schema     *jsonschema.Schema `json:"schema"`
+	Database   any                `json:"database"`
 }
 
 func (c *DaoConfig) Valid() {
@@ -41,6 +41,6 @@ func (c *DaoConfig) GetEnv() common.IEnvConfig {
 	return c.Env
 }
 
-func (c *DaoConfig) GetSchema() *schema.Schema {
+func (c *DaoConfig) GetSchema() *jsonschema.Schema {
 	return c.Schema
 }

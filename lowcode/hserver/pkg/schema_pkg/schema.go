@@ -58,6 +58,16 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 	if err != nil {
 		panic(err)
 	}
+	/*
+		if maps, ok := reader.(map[string]any); ok {
+			if properties, ok := maps["properties"].(map[string]any); ok {
+				for key, propVal := range properties {
+					propVal.(map[string]interface{})["$schema"] = schemaFile
+					types := propVal["type"]
+					sch.Properties[key].Types = jsonschema.NewTypes()
+				}
+			}
+		}*/
 
 	s.cache.Set(fileUrl, sch)
 	return sch

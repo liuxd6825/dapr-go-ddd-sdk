@@ -10,9 +10,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/jsonschema/v6"
 	"time"
 )
 
@@ -77,7 +77,7 @@ func (d *DaoBase) GetEventPrefix() string {
 	return d.eventPrefix
 }
 
-func (d *DaoBase) GetSchema() *schema.Schema {
+func (d *DaoBase) GetSchema() *jsonschema.Schema {
 	return d.cfg.Schema
 }
 

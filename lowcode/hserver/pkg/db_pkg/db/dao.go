@@ -3,11 +3,11 @@ package db
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type Dao interface {
-	GetSchema() *schema.Schema
+	GetSchema() *jsonschema.Schema
 	GetAggField() string
 
 	Create(ctx context.Context, entity map[string]any, opts ...*CallOptions)

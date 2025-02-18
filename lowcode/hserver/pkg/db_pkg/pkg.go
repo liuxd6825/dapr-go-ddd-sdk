@@ -10,9 +10,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/sql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/jsonschema/v6"
 	"gorm.io/gorm"
 )
 
@@ -22,10 +22,10 @@ type Pkg struct {
 }
 
 type NewDaoConfig struct {
-	DbKey      string         `json:"dbKey"`
-	IsPubEvent *bool          `json:"isPubEvent"`
-	AggField   string         `json:"aggField"`
-	Schema     *schema.Schema `json:"schema"`
+	DbKey      string             `json:"dbKey"`
+	IsPubEvent bool               `json:"isPubEvent"`
+	AggField   string             `json:"aggField"`
+	Schema     *jsonschema.Schema `json:"schema"`
 }
 
 func New(server element.Server) *Pkg {
@@ -44,7 +44,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 		panic("db.NewDao() args schema is required")
 	}
 
-	tableName := opts.Schema.GetTableName()
+	tableName := opts.Schema.Name
 	daoKey := fmt.Sprintf("%s-%s", dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
 		return v.(db.Dao)
@@ -83,9 +83,9 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 }
 
 type NewTableOptions struct {
-	DbKey     string         `json:"dbKey"`
-	TableName string         `json:"tableName"`
-	Schema    *schema.Schema `json:"schema"`
+	DbKey     string             `json:"dbKey"`
+	TableName string             `json:"tableName"`
+	Schema    *jsonschema.Schema `json:"schema"`
 }
 
 func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
