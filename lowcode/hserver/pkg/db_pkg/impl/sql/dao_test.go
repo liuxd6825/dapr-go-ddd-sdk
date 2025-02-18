@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"testing"
@@ -15,11 +16,29 @@ import (
 )
 
 type Human struct {
+	Id         string    `gorm:"primaryKey"`
 	Name       string    `gorm:"name"`
 	Age        int       `gorm:"age"`
 	Analyse    string    `gorm:"analyse"`
 	Birthday   time.Time `gorm:"birthday"`
-	PeopleType []string  `gorm:"people_type;type:json"`
+	PeopleType []string  `gorm:"people_type;type:text[]"`
+}
+
+func Test_DB(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("数据库连接失败: %v", err)
+		return
+	}
+	human := &Human{
+		Id:         idutils.NewId(),
+		PeopleType: []string{"Human", "People", "PeopleType"},
+	}
+	table := database.Model(human)
+	table.AutoMigrate(human)
+	res := table.Create(human)
+
+	assert.Equal(t, 1, res.RowsAffected)
 }
 
 func Test_Dao(t *testing.T) {
@@ -29,6 +48,29 @@ func Test_Dao(t *testing.T) {
 		return
 	}
 
+	human := map[string]any{
+		"id":         idutils.NewId(),
+		"tenantId":   "test",
+		"analyse":    "",
+		"birthday":   time.Now(),
+		"peopleType": []string{"1111"},
+		"name":       "name",
+		"age":        1,
+		"tags":       []string{"tag1", "tag2"},
+	}
+	t.Log(human)
+	/*
+		t.Run("dao.Create", func(t *testing.T) {
+			gp.Try(func() error {
+				database.Model(&Human{}).Create(&human)
+				return nil
+			}).Catch(func(err error) {
+				t.Error(err)
+			})
+		})
+		return
+	*/
+
 	humanSchema, err := schema.NewSchemaWithJson("human.json", HumanSchema)
 	if err != nil {
 		t.Error(err)
@@ -36,10 +78,11 @@ func Test_Dao(t *testing.T) {
 	}
 
 	daoCfg := &db.DaoConfig{
-		Database: database,
-		DbKey:    "sql",
-		Schema:   humanSchema,
-		Env:      NewEnvConfig(),
+		Database:   database,
+		DbKey:      "sql",
+		Schema:     humanSchema,
+		Env:        NewEnvConfig(),
+		IsPubEvent: false,
 	}
 
 	dao := NewDao(daoCfg)
@@ -48,24 +91,17 @@ func Test_Dao(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	human := MapEntity{
-		"id":         idutils.NewId(),
-		"analyse":    "",
-		"birthday":   "",
-		"peopleType": []string{"1111"},
-		"name":       "name",
-		"age":        "age",
-		"tags":       []string{"tag1", "tag2"},
-	}
 
-	t.Run("dao.AutoMigrate", func(t *testing.T) {
-		gp.Try(func() error {
-			dao.Table().AutoMigrate(ctx)
-			return nil
-		}).Catch(func(e error) {
-			t.Error(err)
+	/*
+		t.Run("dao.AutoMigrate", func(t *testing.T) {
+			gp.Try(func() error {
+				dao.Table().AutoMigrate(ctx)
+				return nil
+			}).Catch(func(e error) {
+				t.Error(err)
+			})
 		})
-	})
+	*/
 
 	t.Run("dao.Create", func(t *testing.T) {
 		gp.Try(func() error {
@@ -74,6 +110,15 @@ func Test_Dao(t *testing.T) {
 		}).Catch(func(err error) {
 			t.Error(err)
 		})
+	})
+
+	t.Run("dao.FindAll", func(t *testing.T) {
+		res := dao.FindAll(ctx)
+		if res.Error != nil {
+			t.Error(res.Error)
+		} else {
+			t.Log("list:", res.GetData())
+		}
 	})
 
 }

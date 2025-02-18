@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 )
@@ -11,27 +10,27 @@ type Dao interface {
 	GetSchema() *schema.Schema
 	GetAggField() string
 
-	Create(ctx context.Context, entity ddd.MapEntity, opts ...*CallOptions)
-	Update(ctx context.Context, entity ddd.MapEntity, opts ...*CallOptions)
+	Create(ctx context.Context, entity map[string]any, opts ...*CallOptions)
+	Update(ctx context.Context, entity map[string]any, opts ...*CallOptions)
 	DeleteById(ctx context.Context, id string, opts ...*CallOptions)
-	CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*CallOptions)
+	CreateMany(ctx context.Context, entity []map[string]any, opts ...*CallOptions)
 	DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions)
 	UpdateByMap(ctx context.Context, filterMap map[string]any, data map[string]any, opts ...*CallOptions)
-	UpdateMany(ctx context.Context, entities []ddd.MapEntity, opts ...*CallOptions)
+	UpdateMany(ctx context.Context, entities []map[string]any, opts ...*CallOptions)
 	UpdateManyByFilter(ctx context.Context, filter string, data interface{}, opts ...*CallOptions)
 	DeleteAll(ctx context.Context, opts ...*CallOptions)
 	DeleteByFilter(ctx context.Context, filter string, opts ...*CallOptions)
-	DeleteByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*CallOptions)
+	DeleteByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions)
 
-	FindById(ctx context.Context, id string, opts ...*CallOptions) ddd.MapEntity
-	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []ddd.MapEntity
-	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[ddd.MapEntity]
-	FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*CallOptions) *ddd_repository.FindListResult[ddd.MapEntity]
-	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[ddd.MapEntity]
-	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[ddd.MapEntity]
-	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[ddd.MapEntity]
+	FindById(ctx context.Context, id string, opts ...*CallOptions) map[string]any
+	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []map[string]any
+	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[map[string]any]
+	FindListByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions) *ddd_repository.FindListResult[map[string]any]
+	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
+	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
+	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
 
-	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []ddd.MapEntity
+	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
 

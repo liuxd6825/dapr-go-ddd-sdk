@@ -14,12 +14,6 @@ import (
 	"strings"
 )
 
-type MapEntity = map[string]any
-
-func NewMapEntity() MapEntity {
-	return make(map[string]any)
-}
-
 type Dao[T any] struct {
 	options       *Options[T]
 	entityBuilder ddd.EntityBuilder[T] // 实体构造器
@@ -27,7 +21,7 @@ type Dao[T any] struct {
 	dbKey         string
 	entity        T
 	tableName     string
-	_table        *gorm.DB
+	metadata      map[string]any
 }
 
 const (
@@ -68,7 +62,7 @@ func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T]
 
 	if !initializePlugin {
 		initializePlugin = true
-		if err := db.Use(NewFieldPlugin()); err != nil {
+		if err := db.Use(NewGormFieldPlugin()); err != nil {
 			panic(err)
 		}
 	}
@@ -79,6 +73,7 @@ func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T]
 		dbKey:         dbKey,
 		entity:        entity,
 		tableName:     tableName,
+		metadata:      make(map[string]any),
 	}
 }
 
@@ -94,6 +89,14 @@ func newDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T]
 		entity:        entity,
 		tableName:     tableName,
 	}
+}
+
+func (d *Dao[T]) SetMetadata(metadata map[string]any) {
+	d.metadata = metadata
+}
+
+func (d *Dao[T]) GetMetadata() map[string]any {
+	return d.metadata
 }
 
 func (d *Dao[T]) ExecSql(sql string) error {
@@ -127,14 +130,15 @@ func (d *Dao[T]) SetId(entity T, id string) {
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
 	err := gp.Try(func() error {
 		db := d.table(ctx)
-		db = db.Model(d.tableName)
 		return db.Create(entity).Error
 	}).Error
 	return ddd_repository.NewSetResult[T](entity, err)
 }
 
 func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) error {
-	err := d.table(ctx).Model(data).Create(data).Error
+	err := gp.Try(func() error {
+		return d.table(ctx).Model(data).Create(data).Error
+	}).Error
 	return err
 }
 
@@ -143,12 +147,16 @@ func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repos
 	if err != nil {
 		panic(err)
 	}
-	err = d.table(ctx).Model(v).CreateInBatches(entities, len(entities)).Error
+	err = gp.Try(func() error {
+		return d.table(ctx).Model(v).CreateInBatches(entities, len(entities)).Error
+	}).Error
 	return ddd_repository.NewSetManyResult(entities, err)
 }
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	err := d.table(ctx).Model(entity).Updates(entity).Error
+	err := gp.Try(func() error {
+		return d.table(ctx).Model(entity).Updates(entity).Error
+	}).Error
 	return ddd_repository.NewSetResult[T](entity, err)
 }
 
@@ -157,8 +165,15 @@ func (d *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 	if err != nil {
 		panic(err)
 	}
-	res := d.table(ctx).Model(v).Updates(data)
-	return ddd_repository.NewSetManyCountResult().SetError(res.Error).SetModifiedCount(res.RowsAffected)
+	var res *gorm.DB
+	err = gp.Try(func() error {
+		res = d.table(ctx).Model(v).Updates(data)
+		return res.Error
+	}).Error
+	if res != nil {
+		return ddd_repository.NewSetManyCountResult().SetError(res.Error).SetModifiedCount(res.RowsAffected)
+	}
+	return ddd_repository.NewSetManyCountResult().SetError(err)
 }
 
 func (d *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
@@ -522,10 +537,21 @@ func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts .
 
 func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gorm.DB {
 	tx := GetTx(ctx, d.db.Name())
-	if tx != nil {
-		return tx.Table(d.tableName)
+	if tx == nil {
+		tx = d.db
 	}
-	return d.db.Table(d.tableName)
+	items := plugins.Items()
+	hasPlugin := false
+	for _, item := range items {
+		if plugin, ok := item.(GetTablePlugin); ok {
+			hasPlugin = true
+			tx = plugin.GetTable(ctx, d, tx, d.tableName, opts...)
+		}
+	}
+	if hasPlugin {
+		return tx
+	}
+	return tx.Table(d.tableName)
 }
 
 func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, sqlFunc func(sql string) error) error {

@@ -63,4 +63,7 @@ type Dao[T any] interface {
 	Count(ctx context.Context, tenantId string, rsql string, opts ...Options) (int64, error)
 
 	StartTx(ctx context.Context, fun TxFunc, options ...*SessionOptions) error
+
+	SetMetadata(metadata map[string]any)
+	GetMetadata() map[string]any
 }

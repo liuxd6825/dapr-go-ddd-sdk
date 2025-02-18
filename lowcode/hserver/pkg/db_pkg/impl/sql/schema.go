@@ -19,8 +19,7 @@ func NewDBSchema(dest *schema.Schema) (*dbschema.Schema, error) {
 	var primaryField *dbschema.Field
 	for _, p := range dest.Properties {
 		dataType := getDataType(p)
-		name := stringutils.AsFieldName(p.Name)
-		field := newDbField(s, name, dataType)
+		field := addDbField(s, p.Name, dataType)
 		setDbField(field, p.Field)
 		if field.PrimaryKey {
 			primaryField = field
@@ -28,22 +27,39 @@ func NewDBSchema(dest *schema.Schema) (*dbschema.Schema, error) {
 	}
 
 	if primaryField == nil {
-		idField := newDbField(s, "id", dbschema.String)
+		idField := addDbField(s, "id", dbschema.String)
 		idField.PrimaryKey = true
 	}
+	initDbSchema(s)
 	return s, nil
+}
+
+func initDbSchema(s *dbschema.Schema) {
+
+	for k, f := range s.FieldsByDBName {
+		if f.PrimaryKey {
+			s.PrimaryFields = append(s.PrimaryFields, f)
+			s.PrimaryFieldDBNames = append(s.PrimaryFieldDBNames, k)
+		}
+	}
 }
 
 func newDbSchema(dest *schema.Schema) *dbschema.Schema {
 	tableName := stringutils.AsFieldName(dest.Name)
 	s := &dbschema.Schema{
-		Name:             dest.Name,
-		Table:            tableName,
-		FieldsByName:     map[string]*dbschema.Field{},
-		FieldsByBindName: map[string]*dbschema.Field{},
-		FieldsByDBName:   map[string]*dbschema.Field{},
-		Relationships:    dbschema.Relationships{Relations: map[string]*dbschema.Relationship{}},
+		Name:                dest.Name,
+		Table:               tableName,
+		DBNames:             []string{},
+		FieldsByName:        map[string]*dbschema.Field{},
+		FieldsByBindName:    map[string]*dbschema.Field{},
+		FieldsByDBName:      map[string]*dbschema.Field{},
+		Relationships:       dbschema.Relationships{Relations: map[string]*dbschema.Relationship{}},
+		PrimaryFields:       make([]*dbschema.Field, 0),
+		PrimaryFieldDBNames: []string{},
+		ModelType:           reflect.TypeOf(map[string]any{}),
 	}
+
+	addDbField(s, "tenantId", dbschema.String)
 	return s
 }
 func getDataType(property *schema.Property) dbschema.DataType {
@@ -62,20 +78,31 @@ func getDataType(property *schema.Property) dbschema.DataType {
 	if property.IsTypeString() {
 		return dbschema.String
 	}
+	if property.IsTypeObject() {
+		return dbschema.Object
+	}
+	if property.IsTypeArray() {
+		return dbschema.Array
+	}
 	return dbschema.String
 }
-func newDbField(s *dbschema.Schema, name string, dataType dbschema.DataType) *dbschema.Field {
+func addDbField(s *dbschema.Schema, name string, dataType dbschema.DataType) *dbschema.Field {
+	dbName := stringutils.AsFieldName(name)
 	fieldType := getFieldType(dataType)
 	field := &dbschema.Field{
-		Name:              name,
-		DBName:            name,
+		FieldType:         fieldType,
 		IndirectFieldType: fieldType,
+		Name:              name,
+		DBName:            dbName,
 		DataType:          dataType,
+		Creatable:         true,
+		Updatable:         true,
+		Readable:          true,
 	}
 	s.Fields = append(s.Fields, field)
-	s.FieldsByDBName[name] = field
+	s.FieldsByDBName[dbName] = field
 	s.FieldsByName[name] = field
-	s.DBNames = append(s.DBNames, name)
+	s.DBNames = append(s.DBNames, dbName)
 	return field
 }
 
@@ -83,7 +110,6 @@ func setDbField(field *dbschema.Field, propField *schema.Field) {
 	if field == nil || propField == nil {
 		return
 	}
-
 	field.PrimaryKey = propField.PrimaryKey
 	field.NotNull = propField.NotNull
 	field.DefaultValue = propField.DefaultValue
@@ -105,6 +131,10 @@ func getFieldType(dbType dbschema.DataType) reflect.Type {
 		return reflect.TypeOf(float64(0))
 	case dbschema.Time:
 		return reflect.TypeOf(time.Time{})
+	case dbschema.Object:
+		return reflect.TypeOf(map[string]any{})
+	case dbschema.Array:
+		return reflect.TypeOf([]any{})
 	default:
 		return reflect.TypeOf("")
 	}

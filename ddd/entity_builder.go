@@ -22,7 +22,7 @@ func NewMapEntityBuilder[T any]() EntityBuilder[T] {
 }
 
 func (m *MapEntityBuilder[T]) NewEntity() (T, error) {
-	mv := NewMapEntity()
+	mv := map[string]any{}
 	var a any = mv
 	if t, ok := a.(T); ok {
 		return t, nil
@@ -53,7 +53,7 @@ func (m *MapEntityBuilder[T]) SetId(entity T, id string) {
 
 func get(entity any, key string) string {
 	var a any = entity
-	if mv, ok := a.(MapEntity); ok {
+	if mv, ok := a.(map[string]any); ok {
 		if val, ok := mv[key]; ok {
 			if v, ok := val.(string); ok {
 				return v
@@ -67,14 +67,14 @@ func get(entity any, key string) string {
 
 func (m *MapEntityBuilder[T]) Set(entity T, key string, value string) {
 	var a any = entity
-	if mv, ok := a.(MapEntity); ok {
+	if mv, ok := a.(map[string]any); ok {
 		mv[key] = value
 	}
 }
 
 func (m *MapEntityBuilder[T]) as(entity T) (map[string]any, bool) {
 	var a any = entity
-	if v, ok := a.(MapEntity); ok {
+	if v, ok := a.(map[string]any); ok {
 		return v, true
 	}
 	return nil, false

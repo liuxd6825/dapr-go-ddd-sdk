@@ -7,7 +7,7 @@ import (
 
 type DaoConfig struct {
 	DbKey      string            `json:"dbKey"`
-	IsPubEvent *bool             `json:"isPubEvent"`
+	IsPubEvent bool              `json:"isPubEvent"`
 	AggField   string            `json:"aggField"`
 	Env        common.IEnvConfig `json:"env"`
 	Schema     *schema.Schema    `json:"schema"`
@@ -31,10 +31,7 @@ func (c *DaoConfig) GetDbKey() string {
 }
 
 func (c *DaoConfig) GetIsPubEvent() bool {
-	if c.IsPubEvent == nil {
-		return true
-	}
-	return *c.IsPubEvent
+	return c.IsPubEvent
 }
 func (c *DaoConfig) GetAggField() string {
 	return c.AggField

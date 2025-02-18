@@ -8,12 +8,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Dao struct {
-	*db.DaoBase
+	*impl.DaoBase
 	db  *ddd_mongodb.MongoDB
 	dao *ddd_mongodb.Dao[ddd.MapEntity] // 数据访问对象
 	cfg *db.DaoConfig
@@ -67,7 +68,7 @@ func NewDao(cfg *db.DaoConfig) *Dao {
 	dao := ddd_mongodb.NewDao[ddd.MapEntity](getCollCallback, daoOpts)
 	res := &Dao{
 		dao:     dao,
-		DaoBase: db.NewDaoBase(dao, cfg),
+		DaoBase: impl.NewDaoBase(dao, cfg),
 		cfg:     cfg,
 		db:      mongoDB,
 	}

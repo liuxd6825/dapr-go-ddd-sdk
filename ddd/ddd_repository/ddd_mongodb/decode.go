@@ -2,7 +2,6 @@ package ddd_mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -51,7 +50,7 @@ func (d *mapDecoder[T]) rename(val T) {
 }
 
 func (d *mapDecoder[T]) as(val any) map[string]any {
-	if m, ok := val.(ddd.MapEntity); ok {
+	if m, ok := val.(map[string]any); ok {
 		return m
 	} else if m, ok := val.(map[string]any); ok {
 		return m

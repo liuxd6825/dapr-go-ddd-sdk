@@ -2,15 +2,15 @@ package ddd_sql
 
 import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 
-type MapEntityBuilder[T MapEntity] struct {
+type MapEntityBuilder[T map[string]any] struct {
 }
 
-func NewMapEntityBuilder() ddd.EntityBuilder[MapEntity] {
-	return &MapEntityBuilder[MapEntity]{}
+func NewMapEntityBuilder() ddd.EntityBuilder[map[string]any] {
+	return &MapEntityBuilder[map[string]any]{}
 }
 
 func (m *MapEntityBuilder[T]) NewEntity() (T, error) {
-	data := MapEntity{}
+	data := map[string]any{}
 	return T(data), nil
 }
 

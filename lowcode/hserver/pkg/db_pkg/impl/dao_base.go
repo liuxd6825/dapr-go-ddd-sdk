@@ -1,13 +1,13 @@
-package db
+package impl
 
 import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
@@ -17,18 +17,18 @@ import (
 )
 
 type DaoBase struct {
-	cfg         *DaoConfig
-	dbKey       string                            // 配置中的数据库Key
-	tableName   string                            // 表名
-	appId       string                            // 应用ID
-	aggField    string                            // 聚合根字段
-	isPubEvent  bool                              // 是否发布事件
-	eventPrefix string                            // 事件前缀
-	dao         ddd_repository.Dao[ddd.MapEntity] // 数据访问
-	env         common.IEnvConfig                 // 环境变量
+	cfg         *db.DaoConfig
+	dbKey       string                             // 配置中的数据库Key
+	tableName   string                             // 表名
+	appId       string                             // 应用ID
+	aggField    string                             // 聚合根字段
+	isPubEvent  bool                               // 是否发布事件
+	eventPrefix string                             // 事件前缀
+	dao         ddd_repository.Dao[map[string]any] // 数据访问
+	env         common.IEnvConfig                  // 环境变量
 }
 
-func NewDaoBase(dao ddd_repository.Dao[ddd.MapEntity], cfg *DaoConfig) *DaoBase {
+func NewDaoBase(dao ddd_repository.Dao[map[string]any], cfg *db.DaoConfig) *DaoBase {
 	if cfg == nil {
 		panic("dao base config is nil")
 	}
@@ -81,50 +81,51 @@ func (d *DaoBase) GetSchema() *schema.Schema {
 	return d.cfg.Schema
 }
 
-func (d *DaoBase) Create(ctx context.Context, entity ddd.MapEntity, opts ...*CallOptions) {
+func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) {
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
 	tenantId := d.GetTenantId(ctx)
-	entity.SetTenantId(tenantId)
-	err := d.dao.Insert(ctx, entity, NewRepositoryOptions(opts)...).GetError()
+	d.dao.SetTenantId(entity, tenantId)
+	err := d.dao.Insert(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
-	d.PublishEvent(ctx, AccessTypeCreate, entity, opts...)
+	d.PublishEvent(ctx, db.AccessTypeCreate, entity, opts...)
 }
 
-func (d *DaoBase) Update(ctx context.Context, entity ddd.MapEntity, opts ...*CallOptions) {
+func (d *DaoBase) Update(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) {
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Update() entity is nil"))
 	}
 	tenantId := d.GetTenantId(ctx)
-	entity.SetTenantId(tenantId)
-	err := d.dao.Update(ctx, entity, NewRepositoryOptions(opts)...).GetError()
+	d.dao.SetTenantId(entity, tenantId)
+
+	err := d.dao.Update(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 
-	d.PublishEvent(ctx, AccessTypeUpdate, entity, opts...)
+	d.PublishEvent(ctx, db.AccessTypeUpdate, entity, opts...)
 }
 
-func (d *DaoBase) DeleteById(ctx context.Context, id string, opts ...*CallOptions) {
+func (d *DaoBase) DeleteById(ctx context.Context, id string, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.DeleteById(ctx, tenantId, id, NewRepositoryOptions(opts)...).GetError()
+	err := d.dao.DeleteById(ctx, tenantId, id, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 
 	if d.GetIsPubEvent() {
-		entity := ddd.MapEntity{
+		entity := map[string]any{
 			"tenantId": tenantId,
 			"id":       id,
 		}
-		d.PublishEvent(ctx, AccessTypeDelete, entity, opts...)
+		d.PublishEvent(ctx, db.AccessTypeDelete, entity, opts...)
 	}
 }
 
-func (d *DaoBase) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts ...*CallOptions) {
+func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) {
 	if d.GetIsPubEvent() {
 		for _, entity := range entity {
 			d.Create(ctx, entity, opts...)
@@ -132,13 +133,13 @@ func (d *DaoBase) CreateMany(ctx context.Context, entity []ddd.MapEntity, opts .
 		return
 	}
 
-	err := d.dao.InsertMany(ctx, entity, NewRepositoryOptions(opts)...).GetError()
+	err := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions) {
+func (d *DaoBase) DeleteByIds(ctx context.Context, ids []string, opts ...*db.CallOptions) {
 	if d.GetIsPubEvent() {
 		for _, id := range ids {
 			d.DeleteById(ctx, id, opts...)
@@ -147,20 +148,20 @@ func (d *DaoBase) DeleteByIds(ctx context.Context, ids []string, opts ...*CallOp
 	}
 
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.DeleteByIds(ctx, tenantId, ids, NewRepositoryOptions(opts)...)
+	err := d.dao.DeleteByIds(ctx, tenantId, ids, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) UpdateByMap(ctx context.Context, filterMap map[string]any, data map[string]any, opts ...*CallOptions) {
+func (d *DaoBase) UpdateByMap(ctx context.Context, filterMap map[string]any, data map[string]any, opts ...*db.CallOptions) {
 	if d.GetIsPubEvent() {
 		res := d.FindListByMap(ctx, filterMap, opts...)
 		if res.Error != nil {
 			panic(res.Error.Error())
 		}
 		for _, entity := range res.Data {
-			err := d.dao.UpdateMapById(ctx, entity.GetTenantId(), entity.GetId(), data)
+			err := d.dao.UpdateMapById(ctx, d.dao.GetTenantId(entity), d.dao.GetId(entity), data)
 			if err != nil {
 				panic(err)
 			}
@@ -169,146 +170,146 @@ func (d *DaoBase) UpdateByMap(ctx context.Context, filterMap map[string]any, dat
 	}
 
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.UpdateMap(ctx, tenantId, filterMap, data, NewRepositoryOptions(opts)...)
+	err := d.dao.UpdateMap(ctx, tenantId, filterMap, data, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) UpdateMany(ctx context.Context, entities []ddd.MapEntity, opts ...*CallOptions) {
-	err := d.dao.UpdateManyById(ctx, entities, NewRepositoryOptions(opts)...).GetError()
+func (d *DaoBase) UpdateMany(ctx context.Context, entities []map[string]any, opts ...*db.CallOptions) {
+	err := d.dao.UpdateManyById(ctx, entities, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) UpdateManyByFilter(ctx context.Context, filter string, data interface{}, opts ...*CallOptions) {
+func (d *DaoBase) UpdateManyByFilter(ctx context.Context, filter string, data interface{}, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.UpdateManyByFilter(ctx, tenantId, filter, data, NewRepositoryOptions(opts)...).GetError()
+	err := d.dao.UpdateManyByFilter(ctx, tenantId, filter, data, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) DeleteAll(ctx context.Context, opts ...*CallOptions) {
+func (d *DaoBase) DeleteAll(ctx context.Context, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.DeleteAll(ctx, tenantId, NewRepositoryOptions(opts)...).GetError()
+	err := d.dao.DeleteAll(ctx, tenantId, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) DeleteByFilter(ctx context.Context, filter string, opts ...*CallOptions) {
+func (d *DaoBase) DeleteByFilter(ctx context.Context, filter string, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.DeleteByFilter(ctx, tenantId, filter, NewRepositoryOptions(opts)...)
+	err := d.dao.DeleteByFilter(ctx, tenantId, filter, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) DeleteByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*CallOptions) {
+func (d *DaoBase) DeleteByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.DeleteByMap(ctx, tenantId, filterMap, NewRepositoryOptions(opts)...).GetError()
+	err := d.dao.DeleteByMap(ctx, tenantId, filterMap, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) FindById(ctx context.Context, id string, opts ...*CallOptions) ddd.MapEntity {
+func (d *DaoBase) FindById(ctx context.Context, id string, opts ...*db.CallOptions) map[string]any {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.FindById(ctx, tenantId, id, NewRepositoryOptions(opts)...)
+	res := d.dao.FindById(ctx, tenantId, id, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}
 	return res.Data
 }
 
-func (d *DaoBase) FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []ddd.MapEntity {
+func (d *DaoBase) FindByIds(ctx context.Context, ids []string, opts ...*db.CallOptions) []map[string]any {
 	tenantId := d.GetTenantId(ctx)
-	data, _, err := d.dao.FindByIds(ctx, tenantId, ids, NewRepositoryOptions(opts)...).Result()
+	data, _, err := d.dao.FindByIds(ctx, tenantId, ids, db.NewRepositoryOptions(opts)...).Result()
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (d *DaoBase) FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+func (d *DaoBase) FindAll(ctx context.Context, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.FindAll(ctx, tenantId, NewRepositoryOptions(opts)...)
+	res := d.dao.FindAll(ctx, tenantId, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
 	}
 	return res
 }
 
-func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*CallOptions) *ddd_repository.FindListResult[ddd.MapEntity] {
+func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.FindListByMap(ctx, tenantId, filterMap, NewRepositoryOptions(opts)...)
+	res := d.dao.FindListByMap(ctx, tenantId, filterMap, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
 	}
 	return res
 }
 
-func (d *DaoBase) FindPaging(ctx context.Context, findPaging *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+func (d *DaoBase) FindPaging(ctx context.Context, findPaging *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	findQuery := d.NewFindPagingQuery(ctx, findPaging)
-	res := d.dao.FindPaging(ctx, findQuery, NewRepositoryOptions(opts)...)
+	res := d.dao.FindPaging(ctx, findQuery, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
 	}
 	return res
 }
 
-func (d *DaoBase) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+func (d *DaoBase) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	if qry == nil {
 		panic(errors.New("FindAutoComplete query is nil"))
 	}
 	tenantId := d.GetTenantId(ctx)
 	qry.SetTenantId(tenantId)
-	res := d.dao.FindAutoComplete(ctx, qry, NewRepositoryOptions(opts)...)
+	res := d.dao.FindAutoComplete(ctx, qry, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
 		panic(res.GetError())
 	}
 	return res
 }
 
-func (d *DaoBase) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[ddd.MapEntity] {
+func (d *DaoBase) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	if qry == nil {
 		panic(errors.New("FindDistinctQueryRequest query is nil"))
 	}
-	data := d.dao.FindDistinct(ctx, qry, NewRepositoryOptions(opts)...)
+	data := d.dao.FindDistinct(ctx, qry, db.NewRepositoryOptions(opts)...)
 	if data.GetError() != nil {
 		panic(data.GetError())
 	}
 	return data
 }
 
-func (d *DaoBase) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []ddd.MapEntity {
-	data, _, err := d.dao.SumEntity(ctx, qry, NewRepositoryOptions(opts)...)
+func (d *DaoBase) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) []map[string]any {
+	data, _, err := d.dao.SumEntity(ctx, qry, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (d *DaoBase) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any {
-	data, _, err := d.dao.SumMap(ctx, qry, NewRepositoryOptions(opts)...)
+func (d *DaoBase) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) []map[string]any {
+	data, _, err := d.dao.SumMap(ctx, qry, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (d *DaoBase) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any {
-	data, _, err := d.dao.Sum(ctx, qry, data, NewRepositoryOptions(opts)...)
+func (d *DaoBase) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*db.CallOptions) any {
+	data, _, err := d.dao.Sum(ctx, qry, data, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (d *DaoBase) NewAggregateAndEvent(operateType AccessType, entity ddd.MapEntity, opts ...*CallOptions) (*server.Aggregate, *common.Event, error) {
-	opt := NewCallOptions(opts...)
+func (d *DaoBase) NewAggregateAndEvent(operateType db.AccessType, entity map[string]any, opts ...*db.CallOptions) (*server.Aggregate, *common.Event, error) {
+	opt := db.NewCallOptions(opts...)
 	event, err := d.NewEvent(operateType, entity, opt)
 	if err != nil {
 		return nil, nil, err
@@ -320,10 +321,10 @@ func (d *DaoBase) NewAggregateAndEvent(operateType AccessType, entity ddd.MapEnt
 	return agg, event, nil
 }
 
-func (d *DaoBase) NewEvent(operateType AccessType, entity ddd.MapEntity, opt *CallOptions) (*common.Event, error) {
-	o := NewCallOptions(opt)
+func (d *DaoBase) NewEvent(operateType db.AccessType, entity map[string]any, opt *db.CallOptions) (*common.Event, error) {
+	o := db.NewCallOptions(opt)
 	eventId := idutils.NewId()
-	tenantId := entity.GetTenantId()
+	tenantId := d.dao.GetTenantId(entity)
 	aggId, err := d.GetAggregateId(entity, opt)
 	if err != nil {
 		return nil, err
@@ -343,7 +344,7 @@ func (d *DaoBase) NewEvent(operateType AccessType, entity ddd.MapEntity, opt *Ca
 	return event, nil
 }
 
-func (d *DaoBase) GetEventType(accessType AccessType, opts *CallOptions) string {
+func (d *DaoBase) GetEventType(accessType db.AccessType, opts *db.CallOptions) string {
 	eventType := d.tableName
 	if opts != nil && opts.EventType != nil {
 		eventType = *opts.EventType
@@ -351,8 +352,8 @@ func (d *DaoBase) GetEventType(accessType AccessType, opts *CallOptions) string 
 	return common.GetEventType(d.appId, eventType, string(accessType))
 }
 
-func (d *DaoBase) NewAggregate(entity ddd.MapEntity, opt *CallOptions) (*server.Aggregate, error) {
-	tenantId := entity.GetTenantId()
+func (d *DaoBase) NewAggregate(entity map[string]any, opt *db.CallOptions) (*server.Aggregate, error) {
+	tenantId := d.dao.GetTenantId(entity)
 	aggregateId, err := d.GetAggregateId(entity, opt)
 	if err != nil {
 		return nil, err
@@ -365,7 +366,7 @@ func (d *DaoBase) NewAggregate(entity ddd.MapEntity, opt *CallOptions) (*server.
 	return agg, nil
 }
 
-func (d *DaoBase) GetAggregateId(entity ddd.MapEntity, opts *CallOptions) (string, error) {
+func (d *DaoBase) GetAggregateId(entity map[string]any, opts *db.CallOptions) (string, error) {
 	var aggId string
 	if opts != nil && opts.AggId != nil {
 		aggId = *opts.AggId
@@ -376,7 +377,7 @@ func (d *DaoBase) GetAggregateId(entity ddd.MapEntity, opts *CallOptions) (strin
 			return "", errors.New(fmt.Sprintf("Aggregate field %s is not string", d.aggField))
 		}
 	} else {
-		aggId = entity.GetId()
+		aggId = d.dao.GetId(entity)
 	}
 	return aggId, nil
 }
@@ -395,7 +396,7 @@ func (d *DaoBase) GetAuthUser(ctx context.Context) appctx.AuthUser {
 	panic("token is error")
 }
 
-func (d *DaoBase) PublishEvent(ctx context.Context, opeType AccessType, entity ddd.MapEntity, opts ...*CallOptions) {
+func (d *DaoBase) PublishEvent(ctx context.Context, opeType db.AccessType, entity map[string]any, opts ...*db.CallOptions) {
 	if !d.isPubEvent {
 		return
 	}
@@ -412,11 +413,11 @@ func (d *DaoBase) PublishEvent(ctx context.Context, opeType AccessType, entity d
 		"tenantId":    d.GetTenantId(ctx),
 	})
 	switch opeType {
-	case AccessTypeCreate:
+	case db.AccessTypeCreate:
 		server.GetEventPkg().CreateEvent(ctx, agg, event)
-	case AccessTypeUpdate:
+	case db.AccessTypeUpdate:
 		server.GetEventPkg().ApplyEvent(ctx, agg, event)
-	case AccessTypeDelete:
+	case db.AccessTypeDelete:
 		server.GetEventPkg().ApplyEvent(ctx, agg, event)
 	}
 }

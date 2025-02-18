@@ -33,10 +33,13 @@ type Dao[T any] struct {
 	newFun        func() T                                                                   // 新建实体结构方法
 	initFun       func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 	options       *Options[T]
+	metadata      map[string]any
 }
 
 func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
-	r := &Dao[T]{}
+	r := &Dao[T]{
+		metadata: make(map[string]any),
+	}
 	r.initFun = initFun
 	r.options = NewOptions[T](opts...)
 	if r.options.entityBuilder == nil {
@@ -56,6 +59,14 @@ func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collecti
 		panic(err)
 	}
 	return r
+}
+
+func (r *Dao[T]) SetMetadata(metadata map[string]any) {
+	r.metadata = metadata
+}
+
+func (r *Dao[T]) GetMetadata() map[string]any {
+	return r.metadata
 }
 
 func (r *Dao[T]) NewEntity() (T, error) {

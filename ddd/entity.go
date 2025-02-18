@@ -1,9 +1,5 @@
 package ddd
 
-import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-)
-
 type Entity interface {
 	GetTenantId() string
 	SetTenantId(v string)
@@ -13,7 +9,12 @@ type Entity interface {
 
 type EntityList *[]Entity
 
+/*
 type MapEntity types.Object
+
+func NewMapEntity() MapEntity {
+	return MapEntity{}
+}
 
 func (e MapEntity) GetTenantId() string {
 	return types.Object(e).GetString("tenantId")
@@ -31,6 +32,7 @@ func (e MapEntity) SetId(val string) {
 	_ = types.Object(e).Set("id", val)
 }
 
-func NewMapEntity() MapEntity {
-	return MapEntity{}
+func (e MapEntity) AsMap() map[string]any {
+	return types.Object(e).AsMap()
 }
+*/
