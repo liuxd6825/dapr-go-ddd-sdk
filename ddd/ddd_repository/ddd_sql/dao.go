@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"gorm.io/gorm"
 	"strings"
 )
@@ -376,6 +377,14 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			return nil, false, err
 		}
 		tx := d.table(ctx)
+
+		if len(query.GetFields()) > 0 {
+			fields := strings.Split(query.GetFields(), ",")
+			for i, field := range fields {
+				fields[i] = stringutils.AsFieldName(field)
+			}
+			tx = tx.Select(strings.Join(fields, ","))
+		}
 
 		if len(sqlWhere) > 0 {
 			tx = tx.Where(sqlWhere)
