@@ -29,12 +29,10 @@ func main() {
 		GitHead:   GitHead,
 		Actors:    nil,
 		OnInitEvent: func(server *restapp.HttpServer) error {
-			println("---- OnInitEvent ----")
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
 			return nil
-			println("---- OnStartEvent ----")
 
 			daprClient := server.DaprClient()
 			w, err := workflow.NewWorker(workflow.WorkerWithDaprClient(daprClient))

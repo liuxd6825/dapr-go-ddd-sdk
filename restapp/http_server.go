@@ -228,7 +228,7 @@ func (s *HttpServer) doOnStartEvents(ctx context2.Context, app *iris.Application
 	fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
 	if logs.GetLevel() <= logs.DebugLevel {
 		for _, v := range app.GetRoutes() {
-			fmt.Printf("> %-8s %s \r\n", v.Method+":", v.Path)
+			fmt.Printf("> %-8s: http://localhost:%v%s \r\n", v.Method, s.envConfig.App.HttpPort, v.Path)
 		}
 	}
 	fmt.Println()

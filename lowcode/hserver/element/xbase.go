@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
 )
 
 type RunOptions = func(vm *goja.Runtime) error
@@ -24,6 +25,6 @@ type Base interface {
 	Pkg() *types.CMap[any]
 	AddPkg(key string, pkg any)
 	RunValues() *types.CMap[any]
-	RunInitScript(values *ApiRunValues, opts ...RunOptions) error
-	RunOnce(funcName, code, codeType, fileName string, runValues *ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error
+	RunInitScript(ctx context.Context, values *ApiRunValues, opts ...RunOptions) error
+	RunOnce(ctx context.Context, funcName, code, codeType, fileName string, runValues *ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...RunOptions) error
 }

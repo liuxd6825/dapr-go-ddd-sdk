@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
@@ -82,7 +83,8 @@ func (s *Service) Initialize() error {
 		Self:     s,
 		WorkPath: s.WorkPath(),
 	}
-	if err := s.RunInitScript(runValues); err != nil {
+	ctx := context.Background()
+	if err := s.RunInitScript(ctx, runValues); err != nil {
 		return err
 	}
 

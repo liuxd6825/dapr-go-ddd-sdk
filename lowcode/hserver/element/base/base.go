@@ -38,19 +38,19 @@ func NewBase(srcFileName string, logger logrus.FieldLogger, reader fs.Reader, fa
 	}, nil
 }
 
-func (b *Base) RunInitScript(values *element.ApiRunValues, opts ...element.RunOptions) error {
+func (b *Base) RunInitScript(ctx context.Context, values *element.ApiRunValues, opts ...element.RunOptions) error {
 	opts = append(opts, func(vm *goja.Runtime) error {
 		_ = vm.Set("ctx", context.Background())
 		return nil
 	})
-	_, err := b.funcs.Run("init", values, false, opts...)
+	_, err := b.funcs.Run(ctx, "init", values, false, opts...)
 	return err
 }
 
-func (b *Base) RunOnce(funcName, code, codeType, fileName string, runValues *element.ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...element.RunOptions) error {
+func (b *Base) RunOnce(ctx context.Context, funcName, code, codeType, fileName string, runValues *element.ApiRunValues, logger logrus.FieldLogger, pkg *types.CMap[any], opts ...element.RunOptions) error {
 	var err error
 	if code != "" {
-		_, err = b.funcs.Run(funcName, runValues, false, opts...)
+		_, err = b.funcs.Run(ctx, funcName, runValues, false, opts...)
 	}
 	return err
 }

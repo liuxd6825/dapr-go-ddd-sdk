@@ -75,10 +75,10 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 	}
 	wctx := s.server.Factory().NewWebContext(ctx, ictx)
 	params := s.GetParamsValue(wctx)
-	s.run(wctx, params)
+	s.run(wctx.Ctx(), wctx, params)
 }
 
-func (s *ApiHandle) run(wctx element.WebContext, params any) {
+func (s *ApiHandle) run(ctx context.Context, wctx element.WebContext, params any) {
 	values := &element.ApiRunValues{
 		Server:     s.server,
 		Self:       s.service,
@@ -87,7 +87,7 @@ func (s *ApiHandle) run(wctx element.WebContext, params any) {
 	}
 	tenantId := wctx.GetTenantId()
 	funcName := s.fun.Config().FuncName
-	val, err := s.service.Funcs().Run(funcName, values, true, func(vm *goja.Runtime) error {
+	val, err := s.service.Funcs().Run(ctx, funcName, values, true, func(vm *goja.Runtime) error {
 		_ = vm.Set("params", params)
 		_ = vm.Set("wctx", wctx)
 		_ = vm.Set("ctx", wctx.Ctx())

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
@@ -230,7 +231,8 @@ func (s *Server) start() error {
 		Self:     s,
 		Server:   s,
 	}
-	if err := s.RunInitScript(runValue); err != nil {
+	ctx := context.Background()
+	if err := s.RunInitScript(ctx, runValue); err != nil {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package funcs
 
 import (
+	"context"
 	"fmt"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
@@ -50,7 +51,7 @@ func (b *Manager) Delete(scriptName string) error {
 //	@param config
 //	@return res
 //	@return err
-func (b *Manager) Run(funcName string, runValues *element.ApiRunValues, checkHave bool, opts ...RunOptions) (res any, err error) {
+func (b *Manager) Run(ctx context.Context, funcName string, runValues *element.ApiRunValues, checkHave bool, opts ...RunOptions) (res any, err error) {
 	srcFileName := ""
 
 	defer func() {
@@ -80,7 +81,7 @@ func (b *Manager) Run(funcName string, runValues *element.ApiRunValues, checkHav
 		return SetRunValues(vm, runValues)
 	})
 
-	val, err := script.Run(opts...)
+	val, err := script.Run(ctx, opts...)
 	return val, err
 }
 

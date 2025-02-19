@@ -81,19 +81,32 @@ func (s *Func) BuildCode() error {
 	return nil
 }
 
-func (s *Func) Run(opts ...RunOptions) (res any, err error) {
+func (s *Func) Run(ctx context.Context, opts ...RunOptions) (res any, err error) {
 	defer func() {
 		err = utils.RecoverError(err, recover())
 	}()
+	if ctx == nil {
+		ctx = context.Background()
+	}
 
 	if s != nil {
 		opts = append(opts, func(vm *goja.Runtime) error {
 			return nil
 		})
 	}
-	ctx := context.Background()
+
 	dbKeys := s.config.TxDbKeys()
 	var data any
+
+	// 超时时间处理
+	if s.config.Timeout() == 0 {
+		// 使用 context.WithTimeout 创建超时上下文
+		timeoutCtx, cancel := context.WithTimeout(ctx, s.config.Timeout())
+		ctx = timeoutCtx
+		defer cancel()
+	}
+
+	// 开启数据库事务
 	err = tx.StartTx(ctx, dbKeys, func(ctx context.Context, options ...*ddd_repository.SessionOptions) error {
 		opts = append(opts, func(vm *goja.Runtime) error {
 			return vm.Set("ctx", ctx)

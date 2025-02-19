@@ -72,7 +72,7 @@ func (e *Handle) run(ctx context.Context, eventType string, eventVersion string,
 		WorkPath: e.WorkPath(),
 	}
 	tenantId := metadata["tenantId"]
-	_, err := e.service.Funcs().Run(e.fun.Config().FuncName, values, true, func(vm *goja.Runtime) error {
+	_, err := e.service.Funcs().Run(ctx, e.fun.Config().FuncName, values, true, func(vm *goja.Runtime) error {
 		_ = vm.Set("tenantId", tenantId)
 		_ = vm.Set("ctx", ctx)
 		_ = vm.Set("event", event)
