@@ -2,7 +2,6 @@ package base
 
 import (
 	"context"
-	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
@@ -85,7 +84,6 @@ func (b *Base) ParseFunc(sel *goquery.Selection, server element.Server) error {
 	})
 
 	for _, cfg := range funcConfigs {
-		fmt.Println("func = ", cfg.FuncName)
 		fun, err := server.Factory().NewFunc(server, cfg, b.Logger(), server, b.Pkg())
 		if err != nil {
 			return err

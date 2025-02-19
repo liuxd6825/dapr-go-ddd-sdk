@@ -55,7 +55,7 @@ func (b *Manager) Run(funcName string, runValues *element.ApiRunValues, checkHav
 
 	defer func() {
 		if rec := recover(); rec != nil {
-			err = fmt.Errorf("%v in %s %s ", rec, funcName, srcFileName)
+			err = fmt.Errorf("%v in %s() file=%s ", rec, funcName, srcFileName)
 			b.logger.Error(err)
 		}
 	}()

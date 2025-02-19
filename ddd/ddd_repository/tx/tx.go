@@ -18,38 +18,39 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc ddd_repository.TxFunc,
 	}()
 	newCtx := ctx
 	newTxFunc := txFunc
-	for _, dbKey := range dbKeys {
-		item := restapp.GetDb(dbKey)
-		if item == nil {
-			return fmt.Errorf("db %s not found", dbKey)
-		}
-		dbType := item.GetDBType()
-		switch dbType {
-		case restapp.DbType_Redis:
-			break
-		case restapp.DbType_Neo4j:
-			break
-		case restapp.DbType_MongoDB:
-			newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
-			break
-		case restapp.DbType_Sqlite:
-			newTxFunc = newGormFunc(item.GetSqlite(), dbKey, newTxFunc)
-			break
-		case restapp.DbType_MySQL:
-			newTxFunc = newGormFunc(item.GetMySQL(), dbKey, newTxFunc)
-			break
-		case restapp.DbType_MsSQL:
-			newTxFunc = newGormFunc(item.GetMsSQL(), dbKey, newTxFunc)
-			break
-		case restapp.DbType_Oracle:
-			newTxFunc = newGormFunc(item.GetOracle(), dbKey, newTxFunc)
-			break
-		case restapp.DbType_Postgres:
-			newTxFunc = newGormFunc(item.GetPostgres(), dbKey, newTxFunc)
-			break
+	if dbKeys != nil && len(dbKeys) > 0 {
+		for _, dbKey := range dbKeys {
+			item := restapp.GetDb(dbKey)
+			if item == nil {
+				return fmt.Errorf("db %s not found", dbKey)
+			}
+			dbType := item.GetDBType()
+			switch dbType {
+			case restapp.DbType_Redis:
+				break
+			case restapp.DbType_Neo4j:
+				break
+			case restapp.DbType_MongoDB:
+				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
+				break
+			case restapp.DbType_Sqlite:
+				newTxFunc = newGormFunc(item.GetSqlite(), dbKey, newTxFunc)
+				break
+			case restapp.DbType_MySQL:
+				newTxFunc = newGormFunc(item.GetMySQL(), dbKey, newTxFunc)
+				break
+			case restapp.DbType_MsSQL:
+				newTxFunc = newGormFunc(item.GetMsSQL(), dbKey, newTxFunc)
+				break
+			case restapp.DbType_Oracle:
+				newTxFunc = newGormFunc(item.GetOracle(), dbKey, newTxFunc)
+				break
+			case restapp.DbType_Postgres:
+				newTxFunc = newGormFunc(item.GetPostgres(), dbKey, newTxFunc)
+				break
+			}
 		}
 	}
-
 	return newTxFunc(newCtx, options...)
 }
 

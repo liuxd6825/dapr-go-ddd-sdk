@@ -101,7 +101,6 @@ func (s *Server) init(logger logrus.FieldLogger) error {
 
 	if server.Pkg().Count() == 0 {
 		server.LoadPkg("all")
-		print("pkg.count = ", server.Pkg().Count())
 	}
 
 	for _, opt := range opts {
@@ -117,7 +116,7 @@ func (s *Server) init(logger logrus.FieldLogger) error {
 		}
 		// 打印文件路径（忽略目录）
 		if !info.IsDir() {
-			fmt.Println("File:", path)
+			//fmt.Println("File:", path)
 		}
 		return nil
 	})
@@ -319,7 +318,7 @@ func (s *Server) parseLinks(linkSel *goquery.Selection) error {
 			// 获取 url 属性
 			fileUrl, exists := sel.Attr("href")
 			if exists {
-				s.Logs(logrus.InfoLevel, "service.parse() %s ", fileUrl)
+				// s.Logs(logrus.InfoLevel, "service.parse() %s ", fileUrl)
 				fileData, err := s.ReadSrcFile(fileUrl, s.FsOpts())
 				if err != nil {
 					panic(err)
@@ -349,13 +348,14 @@ func (s *Server) addService(sel *goquery.Selection, fileUrl string) error {
 	}
 
 	var config = apiService.Config()
-	isHas := s.services.Has(config.Name())
+	var name = config.Name()
+	isHas := s.services.Has(name)
 	if isHas {
-		errMsg := fmt.Sprintf("Service %s already exists", config.Name)
-		panic(errMsg)
+		msg := fmt.Sprintf("addService %s already exists", name)
+		return errors.New(msg)
 	}
-	s.Logs(logrus.InfoLevel, "Service name=%s; url=%s;", config.Name, config.Url())
-	s.services.Set(config.Name(), apiService)
+	s.services.Set(name, apiService)
+	s.Logs(logrus.InfoLevel, "addService name=%s; file=%s;", name, fileUrl)
 	return nil
 }
 

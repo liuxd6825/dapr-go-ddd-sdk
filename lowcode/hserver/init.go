@@ -37,7 +37,7 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 			return fmt.Errorf(" %s fs not exists", webFsName)
 		}
 	}
-	fmt.Println("lowcode HServer")
+ 
 	server, err := fact.NewServer(httpServer, fileName, srcFs, fact, envCfg)
 	if err != nil {
 		return err

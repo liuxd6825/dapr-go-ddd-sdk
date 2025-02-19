@@ -1,6 +1,7 @@
 package element
 
 import (
+	"context"
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/sirupsen/logrus"
@@ -30,6 +31,7 @@ type ApiRunValues struct {
 	WebContext WebContext
 	WorkPath   string
 	Self       any
+	Context    context.Context
 }
 
 func (c *ServiceConfig) Name() string {

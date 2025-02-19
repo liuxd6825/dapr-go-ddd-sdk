@@ -1,9 +1,12 @@
 package funcs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
@@ -88,8 +91,17 @@ func (s *Func) Run(opts ...RunOptions) (res any, err error) {
 			return nil
 		})
 	}
+	ctx := context.Background()
+	dbKeys := s.config.TxDbKeys()
+	var data any
+	err = tx.StartTx(ctx, dbKeys, func(ctx context.Context, options ...*ddd_repository.SessionOptions) error {
+		opts = append(opts, func(vm *goja.Runtime) error {
+			return vm.Set("ctx", ctx)
+		})
+		data, err = s.runtime.Run("\n"+s.runCode, opts...)
+		return err
+	})
 
-	data, err := s.runtime.Run("\n"+s.runCode, opts...)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("run error:%v in %s %s", err, s.config.FuncName, s.config.SrcFileName))
 	}
