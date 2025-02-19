@@ -1,17 +1,15 @@
-package ddd_mongodb
+package rsql
 
 import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strings"
-	"time"
 )
 
-type MongoProcess struct {
+type mongoProcess struct {
 	item    *filterItem
 	current *filterItem
 	errList []string
@@ -24,13 +22,8 @@ type filterItem struct {
 	items  []*filterItem
 }
 
-const (
-	dateTimeLayout = "2006-01-02T15:04:05"
-	dateLayout     = "2006-01-02"
-)
-
-func NewMongoProcess222() *MongoProcess {
-	m := &MongoProcess{
+func NewMongoProcess() Process {
+	m := &mongoProcess{
 		item:    newFilterItem(nil, "$and"),
 		errList: make([]string, 0),
 	}
@@ -41,7 +34,7 @@ func NewMongoProcess222() *MongoProcess {
 func newFilterItem(parent *filterItem, name string) *filterItem {
 	n := name
 	if n == "id" {
-		n = "_id"
+		n = _id
 	}
 	return &filterItem{
 		name:   n,
@@ -51,11 +44,116 @@ func newFilterItem(parent *filterItem, name string) *filterItem {
 	}
 }
 
-func (m *MongoProcess) init() {
+func (m *mongoProcess) init() {
 	m.current = m.item
 }
 
-func (m *MongoProcess) GetFilterMap(tenantId string) (map[string]any, error) {
+func (m *mongoProcess) OnAndItem() {
+	m.current.name = "$and"
+}
+
+func (m *mongoProcess) OnAndStart() {
+	m.current = m.current.addChildItem("$and", nil)
+}
+
+func (m *mongoProcess) OnAndEnd() {
+	m.current = m.current.parent
+}
+
+func (m *mongoProcess) OnOrItem() {
+	m.current.name = "$or"
+}
+
+func (m *mongoProcess) OnOrStart() {
+	m.current = m.current.addChildItem("$or", nil)
+}
+
+func (m *mongoProcess) OnOrEnd() {
+	m.current = m.current.parent
+}
+
+func (m *mongoProcess) OnEquals(name string, value interface{}, rValue Value) {
+	value = getValue(rValue)
+	m.current.addChildItem(AsFieldName(name), value)
+}
+
+func (m *mongoProcess) OnNotEquals(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", m.getValue(rValue)}})
+}
+
+func (m *mongoProcess) OnLike(name string, value interface{}, rValue Value) {
+	value = getValue(rValue)
+	pattern := fmt.Sprintf("%s", value)
+	pattern = strings.ReplaceAll(pattern, "*", "")
+
+	m.current.addChildItem(AsFieldName(name), primitive.Regex{Pattern: pattern, Options: "im"})
+}
+
+func (m *mongoProcess) OnNotLike(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
+}
+
+func (m *mongoProcess) OnGreaterThan(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$gt", m.getValue(rValue)}})
+}
+
+func (m *mongoProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$gte", m.getValue(rValue)}})
+}
+
+func (m *mongoProcess) OnLessThan(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
+}
+
+func (m *mongoProcess) OnLessThanOrEquals(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$lte", m.getValue(rValue)}})
+}
+
+func (m *mongoProcess) OnIn(name string, value interface{}, rValue Value) {
+	listValue, _ := rValue.(ListValue)
+	values := getValueList(listValue)
+	m.current.addChildItem(AsFieldName(name), bson.M{"$in": values})
+}
+
+func (m *mongoProcess) OnNotIn(name string, value interface{}, rValue Value) {
+	listValue, _ := rValue.(ListValue)
+	values := getValueList(listValue)
+	m.current.addChildItem(AsFieldName(name), bson.M{"$nin": values})
+}
+
+func (m *mongoProcess) OnContains(name string, value interface{}, rValue Value) {
+	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
+	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$regex", primitive.Regex{Pattern: val, Options: "i"}}})
+}
+
+func (m *mongoProcess) OnNotContains(name string, value interface{}, rValue Value) {
+	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
+	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
+}
+
+func (m *mongoProcess) OnIsNull(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$in", []interface{}{nil}}})
+}
+
+func (m *mongoProcess) OnNotIsNull(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *mongoProcess) OnStart(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *mongoProcess) OnEnd(name string, value interface{}, rValue Value) {
+	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (m *mongoProcess) GetSQL() string {
+	return ""
+}
+
+func (m *mongoProcess) GetFilter(tenantId string) (map[string]any, error) {
 	data := make(map[string]any)
 	if len(m.errList) > 0 {
 		msg := strings.Join(m.errList, " ")
@@ -66,19 +164,19 @@ func (m *MongoProcess) GetFilterMap(tenantId string) (map[string]any, error) {
 	m1, ok := data[""]
 	if ok {
 		d1 := m1.(map[string]any)
-		d1[ConstTenantIdField] = tenantId
+		d1[tenantId] = tenantId
 	} else if len(data) == 0 {
-		data[ConstTenantIdField] = tenantId
+		data[tenantId] = tenantId
 	} else {
 		m1, ok := data["$and"]
 		d1, ok := m1.(map[string]interface{})
 		if ok {
-			d1[ConstTenantIdField] = tenantId
+			d1[tenantId] = tenantId
 		}
 		d2, ok := m1.([]interface{})
 		if ok {
 			item := ddd_utils.NewMap()
-			item[ConstTenantIdField] = tenantId
+			item[tenantId] = tenantId
 			d2 := append(d2, item)
 			data["$and"] = d2
 		}
@@ -86,132 +184,15 @@ func (m *MongoProcess) GetFilterMap(tenantId string) (map[string]any, error) {
 	return data, nil
 }
 
-func (m *MongoProcess) OnAndItem() {
-	m.current.name = "$and"
-}
-
-func (m *MongoProcess) OnAndStart() {
-	m.current = m.current.addChildItem("$and", nil)
-}
-
-func (m *MongoProcess) OnAndEnd() {
-	m.current = m.current.parent
-}
-
-func (m *MongoProcess) OnOrItem() {
-	m.current.name = "$or"
-}
-
-func (m *MongoProcess) OnOrStart() {
-	m.current = m.current.addChildItem("$or", nil)
-}
-
-func (m *MongoProcess) OnOrEnd() {
-	m.current = m.current.parent
-}
-
-func (m *MongoProcess) OnEquals(name string, value interface{}, rValue rsql.Value) {
-	value, err := getValue(rValue)
-	if err != nil {
-		m.addError(name, err)
-	}
-	m.current.addChildItem(AsFieldName(name), value)
-}
-
-func (m *MongoProcess) OnNotEquals(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", m.getValue(rValue)}})
-}
-
-func (m *MongoProcess) OnLike(name string, value interface{}, rValue rsql.Value) {
-	value, err := getValue(rValue)
-	if err != nil {
-		m.addError(name, err)
-	}
-
-	pattern := fmt.Sprintf("%s", value)
-	pattern = strings.ReplaceAll(pattern, "*", "")
-
-	m.current.addChildItem(AsFieldName(name), primitive.Regex{Pattern: pattern, Options: "im"})
-}
-
-func (m *MongoProcess) OnNotLike(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
-}
-
-func (m *MongoProcess) OnGreaterThan(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$gt", m.getValue(rValue)}})
-}
-
-func (m *MongoProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$gte", m.getValue(rValue)}})
-}
-
-func (m *MongoProcess) OnLessThan(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
-}
-
-func (m *MongoProcess) OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lte", m.getValue(rValue)}})
-}
-
-func (m *MongoProcess) OnIn(name string, value interface{}, rValue rsql.Value) {
-	listValue, _ := rValue.(rsql.ListValue)
-	values, err := getValueList(listValue)
-	if err != nil {
-		m.addError(name, err)
-	}
-	m.current.addChildItem(AsFieldName(name), bson.M{"$in": values})
-}
-
-func (m *MongoProcess) OnNotIn(name string, value interface{}, rValue rsql.Value) {
-	listValue, _ := rValue.(rsql.ListValue)
-	values, err := getValueList(listValue)
-	if err != nil {
-		m.addError(name, err)
-	}
-	m.current.addChildItem(AsFieldName(name), bson.M{"$nin": values})
-}
-
-func (m *MongoProcess) OnContains(name string, value interface{}, rValue rsql.Value) {
-	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
-	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$regex", primitive.Regex{Pattern: val, Options: "i"}}})
-}
-
-func (m *MongoProcess) OnNotContains(name string, value interface{}, rValue rsql.Value) {
-	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
-	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
-}
-
-func (m *MongoProcess) OnIsNull(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$in", []interface{}{nil}}})
-}
-
-func (m *MongoProcess) OnNotIsNull(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
-}
-
-func (m *MongoProcess) OnStart(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
-}
-
-func (m *MongoProcess) OnEnd(name string, value interface{}, rValue rsql.Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
-}
-
-func (m *MongoProcess) addError(name string, err error) {
+func (m *mongoProcess) addError(name string, err error) {
 	if err != nil {
 		msg := fmt.Sprintf("%v %v; ", name, err.Error())
 		m.errList = append(m.errList, msg)
 	}
 }
 
-func (m *MongoProcess) getValue(rValue rsql.Value) interface{} {
-	v, err := getValue(rValue)
-	if err != nil {
-		m.addError(rValue.ValueName(), err)
-	}
+func (m *mongoProcess) getValue(rValue Value) interface{} {
+	v := getValue(rValue)
 	return v
 }
 
@@ -249,30 +230,31 @@ func (i *filterItem) setValue(name string, value interface{}) {
 	i.value = value
 }
 
-func getValue(value rsql.Value) (interface{}, error) {
+/*
+func getValue(value Value) (interface{}, error) {
 	var v interface{}
 	var err error
 	switch value.(type) {
-	case rsql.StringValue:
-		sv, _ := value.(rsql.StringValue)
+	case StringValue:
+		sv, _ := value.(StringValue)
 		v = sv.Value
-	case rsql.IntegerValue:
-		sv, _ := value.(rsql.IntegerValue)
+	case IntegerValue:
+		sv, _ := value.(IntegerValue)
 		v = sv.Value
-	case rsql.DateValue:
-		sv, _ := value.(rsql.DateValue)
+	case DateValue:
+		sv, _ := value.(DateValue)
 		v, err = time.Parse(dateLayout, sv.Value)
-	case rsql.DoubleValue:
-		sv, _ := value.(rsql.DoubleValue)
+	case DoubleValue:
+		sv, _ := value.(DoubleValue)
 		v = sv.Value
-	case rsql.DateTimeValue:
-		sv, _ := value.(rsql.DateTimeValue)
+	case DateTimeValue:
+		sv, _ := value.(DateTimeValue)
 		v, err = time.Parse(dateTimeLayout, sv.Value)
-	case rsql.BooleanValue:
-		sv, _ := value.(rsql.BooleanValue)
+	case BooleanValue:
+		sv, _ := value.(BooleanValue)
 		v = sv.Value
-	case rsql.ListValue:
-		sv, _ := value.(rsql.ListValue)
+	case ListValue:
+		sv, _ := value.(ListValue)
 		v, err = getValueList(sv)
 	default:
 		v = value
@@ -280,7 +262,7 @@ func getValue(value rsql.Value) (interface{}, error) {
 	return v, err
 }
 
-func getValueList(listValue rsql.ListValue) ([]interface{}, error) {
+func getValueList(listValue ListValue) ([]interface{}, error) {
 	list := make([]interface{}, 0)
 	for _, item := range listValue.Value {
 		v, err := getValue(item)
@@ -291,3 +273,4 @@ func getValueList(listValue rsql.ListValue) ([]interface{}, error) {
 	}
 	return list, nil
 }
+*/

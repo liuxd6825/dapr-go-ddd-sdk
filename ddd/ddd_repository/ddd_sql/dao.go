@@ -490,11 +490,11 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 }
 
 func (d *Dao[T]) sum(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
-	p := NewSqlProcess()
-	if err := ParseProcess(rSql, p); err != nil {
+	p := rsql.NewSqlProcess()
+	if err := rsql.ParseProcess(rSql, p); err != nil {
 		return nil, false, err
 	}
-	sql := p.GetStr()
+	sql := p.GetSQL()
 	table := d.table(ctx)
 	sumFields := make([]string, 0)
 	for _, col := range valueCols {
@@ -594,8 +594,9 @@ func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]any) string {
 }
 
 func (d *Dao[T]) getSql(rSql string) (string, error) {
-	res, err := rsql.SqlParseProcess(rSql)
-	return res, err
+	proc := rsql.NewSqlProcess()
+	err := rsql.ParseProcess(rSql, proc)
+	return proc.GetSQL(), err
 }
 
 func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
@@ -606,11 +607,11 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*d
 	if filter == "" {
 		sqlWhere = fmt.Sprintf("tenant_id='%s'", tenantId)
 	} else {
-		p := NewSqlProcess()
-		if err := ParseProcess(filter, p); err != nil {
+		process := rsql.NewSqlProcess()
+		if err := rsql.ParseProcess(filter, process); err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
-		sqlWhere = fmt.Sprintf("tenant_id='%s' and (%s)", tenantId, p.GetStr())
+		sqlWhere = fmt.Sprintf("tenant_id='%s' and (%s)", tenantId, process.GetSQL())
 	}
 	data, _, err := fun(sqlWhere)
 	if err != nil {

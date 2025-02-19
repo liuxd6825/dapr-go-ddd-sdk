@@ -304,6 +304,7 @@ func (t *Lexer) generateToken(ty TokenType, newPos int) Token {
 		Value: t.buf[t.pos:newPos],
 		Pos:   t.pos,
 	}
+	res.Value = AsFieldName(res.Value)
 	t.pos = newPos
 	return res
 }

@@ -171,11 +171,11 @@ func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 	if b.Filter == "" {
 		return nil, nil
 	}
-	p := NewMongoProcess()
+	p := rsql.NewMongoProcess()
 	if err := rsql.ParseProcess(b.Filter, p); err != nil {
 		return nil, err
 	}
-	return p.GetFilterMap(b.TenantId)
+	return p.GetFilter(b.TenantId)
 }
 
 // GetGroupExpandFilter

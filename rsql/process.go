@@ -3,6 +3,14 @@ package rsql
 import (
 	"errors"
 	"fmt"
+	"github.com/dapr/components-contrib/liuxd/common/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"time"
+)
+
+const (
+	dateTimeLayout = "2006-01-02T15:04:05"
+	dateLayout     = "2006-01-02"
 )
 
 type Process interface {
@@ -28,8 +36,11 @@ type Process interface {
 	OnNotIsNull(name string, value interface{}, rValue Value)
 	OnStart(name string, value interface{}, rValue Value)
 	OnEnd(name string, value interface{}, rValue Value)
+	GetSQL() string
+	GetFilter(tenantId string) (map[string]any, error)
 }
 
+/*
 type SqlProcess struct {
 	str string
 }
@@ -140,7 +151,7 @@ func SqlParseProcess(input string) (string, error) {
 		return "", err
 	}
 	return p.str, nil
-}
+} */
 
 func ParseProcess(input string, process Process) error {
 	if len(input) == 0 {
@@ -275,6 +286,7 @@ func parseProcess(expr Expression, process Process) error {
 	return nil
 }
 
+/*
 func getValue(val Value) interface{} {
 	var value interface{}
 	switch val.(type) {
@@ -295,4 +307,56 @@ func getValue(val Value) interface{} {
 		break
 	}
 	return value
+}
+*/
+
+func getValue(value Value) any {
+	var v any
+	var err error
+	switch value.(type) {
+	case rsql.StringValue:
+		sv, _ := value.(StringValue)
+		v = sv.Value
+	case rsql.IntegerValue:
+		sv, _ := value.(IntegerValue)
+		v = sv.Value
+	case rsql.DateValue:
+		sv, _ := value.(DateValue)
+		v, err = time.Parse(dateLayout, sv.Value)
+	case rsql.DoubleValue:
+		sv, _ := value.(DoubleValue)
+		v = sv.Value
+	case rsql.DateTimeValue:
+		sv, _ := value.(DateTimeValue)
+		v, err = time.Parse(dateTimeLayout, sv.Value)
+	case rsql.BooleanValue:
+		sv, _ := value.(BooleanValue)
+		v = sv.Value
+	case rsql.ListValue:
+		sv, _ := value.(ListValue)
+		v = getValueList(sv)
+	default:
+		v = value
+	}
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func getValueList(listValue ListValue) []any {
+	list := make([]interface{}, 0)
+	for _, item := range listValue.Value {
+		v := getValue(item)
+		list = append(list, v)
+	}
+	return list
+}
+
+// AsFieldName
+// @Description: 转换为mongodb规范的字段名称
+// @param name
+// @return string
+func AsFieldName(name string) string {
+	return stringutils.SnakeString(name)
 }

@@ -1,10 +1,9 @@
 package ddd_sql
 
 import (
-	"errors"
 	"fmt"
-	"github.com/dapr/components-contrib/liuxd/common/rsql"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 )
 
 type Process interface {
@@ -32,7 +31,7 @@ type process struct {
 	str string
 }
 
-func NewSqlProcess() Process {
+func NewSqlProcess222() Process {
 	return &process{}
 }
 func (p *process) GetStr() string {
@@ -109,7 +108,8 @@ func (p *process) Print() {
 	fmt.Print(p.str)
 }
 
-func ParseProcess(input string, process Process) error {
+/*
+func ParseProcess1(input string, process Process) error {
 	if len(input) == 0 {
 		return nil
 	}
@@ -117,12 +117,14 @@ func ParseProcess(input string, process Process) error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("rsql %s expression error, %s", input, err.Error()))
 	}
+	return nil
 	err = parseProcess(expr, process)
 	if err != nil {
 		return errors.New(fmt.Sprintf("rsql %s parseProcess error, %s", input, err.Error()))
 	}
 	return nil
 }
+*/
 
 func parseProcess(expr rsql.Expression, process rsql.Process) error {
 	switch expr.(type) {
