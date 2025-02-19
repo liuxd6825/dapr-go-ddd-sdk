@@ -36,14 +36,15 @@ const (
 //	@param tsCode
 //	@return string
 //	@return error
-func TransformCode(tsCode string, fileName string, transType TransformType) ([]byte, error) {
+func TransformCode(tsCode string, fileName string, transType TransformType) ([]byte, []*transform.FuncParam, error) {
 	var codeBytes []byte
 	var err error
+	var params []*transform.FuncParam
 	switch transType {
 	case TransformTypeTypeScript:
-		codeBytes, err = transform.TransformFromTypeScript(tsCode, fileName)
+		codeBytes, params, err = transform.TransformFromTypeScript(tsCode, fileName)
 	case TransformTypeES6:
-		codeBytes, err = transform.TransformFromEs6(tsCode, fileName)
+		codeBytes, params, err = transform.TransformFromEs6(tsCode, fileName)
 	}
-	return codeBytes, err
+	return codeBytes, params, err
 }

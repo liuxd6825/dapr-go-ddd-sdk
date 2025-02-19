@@ -27,6 +27,11 @@ func NewFuncManager(logger logrus.FieldLogger, reader fs.Reader) *Manager {
 	}
 }
 
+func (b *Manager) Get(funcName string) (fun element.Func, ok bool) {
+	fun, ok = b.funcs.Get(funcName)
+	return fun, ok
+}
+
 func (b *Manager) Items() map[string]element.Func {
 	return b.funcs.Items()
 }

@@ -61,7 +61,7 @@ func (r *Runtime) require(reader fs.Reader, modulePath string) (val goja.Value, 
 	}
 
 	pkgFileName := workPath + moduleName
-	content, err = TransformCode(string(content), pkgFileName, TransformTypeTypeScript)
+	content, _, err = TransformCode(string(content), pkgFileName, TransformTypeTypeScript)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load module %s: %v", pkgFileName, err)
 	}

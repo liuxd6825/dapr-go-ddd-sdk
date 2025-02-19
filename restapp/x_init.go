@@ -263,9 +263,9 @@ func SetEnvConfig(envConfig *EnvConfig) {
 		SetEnvName(envConfig.Name)
 
 		envConfig.Log.LogFile = AbsFileName(envConfig.Log.LogFile)
-		envConfig.Dapr.Server.Config = AbsFileName(envConfig.Dapr.Server.Config)
-		envConfig.Dapr.Server.LogFile = AbsFileName(envConfig.Dapr.Server.LogFile)
-		envConfig.Dapr.Server.ComponentsPath = AbsFileName(envConfig.Dapr.Server.ComponentsPath)
+		//envConfig.Dapr.Server.Config = AbsFileName(envConfig.Dapr.Server.Config)
+		//envConfig.Dapr.Server.LogFile = AbsFileName(envConfig.Dapr.Server.LogFile)
+		//envConfig.Dapr.Server.ComponentsPath = AbsFileName(envConfig.Dapr.Server.ComponentsPath)
 	}
 }
 

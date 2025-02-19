@@ -34,12 +34,14 @@ type Func interface {
 	BuildCode() error
 	Run(ctx context.Context, opts ...RunOptions) (res any, err error)
 	Config() *FuncConfig
+	AsJsFunc() any
 	GetParamsType(urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType)
 }
 
 type FuncManager interface {
 	Add(fun Func) error
 	Run(ctx context.Context, funcName string, runValues *ApiRunValues, checkHave bool, opts ...RunOptions) (res any, err error)
+	Get(funcName string) (fun Func, ok bool)
 	Items() map[string]Func
 }
 

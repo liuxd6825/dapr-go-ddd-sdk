@@ -40,6 +40,15 @@ func ValidEmptyStr(v string, msg string) error {
 	return nil
 }
 
+// ToKebabCase 将驼峰式命名转换为kebab-case（以'-'分隔的小写字符串）
+func ToKebabCase(input string) string {
+	// 使用正则表达式查找大写字母，并在其前面插入"-"
+	re := regexp.MustCompile(`([a-z0-9])([A-Z])`)
+	result := re.ReplaceAllString(input, `${1}-${2}`)
+	// 将字符串转为小写
+	return strings.ToLower(result)
+}
+
 func AsFieldName(s string) string {
 	res := strings.Replace(s, " ", "", -1)
 	res = SnakeString(res)

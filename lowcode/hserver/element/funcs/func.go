@@ -20,6 +20,11 @@ import (
 	"github.com/spf13/afero"
 )
 
+type FuncParam struct {
+	Name string
+	Type string
+}
+
 type Func struct {
 	server         element.Server
 	runCode        string
@@ -31,6 +36,7 @@ type Func struct {
 	logger         logrus.FieldLogger
 	paramsTypeFile string            // 参数文件
 	paramsType     common.ParamsType // 参数类型定义
+	params         []*FuncParam
 }
 
 type RunOptions = func(vm *goja.Runtime) error
@@ -50,6 +56,7 @@ func NewFunc(server element.Server, config *element.FuncConfig, logger logrus.Fi
 		config:    config,
 		logger:    logger,
 		transType: config.TransType,
+		params:    []*FuncParam{},
 	}
 
 	err := fun.BuildCode()
@@ -71,14 +78,52 @@ func (s *Func) Config() *element.FuncConfig {
 // BuildCode 构建es5源代码
 func (s *Func) BuildCode() error {
 	if !s.isBuildCode {
-		codeBytes, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
+		codeBytes, params, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
 		if err != nil {
 			return err
 		}
 		s.isBuildCode = true
 		s.runCode = string(codeBytes)
+		for _, param := range params {
+			s.params = append(s.params, &FuncParam{Name: param.Name, Type: param.Type})
+		}
 	}
 	return nil
+}
+
+func (s *Func) AsJsFunc() any {
+	ctx := context.Background()
+
+	// 定义一个 Go 方法
+	fun := func(call goja.FunctionCall) goja.Value {
+		var rvm *goja.Runtime
+		// 获取 JavaScript 中传递的参数
+		opt := func(vm *goja.Runtime) error {
+			rvm = vm
+			for _, param := range s.params {
+				_ = vm.Set(param.Name, goja.Undefined())
+			}
+
+			for i, arg := range call.Arguments {
+				var name = ""
+				if i <= len(s.params) {
+					name = s.params[i].Name
+				}
+				_ = vm.Set(name, arg.Export())
+			}
+			return nil
+		}
+		r, err := s.Run(ctx, opt)
+		if err != nil {
+			s.logger.Error(err)
+			panic(err)
+		}
+		if r != nil {
+			return rvm.ToValue(r)
+		}
+		return goja.Undefined()
+	}
+	return fun
 }
 
 func (s *Func) Run(ctx context.Context, opts ...RunOptions) (res any, err error) {

@@ -31,6 +31,11 @@ func (s *ServiceProxy) Get(name string) goja.Value {
 			} else {
 				res = s.vm.ToValue(value)
 			}
+		} else {
+			fun, ok := s.service.Funcs().Get(name)
+			if ok {
+				res = s.vm.ToValue(fun.AsJsFunc())
+			}
 		}
 	}
 	return res

@@ -1,6 +1,10 @@
 package transform
 
-import "regexp"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
 
 var tsc *Tsc
 
@@ -42,7 +46,9 @@ var goRuntimeRegex = regexp.MustCompile(`(?m)^\s*//\s*@go-runtime.*\n.*\n`)
 //	@param tsCode
 //	@return string
 //	@return error
-func TransformFromTypeScript(tsCode string, fileName string) ([]byte, error) {
+func TransformFromTypeScript(tsCode string, fileName string) ([]byte, []*FuncParam, error) {
+	params := getParams(tsCode)
+
 	// 替换为仅保留 function()
 	tsCode = funcRe.ReplaceAllString(tsCode, `(function ()`)
 	// 删除import语句
@@ -53,7 +59,53 @@ func TransformFromTypeScript(tsCode string, fileName string) ([]byte, error) {
 		tsc = NewTsc()
 	}
 	es5Code, err := tsc.TransformEs5(tsCode, fileName)
-	return es5Code, err
+	return es5Code, params, err
+}
+
+type FuncParam struct {
+	Name string
+	Type string
+}
+
+func getParams(code string) []*FuncParam {
+	funIdx := strings.Index(code, "function")
+	if funIdx == -1 {
+		return []*FuncParam{}
+	}
+	code = code[funIdx:]
+	// 查找括号部分，提取参数字符串
+	startIndex := strings.Index(code, "(")
+	endIndex := strings.Index(code, ")")
+	resList := make([]*FuncParam, 0)
+	if startIndex != -1 && endIndex != -1 {
+		// 获取括号中的内容：name: string, age: number
+		paramsString := code[startIndex+1 : endIndex]
+
+		// 分割每个参数
+		params := strings.Split(paramsString, ",")
+
+		// 处理每个参数
+		for _, param := range params {
+			// 去除可能的空格
+			param = strings.TrimSpace(param)
+			// 查找参数的名称和类型
+			colonIndex := strings.Index(param, ":")
+			if colonIndex != -1 {
+				paramName := strings.Trim(param[:colonIndex], " ")
+				paramType := strings.Trim(param[colonIndex+1:], " ")
+				resList = append(resList,
+					&FuncParam{
+						Name: paramName,
+						Type: paramType,
+					},
+				)
+				fmt.Printf("Parameter: %s, Type: %s\n", paramName, paramType)
+			}
+		}
+	} else {
+		fmt.Println("No parameters found.")
+	}
+	return resList
 }
 
 // TransformFromEs6
@@ -63,7 +115,8 @@ func TransformFromTypeScript(tsCode string, fileName string) ([]byte, error) {
 //	@param fileName
 //	@return []byte
 //	@return error
-func TransformFromEs6(es6Code string, fileName string) ([]byte, error) {
+func TransformFromEs6(es6Code string, fileName string) ([]byte, []*FuncParam, error) {
+	params := getParams(es6Code)
 	// 替换为仅保留 function()
 	es6Code = funcRe.ReplaceAllString(es6Code, `(function ()`)
 	// 删除import语句
@@ -92,8 +145,9 @@ func TransformFromEs6(es6Code string, fileName string) ([]byte, error) {
 	if babel == nil {
 		var err error
 		if babel, err = NewBabel(); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-	return babel.Transform(es6Code, fileName, false, nil)
+	codeBytes, resErr := babel.Transform(es6Code, fileName, false, nil)
+	return codeBytes, params, resErr
 }
