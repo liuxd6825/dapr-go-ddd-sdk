@@ -18,7 +18,7 @@ type FuncValue struct {
 }
 
 func NewFuncValue(value string) (*FuncValue, error) {
-	i := strings.Index(value, "{")
+	i := strings.Index(value, "(")
 	name := value[:i]
 	name = strings.TrimSpace(name)
 

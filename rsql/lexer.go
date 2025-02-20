@@ -141,7 +141,7 @@ func (t *Lexer) processFunc() *Token {
 
 func (t *Lexer) isFunc(pos int, funName string) bool {
 	s := t.buf[pos:]
-	if ok := strings.HasPrefix(s, funName+"{"); ok {
+	if ok := strings.HasPrefix(s, funName+"("); ok {
 		return ok
 	}
 	if ok := strings.HasSuffix(s, funName+" "); ok {
@@ -153,17 +153,17 @@ func (t *Lexer) isFunc(pos int, funName string) bool {
 func (t *Lexer) getFuncLength(pos int, funName string) int {
 	tokenLen := 0
 	s := t.buf[pos:]
-	index := strings.Index(s, "{")
+	index := strings.Index(s, "(")
 	if index == -1 {
 		return 0
 	}
 	s = s[index:]
 	count := 1
 	for i, char := range s {
-		if char == '{' {
+		if char == '(' {
 			count++
 		}
-		if char == '}' {
+		if char == ')' {
 			count--
 		}
 		if count == 1 {
