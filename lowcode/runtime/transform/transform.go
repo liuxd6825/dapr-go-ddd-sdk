@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
@@ -99,11 +98,11 @@ func getParams(code string) []*FuncParam {
 						Type: paramType,
 					},
 				)
-				fmt.Printf("Parameter: %s, Type: %s\n", paramName, paramType)
+				//fmt.Printf("Parameter: %s, Type: %s\n", paramName, paramType)
 			}
 		}
 	} else {
-		fmt.Println("No parameters found.")
+		//fmt.Println("No parameters found.")
 	}
 	return resList
 }

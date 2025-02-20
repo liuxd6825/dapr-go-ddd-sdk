@@ -77,8 +77,8 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
 				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), config.ConnectTimeout,
 				config.SocketTimeout, config.ServerSelectionTimeout, config.MaxConnIdleTime, config.OperationTimeout, config.SocketTimeout)
-			opts.Monitor = newMongoMonitor()
-			opts.ServerMonitor = newMongoServerMonitor()
+			//opts.Monitor = newMongoMonitor()
+			//opts.ServerMonitor = newMongoServerMonitor()
 			return nil
 		})
 		if err != nil {

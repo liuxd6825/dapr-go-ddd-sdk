@@ -1,10 +1,7 @@
 package restapp
 
 import (
-	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/processutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 
@@ -103,8 +100,8 @@ func newServiceProcess(env *EnvConfig) processutils.Process {
 func newDaprProcess(env *EnvConfig) processutils.Process {
 	appId := env.App.AppId
 	appHttpPort := strconv.FormatInt(int64(env.App.HttpPort), 10)
-	//daprHttpPort := strconv.FormatInt(*env.Dapr.HttpPort, 10)
-	//daprGrpcPort := strconv.FormatInt(*env.Dapr.GrpcPort, 10)
+	daprHttpPort := strconv.FormatInt(*env.Dapr.HttpPort, 10)
+	daprGrpcPort := strconv.FormatInt(*env.Dapr.GrpcPort, 10)
 
 	/*
 		config := AbsFileName(env.Dapr.Server.Config)
@@ -119,8 +116,8 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	args := []string{
 		"-app-id=" + appId,
 		"-app-port=" + appHttpPort,
-		//"-dapr-http-port=" + daprHttpPort,
-		//"-dapr-grpc-port=" + daprGrpcPort,
+		"-dapr-http-port=" + daprHttpPort,
+		"-dapr-grpc-port=" + daprGrpcPort,
 		/*
 			"-log-level=" + logLevel,
 			"-log-output-type=" + logOutputType,
@@ -132,18 +129,17 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 
 		*/
 	}
-	if env.Dapr.Metadata != nil {
-		for k, v := range env.Dapr.Metadata {
+	if env.Dapr.StartArgs != nil {
+		for k, v := range env.Dapr.StartArgs {
 			arg := getDaprArg(k, v)
 			args = append(args, arg)
 		}
 	}
 
-	ctx := context.Background()
+	//ctx := context.Background()
 
-	line := strings.Join(args, " ")
-	logs.InfoMsg(ctx, "", "daprd "+line)
-
+	//line := strings.Join(args, " ")
+	//logs.InfoMsg(ctx, "", "daprd "+line)
 	p := processutils.NewProcess("daprd", args, "app-id="+appId, "app-port="+appHttpPort)
 	return p
 }

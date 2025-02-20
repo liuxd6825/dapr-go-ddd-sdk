@@ -121,7 +121,6 @@ type ResourceConfig struct {
 
 type Metadata map[string]string
 type DaprConfig struct {
-	Start               bool                   `yaml:"start" json:"start"`
 	Host                *string                `yaml:"host" json:"host"`
 	HttpPort            *int64                 `yaml:"httpPort" json:"httpPort"`
 	GrpcPort            *int64                 `yaml:"grpcPort" json:"grpcPort"`
@@ -131,7 +130,8 @@ type DaprConfig struct {
 	IdleConnTimeout     *int                   `yaml:"idleConnTimeout" json:"idleConnTimeout"`
 	EventStores         map[string]*EventStore `yaml:"eventStores" json:"eventStores"`
 	Actor               ActorConfig            `yaml:"actor" json:"actor"`
-	Metadata            Metadata               `yaml:"metadata" json:"metadata"`
+	Start               bool                   `yaml:"start" json:"start"`
+	StartArgs           Metadata               `yaml:"startArgs" json:"startArgs"`
 }
 
 // DaprServerConfig dapr服务端参数
