@@ -6,11 +6,35 @@ import (
 )
 
 type sqlProcess struct {
-	str string
+	str      string
+	tenantId string
 }
 
-func NewSqlProcess() Process {
-	return &sqlProcess{}
+func NewSqlProcess(tenantId string) Process {
+	return &sqlProcess{tenantId: tenantId}
+}
+
+func (p *sqlProcess) TenantId() string {
+	return p.tenantId
+}
+
+func (p *sqlProcess) OnFnProcess(fn *FuncValue) Value {
+	switch fn.Name {
+	case "sub":
+		p := NewSqlProcess(p.tenantId)
+		err := ParseProcess(fn.RSQL(), p)
+		if err != nil {
+			panic(err)
+		}
+		sql := p.GetSQL()
+		field := AsFieldName(fn.Args["field"])
+		table := fn.Args["table"]
+		sql = fmt.Sprintf("(select %s from %s where %s)", field, table, sql)
+		return &StringValue{Value: sql}
+	default:
+		return fn
+	}
+	return fn
 }
 
 func (p *sqlProcess) OnNotEquals(name string, value interface{}, rValue Value) {
@@ -35,28 +59,28 @@ func getLikeValue(value interface{}) string {
 }
 
 func (p *sqlProcess) OnNotLike(name string, value interface{}, rValue Value) {
-	val := getLikeValue(value)
+	val := getLikeValue(GetValue(rValue))
 	p.str = fmt.Sprintf("%s %s not like '%v'", p.str, name, val)
 }
 
 func (p *sqlProcess) OnGreaterThan(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s>%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s>%v", p.str, name, GetValue(rValue))
 }
 
 func (p *sqlProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s>=%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s>=%v", p.str, name, GetValue(rValue))
 }
 
 func (p *sqlProcess) OnLessThan(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s<%v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s<%v", p.str, name, GetValue(rValue))
 }
 
 func (p *sqlProcess) OnLessThanOrEquals(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s <= %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s <= %v", p.str, name, GetValue(rValue))
 }
 
 func (p *sqlProcess) OnIn(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s in %v", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s in %s", p.str, name, GetValue(rValue))
 }
 
 func (p *sqlProcess) OnNotIn(name string, value interface{}, rValue Value) {
@@ -100,20 +124,21 @@ func (p *sqlProcess) GetSQL() string {
 }
 
 func (p *sqlProcess) OnContains(name string, value interface{}, rValue Value) {
-	val := getLikeValue(value)
+	val := getLikeValue(GetValue(rValue))
 	p.str = fmt.Sprintf("%s %s like '%%%v%%'", p.str, name, val)
 }
 
 func (p *sqlProcess) OnNotContains(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s not like '%%%v%%'", p.str, name, value)
+	val := getLikeValue(GetValue(rValue))
+	p.str = fmt.Sprintf("%s %s not like '%%%v%%'", p.str, name, val)
 }
 
 func (p *sqlProcess) OnIsNull(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s IS NULL", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s IS NULL", p.str, name)
 }
 
 func (p *sqlProcess) OnNotIsNull(name string, value interface{}, rValue Value) {
-	p.str = fmt.Sprintf("%s %s IS NOT NULL", p.str, name, value)
+	p.str = fmt.Sprintf("%s %s IS NOT NULL", p.str, name)
 }
 
 func (p *sqlProcess) OnStart(name string, value interface{}, rValue Value) {

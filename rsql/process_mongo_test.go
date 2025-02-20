@@ -1,7 +1,6 @@
 package rsql
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -23,7 +22,7 @@ func TestIsNull(t *testing.T) {
 }
 
 func process(t *testing.T, tenantId string, input string) map[string]interface{} {
-	p := ddd_mongodb.NewMongoProcess()
+	p := NewMongoProcess()
 	err := ParseProcess(input, p)
 	assert.Error(t, err)
 	data, err := p.GetFilter(tenantId)

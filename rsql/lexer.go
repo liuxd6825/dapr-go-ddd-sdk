@@ -38,6 +38,7 @@ const (
 	StartToken           = TokenType("StartToken")
 	EndToken             = TokenType("EndToken")
 	EOFToken             = TokenType("EOFToken")
+	FuncToken            = TokenType("FuncToken")
 )
 
 type Token struct {
@@ -53,8 +54,8 @@ type Lexer struct {
 	buflen int
 }
 
-func unknownToken(messages ...string) Token {
-	return Token{
+func unknownToken(messages ...string) *Token {
+	return &Token{
 		Type:  UnknownToken,
 		Value: "",
 		Pos:   0,
@@ -70,9 +71,9 @@ func NewLexer(input string) *Lexer {
 	}
 }
 
-func (t *Lexer) Parse() ([]Token, error) {
-	var res []Token
-	var token Token
+func (t *Lexer) Parse() ([]*Token, error) {
+	var res []*Token
+	var token *Token
 	var err error
 	for {
 		token = t.nextToken()
@@ -91,7 +92,7 @@ func (t *Lexer) Parse() ([]Token, error) {
 	return res, nil
 }
 
-func (t *Lexer) nextToken() (token Token) {
+func (t *Lexer) nextToken() (token *Token) {
 	defer func() {
 		if r := recover(); r != nil {
 			token = unknownToken(fmt.Sprintf("%+v", r))
@@ -99,14 +100,16 @@ func (t *Lexer) nextToken() (token Token) {
 	}()
 	t.skipBlank()
 	if t.pos >= t.buflen {
-		return Token{
+		return &Token{
 			Type:  EOFToken,
 			Value: "",
 			Pos:   t.buflen,
 		}
 	}
 
-	if token = t.processBool(); token.Type != UnknownToken {
+	if token = t.processFunc(); token.Type != UnknownToken {
+		return token
+	} else if token = t.processBool(); token.Type != UnknownToken {
 		return token
 	} else if token = t.processOperator(); token.Type != UnknownToken {
 		return token
@@ -125,7 +128,53 @@ func (t *Lexer) nextToken() (token Token) {
 	}
 }
 
-func (t *Lexer) processBool() Token {
+func (t *Lexer) processFunc() *Token {
+	for _, fn := range FuncTypes {
+		if t.isFunc(t.pos, fn) {
+			tokenLen := t.getFuncLength(t.pos, fn)
+			return t.generateToken(FuncToken, t.pos+tokenLen)
+		}
+	}
+
+	return unknownToken()
+}
+
+func (t *Lexer) isFunc(pos int, funName string) bool {
+	s := t.buf[pos:]
+	if ok := strings.HasPrefix(s, funName+"{"); ok {
+		return ok
+	}
+	if ok := strings.HasSuffix(s, funName+" "); ok {
+		return ok
+	}
+	return false
+}
+
+func (t *Lexer) getFuncLength(pos int, funName string) int {
+	tokenLen := 0
+	s := t.buf[pos:]
+	index := strings.Index(s, "{")
+	if index == -1 {
+		return 0
+	}
+	s = s[index:]
+	count := 1
+	for i, char := range s {
+		if char == '{' {
+			count++
+		}
+		if char == '}' {
+			count--
+		}
+		if count == 1 {
+			tokenLen = i + 1
+			break
+		}
+	}
+	return index + tokenLen
+}
+
+func (t *Lexer) processBool() *Token {
 	if t.isString(t.pos, "true") {
 		return t.generateToken(BooleanToken, t.pos+4)
 	} else if t.isString(t.pos, "false") {
@@ -134,7 +183,7 @@ func (t *Lexer) processBool() Token {
 	return unknownToken()
 }
 
-func (t *Lexer) processOperator() Token {
+func (t *Lexer) processOperator() *Token {
 	if t.isBlankBefore(t.pos) && (t.isString(t.pos, "and") || t.isString(t.pos, "AND")) && t.isBlankAfter(t.pos+2) {
 		return t.generateToken(AndToken, t.pos+3)
 	} else if t.isBlankBefore(t.pos) && (t.isString(t.pos, "or") || t.isString(t.pos, "OR")) && t.isBlankAfter(t.pos+1) {
@@ -144,7 +193,7 @@ func (t *Lexer) processOperator() Token {
 
 }
 
-func (t *Lexer) processNumber() Token {
+func (t *Lexer) processNumber() *Token {
 	idx := t.pos
 	if t.isDigit(idx) || (t.charAt(idx) == '-' && t.isDigit(idx+1)) {
 		typ := IntegerToken
@@ -165,7 +214,7 @@ func (t *Lexer) processNumber() Token {
 	return unknownToken()
 }
 
-func (t *Lexer) processIdentifier() Token {
+func (t *Lexer) processIdentifier() *Token {
 	idx := t.pos
 	if t.isAlpha(idx) {
 		idx++
@@ -184,7 +233,7 @@ func (t *Lexer) processIdentifier() Token {
 	return unknownToken()
 }
 
-func (t *Lexer) processDate() Token {
+func (t *Lexer) processDate() *Token {
 	idx := t.pos
 	if t.isDigit(idx) && t.isDigit(idx+1) && t.isDigit(idx+2) && t.isDigit(idx+3) &&
 		t.isString(idx+4, "-") &&
@@ -217,7 +266,7 @@ func (t *Lexer) processDate() Token {
 	return unknownToken()
 }
 
-func (t *Lexer) processString() Token {
+func (t *Lexer) processString() *Token {
 	if t.charAt(t.pos) == '\'' || t.charAt(t.pos) == '"' {
 		quote := t.charAt(t.pos)
 		idx := strings.IndexByte(t.buf[t.pos+1:], quote) + t.pos + 1
@@ -228,7 +277,7 @@ func (t *Lexer) processString() Token {
 			panic(fmt.Errorf("unterminated quote %d, %d", t.pos, idx))
 			// t.error('Unterminated quote', t.pos, idx)
 		}
-		token := Token{
+		token := &Token{
 			Type:  StringToken,
 			Value: strings.Join(strings.Split(t.buf[t.pos+1:idx], "\\"+string(quote)), string(quote)),
 			Pos:   t.pos,
@@ -239,7 +288,7 @@ func (t *Lexer) processString() Token {
 	return unknownToken()
 }
 
-func (t *Lexer) processReserved() Token {
+func (t *Lexer) processReserved() *Token {
 	idx := t.pos
 	if t.isString(idx, "(") {
 		return t.generateToken(LeftParenToken, idx+1)
@@ -298,13 +347,15 @@ func (t *Lexer) charAt(pos int) uint8 {
 	return t.buf[pos]
 }
 
-func (t *Lexer) generateToken(ty TokenType, newPos int) Token {
-	res := Token{
+func (t *Lexer) generateToken(ty TokenType, newPos int) *Token {
+	res := &Token{
 		Type:  ty,
 		Value: t.buf[t.pos:newPos],
 		Pos:   t.pos,
 	}
-	res.Value = AsFieldName(res.Value)
+	if ty == IdentifierToken {
+		res.Value = AsFieldName(res.Value)
+	}
 	t.pos = newPos
 	return res
 }

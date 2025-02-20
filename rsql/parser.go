@@ -20,10 +20,10 @@ listValue  : value (',' value)*
 type iterator struct {
 	length int
 	idx    int
-	items  []Token
+	items  []*Token
 }
 
-func newIterator(items []Token) *iterator {
+func newIterator(items []*Token) *iterator {
 	return &iterator{
 		length: len(items),
 		idx:    0,
@@ -31,9 +31,9 @@ func newIterator(items []Token) *iterator {
 	}
 }
 
-func (t *iterator) get(idx int) Token {
+func (t *iterator) get(idx int) *Token {
 	if idx >= t.length {
-		return Token{
+		return &Token{
 			Type:  EOFToken,
 			Value: "",
 			Pos:   t.length,
@@ -42,11 +42,11 @@ func (t *iterator) get(idx int) Token {
 	return t.items[idx]
 }
 
-func (t *iterator) current() Token {
+func (t *iterator) current() *Token {
 	return t.get(t.idx)
 }
 
-func (t *iterator) currentAndMove(potentialCount ...int) Token {
+func (t *iterator) currentAndMove(potentialCount ...int) *Token {
 	count := 1
 	if len(potentialCount) > 0 {
 		count = potentialCount[0]
@@ -113,7 +113,7 @@ func or(tokens *iterator) (Expression, error) {
 	} else if len(items) == 1 {
 		return items[0], nil
 	}
-	return OrExpression{
+	return &OrExpression{
 		Items: items,
 	}, nil
 }
@@ -127,7 +127,7 @@ func and(tokens *iterator) (Expression, error) {
 	} else if len(items) == 1 {
 		return items[0], nil
 	}
-	return AndExpression{
+	return &AndExpression{
 		Items: items,
 	}, nil
 }
@@ -174,51 +174,46 @@ func comparison(tokens *iterator) (Expression, error) {
 	}
 	switch comparator.Type { // TODO Manage that directly to Tokens.
 	case NotContainsToken:
-		return NotContainsComparison{Comparison{id, args}}, nil
+		return &NotContainsComparison{Comparison{id, args}}, nil
 	case ContainsToken:
-		return ContainsComparison{Comparison{id, args}}, nil
+		return &ContainsComparison{Comparison{id, args}}, nil
 	case EqualsToken:
-		return EqualsComparison{Comparison{id, args}}, nil
+		return &EqualsComparison{Comparison{id, args}}, nil
 	case NotEqualsToken:
-		return NotEqualsComparison{Comparison{id, args}}, nil
+		return &NotEqualsComparison{Comparison{id, args}}, nil
 	case LikeToken:
-		return LikeComparison{Comparison{id, args}}, nil
+		return &LikeComparison{Comparison{id, args}}, nil
 	case NotLikeToken:
-		return NotLikeComparison{Comparison{id, args}}, nil
+		return &NotLikeComparison{Comparison{id, args}}, nil
 	case GreaterToken:
-		return GreaterThanComparison{Comparison{id, args}}, nil
+		return &GreaterThanComparison{Comparison{id, args}}, nil
 	case GreaterOrEqualsToken:
-		return GreaterThanOrEqualsComparison{Comparison{id, args}}, nil
+		return &GreaterThanOrEqualsComparison{Comparison{id, args}}, nil
 	case LessToken:
-		return LessThanComparison{Comparison{id, args}}, nil
+		return &LessThanComparison{Comparison{id, args}}, nil
 	case LessOrEqualsToken:
-		return LessThanOrEqualsComparison{Comparison{id, args}}, nil
+		return &LessThanOrEqualsComparison{Comparison{id, args}}, nil
 	case InToken:
-		tmp, ok := args.(ListValue)
-		var lv ListValue
-		if !ok {
-			lv = ListValue{Value: []Value{tmp}}
-		} else {
-			lv = tmp
-		}
-		return InComparison{Comparison{id, lv}}, nil
+		return &InComparison{Comparison{id, args}}, nil
 	case NotInToken:
-		tmp, ok := args.(ListValue)
-		var lv ListValue
+		tmp, ok := args.(*ListValue)
+		var lv *ListValue
 		if !ok {
-			lv = ListValue{Value: []Value{tmp}}
+			lv = &ListValue{Value: []Value{tmp}}
 		} else {
 			lv = tmp
 		}
-		return NotInComparison{Comparison{id, lv}}, nil
+		return &NotInComparison{Comparison{id, lv}}, nil
 	case NotIsNullToken:
-		return NotIsNullComparison{Comparison{id, args}}, nil
+		return &NotIsNullComparison{Comparison{id, args}}, nil
 	case IsNullToken:
-		return IsNullComparison{Comparison{id, args}}, nil
+		return &IsNullComparison{Comparison{id, args}}, nil
 	case StartToken:
-		return StartComparison{Comparison{id, args}}, nil
+		return &StartComparison{Comparison{id, args}}, nil
 	case EndToken:
-		return EndComparison{Comparison{id, args}}, nil
+		return &EndComparison{Comparison{id, args}}, nil
+	case FuncToken:
+		return &FuncComparison{Comparison{id, args}}, nil
 	}
 
 	return nil, fmt.Errorf("'comparator not managed for expression")
@@ -255,32 +250,34 @@ func valueList(tokens *iterator) (Value, error) {
 			return nil, fmt.Errorf("invalid list format, next must be comma or Right Parent")
 		}
 	}
-	return ListValue{items}, nil
+	return &ListValue{items}, nil
 }
 
 func value(tokens *iterator) (Value, error) {
 	v := tokens.currentAndMove()
 	switch v.Type {
+	case FuncToken:
+		return NewFuncValue(v.Value)
 	case StringToken:
-		return StringValue{v.Value}, nil
+		return &StringValue{Value: v.Value}, nil
 	case BooleanToken:
-		return BooleanValue{v.Value == "true"}, nil
+		return &BooleanValue{v.Value == "true"}, nil
 	case DoubleToken:
 		c, err := strconv.ParseFloat(v.Value, 64)
 		if err != nil {
 			return nil, err
 		}
-		return DoubleValue{c}, nil
+		return &DoubleValue{c}, nil
 	case IntegerToken:
 		c, err := strconv.ParseInt(v.Value, 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		return IntegerValue{c}, nil
+		return &IntegerValue{c}, nil
 	case DateToken:
-		return DateValue{v.Value}, nil
+		return &DateValue{v.Value}, nil
 	case DateTimeToken:
-		return DateTimeValue{v.Value}, nil
+		return &DateTimeValue{v.Value}, nil
 	}
 	return nil, fmt.Errorf("invalid type")
 }

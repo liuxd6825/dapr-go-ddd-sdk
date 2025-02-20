@@ -3,26 +3,26 @@ package rsql
 func GetValue(value Value) interface{} {
 	var v interface{}
 	switch value.(type) {
-	case StringValue:
-		sv, _ := value.(StringValue)
+	case *StringValue:
+		sv, _ := value.(*StringValue)
 		v = sv.Value
-	case IntegerValue:
-		sv, _ := value.(IntegerValue)
+	case *IntegerValue:
+		sv, _ := value.(*IntegerValue)
 		v = sv.Value
-	case DateValue:
-		sv, _ := value.(DateValue)
+	case *DateValue:
+		sv, _ := value.(*DateValue)
 		v = sv.Value
-	case DoubleValue:
-		sv, _ := value.(DoubleValue)
+	case *DoubleValue:
+		sv, _ := value.(*DoubleValue)
 		v = sv.Value
-	case DateTimeValue:
-		sv, _ := value.(DateTimeValue)
+	case *DateTimeValue:
+		sv, _ := value.(*DateTimeValue)
 		v = sv.Value
-	case BooleanValue:
-		sv, _ := value.(BooleanValue)
+	case *BooleanValue:
+		sv, _ := value.(*BooleanValue)
 		v = sv.Value
-	case ListValue:
-		sv, _ := value.(ListValue)
+	case *ListValue:
+		sv, _ := value.(*ListValue)
 		v = GetValueList(sv)
 	default:
 		v = value
@@ -30,7 +30,7 @@ func GetValue(value Value) interface{} {
 	return v
 }
 
-func GetValueList(listValue ListValue) []interface{} {
+func GetValueList(listValue *ListValue) []interface{} {
 	list := make([]interface{}, 0)
 	for _, v := range listValue.Value {
 		list = append(list, GetValue(v))

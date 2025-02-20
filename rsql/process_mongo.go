@@ -44,123 +44,131 @@ func newFilterItem(parent *filterItem, name string) *filterItem {
 	}
 }
 
-func (m *mongoProcess) init() {
-	m.current = m.item
+func (p *mongoProcess) init() {
+	p.current = p.item
 }
 
-func (m *mongoProcess) OnAndItem() {
-	m.current.name = "$and"
+func (p *mongoProcess) OnFnProcess(fn *FuncValue) Value {
+	return fn
 }
 
-func (m *mongoProcess) OnAndStart() {
-	m.current = m.current.addChildItem("$and", nil)
+func (p *mongoProcess) OnAndItem() {
+	p.current.name = "$and"
 }
 
-func (m *mongoProcess) OnAndEnd() {
-	m.current = m.current.parent
+func (p *mongoProcess) OnAndStart() {
+	p.current = p.current.addChildItem("$and", nil)
 }
 
-func (m *mongoProcess) OnOrItem() {
-	m.current.name = "$or"
+func (p *mongoProcess) OnAndEnd() {
+	p.current = p.current.parent
 }
 
-func (m *mongoProcess) OnOrStart() {
-	m.current = m.current.addChildItem("$or", nil)
+func (p *mongoProcess) OnOrItem() {
+	p.current.name = "$or"
 }
 
-func (m *mongoProcess) OnOrEnd() {
-	m.current = m.current.parent
+func (p *mongoProcess) OnOrStart() {
+	p.current = p.current.addChildItem("$or", nil)
 }
 
-func (m *mongoProcess) OnEquals(name string, value interface{}, rValue Value) {
+func (p *mongoProcess) OnOrEnd() {
+	p.current = p.current.parent
+}
+
+func (p *mongoProcess) OnEquals(name string, value interface{}, rValue Value) {
 	value = getValue(rValue)
-	m.current.addChildItem(AsFieldName(name), value)
+	p.current.addChildItem(AsFieldName(name), value)
 }
 
-func (m *mongoProcess) OnNotEquals(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", m.getValue(rValue)}})
+func (p *mongoProcess) OnNotEquals(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$ne", p.getValue(rValue)}})
 }
 
-func (m *mongoProcess) OnLike(name string, value interface{}, rValue Value) {
+func (p *mongoProcess) OnLike(name string, value interface{}, rValue Value) {
 	value = getValue(rValue)
 	pattern := fmt.Sprintf("%s", value)
 	pattern = strings.ReplaceAll(pattern, "*", "")
 
-	m.current.addChildItem(AsFieldName(name), primitive.Regex{Pattern: pattern, Options: "im"})
+	p.current.addChildItem(AsFieldName(name), primitive.Regex{Pattern: pattern, Options: "im"})
 }
 
-func (m *mongoProcess) OnNotLike(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
+func (p *mongoProcess) OnNotLike(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$lt", p.getValue(rValue)}})
 }
 
-func (m *mongoProcess) OnGreaterThan(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$gt", m.getValue(rValue)}})
+func (p *mongoProcess) OnGreaterThan(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$gt", p.getValue(rValue)}})
 }
 
-func (m *mongoProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$gte", m.getValue(rValue)}})
+func (p *mongoProcess) OnGreaterThanOrEquals(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$gte", p.getValue(rValue)}})
 }
 
-func (m *mongoProcess) OnLessThan(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lt", m.getValue(rValue)}})
+func (p *mongoProcess) OnLessThan(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$lt", p.getValue(rValue)}})
 }
 
-func (m *mongoProcess) OnLessThanOrEquals(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$lte", m.getValue(rValue)}})
+func (p *mongoProcess) OnLessThanOrEquals(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$lte", p.getValue(rValue)}})
 }
 
-func (m *mongoProcess) OnIn(name string, value interface{}, rValue Value) {
-	listValue, _ := rValue.(ListValue)
+func (p *mongoProcess) OnIn(name string, value interface{}, rValue Value) {
+	listValue, _ := rValue.(*ListValue)
 	values := getValueList(listValue)
-	m.current.addChildItem(AsFieldName(name), bson.M{"$in": values})
+	p.current.addChildItem(AsFieldName(name), bson.M{"$in": values})
 }
 
-func (m *mongoProcess) OnNotIn(name string, value interface{}, rValue Value) {
-	listValue, _ := rValue.(ListValue)
+func (p *mongoProcess) OnNotIn(name string, value interface{}, rValue Value) {
+	listValue, _ := rValue.(*ListValue)
 	values := getValueList(listValue)
-	m.current.addChildItem(AsFieldName(name), bson.M{"$nin": values})
+	p.current.addChildItem(AsFieldName(name), bson.M{"$nin": values})
 }
 
-func (m *mongoProcess) OnContains(name string, value interface{}, rValue Value) {
-	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
+func (p *mongoProcess) OnContains(name string, value interface{}, rValue Value) {
+	val := fmt.Sprintf(".*%v.*", p.getValue(rValue))
 	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$regex", primitive.Regex{Pattern: val, Options: "i"}}})
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$regex", primitive.Regex{Pattern: val, Options: "i"}}})
 }
 
-func (m *mongoProcess) OnNotContains(name string, value interface{}, rValue Value) {
-	val := fmt.Sprintf(".*%v.*", m.getValue(rValue))
+func (p *mongoProcess) OnNotContains(name string, value interface{}, rValue Value) {
+	val := fmt.Sprintf(".*%v.*", p.getValue(rValue))
 	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
 }
 
-func (m *mongoProcess) OnIsNull(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$in", []interface{}{nil}}})
+func (p *mongoProcess) OnIsNull(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$in", []interface{}{nil}}})
 }
 
-func (m *mongoProcess) OnNotIsNull(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+func (p *mongoProcess) OnNotIsNull(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
 }
 
-func (m *mongoProcess) OnStart(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+func (p *mongoProcess) OnStart(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
 }
 
-func (m *mongoProcess) OnEnd(name string, value interface{}, rValue Value) {
-	m.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
+func (p *mongoProcess) OnEnd(name string, value interface{}, rValue Value) {
+	p.current.addChildItem(AsFieldName(name), bson.D{{"$ne", nil}})
 }
 
-func (m *mongoProcess) GetSQL() string {
+func (p *mongoProcess) OnInSubTable(name string, value interface{}, rValue Value) {
+
+}
+
+func (p *mongoProcess) GetSQL() string {
 	return ""
 }
 
-func (m *mongoProcess) GetFilter(tenantId string) (map[string]any, error) {
+func (p *mongoProcess) GetFilter(tenantId string) (map[string]any, error) {
 	data := make(map[string]any)
-	if len(m.errList) > 0 {
-		msg := strings.Join(m.errList, " ")
+	if len(p.errList) > 0 {
+		msg := strings.Join(p.errList, " ")
 		return nil, errors.New(msg)
 	}
 
-	m.item.getValues(data)
+	p.item.getValues(data)
 	m1, ok := data[""]
 	if ok {
 		d1 := m1.(map[string]any)
@@ -184,14 +192,14 @@ func (m *mongoProcess) GetFilter(tenantId string) (map[string]any, error) {
 	return data, nil
 }
 
-func (m *mongoProcess) addError(name string, err error) {
+func (p *mongoProcess) addError(name string, err error) {
 	if err != nil {
 		msg := fmt.Sprintf("%v %v; ", name, err.Error())
-		m.errList = append(m.errList, msg)
+		p.errList = append(p.errList, msg)
 	}
 }
 
-func (m *mongoProcess) getValue(rValue Value) interface{} {
+func (p *mongoProcess) getValue(rValue Value) interface{} {
 	v := getValue(rValue)
 	return v
 }

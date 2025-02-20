@@ -257,7 +257,7 @@ func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 }
 
 func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) error {
-	sql, err := d.getSql(filter)
+	sql, err := d.getSql(tenantId, filter)
 	if err != nil {
 		return err
 	}
@@ -341,7 +341,7 @@ func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 }
 
 func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rSql string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	sql, err := d.getSql(rSql)
+	sql, err := d.getSql(tenantId, rSql)
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
@@ -494,12 +494,12 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 	}
 	filter := getSqlAnds(f1, f2, f3)
 
-	res, found, err := d.sum(ctx, filter, qry.GetValueCols(), resData, opts...)
+	res, found, err := d.sum(ctx, qry.GetTenantId(), filter, qry.GetValueCols(), resData, opts...)
 	return res, found, err
 }
 
-func (d *Dao[T]) sum(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
-	p := rsql.NewSqlProcess()
+func (d *Dao[T]) sum(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+	p := rsql.NewSqlProcess(tenantId)
 	if err := rsql.ParseProcess(rSql, p); err != nil {
 		return nil, false, err
 	}
@@ -602,8 +602,8 @@ func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]any) string {
 	return strings.Join(ands, " AND ")
 }
 
-func (d *Dao[T]) getSql(rSql string) (string, error) {
-	proc := rsql.NewSqlProcess()
+func (d *Dao[T]) getSql(tenantId, rSql string) (string, error) {
+	proc := rsql.NewSqlProcess(tenantId)
 	err := rsql.ParseProcess(rSql, proc)
 	return proc.GetSQL(), err
 }
@@ -616,7 +616,7 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*d
 	if filter == "" {
 		sqlWhere = fmt.Sprintf("tenant_id='%s'", tenantId)
 	} else {
-		process := rsql.NewSqlProcess()
+		process := rsql.NewSqlProcess(tenantId)
 		if err := rsql.ParseProcess(filter, process); err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}
