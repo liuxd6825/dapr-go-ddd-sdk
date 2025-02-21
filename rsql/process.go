@@ -3,7 +3,6 @@ package rsql
 import (
 	"errors"
 	"fmt"
-	"github.com/dapr/components-contrib/liuxd/common/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"time"
 )
@@ -195,28 +194,28 @@ func getValue(value Value) any {
 	var v any
 	var err error
 	switch value.(type) {
-	case *rsql.StringValue:
+	case *StringValue:
 		sv, _ := value.(*StringValue)
 		v = sv.Value
-	case *rsql.IntegerValue:
+	case *IntegerValue:
 		sv, _ := value.(*IntegerValue)
 		v = sv.Value
-	case *rsql.DateValue:
+	case *DateValue:
 		sv, _ := value.(*DateValue)
 		v, err = time.Parse(dateLayout, sv.Value)
-	case *rsql.DoubleValue:
+	case *DoubleValue:
 		sv, _ := value.(*DoubleValue)
 		v = sv.Value
-	case *rsql.DateTimeValue:
+	case *DateTimeValue:
 		sv, _ := value.(*DateTimeValue)
 		v, err = time.Parse(dateTimeLayout, sv.Value)
-	case *rsql.BooleanValue:
+	case *BooleanValue:
 		sv, _ := value.(*BooleanValue)
 		v = sv.Value
-	case *rsql.ListValue:
+	case *ListValue:
 		sv, _ := value.(*ListValue)
 		v = getValueList(sv)
-	case *rsql.FuncValue:
+	case *FuncValue:
 		sv, _ := value.(*FuncValue)
 		v = sv.Value
 	default:
