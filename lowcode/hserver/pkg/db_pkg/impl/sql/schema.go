@@ -21,14 +21,14 @@ func NewDBSchema(sch *jsonschema.Schema) (*dbschema.Schema, error) {
 	if primaryField == nil {
 		idField := dbSch.FieldsByDBName["id"]
 		if idField == nil {
-			idField = addDbField(dbSch, "id", dbschema.String)
+			idField = addDbField(dbSch, "id", dbschema.String, 30)
 		}
 		idField.PrimaryKey = true
 	}
 
-	tenantIdField := dbSch.FieldsByDBName["tenant_id"]
+	tenantIdField := dbSch.FieldsByName["tenantId"]
 	if tenantIdField == nil {
-		tenantIdField = addDbField(dbSch, "tenant_id", dbschema.String)
+		tenantIdField = addDbField(dbSch, "tenantId", dbschema.String, 20)
 	} else {
 		tenantIdField.NotNull = true
 	}
@@ -47,7 +47,8 @@ func addFields(sch *jsonschema.Schema, dbSch *dbschema.Schema) (primaryField *db
 	}
 	for _, p := range sch.Properties {
 		dataType := getDataType(p)
-		field := addDbField(dbSch, p.Name, dataType)
+		size := 0
+		field := addDbField(dbSch, p.Name, dataType, size)
 		if field.PrimaryKey {
 			primaryField = field
 		}
@@ -80,7 +81,7 @@ func newDbSchema(dest *jsonschema.Schema) *dbschema.Schema {
 		ModelType:           reflect.TypeOf(map[string]any{}),
 	}
 
-	addDbField(s, "tenantId", dbschema.String)
+	//addDbField(s, "tenantId", dbschema.String)
 	return s
 }
 func getDataType(property *jsonschema.Schema) dbschema.DataType {
@@ -89,6 +90,9 @@ func getDataType(property *jsonschema.Schema) dbschema.DataType {
 	}
 
 	if property.Types.Contains(jsonschema.JsonType_DateType) {
+		return dbschema.Time
+	}
+	if property.Types.Contains(jsonschema.JsonType_DateTimeType) {
 		return dbschema.Time
 	}
 	if property.Types.Contains(jsonschema.JsonType_IntegerType) {
@@ -108,9 +112,10 @@ func getDataType(property *jsonschema.Schema) dbschema.DataType {
 	}
 	return dbschema.String
 }
-func addDbField(s *dbschema.Schema, name string, dataType dbschema.DataType) *dbschema.Field {
+func addDbField(s *dbschema.Schema, name string, dataType dbschema.DataType, size int) *dbschema.Field {
 	dbName := stringutils.AsFieldName(name)
 	fieldType := getFieldType(dataType)
+	fieldSize := getFieldSize(dataType, size)
 	field := &dbschema.Field{
 		FieldType:         fieldType,
 		IndirectFieldType: fieldType,
@@ -120,6 +125,7 @@ func addDbField(s *dbschema.Schema, name string, dataType dbschema.DataType) *db
 		Creatable:         true,
 		Updatable:         true,
 		Readable:          true,
+		Size:              fieldSize,
 	}
 	s.Fields = append(s.Fields, field)
 	s.FieldsByDBName[dbName] = field
@@ -142,6 +148,30 @@ func setDbField(field *dbschema.Field, propField *jsonschema.Schema) {
 		field.Unique = propField.Unique
 
 	*/
+}
+
+func getFieldSize(fieldType dbschema.DataType, size int) int {
+	if size > 0 {
+		return size
+	}
+	switch fieldType {
+	case dbschema.Bool:
+		return 2
+	case dbschema.String:
+		return 100
+	case dbschema.Int:
+		return 10
+	case dbschema.Float:
+		return 10
+	case dbschema.Time:
+		return 10
+	case dbschema.Object:
+		return 1000
+	case dbschema.Array:
+		return 100
+	default:
+		return size
+	}
 }
 
 func getFieldType(dbType dbschema.DataType) reflect.Type {
