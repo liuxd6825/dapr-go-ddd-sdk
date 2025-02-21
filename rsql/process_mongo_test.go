@@ -1,6 +1,8 @@
 package rsql
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -21,10 +23,18 @@ func TestIsNull(t *testing.T) {
 	process(t, "001", "taskId=='0001' and errors=!null=0")
 }
 
-func process(t *testing.T, tenantId string, input string) map[string]interface{} {
-	p := NewMongoProcess()
+func Test_SubQuery(t *testing.T) {
+	process(t, "test", "id=in=sub(table:human_certificate, field:human_id, rsql:certificate_code~='2222')")
+}
+
+func process(t *testing.T, tenantId string, input string) any {
+	p := NewMongoProcess(tenantId)
 	err := ParseProcess(input, p)
 	assert.Error(t, err)
-	data, err := p.GetFilter(tenantId)
+	data := p.GetFilter()
+
+	jsonText, err := json.Marshal(data)
+	assert.NoError(t, err)
+	fmt.Println(string(jsonText))
 	return data
 }

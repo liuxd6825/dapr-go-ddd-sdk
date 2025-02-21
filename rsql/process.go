@@ -36,9 +36,9 @@ type Process interface {
 	OnStart(name string, value interface{}, rValue Value)
 	OnEnd(name string, value interface{}, rValue Value)
 
-	OnFnProcess(fn *FuncValue) Value
+	OnFnProcess(expr Expression, fn *FuncValue) Value
 	GetSQL() string
-	GetFilter(tenantId string) (map[string]any, error)
+	GetFilter() any
 }
 
 func ParseProcess(input string, process Process) error {
@@ -65,7 +65,10 @@ func parseProcess(expr Expression, process Process) error {
 	if v, ok := expr.(ValueComparison); ok {
 		val := v.Value()
 		if fn, ok := val.(*FuncValue); ok {
-			val = process.OnFnProcess(fn)
+			val = process.OnFnProcess(expr, fn)
+			if val == nil {
+				return nil
+			}
 			v.SetValue(val)
 		}
 	}

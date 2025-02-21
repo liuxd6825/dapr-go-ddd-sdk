@@ -1196,7 +1196,7 @@ func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	}
 
 	var err error
-	process := rsql.NewMongoProcess()
+	process := rsql.NewMongoProcess(qry.GetTenantId())
 
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
@@ -1213,10 +1213,7 @@ func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	if err := rsql.ParseProcess(filter, process); err != nil {
 		return nil, false, err
 	}
-	filterMap, err := process.GetFilter(qry.GetTenantId())
-	if err != nil {
-		return nil, false, err
-	}
+	filterMap := process.GetFilter()
 
 	_, found, err := r.sum(ctx, filterMap, qry.GetValueCols(), data, opts...)
 	return data, found, err
@@ -1323,14 +1320,11 @@ func (r *Dao[T]) GetFilterMap(tenantId, rsql string) map[string]any {
 }
 
 func (r *Dao[T]) getFilterMap(tenantId, rSql string) (map[string]any, error) {
-	process := rsql.NewMongoProcess()
+	process := rsql.NewMongoProcess(tenantId)
 	if err := rsql.ParseProcess(rSql, process); err != nil {
 		return nil, err
 	}
-	filterMap, err := process.GetFilter(tenantId)
-	if err != nil {
-		return nil, err
-	}
+	filterMap := process.GetFilter()
 	return filterMap, nil
 }
 

@@ -87,6 +87,21 @@ func (c *Comparison) SetValue(val Value) {
 	c.Val = val
 }
 
+func (c *Comparison) GetIdentifier() Identifier {
+	return c.Identifier
+}
+func (c *Comparison) SetIdentifier(val Identifier) {
+	c.Identifier = val
+}
+
+type GetIdentifier interface {
+	GetIdentifier() Identifier
+}
+
+type SetIdentifier interface {
+	SetIdentifier(val Identifier)
+}
+
 type EqualsComparison struct{ Comparison }
 
 func (c *EqualsComparison) ExpressionName() string { return "==" }

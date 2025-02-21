@@ -41,6 +41,7 @@ func (d *Definition) addParamsType(params map[string]common.ParamsType, srcFs af
 			if err != nil {
 				return err
 			}
+			fileName = strings.Replace(fileName, "\\", "/", -1) // 解决在window上目录格式问题
 			name := strings.Replace(fileName, d.rootPath+"/", "", 1)
 			params[name] = paramsType
 		}
