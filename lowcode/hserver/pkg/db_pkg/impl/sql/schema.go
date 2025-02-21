@@ -10,32 +10,53 @@ import (
 )
 
 // NewDBSchema get data type from dialector with extra schema table
-func NewDBSchema(dest *jsonschema.Schema) (*dbschema.Schema, error) {
-	if dest == nil {
-		return nil, fmt.Errorf("%w: %+v", dbschema.ErrUnsupportedDataType, dest)
+func NewDBSchema(sch *jsonschema.Schema) (*dbschema.Schema, error) {
+	if sch == nil {
+		return nil, fmt.Errorf("%w: %+v", dbschema.ErrUnsupportedDataType, sch)
 	}
 
-	s := newDbSchema(dest)
-	var primaryField *dbschema.Field
-	for _, p := range dest.Properties {
+	dbSch := newDbSchema(sch)
+	primaryField := addFields(sch, dbSch)
+
+	if primaryField == nil {
+		idField := dbSch.FieldsByDBName["id"]
+		if idField == nil {
+			idField = addDbField(dbSch, "id", dbschema.String)
+		}
+		idField.PrimaryKey = true
+	}
+
+	tenantIdField := dbSch.FieldsByDBName["tenant_id"]
+	if tenantIdField == nil {
+		tenantIdField = addDbField(dbSch, "tenant_id", dbschema.String)
+	} else {
+		tenantIdField.NotNull = true
+	}
+
+	initDbSchema(dbSch)
+	return dbSch, nil
+}
+
+func addFields(sch *jsonschema.Schema, dbSch *dbschema.Schema) (primaryField *dbschema.Field) {
+	for _, p := range sch.AllOf {
+		if p.Ref != nil {
+			if v := addFields(p.Ref, dbSch); v != nil {
+				primaryField = v
+			}
+		}
+	}
+	for _, p := range sch.Properties {
 		dataType := getDataType(p)
-		field := addDbField(s, p.Name, dataType)
-		setDbField(field, p)
+		field := addDbField(dbSch, p.Name, dataType)
 		if field.PrimaryKey {
 			primaryField = field
 		}
+		setDbField(field, p)
 	}
-
-	if primaryField == nil {
-		idField := addDbField(s, "id", dbschema.String)
-		idField.PrimaryKey = true
-	}
-	initDbSchema(s)
-	return s, nil
+	return primaryField
 }
 
 func initDbSchema(s *dbschema.Schema) {
-
 	for k, f := range s.FieldsByDBName {
 		if f.PrimaryKey {
 			s.PrimaryFields = append(s.PrimaryFields, f)
