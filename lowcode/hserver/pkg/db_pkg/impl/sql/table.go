@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/jsonschema/v6"
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ type Table struct {
 	db        *gorm.DB
 }
 
-func NewTable(db *gorm.DB, schema *jsonschema.Schema) *Table {
+func NewTable(db *gorm.DB, schema *jsonschema.Schema) db.Table {
 	dbSchema, err := NewDBSchema(schema)
 	if err != nil {
 		panic(err)

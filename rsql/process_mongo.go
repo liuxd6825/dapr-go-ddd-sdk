@@ -174,6 +174,7 @@ func (p *mongoProcess) OnFnProcess(expr Expression, fn *FuncValue) Value {
 		}
 		np := newMongoProcess(p.tenantId)
 		np.asTableName = tableAs
+		np.current = p.current
 		err := ParseProcess(fn.RSQL(), np)
 		if err != nil {
 			panic(err)
@@ -186,8 +187,8 @@ func (p *mongoProcess) OnFnProcess(expr Expression, fn *FuncValue) Value {
 			as:           tableAs,
 		})
 
-		filter := np.GetFilter()
-		p.current.addChildItem("$match", filter)
+		//filter := np.GetFilter()
+		//p.current.addChildItem("$match", filter)
 		return nil
 	default:
 		return nil
@@ -211,6 +212,9 @@ func (p *mongoProcess) OnEnd(name string, value interface{}, rValue Value) {
 	p.current.addChildItem(p.getFieldName(name), bson.D{{"$ne", nil}})
 }
 
+func (p *mongoProcess) addChildItem(name string, value interface{}) {
+	p.current.addChildItem(p.getFieldName(name), value)
+}
 func (p *mongoProcess) GetSQL() string {
 	return ""
 }
@@ -249,8 +253,7 @@ func (p *mongoProcess) GetFilter() any {
 	}
 
 	var list []map[string]any
-	list = append(list, bson.M{"$match": match})
-
+	// $lookup必须放在$match前面
 	for _, v := range p.lookup {
 		list = append(list, map[string]any{
 			"$lookup": bson.M{
@@ -264,7 +267,7 @@ func (p *mongoProcess) GetFilter() any {
 			"$unwind": "$" + v.as,
 		})
 	}
-
+	list = append(list, bson.M{"$match": match})
 	return list
 }
 
