@@ -55,7 +55,7 @@ func parseNonQuotedJSON(query string) (map[string]any, error) {
 	return result, nil
 }
 
-// 将类似 "table:orderItems;field:customerId;rsql:product=like=*book*" 转换为 map[string]string
+// 将类似 "table:orderItems,field:customerId,rsql:product=like=*book*" 转换为 map[string]string
 func parseQuery(query string) (map[string]string, error) {
 	// 创建一个空的 map 用来存储结果
 	result := make(map[string]string)

@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -56,10 +57,7 @@ func NewDaoWithDbKey[T any](dbKey string, eb ddd.EntityBuilder[T], tableName str
 }
 
 func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T], tableName string) *Dao[T] {
-	entity, err := entityBuilder.NewEntity()
-	if err != nil {
-		panic(err)
-	}
+	entity := entityBuilder.NewEntity()
 
 	if !initializePlugin {
 		initializePlugin = true
@@ -79,10 +77,8 @@ func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T]
 }
 
 func newDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T], tableName string) *Dao[T] {
-	entity, err := entityBuilder.NewEntity()
-	if err != nil {
-		panic(err)
-	}
+	entity := entityBuilder.NewEntity()
+
 	return &Dao[T]{
 		entityBuilder: entityBuilder,
 		db:            db,
@@ -104,11 +100,11 @@ func (d *Dao[T]) ExecSql(sql string) error {
 	return d.db.Exec(sql).Error
 }
 
-func (d *Dao[T]) NewEntity() (T, error) {
+func (d *Dao[T]) NewEntity() T {
 	return d.entityBuilder.NewEntity()
 }
 
-func (d *Dao[T]) NewEntityList() ([]T, error) {
+func (d *Dao[T]) NewEntityList() []T {
 	return d.entityBuilder.NewEntityList()
 }
 
@@ -144,11 +140,8 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 }
 
 func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	v, err := d.NewEntity()
-	if err != nil {
-		panic(err)
-	}
-	err = gp.Try(func() error {
+	v := d.NewEntity()
+	err := gp.Try(func() error {
 		return d.table(ctx).Model(v).CreateInBatches(entities, len(entities)).Error
 	}).Error
 	return ddd_repository.NewSetManyResult(entities, err)
@@ -162,12 +155,9 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 }
 
 func (d *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
-	v, err := d.NewEntity()
-	if err != nil {
-		panic(err)
-	}
+	v := d.NewEntity()
 	var res *gorm.DB
-	err = gp.Try(func() error {
+	err := gp.Try(func() error {
 		res = d.table(ctx).Model(v).Updates(data)
 		return res.Error
 	}).Error
@@ -178,10 +168,11 @@ func (d *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 }
 
 func (d *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	v, err := d.NewEntity()
-	if err != nil {
-		panic(err)
-	}
+	var err error
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	v := d.NewEntity()
 	model := d.table(ctx).Model(v)
 	for _, e := range entities {
 		id := d.GetId(e)
@@ -286,7 +277,7 @@ func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_rep
 	return ddd_repository.NewSetResult[T](null, res.Error)
 }
 
-func (d *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+func (d *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var null T
 	sql := d.mapAsSql(tenantId, filterMap)
 	table := d.table(ctx)
@@ -372,10 +363,13 @@ func (d *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 
 func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
-		list, err := d.entityBuilder.NewEntityList()
-		if err != nil {
-			return nil, false, err
-		}
+		var err error
+		defer func() {
+			err = errors.GetRecoverError(err, recover())
+		}()
+
+		list := d.entityBuilder.NewEntityList()
+
 		tx := d.table(ctx)
 
 		if len(query.GetFields()) > 0 {
@@ -461,10 +455,7 @@ func (d *Dao[T]) FindDistinct(ctx context.Context, qry ddd_repository.FindDistin
 }
 
 func (d *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
-	data, err := d.NewEntityList()
-	if err != nil {
-		return nil, false, err
-	}
+	data := d.NewEntityList()
 	_, found, err := d.Sum(ctx, qry, &data, opts...)
 	return data, found, err
 }
@@ -499,7 +490,7 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 }
 
 func (d *Dao[T]) sum(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
-	p := rsql.NewSqlProcess(tenantId)
+	p := rsql_sql.NewProcess(tenantId)
 	if err := rsql.ParseProcess(rSql, p); err != nil {
 		return nil, false, err
 	}
@@ -580,7 +571,11 @@ func (d *Dao[T]) GetFilterMap(tenantId string, rSql string) map[string]any {
 	return map[string]any{}
 }
 
-func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]any) string {
+func (d *Dao[T]) mapAsSql(tenantId string, mapData any) string {
+	filterMap, ok := mapData.(map[string]any)
+	if ok {
+		panic(errors.New("filter data type is not string"))
+	}
 	if filterMap == nil || len(filterMap) == 0 {
 		return fmt.Sprintf(`tenant_id='%s'`, tenantId)
 	}
@@ -603,7 +598,7 @@ func (d *Dao[T]) mapAsSql(tenantId string, filterMap map[string]any) string {
 }
 
 func (d *Dao[T]) getSql(tenantId, rSql string) (string, error) {
-	proc := rsql.NewSqlProcess(tenantId)
+	proc := rsql_sql.NewProcess(tenantId)
 	err := rsql.ParseProcess(rSql, proc)
 	return proc.GetSQL(), err
 }
@@ -616,7 +611,7 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*d
 	if filter == "" {
 		sqlWhere = fmt.Sprintf("tenant_id='%s'", tenantId)
 	} else {
-		process := rsql.NewSqlProcess(tenantId)
+		process := rsql_sql.NewProcess(tenantId)
 		if err := rsql.ParseProcess(filter, process); err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err)
 		}

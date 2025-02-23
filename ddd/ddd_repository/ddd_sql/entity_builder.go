@@ -9,14 +9,14 @@ func NewMapEntityBuilder() ddd.EntityBuilder[map[string]any] {
 	return &MapEntityBuilder[map[string]any]{}
 }
 
-func (m *MapEntityBuilder[T]) NewEntity() (T, error) {
+func (m *MapEntityBuilder[T]) NewEntity() T {
 	data := map[string]any{}
-	return T(data), nil
+	return T(data)
 }
 
-func (m *MapEntityBuilder[T]) NewEntityList() ([]T, error) {
+func (m *MapEntityBuilder[T]) NewEntityList() []T {
 	list := []T{}
-	return list, nil
+	return list
 }
 
 func (m *MapEntityBuilder[T]) GetTenantId(entity T) string {

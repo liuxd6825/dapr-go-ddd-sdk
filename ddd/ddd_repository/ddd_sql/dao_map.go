@@ -26,14 +26,14 @@ func NewMapDao(db *gorm.DB, dbKey string, tableName string) *MapDao {
 	}
 }
 
-func (m *MapDao) NewEntity() (map[string]any, error) {
-	v, err := m.dao.NewEntity()
-	return v, err
+func (m *MapDao) NewEntity() map[string]any {
+	v := m.dao.NewEntity()
+	return v
 }
 
-func (m *MapDao) NewEntityList() ([]map[string]any, error) {
-	v, err := m.dao.NewEntityList()
-	return v, err
+func (m *MapDao) NewEntityList() []map[string]any {
+	v := m.dao.NewEntityList()
+	return v
 }
 
 func (m *MapDao) GetTenantId(entity map[string]any) string {

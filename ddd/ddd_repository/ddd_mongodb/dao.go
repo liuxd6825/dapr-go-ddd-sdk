@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -69,11 +70,11 @@ func (r *Dao[T]) GetMetadata() map[string]any {
 	return r.metadata
 }
 
-func (r *Dao[T]) NewEntity() (T, error) {
+func (r *Dao[T]) NewEntity() T {
 	return r.entityBuilder.NewEntity()
 }
 
-func (r *Dao[T]) NewEntityList() ([]T, error) {
+func (r *Dao[T]) NewEntityList() []T {
 	return r.entityBuilder.NewEntityList()
 }
 
@@ -135,10 +136,7 @@ func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.C
 //	 @param ctx  上下文
 //	 @return error 错误
 func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
-	e, err := r.NewEntity()
-	if err != nil {
-		return err
-	}
+	e := r.NewEntity()
 	t := reflect.TypeOf(e)
 	elem := t.Elem()
 	var models []mongo.IndexModel
@@ -211,7 +209,7 @@ func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
 	}
 
 	col := r.getCollection(ctx)
-	_, err = col.Indexes().DropAll(ctx)
+	_, err := col.Indexes().DropAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -367,10 +365,13 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...ddd_repositor
 	return entity, err
 }
 
-func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
-	filterMap, err := r.getFilterMap(tenantId, filter)
+func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, rsql string, data any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
+	filter, err := r.getFilter(tenantId, rsql)
 	if err != nil {
 		return ddd_repository.NewSetManyCountResultError(err)
+	}
+	if filter.IsAggregate() {
+		return ddd_repository.NewSetManyCountResultError(errors.New("aggregate update is not supported"))
 	}
 	opt := ddd_repository.NewOptions(opts...)
 	return r.DoSetManyCount(func() (*mongo.UpdateResult, error) {
@@ -378,7 +379,7 @@ func (r *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 		setData := bson.M{"$set": mdata}
 		updateOptions := getUpdateOptions(opts...)
 		sCtx := r.getSessionCtx(ctx)
-		res, err := r.getCollection(ctx).UpdateMany(sCtx, filterMap, setData, updateOptions)
+		res, err := r.getCollection(ctx).UpdateMany(sCtx, filter.Match, setData, updateOptions)
 		return res, err
 	})
 }
@@ -580,10 +581,12 @@ func (r *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return r.DeleteById(ctx, r.GetTenantId(entity), r.GetId(entity), opts...)
 }
 
-func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) error {
-	if filterMap, err := r.getFilterMap(tenantId, filter); err != nil {
+func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, rsql string, opts ...ddd_repository.Options) error {
+	filter, err := r.getFilter(tenantId, rsql)
+	if err != nil {
 		return err
-	} else if err := r.DeleteByMap(ctx, tenantId, filterMap).GetError(); err != nil {
+	}
+	if err := r.deleteByFilter(ctx, tenantId, filter).GetError(); err != nil {
 		return err
 	}
 	return nil
@@ -622,14 +625,26 @@ func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_rep
 	data := map[string]interface{}{}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
+func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	return r.deleteByAny(ctx, tenantId, filterMap, opts...)
+}
 
-func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	if err := assert.NotNil(filterMap, assert.NewOptions("filterMap is nil")); err != nil {
+func (r *Dao[T]) deleteByAny(ctx context.Context, tenantId string, filterAny any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	if err := assert.NotNil(filterAny, assert.NewOptions("filterMap is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
+	if filterMap, ok := filterAny.(map[string]any); ok {
+		return r.deleteByMap(ctx, tenantId, filterMap, opts...)
+	} else if filter, ok := filterAny.(*rsql_mongo.Filter); ok {
+		return r.deleteByFilter(ctx, tenantId, filter, opts...)
+	}
+	return ddd_repository.NewSetResultError[T](errors.New("filterMap is not map[string]any or *rsql_mongo.Filter"))
+}
+
+func (r *Dao[T]) deleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	sCtx := r.getSessionCtx(ctx)
 	return r.DoSet(func() (T, error) {
 		filter := r.NewFilter(tenantId, filterMap)
@@ -637,6 +652,49 @@ func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map
 		_, err := r.getCollection(ctx).DeleteMany(sCtx, filter, deleteOptions)
 		var result T
 		return result, err
+	})
+}
+
+func (r *Dao[T]) deleteByFilter(ctx context.Context, tenantId string, filter *rsql_mongo.Filter, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	ctx = r.getSessionCtx(ctx)
+	if filter.IsAggregate() {
+		return r.deleteByMap(ctx, tenantId, filter.Match, opts...)
+	}
+	return r.DoSet(func() (T, error) {
+		var null T
+		pipeline := filter.NewPipeline()
+		coll := r.getCollection(ctx)
+		cursor, err := coll.Aggregate(ctx, pipeline)
+		if err != nil {
+			return null, err
+		}
+		defer cursor.Close(ctx)
+
+		// 提取符合条件的 _id
+		var idsToDelete []interface{}
+		for cursor.Next(context.TODO()) {
+			var result bson.M
+			if err := cursor.Decode(&result); err != nil {
+				return null, err
+			}
+			idsToDelete = append(idsToDelete, result["_id"])
+		}
+
+		if err := cursor.Err(); err != nil {
+			return null, err
+		}
+
+		// 执行删除操作
+		if len(idsToDelete) > 0 {
+			// 使用 $in 操作符删除符合条件的文档
+			_, err := coll.DeleteMany(context.TODO(), bson.D{
+				{"_id", bson.D{{"$in", idsToDelete}}},
+			})
+			if err != nil {
+				return null, err
+			}
+		}
+		return null, nil
 	})
 }
 
@@ -689,10 +747,7 @@ func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 	return r.DoFindOne(func() (T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
 		findOneOptions := getFindOneOptions(opts...)
-		data, err := r.NewEntity()
-		if err != nil {
-			return null, false, err
-		}
+		data := r.NewEntity()
 		sCtx := r.getSessionCtx(ctx)
 		result := r.getCollection(ctx).FindOne(sCtx, filter, findOneOptions)
 		if err := r.DecodeSingle(ctx, result, data); err != nil {
@@ -748,11 +803,11 @@ func (r *Dao[T]) FindListByBsonM(ctx context.Context, tenantId string, filter bs
 }
 
 func (r *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	return r.DoList(tenantId, rsql, func(filterMap map[string]interface{}) ([]T, bool, error) {
+	return r.doList(tenantId, rsql, func(filter *rsql_mongo.Filter) ([]T, bool, error) {
 		var list []T
 		sCtx := r.getSessionCtx(ctx)
 		findOptions := getFindOptions(opts...)
-		cursor, err := r.getCollection(ctx).Find(sCtx, filterMap, findOptions)
+		cursor, err := r.getCollection(ctx).Find(sCtx, filter.Match, findOptions)
 		if err != nil {
 			return nil, false, err
 		}
@@ -770,51 +825,62 @@ func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repos
 }
 
 func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	return r.DoFilter(query.GetTenantId(), query.GetFilter(), func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error) {
+	return r.doFilter(query.GetTenantId(), query.GetFilter(), func(filter *rsql_mongo.Filter) (*ddd_repository.FindPagingResult[T], bool, error) {
 		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
+		ctx = r.getSessionCtx(ctx)
+		data := r.NewEntityList()
 
-		data, err := r.NewEntityList()
+		inOut := newFindOption(filter, query, &data)
+		err := r.find(ctx, inOut)
 		if err != nil {
 			return nil, false, err
 		}
 
-		findOptions := getFindOptions(opts...)
-		if query.GetPageSize() > 0 {
-			findOptions.SetLimit(query.GetPageSize())
-			findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
-		}
-		if len(query.GetSort()) > 0 {
-			sort, err := r.getSort(query.GetSort())
-			if err != nil {
-				return nil, false, err
-			}
-			findOptions.SetSort(sort)
-		}
-
-		if projection := r.getFindOptionsProjection(query); projection != nil {
-			findOptions.SetProjection(projection)
-		}
-		sCtx := r.getSessionCtx(ctx)
-		cursor, err := r.getCollection(ctx).Find(sCtx, filter, findOptions)
-		if err != nil {
-			return nil, false, err
-		}
-
-		err = cursor.All(ctx, &data)
-		var totalRows *int64
-		if query.GetIsTotalRows() {
-			total, err := r.getCollection(ctx).CountDocuments(sCtx, filter)
-			if err != nil {
-				return nil, false, err
-			}
-			totalRows = &total
-		}
-
-		findData := ddd_repository.NewFindPagingResult[T](data, totalRows, query, err)
+		findData := ddd_repository.NewFindPagingResult[T](data, &inOut.totalRows, query, err)
 		return findData, findData.IsFound, err
 	})
+}
+
+type findOption struct {
+	filter    *rsql_mongo.Filter             // rsql的查询条件
+	query     ddd_repository.FindPagingQuery // 分页查询条件
+	results   any                            // 返回数据
+	totalRows int64                          // 返回记录数
+}
+
+func newFindOption(filter *rsql_mongo.Filter, query ddd_repository.FindPagingQuery, results any) *findOption {
+	return &findOption{
+		filter:    filter,
+		query:     query,
+		results:   results,
+		totalRows: 0,
+	}
+}
+
+func (r *Dao[T]) newFindOptions(query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (*mongo_options.FindOptions, error) {
+	findOptions := getFindOptions(opts...)
+	if query == nil {
+		return findOptions, nil
+	}
+
+	if query.GetPageSize() > 0 {
+		findOptions.SetLimit(query.GetPageSize())
+		findOptions.SetSkip(query.GetPageSize() * query.GetPageNum())
+	}
+	if len(query.GetSort()) > 0 {
+		sort, err := r.getSort(query.GetSort())
+		if err != nil {
+			return nil, err
+		}
+		findOptions.SetSort(sort)
+	}
+
+	if projection := r.getFindOptionsProjection(query); projection != nil {
+		findOptions.SetProjection(projection)
+	}
+	return findOptions, nil
 }
 
 func (r *Dao[T]) getFindOptionsProjection(query ddd_repository.FindPagingQuery) bson.D {
@@ -960,154 +1026,6 @@ func (r *Dao[T]) getFindOptionsProjection(query ddd_repository.FindPagingQuery) 
 		return findData
 	}
 */
-func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) (result *ddd_repository.FindPagingResult[T]) {
-	defer func() {
-		if e := recover(); e != nil {
-			if err, ok := e.(error); ok {
-				result = ddd_repository.NewFindPagingResultWithError[T](err)
-			}
-		}
-	}()
-
-	var err error
-	findOptions := getFindOptions(opts...)
-
-	queryGroup, err := NewQueryGroup(qry)
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	g, err := queryGroup.GetGroup()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	totalGroup, err := queryGroup.GetTotalGroup()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	filter, err := queryGroup.GetFilter()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	filter1, err := queryGroup.GetGroupExpandFilter()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	gSort, err := queryGroup.GetBsonFilterSort()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	sort, err := queryGroup.GetFilterSort()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	data, err := r.NewEntityList()
-	if err != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err)
-	}
-
-	coll := r.getCollection(ctx)
-	var findData *ddd_repository.FindPagingResult[T]
-	var cur *mongo.Cursor
-	var errt error
-	var totalRows int64
-
-	isGroup := queryGroup.IsGroup()
-	isLeaf := queryGroup.IsLeaf()
-
-	sCtx := r.getSessionCtx(ctx)
-
-	if isGroup {
-		if !isLeaf {
-			pipeline := mongo.Pipeline{}
-			if filter1 != nil && len(filter1) > 0 {
-				pipeline = append(pipeline, bson.D{{"$match", filter1}})
-			}
-			if g != nil && len(g) > 0 {
-				pipeline = append(pipeline, g)
-			}
-			if gSort != nil && len(gSort) > 0 {
-				pipeline = append(pipeline, gSort)
-			}
-			pipeline = append(pipeline, totalGroup)
-
-			pipeline = append(pipeline, bson.D{{
-				"$project", map[string]interface{}{
-					"_id":        "$_id",
-					"data":       map[string]interface{}{"$slice": []interface{}{"$data", qry.GetPageSize() * qry.GetPageNum(), qry.GetPageSize()}},
-					"total_rows": "$total_rows",
-				},
-			}})
-			cur, err = coll.Aggregate(sCtx, pipeline)
-		}
-	}
-	if !isGroup || isLeaf {
-		f := make(map[string]interface{})
-		if isLeaf {
-			f = filter1
-		} else {
-			f = filter
-		}
-		findOptions.SetSort(sort)
-		if qry.GetPageSize() > 0 {
-			findOptions.SetLimit(qry.GetPageSize())
-			findOptions.SetSkip(qry.GetPageSize() * qry.GetPageNum())
-		}
-		if projection := r.getFindOptionsProjection(qry); projection != nil {
-			findOptions.SetProjection(projection)
-		}
-
-		cur, err = coll.Find(sCtx, f, findOptions)
-		if qry.GetIsTotalRows() {
-			totalRows, errt = coll.CountDocuments(sCtx, f)
-		}
-	}
-	if err != nil || errt != nil {
-		return ddd_repository.NewFindPagingResultWithError[T](err, errt)
-	}
-
-	if isGroup && !isLeaf {
-		d := make([]struct {
-			Data      []T   `json:"data" bson:"data"`
-			TotalRows int64 `json:"totalRows" bson:"total_rows"`
-		}, 0)
-		err = cur.All(ctx, &d)
-		if err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err)
-		}
-		if d != nil && len(d) == 1 {
-			data = d[0].Data
-			totalRows = d[0].TotalRows
-		}
-	} else {
-		//err = cur.All(ctx, &data)
-		err = r.DecodeList(ctx, cur, &data)
-		if err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err)
-		}
-	}
-
-	if data == nil {
-		data = []T{}
-	}
-	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, qry, err)
-	// 进行汇总计算
-	if len(qry.GetValueCols()) > 0 {
-		sumData, _, err := r.SumEntity(ctx, qry, opts...)
-		findData.SetSum(true, sumData, err)
-	} else {
-		sumData := []T{}
-		findData.SetSum(false, sumData, err)
-	}
-	findData.IsTotalRows = qry.GetIsTotalRows()
-	return findData
-}
 
 func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry ddd_repository.FindAutoCompleteQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	f := ddd_repository.NewFindPagingQuery()
@@ -1160,13 +1078,13 @@ func (r *Dao[T]) AggregateByPipeline(ctx context.Context, pipeline mongo.Pipelin
 func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCollectionName string, opts ...ddd_repository.Options) error {
 	options := getAggregateOptions(opts...)
 	//db.record.aggregate([{$match:{opp_bank_name:"工商银行"}},{$out:"record1"}])
-	filterMap, err := r.getFilterMap(tenantId, rsql)
+	filter, err := r.getFilter(tenantId, rsql)
 	if err != nil {
 		return err
 	}
 	pipeline := mongo.Pipeline{}
-	if filterMap != nil && len(filterMap) > 0 {
-		pipeline = append(pipeline, bson.D{{"$match", filterMap}})
+	if filter != nil && len(filter.Match) > 0 {
+		pipeline = append(pipeline, bson.D{{"$match", filter.Match}})
 	}
 	pipeline = append(pipeline, bson.D{{"$out", toCollectionName}})
 	sCtx := r.getSessionCtx(ctx)
@@ -1175,10 +1093,7 @@ func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCol
 }
 
 func (r *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
-	data, err := r.NewEntityList()
-	if err != nil {
-		return nil, false, err
-	}
+	data := r.NewEntityList()
 	sCtx := r.getSessionCtx(ctx)
 	_, found, err := r.Sum(sCtx, qry, &data, opts...)
 	return data, found, err
@@ -1196,7 +1111,7 @@ func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	}
 
 	var err error
-	process := rsql.NewMongoProcess(qry.GetTenantId())
+	process := rsql_mongo.NewProcess(qry.GetTenantId())
 
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
@@ -1219,9 +1134,12 @@ func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	return data, found, err
 }
 
-func (r *Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []*ddd_repository.ValueCol, data any, opts ...ddd_repository.Options) (any, bool, error) {
+func (r *Dao[T]) sum(ctx context.Context, filterMap any, valueCols []*ddd_repository.ValueCol, data any, opts ...ddd_repository.Options) (any, bool, error) {
 	coll := r.getCollection(ctx)
-
+	filter, ok := filterMap.(*rsql_mongo.Filter)
+	if ok {
+		return nil, false, errors.ErrorOf("")
+	}
 	var cur *mongo.Cursor
 	summaryMap := make(map[string]interface{})
 	summaryMap["_id"] = "total"
@@ -1242,12 +1160,12 @@ func (r *Dao[T]) sum(ctx context.Context, filterMap map[string]any, valueCols []
 	}
 
 	pipeline := mongo.Pipeline{}
-	if filterMap != nil {
-		pipeline = append(pipeline, bson.D{{"$match", filterMap}})
-	}
+	filter.AddPipelines(pipeline)
+
 	if summaryMap != nil {
 		pipeline = append(pipeline, bson.D{{"$group", summaryMap}})
 	}
+
 	cur, err := coll.Aggregate(r.getSessionCtx(ctx), pipeline)
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err).DataResult()
@@ -1269,7 +1187,7 @@ func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any,
 }
 
 func (r *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
-	f, err := r.getFilterMap(tenantId, rsql)
+	f, err := r.getFilter(tenantId, rsql)
 	total, err := r.getCollection(ctx).CountDocuments(r.getSessionCtx(ctx), f)
 	if err != nil {
 		return 0, err
@@ -1277,11 +1195,11 @@ func (r *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts .
 	return total, err
 }
 
-func (r *Dao[T]) DoList(tenantId, rsql string, fun func(filter map[string]interface{}) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
+func (r *Dao[T]) doList(tenantId, rsql string, fun func(filter *rsql_mongo.Filter) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
-	filterData, err := r.getFilterMap(tenantId, rsql)
+	filterData, err := r.getFilter(tenantId, rsql)
 	if err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
@@ -1294,11 +1212,11 @@ func (r *Dao[T]) DoList(tenantId, rsql string, fun func(filter map[string]interf
 	return ddd_repository.NewFindListResult(data, ok, err)
 }
 
-func (r *Dao[T]) DoFilter(tenantId, rsql string, fun func(filter map[string]interface{}) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+func (r *Dao[T]) doFilter(tenantId, rsql string, fun func(filter *rsql_mongo.Filter) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
-	filterData, err := r.getFilterMap(tenantId, rsql)
+	filterData, err := r.getFilter(tenantId, rsql)
 	if err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
@@ -1311,21 +1229,21 @@ func (r *Dao[T]) DoFilter(tenantId, rsql string, fun func(filter map[string]inte
 	return data
 }
 
-func (r *Dao[T]) GetFilterMap(tenantId, rsql string) map[string]any {
-	data, err := r.getFilterMap(tenantId, rsql)
+func (r *Dao[T]) GetFilterMap(tenantId, rsql string) *rsql_mongo.Filter {
+	data, err := r.getFilter(tenantId, rsql)
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (r *Dao[T]) getFilterMap(tenantId, rSql string) (map[string]any, error) {
-	process := rsql.NewMongoProcess(tenantId)
+func (r *Dao[T]) getFilter(tenantId, rSql string) (*rsql_mongo.Filter, error) {
+	process := rsql_mongo.NewProcess(tenantId)
 	if err := rsql.ParseProcess(rSql, process); err != nil {
 		return nil, err
 	}
-	filterMap := process.GetFilter()
-	return filterMap, nil
+	filter := process.GetFilter().(*rsql_mongo.Filter)
+	return filter, nil
 }
 
 func (r *Dao[T]) DoFindList(fun func() ([]T, bool, error)) *ddd_repository.FindListResult[T] {

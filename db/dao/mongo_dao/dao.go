@@ -180,8 +180,8 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, da
 	return d.dao.Sum(ctx, qry, data, opts...)
 }
 
-func (d *Dao[T]) GetFilterMap(tenantId string, rsqlstr string) map[string]any {
-	return d.dao.GetFilterMap(tenantId, rsqlstr)
+func (d *Dao[T]) GetFilterMap(tenantId string, rSql string) any {
+	return d.dao.GetFilterMap(tenantId, rSql)
 }
 
 func GetDB() *ddd_mongodb.MongoDB {

@@ -6,6 +6,7 @@ import (
 	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"strconv"
 	"strings"
@@ -21,7 +22,7 @@ type QueryGroup struct {
 	Sort      string
 }
 
-func NewQueryGroup(qry ddd_repository.FindPagingQuery) (*QueryGroup, error) {
+func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 	var err error
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
@@ -30,7 +31,7 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) (*QueryGroup, error) {
 	if ok {
 		f3, err = mustWhere.GetMustWhere()
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
 	}
 	filter := getRsqlAnds(f1, f2, f3)
@@ -42,7 +43,7 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) (*QueryGroup, error) {
 		ValueCols: qry.GetValueCols(),
 		Sort:      qry.GetSort(),
 	}
-	return baseGroup, nil
+	return baseGroup
 }
 
 // IsPaging
@@ -82,6 +83,7 @@ func (b *QueryGroup) IsExpand() bool {
 	return true
 }
 
+// IsLeaf 是树型查询的子数据
 func (b *QueryGroup) IsLeaf() bool {
 	if b.IsGroup() && b.IsExpand() && len(b.GroupCols) == len(b.GroupKeys) {
 		return true
@@ -94,9 +96,9 @@ func (b *QueryGroup) IsLeaf() bool {
 // @receiver b
 // @return bson.D
 // @return error
-func (b *QueryGroup) GetGroup() (bson.D, error) {
+func (b *QueryGroup) GetGroup() bson.D {
 	if b.GroupCols == nil || len(b.GroupCols) == 0 {
-		return nil, nil
+		return nil
 	}
 
 	gSubMap := make(map[string]any)
@@ -134,10 +136,10 @@ func (b *QueryGroup) GetGroup() (bson.D, error) {
 		"$group", gSubMap,
 	}}
 
-	return group, nil
+	return group
 }
 
-func (b *QueryGroup) GetTotalGroup() (bson.D, error) {
+func (b *QueryGroup) GetTotalGroup() bson.D {
 	projectMap := make(map[string]interface{})
 	projectMap["_id"] = "null"
 	pushMap := make(map[string]interface{})
@@ -159,7 +161,7 @@ func (b *QueryGroup) GetTotalGroup() (bson.D, error) {
 		"$push": pushMap,
 	}
 	projectMap["total_rows"] = map[string]interface{}{"$sum": 1}
-	return bson.D{{"$group", projectMap}}, nil
+	return bson.D{{"$group", projectMap}}
 }
 
 // GetFilter
@@ -167,15 +169,18 @@ func (b *QueryGroup) GetTotalGroup() (bson.D, error) {
 // @receiver b
 // @return map[string]interface{}
 // @return error
-func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
+func (b *QueryGroup) GetFilter() *rsql_mongo.Filter {
 	if b.Filter == "" {
-		return nil, nil
+		return rsql_mongo.NewMongoFilter()
 	}
-	p := rsql.NewMongoProcess(b.TenantId)
+
+	p := rsql_mongo.NewProcess(b.TenantId)
 	if err := rsql.ParseProcess(b.Filter, p); err != nil {
-		return nil, err
+		panic(err)
+
 	}
-	return p.GetFilter(), nil
+	filter := p.GetFilter().(*rsql_mongo.Filter)
+	return filter
 }
 
 // GetGroupExpandFilter
@@ -183,11 +188,9 @@ func (b *QueryGroup) GetFilter() (map[string]interface{}, error) {
 // @receiver b
 // @return map[string]interface{}
 // @return error
-func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
-	mMatch, err := b.GetFilter()
-	if err != nil {
-		return nil, err
-	}
+func (b *QueryGroup) GetGroupExpandFilter() *rsql_mongo.Filter {
+	filter := b.GetFilter()
+	mMatch := filter.Match
 
 	if mMatch == nil {
 		mMatch = make(map[string]interface{})
@@ -211,19 +214,19 @@ func (b *QueryGroup) GetGroupExpandFilter() (map[string]interface{}, error) {
 		}
 		mMatch["$and"] = val
 	}
-	return mMatch, nil
+	return filter
 }
 
 func toNumber(v interface{}) *float64 {
 	if v == nil {
 		return nil
 	}
-	_v := strings.Trim(v.(string), " ")
-	if _v == "" {
+	val := strings.Trim(v.(string), " ")
+	if val == "" {
 		return nil
 	}
 
-	num, err := strconv.ParseFloat(_v, 64)
+	num, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return nil
 	}
@@ -235,9 +238,9 @@ func toNumber(v interface{}) *float64 {
 // @receiver b
 // @return bson.D
 // @return error
-func (b *QueryGroup) GetFilterSort() (bson.D, error) {
+func (b *QueryGroup) GetFilterSort() bson.D {
 	if len(b.Sort) == 0 {
-		return bson.D{}, nil
+		return bson.D{}
 	}
 	// 输入
 	// name:desc,id:asc
@@ -274,16 +277,16 @@ func (b *QueryGroup) GetFilterSort() (bson.D, error) {
 			oerr = errors.New("order " + order + " is error")
 		}
 		if oerr != nil {
-			return nil, oerr
+			print(oerr)
 		}
 		item := bson.E{Key: utils.SnakeString(name), Value: orderVal}
 		res = append(res, item)
 	}
-	return res, nil
+	return res
 }
 
-func (b *QueryGroup) GetBsonFilterSort() (bson.D, error) {
-	_sort := bson.D{}
+func (b *QueryGroup) GetBsonFilterSort() bson.D {
+	sort := bson.D{}
 	flag := false
 	if len(b.Sort) > 0 {
 		list := strings.Split(b.Sort, ",")
@@ -291,8 +294,8 @@ func (b *QueryGroup) GetBsonFilterSort() (bson.D, error) {
 			if flag {
 				break
 			}
-			for _, _rowGroupCol := range b.GroupCols {
-				if strings.Contains(s, _rowGroupCol.Field) {
+			for _, rowGroupCol := range b.GroupCols {
+				if strings.Contains(s, rowGroupCol.Field) {
 					flag = true
 					break
 				}
@@ -300,27 +303,32 @@ func (b *QueryGroup) GetBsonFilterSort() (bson.D, error) {
 		}
 	}
 	if (len(b.Sort) == 0 || !flag) && b.IsGroup() {
-		for _, _rowGroupCol := range b.GroupCols {
-			_sort = append(_sort, bson.E{Key: utils.SnakeString(_rowGroupCol.Field), Value: 1})
+		for _, rowGroupCol := range b.GroupCols {
+			sort = append(sort, bson.E{Key: utils.SnakeString(rowGroupCol.Field), Value: 1})
 		}
 	}
-	_sort1, _ := b.GetFilterSort()
-	_sort = append(_sort, _sort1...)
-	return bson.D{{"$sort", _sort}}, nil
+	sort1 := b.GetFilterSort()
+	if len(sort1) > 0 {
+		sort = append(sort, sort1...)
+	}
+	if len(sort) == 0 {
+		return nil
+	}
+	return bson.D{{"$sort", sort}}
 }
 
 func toDate(v interface{}) time.Time {
 	if v == nil {
 		return time.Time{}
 	}
-	_v := strings.Trim(v.(string), " ")
-	if _v == "" {
+	val := strings.Trim(v.(string), " ")
+	if val == "" {
 		return time.Time{}
 	}
 
 	timeLayout := "2006-01-02T15:04:05+08:00" //转化所需模板
 	loc, _ := time.LoadLocation("Local")      //重要：获取时区
-	theTime, _ := time.ParseInLocation(timeLayout, _v, loc)
+	theTime, _ := time.ParseInLocation(timeLayout, val, loc)
 	return theTime
 }
 

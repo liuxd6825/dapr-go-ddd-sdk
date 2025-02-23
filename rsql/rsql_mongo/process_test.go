@@ -1,8 +1,9 @@
-package rsql
+package rsql_mongo
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -28,8 +29,8 @@ func Test_SubQuery(t *testing.T) {
 }
 
 func process(t *testing.T, tenantId string, input string) any {
-	p := NewMongoProcess(tenantId)
-	err := ParseProcess(input, p)
+	p := NewProcess(tenantId)
+	err := rsql.ParseProcess(input, p)
 	assert.Error(t, err)
 	data := p.GetFilter()
 

@@ -144,7 +144,7 @@ func (s *Func) Run(ctx context.Context, opts ...RunOptions) (res any, err error)
 	var data any
 
 	// 超时时间处理
-	if s.config.Timeout() == 0 {
+	if s.config.Timeout() > 0 {
 		// 使用 context.WithTimeout 创建超时上下文
 		timeoutCtx, cancel := context.WithTimeout(ctx, s.config.Timeout())
 		ctx = timeoutCtx

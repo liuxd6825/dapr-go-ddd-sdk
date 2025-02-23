@@ -3,13 +3,11 @@ package rsql
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"time"
 )
 
 const (
-	dateTimeLayout = "2006-01-02T15:04:05"
-	dateLayout     = "2006-01-02"
+	DateTimeLayout = "2006-01-02T15:04:05"
+	DateLayout     = "2006-01-02"
 )
 
 type Process interface {
@@ -191,58 +189,4 @@ func parseProcess(expr Expression, process Process) error {
 		process.OnEnd(name, value, ex.Comparison.Val)
 	}
 	return nil
-}
-
-func getValue(value Value) any {
-	var v any
-	var err error
-	switch value.(type) {
-	case *StringValue:
-		sv, _ := value.(*StringValue)
-		v = sv.Value
-	case *IntegerValue:
-		sv, _ := value.(*IntegerValue)
-		v = sv.Value
-	case *DateValue:
-		sv, _ := value.(*DateValue)
-		v, err = time.Parse(dateLayout, sv.Value)
-	case *DoubleValue:
-		sv, _ := value.(*DoubleValue)
-		v = sv.Value
-	case *DateTimeValue:
-		sv, _ := value.(*DateTimeValue)
-		v, err = time.Parse(dateTimeLayout, sv.Value)
-	case *BooleanValue:
-		sv, _ := value.(*BooleanValue)
-		v = sv.Value
-	case *ListValue:
-		sv, _ := value.(*ListValue)
-		v = getValueList(sv)
-	case *FuncValue:
-		sv, _ := value.(*FuncValue)
-		v = sv.Value
-	default:
-		v = value
-	}
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
-
-func getValueList(listValue *ListValue) []any {
-	list := make([]interface{}, 0)
-	for _, item := range listValue.Value {
-		v := getValue(item)
-		list = append(list, v)
-	}
-	return list
-}
-
-// AsFieldName
-// @Description: 转换为mongodb规范的字段名称
-// @param name
-// @return string
-func AsFieldName(name string) string {
-	return stringutils.SnakeString(name)
 }

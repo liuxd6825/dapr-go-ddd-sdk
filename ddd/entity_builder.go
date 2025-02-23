@@ -6,8 +6,8 @@ import (
 )
 
 type EntityBuilder[T any] interface {
-	NewEntity() (T, error)
-	NewEntityList() ([]T, error)
+	NewEntity() T
+	NewEntityList() []T
 	GetTenantId(entity T) string
 	SetTenantId(entity T, tenantId string)
 	GetId(entity T) string
@@ -21,18 +21,17 @@ func NewMapEntityBuilder[T any]() EntityBuilder[T] {
 	return &MapEntityBuilder[T]{}
 }
 
-func (m *MapEntityBuilder[T]) NewEntity() (T, error) {
+func (m *MapEntityBuilder[T]) NewEntity() T {
 	mv := map[string]any{}
 	var a any = mv
 	if t, ok := a.(T); ok {
-		return t, nil
+		return t
 	}
-	var null T
-	return null, fmt.Errorf("cannot convert map to entity")
+	panic(fmt.Errorf("cannot convert map to entity"))
 }
 
-func (m *MapEntityBuilder[T]) NewEntityList() ([]T, error) {
-	return make([]T, 0), nil
+func (m *MapEntityBuilder[T]) NewEntityList() []T {
+	return make([]T, 0)
 }
 
 func (m *MapEntityBuilder[T]) GetTenantId(entity T) string {
@@ -87,12 +86,20 @@ func NewStructEntityBuilder[T any]() EntityBuilder[T] {
 	return &StructEntityBuilder[T]{}
 }
 
-func (s *StructEntityBuilder[T]) NewEntity() (T, error) {
-	return reflectutils.NewStruct[T]()
+func (s *StructEntityBuilder[T]) NewEntity() T {
+	ent, err := reflectutils.NewStruct[T]()
+	if err != nil {
+		panic(err)
+	}
+	return ent
 }
 
-func (s *StructEntityBuilder[T]) NewEntityList() ([]T, error) {
-	return reflectutils.NewSlice[[]T]()
+func (s *StructEntityBuilder[T]) NewEntityList() []T {
+	list, err := reflectutils.NewSlice[[]T]()
+	if err != nil {
+		panic(err)
+	}
+	return list
 }
 
 func (s *StructEntityBuilder[T]) GetTenantId(entity T) string {

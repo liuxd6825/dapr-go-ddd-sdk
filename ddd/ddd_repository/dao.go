@@ -5,8 +5,8 @@ import "context"
 type TxFunc func(ctx context.Context, options ...*SessionOptions) error
 
 type Dao[T any] interface {
-	NewEntity() (T, error)
-	NewEntityList() ([]T, error)
+	NewEntity() T
+	NewEntityList() []T
 
 	GetTenantId(entity T) string
 	SetTenantId(entity T, tenantId string)
@@ -37,14 +37,14 @@ type Dao[T any] interface {
 	DeleteById(ctx context.Context, tenantId string, id string, opts ...Options) *SetResult[T]
 	DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...Options) error
 	DeleteAll(ctx context.Context, tenantId string, opts ...Options) *SetResult[T]
-	DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...Options) *SetResult[T]
+	DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...Options) *SetResult[T]
 
 	// 查询
 
 	FindById(ctx context.Context, tenantId string, id string, opts ...Options) *FindOneResult[T]
 	FindByIds(ctx context.Context, tenantId string, ids []string, opts ...Options) *FindListResult[T]
-	FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...Options) *FindOneResult[T]
-	FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...Options) *FindListResult[T]
+	FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...Options) *FindOneResult[T]
+	FindListByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...Options) *FindListResult[T]
 	FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...Options) *FindListResult[T]
 	FindAll(ctx context.Context, tenantId string, opts ...Options) *FindListResult[T]
 	FindPaging(ctx context.Context, qry FindPagingQuery, opts ...Options) (result *FindPagingResult[T])
