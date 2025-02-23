@@ -20,10 +20,14 @@ type QueryGroup struct {
 	ValueCols []*ddd_repository.ValueCol
 	GroupKeys []any
 	Sort      string
+	Query     ddd_repository.FindPagingQuery
 }
 
 func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 	var err error
+	if qry == nil {
+		panic(errors.New("query is nil"))
+	}
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
 	f3 := ""
@@ -36,6 +40,7 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 	}
 	filter := getRsqlAnds(f1, f2, f3)
 	baseGroup := &QueryGroup{
+		Query:     qry,
 		TenantId:  qry.GetTenantId(),
 		Filter:    filter,
 		GroupCols: qry.GetGroupCols(),
@@ -162,6 +167,14 @@ func (b *QueryGroup) GetTotalGroup() bson.D {
 	}
 	projectMap["total_rows"] = map[string]interface{}{"$sum": 1}
 	return bson.D{{"$group", projectMap}}
+}
+
+func (q *QueryGroup) GetPageNum() int64 {
+	return q.Query.GetPageNum()
+}
+
+func (q *QueryGroup) GetPageSize() int64 {
+	return q.Query.GetPageSize()
 }
 
 // GetFilter
