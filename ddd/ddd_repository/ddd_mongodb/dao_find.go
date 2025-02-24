@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mongoutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -16,29 +17,11 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 			}
 		}
 	}()
-
-	var err error
-	//findOptions := getFindOptions(opts...)
-
-	queryGroup := NewQueryGroup(qry)
-	g := queryGroup.GetGroup()
-
-	totalGroup := queryGroup.GetTotalGroup()
-	filter := queryGroup.GetFilter()
-	//expandFilter := queryGroup.GetGroupExpandFilter()
-	gSort := queryGroup.GetBsonFilterSort()
-	//sort := queryGroup.GetFilterSort()
-	data := r.NewEntityList()
-
-	coll := r.getCollection(ctx)
 	var findData *ddd_repository.FindPagingResult[T]
-	var cur *mongo.Cursor
-	var errt error
-	var totalRows int64
-
-	isGroup := queryGroup.IsGroup()
-	isLeaf := queryGroup.IsLeaf()
-
+	var err error
+	data := r.NewEntityList()
+	queryGroup := NewQueryGroup(qry)
+	//findOptions := getFindOptions(opts...)
 	ctx = r.getSessionCtx(ctx)
 
 	groupQueryResult := &findByGroupQueryOptions{
@@ -53,6 +36,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 		data = []T{}
 	}
 	findData = ddd_repository.NewFindPagingResult[T](data, &groupQueryResult.totalRows, qry, err)
+
 	// 进行汇总计算
 	if len(qry.GetValueCols()) > 0 {
 		sumData, _, err := r.SumEntity(ctx, qry, opts...)
@@ -61,8 +45,26 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 		sumData := []T{}
 		findData.SetSum(false, sumData, err)
 	}
+
 	findData.IsTotalRows = qry.GetIsTotalRows()
 	return findData
+
+	g := queryGroup.GetGroup()
+
+	totalGroup := queryGroup.GetTotalGroup()
+	filter := queryGroup.GetFilter()
+	//expandFilter := queryGroup.GetGroupExpandFilter()
+	gSort := queryGroup.GetBsonFilterSort()
+	//sort := queryGroup.GetFilterSort()
+
+	coll := r.getCollection(ctx)
+
+	var cur *mongo.Cursor
+	var errt error
+	var totalRows int64
+
+	isGroup := queryGroup.IsGroup()
+	isLeaf := queryGroup.IsLeaf()
 
 	// 是分组查询
 	if isGroup {
@@ -238,21 +240,24 @@ func (r *Dao[T]) findByFilter(ctx context.Context, filter *rsql_mongo.Filter, op
 
 	} else {
 		pipeline := filter.NewPipeline()
-		cursor1, err := coll.Aggregate(ctx, pipeline)
+		cur, err := coll.Aggregate(ctx, pipeline)
 		if err != nil {
 			return err
 		}
 
-		defer cursor1.Close(ctx)
+		mongoutils.PrintPipeline(pipeline)
 
-		err = cursor1.All(ctx, opt.resultsData)
+		defer cur.Close(ctx)
+
+		err = cur.All(ctx, opt.resultsData)
 		if err != nil {
 			return err
 		}
-
-		opt.resultsTotalRows, err = r.aggregateTotal(ctx, coll, pipeline)
-		if err != nil {
-			return err
+		if opt.isTotalRows {
+			opt.resultsTotalRows, err = r.aggregateTotal(ctx, coll, pipeline)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -272,14 +277,18 @@ func (r *Dao[T]) findByGroupQuery(ctx context.Context, qry *QueryGroup, results 
 		if err != nil {
 			return err
 		}
-		cursor, err := coll.Find(ctx, filter.Match, findOptions)
+		match := filter.Match
+		//mongoutils.GetMQL(match)
+
+		cursor, err := coll.Find(ctx, match, findOptions)
 		if err != nil {
 			return err
 		}
 		err = cursor.All(ctx, results.results)
 		defer cursor.Close(ctx)
+
 		if qry.Query.GetIsTotalRows() {
-			total, err := coll.CountDocuments(ctx, filter.Match)
+			total, err := coll.CountDocuments(ctx, match)
 			if err != nil {
 				return err
 			}
@@ -301,11 +310,11 @@ func (r *Dao[T]) findByGroupQuery(ctx context.Context, qry *QueryGroup, results 
 		}
 		totalGroup := qry.GetTotalGroup()
 		pipeline = append(pipeline, totalGroup)
-		pipeline = append(pipeline, bson.D{{
-			"$project", map[string]any{
+		project := bson.D{{
+			"$project", bson.M{
 				"_id": "$_id",
-				"data": map[string]any{
-					"$slice": []any{
+				"data": bson.M{
+					"$slice": bson.A{
 						"$data",
 						qry.GetPageSize() * qry.GetPageNum(),
 						qry.GetPageSize(),
@@ -313,13 +322,29 @@ func (r *Dao[T]) findByGroupQuery(ctx context.Context, qry *QueryGroup, results 
 				},
 				"total_rows": "$total_rows",
 			},
-		}})
+		}}
+		pipeline = append(pipeline, project)
+		/*
+					pipeline = append(pipeline, bson.M{
+			,			"$project": bson.M{
+							"_id": "$_id",
+							"data": map[string]any{
+								"$slice": []any{
+									"$data",
+									qry.GetPageSize() * qry.GetPageNum(),
+									qry.GetPageSize(),
+								},
+							},
+							"total_rows": "$total_rows",
+						}
+					}) */
 	}
-
+	mongoutils.PrintPipeline(pipeline)
 	cur, err := coll.Aggregate(ctx, pipeline)
 	if err != nil {
 		return err
 	}
+
 	defer cur.Close(ctx)
 
 	err = cur.All(ctx, results.results)

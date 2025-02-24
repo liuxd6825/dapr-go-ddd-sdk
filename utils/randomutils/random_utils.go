@@ -2,7 +2,6 @@ package randomutils
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"math"
 	"math/rand"
@@ -288,6 +287,7 @@ func PBoolean() *bool {
 	return &p
 }
 
+/*
 func JsonTime() times.JSONTime {
 	return times.JSONTime(Time())
 }
@@ -305,6 +305,7 @@ func PJsonDate() *times.JSONDate {
 	value := JsonDate()
 	return &value
 }
+*/
 
 // randomString
 // @Description: 随机生成字符串

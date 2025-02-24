@@ -804,17 +804,14 @@ func (r *Dao[T]) FindListByBsonM(ctx context.Context, tenantId string, filter bs
 
 func (r *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	return r.doList(tenantId, rsql, func(filter *rsql_mongo.Filter) ([]T, bool, error) {
-		var list []T
-		sCtx := r.getSessionCtx(ctx)
-		findOptions := getFindOptions(opts...)
-		cursor, err := r.getCollection(ctx).Find(sCtx, filter.Match, findOptions)
+		list := r.NewEntityList()
+		ctx = r.getSessionCtx(ctx)
+		findOpts := &findByFilterOptions{
+			resultsData: &list,
+		}
+		err := r.findByFilter(ctx, filter, findOpts)
 		if err != nil {
 			return nil, false, err
-		}
-		err = cursor.All(ctx, &list)
-		count := len(list)
-		if count == 0 {
-			list = []T{}
 		}
 		return list, len(list) > 0, err
 	})

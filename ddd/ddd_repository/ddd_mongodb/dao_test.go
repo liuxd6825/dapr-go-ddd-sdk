@@ -3,43 +3,132 @@ package ddd_mongodb
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 	"testing"
 	"time"
 )
 
+const DB_NAME = "test"
+const TENANT_ID = "test"
+
 func TestMapper_Search(t *testing.T) {
 	ctx := context.Background()
-	mdb, coll := newCollection("record_ie")
-	mapper := NewDao[*Record](func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) {
-		return mdb, coll
+
+	humanDao := NewDao[*Human](func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) {
+		return NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "human")
 	})
 
-	qry := ddd_repository.NewFindPagingQuery()
-	qry.SetFilter("name=='梁瑞梅' and batch_id=='bd82aaf8-1654-4680-ba29-4e16eb66c29f'")
-	qry.SetTenantId("test")
-	qry.SetPageSize(20)
-	qry.SetGroupCols(ddd_repository.NewGroupCols("").Add("name", types.DataTypeString).Add("oppName", types.DataTypeString).Cols())
-	qry.SetValueCols(ddd_repository.NewValueCols().Add("amount", ddd_repository.AggFuncSum).Cols())
-	qry.SetGroupKeys([]any{"梁瑞梅"})
+	recordDao := NewDao[*Record](func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) {
+		return NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "record")
+	})
 
-	res := mapper.FindPaging(ctx, qry)
-	if res.Error == nil {
-		logObject(t, "Data: ", res.Data)
-		logObject(t, "Sum: ", res.SumData)
-	} else {
-		t.Error(res.Error)
-	}
+	humanName := "张三"
+	t.Run("Inserts", func(t *testing.T) {
+		humanMax := 1
+		var humanList []*Human
+		var recordList []*Record
+		for i := 0; i < humanMax; i++ {
+			human := &Human{
+				Id:       idutils.NewId(),
+				Name:     humanName,
+				TenantId: TENANT_ID,
+			}
+			humanList = append(humanList, human)
+		}
 
+		for i := 0; i < humanMax; i++ {
+			human := humanList[i]
+			for j := 0; j < 10; j++ {
+				record := &Record{
+					Id:       idutils.NewId(),
+					Name:     human.Name,
+					CaseId:   human.TenantId,
+					TenantId: TENANT_ID,
+					Acct:     randomutils.StringNumber(10),
+					Iden:     randomutils.StringNumber(10), // 标识
+					OppIden:  randomutils.StringNumber(10),
+					OppName:  randomutils.StringNumber(10),
+				}
+				recordList = append(recordList, record)
+			}
+
+		}
+
+		err1 := humanDao.InsertMany(ctx, humanList).Error
+		assert.Nil(t, err1)
+
+		err2 := recordDao.InsertMany(ctx, recordList).Error
+		assert.Nil(t, err2)
+	})
+
+	t.Run("FindPagingQuery_NoGroup", func(t *testing.T) {
+		qry := ddd_repository.NewFindPagingQuery()
+		filter := fmt.Sprintf("name=='%s' and tenantId=='%s'", humanName, TENANT_ID)
+		qry.SetFilter(filter)
+		qry.SetTenantId(TENANT_ID)
+		qry.SetPageSize(20)
+
+		res := recordDao.FindPaging(ctx, qry)
+		if res.Error == nil {
+			logObject(t, "Data: ", res.Data)
+			logObject(t, "Sum: ", res.SumData)
+		} else {
+			t.Error(res.Error)
+		}
+	})
+
+	t.Run("FindPagingQuery_Group", func(t *testing.T) {
+		qry := ddd_repository.NewFindPagingQuery()
+		filter := fmt.Sprintf("name=='%s'", humanName)
+		qry.SetFilter(filter)
+		qry.SetTenantId(TENANT_ID)
+		qry.SetPageSize(20)
+		qry.SetGroupCols(ddd_repository.NewGroupCols("").Add("name", types.DataTypeString).GetCols())
+		qry.SetGroupKeys([]any{humanName})
+
+		res := recordDao.FindPaging(ctx, qry)
+		if res.Error == nil {
+			logObject(t, "Data: ", res.Data)
+			logObject(t, "Sum: ", res.SumData)
+		} else {
+			t.Error(res.Error)
+		}
+	})
+
+	t.Run("Filter_Sub", func(t *testing.T) {
+		rSql := fmt.Sprintf("name==sub(table:human, field:name, rsql:name~='%s')", humanName)
+		res := recordDao.FindByRSQL(ctx, TENANT_ID, rSql)
+		if res.Error == nil {
+			logObject(t, "Data: ", res.Data)
+		} else {
+			t.Error(res.Error)
+		}
+	})
+
+	t.Run("Filter_Like", func(t *testing.T) {
+		rSql := fmt.Sprintf("name~='%s'", humanName)
+		res := recordDao.FindByRSQL(ctx, TENANT_ID, rSql)
+		if res.Error == nil {
+			logObject(t, "Data: ", res.Data)
+		} else {
+			t.Error(res.Error)
+		}
+	})
 }
 
 func TestDao_CreateIndexes(t *testing.T) {
 	ctx := context.Background()
-	mdb, coll := newCollection("test_create_index")
+	coll := getCollection(DB_NAME, "test_create_index")
 	mapper := NewDao[*Index](func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) {
-		return mdb, coll
+		return NenMongoDBWithClient(DB_NAME, client), coll
 	})
 
 	err := mapper.CreateIndexes(ctx)
@@ -64,6 +153,44 @@ type Index struct {
 	Desc      int64  `bson:"desc" index:" desc "`
 	Unique    string `index:"unique"`
 	AscUnique string `bson:"asc_unique" index:"asc, unique "`
+}
+
+func (u *Index) GetTenantId() string {
+	return u.TenantId
+}
+
+func (u *Index) SetTenantId(v string) {
+	u.TenantId = v
+}
+
+func (u *Index) GetId() string {
+	return string(u.Id)
+}
+
+func (u *Index) SetId(v string) {
+	u.Id = v
+}
+
+type Human struct {
+	Id       string `bson:"_id" `
+	Name     string `bson:"name" index:"" `
+	TenantId string `bson:"tenant_id" index:"" `
+}
+
+func (u *Human) GetTenantId() string {
+	return u.TenantId
+}
+
+func (u *Human) SetTenantId(v string) {
+	u.TenantId = v
+}
+
+func (u *Human) GetId() string {
+	return string(u.Id)
+}
+
+func (u *Human) SetId(v string) {
+	u.Id = v
 }
 
 type Record struct {
@@ -116,22 +243,31 @@ func (u *Record) GetId() string {
 	return string(u.Id)
 }
 
-func (u *Index) SetId(v string) {
-	u.Id = v
-}
-
-func (u *Index) GetTenantId() string {
-	return u.TenantId
-}
-
-func (u *Index) SetTenantId(v string) {
-	u.TenantId = v
-}
-
-func (u *Index) GetId() string {
-	return string(u.Id)
-}
-
 func (u *Record) SetId(v string) {
 	u.Id = v
+}
+
+var client *mongo.Client
+
+func init() {
+	// 设置MongoDB连接URL
+	clientOptions := options.Client().ApplyURI("mongodb://192.168.65.5:27018,192.168.65.5:27019,192.168.65.5:27020/?retryWrites=false&replicaSet=mongors&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
+
+	// 连接到MongoDB
+	clientVal, err := mongo.Connect(context.TODO(), clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	client = clientVal
+	// 确保连接成功
+	err = client.Ping(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func getCollection(dbName string, collName string) *mongo.Collection {
+	// 选择数据库和集合
+	collection := client.Database(dbName).Collection(collName)
+	return collection
 }

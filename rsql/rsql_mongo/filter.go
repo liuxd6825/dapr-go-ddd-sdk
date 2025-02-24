@@ -42,10 +42,6 @@ func (l *Filter) AddLookups(pipeline mongo.Pipeline) mongo.Pipeline {
 		pipeline = append(pipeline, lookup.GetLookup())
 		pipeline = append(pipeline, lookup.GetUnwind())
 	}
-
-	if l.Match != nil {
-		pipeline = append(pipeline, bson.D{{"$match", l.Match}})
-	}
 	return pipeline
 }
 
