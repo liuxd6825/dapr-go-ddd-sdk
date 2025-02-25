@@ -94,6 +94,20 @@ func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db
 	d.PublishEvent(ctx, db.AccessTypeCreate, entity, opts...)
 }
 
+func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) {
+	if d.GetIsPubEvent() {
+		for _, entity := range entity {
+			d.Create(ctx, entity, opts...)
+		}
+		return
+	}
+
+	err := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (d *DaoBase) Update(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) {
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Update() entity is nil"))
@@ -122,20 +136,6 @@ func (d *DaoBase) DeleteById(ctx context.Context, id string, opts ...*db.CallOpt
 			"id":       id,
 		}
 		d.PublishEvent(ctx, db.AccessTypeDelete, entity, opts...)
-	}
-}
-
-func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) {
-	if d.GetIsPubEvent() {
-		for _, entity := range entity {
-			d.Create(ctx, entity, opts...)
-		}
-		return
-	}
-
-	err := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
-	if err != nil {
-		panic(err)
 	}
 }
 
@@ -231,6 +231,15 @@ func (d *DaoBase) FindByIds(ctx context.Context, ids []string, opts ...*db.CallO
 		panic(err)
 	}
 	return data
+}
+
+func (d *DaoBase) FindByRSQL(ctx context.Context, rsql string, opts ...*db.CallOptions) []map[string]any {
+	tenantId := d.GetTenantId(ctx)
+	res := d.dao.FindByRSQL(ctx, tenantId, rsql, db.NewRepositoryOptions(opts)...)
+	if res.GetError() != nil {
+		panic(res.GetError())
+	}
+	return res.Data
 }
 
 func (d *DaoBase) FindAll(ctx context.Context, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {

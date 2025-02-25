@@ -24,6 +24,7 @@ type Dao interface {
 
 	FindById(ctx context.Context, id string, opts ...*CallOptions) map[string]any
 	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []map[string]any
+	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []map[string]any
 	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[map[string]any]
 	FindListByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions) *ddd_repository.FindListResult[map[string]any]
 	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]

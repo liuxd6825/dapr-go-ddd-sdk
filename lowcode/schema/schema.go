@@ -127,6 +127,9 @@ func (s *Schema) Compile() error {
 }
 
 func (s *Schema) GetJsonSchema() *jsonschema.Schema {
+	if err := s.Compile(); err != nil {
+		panic(err)
+	}
 	return s.validate.validator
 }
 

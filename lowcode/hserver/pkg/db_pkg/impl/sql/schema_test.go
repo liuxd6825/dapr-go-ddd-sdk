@@ -14,9 +14,6 @@ const HumanSchema = `
 	  "type": "object",
 	  "required": ["id","name"],
 	  "description": "人员基本信息",
-	  "allOf": [
-		{"$ref": "/definition/db/base.json"}
-	  ],
 	  "properties": {
 		"age": {
 		  "type": ["integer", "null"],
@@ -87,7 +84,7 @@ func Test_Schema(t *testing.T) {
 
 	var dbSchema *dbschema.Schema
 	t.Run("NewDBSchema", func(t *testing.T) {
-		v, err := NewDBSchema(dest)
+		v, err := NewDBSchema(dest.GetJsonSchema())
 		if err != nil {
 			t.Error(err)
 		}

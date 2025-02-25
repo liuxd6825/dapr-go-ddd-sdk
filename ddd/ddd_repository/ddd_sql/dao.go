@@ -149,7 +149,7 @@ func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repos
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	err := gp.Try(func() error {
-		return d.table(ctx).Model(entity).Updates(entity).Error
+		return d.table(ctx).Where("id=?", d.GetId(entity)).UpdateColumns(entity).Error
 	}).Error
 	return ddd_repository.NewSetResult[T](entity, err)
 }

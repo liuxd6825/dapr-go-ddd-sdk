@@ -60,8 +60,8 @@ func getMap(m map[string]any) string {
 			sb.WriteString(fmt.Sprintf(`"%s":"%v"`, key, val))
 			break
 		}
-		if i < count {
-			sb.WriteString("")
+		if i < count-1 {
+			sb.WriteString(",")
 			i++
 		}
 	}

@@ -2,12 +2,14 @@ package sql
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -48,28 +50,18 @@ func Test_Dao(t *testing.T) {
 		return
 	}
 
+	humanName := randomutils.NameCN()
 	human := map[string]any{
 		"id":         idutils.NewId(),
 		"tenantId":   "test",
 		"analyse":    "",
 		"birthday":   time.Now(),
 		"peopleType": []string{"1111"},
-		"name":       "name",
+		"name":       humanName,
 		"age":        1,
 		"tags":       []string{"tag1", "tag2"},
 	}
 	t.Log(human)
-	/*
-		t.Run("dao.Create", func(t *testing.T) {
-			gp.Try(func() error {
-				database.Model(&Human{}).Create(&human)
-				return nil
-			}).Catch(func(err error) {
-				t.Error(err)
-			})
-		})
-		return
-	*/
 
 	humanSchema, err := schema.NewSchemaWithJson("human.json", HumanSchema)
 	if err != nil {
@@ -80,7 +72,7 @@ func Test_Dao(t *testing.T) {
 	daoCfg := &db.DaoConfig{
 		Database:   database,
 		DbKey:      "sql",
-		Schema:     humanSchema,
+		Schema:     humanSchema.GetJsonSchema(),
 		Env:        NewEnvConfig(),
 		IsPubEvent: false,
 	}
@@ -110,6 +102,22 @@ func Test_Dao(t *testing.T) {
 		}).Catch(func(err error) {
 			t.Error(err)
 		})
+	})
+
+	t.Run("dao.Update", func(t *testing.T) {
+		gp.Try(func() error {
+			humanName = humanName + "2"
+			human["name"] = humanName
+			dao.Update(ctx, human)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.FindByRSQL", func(t *testing.T) {
+		list := dao.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
+		t.Log("list:", list)
 	})
 
 	t.Run("dao.FindAll", func(t *testing.T) {

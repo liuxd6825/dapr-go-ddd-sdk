@@ -115,7 +115,7 @@ func (b *QueryGroup) GetGroup() bson.D {
 	ids := make([]any, 0)
 	for i := 0; i <= groupIndex; i++ {
 		col := b.GroupCols[i]
-		var newId interface{} = map[string]interface{}{"$toString": "$" + utils.SnakeString(col.Field)}
+		var newId any = map[string]any{"$toString": "$" + utils.SnakeString(col.Field)}
 		if col.DataType.IsDateTime() || col.DataType.IsDate() {
 			newId = map[string]any{"$dateToString": map[string]any{"date": "$" + utils.SnakeString(col.Field)}}
 		}
