@@ -573,7 +573,7 @@ func (d *Dao[T]) GetFilterMap(tenantId string, rSql string) map[string]any {
 
 func (d *Dao[T]) mapAsSql(tenantId string, mapData any) string {
 	filterMap, ok := mapData.(map[string]any)
-	if ok {
+	if !ok {
 		panic(errors.New("filter data type is not string"))
 	}
 	if filterMap == nil || len(filterMap) == 0 {

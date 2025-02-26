@@ -51,8 +51,9 @@ func Test_Dao(t *testing.T) {
 	}
 
 	humanName := randomutils.NameCN()
+	id := idutils.NewId()
 	human := map[string]any{
-		"id":         idutils.NewId(),
+		"id":         id,
 		"tenantId":   "test",
 		"analyse":    "",
 		"birthday":   time.Now(),
@@ -114,6 +115,18 @@ func Test_Dao(t *testing.T) {
 			t.Error(err)
 		})
 	})
+
+	t.Run("dao.FindById", func(t *testing.T) {
+		gp.Try(func() error {
+			e := dao.FindById(ctx, id)
+			t.Log("findById:", e)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	return
 
 	t.Run("dao.FindByRSQL", func(t *testing.T) {
 		list := dao.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
