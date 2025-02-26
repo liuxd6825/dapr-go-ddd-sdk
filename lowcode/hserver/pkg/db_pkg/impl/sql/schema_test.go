@@ -10,7 +10,7 @@ import (
 
 const HumanSchema = `
 	{
-	  "name": "humans",
+	  "name": "human",
 	  "type": "object",
 	  "required": ["id","name"],
 	  "description": "人员基本信息",
@@ -51,6 +51,48 @@ const HumanSchema = `
 		  "type": "array",
 		  "items": { "type": "string" },
 		  "order": 106
+		},
+		"createdTime": {
+		  "name": "createdTime",
+		  "type": ["datetime"],
+		  "title": "创建时间",
+		  "notNull": true,
+		  "order": 9002
+		},
+		"creatorId": {
+		  "name": "creatorId",
+		  "type": ["string","null"],
+		  "title": "创建人Id",
+		  "notNull": true,
+		  "order": 9003
+		},
+		"creatorName": {
+		  "name": "creatorName",
+		  "type": ["string","null"],
+		  "title": "创建人",
+		  "notNull": true,
+		  "order": 9004
+		},
+		"updatedTime": {
+		  "name": "updatedTime",
+		  "type": ["datetime","null"],
+		  "title": "修改时间",
+		  "notNull": true,
+		  "order": 9005
+		},
+		"updaterId": {
+		  "name": "updaterId",
+		  "type": ["string","null"],
+		  "title": "修改人Id",
+		  "notNull": true,
+		  "order": 9006
+		},
+		"updaterName": {
+		  "name": "updaterName",
+		  "type": ["string","null"],
+		  "title": "修改人",
+		  "notNull": true,
+		  "order": 9007
 		}
 	  }
 	}

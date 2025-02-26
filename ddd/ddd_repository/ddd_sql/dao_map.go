@@ -2,6 +2,7 @@ package ddd_sql
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"gorm.io/gorm"
 )
@@ -11,7 +12,7 @@ type MapDao struct {
 }
 
 func NewMapDaoWithDbKey(dbKey string, tableName string) ddd_repository.Dao[map[string]any] {
-	eb := NewMapEntityBuilder()
+	eb := ddd.NewMapEntityBuilder()
 	mapDao := NewDaoWithDbKey[map[string]any](dbKey, eb, tableName)
 	return &MapDao{
 		dao: mapDao,
@@ -19,7 +20,7 @@ func NewMapDaoWithDbKey(dbKey string, tableName string) ddd_repository.Dao[map[s
 }
 
 func NewMapDao(db *gorm.DB, dbKey string, tableName string) *MapDao {
-	eb := NewMapEntityBuilder()
+	eb := ddd.NewMapEntityBuilder()
 	mapDao := NewDao[map[string]any](db, dbKey, eb, tableName)
 	return &MapDao{
 		dao: mapDao,

@@ -85,6 +85,8 @@ func Test_Dao(t *testing.T) {
 		return
 	}
 
+	dao.Table().AutoMigrate(ctx)
+
 	/*
 		t.Run("dao.AutoMigrate", func(t *testing.T) {
 			gp.Try(func() error {
@@ -107,8 +109,7 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.Update", func(t *testing.T) {
 		gp.Try(func() error {
-			humanName = humanName + "2"
-			human["name"] = humanName
+			human["name"] = humanName + "2"
 			dao.Update(ctx, human)
 			return nil
 		}).Catch(func(err error) {
@@ -120,6 +121,16 @@ func Test_Dao(t *testing.T) {
 		gp.Try(func() error {
 			e := dao.FindById(ctx, id)
 			t.Log("findById:", e)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.DeleteById", func(t *testing.T) {
+		gp.Try(func() error {
+			dao.DeleteById(ctx, id)
+			t.Log("deleteById:", id)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)

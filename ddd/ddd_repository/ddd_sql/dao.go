@@ -33,6 +33,8 @@ const (
 
 var initializePlugin bool = false
 
+var fields = ddd.GetFields()
+
 func NewDaoWithDbKey[T any](dbKey string, eb ddd.EntityBuilder[T], tableName string) ddd_repository.Dao[T] {
 	item := restapp.GetDb(dbKey)
 	if item == nil {
@@ -127,13 +129,15 @@ func (d *Dao[T]) SetId(entity T, id string) {
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
 	err := gp.Try(func() error {
 		db := d.table(ctx)
+		d.entityBuilder.SetCreatedInfo(ctx, entity)
 		return db.Create(entity).Error
 	}).Error
 	return ddd_repository.NewSetResult[T](entity, err)
 }
 
-func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) error {
+func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) error {
 	err := gp.Try(func() error {
+		d.entityBuilder.SetCreatedInfo(ctx, data)
 		return d.table(ctx).Model(data).Create(data).Error
 	}).Error
 	return err
@@ -142,6 +146,9 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	v := d.NewEntity()
 	err := gp.Try(func() error {
+		for _, entity := range entities {
+			d.entityBuilder.SetCreatedInfo(ctx, entity)
+		}
 		return d.table(ctx).Model(v).CreateInBatches(entities, len(entities)).Error
 	}).Error
 	return ddd_repository.NewSetManyResult(entities, err)
@@ -149,7 +156,41 @@ func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repos
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	err := gp.Try(func() error {
-		return d.table(ctx).Where("id=?", d.GetId(entity)).UpdateColumns(entity).Error
+		opt := ddd_repository.NewOptions(opts...)
+		d.entityBuilder.SetUpdatedInfo(ctx, entity)
+		tenantId := d.entityBuilder.GetTenantId(entity)
+		table := d.table(ctx).Where("id=? and tenant_id=?", d.GetId(entity), tenantId)
+
+		// 指定更新字段
+		updateFields := opt.GetUpdateFields()
+		if len(updateFields) > 0 {
+			for _, v := range updateFields {
+				table = table.Select(v)
+			}
+		}
+
+		table = table.Omit(fields.CreatedTime, fields.CreatorId, fields.CreatorName)
+
+		// 指定取消更新的字段
+		cancelFields := opt.GetUpdateCancel()
+		if len(cancelFields) > 0 {
+			for _, name := range cancelFields {
+				table = table.Omit(name)
+			}
+		}
+
+		// 是否空值更新
+		if !opt.GetNullUpdate() {
+			if e, ok := any(entity).(map[string]any); ok {
+				for k, v := range e {
+					if v == nil {
+						table = table.Omit(k)
+					}
+				}
+			}
+		}
+
+		return table.UpdateColumns(entity).Error
 	}).Error
 	return ddd_repository.NewSetResult[T](entity, err)
 }
@@ -158,6 +199,7 @@ func (d *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string
 	v := d.NewEntity()
 	var res *gorm.DB
 	err := gp.Try(func() error {
+		d.entityBuilder.SetUpdatedInfo(ctx, data)
 		res = d.table(ctx).Model(v).Updates(data)
 		return res.Error
 	}).Error
@@ -176,6 +218,7 @@ func (d *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 	model := d.table(ctx).Model(v)
 	for _, e := range entities {
 		id := d.GetId(e)
+		d.entityBuilder.SetUpdatedInfo(ctx, e)
 		model.Where("id = ?", id).UpdateColumns(e)
 	}
 	return ddd_repository.NewSetManyResult(entities, err)
@@ -193,6 +236,7 @@ func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 	model := d.table(ctx).Model(d.entity)
 	for _, e := range entities {
 		id := d.GetId(e)
+		d.entityBuilder.SetUpdatedInfo(ctx, e)
 		err = model.Where("id = ?", id).UpdateColumn(strings.Join(mask, ","), e).Error
 		if err != nil {
 			break
@@ -203,11 +247,13 @@ func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 
 func (d *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) error {
 	data[TenantId] = tenantId
+	d.entityBuilder.SetUpdatedInfo(ctx, data)
 	return d.table(ctx).Model(d.entity).Where("id", id).Updates(data).Error
 }
 
 func (d *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (T, error) {
 	var null T
+	d.entityBuilder.SetUpdatedInfo(ctx, data)
 	err := d.UpdateMapById(ctx, tenantId, id, data, opts...)
 	if err != nil {
 		return null, err
@@ -218,6 +264,7 @@ func (d *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id s
 
 func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) error {
 	table := d.table(ctx)
+	d.entityBuilder.SetUpdatedInfo(ctx, data)
 	err := table.Where(filter).Updates(data).Error
 	return err
 }
@@ -225,12 +272,15 @@ func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, filter any, dat
 func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) (int64, error) {
 	table := d.table(ctx)
 	var res *gorm.DB
+	var count int64
 	_ = d.asFilter(filter, func(data map[string]any) error {
+		d.entityBuilder.SetUpdatedInfo(ctx, data)
 		res = table.Where(filter).Updates(data)
 		return res.Error
 	}, func(sql string) error {
 		sql = fmt.Sprintf("%s='%s' and (%s)", TenantId, tenantId, sql)
-		res = table.Where(sql).Updates(data)
+
+		res = table.Where(sql).Count(&count)
 		return res.Error
 	})
 
@@ -243,7 +293,8 @@ func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	tenantId := d.GetTenantId(entity)
 	id := d.GetId(entity)
-	res := d.table(ctx).Where("tenant_id='%s' and id='%s'", tenantId, id).Delete(entity)
+	d.entityBuilder.SetDeletedInfo(ctx, entity)
+	res := d.table(ctx).Where("tenant_id=? and id=?", tenantId, id).Delete(entity)
 	return ddd_repository.NewSetResult[T](entity, res.Error)
 }
 
@@ -260,7 +311,7 @@ func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, op
 func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var null T
 	table := d.table(ctx)
-	res := table.Where("tenant_id=? and id=?", tenantId, id)
+	res := table.Where("tenant_id=? and id=?", tenantId, id).Delete(id)
 	return ddd_repository.NewSetResult[T](null, res.Error)
 }
 

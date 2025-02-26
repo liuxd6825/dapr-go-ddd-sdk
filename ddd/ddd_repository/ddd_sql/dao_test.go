@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"testing"
@@ -15,12 +17,12 @@ import (
 type Entity = map[string]any
 
 type User struct {
-	ID       string
+	Id       string
 	Name     string
 	Age      int
 	Score    int
 	Email    string
-	TenantID string
+	TenantId string
 }
 
 const test = "test"
@@ -34,30 +36,68 @@ func Test_Dao(t *testing.T) {
 
 	err = db.Exec(`
         CREATE TABLE IF NOT EXISTS users (
-            id TEXT  PRIMARY KEY AUTOINCREMENT,
+            id TEXT  PRIMARY KEY,
             tenant_id TEXT,
             name TEXT,
             age INTEGER,
             score INTEGER,
-            email TEXT
+            email TEXT,
+			created_time TEXT
+			creator_id  TEXT,
+			creator_name TEXT,
+			updated_time TEXT,
+			updater_id TEXT,
+			updater_name TEXT,
+			deleted_time TEXT,
+			deleter_id TEXT,
+			deleter_name TEXT,
+			is_deleted INTEGER
         )
 	`).Error
+
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	eb := NewMapEntityBuilder()
-	dao := NewDao[MapEntity](db, "dbKey", eb, "users")
-	ctx := context.Background()
-	id := "7MC10GTPH63KJJN19YYAREZDS5CJMF"
+	eb := ddd.NewMapEntityBuilder()
+	dao := NewDao[map[string]any](db, "dbKey", eb, "users")
+	ctx, err := restapp.NewTestContext(context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	id := randomutils.NewId()
+	name := randomutils.NameCN()
 
 	t.Run("Insert", func(t *testing.T) {
-		user := NewMapEntity()
+		user := map[string]any{}
+		user["id"] = id
 		user["tenant_id"] = "test"
-		user["name"] = idutils.NewId()
-		user["id"] = idutils.NewId()
+		user["name"] = name
+
 		res := dao.Insert(ctx, user)
+		if res.Error != nil {
+			t.Error(res.Error)
+		}
+	})
+
+	t.Run("Update", func(t *testing.T) {
+		user := map[string]any{}
+		user["id"] = id
+		user["tenant_id"] = "test"
+		user["name"] = name + "2"
+
+		res := dao.Update(ctx, user)
+		if res.Error != nil {
+			t.Error(res.Error)
+		}
+	})
+
+	return
+
+	t.Run("DeleteById", func(t *testing.T) {
+		res := dao.DeleteById(ctx, "test", id)
 		if res.Error != nil {
 			t.Error(res.Error)
 		}

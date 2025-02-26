@@ -28,6 +28,21 @@ type DaoBase struct {
 	env         common.IEnvConfig                  // 环境变量
 }
 
+const (
+	CreatedTime = "createdTime"
+	CreatorId   = "creatorId"
+	CreatorName = "creatorName"
+	UpdatedTime = "updatedTime"
+	UpdaterId   = "updaterId"
+	UpdaterName = "updaterName"
+	DeletedTime = "deletedTime"
+	DeleterId   = "deleterId"
+	DeleterName = "deleterName"
+	IsDeleted   = "isDeleted"
+	TenantId    = "tenantId"
+	Id          = "id"
+)
+
 func NewDaoBase(dao ddd_repository.Dao[map[string]any], cfg *db.DaoConfig) *DaoBase {
 	if cfg == nil {
 		panic("dao base config is nil")
@@ -99,9 +114,7 @@ func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts 
 		for _, entity := range entity {
 			d.Create(ctx, entity, opts...)
 		}
-		return
 	}
-
 	err := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -114,7 +127,18 @@ func (d *DaoBase) Update(ctx context.Context, entity map[string]any, opts ...*db
 	}
 	tenantId := d.GetTenantId(ctx)
 	d.dao.SetTenantId(entity, tenantId)
+	err := d.dao.Update(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
+	if err != nil {
+		panic(err)
+	}
 
+	d.PublishEvent(ctx, db.AccessTypeUpdate, entity, opts...)
+}
+
+func (d *DaoBase) SoftDeleteById(ctx context.Context, id string, opts ...*db.CallOptions) {
+	entity := map[string]any{}
+	entity[Id] = id
+	entity[TenantId] = d.GetTenantId(ctx)
 	err := d.dao.Update(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -125,6 +149,7 @@ func (d *DaoBase) Update(ctx context.Context, entity map[string]any, opts ...*db
 
 func (d *DaoBase) DeleteById(ctx context.Context, id string, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
+
 	err := d.dao.DeleteById(ctx, tenantId, id, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
@@ -132,8 +157,8 @@ func (d *DaoBase) DeleteById(ctx context.Context, id string, opts ...*db.CallOpt
 
 	if d.GetIsPubEvent() {
 		entity := map[string]any{
-			"tenantId": tenantId,
-			"id":       id,
+			TenantId: tenantId,
+			Id:       id,
 		}
 		d.PublishEvent(ctx, db.AccessTypeDelete, entity, opts...)
 	}
@@ -151,6 +176,18 @@ func (d *DaoBase) DeleteByIds(ctx context.Context, ids []string, opts ...*db.Cal
 	err := d.dao.DeleteByIds(ctx, tenantId, ids, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
+	}
+
+	if d.GetIsPubEvent() {
+		list := []map[string]any{}
+		for _, id := range ids {
+			e := map[string]any{}
+			e[Id] = id
+			e[TenantId] = tenantId
+			list = append(list, e)
+		}
+
+		d.PublishBatchEvent(ctx, db.AccessTypeBatchDelete, list, opts...)
 	}
 }
 
@@ -429,6 +466,35 @@ func (d *DaoBase) PublishEvent(ctx context.Context, opeType db.AccessType, entit
 	case db.AccessTypeDelete:
 		server.GetEventPkg().ApplyEvent(ctx, agg, event)
 	}
+}
+
+func (d *DaoBase) PublishBatchEvent(ctx context.Context, opeType db.AccessType, list []map[string]any, opts ...*db.CallOptions) {
+	if !d.isPubEvent {
+		return
+	}
+
+	/*
+		agg, event, err := d.NewAggregateAndEvent(opeType, list, opts...)
+		if err != nil {
+			panic(err)
+		}
+		logs.Debug(ctx, "", logs.Fields{
+			"eventId":     event.EventId,
+			"eventType":   event.EventType,
+			"commandId":   event.CommandId,
+			"aggregateId": event.AggregateId,
+			"tenantId":    d.GetTenantId(ctx),
+		})
+		switch opeType {
+		case db.AccessTypeCreate:
+			server.GetEventPkg().CreateEvent(ctx, agg, event)
+		case db.AccessTypeUpdate:
+			server.GetEventPkg().ApplyEvent(ctx, agg, event)
+		case db.AccessTypeDelete:
+			server.GetEventPkg().ApplyEvent(ctx, agg, event)
+		}
+
+	*/
 }
 
 func (d *DaoBase) NewFindPagingQuery(ctx context.Context, findPagingMap any) ddd_repository.FindPagingQuery {

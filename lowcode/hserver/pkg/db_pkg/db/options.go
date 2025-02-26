@@ -6,12 +6,14 @@ import (
 )
 
 type DaoConfig struct {
-	DbKey      string             `json:"dbKey"`
-	IsPubEvent bool               `json:"isPubEvent"`
-	AggField   string             `json:"aggField"`
-	Env        common.IEnvConfig  `json:"env"`
-	Schema     *jsonschema.Schema `json:"schema"`
-	Database   any                `json:"database"`
+	DbKey              string             `json:"dbKey"`              // 数据库Key
+	IsPubEvent         bool               `json:"isPubEvent"`         // 是否发布消息
+	AggField           string             `json:"aggField"`           // 聚合根字段
+	Env                common.IEnvConfig  `json:"env"`                // 环境配置
+	Schema             *jsonschema.Schema `json:"schema"`             // 数据结构
+	Database           any                `json:"database"`           // 数据库连接对象
+	IsCancelModified   bool               `json:"isCancelModified"`   // 取消创建者与更新都信息
+	IsCancelSoftDelete bool               `json:"isCancelSoftDelete"` // 取消软删除
 }
 
 func (c *DaoConfig) Valid() {

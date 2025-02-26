@@ -45,15 +45,19 @@ type Options interface {
 	SetUpdateCancel(v []string) Options
 	SetUpdateCancelByDefault() Options
 
+	GetNullUpdate() bool
+	SetNullUpdate(val bool) Options
+
 	Merge(opts ...Options) Options
 }
 
 type RepositoryOptions struct {
-	sort         *string
-	timeout      *time.Duration
-	updateFields []string
-	updateCancel []string
-	upsert       *bool
+	sort          *string
+	timeout       *time.Duration
+	updateFields  []string
+	updateCancel  []string
+	upsert        *bool
+	nullNotUpdate *bool // 空值是否更新
 }
 
 func NewOptions(o ...Options) Options {
@@ -76,6 +80,18 @@ func NewOptions(o ...Options) Options {
 		}
 	}
 	return res
+}
+
+func (o *RepositoryOptions) GetNullUpdate() bool {
+	if o.nullNotUpdate == nil {
+		return true
+	}
+	return *o.nullNotUpdate
+}
+func (o *RepositoryOptions) SetNullUpdate(val bool) Options {
+	b := val
+	o.nullNotUpdate = &b
+	return o
 }
 
 func (o *RepositoryOptions) GetTimeout() *time.Duration {
