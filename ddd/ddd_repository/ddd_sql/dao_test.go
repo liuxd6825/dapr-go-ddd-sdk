@@ -138,7 +138,7 @@ func Test_Dao(t *testing.T) {
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := dao.Count(ctx, test, "")
+		count, err := dao.CountByRSQL(ctx, test, "")
 		if err != nil {
 			t.Error(err)
 			return

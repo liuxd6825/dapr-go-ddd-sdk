@@ -213,15 +213,19 @@ func (d *DaoBase) UpdateByMap(ctx context.Context, filterMap map[string]any, dat
 }
 
 func (d *DaoBase) UpdateMany(ctx context.Context, entities []map[string]any, opts ...*db.CallOptions) {
+	tenantId := d.GetTenantId(ctx)
+	for _, entity := range entities {
+		entity[TenantId] = tenantId
+	}
 	err := d.dao.UpdateManyById(ctx, entities, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (d *DaoBase) UpdateManyByFilter(ctx context.Context, filter string, data interface{}, opts ...*db.CallOptions) {
+func (d *DaoBase) UpdateManyByFilter(ctx context.Context, filterRSQL string, data interface{}, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.UpdateManyByFilter(ctx, tenantId, filter, data, db.NewRepositoryOptions(opts)...).GetError()
+	err := d.dao.UpdateManyByFilter(ctx, tenantId, filterRSQL, data, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
 		panic(err)
 	}
@@ -235,9 +239,9 @@ func (d *DaoBase) DeleteAll(ctx context.Context, opts ...*db.CallOptions) {
 	}
 }
 
-func (d *DaoBase) DeleteByFilter(ctx context.Context, filter string, opts ...*db.CallOptions) {
+func (d *DaoBase) DeleteByFilter(ctx context.Context, filterRSQL string, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
-	err := d.dao.DeleteByFilter(ctx, tenantId, filter, db.NewRepositoryOptions(opts)...)
+	err := d.dao.DeleteByFilter(ctx, tenantId, filterRSQL, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
@@ -351,6 +355,12 @@ func (d *DaoBase) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRe
 		panic(err)
 	}
 	return data
+}
+
+func (d *DaoBase) SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*db.CallOptions) map[string]any {
+	opt := db.NewCallOptions(opts...)
+	tenantId := d.GetTenantId(ctx)
+	return d.dao.SumByRSQL(ctx, tenantId, rSql, valueCols, opt)
 }
 
 func (d *DaoBase) NewAggregateAndEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opts ...*db.CallOptions) (*server.Aggregate, *common.Event, error) {

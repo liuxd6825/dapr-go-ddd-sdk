@@ -17,9 +17,10 @@ type Dao interface {
 	DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions)
 	UpdateByMap(ctx context.Context, filterMap map[string]any, data map[string]any, opts ...*CallOptions)
 	UpdateMany(ctx context.Context, entities []map[string]any, opts ...*CallOptions)
-	UpdateManyByFilter(ctx context.Context, filter string, data interface{}, opts ...*CallOptions)
+	UpdateManyByFilter(ctx context.Context, filterRSQL string, data interface{}, opts ...*CallOptions)
+
 	DeleteAll(ctx context.Context, opts ...*CallOptions)
-	DeleteByFilter(ctx context.Context, filter string, opts ...*CallOptions)
+	DeleteByFilter(ctx context.Context, filterRSQL string, opts ...*CallOptions)
 	DeleteByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions)
 
 	FindById(ctx context.Context, id string, opts ...*CallOptions) map[string]any
@@ -34,6 +35,7 @@ type Dao interface {
 	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
+	SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) map[string]any
 
 	CountByMap(ctx context.Context, filterData any, opts ...*CallOptions) int64
 	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64

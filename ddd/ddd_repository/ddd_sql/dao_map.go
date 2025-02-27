@@ -171,6 +171,10 @@ func (m *MapDao) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 
 func (m *MapDao) CountByMap(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
 	return m.dao.CountByMap(ctx, tenantId, filterData, opts...)
+
+}
+func (m *MapDao) SumByRSQL(ctx context.Context, tenantId, rsql string, vals []*ddd_repository.ValueCol, opts ...ddd_repository.Options) map[string]any {
+	return m.dao.SumByRSQL(ctx, tenantId, rsql, vals, opts...)
 }
 
 func (m *MapDao) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {

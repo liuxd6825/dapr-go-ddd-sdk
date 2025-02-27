@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
@@ -108,8 +109,6 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
-	return
-
 	id := idutils.NewId()
 	human := map[string]any{
 		"id":         id,
@@ -181,6 +180,21 @@ func Test_Dao(t *testing.T) {
 	t.Run("dao.Count", func(t *testing.T) {
 		gp.Try(func() error {
 			res := dao.CountByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
+			t.Log("count:", res)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.Sum", func(t *testing.T) {
+		gp.Try(func() error {
+			var vals []*ddd_repository.ValueCol
+			vals = append(vals, &ddd_repository.ValueCol{
+				AggFunc: "sum",
+				Field:   "age",
+			})
+			res := dao.SumByRSQL(ctx, "", vals)
 			t.Log("count:", res)
 			return nil
 		}).Catch(func(err error) {

@@ -222,7 +222,6 @@ func (d *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
-
 	for _, e := range entities {
 		d.entityBuilder.SetUpdatedInfo(ctx, e)
 	}
@@ -545,6 +544,15 @@ func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 
 	res, found, err := d.sum(ctx, qry.GetTenantId(), filter, qry.GetValueCols(), resData, opts...)
 	return res, found, err
+}
+
+func (d *Dao[T]) SumByRSQL(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) map[string]any {
+	data := make(map[string]any)
+	_, _, err := d.sum(ctx, tenantId, rSql, valueCols, &data, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 func (d *Dao[T]) sum(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
