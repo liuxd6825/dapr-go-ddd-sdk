@@ -62,7 +62,7 @@ func NewDao(cfg *db.DaoConfig) *Dao {
 	if opt.GetCollCallback != nil {
 		getCollCallback = opt.GetCollCallback
 	}
-	entBuilder := ddd.NewMapEntityBuilder[map[string]any]()
+	entBuilder := ddd.NewMapEntityBuilder()
 	daoOpts := ddd_mongodb.NewOptions[map[string]any]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
 
 	dao := ddd_mongodb.NewDao[map[string]any](getCollCallback, daoOpts)

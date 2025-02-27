@@ -1,5 +1,13 @@
 # dapr-go-ddd-sdk
 
+### 启动
+
+```shell
+main.go start 
+--env = dev_lxd 
+--config = /Users/lxd/Projects/duxm/h-master/server/config/config.yaml 
+--homePath = /Users/lxd/Projects/duxm/h-master
+```
 #### 目标
 
 框架目标是简化DDD开发难度，使开发人员可直接进行业务开发，不需关心技术细节与实现。实现技术与业务分离，提升开发效率与质量。
