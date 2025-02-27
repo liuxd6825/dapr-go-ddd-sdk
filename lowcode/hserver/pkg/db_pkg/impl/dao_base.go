@@ -112,7 +112,7 @@ func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db
 func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) {
 	tenantId := d.GetTenantId(ctx)
 	for _, e := range entity {
-		e["tenant_id"] = tenantId
+		e[TenantId] = tenantId
 	}
 	err := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
