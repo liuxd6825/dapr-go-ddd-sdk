@@ -22,13 +22,10 @@ type Dao[T any] interface {
 	// 更新
 
 	Update(ctx context.Context, entity T, opts ...Options) *SetResult[T]
-	UpdateManyByFilter(ctx context.Context, tenantId, filter string, data any, opts ...Options) *SetManyCountResult
-	UpdateManyById(ctx context.Context, entities []T, opts ...Options) *SetManyResult[T]
-	UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...Options) *SetManyResult[T]
-	UpdateMapById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) error
-	FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) (T, error)
-	UpdateMap(ctx context.Context, tenantId string, filter any, data any, opts ...Options) error
-	UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...Options) (int64, error)
+	UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...Options) *SetManyCountResult
+	UpdateMany(ctx context.Context, entities []T, opts ...Options) *SetManyResult[T]
+	UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) *SetResult[T]
+	UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...Options) *SetResult[T]
 
 	// 删除
 
@@ -50,7 +47,7 @@ type Dao[T any] interface {
 	FindPaging(ctx context.Context, qry FindPagingQuery, opts ...Options) (result *FindPagingResult[T])
 	FindAutoComplete(ctx context.Context, qry FindAutoCompleteQuery, opts ...Options) *FindPagingResult[T]
 	FindDistinct(ctx context.Context, qry FindDistinctQuery, opts ...Options) *FindPagingResult[T]
-
+	FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) (T, error)
 	// 汇总
 
 	SumEntity(ctx context.Context, qry FindPagingQuery, opts ...Options) ([]T, bool, error)

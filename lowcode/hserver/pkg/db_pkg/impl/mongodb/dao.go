@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dao/mongo_dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
@@ -16,7 +17,7 @@ import (
 type Dao struct {
 	*impl.DaoBase
 	db  *ddd_mongodb.MongoDB
-	dao *ddd_mongodb.Dao[map[string]any] // 数据访问对象
+	dao ddd_repository.Dao[map[string]any] // 数据访问对象
 	cfg *db.DaoConfig
 }
 
@@ -28,7 +29,7 @@ type DaoOptions struct {
 	IsPubEvent bool
 	AggField   string
 	// mongo
-	MongoDB         *ddd_mongodb.MongoDB
+	MongoDB         ddd_repository.Dao[map[string]any]
 	GetCollCallback mongo_dao.GetCollectionCallback
 	Server          element.Server
 }

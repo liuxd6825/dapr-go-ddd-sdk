@@ -69,7 +69,7 @@ func NewDao[T ddd.Entity](collectionName string, opts ...*RepositoryOptions) *Da
 	}
 
 	return &Dao[T]{
-		dao: ddd_mongodb.NewDao[T](getCollCallback, ddd_mongodb.NewOptions[T]().SetAutoCreateCollection(true).SetAutoCreateIndex(true)),
+		dao: ddd_mongodb.NewMongoDao[T](getCollCallback, ddd_mongodb.NewOptions[T]().SetAutoCreateCollection(true).SetAutoCreateIndex(true)),
 	}
 }
 
@@ -101,20 +101,24 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return d.dao.Update(ctx, entity, opts...).GetError()
 }
 
-func (d *Dao[T]) UpdateByMap(ctx context.Context, tenantId string, filterMap map[string]any, data any, opts ...ddd_repository.Options) error {
-	return d.dao.UpdateMap(ctx, tenantId, filterMap, data, opts...)
+func (d *Dao[T]) UpdateByMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) int64 {
+	res := d.dao.UpdateMap(ctx, tenantId, id, data, opts...)
+	if res.Error != nil {
+		panic(res.Error)
+	}
+	return res.RowsAffected
 }
 
 func (d *Dao[T]) UpdateMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) error {
-	return d.dao.UpdateManyById(ctx, entities, opts...).GetError()
+	return d.dao.UpdateMany(ctx, entities, opts...).GetError()
 }
 
 func (d *Dao[T]) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...ddd_repository.Options) (*ddd_repository.BulkWriteResult, error) {
 	return d.dao.BulkWrite(ctx, models, opts...)
 }
 
-func (d *Dao[T]) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data interface{}, opts ...ddd_repository.Options) error {
-	return d.dao.UpdateManyByFilter(ctx, tenantId, filter, data, opts...).GetError()
+func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) error {
+	return d.dao.UpdateByRSQL(ctx, tenantId, filterRSQL, data, opts...).GetError()
 }
 
 func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error {

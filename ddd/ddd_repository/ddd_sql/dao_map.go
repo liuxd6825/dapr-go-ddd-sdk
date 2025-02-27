@@ -38,7 +38,7 @@ func (m *MapDao) NewEntityList() []map[string]any {
 }
 
 func (m *MapDao) GetTenantId(entity map[string]any) string {
-	return m.dao.GetTenantId(map[string]any(entity))
+	return m.dao.GetTenantId(entity)
 }
 
 func (m *MapDao) SetTenantId(entity map[string]any, tenantId string) {
@@ -69,31 +69,24 @@ func (m *MapDao) Update(ctx context.Context, entity map[string]any, opts ...ddd_
 	return m.dao.Update(ctx, entity, opts...)
 }
 
-func (m *MapDao) UpdateManyByFilter(ctx context.Context, tenantId, filter string, data any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
-	return m.dao.UpdateManyByFilter(ctx, tenantId, filter, data, opts...)
+func (m *MapDao) UpdateByRSQL(ctx context.Context, tenantId, filter string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
+	return m.dao.UpdateByRSQL(ctx, tenantId, filter, data, opts...)
 }
 
-func (m *MapDao) UpdateManyById(ctx context.Context, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
-	return m.dao.UpdateManyById(ctx, entities, opts...)
+func (m *MapDao) UpdateMany(ctx context.Context, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
+	return m.dao.UpdateMany(ctx, entities, opts...)
 }
 
-func (m *MapDao) UpdateManyMaskById(ctx context.Context, entities []map[string]any, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
-	return m.dao.UpdateManyMaskById(ctx, entities, mask, opts...)
-}
-
-func (m *MapDao) UpdateMapById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) error {
-	return m.dao.UpdateMapById(ctx, tenantId, id, data, opts...)
+func (m *MapDao) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
+	res := m.dao.UpdateMap(ctx, tenantId, id, data, opts...)
+	return res
 }
 
 func (m *MapDao) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (map[string]any, error) {
 	return m.dao.FindOneAndUpdateById(ctx, tenantId, id, data, opts...)
 }
 
-func (m *MapDao) UpdateMap(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) error {
-	return m.dao.UpdateMap(ctx, tenantId, filter, data, opts...)
-}
-
-func (m *MapDao) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) (int64, error) {
+func (m *MapDao) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.UpdateMapAndGetCount(ctx, tenantId, filter, data, opts...)
 }
 

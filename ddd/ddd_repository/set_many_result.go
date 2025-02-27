@@ -1,23 +1,23 @@
 package ddd_repository
 
 type SetManyResult[T interface{}] struct {
-	Error error `json:"error"`
-	Count int64 `json:"count"`
-	Data  []T   `json:"data"`
+	Error        error `json:"error"`
+	RowsAffected int64 `json:"RowsAffected"`
+	Data         []T   `json:"data"`
 }
 
 type SetManyCountResult struct {
 	Error         error       `json:"error"`
-	MatchedCount  int64       `json:"matchedCount"`  // The number of documents matched by the filter.
-	ModifiedCount int64       `json:"modifiedCount"` // The number of documents modified by the operation.
-	UpsertedCount int64       `json:"upsertedCount"` // The number of documents upserted by the operation.
+	MatchedCount  int64       `json:"matchedCount"`  // 查询条件匹配到的文档数量。
+	RowsAffected  int64       `json:"rowsAffected"`  // 表示实际被修改的文档数量。
+	UpsertedCount int64       `json:"upsertedCount"` // 表示执行 upsert 操作时插入的新文档数量
 	UpsertedID    interface{} `json:"upsertedId"`    // The _id field of the upserted document, or nil if no upsert was done.
 }
 
 type UpdateResult interface {
-	GetMatchedCount() int64     // The number of documents matched by the filter.
-	GetModifiedCount() int64    // The number of documents modified by the operation.
-	GetUpsertedCount() int64    // The number of documents upserted by the operation.
+	GetMatchedCount() int64     // 查询条件匹配到的文档数量。
+	GetRowsAffected() int64     // 表示实际被修改的文档数量。
+	GetUpsertedCount() int64    // 表示执行 upsert 操作时插入的新文档数量
 	GetUpsertedID() interface{} // The _id field of the upserted document, or nil if no upsert was done.
 }
 
@@ -35,7 +35,7 @@ func NewSetManyCountResultMongo(updateRes UpdateResult, err error) *SetManyCount
 	}
 	if updateRes != nil {
 		res.UpsertedCount = updateRes.GetUpsertedCount()
-		res.ModifiedCount = updateRes.GetModifiedCount()
+		res.RowsAffected = updateRes.GetRowsAffected()
 		res.MatchedCount = updateRes.GetMatchedCount()
 		res.UpsertedID = updateRes.GetUpsertedID()
 	}
@@ -50,8 +50,8 @@ func (r *SetManyCountResult) SetMatchedCount(v int64) *SetManyCountResult {
 	r.MatchedCount = v
 	return r
 }
-func (r *SetManyCountResult) SetModifiedCount(v int64) *SetManyCountResult {
-	r.ModifiedCount = v
+func (r *SetManyCountResult) SetRowsAffected(v int64) *SetManyCountResult {
+	r.RowsAffected = v
 	return r
 }
 func (r *SetManyCountResult) SetUpsertedCount(v int64) *SetManyCountResult {

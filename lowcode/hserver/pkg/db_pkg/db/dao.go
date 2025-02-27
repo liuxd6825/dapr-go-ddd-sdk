@@ -10,15 +10,16 @@ type Dao interface {
 	GetSchema() *jsonschema.Schema
 	GetAggField() string
 
-	Create(ctx context.Context, entity map[string]any, opts ...*CallOptions)
-	Update(ctx context.Context, entity map[string]any, opts ...*CallOptions)
-	DeleteById(ctx context.Context, id string, opts ...*CallOptions)
-	CreateMany(ctx context.Context, entity []map[string]any, opts ...*CallOptions)
-	DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions)
-	UpdateByMap(ctx context.Context, filterMap map[string]any, data map[string]any, opts ...*CallOptions)
-	UpdateMany(ctx context.Context, entities []map[string]any, opts ...*CallOptions)
-	UpdateManyByFilter(ctx context.Context, filterRSQL string, data interface{}, opts ...*CallOptions)
+	Create(ctx context.Context, entity map[string]any, opts ...*CallOptions) int64
+	CreateMany(ctx context.Context, entity []map[string]any, opts ...*CallOptions) int64
 
+	Update(ctx context.Context, entity map[string]any, opts ...*CallOptions) int64
+	UpdateMap(ctx context.Context, id string, data map[string]any, opts ...*CallOptions) int64
+	UpdateMany(ctx context.Context, entities []map[string]any, opts ...*CallOptions) int64
+	UpdateByRSQL(ctx context.Context, filterRSQL string, data map[string]any, opts ...*CallOptions) int64
+
+	DeleteById(ctx context.Context, id string, opts ...*CallOptions)
+	DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions)
 	DeleteAll(ctx context.Context, opts ...*CallOptions)
 	DeleteByFilter(ctx context.Context, filterRSQL string, opts ...*CallOptions)
 	DeleteByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions)

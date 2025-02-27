@@ -74,11 +74,11 @@ func Test_Dao(t *testing.T) {
 	}
 	dao.Table().Drop(ctx)
 	dao.Table().AutoMigrate(ctx)
-	newCount := 10
+	newCount := int64(10)
 	var list []map[string]any
 	t.Run("dao.CreateMany", func(t *testing.T) {
 		gp.Try(func() error {
-			for i := 0; i < newCount; i++ {
+			for i := int64(0); i < newCount; i++ {
 				entity := map[string]any{
 					"id":         randomutils.NewId(),
 					"name":       humanName,
@@ -130,20 +130,33 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
-	t.Run("dao.Update", func(t *testing.T) {
+	t.Run("dao.FindById", func(t *testing.T) {
 		gp.Try(func() error {
-			human["name"] = humanName + "2"
-			dao.Update(ctx, human)
+			e := dao.FindById(ctx, id)
+			t.Log("findById:", e)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
 		})
 	})
 
-	t.Run("dao.FindById", func(t *testing.T) {
+	t.Run("dao.Update", func(t *testing.T) {
 		gp.Try(func() error {
-			e := dao.FindById(ctx, id)
-			t.Log("findById:", e)
+			human["name"] = humanName + "2"
+			count := dao.Update(ctx, human)
+			assert.Equal(t, int64(1), count)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.UpdateByRSQL", func(t *testing.T) {
+		gp.Try(func() error {
+			humanName = humanName + "3"
+			human["name"] = humanName
+			count := dao.UpdateByRSQL(ctx, fmt.Sprintf("id=='%s'", id), human)
+			assert.Equal(t, int64(1), count)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -161,11 +174,9 @@ func Test_Dao(t *testing.T) {
 	})
 
 	t.Run("dao.FindByRSQL", func(t *testing.T) {
-		list := dao.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
-		t.Log("list:", list)
-		if len(list) != newCount {
-			t.Errorf("len(list)=%d  newCount=%v", len(list), newCount)
-		}
+		findList := dao.FindByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+		t.Log("list:", findList)
+		assert.Equal(t, newCount, int64(len(findList)))
 	})
 
 	t.Run("dao.FindAll", func(t *testing.T) {
@@ -177,9 +188,10 @@ func Test_Dao(t *testing.T) {
 		}
 	})
 
-	t.Run("dao.Count", func(t *testing.T) {
+	t.Run("dao.CountByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			res := dao.CountByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
+			res := dao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			assert.Equal(t, newCount, res)
 			t.Log("count:", res)
 			return nil
 		}).Catch(func(err error) {
