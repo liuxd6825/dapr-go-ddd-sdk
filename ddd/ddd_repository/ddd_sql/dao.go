@@ -237,6 +237,7 @@ func (d *Dao[T]) getIds(entities []T) []string {
 	}
 	return ids
 }
+
 func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	var err error
 	model := d.table(ctx).Model(d.entity)
