@@ -73,9 +73,14 @@ func NewDao[T ddd.Entity](collectionName string, opts ...*RepositoryOptions) *Da
 	}
 }
 
-func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
-	return d.dao.Count(ctx, tenantId, rsql, opts...)
+func (d *Dao[T]) CountByMap(ctx context.Context, tenantId string, mapData any, opts ...ddd_repository.Options) (int64, error) {
+	return d.dao.CountByMap(ctx, tenantId, mapData, opts...)
 }
+
+func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
+	return d.dao.CountByRSQL(ctx, tenantId, rsql, opts...)
+}
+
 func (d *Dao[T]) Save(ctx context.Context, setData *ddd.SetData[T], opts ...ddd_repository.Options) error {
 	return d.dao.Save(ctx, setData, opts...).GetError()
 }

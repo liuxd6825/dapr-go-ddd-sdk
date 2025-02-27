@@ -70,6 +70,10 @@ func (r *Dao[T]) GetMetadata() map[string]any {
 	return r.metadata
 }
 
+func (r *Dao[T]) AddMetadata(key string, val any) {
+	r.metadata[key] = val
+}
+
 func (r *Dao[T]) NewEntity() T {
 	return r.entityBuilder.NewEntity()
 }
