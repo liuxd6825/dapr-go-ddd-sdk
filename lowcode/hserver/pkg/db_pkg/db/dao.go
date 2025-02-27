@@ -35,6 +35,9 @@ type Dao interface {
 	SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
 
+	CountByMap(ctx context.Context, filterData any, opts ...*CallOptions) int64
+	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64
+
 	Table() Table
 	//GetFilterMap(tenantId string, rSql string) map[string]any
 }

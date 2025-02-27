@@ -46,8 +46,8 @@ func NewDao(cfg *db.DaoConfig) db.Dao {
 	}
 
 	sqlDao := ddd_sql.NewMapDao(database, cfg.DbKey, cfg.Schema.Name)
-	sqlDao.GetMetadata()["dbSchema"] = dbSchema
-	sqlDao.GetMetadata()["schema"] = cfg.Schema
+	sqlDao.AddMetadata("dbSchema", dbSchema)
+	sqlDao.AddMetadata("schema", cfg.Schema)
 
 	daoBase := impl.NewDaoBase(sqlDao, cfg)
 

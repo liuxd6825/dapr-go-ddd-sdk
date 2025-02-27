@@ -59,11 +59,12 @@ type Dao[T any] interface {
 
 	// 总数
 
-	CountRows(ctx context.Context, tenantId string, filterData any, opts ...Options) (int64, error)
-	Count(ctx context.Context, tenantId string, rsql string, opts ...Options) (int64, error)
+	CountByMap(ctx context.Context, tenantId string, filterData any, opts ...Options) (int64, error)
+	CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...Options) (int64, error)
 
 	StartTx(ctx context.Context, fun TxFunc, options ...*SessionOptions) error
 
 	SetMetadata(metadata map[string]any)
 	GetMetadata() map[string]any
+	AddMetadata(key string, val any)
 }

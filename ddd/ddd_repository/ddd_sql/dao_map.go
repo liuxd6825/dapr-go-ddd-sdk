@@ -169,12 +169,12 @@ func (m *MapDao) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, re
 	return m.dao.Sum(ctx, qry, resData, opts...)
 }
 
-func (m *MapDao) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
-	return m.dao.CountRows(ctx, tenantId, filterData, opts...)
+func (m *MapDao) CountByMap(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
+	return m.dao.CountByMap(ctx, tenantId, filterData, opts...)
 }
 
-func (m *MapDao) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
-	return m.dao.Count(ctx, tenantId, rsql, opts...)
+func (m *MapDao) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
+	return m.dao.CountByRSQL(ctx, tenantId, rsql, opts...)
 }
 
 func (m *MapDao) StartTx(ctx context.Context, fun ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) error {
@@ -187,4 +187,8 @@ func (m *MapDao) SetMetadata(metadata map[string]any) {
 
 func (m *MapDao) GetMetadata() map[string]any {
 	return m.dao.GetMetadata()
+}
+
+func (m *MapDao) AddMetadata(key string, val any) {
+	m.dao.AddMetadata(key, val)
 }

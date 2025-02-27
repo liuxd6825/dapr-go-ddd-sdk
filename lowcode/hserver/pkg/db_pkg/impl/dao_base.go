@@ -110,10 +110,9 @@ func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db
 }
 
 func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) {
-	if d.GetIsPubEvent() {
-		for _, entity := range entity {
-			d.Create(ctx, entity, opts...)
-		}
+	tenantId := d.GetTenantId(ctx)
+	for _, e := range entity {
+		e["tenant_id"] = tenantId
 	}
 	err := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...).GetError()
 	if err != nil {
@@ -354,9 +353,9 @@ func (d *DaoBase) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRe
 	return data
 }
 
-func (d *DaoBase) NewAggregateAndEvent(operateType db.AccessType, entity map[string]any, opts ...*db.CallOptions) (*server.Aggregate, *common.Event, error) {
+func (d *DaoBase) NewAggregateAndEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opts ...*db.CallOptions) (*server.Aggregate, *common.Event, error) {
 	opt := db.NewCallOptions(opts...)
-	event, err := d.NewEvent(operateType, entity, opt)
+	event, err := d.NewEvent(ctx, operateType, entity, opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -367,7 +366,7 @@ func (d *DaoBase) NewAggregateAndEvent(operateType db.AccessType, entity map[str
 	return agg, event, nil
 }
 
-func (d *DaoBase) NewEvent(operateType db.AccessType, entity map[string]any, opt *db.CallOptions) (*common.Event, error) {
+func (d *DaoBase) NewEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opt *db.CallOptions) (*common.Event, error) {
 	o := db.NewCallOptions(opt)
 	eventId := idutils.NewId()
 	tenantId := d.dao.GetTenantId(entity)
@@ -396,6 +395,27 @@ func (d *DaoBase) GetEventType(accessType db.AccessType, opts *db.CallOptions) s
 		eventType = *opts.EventType
 	}
 	return common.GetEventType(d.appId, eventType, string(accessType))
+}
+
+func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*db.CallOptions) int64 {
+	opt := db.NewCallOptions(opts...)
+
+	tenantId := d.GetTenantId(ctx)
+	count, err := d.dao.CountByMap(ctx, tenantId, filterData, opt)
+	if err != nil {
+		panic(err)
+	}
+	return count
+}
+
+func (d *DaoBase) CountByRSQL(ctx context.Context, rsql string, opts ...*db.CallOptions) int64 {
+	opt := db.NewCallOptions(opts...)
+	tenantId := d.GetTenantId(ctx)
+	count, err := d.dao.CountByRSQL(ctx, tenantId, rsql, opt)
+	if err != nil {
+		panic(err)
+	}
+	return count
 }
 
 func (d *DaoBase) NewAggregate(entity map[string]any, opt *db.CallOptions) (*server.Aggregate, error) {
@@ -447,7 +467,7 @@ func (d *DaoBase) PublishEvent(ctx context.Context, opeType db.AccessType, entit
 		return
 	}
 
-	agg, event, err := d.NewAggregateAndEvent(opeType, entity, opts...)
+	agg, event, err := d.NewAggregateAndEvent(ctx, opeType, entity, opts...)
 	if err != nil {
 		panic(err)
 	}

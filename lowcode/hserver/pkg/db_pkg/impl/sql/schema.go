@@ -24,6 +24,7 @@ func NewDBSchema(sch *jsonschema.Schema) (*dbschema.Schema, error) {
 			idField = addDbField(dbSch, "id", dbschema.String, 30)
 		}
 		idField.PrimaryKey = true
+		idField.Updatable = false
 	}
 
 	tenantIdField := dbSch.FieldsByName["tenantId"]
@@ -32,6 +33,7 @@ func NewDBSchema(sch *jsonschema.Schema) (*dbschema.Schema, error) {
 	} else {
 		tenantIdField.NotNull = true
 	}
+	tenantIdField.Updatable = false
 
 	initDbSchema(dbSch)
 	return dbSch, nil

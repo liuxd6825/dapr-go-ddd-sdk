@@ -51,19 +51,6 @@ func Test_Dao(t *testing.T) {
 	}
 
 	humanName := randomutils.NameCN()
-	id := idutils.NewId()
-	human := map[string]any{
-		"id":         id,
-		"tenantId":   "test",
-		"analyse":    "",
-		"birthday":   time.Now(),
-		"peopleType": []string{"1111"},
-		"name":       humanName,
-		"age":        1,
-		"tags":       []string{"tag1", "tag2"},
-	}
-	t.Log(human)
-
 	humanSchema, err := schema.NewSchemaWithJson("human.json", HumanSchema)
 	if err != nil {
 		t.Error(err)
@@ -84,19 +71,56 @@ func Test_Dao(t *testing.T) {
 		t.Error(err)
 		return
 	}
-
+	dao.Table().Drop(ctx)
 	dao.Table().AutoMigrate(ctx)
-
-	/*
-		t.Run("dao.AutoMigrate", func(t *testing.T) {
-			gp.Try(func() error {
-				dao.Table().AutoMigrate(ctx)
-				return nil
-			}).Catch(func(e error) {
-				t.Error(err)
-			})
+	newCount := 10
+	var list []map[string]any
+	t.Run("dao.CreateMany", func(t *testing.T) {
+		gp.Try(func() error {
+			for i := 0; i < newCount; i++ {
+				entity := map[string]any{
+					"id":         randomutils.NewId(),
+					"name":       humanName,
+					"analyse":    "",
+					"age":        randomutils.IntMax(100),
+					"birthday":   randomutils.Date(),
+					"peopleType": []string{"1111"},
+					"tags":       []string{"tag1", "tag2"},
+				}
+				list = append(list, entity)
+			}
+			dao.CreateMany(ctx, list)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
 		})
-	*/
+	})
+
+	t.Run("dao.UpdateMany", func(t *testing.T) {
+		gp.Try(func() error {
+			for _, v := range list {
+				v["remark"] = "remark," + randomutils.String(10)
+			}
+			dao.UpdateMany(ctx, list)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	return
+
+	id := idutils.NewId()
+	human := map[string]any{
+		"id":         id,
+		"tenantId":   "test",
+		"analyse":    "",
+		"birthday":   time.Now(),
+		"peopleType": []string{"1111"},
+		"name":       humanName,
+		"age":        1,
+		"tags":       []string{"tag1", "tag2"},
+	}
 
 	t.Run("dao.Create", func(t *testing.T) {
 		gp.Try(func() error {
@@ -137,11 +161,12 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
-	return
-
 	t.Run("dao.FindByRSQL", func(t *testing.T) {
 		list := dao.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
 		t.Log("list:", list)
+		if len(list) != newCount {
+			t.Errorf("len(list)=%d  newCount=%v", len(list), newCount)
+		}
 	})
 
 	t.Run("dao.FindAll", func(t *testing.T) {
@@ -151,6 +176,16 @@ func Test_Dao(t *testing.T) {
 		} else {
 			t.Log("list:", res.GetData())
 		}
+	})
+
+	t.Run("dao.Count", func(t *testing.T) {
+		gp.Try(func() error {
+			res := dao.CountByRSQL(ctx, fmt.Sprintf("name=='%s'", humanName))
+			t.Log("count:", res)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
 	})
 
 }

@@ -1175,7 +1175,7 @@ func (r *Dao[T]) sum(ctx context.Context, filterMap any, valueCols []*ddd_reposi
 
 }
 
-func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
+func (r *Dao[T]) CountByMap(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
 	total, err := r.getCollection(ctx).CountDocuments(r.getSessionCtx(ctx), filterData)
 	if err != nil {
 		return 0, err
@@ -1183,7 +1183,7 @@ func (r *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any,
 	return total, err
 }
 
-func (r *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
+func (r *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
 	f, err := r.getFilter(tenantId, rsql)
 	total, err := r.getCollection(ctx).CountDocuments(r.getSessionCtx(ctx), f)
 	if err != nil {

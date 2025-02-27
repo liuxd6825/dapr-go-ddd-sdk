@@ -98,6 +98,10 @@ func (d *Dao[T]) GetMetadata() map[string]any {
 	return d.metadata
 }
 
+func (d *Dao[T]) AddMetadata(key string, val any) {
+	d.metadata[key] = val
+}
+
 func (d *Dao[T]) ExecSql(sql string) error {
 	return d.db.Exec(sql).Error
 }
@@ -154,30 +158,34 @@ func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repos
 	return ddd_repository.NewSetManyResult(entities, err)
 }
 
+func (d *Dao[T]) updateTable(ctx context.Context, opt ddd_repository.Options) *gorm.DB {
+	table := d.table(ctx)
+	// 指定更新字段
+	updateFields := opt.GetUpdateFields()
+	if len(updateFields) > 0 {
+		for _, v := range updateFields {
+			table = table.Select(v)
+		}
+	}
+
+	table = table.Omit(fields.CreatedTime, fields.CreatorId, fields.CreatorName)
+
+	// 指定取消更新的字段
+	cancelFields := opt.GetUpdateCancel()
+	if len(cancelFields) > 0 {
+		for _, name := range cancelFields {
+			table = table.Omit(name)
+		}
+	}
+	return table
+}
+
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	err := gp.Try(func() error {
 		opt := ddd_repository.NewOptions(opts...)
 		d.entityBuilder.SetUpdatedInfo(ctx, entity)
 		tenantId := d.entityBuilder.GetTenantId(entity)
-		table := d.table(ctx).Where("id=? and tenant_id=?", d.GetId(entity), tenantId)
-
-		// 指定更新字段
-		updateFields := opt.GetUpdateFields()
-		if len(updateFields) > 0 {
-			for _, v := range updateFields {
-				table = table.Select(v)
-			}
-		}
-
-		table = table.Omit(fields.CreatedTime, fields.CreatorId, fields.CreatorName)
-
-		// 指定取消更新的字段
-		cancelFields := opt.GetUpdateCancel()
-		if len(cancelFields) > 0 {
-			for _, name := range cancelFields {
-				table = table.Omit(name)
-			}
-		}
+		table := d.updateTable(ctx, opt).Where("id=? and tenant_id=?", d.GetId(entity), tenantId)
 
 		// 是否空值更新
 		if !opt.GetNullUpdate() {
@@ -214,13 +222,12 @@ func (d *Dao[T]) UpdateManyById(ctx context.Context, entities []T, opts ...ddd_r
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
-	v := d.NewEntity()
-	model := d.table(ctx).Model(v)
+
 	for _, e := range entities {
-		id := d.GetId(e)
 		d.entityBuilder.SetUpdatedInfo(ctx, e)
-		model.Where("id = ?", id).UpdateColumns(e)
 	}
+	opt := ddd_repository.NewOptions(opts...)
+	err = d.updateTable(ctx, opt).Save(entities).Error
 	return ddd_repository.NewSetManyResult(entities, err)
 }
 
@@ -557,7 +564,7 @@ func (d *Dao[T]) sum(ctx context.Context, tenantId, rSql string, valueCols []*dd
 	return resData, res.Error != nil, nil
 }
 
-func (d *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
+func (d *Dao[T]) CountByMap(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
 	var count int64
 	filterMap, ok := filterData.(map[string]any)
 	var sql string
@@ -576,7 +583,7 @@ func (d *Dao[T]) CountRows(ctx context.Context, tenantId string, filterData any,
 	return count, res.Error
 }
 
-func (d *Dao[T]) Count(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
+func (d *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
 	var count int64
 	res := d.DoFilter(tenantId, rsql, func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
 		table := d.table(ctx)

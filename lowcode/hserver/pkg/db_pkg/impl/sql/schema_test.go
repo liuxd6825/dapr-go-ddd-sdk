@@ -52,11 +52,15 @@ const HumanSchema = `
 		  "items": { "type": "string" },
 		  "order": 106
 		},
+		"remark": {
+		  "name": "remark",
+		  "type": ["string", "null"],
+		  "title": "备注"
+		},
 		"createdTime": {
 		  "name": "createdTime",
 		  "type": ["datetime"],
 		  "title": "创建时间",
-		  "notNull": true,
 		  "order": 9002
 		},
 		"creatorId": {
