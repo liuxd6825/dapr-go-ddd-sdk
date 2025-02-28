@@ -273,7 +273,7 @@ func Test_Dao(t *testing.T) {
 
 			var ids []string
 			for _, e := range list {
-				if v, ok := e[id].(string); ok {
+				if v, ok := e["id"].(string); ok {
 					ids = append(ids, v)
 				}
 			}

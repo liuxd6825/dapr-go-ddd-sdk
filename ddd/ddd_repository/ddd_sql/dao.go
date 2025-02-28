@@ -337,9 +337,9 @@ func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opt
 }
 
 func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
+	var null = d.NewEntity()
 	table := d.table(ctx, opts...)
-	db := table.Where("tenant_id=?", tenantId).Delete(ids)
+	db := table.Where("tenant_id=? and id in ?", tenantId, ids).Delete(null)
 	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
 }
 
@@ -631,9 +631,9 @@ func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gor
 		}
 	}
 	if hasPlugin {
-		return tx
+		return tx.Unscoped()
 	}
-	return tx.Table(d.tableName)
+	return tx.Table(d.tableName).Unscoped()
 }
 
 func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, sqlFunc func(sql string) error) error {

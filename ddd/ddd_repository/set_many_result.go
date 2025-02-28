@@ -80,21 +80,21 @@ func NewSetManyResultError[T any](err error) *SetManyResult[T] {
 	}
 }
 
-func (s *SetManyResult[T]) GetError() error {
-	return s.Error
+func (r *SetManyResult[T]) GetError() error {
+	return r.Error
 }
 
-func (s *SetManyResult[T]) SetError(err error) *SetManyResult[T] {
-	s.Error = err
-	return s
+func (r *SetManyResult[T]) SetError(err error) *SetManyResult[T] {
+	r.Error = err
+	return r
 }
 
-func (s *SetManyResult[T]) GetData() []T {
-	return s.Data
+func (r *SetManyResult[T]) GetData() []T {
+	return r.Data
 }
 
-func (s *SetManyResult[T]) Result() ([]T, error) {
-	return s.Data, s.Error
+func (r *SetManyResult[T]) Result() ([]T, error) {
+	return r.Data, r.Error
 }
 
 func (r *SetManyResult[T]) GetRowsAffected() int64 {
@@ -106,18 +106,18 @@ func (r *SetManyResult[T]) SetRowsAffected(val int64) *SetManyResult[T] {
 	return r
 }
 
-func (s *SetManyResult[T]) OnSuccess(success OnSuccessList[T]) *SetManyResult[T] {
-	if s.Error == nil && success != nil {
-		s.Error = success(s.Data)
+func (r *SetManyResult[T]) OnSuccess(success OnSuccessList[T]) *SetManyResult[T] {
+	if r.Error == nil && success != nil {
+		r.Error = success(r.Data)
 	}
-	return s
+	return r
 }
 
-func (s *SetManyResult[T]) OnError(err OnError) *SetManyResult[T] {
-	if s.Error != nil && err != nil {
-		s.Error = err(s.Error)
+func (r *SetManyResult[T]) OnError(err OnError) *SetManyResult[T] {
+	if r.Error != nil && err != nil {
+		r.Error = err(r.Error)
 	}
-	return s
+	return r
 }
 
 func (r *SetManyCountResult) GetError() error {

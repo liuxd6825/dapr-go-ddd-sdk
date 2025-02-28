@@ -22,14 +22,18 @@ var (
 )
 
 func NewTime(value ...*time.Time) *Time {
-	var v Time
 	if len(value) == 0 {
-		v = Time(time.Now())
+		t := Time(time.Now())
+		return &t
 	} else {
-		t := *value[0]
-		v = Time(t)
+		for _, v := range value {
+			if v != nil {
+				t := Time(*v)
+				return &t
+			}
+		}
 	}
-	return &v
+	return nil
 }
 
 func NewTimeWithString(val string) (t *Time, err error) {
