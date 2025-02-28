@@ -139,12 +139,16 @@ func (d *Dao[T]) SetId(entity T, id string) {
 }
 
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
-	err := gp.Try(func() error {
+	var null T
+	res = ddd_repository.NewSetResult[T](null, nil)
+	res.Error = gp.Try(func() error {
 		db := d.table(ctx)
 		d.entityBuilder.SetCreatedInfo(ctx, entity)
-		return db.Create(entity).Error
+		db = db.Create(entity)
+		res.SetRowsAffected(db.RowsAffected)
+		return db.Error
 	}).Error
-	return ddd_repository.NewSetResult[T](entity, err)
+	return res
 }
 
 func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) error {
@@ -311,47 +315,50 @@ func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return ddd_repository.NewSetResult[T](entity, res.Error)
 }
 
-func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) error {
-	sql, err := d.getSql(tenantId, filter)
+func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	var null T
+	res := ddd_repository.NewSetResult[T](null, nil)
+	sql, err := d.getSql(tenantId, rSQL)
 	if err != nil {
-		return err
+		return res.SetError(err)
 	}
-	table := d.table(ctx)
-	res := table.Where("tenant_id=?", tenantId).Delete(sql)
-	return res.Error
+	table := d.table(ctx, opts...)
+	db := table.Where("tenant_id=?", tenantId).Delete(sql)
+	return res.SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var null T
-	table := d.table(ctx)
-	res := table.Where("tenant_id=? and id=?", tenantId, id).Delete(id)
-	return ddd_repository.NewSetResult[T](null, res.Error)
+	table := d.table(ctx, opts...)
+	db := table.Where("tenant_id=? and id=?", tenantId, id).Delete(id)
+	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
 }
 
-func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
-	table := d.table(ctx)
-	res := table.Where("tenant_id=?", tenantId).Delete(ids)
-	return res.Error
+func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	var null T
+	table := d.table(ctx, opts...)
+	db := table.Where("tenant_id=?", tenantId).Delete(ids)
+	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var null T
-	table := d.table(ctx)
-	res := table.Where("tenant_id=?", tenantId).Delete("")
-	return ddd_repository.NewSetResult[T](null, res.Error)
+	table := d.table(ctx, opts...)
+	db := table.Where("tenant_id=?", tenantId).Delete("")
+	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var null T
 	sql := d.mapAsSql(tenantId, filterMap)
-	table := d.table(ctx)
-	res := table.Where("tenant_id=?", tenantId).Delete(sql)
-	return ddd_repository.NewSetResult[T](null, res.Error)
+	table := d.table(ctx, opts...)
+	db := table.Where("tenant_id=?", tenantId).Delete(sql)
+	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	var data T
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	res := table.Where("id=? and tenant_id=?", id, tenantId).Find(&data)
 	isFound := false
 	if res.RowsAffected > 0 {
@@ -362,7 +369,7 @@ func (d *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts 
 
 func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	var data []T
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	res := table.Where("id in ? and tenant_id=?", ids, tenantId).Find(&data)
 	isFound := false
 	if res.RowsAffected > 0 {
@@ -374,7 +381,7 @@ func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, o
 func (d *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	var data T
 	sql := d.mapAsSql(tenantId, filterMap)
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	res := table.Where(sql).Find(&data)
 	isFound := false
 	if res.RowsAffected > 0 {
@@ -386,7 +393,7 @@ func (d *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	var data []T
 	sql := d.mapAsSql(tenantId, filterMap)
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	res := table.Where(sql).Find(&data)
 	isFound := false
 	if res.RowsAffected > 0 {
@@ -401,7 +408,7 @@ func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rSql string, o
 		return ddd_repository.NewFindListResultError[T](err)
 	}
 	var list []T
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	res := table.Where("tenant_id=?", tenantId).Find(&list, sql)
 	isFound := false
 	if res.RowsAffected > 0 {
@@ -412,7 +419,7 @@ func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rSql string, o
 
 func (d *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	var list []T
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	res := table.Where("tenant_id=?", tenantId).Find(&list)
 	isFound := false
 	if res.RowsAffected > 0 {
@@ -434,7 +441,7 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 
 		list := d.entityBuilder.NewEntityList()
 
-		tx := d.table(ctx)
+		tx := d.table(ctx, opts...)
 
 		if len(query.GetFields()) > 0 {
 			fields := strings.Split(query.GetFields(), ",")
@@ -475,7 +482,7 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			}
 		}
 
-		findData := ddd_repository.NewFindPagingResult[T](list, &totalRows, query, err)
+		findData := ddd_repository.NewFindPagingResult[T](list, totalRows, query, err)
 		return findData, true, err
 	})
 
@@ -568,7 +575,7 @@ func (d *Dao[T]) sum(ctx context.Context, tenantId, rSql string, valueCols []*dd
 		return nil, false, err
 	}
 	sql := p.GetSQL()
-	table := d.table(ctx)
+	table := d.table(ctx, opts...)
 	sumFields := make([]string, 0)
 	for _, col := range valueCols {
 		sumFields = append(sumFields, fmt.Sprintf("sum(%s) as %s", col.Field, col.Field))
@@ -601,7 +608,7 @@ func (d *Dao[T]) CountByMap(ctx context.Context, tenantId string, filterData any
 func (d *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
 	var count int64
 	res := d.DoFilter(tenantId, rsql, func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
-		table := d.table(ctx)
+		table := d.table(ctx, opts...)
 		res := table.Where(sqlWhere).Select("count(*) as total").Scan(&count)
 		return ddd_repository.NewFindPagingResultEmpty[T]().SetError(res.Error), res.Error == nil, nil
 	})

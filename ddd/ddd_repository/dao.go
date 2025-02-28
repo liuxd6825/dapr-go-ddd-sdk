@@ -30,9 +30,9 @@ type Dao[T any] interface {
 	// 删除
 
 	Delete(ctx context.Context, entity T, opts ...Options) *SetResult[T]
-	DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...Options) error
+	DeleteByRSQL(ctx context.Context, tenantId, filter string, opts ...Options) *SetResult[T]
 	DeleteById(ctx context.Context, tenantId string, id string, opts ...Options) *SetResult[T]
-	DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...Options) error
+	DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...Options) *SetResult[T]
 	DeleteAll(ctx context.Context, tenantId string, opts ...Options) *SetResult[T]
 	DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...Options) *SetResult[T]
 

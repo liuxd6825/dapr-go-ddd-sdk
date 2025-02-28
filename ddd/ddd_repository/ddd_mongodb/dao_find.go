@@ -35,7 +35,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 	if data == nil {
 		data = []T{}
 	}
-	findData = ddd_repository.NewFindPagingResult[T](data, &groupQueryResult.totalRows, qry, err)
+	findData = ddd_repository.NewFindPagingResult[T](data, groupQueryResult.totalRows, qry, err)
 
 	// 进行汇总计算
 	if len(qry.GetValueCols()) > 0 {
@@ -146,7 +146,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 	if data == nil {
 		data = []T{}
 	}
-	findData = ddd_repository.NewFindPagingResult[T](data, &totalRows, qry, err)
+	findData = ddd_repository.NewFindPagingResult[T](data, totalRows, qry, err)
 	// 进行汇总计算
 	if len(qry.GetValueCols()) > 0 {
 		sumData, _, err := r.SumEntity(ctx, qry, opts...)

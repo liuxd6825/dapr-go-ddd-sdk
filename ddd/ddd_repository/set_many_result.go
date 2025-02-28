@@ -2,7 +2,7 @@ package ddd_repository
 
 type SetManyResult[T interface{}] struct {
 	Error        error `json:"error"`
-	RowsAffected int64 `json:"RowsAffected"`
+	RowsAffected int64 `json:"rowsAffected"`
 	Data         []T   `json:"data"`
 }
 
@@ -54,6 +54,10 @@ func (r *SetManyCountResult) SetRowsAffected(v int64) *SetManyCountResult {
 	r.RowsAffected = v
 	return r
 }
+func (r *SetManyCountResult) GetRowsAffected() int64 {
+	return r.RowsAffected
+}
+
 func (r *SetManyCountResult) SetUpsertedCount(v int64) *SetManyCountResult {
 	r.UpsertedCount = v
 	return r
@@ -86,6 +90,10 @@ func (s *SetManyResult[T]) GetData() []T {
 
 func (s *SetManyResult[T]) Result() ([]T, error) {
 	return s.Data, s.Error
+}
+
+func (r *SetManyResult[T]) GetRowsAffected() int64 {
+	return r.RowsAffected
 }
 
 func (s *SetManyResult[T]) OnSuccess(success OnSuccessList[T]) *SetManyResult[T] {

@@ -129,7 +129,7 @@ func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return d.dao.Delete(ctx, entity, opts...).GetError()
 }
 
-func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
+func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	return d.dao.DeleteByIds(ctx, tenantId, ids, opts...)
 }
 
@@ -137,8 +137,8 @@ func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_rep
 	return d.dao.DeleteAll(ctx, tenantId, opts...).GetError()
 }
 
-func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) error {
-	return d.dao.DeleteByFilter(ctx, tenantId, filter, opts...)
+func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	return d.dao.DeleteByRSQL(ctx, tenantId, filter, opts...)
 }
 
 func (d *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) error {

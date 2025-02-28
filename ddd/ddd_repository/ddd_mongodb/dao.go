@@ -596,15 +596,15 @@ func (r *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return r.DeleteById(ctx, r.GetTenantId(entity), r.GetId(entity), opts...)
 }
 
-func (r *Dao[T]) DeleteByFilter(ctx context.Context, tenantId, rsql string, opts ...ddd_repository.Options) error {
-	filter, err := r.getFilter(tenantId, rsql)
+func (r *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	var null T
+	res := ddd_repository.NewSetResult[T](null, nil)
+	filter, err := r.getFilter(tenantId, rSQL)
 	if err != nil {
-		return err
+		return res.SetError(err)
 	}
-	if err := r.deleteByFilter(ctx, tenantId, filter).GetError(); err != nil {
-		return err
-	}
-	return nil
+	db := r.deleteByFilter(ctx, tenantId, filter)
+	return res.SetError(db.GetError()).SetRowsAffected(res.RowsAffected)
 }
 
 func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
@@ -615,25 +615,29 @@ func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opt
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
-func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
+func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	var null T
+	res := ddd_repository.NewSetResult[T](null, nil)
 	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
-		return err
+		return res.SetError(err)
 	}
 	if len(ids) == 0 {
-		return nil
+		return res
 	}
 
-	setResult := r.DoSet(func() (T, error) {
+	_ = r.DoSet(func() (T, error) {
 		var null T
 		filter := bson.D{}
 		filter = append(filter, bson.E{Key: ConstIdField, Value: bson.M{"$in": ids}})
 		filter = append(filter, bson.E{Key: ConstTenantIdField, Value: tenantId})
 		deleteOptions := getDeleteOptions(opts...)
 		sCtx := r.getSessionCtx(ctx)
-		_, err := r.getCollection(ctx).DeleteMany(sCtx, filter, deleteOptions)
+		del, err := r.getCollection(ctx).DeleteMany(sCtx, filter, deleteOptions)
+		res.SetError(err)
+		res.SetRowsAffected(del.DeletedCount)
 		return null, err
 	})
-	return setResult.GetError()
+	return res
 }
 
 func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
@@ -850,7 +854,7 @@ func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			return nil, false, err
 		}
 
-		findData := ddd_repository.NewFindPagingResult[T](data, &inOut.totalRows, query, err)
+		findData := ddd_repository.NewFindPagingResult[T](data, inOut.totalRows, query, err)
 		return findData, findData.IsFound, err
 	})
 }

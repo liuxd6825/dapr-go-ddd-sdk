@@ -123,7 +123,8 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.Create", func(t *testing.T) {
 		gp.Try(func() error {
-			dao.Create(ctx, human)
+			res := dao.Create(ctx, human)
+			assert.Equal(t, int64(1), res.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -133,7 +134,30 @@ func Test_Dao(t *testing.T) {
 	t.Run("dao.FindById", func(t *testing.T) {
 		gp.Try(func() error {
 			e := dao.FindById(ctx, id)
+			assert.NotNil(t, e)
+			if e != nil {
+				if dataId, ok := e["id"].(string); ok {
+					assert.Equal(t, id, dataId)
+				}
+			}
 			t.Log("findById:", e)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.FindPaging", func(t *testing.T) {
+		gp.Try(func() error {
+			paging := ddd_repository.NewFindPagingQueryRequest()
+			paging.PageSize = 2
+			paging.IsTotalRows = true
+			paging.Filter = fmt.Sprintf("creatorName=='%s'", "test")
+			res := dao.FindPaging(ctx, paging)
+			assert.NotNil(t, res)
+			assert.Equal(t, int64(11), res.TotalRows)
+			assert.Equal(t, 2, len(res.Data))
+			t.Log("totalRows:", res.TotalRows, " count:", len(res.Data))
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -144,7 +168,7 @@ func Test_Dao(t *testing.T) {
 		gp.Try(func() error {
 			human["name"] = humanName + "2"
 			count := dao.Update(ctx, human)
-			assert.Equal(t, int64(1), count)
+			assert.Equal(t, int64(1), count.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -156,7 +180,7 @@ func Test_Dao(t *testing.T) {
 			humanName = humanName + "3"
 			human["name"] = humanName
 			count := dao.UpdateByRSQL(ctx, fmt.Sprintf("id=='%s'", id), human)
-			assert.Equal(t, int64(1), count)
+			assert.Equal(t, int64(1), count.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -208,6 +232,17 @@ func Test_Dao(t *testing.T) {
 			})
 			res := dao.SumByRSQL(ctx, "", vals)
 			t.Log("count:", res)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.DeleteByRSQL", func(t *testing.T) {
+		gp.Try(func() error {
+			res := dao.DeleteByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			t.Log("DeleteByRSQL count:", res.RowsAffected)
+			assert.Equal(t, newCount, res.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)

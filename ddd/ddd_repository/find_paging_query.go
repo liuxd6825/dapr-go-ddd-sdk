@@ -82,6 +82,10 @@ type FindPagingQueryRequest struct {
 	ValueCols   []*ValueCol `json:"valueCols"`
 }
 
+func NewFindPagingQueryRequest() *FindPagingQueryRequest {
+	return &FindPagingQueryRequest{}
+}
+
 type FindPagingQueryMustWhere interface {
 	GetMustWhere() (string, error)
 }

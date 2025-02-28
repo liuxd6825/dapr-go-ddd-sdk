@@ -94,15 +94,15 @@ func (m *MapDao) Delete(ctx context.Context, entity map[string]any, opts ...ddd_
 	return m.dao.Delete(ctx, entity, opts...)
 }
 
-func (m *MapDao) DeleteByFilter(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) error {
-	return m.dao.DeleteByFilter(ctx, tenantId, filter, opts...)
+func (m *MapDao) DeleteByRSQL(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
+	return m.dao.DeleteByRSQL(ctx, tenantId, filter, opts...)
 }
 
 func (m *MapDao) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.DeleteById(ctx, tenantId, id, opts...)
 }
 
-func (m *MapDao) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
+func (m *MapDao) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.DeleteByIds(ctx, tenantId, ids, opts...)
 }
 

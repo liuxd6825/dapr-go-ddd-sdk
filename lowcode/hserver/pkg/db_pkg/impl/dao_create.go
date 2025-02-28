@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 )
 
-func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) int64 {
+func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) *db.Result {
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
@@ -17,10 +17,10 @@ func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db
 		panic(res.Error)
 	}
 	d.PublishEvent(ctx, db.AccessTypeCreate, entity, opts...)
-	return res.RowsAffected
+	return db.NewResult(res)
 }
 
-func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) int64 {
+func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
 	for _, e := range entity {
 		e[TenantId] = tenantId
@@ -29,5 +29,5 @@ func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts 
 	if res.Error != nil {
 		panic(res.Error)
 	}
-	return res.RowsAffected
+	return db.NewResult(res)
 }

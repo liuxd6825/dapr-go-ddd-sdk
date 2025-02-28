@@ -22,8 +22,8 @@ type FindPagingResultDTO struct {
 type FindPagingResult[T any] struct {
 	Data        []T    `json:"data"`
 	SumData     []T    `json:"sumData,omitempty"`
-	TotalRows   *int64 `json:"totalRows,omitempty"`
-	TotalPages  *int64 `json:"totalPages,omitempty"`
+	TotalRows   int64  `json:"totalRows,omitempty"`
+	TotalPages  int64  `json:"totalPages,omitempty"`
 	PageNum     int64  `json:"pageNum,omitempty"`
 	PageSize    int64  `json:"pageSize,omitempty"`
 	Filter      string `json:"filter"`
@@ -52,7 +52,11 @@ type FindPagingResultOptions[T interface{}] struct {
 }
 
 func NewFindPagingSumResult[T ddd.Entity](data []T, sumData []T, totalRows *int64, query FindPagingQuery, err error, sumErr error) *FindPagingResult[T] {
-	res := NewFindPagingResult(data, totalRows, query, err)
+	var total int64
+	if totalRows != nil {
+		total = *totalRows
+	}
+	res := NewFindPagingResult(data, total, query, err)
 	res.SumData = sumData
 	if err == nil && sumErr != nil {
 		res.Error = sumErr
@@ -62,8 +66,8 @@ func NewFindPagingSumResult[T ddd.Entity](data []T, sumData []T, totalRows *int6
 func NewFindPagingResultEmpty[T any]() *FindPagingResult[T] {
 	res := &FindPagingResult[T]{
 		Data:        nil,
-		TotalRows:   nil,
-		TotalPages:  nil,
+		TotalRows:   0,
+		TotalPages:  0,
 		PageNum:     0,
 		PageSize:    0,
 		Sort:        "",
@@ -75,11 +79,11 @@ func NewFindPagingResultEmpty[T any]() *FindPagingResult[T] {
 	return res
 }
 
-func NewFindPagingResult[T any](data []T, totalRows *int64, query FindPagingQuery, err error) *FindPagingResult[T] {
+func NewFindPagingResult[T any](data []T, totalRows int64, query FindPagingQuery, err error) *FindPagingResult[T] {
 	res := &FindPagingResult[T]{
 		Data:        data,
-		TotalRows:   nil,
-		TotalPages:  nil,
+		TotalRows:   0,
+		TotalPages:  0,
 		PageNum:     0,
 		PageSize:    0,
 		Sort:        "",
@@ -92,9 +96,8 @@ func NewFindPagingResult[T any](data []T, totalRows *int64, query FindPagingQuer
 		res.Data = data
 		res.IsFound = len(data) > 0
 	}
-	if totalRows != nil {
-		res.TotalRows = totalRows
-	}
+
+	res.TotalRows = totalRows
 
 	if query != nil {
 		res.TotalPages = getTotalPage(totalRows, query.GetPageSize())
@@ -144,11 +147,11 @@ func (f *FindPagingResult[T]) GetAnyData() any {
 	return f.Data
 }
 
-func (f *FindPagingResult[T]) GetTotalRows() *int64 {
+func (f *FindPagingResult[T]) GetTotalRows() int64 {
 	return f.TotalRows
 }
 
-func (f *FindPagingResult[T]) GetTotalPages() *int64 {
+func (f *FindPagingResult[T]) GetTotalPages() int64 {
 	return f.TotalPages
 }
 
@@ -282,17 +285,17 @@ func (f *FindPagingResultOptions[T]) SetIsTotalRows(v bool) *FindPagingResultOpt
 	return f
 }
 
-func getTotalPage(totalRows *int64, pageSize int64) *int64 {
-	if totalRows == nil {
-		return nil
+func getTotalPage(totalRows int64, pageSize int64) int64 {
+	if totalRows == 0 {
+		return 0
 	}
 	if pageSize == 0 {
-		return nil
+		return 0
 	}
-	rows := *totalRows
+	rows := totalRows
 	totalPage := rows / pageSize
 	if rows%pageSize > 1 {
 		totalPage++
 	}
-	return &totalPage
+	return totalPage
 }
