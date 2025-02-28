@@ -157,7 +157,7 @@ func Test_Dao(t *testing.T) {
 			assert.NotNil(t, res)
 			assert.Equal(t, int64(11), res.TotalRows)
 			assert.Equal(t, 2, len(res.Data))
-			t.Log("totalRows:", res.TotalRows, " count:", len(res.Data))
+			t.Log("totalRows=", res.TotalRows, " count=", len(res.Data))
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
