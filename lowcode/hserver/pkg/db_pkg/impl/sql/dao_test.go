@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
@@ -134,6 +135,23 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
+	t.Run("dao.Update", func(t *testing.T) {
+		gp.Try(func() error {
+			human["name"] = humanName + "2"
+			human["birthday"] = times.NewDate()
+			count := dao.Update(ctx, human)
+			assert.Equal(t, int64(1), count.RowsAffected)
+
+			human["birthday"] = times.NewTime()
+			count = dao.Update(ctx, human)
+			assert.Equal(t, int64(1), count.RowsAffected)
+
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
 	t.Run("dao.FindById", func(t *testing.T) {
 		gp.Try(func() error {
 			e := dao.FindById(ctx, id)
@@ -161,17 +179,6 @@ func Test_Dao(t *testing.T) {
 			assert.Equal(t, int64(11), res.TotalRows)
 			assert.Equal(t, 2, len(res.Data))
 			t.Log("totalRows=", res.TotalRows, " count=", len(res.Data))
-			return nil
-		}).Catch(func(err error) {
-			t.Error(err)
-		})
-	})
-
-	t.Run("dao.Update", func(t *testing.T) {
-		gp.Try(func() error {
-			human["name"] = humanName + "2"
-			count := dao.Update(ctx, human)
-			assert.Equal(t, int64(1), count.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
