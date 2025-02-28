@@ -302,13 +302,6 @@ func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	return res
 }
 
-func (d *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (T, error) {
-	d.entityBuilder.SetUpdatedInfo(ctx, data)
-	d.UpdateMap(ctx, tenantId, id, data, opts...)
-	res := d.FindById(ctx, tenantId, id, opts...)
-	return res.Data, res.Error
-}
-
 func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	tenantId := d.GetTenantId(entity)
 	id := d.GetId(entity)
@@ -380,6 +373,13 @@ func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, o
 	return ddd_repository.NewFindListResult[T](data, isFound, res.Error)
 }
 
+func (d *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (T, error) {
+	d.entityBuilder.SetUpdatedInfo(ctx, data)
+	d.UpdateMap(ctx, tenantId, id, data, opts...)
+	res := d.FindById(ctx, tenantId, id, opts...)
+	return res.Data, res.Error
+}
+
 func (d *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {
 	var data T
 	sql := d.mapAsSql(tenantId, filterMap)
@@ -435,8 +435,7 @@ func (d *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 }
 
 func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error) {
-		var err error
+	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func(sqlWhere string) (findRes *ddd_repository.FindPagingResult[T], isFound bool, err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
@@ -685,9 +684,10 @@ func (d *Dao[T]) getSql(tenantId, rSql string) (string, error) {
 	return proc.GetSQL(), err
 }
 
-func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*ddd_repository.FindPagingResult[T], bool, error)) (findRes *ddd_repository.FindPagingResult[T]) {
+	findRes = ddd_repository.NewFindPagingResultEmpty[T]()
 	if tenantId == "" {
-		return ddd_repository.NewFindPagingResultWithError[T](errors.New("tenantId can not be empty"))
+		return findRes.SetError(errors.New("tenantId can not be empty"))
 	}
 	var sqlWhere string
 	if filter == "" {
@@ -695,15 +695,15 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*d
 	} else {
 		process := rsql_sql.NewProcess(tenantId)
 		if err := rsql.ParseProcess(filter, process); err != nil {
-			return ddd_repository.NewFindPagingResultWithError[T](err)
+			return findRes.SetError(err)
 		}
 		sqlWhere = fmt.Sprintf("tenant_id='%s' and (%s)", tenantId, process.GetSQL())
 	}
 	data, _, err := fun(sqlWhere)
-	if err != nil {
-		err = nil
+	if data != nil {
+		findRes = data
 	}
-	return data
+	return findRes.SetError(err)
 }
 
 func (d *Dao[T]) StartTx(ctx context.Context, fun ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
