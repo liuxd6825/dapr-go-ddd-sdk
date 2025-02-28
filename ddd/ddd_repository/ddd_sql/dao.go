@@ -248,8 +248,10 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, entities []T, opts ...ddd_repos
 	for _, e := range entities {
 		d.entityBuilder.SetUpdatedInfo(ctx, e)
 	}
-	err = d.updateTable(ctx, opts...).Save(entities).Error
-	return ddd_repository.NewSetManyResult(entities, err)
+	ent := d.NewEntity()
+	res := ddd_repository.NewSetManyResult[T](entities, nil)
+	db := d.updateTable(ctx, opts...).Model(ent).Save(entities)
+	return res.SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {

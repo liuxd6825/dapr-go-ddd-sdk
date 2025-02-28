@@ -162,6 +162,11 @@ func Test_Dao(t *testing.T) {
 				}
 			}
 			t.Log("findById:", e)
+
+			if _, ok := e["peopleType"]; !ok {
+				t.Error("peopleType not exist")
+			}
+
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)

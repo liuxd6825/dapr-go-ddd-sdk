@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"time"
 )
 
@@ -113,7 +113,7 @@ func (m *MapEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 		//delete(e, fields.CreatorName)
 		//delete(e, fields.CreatorId)
 
-		e[fields.UpdatedTime] = timeNow
+		e[fields.UpdatedTime] = times.NewTime(&timeNow)
 		e[fields.UpdaterName] = authUser.GetName()
 		e[fields.UpdaterId] = authUser.GetId()
 	}
@@ -126,7 +126,7 @@ func (m *MapEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
 	if m.IsCancelSoftDelete {
 		return
 	}
-	var timeNow *time.Time
+	var timeNow *times.Time
 	var userName *string
 	var userId *string
 	var isDeleted = true
@@ -135,7 +135,7 @@ func (m *MapEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
 		name := authUser.GetName()
 		id := authUser.GetId()
 
-		timeNow = timeutils.PNow()
+		timeNow = times.NowTime()
 		userName = &name
 		userId = &id
 	}
