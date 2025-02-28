@@ -13,6 +13,10 @@ var (
 	dateJSONFormat = "2006-01-02"
 )
 
+type IDate interface {
+	Date() time.Time
+}
+
 func NewDate(value ...*time.Time) *Date {
 	var res Date
 	if len(value) == 0 {
@@ -87,6 +91,14 @@ func (t *Date) PTime() *time.Time {
 	}
 	v := time.Time(*t)
 	return &v
+}
+
+func (t *Date) PDate() *time.Time {
+	return t.PTime()
+}
+
+func (t *Date) Date() time.Time {
+	return t.Time()
 }
 
 func (t *Date) Time() time.Time {

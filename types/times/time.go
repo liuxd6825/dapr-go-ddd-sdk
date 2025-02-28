@@ -13,6 +13,10 @@ type JSONTimeOption struct {
 	time *time.Time
 }
 
+type ITime interface {
+	Time() time.Time
+}
+
 var (
 	timeJSONFormat = "2006-01-02 15:04:05"
 )

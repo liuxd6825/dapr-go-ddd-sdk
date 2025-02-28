@@ -84,6 +84,11 @@ func (s *SetManyResult[T]) GetError() error {
 	return s.Error
 }
 
+func (s *SetManyResult[T]) SetError(err error) *SetManyResult[T] {
+	s.Error = err
+	return s
+}
+
 func (s *SetManyResult[T]) GetData() []T {
 	return s.Data
 }
@@ -94,6 +99,11 @@ func (s *SetManyResult[T]) Result() ([]T, error) {
 
 func (r *SetManyResult[T]) GetRowsAffected() int64 {
 	return r.RowsAffected
+}
+
+func (r *SetManyResult[T]) SetRowsAffected(val int64) *SetManyResult[T] {
+	r.RowsAffected = val
+	return r
 }
 
 func (s *SetManyResult[T]) OnSuccess(success OnSuccessList[T]) *SetManyResult[T] {

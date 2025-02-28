@@ -76,21 +76,24 @@ func Test_Dao(t *testing.T) {
 	dao.Table().AutoMigrate(ctx)
 	newCount := int64(10)
 	var list []map[string]any
+
+	for i := int64(0); i < newCount; i++ {
+		entity := map[string]any{
+			"id":         randomutils.NewId(),
+			"name":       humanName,
+			"analyse":    "",
+			"age":        randomutils.IntMax(100),
+			"birthday":   randomutils.Date(),
+			"peopleType": []string{"1111"},
+			"tags":       []string{"tag1", "tag2"},
+		}
+		list = append(list, entity)
+	}
+
 	t.Run("dao.CreateMany", func(t *testing.T) {
 		gp.Try(func() error {
-			for i := int64(0); i < newCount; i++ {
-				entity := map[string]any{
-					"id":         randomutils.NewId(),
-					"name":       humanName,
-					"analyse":    "",
-					"age":        randomutils.IntMax(100),
-					"birthday":   randomutils.Date(),
-					"peopleType": []string{"1111"},
-					"tags":       []string{"tag1", "tag2"},
-				}
-				list = append(list, entity)
-			}
-			dao.CreateMany(ctx, list)
+			res := dao.CreateMany(ctx, list)
+			assert.Equal(t, newCount, res.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -249,6 +252,42 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
+	t.Run("dao.DeleteAll", func(t *testing.T) {
+		gp.Try(func() error {
+			res1 := dao.CreateMany(ctx, list)
+			assert.Equal(t, newCount, res1.RowsAffected)
+
+			res2 := dao.DeleteAll(ctx)
+			t.Log("DeleteAll count:", res2.RowsAffected)
+			assert.Equal(t, newCount, res2.RowsAffected)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.DeleteByIds", func(t *testing.T) {
+		gp.Try(func() error {
+			res1 := dao.CreateMany(ctx, list)
+			assert.Equal(t, newCount, res1.RowsAffected)
+
+			var ids []string
+			for _, e := range list {
+				if v, ok := e[id].(string); ok {
+					ids = append(ids, v)
+				}
+			}
+
+			res2 := dao.DeleteByIds(ctx, ids)
+			t.Log("DeleteByIds count:", res2.RowsAffected)
+			assert.Equal(t, newCount, res2.RowsAffected)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.FindByRSQL", func(t *testing.T) {})
 }
 
 type EnvConfig struct {

@@ -160,14 +160,16 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 }
 
 func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	v := d.NewEntity()
+	res := ddd_repository.NewSetManyResult[T](entities, nil)
 	err := gp.Try(func() error {
 		for _, entity := range entities {
 			d.entityBuilder.SetCreatedInfo(ctx, entity)
 		}
-		return d.table(ctx).Model(v).CreateInBatches(entities, len(entities)).Error
+		db := d.table(ctx).CreateInBatches(entities, len(entities))
+		res.SetRowsAffected(db.RowsAffected)
+		return res.Error
 	}).Error
-	return ddd_repository.NewSetManyResult(entities, err)
+	return res.SetError(err)
 }
 
 func (d *Dao[T]) updateTable(ctx context.Context, opts ...ddd_repository.Options) *gorm.DB {
