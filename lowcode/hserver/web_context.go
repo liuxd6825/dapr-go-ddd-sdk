@@ -151,7 +151,10 @@ func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
 		panic(err)
 	}
 
-	object := val.(map[string]any)
+	object, ok := val.(map[string]any)
+	if !ok {
+		panic("ReadObject() invalid object")
+	}
 	if schema != nil {
 		err = schema.Validate(object)
 	}

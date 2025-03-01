@@ -142,12 +142,12 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 		case InParamTypePath.String():
 			val = ictx.Params().Get(key)
 		case InParamTypeBody.String():
-			//if v.Schema != nil {
-			schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
-			val = wctx.ReadObject(schema)
-			//} else {
-			//panic(errors.New("paramType %s is no schema defined", key))
-			//}
+			if v.Schema != nil {
+				schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
+				val = wctx.ReadObject(schema)
+			} else {
+				panic(errors.New("paramType %s is no schema defined", key))
+			}
 		case InParamTypeFormValue.String():
 			val = wctx.FormValue(key, v.Required)
 		case InParamTypeFormObject.String():

@@ -92,7 +92,7 @@ func getDataType(property *jsonschema.Schema) dbschema.DataType {
 	}
 
 	if property.Types.Contains(jsonschema.JsonType_DateType) {
-		return dbschema.Time
+		return dbschema.Date
 	}
 	if property.Types.Contains(jsonschema.JsonType_DateTimeType) {
 		return dbschema.Time
@@ -167,6 +167,8 @@ func getFieldSize(fieldType dbschema.DataType, size int) int {
 		return 10
 	case dbschema.Time:
 		return 10
+	case dbschema.Date:
+		return 10
 	case dbschema.Object:
 		return 1000
 	case dbschema.Array:
@@ -187,6 +189,8 @@ func getFieldType(dbType dbschema.DataType) reflect.Type {
 	case dbschema.Float:
 		return reflect.TypeOf(float64(0))
 	case dbschema.Time:
+		return reflect.TypeOf(time.Time{})
+	case dbschema.Date:
 		return reflect.TypeOf(time.Time{})
 	case dbschema.Object:
 		return reflect.TypeOf("map[string]any{}")
