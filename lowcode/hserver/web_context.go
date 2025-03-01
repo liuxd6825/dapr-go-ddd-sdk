@@ -18,7 +18,6 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/liuxd6825/k6server/js/modules"
 	"io"
-	"time"
 )
 
 type WebContext struct {
@@ -423,22 +422,22 @@ var parseTime = func(val string, key any) (timeVal any, err error) {
 	if val == "" || val == "null" {
 		return nil, nil
 	}
-
-	typeName, ok := key.(string)
-	if !ok || typeName == schema2.TypeDate {
-		tm, er := time.Parse(dateFormat, val)
-		if er != nil {
-			return nil, er
+	if sch, ok := key.(*jsonschema.Schema); ok {
+		if sch.Types.Contains(jsonschema.JsonType_DateTimeType) {
+			if tm, err := times.AsTime(val); err != nil {
+				return nil, err
+			} else if tm != nil {
+				timeVal = times.NewTime(tm.PTime())
+			}
+		} else if sch.Types.Contains(jsonschema.JsonType_DateType) {
+			if tm, er := times.AsTime(val); er != nil {
+				return nil, er
+			} else if tm != nil {
+				timeVal = times.NewDate(tm.PTime())
+			}
 		}
-		timeVal = times.NewDate(&tm)
-	} else {
-		tm, er := time.Parse(dateTimeFormat, val)
-		if er != nil {
-			return nil, er
-		}
-		timeVal = times.NewTime(&tm)
 	}
-	return timeVal, err
+	return timeVal, nil
 }
 
 // getTimeFields

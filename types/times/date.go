@@ -18,28 +18,24 @@ type IDate interface {
 }
 
 func NewDate(value ...*time.Time) *Date {
-	var res Date
-	if len(value) == 0 {
-		res = Date(time.Now())
-	} else {
-		for _, v := range value {
-			if v != nil {
-				t := *v
-				d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-				res = Date(d)
-				break
-			}
+	res := Date(time.Now())
+	for _, v := range value {
+		if v != nil {
+			t := *v
+			d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+			res = Date(d)
+			break
 		}
 	}
 	return &res
 }
 
-func NewDateWithString(val string) (t *Time, err error) {
+func NewDateWithString(val string) (t *Date, err error) {
 	if val == "" {
 		return nil, errors.New("time value is empty")
 	}
 	now, err := time.ParseInLocation(`"`+dateJSONFormat+`"`, val, time.Local)
-	*t = Time(now)
+	*t = Date(now)
 	return t, err
 }
 

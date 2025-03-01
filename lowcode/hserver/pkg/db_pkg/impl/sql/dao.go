@@ -84,6 +84,14 @@ func init() {
 			} else {
 				return value, false
 			}
+		} else if field.DataType == dbschema.Date {
+			if val, ok := value.(times.IDate); ok {
+				return val.Date(), true
+			} else if val, ok := value.(times.ITime); ok {
+				return val.Time(), true
+			} else {
+				return value, false
+			}
 		}
 		return value, false
 	}
@@ -106,9 +114,30 @@ func init() {
 			return data, true
 		} else if field.DataType == dbschema.Time {
 			return newTime(value), true
+		} else if field.DataType == dbschema.Date {
+			return newDate(value), true
 		}
 		return value, false
 	}
+}
+
+func newDate(value any) *times.Date {
+	if value != nil {
+		if val, ok := value.(**time.Time); ok {
+			return times.NewDate(*val)
+		} else if val, ok := value.(time.Time); ok {
+			return times.NewDate(&val)
+		} else if val, ok := value.(*time.Time); ok {
+			return times.NewDate(val)
+		} else if val, ok := value.(string); ok {
+			if tVal, err := times.NewDateWithString(val); err == nil {
+				return tVal
+			} else {
+				panic(err)
+			}
+		}
+	}
+	return nil
 }
 
 func newTime(value any) *times.Time {
