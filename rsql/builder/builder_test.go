@@ -48,13 +48,14 @@ func Test_NewBuilder(t *testing.T) {
 		t.Log("sql:", p.GetSQL())
 	})
 
-	t.Run("处理特殊类型", func(t *testing.T) {
+	t.Run("Gt In", func(t *testing.T) {
 		b := NewBuilder()
 		// 处理特殊类型
 		vt := time.Date(2023, 10, 5, 0, 0, 0, 0, time.UTC)
 		query := b.And(
 			b.Gt("createdAt", vt),
 			b.In("tags", []string{"golang", "backend"}),
+			b.Out("tags", []string{"java", "typescript"}),
 		).Build()
 		t.Log("rsql:", query)
 		// (createdAt=gt="2023-10-05T00:00:00Z";tags=in=("golang","backend"))

@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/builder"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"gorm.io/gorm"
@@ -33,6 +34,10 @@ func New(server element.Server) *Pkg {
 		server: server,
 		daoMap: types.NewCMap[db.Dao](),
 	}
+}
+
+func (p *Pkg) NewRsqlBuilder() *builder.Builder {
+	return builder.NewBuilder()
 }
 
 func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
