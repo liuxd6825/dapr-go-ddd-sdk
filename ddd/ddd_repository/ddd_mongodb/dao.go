@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -319,14 +320,23 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 // @param data
 // @param opts
 // @return error
-func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) error {
-	sCtx := r.getSessionCtx(ctx)
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
+	res = ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		sCtx := r.getSessionCtx(ctx)
+		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+			return err
+		}
+		data["tenant_id"] = tenantId
+		inRes, err := r.getCollection(ctx).InsertOne(sCtx, data, getInsertOneOptions(opts...))
+		if inRes != nil && inRes.InsertedID != nil {
+			res.SetRowsAffected(1)
+		}
 		return err
-	}
-	data["tenant_id"] = tenantId
-	_, err := r.getCollection(ctx).InsertOne(sCtx, data, getInsertOneOptions(opts...))
-	return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (r *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
