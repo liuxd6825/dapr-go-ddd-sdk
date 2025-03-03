@@ -74,6 +74,10 @@ func NewSetManyResult[T any](data []T, err error) *SetManyResult[T] {
 	}
 }
 
+func NewSetManyResultEmpty[T any]() *SetManyResult[T] {
+	return &SetManyResult[T]{}
+}
+
 func NewSetManyResultError[T any](err error) *SetManyResult[T] {
 	return &SetManyResult[T]{
 		Error: err,

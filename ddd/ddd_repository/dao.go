@@ -16,7 +16,7 @@ type Dao[T any] interface {
 	// 添加
 
 	Insert(ctx context.Context, entity T, opts ...Options) *SetResult[T]
-	InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...Options) error
+	InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...Options) (res *SetResult[T])
 	InsertMany(ctx context.Context, entities []T, opts ...Options) *SetManyResult[T]
 
 	// 更新

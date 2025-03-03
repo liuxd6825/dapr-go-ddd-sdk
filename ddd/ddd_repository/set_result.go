@@ -6,6 +6,15 @@ type SetResult[T interface{}] struct {
 	RowsAffected int64 `json:"rowsAffected"`
 }
 
+func NewSetResultEmpty[T interface{}]() *SetResult[T] {
+	var data T
+	return &SetResult[T]{
+		Data:         data,
+		Error:        nil,
+		RowsAffected: 0,
+	}
+}
+
 func NewSetResult[T interface{}](data T, err error) *SetResult[T] {
 	return &SetResult[T]{
 		Data:         data,
