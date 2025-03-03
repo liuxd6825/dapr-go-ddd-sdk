@@ -151,25 +151,33 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return res
 }
 
-func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) error {
-	err := gp.Try(func() error {
+func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
+	res = ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
 		d.entityBuilder.SetCreatedInfo(ctx, data)
-		return d.table(ctx).Model(data).Create(data).Error
-	}).Error
-	return err
+		db := d.table(ctx).Model(data).Create(data)
+		res.SetRowsAffected(db.RowsAffected)
+		return db.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	res := ddd_repository.NewSetManyResult[T](entities, nil)
-	err := gp.Try(func() error {
+	gp.Try(func() error {
 		for _, entity := range entities {
 			d.entityBuilder.SetCreatedInfo(ctx, entity)
 		}
-		db := d.table(ctx).CreateInBatches(entities, len(entities))
+		db := d.table(ctx).Model(d.NewEntity()).CreateInBatches(entities, len(entities))
 		res.SetRowsAffected(db.RowsAffected)
-		return res.Error
-	}).Error
-	return res.SetError(err)
+		return db.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
+
 }
 
 func (d *Dao[T]) updateTable(ctx context.Context, opts ...ddd_repository.Options) *gorm.DB {
@@ -197,7 +205,7 @@ func (d *Dao[T]) updateTable(ctx context.Context, opts ...ddd_repository.Options
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResult(entity, nil)
-	res.Error = gp.Try(func() error {
+	_ = gp.Try(func() error {
 		opt := ddd_repository.NewOptions(opts...)
 		d.entityBuilder.SetUpdatedInfo(ctx, entity)
 		tenantId := d.entityBuilder.GetTenantId(entity)
@@ -217,56 +225,67 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 		db := table.UpdateColumns(entity)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
-	}).Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
 
 	return res
 }
 
 func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
 	v := d.NewEntity()
-	var db *gorm.DB
+
 	res := ddd_repository.NewSetManyCountResult()
-	err := gp.Try(func() error {
+	_ = gp.Try(func() error {
 		where, err := d.getSql(tenantId, filterRSQL)
 		if err != nil {
 			return err
 		}
 		d.entityBuilder.SetUpdatedInfo(ctx, data)
-		db = d.updateTable(ctx, opts...).Where(where).Model(v).Updates(data)
+		db := d.updateTable(ctx, opts...).Where(where).Model(v).Updates(data)
+		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
-	}).Error
-	res.SetError(err)
-	res.SetRowsAffected(db.RowsAffected)
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
 	return res
 }
 
 func (d *Dao[T]) UpdateMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	var err error
-	defer func() {
-		err = errors.GetRecoverError(err, recover())
-	}()
-	for _, e := range entities {
-		d.entityBuilder.SetUpdatedInfo(ctx, e)
-	}
-	ent := d.NewEntity()
 	res := ddd_repository.NewSetManyResult[T](entities, nil)
-	db := d.updateTable(ctx, opts...).Model(ent).Save(entities)
-	return res.SetError(db.Error).SetRowsAffected(db.RowsAffected)
+	gp.Try(func() error {
+		for _, e := range entities {
+			d.entityBuilder.SetUpdatedInfo(ctx, e)
+		}
+		db := d.updateTable(ctx, opts...).Model(d.NewEntity()).Save(entities)
+		res.SetRowsAffected(db.RowsAffected)
+		return db.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+
+	return res
 }
 
 func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
 	var err error
-	opt := ddd_repository.NewOptions(opts...)
-	model := d.updateTable(ctx, opt).Model(d.entity)
-	for _, e := range entities {
-		id := d.GetId(e)
-		d.entityBuilder.SetUpdatedInfo(ctx, e)
-		err = model.Where("id = ?", id).UpdateColumn(strings.Join(mask, ","), e).Error
-		if err != nil {
-			break
+	var res = ddd_repository.NewSetManyResult(entities, err)
+	gp.Try(func() error {
+		opt := ddd_repository.NewOptions(opts...)
+		model := d.updateTable(ctx, opt).Model(d.entity)
+		for _, e := range entities {
+			id := d.GetId(e)
+			d.entityBuilder.SetUpdatedInfo(ctx, e)
+			db := model.Where("id = ?", id).UpdateColumn(strings.Join(mask, ","), e)
+			if err != nil {
+				return db.Error
+			}
 		}
-	}
-	return ddd_repository.NewSetManyResult(entities, err)
+		return nil
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
@@ -436,8 +455,20 @@ func (d *Dao[T]) FindPaging(ctx context.Context, qry ddd_repository.FindPagingQu
 	return d.findPaging(ctx, qry, opts...)
 }
 
+func (d *Dao[T]) getAllFilter(qry ddd_repository.FindPagingQuery) string {
+	filter := qry.GetFilter()
+	mustFilter := qry.GetMustFilter()
+	if filter != "" && mustFilter != "" {
+		return fmt.Sprintf("(%s) and (%s)", filter, mustFilter)
+	} else if filter != "" {
+		return filter
+	}
+	return mustFilter
+}
+
 func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	return d.DoFilter(query.GetTenantId(), query.GetFilter(), func(sqlWhere string) (findRes *ddd_repository.FindPagingResult[T], isFound bool, err error) {
+	filter := d.getAllFilter(query)
+	return d.DoFilter(query.GetTenantId(), filter, func(sqlWhere string) (findRes *ddd_repository.FindPagingResult[T], isFound bool, err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
