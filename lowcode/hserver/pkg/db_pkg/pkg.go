@@ -35,13 +35,6 @@ func New(server element.Server) *Pkg {
 	}
 }
 
-func (p *Pkg) GetDao(daoKey string) db.Dao {
-	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
-		return v.(db.Dao)
-	}
-	panic(fmt.Errorf("dao not found %s", daoKey))
-}
-
 func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 	dbKey := opts.DbKey
 	if dbKey == "" {
@@ -52,7 +45,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 	}
 
 	tableName := opts.Schema.Name
-	daoKey := fmt.Sprintf("%s.%s", dbKey, tableName)
+	daoKey := getDaoKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
 		return v.(db.Dao)
 	}
@@ -87,6 +80,18 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 
 	p.daoMap.Add(daoKey, dao)
 	return dao
+}
+
+func (p *Pkg) GetDao(dbKey, tableName string) db.Dao {
+	daoKey := getDaoKey(dbKey, tableName)
+	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
+		return v.(db.Dao)
+	}
+	panic(fmt.Errorf("dao not found %s", daoKey))
+}
+
+func getDaoKey(dbKey, tableName string) string {
+	return fmt.Sprintf("%s.%s", dbKey, tableName)
 }
 
 type NewTableOptions struct {
