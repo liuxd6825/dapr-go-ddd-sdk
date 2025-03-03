@@ -89,7 +89,7 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return d.dao.Insert(ctx, entity, opts...).GetError()
 }
 
-func (d *Dao[T]) InsertByMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) error {
+func (d *Dao[T]) InsertByMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	return d.dao.InsertMap(ctx, tenantId, data, opts...)
 }
 

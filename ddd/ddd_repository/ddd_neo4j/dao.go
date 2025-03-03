@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -46,10 +47,9 @@ type Element interface {
 }
 
 type Dao[T Element] struct {
-	driver  neo4j.DriverWithContext
-	cypher  Cypher
-	newOne  func() T
-	newList func() []T
+	driver neo4j.DriverWithContext
+	cypher Cypher
+	eb     ddd.EntityBuilder[T]
 }
 
 type Options[T interface{}] struct {
@@ -134,16 +134,10 @@ func NewOptions[T interface{}](opts ...*Options[T]) *Options[T] {
 	return n
 }
 
-func (d *Dao[T]) init(driver neo4j.DriverWithContext, cypher Cypher, opts ...*Options[T]) {
-	o := NewOptions[T](opts...)
+func (d *Dao[T]) init(driver neo4j.DriverWithContext, cypher Cypher, eb ddd.EntityBuilder[T], opts ...*Options[T]) {
 	d.driver = driver
 	d.cypher = cypher
-	if o.newList != nil {
-		d.newList = o.newList
-	}
-	if o.newOne != nil {
-		d.newOne = o.newOne
-	}
+	d.eb = eb
 }
 
 func (d *Dao[T]) query(ctx context.Context, query string, data map[string]any) (any, error) {
@@ -223,11 +217,8 @@ func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]int
 	return resultData, err
 }
 
-func (d *Dao[T]) NewEntity() (res T, resErr error) {
-	if d.newOne != nil {
-		return d.newOne(), nil
-	}
-	return reflectutils.NewStruct[T]()
+func (d *Dao[T]) NewEntity() T {
+	return d.eb.NewEntity()
 }
 
 func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
@@ -258,36 +249,37 @@ func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_rep
 	return ddd_repository.NewSetResultError[T](nil)
 }
 
-func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
-	var err error
-	defer func() {
-		if e := recover(); e != nil {
-			if err = errors.GetRecoverError(err, e); err != nil {
-				setResult = ddd_repository.NewSetResultError[T](err)
-			}
+func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
+	res = ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.Insert(ctx, entity)
+		if err != nil {
+			return err
 		}
-	}()
-
-	cr, err1 := d.cypher.Insert(ctx, entity)
-	if err1 != nil {
-		err = err1
-		return ddd_repository.NewSetResultError[T](err)
-	}
-
-	_, err = d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
-	if err != nil {
-		return ddd_repository.NewSetResultError[T](err)
-	}
-	return ddd_repository.NewSetResult(entity, err)
+		_, err = d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
+		if err != nil {
+			return err
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	for _, e := range entities {
-		if err := d.Insert(ctx, e, opts...).GetError(); err != nil {
-			return ddd_repository.NewSetManyResultError[T](err)
+	res := ddd_repository.NewSetManyResultEmpty[T]()
+	gp.Try(func() error {
+		for _, e := range entities {
+			if err := d.Insert(ctx, e, opts...).GetError(); err != nil {
+				return err
+			}
 		}
-	}
-	return ddd_repository.NewSetManyResult[T](entities, nil)
+		return nil
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
@@ -610,7 +602,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, tenantId, cypher string
 		return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 	}
 
-	var totalRows *int64
+	var totalRows int64
 	if isTotalRows {
 		totalKey := "count"
 		countCypher := cypher + fmt.Sprintf(" RETURN count(%s) as %s ", resultKey, totalKey)
@@ -619,7 +611,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, tenantId, cypher string
 		if err != nil {
 			return ddd_repository.NewFindPagingResultWithError[T](err), false, err
 		}
-		totalRows = &total
+		totalRows = total
 	}
 
 	res := ddd_repository.NewFindPagingResult[T](list, totalRows, nil, nil)

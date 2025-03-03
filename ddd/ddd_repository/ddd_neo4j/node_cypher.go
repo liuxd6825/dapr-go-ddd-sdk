@@ -68,6 +68,7 @@ func (c *nodeCypher) InsertMany(ctx context.Context, list interface{}) (CypherRe
 	(:pig{name:"猪爸爸",age:3}),
 	(:pig{name:"猪妈妈",age:1})`*/
 	cyphers := &strings.Builder{}
+	cyphers.WriteString("UNWIND $data AS row \n ")
 	cyphers.WriteString("CREATE ")
 	vList := reflect.ValueOf(list)
 	count := vList.Len()
