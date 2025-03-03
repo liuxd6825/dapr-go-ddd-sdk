@@ -21,14 +21,19 @@ var (
 	timeJSONFormat = "2006-01-02 15:04:05"
 )
 
-func NewTime(value ...*time.Time) *Time {
-	t := Time(time.Now())
+func GetTime(value ...*time.Time) *Time {
+	var t *Time
 	for _, v := range value {
 		if v != nil {
 			t := Time(*v)
 			return &t
 		}
 	}
+	return t
+}
+
+func NewTime() *Time {
+	t := Time(time.Now())
 	return &t
 }
 
@@ -114,7 +119,7 @@ func (t *Time) Date() *Date {
 	if t == nil {
 		return nil
 	}
-	return NewDate(t.PTime())
+	return GetDate(t.PTime())
 }
 
 func (t *Time) IsNil() bool {

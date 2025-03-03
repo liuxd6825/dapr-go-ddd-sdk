@@ -85,7 +85,7 @@ func AnyToTime(data interface{}, defaultValue time.Time) (res time.Time, err err
 		res, err = time.Time{}, errors.New("Invalid data type")
 	}
 	if err == nil {
-		val := times.NewTime(&res)
+		val := times.GetTime(&res)
 		return val.Time(), nil
 	}
 	return defaultValue, nil

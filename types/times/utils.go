@@ -43,18 +43,6 @@ func now() time.Time {
 	return t
 }
 
-// GetTime
-// @Description: 获取毫秒值为0的时间
-// @param t
-// @return *time.Time
-func GetTime(t *time.Time) *time.Time {
-	if t == nil {
-		return t
-	}
-	v := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), 0, t.Location())
-	return &v
-}
-
 func AsDate(data any) (*Date, error) {
 	val, err := AsTime(data)
 	if err != nil {
@@ -80,29 +68,29 @@ func AsTime(data any) (res *Time, err error) {
 	switch data.(type) {
 	case time.Time:
 		val := data.(time.Time)
-		res = NewTime(&val)
+		res = GetTime(&val)
 	case *time.Time:
 		val := data.(*time.Time)
-		res = NewTime(val)
+		res = GetTime(val)
 	case string:
 		val, er := StrToDateTime(data.(string))
 		if er != nil {
 			return nil, er
 		}
-		res = NewTime(val)
+		res = GetTime(val)
 	case *string:
 		str := data.(*string)
 		val, er := StrToDateTime(*str)
 		if er != nil {
 			return nil, err
 		}
-		res = NewTime(val)
+		res = GetTime(val)
 	case float64:
 		val := time.Unix(0, int64(data.(float64))*int64(time.Millisecond))
-		res = NewTime(&val)
+		res = GetTime(&val)
 	case int64:
 		val := time.Unix(0, data.(int64)*int64(time.Millisecond))
-		res = NewTime(&val)
+		res = GetTime(&val)
 	default:
 		err = errors.New("Invalid data type")
 	}

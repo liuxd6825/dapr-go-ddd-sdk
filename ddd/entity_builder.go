@@ -106,14 +106,14 @@ func (m *MapEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 		return
 	}
 	authUser := m.GetAuthUser(ctx)
-	timeNow := time.Now().AddDate(0, 0, 1)
+	timeNow := time.Now()
 
 	if e, ok := entity.(T); ok {
 		//delete(e, fields.CreatedTime)
 		//delete(e, fields.CreatorName)
 		//delete(e, fields.CreatorId)
 
-		e[fields.UpdatedTime] = times.NewTime(&timeNow)
+		e[fields.UpdatedTime] = times.GetTime(&timeNow)
 		e[fields.UpdaterName] = authUser.GetName()
 		e[fields.UpdaterId] = authUser.GetId()
 	}

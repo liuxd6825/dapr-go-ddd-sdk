@@ -101,13 +101,13 @@ var parseTime = func(val string, key any) (timeVal any, err error) {
 		if er != nil {
 			return nil, er
 		}
-		timeVal = times.NewDate(&tm)
+		timeVal = times.GetDate(&tm)
 	} else {
 		tm, er := time.Parse(dateTimeFormat, val)
 		if er != nil {
 			return nil, er
 		}
-		timeVal = times.NewTime(&tm)
+		timeVal = times.GetTime(&tm)
 	}
 	return timeVal, err
 }

@@ -430,13 +430,13 @@ var parseTime = func(val string, key any) (timeVal any, err error) {
 			if tm, err := times.AsTime(val); err != nil {
 				return nil, err
 			} else if tm != nil {
-				timeVal = times.NewTime(tm.PTime())
+				timeVal = times.GetTime(tm.PTime())
 			}
 		} else if sch.Types.Contains(jsonschema.JsonType_DateType) {
 			if tm, er := times.AsTime(val); er != nil {
 				return nil, er
 			} else if tm != nil {
-				timeVal = times.NewDate(tm.PTime())
+				timeVal = times.GetDate(tm.PTime())
 			}
 		}
 	}

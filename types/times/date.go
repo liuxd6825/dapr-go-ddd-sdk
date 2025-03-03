@@ -17,16 +17,22 @@ type IDate interface {
 	Date() time.Time
 }
 
-func NewDate(value ...*time.Time) *Date {
-	res := Date(time.Now())
+func GetDate(value ...*time.Time) *Date {
 	for _, v := range value {
 		if v != nil {
 			t := *v
 			d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
-			res = Date(d)
-			break
+			res := Date(d)
+			return &res
 		}
 	}
+	return nil
+}
+
+func NewDate() *Date {
+	t := time.Now()
+	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	res := Date(d)
 	return &res
 }
 

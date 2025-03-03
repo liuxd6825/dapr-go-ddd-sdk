@@ -124,11 +124,11 @@ func init() {
 func newDate(value any) *times.Date {
 	if value != nil {
 		if val, ok := value.(**time.Time); ok {
-			return times.NewDate(*val)
+			return times.GetDate(*val)
 		} else if val, ok := value.(time.Time); ok {
-			return times.NewDate(&val)
+			return times.GetDate(&val)
 		} else if val, ok := value.(*time.Time); ok {
-			return times.NewDate(val)
+			return times.GetDate(val)
 		} else if val, ok := value.(string); ok {
 			if tVal, err := times.NewDateWithString(val); err == nil {
 				return tVal
@@ -143,11 +143,11 @@ func newDate(value any) *times.Date {
 func newTime(value any) *times.Time {
 	if value != nil {
 		if val, ok := value.(**time.Time); ok {
-			return times.NewTime(*val)
+			return times.GetTime(*val)
 		} else if val, ok := value.(time.Time); ok {
-			return times.NewTime(&val)
+			return times.GetTime(&val)
 		} else if val, ok := value.(*time.Time); ok {
-			return times.NewTime(val)
+			return times.GetTime(val)
 		} else if val, ok := value.(string); ok {
 			if tVal, err := times.NewTimeWithString(val); err == nil {
 				return tVal
