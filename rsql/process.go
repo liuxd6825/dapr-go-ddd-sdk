@@ -45,11 +45,11 @@ func ParseProcess(input string, process Process) error {
 	}
 	expr, err := Parse(input)
 	if err != nil {
-		return errors.New(fmt.Sprintf("rsql %s expression error, %s", input, err.Error()))
+		return errors.New(fmt.Sprintf("%s expression error, %s", input, err.Error()))
 	}
 	err = parseProcess(expr, process)
 	if err != nil {
-		return errors.New(fmt.Sprintf("rsql %s parseProcess error, %s", input, err.Error()))
+		return errors.New(fmt.Sprintf("%s parseProcess error, %s", input, err.Error()))
 	}
 	return nil
 }

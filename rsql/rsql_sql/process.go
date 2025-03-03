@@ -96,13 +96,22 @@ func (p *Process) OnLessThanOrEquals(name string, value any, rValue rsql.Value) 
 }
 
 func (p *Process) OnIn(name string, value any, rValue rsql.Value) {
-	val := p.getValue(rValue)
-	p.str = fmt.Sprintf("%s %s in %s", p.str, name, val)
+	if vList, ok := rValue.(*rsql.ListValue); ok {
+		val := p.getInValue(vList)
+		p.str = fmt.Sprintf("%s %s in (%s)", p.str, name, val)
+	} else {
+		panic("invalid rsql type in In ")
+	}
+
 }
 
 func (p *Process) OnNotIn(name string, value any, rValue rsql.Value) {
-	val := p.getValue(rValue)
-	p.str = fmt.Sprintf("%s %s not in %v", p.str, name, val)
+	if vList, ok := rValue.(*rsql.ListValue); ok {
+		val := p.getInValue(vList)
+		p.str = fmt.Sprintf("%s %s not in (%s)", p.str, name, val)
+	} else {
+		panic("invalid rsql type in not In ")
+	}
 }
 
 func (p *Process) OnAndItem() {
@@ -179,7 +188,7 @@ func (p *Process) getValue(value rsql.Value) any {
 		v = sv.Value
 	case *rsql.ListValue:
 		sv, _ := value.(*rsql.ListValue)
-		v = rsql.GetValueList(sv)
+		v = p.getValueList(sv)
 	case *rsql.FuncValue:
 		sv, _ := value.(*rsql.FuncValue)
 		v = sv.Value
@@ -202,4 +211,28 @@ func (p *Process) getLikeValue(value rsql.Value) string {
 	s = strings.Replace(s, "'", "''", -1)
 	s = strings.Replace(s, "*", "%", -1)
 	return "'" + s + "'"
+}
+
+func (p *Process) getValueList(listValue *rsql.ListValue) []interface{} {
+	list := make([]interface{}, 0)
+	if listValue == nil {
+		return list
+	}
+	for _, v := range listValue.Value {
+		list = append(list, p.getValue(v))
+	}
+	return list
+}
+
+func (p *Process) getInValue(listValue *rsql.ListValue) string {
+	list := p.getValueList(listValue)
+	sb := &strings.Builder{}
+	count := len(list)
+	for i, v := range list {
+		sb.WriteString(fmt.Sprintf("%v", v))
+		if i < count-1 {
+			sb.WriteString(",")
+		}
+	}
+	return sb.String()
 }

@@ -82,6 +82,9 @@ func AsFieldName(name string) string {
 
 func GetValueList(listValue *ListValue) []interface{} {
 	list := make([]interface{}, 0)
+	if listValue == nil {
+		return list
+	}
 	for _, v := range listValue.Value {
 		list = append(list, GetValue(v))
 	}
