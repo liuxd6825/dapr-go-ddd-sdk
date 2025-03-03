@@ -36,7 +36,7 @@ func New(server element.Server) *Pkg {
 	}
 }
 
-func (p *Pkg) NewRsqlBuilder() *builder.Builder {
+func (p *Pkg) NewRSQLBuilder() *builder.Builder {
 	return builder.NewBuilder()
 }
 
