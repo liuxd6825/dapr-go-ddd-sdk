@@ -57,7 +57,7 @@ func (m *MapDao) Insert(ctx context.Context, entity map[string]any, opts ...ddd_
 	return m.dao.Insert(ctx, entity, opts...)
 }
 
-func (m *MapDao) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) error {
+func (m *MapDao) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.InsertMap(ctx, tenantId, data, opts...)
 }
 
