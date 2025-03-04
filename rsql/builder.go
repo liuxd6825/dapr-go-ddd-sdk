@@ -1,4 +1,4 @@
-package builder
+package rsql
 
 import (
 	"fmt"
@@ -56,7 +56,7 @@ func (c *outCondition) Build() string {
 	return fmt.Sprintf("%s=out=%s", c.field, c.values)
 }
 
-// Builder 主结构体
+// Builder RSQL语包生成器
 type Builder struct{}
 
 func NewBuilder() *Builder {
@@ -64,7 +64,7 @@ func NewBuilder() *Builder {
 }
 
 // formatValue 处理不同数据类型的值格式化
-func formatValue(value interface{}) string {
+func (b *Builder) formatValue(value interface{}) string {
 	if value == nil {
 		return "null"
 	}
@@ -87,7 +87,7 @@ func formatValue(value interface{}) string {
 			if val.IsNil() {
 				return "null"
 			}
-			return formatValue(val.Elem().Interface())
+			return b.formatValue(val.Elem().Interface())
 		}
 		return fmt.Sprintf(`"%v"`, v)
 	}
@@ -98,7 +98,7 @@ func (b *Builder) Like(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "~=",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -114,7 +114,7 @@ func (b *Builder) Eq(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "==",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -141,7 +141,7 @@ func (b *Builder) Start(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=start=",
-		value:    formatValue(val),
+		value:    b.formatValue(val),
 	}
 }
 
@@ -150,7 +150,7 @@ func (b *Builder) End(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=end=",
-		value:    formatValue(val),
+		value:    b.formatValue(val),
 	}
 }
 
@@ -159,7 +159,7 @@ func (b *Builder) Contains(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=contains=",
-		value:    formatValue(val),
+		value:    b.formatValue(val),
 	}
 }
 
@@ -168,7 +168,7 @@ func (b *Builder) NotContains(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=!contains=",
-		value:    formatValue(val),
+		value:    b.formatValue(val),
 	}
 }
 
@@ -184,7 +184,7 @@ func (b *Builder) Neq(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "!=",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -193,7 +193,7 @@ func (b *Builder) Gt(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: ">",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -202,7 +202,7 @@ func (b *Builder) Ge(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: ">=",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -210,7 +210,7 @@ func (b *Builder) Lt(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "<",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -218,7 +218,7 @@ func (b *Builder) Le(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "<=",
-		value:    formatValue(value),
+		value:    b.formatValue(value),
 	}
 }
 
@@ -231,7 +231,7 @@ func (b *Builder) In(field string, values interface{}) Condition {
 
 	var formatted []string
 	for i := 0; i < val.Len(); i++ {
-		formatted = append(formatted, formatValue(val.Index(i).Interface()))
+		formatted = append(formatted, b.formatValue(val.Index(i).Interface()))
 	}
 
 	return &inCondition{
@@ -249,7 +249,7 @@ func (b *Builder) Out(field string, values interface{}) Condition {
 
 	var formatted []string
 	for i := 0; i < val.Len(); i++ {
-		formatted = append(formatted, formatValue(val.Index(i).Interface()))
+		formatted = append(formatted, b.formatValue(val.Index(i).Interface()))
 	}
 
 	return &outCondition{
@@ -258,7 +258,7 @@ func (b *Builder) Out(field string, values interface{}) Condition {
 	}
 }
 
-// 逻辑组合方法
+// And 与逻辑组合方法
 func (b *Builder) And(conditions ...Condition) Condition {
 	return &compositeCondition{
 		operator:   " and ",
@@ -266,9 +266,19 @@ func (b *Builder) And(conditions ...Condition) Condition {
 	}
 }
 
+// Or 或逻辑
 func (b *Builder) Or(conditions ...Condition) Condition {
 	return &compositeCondition{
 		operator:   " or ",
 		conditions: conditions,
 	}
+}
+
+// GetList 取得slice中元素指定字段的值，支持struct与map类型。
+func (b *Builder) GetList(list any, filed string) []string {
+	res, err := GetFieldValues(list, filed)
+	if err != nil {
+		panic(err)
+	}
+	return res
 }

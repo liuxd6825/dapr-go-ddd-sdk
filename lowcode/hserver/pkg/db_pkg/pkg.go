@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/builder"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"gorm.io/gorm"
@@ -36,8 +36,8 @@ func New(server element.Server) *Pkg {
 	}
 }
 
-func (p *Pkg) NewRSQLBuilder() *builder.Builder {
-	return builder.NewBuilder()
+func (p *Pkg) NewRSQLBuilder() *rsql.Builder {
+	return rsql.NewBuilder()
 }
 
 func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
@@ -95,10 +95,6 @@ func (p *Pkg) GetDao(dbKey, tableName string) db.Dao {
 	panic(fmt.Errorf("dao not found %s", daoKey))
 }
 
-func getDaoKey(dbKey, tableName string) string {
-	return fmt.Sprintf("%s.%s", dbKey, tableName)
-}
-
 type NewTableOptions struct {
 	DbKey     string             `json:"dbKey"`
 	TableName string             `json:"tableName"`
@@ -147,4 +143,8 @@ func (p *Pkg) getDbItem(dbKey string) restapp.DBItem {
 
 func (p *Pkg) StartTx(ctx context.Context, dbKeys []string, txFunc ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
 	return tx.StartTx(ctx, dbKeys, txFunc, options...)
+}
+
+func getDaoKey(dbKey, tableName string) string {
+	return fmt.Sprintf("%s.%s", dbKey, tableName)
 }

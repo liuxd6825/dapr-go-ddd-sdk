@@ -1,7 +1,6 @@
-package builder
+package rsql
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_sql"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -20,7 +19,7 @@ func Test_NewBuilder(t *testing.T) {
 
 		t.Log("rsql:", query) // (name=="Alice";age=gt=25)
 		p := rsql_sql.NewProcess("test")
-		err := rsql.ParseProcess(query, p)
+		err := ParseProcess(query, p)
 		assert.NoError(t, err)
 		t.Log("sql:", p.GetSQL())
 	})
@@ -43,7 +42,7 @@ func Test_NewBuilder(t *testing.T) {
 		t.Log("rsql:", query)
 
 		p := rsql_sql.NewProcess("test")
-		err := rsql.ParseProcess(query, p)
+		err := ParseProcess(query, p)
 		assert.NoError(t, err)
 		t.Log("sql:", p.GetSQL())
 	})
@@ -61,7 +60,7 @@ func Test_NewBuilder(t *testing.T) {
 		// (createdAt=gt="2023-10-05T00:00:00Z";tags=in=("golang","backend"))
 
 		p := rsql_sql.NewProcess("test")
-		err := rsql.ParseProcess(query, p)
+		err := ParseProcess(query, p)
 		assert.NoError(t, err)
 		t.Log("sql:", p.GetSQL())
 	})
@@ -76,7 +75,7 @@ func Test_NewBuilder(t *testing.T) {
 		// (deletedAt==null,archived==null)
 
 		p := rsql_sql.NewProcess("test")
-		err := rsql.ParseProcess(query, p)
+		err := ParseProcess(query, p)
 		assert.NoError(t, err)
 		t.Log("rsql:", query)
 		t.Log("sql:", p.GetSQL())
