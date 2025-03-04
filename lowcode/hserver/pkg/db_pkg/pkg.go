@@ -9,11 +9,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
+	neo4jdriver "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"gorm.io/gorm"
 )
 
@@ -78,7 +80,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 	case restapp.DbType_Redis:
 		panic(errors.New(fmt.Sprintf("%s database nonsupport Redis", dbKey)))
 	case restapp.DbType_Neo4j:
-		panic(errors.New(fmt.Sprintf("%s database nonsupport Neo4j", dbKey)))
+		dao = neo4j.NewDao(cfg)
 	default:
 		panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
 	}
@@ -123,10 +125,15 @@ func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
 			panic(errors.New(fmt.Sprintf("%s database nonsupport gorm.DB", dbKey)))
 		}
 		table = sql.NewTable(database, opts.Schema)
+	case restapp.DbType_Neo4j:
+		if driver, ok := item.GetDB().(neo4jdriver.DriverWithContext); ok {
+			table = neo4j.NewTable(driver, opts.Schema)
+		} else {
+			panic(errors.New(fmt.Sprintf("%s database nonsupport neo4j.Driver", dbKey)))
+		}
 	case restapp.DbType_Redis:
 		panic(errors.New(fmt.Sprintf("%s database nonsupport Redis", dbKey)))
-	case restapp.DbType_Neo4j:
-		panic(errors.New(fmt.Sprintf("%s database nonsupport Neo4j", dbKey)))
+
 	default:
 		panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
 	}

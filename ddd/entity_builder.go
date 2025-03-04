@@ -20,6 +20,8 @@ type EntityBuilder[T any] interface {
 	SetCreatedInfo(ctx context.Context, entity any)
 	SetUpdatedInfo(ctx context.Context, entity any)
 	SetDeletedInfo(ctx context.Context, entity any)
+
+	GetAuthUser(ctx context.Context) appctx.AuthUser
 }
 
 type MapEntityBuilder[T map[string]any] struct {

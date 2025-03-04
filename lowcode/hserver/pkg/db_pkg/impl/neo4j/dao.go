@@ -2,57 +2,60 @@ package neo4j
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_sql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
-	"github.com/liuxd6825/jsonschema/v6"
-	"gorm.io/gorm"
-	dbschema "gorm.io/gorm/schema"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 type Dao struct {
+	*impl.DaoBase
+	cfg    *db.DaoConfig
+	dao    ddd_repository.Dao[map[string]any]
+	driver neo4j.DriverWithContext
 }
 
 func NewDao(cfg *db.DaoConfig) db.Dao {
 	cfg.Valid()
-	var database *gorm.DB
+	var driver neo4j.DriverWithContext
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
 	if cfg.Database != nil {
-		if val, ok := cfg.Database.(*gorm.DB); ok {
-			database = val
+		if val, ok := cfg.Database.(neo4j.DriverWithContext); ok {
+			driver = val
 		} else {
-			panic("database config error")
+			panic("database config error neo4j.DriverWithContext")
 		}
 	}
 
-	if database == nil {
+	if driver == nil {
 		item := restapp.GetDb(cfg.DbKey)
 		if item == nil {
-			panic("db item not found")
+			panic(fmt.Sprintf("dbKey %s not found", cfg.DbKey))
 		}
-		if val, ok := item.GetDB().(*gorm.DB); ok {
-			database = val
+		if val, ok := item.GetDB().(neo4j.DriverWithContext); ok {
+			driver = val
 		} else {
-			panic("database config error")
+			panic(fmt.Sprintf("dbKey %s is not neo4j.DriverWithContext", cfg.DbKey))
 		}
 	}
-	dbSchema, err := NewDBSchema(cfg.Schema)
-	if err != nil {
-		panic(err)
-	}
 
-	sqlDao := ddd_sql.NewMapDao(database, cfg.DbKey, cfg.Schema.Name)
-	sqlDao.AddMetadata("dbSchema", dbSchema)
-	sqlDao.AddMetadata("schema", cfg.Schema)
-
-	daoBase := impl.NewDaoBase(sqlDao, cfg)
+	dao := ddd_neo4j.NewMapNodeDao[map[string]any](driver, cfg.Schema.Name)
+	daoBase := impl.NewDaoBase(dao, cfg)
 
 	return &Dao{
-		DaoBase:  daoBase,
-		dao:      sqlDao,
-		cfg:      cfg,
-		db:       database,
-		dbSchema: dbSchema,
+		DaoBase: daoBase,
+		dao:     dao,
+		cfg:     cfg,
+		driver:  driver,
 	}
+}
+
+func (d *Dao) Table() db.Table {
+	return newTable(d.driver, d.cfg.Schema)
+}
+
+func (d *Dao) GetTableName() string {
+	return d.cfg.Schema.Name
 }
