@@ -96,21 +96,25 @@ func (p *Process) OnLessThanOrEquals(name string, value any, rValue rsql.Value) 
 }
 
 func (p *Process) OnIn(name string, value any, rValue rsql.Value) {
+	// 是标准数组查询
 	if vList, ok := rValue.(*rsql.ListValue); ok {
 		val := p.getInValue(vList)
 		p.str = fmt.Sprintf("%s %s in (%s)", p.str, name, val)
-	} else {
-		panic("invalid rsql type in In ")
+	} else { // 是sub子查询
+		val := p.getValue(rValue)
+		p.str = fmt.Sprintf("%s %s in %s", p.str, name, val)
 	}
 
 }
 
 func (p *Process) OnNotIn(name string, value any, rValue rsql.Value) {
+	// 是标准数组查询
 	if vList, ok := rValue.(*rsql.ListValue); ok {
 		val := p.getInValue(vList)
 		p.str = fmt.Sprintf("%s %s not in (%s)", p.str, name, val)
-	} else {
-		panic("invalid rsql type in not In ")
+	} else { // 是sub子查询
+		val := p.getValue(rValue)
+		p.str = fmt.Sprintf("%s %s not in %s", p.str, name, val)
 	}
 }
 
@@ -170,7 +174,8 @@ func (p *Process) getValue(value rsql.Value) any {
 	switch value.(type) {
 	case *rsql.StringValue:
 		sv, _ := value.(*rsql.StringValue)
-		v = "'" + sv.Value + "'"
+		v = sv.Value
+		//v = "'" + sv.Value + "'"
 	case *rsql.IntegerValue:
 		sv, _ := value.(*rsql.IntegerValue)
 		v = sv.Value
@@ -225,11 +230,14 @@ func (p *Process) getValueList(listValue *rsql.ListValue) []interface{} {
 }
 
 func (p *Process) getInValue(listValue *rsql.ListValue) string {
-	list := p.getValueList(listValue)
 	sb := &strings.Builder{}
-	count := len(list)
-	for i, v := range list {
-		sb.WriteString(fmt.Sprintf("%v", v))
+	count := len(listValue.Value)
+	for i, v := range listValue.Value {
+		if s, ok := v.(*rsql.StringValue); ok {
+			sb.WriteString(fmt.Sprintf("'%v'", s))
+		} else {
+			sb.WriteString(fmt.Sprintf("%v", v))
+		}
 		if i < count-1 {
 			sb.WriteString(",")
 		}

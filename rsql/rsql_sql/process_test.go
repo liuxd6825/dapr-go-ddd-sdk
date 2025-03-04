@@ -8,20 +8,42 @@ import (
 
 func Test_ParseProcess(t *testing.T) {
 	input := "((toto==32 and userId=='001' ) or (user=='admin' and sex==1)) and user==~'000'"
-	p := NewSqlProcess("test")
+	p := NewProcess("test")
 	err := rsql.ParseProcess(input, p)
-	p.GetSQL()
 	assert.Error(t, err)
+	sql := p.GetSQL()
+	t.Log(sql)
 }
 
 func Test_InSubTable(t *testing.T) {
-	input := "id=in=sub{table:orderItems;field:customerId;rsql:product~='*book*'}"
-	//input := "id=in=sub(orderItems,customerId,product=like=*book*)"
-	//.input := "id=in='001'"
-	p := NewSqlProcess("test")
-	err := rsql.ParseProcess(input, p)
-	assert.NoError(t, err)
 
-	sql := p.GetSQL()
-	t.Log(sql)
+	t.Run("sub", func(t *testing.T) {
+		input := "id=in=sub(table:orderItems,field:customerId,rsql:product~='*book*')"
+		p := NewProcess("test")
+		err := rsql.ParseProcess(input, p)
+		assert.NoError(t, err)
+
+		sql := p.GetSQL()
+		t.Log(sql)
+	})
+
+	t.Run("in []string", func(t *testing.T) {
+		input := "id=in=('a1','b2','c3')"
+		p := NewProcess("test")
+		err := rsql.ParseProcess(input, p)
+		assert.NoError(t, err)
+
+		sql := p.GetSQL()
+		t.Log(sql)
+	})
+
+	t.Run("in []number", func(t *testing.T) {
+		input := "id=in=(12,22,31)"
+		p := NewProcess("test")
+		err := rsql.ParseProcess(input, p)
+		assert.NoError(t, err)
+
+		sql := p.GetSQL()
+		t.Log(sql)
+	})
 }
