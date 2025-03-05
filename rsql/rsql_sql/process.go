@@ -101,10 +101,9 @@ func (p *Process) OnIn(name string, value any, rValue rsql.Value) {
 		val := p.getInValue(vList)
 		p.str = fmt.Sprintf("%s %s in (%s)", p.str, name, val)
 	} else { // 是sub子查询
-		val := p.getValue(rValue)
+		val := p.getSubSql(rValue)
 		p.str = fmt.Sprintf("%s %s in %s", p.str, name, val)
 	}
-
 }
 
 func (p *Process) OnNotIn(name string, value any, rValue rsql.Value) {
@@ -113,9 +112,17 @@ func (p *Process) OnNotIn(name string, value any, rValue rsql.Value) {
 		val := p.getInValue(vList)
 		p.str = fmt.Sprintf("%s %s not in (%s)", p.str, name, val)
 	} else { // 是sub子查询
-		val := p.getValue(rValue)
+		val := p.getSubSql(rValue)
 		p.str = fmt.Sprintf("%s %s not in %s", p.str, name, val)
 	}
+}
+func (p *Process) getSubSql(rValue rsql.Value) string {
+	val := p.getValue(rValue)
+	if sub, ok := val.(string); ok {
+		sub = strings.Trim(sub, "'")
+		return sub
+	}
+	panic("invalid rsql type in sub sql")
 }
 
 func (p *Process) OnAndItem() {
@@ -174,8 +181,8 @@ func (p *Process) getValue(value rsql.Value) any {
 	switch value.(type) {
 	case *rsql.StringValue:
 		sv, _ := value.(*rsql.StringValue)
-		v = sv.Value
-		//v = "'" + sv.Value + "'"
+		//v = sv.Value
+		v = "'" + sv.Value + "'"
 	case *rsql.IntegerValue:
 		sv, _ := value.(*rsql.IntegerValue)
 		v = sv.Value

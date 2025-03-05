@@ -18,6 +18,16 @@ func Test_ParseProcess(t *testing.T) {
 func Test_InSubTable(t *testing.T) {
 
 	t.Run("sub", func(t *testing.T) {
+		input := "id=='1111'"
+		p := NewProcess("test")
+		err := rsql.ParseProcess(input, p)
+		assert.NoError(t, err)
+
+		sql := p.GetSQL()
+		t.Log(sql)
+	})
+
+	t.Run("sub", func(t *testing.T) {
 		input := "id=in=sub(table:orderItems,field:customerId,rsql:product~='*book*')"
 		p := NewProcess("test")
 		err := rsql.ParseProcess(input, p)
