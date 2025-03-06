@@ -139,8 +139,7 @@ func (d *Dao[T]) SetId(entity T, id string) {
 }
 
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
-	var null T
-	res = ddd_repository.NewSetResult[T](null, nil)
+	res = ddd_repository.NewSetResult[T]()
 	res.Error = gp.Try(func() error {
 		db := d.table(ctx)
 		d.entityBuilder.SetCreatedInfo(ctx, entity)
@@ -164,8 +163,8 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 	return res
 }
 
-func (d *Dao[T]) InsertMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	res := ddd_repository.NewSetManyResult[T](entities, nil)
+func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		for _, entity := range entities {
 			d.entityBuilder.SetCreatedInfo(ctx, entity)
@@ -204,7 +203,7 @@ func (d *Dao[T]) updateTable(ctx context.Context, opts ...ddd_repository.Options
 }
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	res := ddd_repository.NewSetResult(entity, nil)
+	res := ddd_repository.NewSetResult[T]()
 	_ = gp.Try(func() error {
 		opt := ddd_repository.NewOptions(opts...)
 		d.entityBuilder.SetUpdatedInfo(ctx, entity)
@@ -232,10 +231,9 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return res
 }
 
-func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
+func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	v := d.NewEntity()
-
-	res := ddd_repository.NewSetManyCountResult()
+	res := ddd_repository.NewSetResultEmpty[T]()
 	_ = gp.Try(func() error {
 		where, err := d.getSql(tenantId, filterRSQL)
 		if err != nil {
@@ -251,8 +249,8 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, 
 	return res
 }
 
-func (d *Dao[T]) UpdateMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	res := ddd_repository.NewSetManyResult[T](entities, nil)
+func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		for _, e := range entities {
 			d.entityBuilder.SetUpdatedInfo(ctx, e)
@@ -263,13 +261,12 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, entities []T, opts ...ddd_repos
 	}).Catch(func(err error) {
 		res.SetError(err)
 	})
-
 	return res
 }
 
-func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
+func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var err error
-	var res = ddd_repository.NewSetManyResult(entities, err)
+	var res = ddd_repository.NewSetResult[T]()
 	gp.Try(func() error {
 		opt := ddd_repository.NewOptions(opts...)
 		model := d.updateTable(ctx, opt).Model(d.entity)
@@ -289,8 +286,7 @@ func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 }
 
 func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
-	res := ddd_repository.NewSetResult(null, nil)
+	res := ddd_repository.NewSetResult[T]()
 	data[TenantId] = tenantId
 	d.entityBuilder.SetUpdatedInfo(ctx, data)
 	db := d.updateTable(ctx, opts...).Model(d.entity).Where("id", id).Updates(data)
@@ -300,11 +296,10 @@ func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 }
 
 func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
 	var db *gorm.DB
 	var count int64
 
-	res := ddd_repository.NewSetResult[T](null, nil)
+	res := ddd_repository.NewSetResult[T]()
 	table := d.updateTable(ctx, opts...)
 
 	res.Error = d.asFilter(filter, func(data map[string]any) error {
@@ -328,12 +323,11 @@ func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 	id := d.GetId(entity)
 	d.entityBuilder.SetDeletedInfo(ctx, entity)
 	res := d.table(ctx).Where("tenant_id=? and id=?", tenantId, id).Delete(entity)
-	return ddd_repository.NewSetResult[T](entity, res.Error)
+	return ddd_repository.NewSetResult[T]().SetData(entity).SetError(res.Error)
 }
 
 func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
-	res := ddd_repository.NewSetResult[T](null, nil)
+	res := ddd_repository.NewSetResult[T]()
 	sql, err := d.getSql(tenantId, rSQL)
 	if err != nil {
 		return res.SetError(err)
@@ -344,32 +338,29 @@ func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts .
 }
 
 func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
 	table := d.table(ctx, opts...)
 	db := table.Where("tenant_id=? and id=?", tenantId, id).Delete(id)
-	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
+	return ddd_repository.NewSetResult[T]().SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	var null = d.NewEntity()
 	table := d.table(ctx, opts...)
 	db := table.Where("tenant_id=? and id in ?", tenantId, ids).Delete(null)
-	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
+	return ddd_repository.NewSetResult[T]().SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
 	table := d.table(ctx, opts...)
 	db := table.Where("tenant_id=?", tenantId).Delete("")
-	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
+	return ddd_repository.NewSetResult[T]().SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var null T
 	sql := d.mapAsSql(tenantId, filterMap)
 	table := d.table(ctx, opts...)
 	db := table.Where("tenant_id=?", tenantId).Delete(sql)
-	return ddd_repository.NewSetResult[T](null, db.Error).SetRowsAffected(db.RowsAffected)
+	return ddd_repository.NewSetResult[T]().SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
 func (d *Dao[T]) FindById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[T] {

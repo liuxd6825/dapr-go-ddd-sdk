@@ -29,3 +29,9 @@ func TestParseDesc(t *testing.T) {
 func TestGetTypeName(t *testing.T) {
 
 }
+
+func Test_NewObject(t *testing.T) {
+	v, err := NewObject[map[string]any]()
+	assert.NoError(t, err)
+	t.Log(v)
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -11,15 +12,17 @@ type MapDao struct {
 	dao ddd_repository.Dao[map[string]any]
 }
 
-func NewMapNodeDao(driver neo4j.DriverWithContext, tableName string, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
-	eb := ddd.NewMapEntityBuilder()
-	dao := NewNodeDao[map[string]any](driver, tableName, eb, opts...)
+func NewMapNodeDao(driver neo4j.DriverWithContext, labels []string, schema *jsonschema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
+	ebBase := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	eb := NewNodeEntityBuilder[map[string]any](ebBase)
+	dao := NewNodeDao[map[string]any](driver, eb, schema, labels, opts...)
 	return newMapDao(dao)
 }
 
-func NewMapRelationDao(driver neo4j.DriverWithContext, tableName string, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
-	eb := ddd.NewMapEntityBuilder()
-	dao := NewRelationDao[map[string]any](driver, tableName, eb, opts...)
+func NewMapRelationDao(driver neo4j.DriverWithContext, labels []string, schema *jsonschema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
+	ebBase := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	eb := NewRelationEntityBuilder[map[string]any](ebBase)
+	dao := NewRelationDao[map[string]any](driver, eb, schema, labels, opts...)
 	return newMapDao(dao)
 }
 
@@ -61,20 +64,20 @@ func (m *MapDao) InsertMap(ctx context.Context, tenantId string, data map[string
 	return m.dao.InsertMap(ctx, tenantId, data, opts...)
 }
 
-func (m *MapDao) InsertMany(ctx context.Context, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
-	return m.dao.InsertMany(ctx, entities, opts...)
+func (m *MapDao) InsertMany(ctx context.Context, tenantId string, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
+	return m.dao.InsertMany(ctx, tenantId, entities, opts...)
 }
 
 func (m *MapDao) Update(ctx context.Context, entity map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.Update(ctx, entity, opts...)
 }
 
-func (m *MapDao) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
+func (m *MapDao) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.UpdateByRSQL(ctx, tenantId, filterRSQL, data, opts...)
 }
 
-func (m *MapDao) UpdateMany(ctx context.Context, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
-	return m.dao.UpdateMany(ctx, entities, opts...)
+func (m *MapDao) UpdateMany(ctx context.Context, tenantId string, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
+	return m.dao.UpdateMany(ctx, tenantId, entities, opts...)
 }
 
 func (m *MapDao) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {

@@ -17,13 +17,12 @@ type Dao[T any] interface {
 
 	Insert(ctx context.Context, entity T, opts ...Options) *SetResult[T]
 	InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...Options) (res *SetResult[T])
-	InsertMany(ctx context.Context, entities []T, opts ...Options) *SetManyResult[T]
+	InsertMany(ctx context.Context, tenantId string, entities []T, opts ...Options) *SetResult[T]
 
 	// 更新
-
 	Update(ctx context.Context, entity T, opts ...Options) *SetResult[T]
-	UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...Options) *SetManyCountResult
-	UpdateMany(ctx context.Context, entities []T, opts ...Options) *SetManyResult[T]
+	UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data T, opts ...Options) *SetResult[T]
+	UpdateMany(ctx context.Context, tenantId string, entities []T, opts ...Options) *SetResult[T]
 	UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) *SetResult[T]
 	UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...Options) *SetResult[T]
 

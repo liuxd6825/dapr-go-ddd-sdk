@@ -3,6 +3,7 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ func TestRelationDao(t *testing.T) {
 	ctx := context.Background()
 	tenantId := "test"
 
-	dao := NewRelationDao[*CompanyRelation](driver, NewRelationCypher("C"))
+	dao := NewCompanyRelationDao()
 
 	rel := &CompanyRelation{}
 	rel.Id = uuid.New().String()
@@ -44,9 +45,9 @@ func TestRelationDao(t *testing.T) {
 	})
 
 	t.Run("FindById", func(t *testing.T) {
-		if v, ok, err := dao.FindById(ctx, rel.TenantId, rel.Id); err != nil {
-			t.Error(err)
-		} else if !ok {
+		if v := dao.FindById(ctx, rel.TenantId, rel.Id); v.Error != nil {
+			t.Error(v.Error)
+		} else if !v.IsFound {
 			t.Error("Not Found ")
 		} else {
 			t.Log(v)
@@ -55,7 +56,7 @@ func TestRelationDao(t *testing.T) {
 
 	t.Run("FindByFilter", func(t *testing.T) {
 		filter := "name=='TableName'"
-		if vList, ok, err := dao.FindByFilter(ctx, tenantId, filter).Result(); err != nil {
+		if vList, ok, err := dao.FindByRSQL(ctx, tenantId, filter).Result(); err != nil {
 			t.Error(err)
 		} else if !ok {
 			t.Log("Not Found ")
@@ -73,4 +74,9 @@ func TestRelationDao(t *testing.T) {
 			t.Log(vList)
 		}
 	})
+}
+
+func NewCompanyRelationDao() ddd_repository.Dao[*CompanyRelation] {
+	eb := NewRelationEntityBuilder[*CompanyRelation](nil)
+	return NewRelationDao[*CompanyRelation](driver, "C", eb)
 }

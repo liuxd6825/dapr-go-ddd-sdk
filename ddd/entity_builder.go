@@ -2,9 +2,7 @@ package ddd
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"time"
 )
@@ -12,180 +10,70 @@ import (
 type EntityBuilder[T any] interface {
 	NewEntity() T
 	NewEntityList() []T
+
 	GetTenantId(entity T) string
 	SetTenantId(entity T, tenantId string)
+
 	GetId(entity T) string
 	SetId(entity T, id string)
+
+	GetCaseId(entity T) string
+	SetCaseId(entity T, id string)
 
 	SetCreatedInfo(ctx context.Context, entity any)
 	SetUpdatedInfo(ctx context.Context, entity any)
 	SetDeletedInfo(ctx context.Context, entity any)
 
 	GetAuthUser(ctx context.Context) appctx.AuthUser
+
+	GetConfig() *EntityBuilderConfig
 }
 
-type MapEntityBuilder[T map[string]any] struct {
-	IsCancelModified   bool
-	IsCancelSoftDelete bool
+type EntityBuilderConfig struct {
+	IsMap            bool
+	IsCancelModified bool
+	Fields           Fields
 }
 
-func NewMapEntityBuilder() EntityBuilder[map[string]any] {
-	return &MapEntityBuilder[map[string]any]{}
-}
-
-func (m *MapEntityBuilder[T]) NewEntity() T {
-	mv := map[string]any{}
-	var a any = mv
-	if t, ok := a.(T); ok {
-		return t
-	}
-	panic(fmt.Errorf("cannot convert map to entity"))
-}
-
-func (m *MapEntityBuilder[T]) NewEntityList() []T {
-	return make([]T, 0)
-}
-
-func (m *MapEntityBuilder[T]) GetTenantId(entity T) string {
-	return get(entity, fields.TenantId)
-}
-
-func (m *MapEntityBuilder[T]) SetTenantId(entity T, id string) {
-	m.Set(entity, fields.TenantId, id)
-}
-
-func (m *MapEntityBuilder[T]) GetId(entity T) string {
-	return get(entity, fields.Id)
-}
-
-func (m *MapEntityBuilder[T]) SetId(entity T, id string) {
-	m.Set(entity, fields.Id, id)
-}
-
-func (m *MapEntityBuilder[T]) Set(entity T, key string, value string) {
-	var a any = entity
-	if mv, ok := a.(map[string]any); ok {
-		mv[key] = value
+func NewEntityBuilderConfig() *EntityBuilderConfig {
+	fields := newFields()
+	return &EntityBuilderConfig{
+		Fields: *fields,
 	}
 }
 
-func (m *MapEntityBuilder[T]) as(entity T) (map[string]any, bool) {
-	var a any = entity
-	if v, ok := a.(map[string]any); ok {
-		return v, true
-	}
-	return nil, false
+type AnyEntityBuilder[T any] struct {
+	cfg *EntityBuilderConfig
 }
 
-func (m *MapEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
-	if entity == nil {
-		return
-	}
-	if m.IsCancelModified {
-		return
-	}
-	authUser := m.GetAuthUser(ctx)
-	timeNow := time.Now()
-
-	if e, ok := entity.(T); ok {
-		e[fields.CreatedTime] = timeNow
-		e[fields.CreatorName] = authUser.GetName()
-		e[fields.CreatorId] = authUser.GetId()
-
-		e[fields.UpdatedTime] = timeNow
-		e[fields.UpdaterName] = authUser.GetName()
-		e[fields.UpdaterId] = authUser.GetId()
-		//e[fields.IsDeleted] = false
-	}
-
-}
-
-func (m *MapEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
-	if entity == nil {
-		return
-	}
-	if m.IsCancelModified {
-		return
-	}
-	authUser := m.GetAuthUser(ctx)
-	timeNow := time.Now()
-
-	if e, ok := entity.(T); ok {
-		//delete(e, fields.CreatedTime)
-		//delete(e, fields.CreatorName)
-		//delete(e, fields.CreatorId)
-
-		e[fields.UpdatedTime] = times.GetTime(&timeNow)
-		e[fields.UpdaterName] = authUser.GetName()
-		e[fields.UpdaterId] = authUser.GetId()
+func NewAnyEntityBuilder[T any](cfg *EntityBuilderConfig) EntityBuilder[T] {
+	cfg.IsMap = reflectutils.IsMap[T]()
+	return &AnyEntityBuilder[T]{
+		cfg: cfg,
 	}
 }
 
-func (m *MapEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
-	if entity == nil {
-		return
-	}
-	if m.IsCancelSoftDelete {
-		return
-	}
-	var timeNow *times.Time
-	var userName *string
-	var userId *string
-	var isDeleted = true
-	if isDeleted {
-		authUser := m.GetAuthUser(ctx)
-		name := authUser.GetName()
-		id := authUser.GetId()
-
-		timeNow = times.NowTime()
-		userName = &name
-		userId = &id
-	}
-
-	if e, ok := entity.(T); ok {
-		e[fields.DeletedTime] = timeNow
-		e[fields.DeleterName] = userName
-		e[fields.DeleterId] = userId
-		e[fields.IsDeleted] = isDeleted
+func NewAnyEntityBuilderDefault[T any]() EntityBuilder[T] {
+	cfg := NewEntityBuilderConfig()
+	cfg.IsMap = reflectutils.IsMap[T]()
+	return &AnyEntityBuilder[T]{
+		cfg: cfg,
 	}
 }
 
-func (m *MapEntityBuilder[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
-	if user, ok := appctx.GetAuthUser(ctx); ok {
-		return user
-	}
-	panic("token is error")
+func (b *AnyEntityBuilder[T]) GetConfig() *EntityBuilderConfig {
+	return b.cfg
 }
 
-// /////////
-type StructEntityBuilder[T any] struct {
-}
-
-type SetCreator interface {
-	SetCreator(ctx context.Context, user appctx.AuthUser, name string)
-}
-
-type SetDeleter interface {
-	SetDeleter(ctx context.Context, user appctx.AuthUser, isDeleted bool)
-}
-
-type SetUpdater interface {
-	SetUpdater(ctx context.Context, user appctx.AuthUser)
-}
-
-func NewStructEntityBuilder[T any]() EntityBuilder[T] {
-	return &StructEntityBuilder[T]{}
-}
-
-func (m *StructEntityBuilder[T]) NewEntity() T {
-	ent, err := reflectutils.NewStruct[T]()
+func (b *AnyEntityBuilder[T]) NewEntity() T {
+	v, err := reflectutils.NewObject[T]()
 	if err != nil {
 		panic(err)
 	}
-	return ent
+	return v
 }
 
-func (m *StructEntityBuilder[T]) NewEntityList() []T {
+func (b *AnyEntityBuilder[T]) NewEntityList() []T {
 	list, err := reflectutils.NewSlice[[]T]()
 	if err != nil {
 		panic(err)
@@ -193,69 +81,126 @@ func (m *StructEntityBuilder[T]) NewEntityList() []T {
 	return list
 }
 
-func (m *StructEntityBuilder[T]) GetTenantId(entity T) string {
-	if e, ok := m.as(entity); ok {
-		return e.GetTenantId()
+func (b *AnyEntityBuilder[T]) GetTenantId(entity T) string {
+	return b.getFieldString(entity, b.cfg.Fields.TenantId)
+}
+
+func (b *AnyEntityBuilder[T]) SetTenantId(entity T, id string) {
+	reflectutils.SetFieldString(entity, b.cfg.Fields.TenantId, id)
+}
+
+func (b *AnyEntityBuilder[T]) GetId(entity T) string {
+	return reflectutils.GetFieldString(entity, b.cfg.Fields.Id)
+}
+
+func (b *AnyEntityBuilder[T]) SetId(entity T, id string) {
+	reflectutils.SetFieldString(entity, b.cfg.Fields.Id, id)
+}
+
+func (b *AnyEntityBuilder[T]) GetCaseId(entity T) string {
+	return reflectutils.GetFieldString(entity, b.cfg.Fields.CaseId)
+}
+
+func (b *AnyEntityBuilder[T]) SetCaseId(entity T, id string) {
+	reflectutils.SetFieldString(entity, fields.CaseId, id)
+}
+
+func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
+	e := any(entity)
+	if e == nil {
+		return
 	}
-	return ""
-}
-
-func (m *StructEntityBuilder[T]) SetTenantId(entity T, tenantId string) {
-	if e, ok := m.as(entity); ok {
-		e.SetTenantId(tenantId)
+	if b.cfg.IsCancelModified {
+		return
 	}
-}
+	authUser := b.GetAuthUser(ctx)
+	timeNow := time.Now().UTC()
 
-func (m *StructEntityBuilder[T]) GetId(entity T) string {
-	if e, ok := m.as(entity); ok {
-		return e.GetId()
+	if b.cfg.IsMap {
+		if data, ok := e.(map[string]any); ok {
+			data[fields.CreatedTime] = timeNow
+			data[fields.CreatorName] = authUser.GetName()
+			data[fields.CreatorId] = authUser.GetId()
+			
+			data[fields.UpdatedTime] = timeNow
+			data[fields.UpdaterName] = authUser.GetName()
+			data[fields.UpdaterId] = authUser.GetId()
+		}
+	} else {
+		b.setField(entity, fields.CreatedTime, timeNow)
+		b.setField(entity, fields.CreatorName, authUser.GetName())
+		b.setField(entity, fields.CreatorId, authUser.GetId())
+
+		b.setField(entity, fields.UpdatedTime, timeNow)
+		b.setField(entity, fields.UpdaterName, authUser.GetName())
+		b.setField(entity, fields.UpdaterId, authUser.GetId())
 	}
-	return ""
+
 }
 
-func (m *StructEntityBuilder[T]) SetId(entity T, id string) {
-	if e, ok := m.as(entity); ok {
-		e.SetId(id)
+func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
+	e := any(entity)
+	if e == nil {
+		return
 	}
-}
-
-func (m *StructEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
-
-}
-
-func (m *StructEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
-
-}
-
-func (m *StructEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
-
-}
-
-func (m *StructEntityBuilder[T]) as(entity T) (Entity, bool) {
-	var a any = entity
-	if e, ok := a.(Entity); ok {
-		return e, true
+	if b.cfg.IsCancelModified {
+		return
 	}
-	return nil, false
+	authUser := b.GetAuthUser(ctx)
+	timeNow := time.Now().UTC()
+
+	if b.cfg.IsMap {
+		if data, ok := any(entity).(map[string]any); ok {
+			data[fields.UpdatedTime] = timeNow
+			data[fields.UpdaterName] = authUser.GetName()
+			data[fields.UpdaterId] = authUser.GetId()
+		}
+	} else {
+		b.setField(entity, fields.UpdatedTime, timeNow)
+		b.setField(entity, fields.UpdaterName, authUser.GetName())
+		b.setField(entity, fields.UpdaterId, authUser.GetId())
+	}
+
 }
 
-func (m *StructEntityBuilder[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
+func (b *AnyEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
+
+}
+
+func (b *AnyEntityBuilder[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
 	if user, ok := appctx.GetAuthUser(ctx); ok {
 		return user
 	}
 	panic("token is error")
 }
 
-func get(entity any, key string) string {
-	var a any = entity
-	if mv, ok := a.(map[string]any); ok {
-		if val, ok := mv[key]; ok {
-			if v, ok := val.(string); ok {
-				return v
-			} else {
-				return fmt.Sprintf("%v", val)
-			}
-		}
-	}
-	return ""
+func (b *AnyEntityBuilder[T]) setFieldString(entity any, fieldName, val string) {
+	reflectutils.SetFieldString(entity, fieldName, val)
+}
+
+func (b *AnyEntityBuilder[T]) setField(entity any, fieldName string, val any) {
+	reflectutils.SetField(entity, fieldName, val)
+}
+
+func (b *AnyEntityBuilder[T]) getFieldString(entity any, fieldName string) string {
+	return reflectutils.GetFieldString(entity, fieldName)
+}
+
+func (b *AnyEntityBuilder[T]) getField(entity any, fieldName string) any {
+	return reflectutils.GetField(entity, fieldName)
+}
+
+func (c *EntityBuilderConfig) SetIsMap(isMap bool) *EntityBuilderConfig {
+	c.IsMap = isMap
+	return c
+}
+
+func (c *EntityBuilderConfig) SetIsCancelModified(isCancelModified bool) *EntityBuilderConfig {
+	c.IsCancelModified = isCancelModified
+	return c
+}
+
+func (c *EntityBuilderConfig) SetFields(fields *Fields) *EntityBuilderConfig {
+	c.Fields = *fields
+	return c
 }

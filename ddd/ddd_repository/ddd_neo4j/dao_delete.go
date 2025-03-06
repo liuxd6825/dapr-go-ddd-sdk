@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
 func (d *Dao[T]) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) error {
@@ -30,31 +31,52 @@ func (d *Dao[T]) DeleteLabelByFilter(ctx context.Context, tenantId string, filte
 	return nil
 }
 
-func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypher.DeleteById(ctx, tenantId, id)
-	if err != nil {
+func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.DeleteById(ctx, tenantId, id)
+		if err != nil {
+			return err
+		}
+		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		if nRes != nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
 		return err
-	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
-	return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
-func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypher.DeleteByIds(ctx, tenantId, ids)
-	if err != nil {
+func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.DeleteByIds(ctx, tenantId, ids)
+		if err != nil {
+			return err
+		}
+		_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		return err
-	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
-	return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
-func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypher.DeleteAll(ctx, tenantId)
-	if err != nil {
+func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.DeleteAll(ctx, tenantId)
+		if err != nil {
+			return err
+		}
+		_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		return err
-	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
-	return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) error {

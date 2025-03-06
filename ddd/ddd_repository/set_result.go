@@ -15,10 +15,8 @@ func NewSetResultEmpty[T interface{}]() *SetResult[T] {
 	}
 }
 
-func NewSetResult[T interface{}](data T, err error) *SetResult[T] {
+func NewSetResult[T interface{}]() *SetResult[T] {
 	return &SetResult[T]{
-		Data:         data,
-		Error:        err,
 		RowsAffected: 0,
 	}
 }
@@ -40,6 +38,11 @@ func (s *SetResult[T]) GetError() error {
 
 func (s *SetResult[T]) GetData() T {
 	return s.Data
+}
+
+func (s *SetResult[T]) SetData(val T) *SetResult[T] {
+	s.Data = val
+	return s
 }
 
 func (s *SetResult[T]) Result() (T, error) {

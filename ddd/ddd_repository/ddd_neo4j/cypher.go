@@ -5,17 +5,18 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 )
 
-type Cypher interface {
-	Insert(ctx context.Context, data interface{}) (CypherResult, error)
-	InsertMany(ctx context.Context, list interface{}) (CypherResult, error)
+type Cypher[T any] interface {
+	Insert(ctx context.Context, data T) (CypherResult, error)
+	InsertMany(ctx context.Context, list []T) (CypherResult, error)
 
-	InsertOrUpdate(ctx context.Context, data interface{}) (CypherResult, error)
+	InsertOrUpdate(ctx context.Context, data T) (CypherResult, error)
 
-	Update(ctx context.Context, data interface{}, setFields ...string) (CypherResult, error)
-	UpdateMany(ctx context.Context, list interface{}) (CypherResult, error)
+	Update(ctx context.Context, data T, setFields ...string) (CypherResult, error)
+	UpdateMany(ctx context.Context, list []T) (CypherResult, error)
+	UpdateByRSQL(ctx context.Context, tenantId string, rSQL string, data T, setFields ...string) (CypherResult, error)
 
 	UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)
-	UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error)
+	UpdateLabelByFilter(ctx context.Context, tenantId string, rSQL string, labels ...string) (CypherResult, error)
 
 	DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error)
 	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error)

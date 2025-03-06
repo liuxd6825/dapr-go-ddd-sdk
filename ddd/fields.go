@@ -13,6 +13,7 @@ type Fields struct {
 	IsDeleted   string
 	TenantId    string
 	Id          string
+	CaseId      string
 }
 
 var fields = newFields()
@@ -35,5 +36,6 @@ func newFields() *Fields {
 		IsDeleted:   "isDeleted",
 		TenantId:    "tenantId",
 		Id:          "id",
+		CaseId:      "caseId",
 	}
 }

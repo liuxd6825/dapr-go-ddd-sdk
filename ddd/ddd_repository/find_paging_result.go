@@ -197,6 +197,16 @@ func (f *FindPagingResult[T]) SetData(data []T) *FindPagingResult[T] {
 	return f
 }
 
+func (f *FindPagingResult[T]) SetTotalPages(val int64) *FindPagingResult[T] {
+	f.TotalPages = val
+	return f
+}
+
+func (f *FindPagingResult[T]) SetTotalRow(val int64) *FindPagingResult[T] {
+	f.TotalRows = val
+	return f
+}
+
 func (f *FindPagingResult[T]) SetSum(isSum bool, sumData []T, err error) *FindPagingResult[T] {
 	f.IsSum = isSum
 	f.SumData = sumData

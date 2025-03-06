@@ -36,16 +36,20 @@ type DaoOptions struct {
 
 func NewDao(cfg *db.DaoConfig) *Dao {
 	cfg.Valid()
+	var mongoDb *ddd_mongodb.MongoDB
+	if v, ok := cfg.Database.(*ddd_mongodb.MongoDB); ok {
+		mongoDb = v
+	} else {
+		item := restapp.GetDb(cfg.DbKey)
+		if item == nil {
+			panic(errors.New(" %s database not found", cfg.DbKey))
+		}
+		mongoDb = item.GetMongo()
+	}
 
 	tableName := cfg.Schema.Name
-	item := restapp.GetDb(cfg.DbKey)
-	if item == nil {
-		panic(errors.New(" %s database not found", cfg.DbKey))
-	}
-	mongoDB := item.GetMongo()
-
 	opt := mongo_dao.NewRepositoryOptions(&mongo_dao.RepositoryOptions{
-		MongoDB: mongoDB,
+		MongoDB: mongoDb,
 		//GetCollCallback: opts.GetCollCallback,
 	})
 
@@ -63,15 +67,15 @@ func NewDao(cfg *db.DaoConfig) *Dao {
 	if opt.GetCollCallback != nil {
 		getCollCallback = opt.GetCollCallback
 	}
-	entBuilder := ddd.NewMapEntityBuilder()
-	daoOpts := ddd_mongodb.NewOptions[map[string]any]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(entBuilder)
+	eb := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	daoOpts := ddd_mongodb.NewOptions[map[string]any]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(eb)
 
 	dao := ddd_mongodb.NewDao[map[string]any](getCollCallback, daoOpts)
 	res := &Dao{
 		dao:     dao,
 		DaoBase: impl.NewDaoBase(dao, cfg),
 		cfg:     cfg,
-		db:      mongoDB,
+		db:      mongoDb,
 	}
 	return res
 }

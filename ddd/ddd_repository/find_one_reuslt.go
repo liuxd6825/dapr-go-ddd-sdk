@@ -6,6 +6,10 @@ type FindOneResult[T any] struct {
 	IsFound bool  `json:"isFound" js:"isFound"`
 }
 
+func NewFindOneResultEmpty[T any]() *FindOneResult[T] {
+	return &FindOneResult[T]{}
+}
+
 func NewFindOneResult[T any](data T, isFound bool, err error) *FindOneResult[T] {
 	return &FindOneResult[T]{
 		Data:    data,
@@ -18,12 +22,32 @@ func (f *FindOneResult[T]) GetError() error {
 	return f.Error
 }
 
+func (f *FindOneResult[T]) SetError(err error) *FindOneResult[T] {
+	f.Error = err
+	return f
+}
+
 func (f *FindOneResult[T]) GetData() T {
 	return f.Data
 }
 
+func (f *FindOneResult[T]) SetData(val T) *FindOneResult[T] {
+	f.Data = val
+	if any(val) != nil {
+		f.IsFound = true
+	} else {
+		f.IsFound = false
+	}
+	return f
+}
+
 func (f *FindOneResult[T]) GetIsFound() bool {
 	return f.IsFound
+}
+
+func (f *FindOneResult[T]) SetIsFound(val bool) *FindOneResult[T] {
+	f.IsFound = val
+	return f
 }
 
 func (f *FindOneResult[T]) Result() (T, bool, error) {

@@ -25,7 +25,7 @@ func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts 
 	for _, e := range entity {
 		e[TenantId] = tenantId
 	}
-	res := d.dao.InsertMany(ctx, entity, db.NewRepositoryOptions(opts)...)
+	res := d.dao.InsertMany(ctx, tenantId, entity, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}

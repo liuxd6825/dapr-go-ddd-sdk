@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/gocsv"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -15,6 +16,70 @@ import (
 	"reflect"
 	"strings"
 	"time"
+)
+
+type ImportCsvCmd struct {
+	TenantId         string                 `json:"tenantId" desc:"租户ID"`
+	CaseId           string                 `json:"caseId" desc:""`
+	ImportFile       string                 `json:"importFile"`
+	Labels           []string               `json:"label"`
+	Fields           []string               `json:"fields"`
+	ImportType       ImportType             `json:"importType"`
+	Data             ImportCsvCmdData       `json:"data"`
+	SaveFileCallback ImportSaveFileCallback `json:"-"`
+}
+
+type ImportCsvCmdData interface {
+	Data() any
+	List() any
+	Item(index int) any
+	Append(item any)
+	Length() int
+}
+
+type ImportType int
+
+type ImportJsonCmd struct {
+	TenantId   string     `json:"tenantId" desc:"租户ID"`
+	CaseId     string     `json:"caseId" desc:""`
+	Neo4jPath  string     `json:"neo4JPath"`
+	ImportFile string     `json:"importFile"`
+	Nodes      []Node     `json:"nodes"`
+	Relations  []Relation `json:"relations"`
+}
+
+type importCsvCmdData struct {
+	list []any
+	data any
+}
+
+func (i *importCsvCmdData) List() any {
+	return i.list
+}
+
+func (i *importCsvCmdData) Data() any {
+	return i.data
+}
+
+func (i *importCsvCmdData) Item(index int) any {
+	return i.list[index]
+}
+
+func (i *importCsvCmdData) Append(item any) {
+	i.list = append(i.list, item)
+}
+
+func (i *importCsvCmdData) Length() int {
+	return len(i.list)
+}
+
+func NewImportCsvCmdData(data any) ImportCsvCmdData {
+	return &importCsvCmdData{data: data}
+}
+
+const (
+	ImportTypeNode = iota
+	ImportTypeRelation
 )
 
 // ImportSaveFileCallback
@@ -153,7 +218,7 @@ func (d *Dao[T]) importCsv(ctx context.Context, cmd ImportCsvCmd, opts ...ddd_re
 }
 
 func getStructFields(data any) ([]*importField, error) {
-	refFields, err := reflectutils.GetFields(data)
+	refFields, err := reflectutils.NewFields(data)
 	if err != nil {
 		return nil, err
 	}
@@ -263,4 +328,123 @@ func LocalFileImportSaveFileCallback(ctx context.Context, tenantId string, fileN
 	}
 	fileUri := fmt.Sprintf("file:///%s", fileName)
 	return fileUri, completeCallback, nil
+}
+
+type ImportJsonRelation struct {
+	Id         string                  `json:"id"`
+	Type       string                  `json:"type"`
+	Label      string                  `json:"label"`
+	Properties any                     `json:"properties"`
+	Start      ImportJsonRelationStart `json:"start"`
+	End        ImportJsonRelationEnd   `json:"end"`
+}
+type ImportJsonRelationStart struct {
+	Id         string   `json:"id"`
+	Labels     []string `json:"labels"`
+	Properties any      `json:"properties"`
+}
+type ImportJsonRelationEnd struct {
+	Id         string   `json:"id"`
+	Labels     []string `json:"labels"`
+	Properties any      `json:"properties"`
+}
+
+type ImportJsonNode struct {
+	Id         string   `json:"id"`
+	Type       string   `json:"type"`
+	Labels     []string `json:"labels"`
+	Properties any      `json:"properties"`
+}
+type Null struct {
+}
+
+func (d *Dao[T]) ImportJson(ctx context.Context, cmd ImportJsonCmd, opts ...ddd_repository.Options) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	fileName := cmd.Neo4jPath + "/import/" + cmd.ImportFile
+
+	var jsonFile *os.File
+	jsonFile, err = os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		_ = jsonFile.Close()
+	}()
+
+	//labelTenant := fmt.Sprintf("tenant_%s", cmd.TenantId)
+	labelCase := fmt.Sprintf("case_%s", cmd.CaseId)
+	lables := []string{
+		//labelTenant,
+		labelCase,
+	}
+	ids := map[string]int{}
+	for _, item := range cmd.Nodes {
+		id := item.GetId()
+		//nodeLables := append(lables, "human")
+		if _, ok := ids[id]; ok {
+			continue
+		}
+		ids[id] = 0
+		props := map[string]any{"id": item.GetId()}
+		node := ImportJsonNode{
+			Id:         item.GetId(),
+			Type:       "node",
+			Labels:     lables,
+			Properties: props,
+		}
+		if item, err := jsonutils.Marshal(node); err != nil {
+			return err
+		} else {
+			jsonFile.WriteString(item)
+			jsonFile.WriteString("\r\n")
+		}
+	}
+
+	for _, item := range cmd.Relations {
+		rel := ImportJsonRelation{
+			Id:         item.GetId(),
+			Type:       "relationship",
+			Label:      item.GetRelType(),
+			Properties: item.GetProperties(),
+			Start: ImportJsonRelationStart{
+				Id:         item.GetStartId(),
+				Labels:     lables,
+				Properties: Null{},
+			},
+			End: ImportJsonRelationEnd{
+				Id:         item.GetEndId(),
+				Labels:     lables,
+				Properties: Null{},
+			},
+		}
+		if item, err := jsonutils.Marshal(rel); err != nil {
+			return err
+		} else {
+			jsonFile.WriteString(item)
+			jsonFile.WriteString("\r\n")
+		}
+	}
+
+	cypher := fmt.Sprintf(`CALL apoc.import.json("file:///%s",{cleanup:false, importIdName:"id"} )`, cmd.ImportFile)
+
+	fmt.Println("***********")
+	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
+	fmt.Println("***********")
+
+	session := d.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer session.Close(ctx)
+
+	_, err = session.Run(ctx, cypher, nil)
+	if err != nil {
+		fmt.Println(err)
+
+	} else {
+		//summary, _ := result.Consume(ctx)
+		//fmt.Println("Query updated the database?", summary.Counters().ContainsUpdates())
+	}
+
+	return err
 }

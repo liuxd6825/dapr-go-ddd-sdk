@@ -14,6 +14,10 @@ func NewFindListResult[T interface{}](data []T, isFound bool, err error) *FindLi
 	}
 }
 
+func NewFindListResultEmpty[T interface{}]() *FindListResult[T] {
+	return &FindListResult[T]{}
+}
+
 func NewFindListResultError[T any](err error) *FindListResult[T] {
 	return &FindListResult[T]{
 		Error: err,
@@ -24,12 +28,30 @@ func (f *FindListResult[T]) GetError() error {
 	return f.Error
 }
 
+func (f *FindListResult[T]) SetError(err error) *FindListResult[T] {
+	f.Error = err
+	return f
+}
+
 func (f *FindListResult[T]) GetData() []T {
 	return f.Data
 }
 
+func (f *FindListResult[T]) SetData(list []T) *FindListResult[T] {
+	f.Data = list
+	if len(list) > 0 {
+		f.IsFound = true
+	}
+	return f
+}
+
 func (f *FindListResult[T]) GetIsFound() bool {
 	return f.IsFound
+}
+
+func (f *FindListResult[T]) SetIsFound(val bool) *FindListResult[T] {
+	f.IsFound = val
+	return f
 }
 
 func (f *FindListResult[T]) Result() ([]T, bool, error) {

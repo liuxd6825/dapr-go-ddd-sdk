@@ -116,7 +116,7 @@ func getResultError(values ...any) (err error) {
 func checkArgsIsNil(args ...any) error {
 	for i, v := range args {
 		if v == nil {
-			return errors.New("第%i参数不能为nil", i)
+			return errors.New("第%v参数不能为nil", i)
 		}
 	}
 	return nil

@@ -30,6 +30,9 @@ type WebContext struct {
 	timeFields map[string]any
 }
 
+const dateFormat = "2006-01-02"
+const dateTimeFormat = "2006-01-02 15:04:05"
+
 func NewWebContext(ctx context.Context, ictx iris.Context) *WebContext {
 	authToken, ok := appctx.GetAuthToken(ctx)
 	if !ok {
@@ -417,9 +420,6 @@ func (c *WebContext) GetFindPaging() *ddd_repository.FindPagingQueryRequest {
 	v.TenantId = c.GetTenantId()
 	return v
 }
-
-const dateFormat = "2006-01-02"
-const dateTimeFormat = "2006-01-02 15:04:05"
 
 var parseTime = func(val string, key any) (timeVal any, err error) {
 	if val == "" || val == "null" {

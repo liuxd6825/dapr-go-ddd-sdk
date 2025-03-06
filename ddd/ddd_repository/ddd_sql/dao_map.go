@@ -12,7 +12,7 @@ type MapDao struct {
 }
 
 func NewMapDaoWithDbKey(dbKey string, tableName string) ddd_repository.Dao[map[string]any] {
-	eb := ddd.NewMapEntityBuilder()
+	eb := ddd.NewAnyEntityBuilderDefault[map[string]any]()
 	mapDao := NewDaoWithDbKey[map[string]any](dbKey, eb, tableName)
 	return &MapDao{
 		dao: mapDao,
@@ -20,7 +20,7 @@ func NewMapDaoWithDbKey(dbKey string, tableName string) ddd_repository.Dao[map[s
 }
 
 func NewMapDao(db *gorm.DB, dbKey string, tableName string) *MapDao {
-	eb := ddd.NewMapEntityBuilder()
+	eb := ddd.NewAnyEntityBuilderDefault[map[string]any]()
 	mapDao := NewDao[map[string]any](db, dbKey, eb, tableName)
 	return &MapDao{
 		dao: mapDao,
@@ -61,20 +61,20 @@ func (m *MapDao) InsertMap(ctx context.Context, tenantId string, data map[string
 	return m.dao.InsertMap(ctx, tenantId, data, opts...)
 }
 
-func (m *MapDao) InsertMany(ctx context.Context, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
-	return m.dao.InsertMany(ctx, entities, opts...)
+func (m *MapDao) InsertMany(ctx context.Context, tenantId string, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
+	return m.dao.InsertMany(ctx, tenantId, entities, opts...)
 }
 
 func (m *MapDao) Update(ctx context.Context, entity map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.Update(ctx, entity, opts...)
 }
 
-func (m *MapDao) UpdateByRSQL(ctx context.Context, tenantId, filter string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
+func (m *MapDao) UpdateByRSQL(ctx context.Context, tenantId, filter string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.UpdateByRSQL(ctx, tenantId, filter, data, opts...)
 }
 
-func (m *MapDao) UpdateMany(ctx context.Context, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[map[string]any] {
-	return m.dao.UpdateMany(ctx, entities, opts...)
+func (m *MapDao) UpdateMany(ctx context.Context, tenantId string, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
+	return m.dao.UpdateMany(ctx, tenantId, entities, opts...)
 }
 
 func (m *MapDao) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {

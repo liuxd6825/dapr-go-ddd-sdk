@@ -93,8 +93,8 @@ func (d *Dao[T]) InsertByMap(ctx context.Context, tenantId string, data map[stri
 	return d.dao.InsertMap(ctx, tenantId, data, opts...)
 }
 
-func (d *Dao[T]) InsertMany(ctx context.Context, entity []T, opts ...ddd_repository.Options) error {
-	return d.dao.InsertMany(ctx, entity, opts...).GetError()
+func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entity []T, opts ...ddd_repository.Options) error {
+	return d.dao.InsertMany(ctx, tenantId, entity, opts...).GetError()
 }
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) error {
@@ -109,15 +109,15 @@ func (d *Dao[T]) UpdateByMap(ctx context.Context, tenantId string, id string, da
 	return res.RowsAffected
 }
 
-func (d *Dao[T]) UpdateMany(ctx context.Context, entities []T, opts ...ddd_repository.Options) error {
-	return d.dao.UpdateMany(ctx, entities, opts...).GetError()
+func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, opts ...ddd_repository.Options) error {
+	return d.dao.UpdateMany(ctx, tenantId, entities, opts...).GetError()
 }
 
 func (d *Dao[T]) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...ddd_repository.Options) (*ddd_repository.BulkWriteResult, error) {
 	return d.dao.BulkWrite(ctx, models, opts...)
 }
 
-func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) error {
+func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data T, opts ...ddd_repository.Options) error {
 	return d.dao.UpdateByRSQL(ctx, tenantId, filterRSQL, data, opts...).GetError()
 }
 

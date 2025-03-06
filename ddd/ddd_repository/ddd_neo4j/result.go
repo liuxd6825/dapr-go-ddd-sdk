@@ -3,11 +3,13 @@ package ddd_neo4j
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,7 +17,7 @@ import (
 )
 
 type Neo4jResult struct {
-	data map[string][]interface{}
+	dataSet map[string][]any
 }
 
 type KeyResult[T interface{}] struct {
@@ -34,7 +36,7 @@ type MappingOptions struct {
 
 const timeLayout = "2006-01-02 15:04:05Z07:00"
 
-var jsonTimeType = reflect.TypeOf(times.NewJSONTime())
+var jsonTimeType = reflect.TypeOf(times.NewTime())
 
 func NewMappingOptions() *MappingOptions {
 	return &MappingOptions{
@@ -43,97 +45,75 @@ func NewMappingOptions() *MappingOptions {
 }
 
 func NewNeo4jResult(ctx context.Context, result neo4j.ResultWithContext, keys ...*KeyResult[interface{}]) *Neo4jResult {
-	mapList := make(map[string][]interface{})
+	dataSet := make(map[string][]any)
 	init := false
+
 	for result.Next(ctx) {
 		record := result.Record()
 		if !init {
 			init = true
 			for _, key := range record.Keys {
-				mapList[key] = make([]interface{}, 0)
+				dataSet[key] = make([]interface{}, 0)
 			}
 		}
 		for _, key := range record.Keys {
-			list := mapList[key]
+			list := dataSet[key]
 			if value, ok := record.Get(key); ok {
 				if items, ok := value.([]interface{}); ok {
 					for _, item := range items {
 						list = append(list, item)
 					}
-					mapList[key] = list
+					dataSet[key] = list
 				} else {
-					mapList[key] = append(list, value)
+					dataSet[key] = append(list, value)
 				}
 
 			}
 		}
 	}
+
 	return &Neo4jResult{
-		data: mapList,
+		dataSet: dataSet,
 	}
 }
 
-func (r *Neo4jResult) Data() map[string][]interface{} {
-	return r.data
+func (r *Neo4jResult) Data() map[string][]any {
+	return r.dataSet
 }
 
-func (r *Neo4jResult) GetData(key string) ([]interface{}, bool) {
-	v, ok := r.data[key]
+func (r *Neo4jResult) GetData(key string) ([]any, bool) {
+	v, ok := r.dataSet[key]
 	return v, ok
 }
 
-func (r *Neo4jResult) GetList(key string, resultList interface{}, opts ...*MappingOptions) error {
-	options := NewMappingOptions()
-	options.Merge(opts...)
+func (r *Neo4jResult) GetList(ctx context.Context, key string, resList any, opts ...*MappingOptions) error {
+	// 检查 res 是否为 *[]map[string]any 类型
+	resType := reflect.TypeOf(resList)
+	if resType.Kind() != reflect.Ptr || resType.Elem().Kind() != reflect.Slice || resType.Elem().Elem().Kind() != reflect.Map {
+		return errors.New("res must be a pointer to a slice of map[string]any")
+	}
 
-	var sourceList []interface{}
-	var ok bool = false
-	if len(key) == 0 {
-		for _, v := range r.data {
-			sourceList = v
-			ok = true
-			break
+	// 解引用 res
+	resValue := reflect.ValueOf(resList).Elem()
+
+	// 遍历 Neo4j 结果集
+
+	items, found := r.dataSet[key]
+	if !found {
+		return fmt.Errorf("dataKey '%s' not found in record", key)
+	}
+
+	for _, item := range items {
+		if node, ok := item.(dbtype.Node); ok {
+			m := reflect.ValueOf(node.Props)
+			resValue.Set(reflect.Append(resValue, m))
+		} else if rel, ok := item.(neo4j.Relationship); ok {
+			m := reflect.ValueOf(rel.Props)
+			resValue.Set(reflect.Append(resValue, m))
 		}
-	} else {
-		sourceList, ok = r.data[key]
-	}
-
-	if !ok {
-		return nil
-	}
-	err := reflectutils.MappingSlice(sourceList, resultList, func(i int, source reflect.Value, target reflect.Value) error {
-		return options.mapping(source, target)
-	})
-	if err != nil {
-		return err
 	}
 
 	return nil
-}
-
-// GetInteger
-// @Description: 获取整数值，如count查询结果；当neo4j结果是列表时，只取第一条；当neo4j没有结果时，返回defaultValue值
-// @receiver r
-// @param  key   数据集Key名称
-// @param  defaultValue 默认值
-// @return int64 total汇总数据量
-// @return error 错误
-func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) {
-	var total int64 = 0
-	dataList, ok := r.data[key]
-	if !ok {
-		return defaultValue, nil
-	}
-	if len(dataList) > 0 {
-		v := dataList[0]
-		s := fmt.Sprintf("%v", v)
-		if count, err := strconv.ParseInt(s, 10, 64); err != nil {
-			return 0, err
-		} else {
-			total = count
-		}
-	}
-	return total, nil
 }
 
 // GetOne
@@ -150,13 +130,13 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*Mappin
 	var list []any
 	key := dataKey
 	if len(key) == 0 {
-		for k, v := range r.data {
+		for k, v := range r.dataSet {
 			list = v
 			key = k
 			break
 		}
 	} else {
-		neo4jList, ok := r.data[key]
+		neo4jList, ok := r.dataSet[key]
 		if !ok {
 			return false, fmt.Errorf("GetOne(dataKey, entity) dataKey \"%s\" not exist ", key)
 		}
@@ -169,26 +149,79 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*Mappin
 	} else if count > 1 {
 		return false, fmt.Errorf("GetOne(dataKey, data) dataKey \"%s\" neo4j result %v > 1  not exist ", key, count)
 	}
+	var err error
 	item := list[0]
-	err := reflectutils.MappingStruct(item, entity, func(source reflect.Value, target reflect.Value) error {
-		return options.mapping(source, target)
-	})
+	if m, ok := entity.(map[string]any); ok {
+		if node, ok := item.(dbtype.Node); ok {
+			for k, v := range node.GetProperties() {
+				m[k] = v
+			}
+		}
+	} else {
+		err = reflectutils.MappingStruct(item, entity, func(source reflect.Value, target reflect.Value) error {
+			return options.mapping(source, target)
+		})
+	}
+
 	if err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
+// GetInteger
+// @Description: 获取整数值，如count查询结果；当neo4j结果是列表时，只取第一条；当neo4j没有结果时，返回defaultValue值
+// @receiver r
+// @param  key   数据集Key名称
+// @param  defaultValue 默认值
+// @return int64 total汇总数据量
+// @return error 错误
+func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) {
+	var total int64 = 0
+	dataList, ok := r.dataSet[key]
+	if !ok {
+		return defaultValue, nil
+	}
+	if len(dataList) > 0 {
+		v := dataList[0]
+		s := fmt.Sprintf("%v", v)
+		if count, err := strconv.ParseInt(s, 10, 64); err != nil {
+			return 0, err
+		} else {
+			total = count
+		}
+	}
+	return total, nil
+}
+
+func (r *Neo4jResult) GetRowsAffected() int64 {
+	count, err := r.GetInteger("rows", 0)
+	if err != nil {
+		panic(err)
+	}
+	return count
+}
+
 func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
 	var list []interface{}
-	if v, ok := r.data[key]; ok {
+	if v, ok := r.dataSet[key]; ok {
 		list = v
 	} else {
 		list = make([]interface{}, 0)
-		r.data[key] = list
+		r.dataSet[key] = list
 	}
 	list = append(list, value)
 	return list
+}
+
+func (r *Neo4jResult) GetCount(dataKey string) int64 {
+	var total int64 = 0
+	dataList, ok := r.dataSet[dataKey]
+	if !ok {
+		return total
+	}
+	total = int64(len(dataList))
+	return total
 }
 
 func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.Value) error {
@@ -325,7 +358,7 @@ func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (inte
 				format = time.RFC3339
 			}
 			res, err := time.Parse(format, sTime)
-			return times.NewJSONTime(&res), err
+			return times.GetTime(&res), err
 		}
 	} else if fromType.Kind() == reflect.String {
 		switch toType.Name() {
@@ -340,4 +373,35 @@ func decodeHook(fromType reflect.Type, toType reflect.Type, v interface{}) (inte
 		}
 	}
 	return v, nil
+}
+
+// getList 从 Neo4j 返回的数据集中提取 dataKey 对应的内容，并解析到 res 中
+func getList(ctx context.Context, dataKey string, res any, dataSet map[string][]any) error {
+	// 检查 res 是否为 *[]map[string]any 类型
+	resType := reflect.TypeOf(res)
+	if resType.Kind() != reflect.Ptr || resType.Elem().Kind() != reflect.Slice || resType.Elem().Elem().Kind() != reflect.Map {
+		return errors.New("res must be a pointer to a slice of map[string]any")
+	}
+
+	// 解引用 res
+	resValue := reflect.ValueOf(res).Elem()
+
+	// 遍历 Neo4j 结果集
+
+	items, found := dataSet[dataKey]
+	if !found {
+		return fmt.Errorf("dataKey '%s' not found in record", dataKey)
+	}
+
+	for _, item := range items {
+		if node, ok := item.(dbtype.Node); ok {
+			m := reflect.ValueOf(node.Props)
+			resValue.Set(reflect.Append(resValue, m))
+		} else if rel, ok := item.(neo4j.Relationship); ok {
+			m := reflect.ValueOf(rel.Props)
+			resValue.Set(reflect.Append(resValue, m))
+		}
+	}
+
+	return nil
 }

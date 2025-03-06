@@ -19,7 +19,7 @@ type Object struct {
 
 func TestGetFields(t *testing.T) {
 	obj := &Object{}
-	fields, err := GetFields(obj)
+	fields, err := NetFields(obj)
 	if err != nil {
 		t.Error(err)
 		return

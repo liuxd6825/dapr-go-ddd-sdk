@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_neo4j"
 )
 
 type RsqlProcess interface {
@@ -141,19 +142,6 @@ func (p *rsqlProcess) GetSqlWhere(tenantId string) interface{} {
 
 func (p *rsqlProcess) Print() {
 	fmt.Print(p.str)
-}
-
-func getNeo4jWhere(tenantId string, dataKey string, filter string) (string, error) {
-	p := NewRSqlProcess(dataKey)
-
-	if err := ParseProcess(filter, p); err != nil {
-		return "", err
-	}
-	where := p.GetSqlWhere(tenantId).(string)
-	if len(where) > 0 {
-		where = "WHERE " + where
-	}
-	return where, nil
 }
 
 func ParseProcess(input string, process RsqlProcess) error {

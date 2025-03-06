@@ -122,10 +122,10 @@ func ParseTag(tag string) (map[string]string, error) {
 	return res, nil
 }
 
-// GetFieldValues 从 any 类型的列表中提取指定字段的值，并返回 []string
-func GetFieldValues(data any, field string) ([]string, error) {
+// GetListFieldValues 从 any 类型的列表中提取指定字段的值，并返回 []string
+func GetListFieldValues(list any, field string) ([]string, error) {
 	// 使用反射获取 data 的类型
-	v := reflect.ValueOf(data)
+	v := reflect.ValueOf(list)
 
 	// 判断 data 是否是切片或数组
 	if v.Kind() != reflect.Slice && v.Kind() != reflect.Array {

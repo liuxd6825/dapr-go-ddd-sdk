@@ -66,11 +66,11 @@ func TestNodeDao(t *testing.T) {
 	})
 
 	t.Run("FindById", func(t *testing.T) {
-		if findV, ok, err := dao.FindById(ctx, tenantId, id); err != nil {
-			t.Error(err)
+		if findV := dao.FindById(ctx, tenantId, id); findV.Error != nil {
+			t.Error(findV.Error)
 			return
-		} else if ok {
-			t.Logf("findV.id = %v", findV.GetId())
+		} else if findV.IsFound {
+			t.Logf("findV.id = %v", findV.GetData().GetId())
 		} else {
 			t.Error(errors.New("not found "))
 		}
@@ -111,5 +111,5 @@ func TestGetList(t *testing.T) {
 }
 
 func NewCompanyNodeDao() *Dao[*CompanyNode] {
-	return NewNodeDao[*CompanyNode](driver, NewNodeCypher("CompanyNode"))
+	return newNodeDao[*CompanyNode](driver, "CompanyNode", NewNodeEntityBuilder[*CompanyNode](nil))
 }

@@ -3,11 +3,26 @@ package ddd_neo4j
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
-func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetManyCountResult {
-	//TODO implement me
-	panic("implement me")
+func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, rSQL string, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.UpdateByRSQL(ctx, tenantId, rSQL, entity)
+		if err != nil {
+			return err
+		}
+		tenantId := d.GetTenantId(entity)
+		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		if nRes != nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
@@ -21,30 +36,43 @@ func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 }
 
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	cr, err := d.cypher.Update(ctx, entity)
-	res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...)
-	if err != nil {
-		return ddd_repository.NewSetResultError[T](err)
-	}
-	if _, err := res.GetOne("", entity); err != nil {
-		return ddd_repository.NewSetResultError[T](err)
-	}
-	return ddd_repository.NewSetResult(entity, err)
+	res := ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.Update(ctx, entity)
+		if err != nil {
+			return err
+		}
+		tenantId := d.GetTenantId(entity)
+		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		if nRes != nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
-func (d *Dao[T]) UpdateMany(ctx context.Context, list []T, opts ...ddd_repository.Options) *ddd_repository.SetManyResult[T] {
-	for _, entity := range list {
-		if cr, err := d.cypher.Update(ctx, entity); err != nil {
-			return ddd_repository.NewSetManyResultError[T](err)
-		} else {
-			if res, err := d.doSet(ctx, entity.GetTenantId(), cr.Cypher(), cr.Params(), opts...); err != nil {
-				return ddd_repository.NewSetManyResultError[T](err)
-			} else if _, err := res.GetOne(cr.ResultKeys()[0], entity); err != nil {
-				return ddd_repository.NewSetManyResultError[T](err)
-			}
+func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, list []T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		for _, entity := range list {
+			d.eb.SetUpdatedInfo(ctx, entity)
 		}
-	}
-	return ddd_repository.NewSetManyResult(list, nil)
+		cr, err := d.cypher.UpdateMany(ctx, list)
+		if err != nil {
+			return err
+		}
+		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		if nRes != nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) UpdateLabelById(ctx context.Context, tenantId string, id string, label string) error {
@@ -52,14 +80,8 @@ func (d *Dao[T]) UpdateLabelById(ctx context.Context, tenantId string, id string
 	if err != nil {
 		return err
 	}
-	if cr == nil {
-		return nil
-	}
 	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (d *Dao[T]) UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) error {

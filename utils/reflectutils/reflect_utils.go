@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	errors2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
 )
 
@@ -144,14 +145,49 @@ func New(t reflect.Type) (res reflect.Value, resErr error) {
 	return reflect.New(t), nil
 }
 
-func NewStruct[T interface{}]() (res T, resErr error) {
+// NewObject 支持map和struct的创建
+func NewObject[T any]() (res T, resErr error) {
 	defer func() {
 		if err := errors2.GetError(recover()); err != nil {
 			resErr = err
 		}
 	}()
 	var null T
-	v, err := New(reflect.TypeOf(null))
+	t := reflect.TypeOf(null)
+	if t.Kind() == reflect.Map {
+		v := map[string]any{}
+		var a any = v
+		if data, ok := a.(T); ok {
+			return data, nil
+		} else {
+			panic("can not cast any")
+		}
+	}
+	v, err := New(t)
+	if err != nil {
+		return null, err
+	}
+	return v.Interface().(T), nil
+}
+
+func IsMap[T any]() bool {
+	var null T
+	t := reflect.TypeOf(null)
+	if t.Kind() == reflect.Map {
+		return true
+	}
+	return false
+}
+
+func NewStruct[T any]() (res T, resErr error) {
+	defer func() {
+		if err := errors2.GetError(recover()); err != nil {
+			resErr = err
+		}
+	}()
+	var null T
+	t := reflect.TypeOf(null)
+	v, err := New(t)
 	if err != nil {
 		return null, err
 	}
@@ -187,4 +223,75 @@ func GetValuePointer(data interface{}) reflect.Value {
 		v = v.Elem()
 	}
 	return v
+}
+
+func GetFieldString(data any, fieldName string) string {
+	if m, ok := data.(map[string]interface{}); ok {
+		v := m[fieldName]
+		return fmt.Sprintf("%v", v)
+	}
+
+	refVal := reflect.ValueOf(data)
+	// 根据字段名称获取字段的反射值
+	fieldValue := refVal.FieldByName(fieldName)
+	// 根据字段类型设置值
+	switch fieldValue.Kind() {
+	case reflect.String:
+		return fieldValue.String() // 设置字符串字段的值
+	default:
+		fmt.Println("Unsupported field type:", fieldName)
+	}
+	return ""
+}
+
+func SetFieldString(data any, fieldName string, val string) {
+	if m, ok := data.(map[string]interface{}); ok {
+		m[fieldName] = val
+		return
+	}
+
+	fieldName = stringutils.FirstUpper(fieldName)
+	refVal := reflect.ValueOf(data)
+	// 根据字段名称获取字段的反射值
+	fieldValue := refVal.FieldByName(fieldName)
+	// 根据字段类型设置值
+	switch fieldValue.Kind() {
+	case reflect.String:
+		if fieldValue.CanSet() {
+			fieldValue.SetString(val)
+		} else {
+			panic("SetString cannot set String")
+		}
+	default:
+		fmt.Println("Unsupported field type:", fieldName)
+	}
+}
+
+func SetField(data any, fieldName string, val any) {
+	if m, ok := data.(map[string]interface{}); ok {
+		m[fieldName] = val
+		return
+	}
+
+	refVal := reflect.ValueOf(data)
+	// 根据字段名称获取字段的反射值
+	fieldValue := refVal.FieldByName(fieldName)
+	if !fieldValue.CanSet() {
+		panic("SetField cannot set")
+	}
+	fieldValue.Set(reflect.ValueOf(val))
+}
+
+func GetField(data any, fieldName string) any {
+	if m, ok := data.(map[string]interface{}); ok {
+		return m[fieldName]
+	}
+
+	refVal := reflect.ValueOf(data)
+	// 根据字段名称获取字段的反射值
+	fieldValue := refVal.FieldByName(fieldName)
+	if !fieldValue.CanSet() {
+		panic("SetField cannot set")
+	}
+	return fieldValue.Interface()
 }

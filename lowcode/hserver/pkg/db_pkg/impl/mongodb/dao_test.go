@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/tests"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/mongo"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"testing"
 	"time"
 )
@@ -30,30 +28,13 @@ type Human struct {
 	PeopleType []string  `gorm:"people_type;type:text[]"`
 }
 
-func Test_DB(t *testing.T) {
-	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		t.Fatalf("数据库连接失败: %v", err)
-		return
-	}
-	human := &Human{
-		Id:         idutils.NewId(),
-		PeopleType: []string{"Human", "People", "PeopleType"},
-	}
-	table := database.Model(human)
-	table.AutoMigrate(human)
-	res := table.Create(human)
-
-	assert.Equal(t, 1, res.RowsAffected)
-}
-
 var DB_NAME = "test"
 
 func Test_Dao(t *testing.T) {
 	database := ddd_mongodb.NenMongoDBWithClient(DB_NAME, client)
 
 	humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", HumanSchema)
+	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
 	if err != nil {
 		t.Error(err)
 		return
@@ -63,7 +44,7 @@ func Test_Dao(t *testing.T) {
 		Database:   database,
 		DbKey:      "sql",
 		Schema:     humanSchema.GetJsonSchema(),
-		Env:        NewEnvConfig(),
+		Env:        tests.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
@@ -95,6 +76,7 @@ func Test_Dao(t *testing.T) {
 		gp.Try(func() error {
 			res := dao.CreateMany(ctx, list)
 			assert.Equal(t, newCount, res.RowsAffected)
+			t.Log("RowsAffected:", res.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -178,7 +160,7 @@ func Test_Dao(t *testing.T) {
 			paging := ddd_repository.NewFindPagingQueryRequest()
 			paging.PageSize = 2
 			paging.IsTotalRows = true
-			paging.Filter = fmt.Sprintf("creatorName=='%s'", "test")
+			paging.Filter = rsql.NewBuilder().Eq("creatorName", "test").Build()
 			res := dao.FindPaging(ctx, paging)
 			assert.NotNil(t, res)
 			assert.Equal(t, int64(11), res.TotalRows)
@@ -300,51 +282,4 @@ func Test_Dao(t *testing.T) {
 	})
 
 	t.Run("dao.FindByRSQL", func(t *testing.T) {})
-}
-
-type EnvConfig struct {
-}
-
-func (e EnvConfig) GetAppId() string {
-	return "test"
-}
-
-func (e EnvConfig) GetAppName() string {
-	return "app"
-}
-
-func (e EnvConfig) GetAppHttpHost() string {
-	return "localhost"
-}
-
-func (e EnvConfig) GetAppHttpPort() int {
-	return 0
-}
-
-func (e EnvConfig) GetDaprHost() string {
-	return "localhost"
-}
-
-func (e EnvConfig) GetDaprHttpPort() int64 {
-	return 0
-}
-
-func (e EnvConfig) GetDaprGrpcPort() int64 {
-	return 0
-}
-
-func (e EnvConfig) GetFsManager() *fsm.Manager {
-	return nil
-}
-
-func (e EnvConfig) GetHServerSrcPath() string {
-	return ""
-}
-
-func (e EnvConfig) GetHServerEnable() bool {
-	return false
-}
-
-func NewEnvConfig() *EnvConfig {
-	return &EnvConfig{}
 }
