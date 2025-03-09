@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/jsonschema/v6"
 	"strings"
 )
 
@@ -14,14 +14,14 @@ type relationCypher[T any] struct {
 	labels        string
 	isEmptyLabels bool
 	eb            RelationEntityBuilder[T]
-	schema        *jsonschema.Schema
+	schema        *schema.Schema
 }
 
 // NewRelationCypher
 // @Description:
 // @param labels 关系标签，可以为空值；为空：由Relation.GetRelType()决定标签名称
 // @return Cypher
-func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *jsonschema.Schema, labels ...string) Cypher[T] {
+func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *schema.Schema, labels ...string) Cypher[T] {
 	return &relationCypher[T]{
 		labels:        getLabels(labels...),
 		isEmptyLabels: len(labels) == 0,
@@ -60,7 +60,7 @@ func (c *relationCypher[T]) InsertOrUpdate(ctx context.Context, data T) (CypherR
 	return NewCypherBuilderResult(sb.String(), dataMap, nil), nil
 }
 
-func (c *relationCypher[T]) InsertMany(ctx context.Context, list []T) (CypherResult, error) {
+func (c *relationCypher[T]) InsertMany(ctx context.Context, tenantId string, list []T) (CypherResult, error) {
 	return nil, nil
 }
 
@@ -72,7 +72,7 @@ func (c *relationCypher[T]) Update(ctx context.Context, data T, setFields ...str
 	// 更新关系的标签与属性
 	// match(n)-[r:relation{id:'cbc4d7be-43fa-427e-956d-e812b335bc12'}]->(m) create (n)-[r2:relation]->(m) set r2=r, r2.title='title' with r delete r
 
-	prosNames, mapData, err := getUpdateProperties(ctx, data, "r2", setFields...)
+	prosNames, mapData, err := c.getUpdateProperties(ctx, data, "r2", setFields...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (c *relationCypher[T]) UpdateLabelById(ctx context.Context, tenantId string
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
-func (c *relationCypher[T]) UpdateMany(ctx context.Context, list []T) (CypherResult, error) {
+func (c *relationCypher[T]) UpdateMany(ctx context.Context, tenantId string, list []T) (CypherResult, error) {
 	panic("implement me")
 }
 
@@ -258,7 +258,7 @@ func (c *relationCypher[T]) getLabels(labels string) string {
 }
 
 func (c *relationCypher[T]) getCreateProperties(ctx context.Context, data interface{}) (string, map[string]any, error) {
-	mapData, err := getMap(data)
+	mapData, err := c.newMap(data)
 	if err != nil {
 		return "", nil, err
 	}
@@ -284,7 +284,7 @@ func (c *relationCypher[T]) getCreateProperties(ctx context.Context, data interf
 }
 
 func (c *relationCypher[T]) getSetFields(ctx context.Context, resName string, data interface{}) (string, map[string]any, error) {
-	mapData, err := getMap(data)
+	mapData, err := c.newMap(data)
 	if err != nil {
 		return "", nil, err
 	}
@@ -316,4 +316,44 @@ func getSqlInStr(ids []string) string {
 	}
 	strIds := strings.Join(ids, ",")
 	return strIds
+}
+
+func (c *relationCypher[T]) getUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error) {
+	mapData, err := c.newMap(data)
+	if err != nil {
+		return "", nil, err
+	}
+	return c.getUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
+}
+
+func (c *relationCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, setFields ...string) (string, map[string]any, error) {
+	var properties string
+	isSetFields := len(setFields) > 0
+	var keyFields map[string]string
+	if isSetFields {
+		keyFields = make(map[string]string)
+		for _, k := range setFields {
+			keyFields[strings.ToLower(k)] = k
+		}
+	}
+
+	for k := range mapData {
+		if isSetFields {
+			if _, ok := keyFields[strings.ToLower(k)]; ok {
+				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, k, k)
+			}
+		} else {
+			properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, k, k)
+		}
+	}
+
+	if len(properties) > 0 {
+		properties = properties[:len(properties)-1]
+	}
+
+	return properties, mapData, nil
+}
+
+func (c *relationCypher[T]) newMap(data any) (map[string]interface{}, error) {
+	return c.schema.NewMap(context.Background(), data)
 }

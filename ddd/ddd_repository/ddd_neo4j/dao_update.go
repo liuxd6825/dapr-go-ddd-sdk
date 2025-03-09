@@ -6,6 +6,24 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
+func (d *Dao[T]) getUpdateMap(ctx context.Context, entity T) map[string]any {
+	res, err := d.schema.NewMap(context.Background(), entity)
+	if err != nil {
+		panic(err)
+	}
+	d.eb.SetUpdatedInfo(ctx, res)
+	return res
+}
+
+func (d *Dao[T]) getUpdateMapList(ctx context.Context, list []T) []map[string]any {
+	items := make([]map[string]any, 0)
+	for _, ent := range list {
+		m := d.getUpdateMap(ctx, ent)
+		items = append(items, m)
+	}
+	return items
+}
+
 func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, rSQL string, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
@@ -13,6 +31,7 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, rSQL string, entity
 		if err != nil {
 			return err
 		}
+
 		tenantId := d.GetTenantId(entity)
 		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
@@ -57,16 +76,22 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, list []T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		for _, entity := range list {
-			d.eb.SetUpdatedInfo(ctx, entity)
+		for _, ent := range list {
+			d.eb.SetTenantId(ent, tenantId)
+			d.eb.SetUpdatedInfo(ctx, ent)
 		}
-		cr, err := d.cypher.UpdateMany(ctx, list)
+		cr, err := d.cypher.UpdateMany(ctx, tenantId, list)
 		if err != nil {
 			return err
 		}
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		cypher := cr.Cypher()
+		params := cr.Params()
+		nRes, err := d.doSet(ctx, tenantId, cypher, params, opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		if err != nil {
+			println(cypher)
 		}
 		return err
 	}).Catch(func(err error) {

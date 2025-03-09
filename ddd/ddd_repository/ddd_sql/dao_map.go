@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"gorm.io/gorm"
 )
 
@@ -51,6 +52,10 @@ func (m *MapDao) GetId(entity map[string]any) string {
 
 func (m *MapDao) SetId(entity map[string]any, id string) {
 	m.dao.SetId(entity, id)
+}
+
+func (m *MapDao) GetSchema() *schema.Schema {
+	return m.dao.GetSchema()
 }
 
 func (m *MapDao) Insert(ctx context.Context, entity map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {

@@ -33,9 +33,6 @@ func (d *DaoBase) UpdateMap(ctx context.Context, id string, data map[string]any,
 
 func (d *DaoBase) UpdateMany(ctx context.Context, entities []map[string]any, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
-	for _, entity := range entities {
-		entity[TenantId] = tenantId
-	}
 	res := d.dao.UpdateMany(ctx, tenantId, entities, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)

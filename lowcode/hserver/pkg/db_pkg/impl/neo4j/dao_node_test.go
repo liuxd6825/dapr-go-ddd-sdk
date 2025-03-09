@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
@@ -17,7 +18,7 @@ import (
 	"time"
 )
 
-func Test_Dao(t *testing.T) {
+func Test_NodeDao(t *testing.T) {
 	humanName := randomutils.NameCN()
 	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
 	if err != nil {
@@ -27,7 +28,7 @@ func Test_Dao(t *testing.T) {
 
 	daoCfg := &db.DaoConfig{
 		Database:   driver,
-		DbKey:      "sql",
+		DbKey:      "neo4j",
 		Schema:     humanSchema.GetJsonSchema(),
 		Env:        tests.NewEnvConfig(),
 		IsPubEvent: false,
@@ -46,11 +47,11 @@ func Test_Dao(t *testing.T) {
 
 	for i := int64(0); i < newCount; i++ {
 		entity := map[string]any{
-			"id":      randomutils.NewId(),
-			"name":    humanName,
-			"analyse": "",
-			"age":     randomutils.IntMax(100),
-			//"birthday":   times.NowTime(),
+			"id":         randomutils.NewId(),
+			"name":       humanName,
+			"analyse":    "",
+			"age":        randomutils.IntMax(100),
+			"birthday":   times.NowTime(),
 			"peopleType": []string{"1111"},
 			"tags":       []string{"tag1", "tag2"},
 			"caseId":     "test",
@@ -73,6 +74,7 @@ func Test_Dao(t *testing.T) {
 		gp.Try(func() error {
 			for _, v := range list {
 				v["remark"] = "remark," + randomutils.String(10)
+				v["name"] = humanName + "UpdateMany"
 			}
 			res := dao.UpdateMany(ctx, list)
 			assert.Equal(t, newCount, res.RowsAffected)
@@ -86,6 +88,7 @@ func Test_Dao(t *testing.T) {
 	human := map[string]any{
 		"id":         id,
 		"tenantId":   "test",
+		"caseId":     "test",
 		"analyse":    "",
 		"birthday":   time.Now(),
 		"peopleType": []string{"1111"},

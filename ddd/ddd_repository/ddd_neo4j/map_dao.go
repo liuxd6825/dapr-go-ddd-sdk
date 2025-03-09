@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/jsonschema/v6"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -12,14 +12,14 @@ type MapDao struct {
 	dao ddd_repository.Dao[map[string]any]
 }
 
-func NewMapNodeDao(driver neo4j.DriverWithContext, labels []string, schema *jsonschema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
+func NewMapNodeDao(driver neo4j.DriverWithContext, labels []string, schema *schema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
 	ebBase := ddd.NewAnyEntityBuilderDefault[map[string]any]()
 	eb := NewNodeEntityBuilder[map[string]any](ebBase)
 	dao := NewNodeDao[map[string]any](driver, eb, schema, labels, opts...)
 	return newMapDao(dao)
 }
 
-func NewMapRelationDao(driver neo4j.DriverWithContext, labels []string, schema *jsonschema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
+func NewMapRelationDao(driver neo4j.DriverWithContext, labels []string, schema *schema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
 	ebBase := ddd.NewAnyEntityBuilderDefault[map[string]any]()
 	eb := NewRelationEntityBuilder[map[string]any](ebBase)
 	dao := NewRelationDao[map[string]any](driver, eb, schema, labels, opts...)
@@ -50,6 +50,9 @@ func (m *MapDao) SetTenantId(entity map[string]any, tenantId string) {
 
 func (m *MapDao) GetId(entity map[string]any) string {
 	return m.dao.GetId(entity)
+}
+func (m *MapDao) GetSchema() *schema.Schema {
+	return m.dao.GetSchema()
 }
 
 func (m *MapDao) SetId(entity map[string]any, id string) {

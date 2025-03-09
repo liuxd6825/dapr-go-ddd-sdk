@@ -8,13 +8,34 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
+func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
+	res = ddd_repository.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		tenantId := d.eb.GetTenantId(entity)
+		d.eb.SetCreatedInfo(ctx, entity)
+		cr, err := d.cypher.Insert(ctx, entity)
+		if err != nil {
+			return err
+		}
+		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		if nRes != nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
+}
+
 func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, list []T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		for _, v := range list {
-			d.eb.SetCreatedInfo(ctx, v)
+		for _, ent := range list {
+			d.eb.SetTenantId(ent, tenantId)
+			d.eb.SetCreatedInfo(ctx, ent)
 		}
-		cr, err := d.cypher.InsertMany(ctx, list)
+		cr, err := d.cypher.InsertMany(ctx, tenantId, list)
 		if err != nil {
 			return err
 		}
@@ -33,14 +54,12 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, list []T, opts
 func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) (setResult *ddd_repository.SetResult[T]) {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		d.eb.SetCreatedInfo(ctx, entity)
 		cr, err := d.cypher.InsertOrUpdate(ctx, entity)
 		if err != nil {
 			return err
 		}
 
 		tenantId := d.eb.GetTenantId(entity)
-		d.eb.SetUpdatedInfo(ctx, entity)
 		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
@@ -90,26 +109,25 @@ func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...ddd_rep
 	return ddd_repository.NewSetResultError[T](nil)
 }
 
-func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
-	res = ddd_repository.NewSetResultEmpty[T]()
-	gp.Try(func() error {
-		d.eb.SetCreatedInfo(ctx, entity)
-		cr, err := d.cypher.Insert(ctx, entity)
-		if err != nil {
-			return err
-		}
-		nRes, err := d.doSet(ctx, d.GetTenantId(entity), cr.Cypher(), cr.Params(), opts...)
-		if nRes != nil {
-			res.SetRowsAffected(nRes.GetRowsAffected())
-		}
-		return err
-	}).Catch(func(err error) {
-		res.SetError(err)
-	})
-	return res
-}
-
 func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (d *Dao[T]) getInsertMap(ctx context.Context, entity T) map[string]any {
+	res, err := d.schema.NewMap(context.Background(), entity)
+	if err != nil {
+		panic(err)
+	}
+	d.eb.SetCreatedInfo(ctx, res)
+	return res
+}
+
+func (d *Dao[T]) getInsertMapList(ctx context.Context, list []T) []map[string]any {
+	items := make([]map[string]any, 0)
+	for _, ent := range list {
+		m := d.getInsertMap(ctx, ent)
+		items = append(items, m)
+	}
+	return items
 }

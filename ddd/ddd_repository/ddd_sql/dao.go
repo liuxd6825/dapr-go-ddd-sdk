@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
@@ -24,6 +25,7 @@ type Dao[T any] struct {
 	entity        T
 	tableName     string
 	metadata      map[string]any
+	schema        schema.Schema
 }
 
 const (
@@ -96,6 +98,10 @@ func (d *Dao[T]) getIds(entities []T) []string {
 		ids = append(ids, d.GetId(entity))
 	}
 	return ids
+}
+
+func (d *Dao[T]) GetSchema() *schema.Schema {
+	return d.schema
 }
 
 func (d *Dao[T]) SetMetadata(metadata map[string]any) {
@@ -231,7 +237,7 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 	return res
 }
 
-func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId string, filterRSQL string, data T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	v := d.NewEntity()
 	res := ddd_repository.NewSetResultEmpty[T]()
 	_ = gp.Try(func() error {
@@ -287,43 +293,58 @@ func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 
 func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResult[T]()
-	data[TenantId] = tenantId
-	d.entityBuilder.SetUpdatedInfo(ctx, data)
-	db := d.updateTable(ctx, opts...).Model(d.entity).Where("id", id).Updates(data)
-	res.Error = db.Error
-	res.RowsAffected = db.RowsAffected
+	gp.Try(func() error {
+		data[TenantId] = tenantId
+		d.entityBuilder.SetUpdatedInfo(ctx, data)
+		db := d.updateTable(ctx, opts...).Model(d.entity).Where("id", id).Updates(data)
+		res.Error = db.Error
+		res.RowsAffected = db.RowsAffected
+		return res.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
 	return res
 }
 
 func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	var db *gorm.DB
-	var count int64
-
 	res := ddd_repository.NewSetResult[T]()
-	table := d.updateTable(ctx, opts...)
+	gp.Try(func() error {
+		var db *gorm.DB
+		var count int64
+		table := d.updateTable(ctx, opts...)
+		res.Error = d.asFilter(filter, func(data map[string]any) error {
+			d.entityBuilder.SetUpdatedInfo(ctx, data)
+			db = table.Where(filter).Updates(data)
+			return res.Error
+		}, func(sql string) error {
+			sql = fmt.Sprintf("%s='%s' and (%s)", TenantId, tenantId, sql)
+			db = table.Where(sql).Count(&count)
+			return res.Error
+		})
 
-	res.Error = d.asFilter(filter, func(data map[string]any) error {
-		d.entityBuilder.SetUpdatedInfo(ctx, data)
-		db = table.Where(filter).Updates(data)
+		res.SetError(db.Error)
+		res.SetRowsAffected(db.RowsAffected)
 		return res.Error
-	}, func(sql string) error {
-		sql = fmt.Sprintf("%s='%s' and (%s)", TenantId, tenantId, sql)
-		db = table.Where(sql).Count(&count)
-		return res.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
 	})
-
-	res.SetError(db.Error)
-	res.SetRowsAffected(db.RowsAffected)
 
 	return res
 }
 
 func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	tenantId := d.GetTenantId(entity)
-	id := d.GetId(entity)
-	d.entityBuilder.SetDeletedInfo(ctx, entity)
-	res := d.table(ctx).Where("tenant_id=? and id=?", tenantId, id).Delete(entity)
-	return ddd_repository.NewSetResult[T]().SetData(entity).SetError(res.Error)
+	res := ddd_repository.NewSetResult[T]()
+	gp.Try(func() error {
+		tenantId := d.GetTenantId(entity)
+		id := d.GetId(entity)
+		d.entityBuilder.SetDeletedInfo(ctx, entity)
+		db := d.table(ctx).Where("tenant_id=? and id=?", tenantId, id).Delete(entity)
+		res.SetRowsAffected(db.RowsAffected)
+		return res.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {

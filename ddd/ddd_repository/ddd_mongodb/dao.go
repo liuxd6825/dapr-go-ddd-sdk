@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
@@ -37,6 +38,7 @@ type Dao[T any] struct {
 	initFun    func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 	options    *Options[T]
 	metadata   map[string]any
+	schema     *schema.Schema
 }
 
 func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) ddd_repository.Dao[T] {
@@ -77,6 +79,10 @@ func (r *Dao[T]) GetMetadata() map[string]any {
 
 func (r *Dao[T]) AddMetadata(key string, val any) {
 	r.metadata[key] = val
+}
+
+func (r *Dao[T]) GetSchema() *schema.Schema {
+	return r.schema
 }
 
 func (r *Dao[T]) NewEntity() T {

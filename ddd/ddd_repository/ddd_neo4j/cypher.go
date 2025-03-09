@@ -7,12 +7,12 @@ import (
 
 type Cypher[T any] interface {
 	Insert(ctx context.Context, data T) (CypherResult, error)
-	InsertMany(ctx context.Context, list []T) (CypherResult, error)
+	InsertMany(ctx context.Context, tenantId string, list []T) (CypherResult, error)
 
 	InsertOrUpdate(ctx context.Context, data T) (CypherResult, error)
 
 	Update(ctx context.Context, data T, setFields ...string) (CypherResult, error)
-	UpdateMany(ctx context.Context, list []T) (CypherResult, error)
+	UpdateMany(ctx context.Context, tenantId string, list []T) (CypherResult, error)
 	UpdateByRSQL(ctx context.Context, tenantId string, rSQL string, data T, setFields ...string) (CypherResult, error)
 
 	UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)

@@ -20,12 +20,9 @@ func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db
 	return db.NewResult(res)
 }
 
-func (d *DaoBase) CreateMany(ctx context.Context, entity []map[string]any, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) CreateMany(ctx context.Context, list []map[string]any, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
-	for _, e := range entity {
-		e[TenantId] = tenantId
-	}
-	res := d.dao.InsertMany(ctx, tenantId, entity, db.NewRepositoryOptions(opts)...)
+	res := d.dao.InsertMany(ctx, tenantId, list, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}

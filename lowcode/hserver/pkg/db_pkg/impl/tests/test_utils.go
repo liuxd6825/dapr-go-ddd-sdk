@@ -12,6 +12,10 @@ const HumanSchema = `
 	  "required": ["id","name"],
 	  "description": "人员基本信息",
 	  "properties": {
+		"id": {
+		  "type": ["string"],
+		  "title": "ID"
+		},
 		"age": {
 		  "type": ["integer", "null"],
 		  "title": "年龄",
@@ -58,21 +62,30 @@ const HumanSchema = `
 		  "name": "createdTime",
 		  "type": ["datetime"],
 		  "title": "创建时间",
-		  "order": 9002
+		  "order": 9002,
+          "dbField":{
+		    "updatable":false
+		  }
 		},
 		"creatorId": {
 		  "name": "creatorId",
 		  "type": ["string","null"],
 		  "title": "创建人Id",
 		  "notNull": true,
-		  "order": 9003
+		  "order": 9003,
+          "dbField":{
+		    "updatable":false
+		  }
 		},
 		"creatorName": {
 		  "name": "creatorName",
 		  "type": ["string","null"],
 		  "title": "创建人",
 		  "notNull": true,
-		  "order": 9004
+		  "order": 9004,
+          "dbField":{
+		    "updatable":false
+		  }
 		},
 		"updatedTime": {
 		  "name": "updatedTime",

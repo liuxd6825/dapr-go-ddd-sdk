@@ -41,7 +41,8 @@ func NewDao(cfg *db.DaoConfig) db.Dao {
 		}
 	}
 
-	dao := ddd_neo4j.NewMapNodeDao(driver, []string{cfg.Schema.Name}, cfg.Schema)
+	dbSchema := newDbSchema(cfg.Schema)
+	dao := ddd_neo4j.NewMapNodeDao(driver, []string{cfg.Schema.Name}, dbSchema)
 	daoBase := impl.NewDaoBase(dao, cfg)
 
 	return &Dao{

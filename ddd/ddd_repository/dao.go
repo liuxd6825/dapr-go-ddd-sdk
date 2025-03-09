@@ -1,6 +1,9 @@
 package ddd_repository
 
-import "context"
+import (
+	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
+)
 
 type TxFunc func(ctx context.Context, options ...*SessionOptions) error
 
@@ -63,4 +66,6 @@ type Dao[T any] interface {
 	SetMetadata(metadata map[string]any)
 	GetMetadata() map[string]any
 	AddMetadata(key string, val any)
+
+	GetSchema() *schema.Schema
 }
