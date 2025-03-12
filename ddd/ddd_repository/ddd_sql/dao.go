@@ -515,12 +515,16 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		}
 
 		if len(query.GetGroupCols()) > 0 {
-			for _, g := range query.GetGroupCols() {
-				tx = tx.Group(g.Field)
+
+			for i, value := range query.GetGroupKeys() {
+				field := query.GetGroupCols()[i]
+				tx = tx.Where("%s=?", field.Field, value)
 			}
-
-			if len(query.GetGroupKeys()) > 0 {
-
+			colLen := len(query.GetGroupCols())
+			keyLen := len(query.GetGroupKeys())
+			if colLen-keyLen == 1 {
+				field := query.GetGroupCols()[colLen-1]
+				tx = tx.Group(field.Field)
 			}
 		}
 
