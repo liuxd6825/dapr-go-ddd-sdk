@@ -174,6 +174,7 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 	gp.Try(func() error {
 		for _, entity := range entities {
 			d.entityBuilder.SetCreatedInfo(ctx, entity)
+			d.SetTenantId(entity, tenantId)
 		}
 		db := d.table(ctx).Model(d.NewEntity()).CreateInBatches(entities, len(entities))
 		res.SetRowsAffected(db.RowsAffected)
@@ -511,6 +512,16 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 
 		if len(query.GetSort()) > 0 {
 			tx = tx.Order(query.GetSort())
+		}
+
+		if len(query.GetGroupCols()) > 0 {
+			for _, g := range query.GetGroupCols() {
+				tx = tx.Group(g.Field)
+			}
+
+			if len(query.GetGroupKeys()) > 0 {
+
+			}
 		}
 
 		if err = tx.Find(&list).Error; err != nil {

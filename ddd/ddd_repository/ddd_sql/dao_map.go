@@ -62,9 +62,11 @@ func (m *MapDao) Insert(ctx context.Context, entity map[string]any, opts ...ddd_
 	return m.dao.Insert(ctx, entity, opts...)
 }
 
+/*
 func (m *MapDao) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.InsertMap(ctx, tenantId, data, opts...)
 }
+*/
 
 func (m *MapDao) InsertMany(ctx context.Context, tenantId string, entities []map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.InsertMany(ctx, tenantId, entities, opts...)
@@ -91,9 +93,11 @@ func (m *MapDao) FindOneAndUpdateById(ctx context.Context, tenantId string, id s
 	return m.dao.FindOneAndUpdateById(ctx, tenantId, id, data, opts...)
 }
 
+/*
 func (m *MapDao) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.UpdateMapAndGetCount(ctx, tenantId, filter, data, opts...)
 }
+*/
 
 func (m *MapDao) Delete(ctx context.Context, entity map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.Delete(ctx, entity, opts...)
@@ -115,9 +119,11 @@ func (m *MapDao) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_rep
 	return m.dao.DeleteAll(ctx, tenantId, opts...)
 }
 
+/*
 func (m *MapDao) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.SetResult[map[string]any] {
 	return m.dao.DeleteByMap(ctx, tenantId, filterMap, opts...)
 }
+*/
 
 func (m *MapDao) FindById(ctx context.Context, tenantId string, id string, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[map[string]any] {
 	return m.dao.FindById(ctx, tenantId, id, opts...)
@@ -127,6 +133,7 @@ func (m *MapDao) FindByIds(ctx context.Context, tenantId string, ids []string, o
 	return m.dao.FindByIds(ctx, tenantId, ids, opts...)
 }
 
+/*
 func (m *MapDao) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindOneResult[map[string]any] {
 	return m.dao.FindOneByMap(ctx, tenantId, filterMap, opts...)
 }
@@ -134,6 +141,7 @@ func (m *MapDao) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 func (m *MapDao) FindListByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...ddd_repository.Options) *ddd_repository.FindListResult[map[string]any] {
 	return m.dao.FindListByMap(ctx, tenantId, filterMap, opts...)
 }
+*/
 
 func (m *MapDao) FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[map[string]any] {
 	return m.dao.FindByRSQL(ctx, tenantId, rsql, opts...)
@@ -159,18 +167,21 @@ func (m *MapDao) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQue
 	return m.dao.SumEntity(ctx, qry, opts...)
 }
 
-func (m *MapDao) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
-	return m.dao.SumMap(ctx, qry, opts...)
-}
-
+/*
+	func (m *MapDao) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
+		return m.dao.SumMap(ctx, qry, opts...)
+	}
+*/
 func (m *MapDao) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
 	return m.dao.Sum(ctx, qry, resData, opts...)
 }
 
+/*
 func (m *MapDao) CountByMap(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
 	return m.dao.CountByMap(ctx, tenantId, filterData, opts...)
-
 }
+*/
+
 func (m *MapDao) SumByRSQL(ctx context.Context, tenantId, rsql string, vals []*ddd_repository.ValueCol, opts ...ddd_repository.Options) map[string]any {
 	return m.dao.SumByRSQL(ctx, tenantId, rsql, vals, opts...)
 }
