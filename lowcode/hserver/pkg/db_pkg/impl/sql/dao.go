@@ -20,7 +20,7 @@ type Dao struct {
 	dbSchema *dbschema.Schema
 }
 
-func NewDao(cfg *db.DaoConfig) db.Dao {
+func NewDao(cfg *db.DaoConfig, tableNames ...string) db.Dao {
 	cfg.Valid()
 	var database *gorm.DB
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
@@ -47,8 +47,12 @@ func NewDao(cfg *db.DaoConfig) db.Dao {
 	if err != nil {
 		panic(err)
 	}
+	tableName := cfg.Schema.Name
+	if len(tableNames) > 0 {
+		tableName = tableNames[0]
+	}
 
-	sqlDao := ddd_sql.NewMapDao(database, cfg.DbKey, cfg.Schema.Name)
+	sqlDao := ddd_sql.NewMapDao(database, cfg.DbKey, tableName)
 	sqlDao.AddMetadata("dbSchema", dbSchema)
 	sqlDao.AddMetadata("schema", cfg.Schema)
 

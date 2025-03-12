@@ -43,6 +43,7 @@ func (d *DaoBase) FindAll(ctx context.Context, opts ...*db.CallOptions) *ddd_rep
 	return res
 }
 
+/*
 func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.FindListByMap(ctx, tenantId, filterMap, db.NewRepositoryOptions(opts)...)
@@ -51,6 +52,7 @@ func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interf
 	}
 	return res
 }
+*/
 
 func (d *DaoBase) FindPaging(ctx context.Context, findPaging *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	findQuery := d.NewFindPagingQuery(ctx, findPaging)

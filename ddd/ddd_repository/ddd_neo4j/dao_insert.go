@@ -13,7 +13,7 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 	gp.Try(func() error {
 		tenantId := d.eb.GetTenantId(entity)
 		d.eb.SetCreatedInfo(ctx, entity)
-		cr, err := d.cypher.Insert(ctx, entity)
+		cr, err := d.cypher.Insert(ctx, tenantId, entity)
 		if err != nil {
 			return err
 		}
@@ -40,7 +40,9 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, list []T, opts
 			return err
 		}
 		cypher := cr.Cypher()
-		nRes, err := d.Run(ctx, cypher, cr.Params(), true, opts...)
+		params := cr.Params()
+		println(cypher)
+		nRes, err := d.Run(ctx, cypher, params, true, opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}

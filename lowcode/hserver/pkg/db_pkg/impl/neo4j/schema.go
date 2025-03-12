@@ -72,6 +72,10 @@ func initField(field *dbschema.Field) {
 				return v.UTC(), false
 			} else if v, ok := val.(time.Time); ok {
 				return v.UTC(), false
+			} else if v, ok := val.(*times.Date); ok {
+				return v.PTime().UTC(), false
+			} else if v, ok := val.(times.Date); ok {
+				return v.PTime().UTC(), false
 			} else if v, ok := val.(times.Time); ok {
 				return v.PTime().UTC(), false
 			} else if v, ok := val.(*times.Time); ok {

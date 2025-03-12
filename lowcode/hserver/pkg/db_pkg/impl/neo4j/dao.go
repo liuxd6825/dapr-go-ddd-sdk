@@ -17,7 +17,7 @@ type Dao struct {
 	driver neo4j.DriverWithContext
 }
 
-func NewDao(cfg *db.DaoConfig) db.Dao {
+func NewDao(cfg *db.DaoConfig, tableName ...string) db.Dao {
 	cfg.Valid()
 	var driver neo4j.DriverWithContext
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
@@ -41,10 +41,18 @@ func NewDao(cfg *db.DaoConfig) db.Dao {
 		}
 	}
 
+	labels := []string{cfg.Schema.Name}
+	if len(tableName) > 0 {
+		labels = tableName
+	}
 	dbSchema := newDbSchema(cfg.Schema)
-	dao := ddd_neo4j.NewMapNodeDao(driver, []string{cfg.Schema.Name}, dbSchema)
+	var dao ddd_repository.Dao[map[string]any]
+	if cfg.DaoType == "node" {
+		dao = ddd_neo4j.NewMapNodeDao(driver, labels, dbSchema)
+	} else {
+		dao = ddd_neo4j.NewMapRelationDao(driver, labels, dbSchema)
+	}
 	daoBase := impl.NewDaoBase(dao, cfg)
-
 	return &Dao{
 		DaoBase: daoBase,
 		dao:     dao,

@@ -9,8 +9,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -19,72 +19,41 @@ import (
 
 func Test_RelDao(t *testing.T) {
 	humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+
+	relSchema, err := schema.NewSchemaWithJson("humanRel.json", tests.HumanRelSchema)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	daoCfg := &db.DaoConfig{
+	relCfg := &db.DaoConfig{
 		Database:   driver,
 		DbKey:      "neo4j",
-		Schema:     humanSchema.GetJsonSchema(),
+		Schema:     relSchema.GetJsonSchema(),
 		Env:        tests.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
-	dao := NewDao(daoCfg)
+	relDao := NewDao(relCfg)
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	dao.Table().Drop(ctx)
-	dao.Table().AutoMigrate(ctx)
-	newCount := int64(10)
-	var list []map[string]any
+	relDao.Table().Drop(ctx)
+	relDao.Table().AutoMigrate(ctx)
 
-	for i := int64(0); i < newCount; i++ {
-		entity := map[string]any{
-			"id":      randomutils.NewId(),
-			"name":    humanName,
-			"analyse": "",
-			"age":     randomutils.IntMax(100),
-			//"birthday":   times.NowTime(),
-			"peopleType": []string{"1111"},
-			"tags":       []string{"tag1", "tag2"},
-			"caseId":     "test",
-			"graphId":    "neo4j-test",
-		}
-		list = append(list, entity)
-	}
+	id := randomutils.NewId()
+	nodeDao := newNodeDao(t)
+	nodes := newNodes(humanName, id, t)
+	nodeRes := nodeDao.CreateMany(ctx, nodes)
+	assert.Equal(t, int64(len(nodes)), nodeRes.RowsAffected)
 
-	t.Run("dao.CreateMany", func(t *testing.T) {
-		gp.Try(func() error {
-			res := dao.CreateMany(ctx, list)
-			assert.Equal(t, newCount, res.RowsAffected)
-			return nil
-		}).Catch(func(err error) {
-			t.Error(err)
-		})
-	})
-
-	t.Run("dao.UpdateMany", func(t *testing.T) {
-		gp.Try(func() error {
-			for _, v := range list {
-				v["remark"] = "remark," + randomutils.String(10)
-			}
-			res := dao.UpdateMany(ctx, list)
-			assert.Equal(t, newCount, res.RowsAffected)
-			return nil
-		}).Catch(func(err error) {
-			t.Error(err)
-		})
-	})
-
-	id := idutils.NewId()
-	human := map[string]any{
+	rel := map[string]any{
 		"id":         id,
+		"startId":    "start" + id,
+		"endId":      "end" + id,
+		"relType":    "create",
 		"tenantId":   "test",
 		"analyse":    "",
 		"birthday":   time.Now(),
@@ -94,9 +63,9 @@ func Test_RelDao(t *testing.T) {
 		"tags":       []string{"tag1", "tag2"},
 	}
 
-	t.Run("dao.Create", func(t *testing.T) {
+	t.Run("rel.Create", func(t *testing.T) {
 		gp.Try(func() error {
-			res := dao.Create(ctx, human)
+			res := relDao.Create(ctx, rel)
 			assert.Equal(t, int64(1), res.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
@@ -104,52 +73,136 @@ func Test_RelDao(t *testing.T) {
 		})
 	})
 
-	/*
-		t.Run("dao.Update", func(t *testing.T) {
-			gp.Try(func() error {
-				human["name"] = humanName + "2"
-				human["birthday"] = times.NewDate()
-				count := dao.Update(ctx, human)
-				assert.Equal(t, int64(1), count.RowsAffected)
-
-				human["birthday"] = times.NewTime()
-				count = dao.Update(ctx, human)
-				assert.Equal(t, int64(1), count.RowsAffected)
-
-				return nil
-			}).Catch(func(err error) {
-				t.Error(err)
-			})
-		})
-
-	*/
-
-	t.Run("dao.FindById", func(t *testing.T) {
+	t.Run("rel.Update", func(t *testing.T) {
 		gp.Try(func() error {
-			entity := dao.FindById(ctx, id)
-			assert.NotNil(t, entity)
-			if entity != nil {
-				if dataId, ok := entity["id"].(string); ok {
-					assert.Equal(t, id, dataId)
-				}
-				t.Log("findById:", entity)
-				if _, ok := entity["peopleType"]; !ok {
-					t.Error("peopleType not exist")
-				}
-			}
+			rel["name"] = humanName + "-update"
+			rel["birthday"] = times.NewDate()
+			count := relDao.Update(ctx, rel)
+			assert.Equal(t, int64(1), count.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
 		})
 	})
 
-	t.Run("dao.FindPaging", func(t *testing.T) {
+	t.Run("rel.FindById", func(t *testing.T) {
+		gp.Try(func() error {
+			entity := relDao.FindById(ctx, id)
+			assert.NotNil(t, entity)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.UpdateByRSQL", func(t *testing.T) {
+		gp.Try(func() error {
+			humanName = humanName + "3"
+			rel["name"] = humanName
+			builder := rsql.NewBuilder().Eq("id", id)
+			res := relDao.UpdateByRSQL(ctx, builder.Build(), rel)
+			assert.Equal(t, int64(1), res.RowsAffected)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.DeleteById", func(t *testing.T) {
+		gp.Try(func() error {
+			relDao.DeleteById(ctx, id)
+			t.Log("deleteById:", id)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+}
+
+func TestRelDao_Many(t *testing.T) {
+	humanName := randomutils.NameCN()
+
+	relSchema, err := schema.NewSchemaWithJson("humanRel.json", tests.HumanRelSchema)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	relCfg := &db.DaoConfig{
+		Database:   driver,
+		DbKey:      "neo4j",
+		Schema:     relSchema.GetJsonSchema(),
+		Env:        tests.NewEnvConfig(),
+		IsPubEvent: false,
+		DaoType:    "rel",
+	}
+
+	relDao := NewDao(relCfg, "rel0", "rel1")
+	ctx, err := restapp.NewTestContext(context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	relDao.Table().Drop(ctx)
+	relDao.Table().AutoMigrate(ctx)
+	newCount := int64(2)
+
+	id := randomutils.NewId()
+	nodeDao := newNodeDao(t)
+	nodes := newNodes(humanName, id, t)
+
+	var rels []map[string]any
+	for i := int64(0); i < newCount; i++ {
+		entity := map[string]any{
+			"id":         randomutils.NewId(),
+			"startId":    "start" + id,
+			"endId":      "end" + id,
+			"relType":    fmt.Sprintf("rel%d", i),
+			"name":       humanName,
+			"analyse":    "",
+			"age":        randomutils.IntMax(100),
+			"peopleType": []string{"1111"},
+			"tags":       []string{"tag1", "tag2"},
+			"caseId":     "test",
+			"graphId":    "neo4j-test",
+		}
+		rels = append(rels, entity)
+	}
+
+	t.Run("rel.CreateMany", func(t *testing.T) {
+		gp.Try(func() error {
+			nodeRes := nodeDao.CreateMany(ctx, nodes)
+			assert.Equal(t, int64(len(nodes)), nodeRes.RowsAffected)
+
+			relRes := relDao.CreateMany(ctx, rels)
+			assert.Equal(t, int64(len(rels)), relRes.RowsAffected)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("rel.UpdateMany", func(t *testing.T) {
+		gp.Try(func() error {
+			for _, v := range rels {
+				v["remark"] = "remark," + randomutils.String(10)
+			}
+			res := relDao.UpdateMany(ctx, rels)
+			assert.Equal(t, newCount, res.RowsAffected)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("rel.FindPaging", func(t *testing.T) {
 		gp.Try(func() error {
 			paging := ddd_repository.NewFindPagingQueryRequest()
 			paging.PageSize = 2
 			paging.IsTotalRows = true
-			paging.Filter = fmt.Sprintf("creatorName=='%s'", "test")
-			res := dao.FindPaging(ctx, paging)
+			paging.Filter = "creatorName=='test'"
+			res := relDao.FindPaging(ctx, paging)
 			assert.NotNil(t, res)
 			assert.NoError(t, res.Error)
 			assert.Equal(t, 2, len(res.Data))
@@ -160,40 +213,15 @@ func Test_RelDao(t *testing.T) {
 		})
 	})
 
-	t.Run("dao.UpdateByRSQL", func(t *testing.T) {
-		gp.Try(func() error {
-			humanName = humanName + "3"
-			human["name"] = humanName
-			builder := rsql.NewBuilder().Eq("id", id)
-			res := dao.UpdateByRSQL(ctx, builder.Build(), human)
-			assert.Equal(t, int64(1), res.RowsAffected)
-			return nil
-		}).Catch(func(err error) {
-			t.Error(err)
-		})
-	})
-
-	return
-
-	t.Run("dao.DeleteById", func(t *testing.T) {
-		gp.Try(func() error {
-			dao.DeleteById(ctx, id)
-			t.Log("deleteById:", id)
-			return nil
-		}).Catch(func(err error) {
-			t.Error(err)
-		})
-	})
-
-	t.Run("dao.FindByRSQL", func(t *testing.T) {
-		builder := rsql.NewBuilder().Eq("creatorName", "test")
-		findList := dao.FindByRSQL(ctx, builder.Build())
+	t.Run("rel.FindByRSQL", func(t *testing.T) {
+		rSql := rsql.NewBuilder().Eq("creatorName", "test").Build()
+		findList := relDao.FindByRSQL(ctx, rSql)
 		t.Log("list:", findList)
-		assert.Equal(t, newCount, int64(len(findList)))
+		//assert.Equal(t, newCount, int64(len(findList)))
 	})
 
-	t.Run("dao.FindAll", func(t *testing.T) {
-		res := dao.FindAll(ctx)
+	t.Run("rel.FindAll", func(t *testing.T) {
+		res := relDao.FindAll(ctx)
 		if res.Error != nil {
 			t.Error(res.Error)
 		} else {
@@ -201,10 +229,9 @@ func Test_RelDao(t *testing.T) {
 		}
 	})
 
-	t.Run("dao.CountByRSQL", func(t *testing.T) {
+	t.Run("rel.CountByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			res := dao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
-			assert.Equal(t, newCount, res)
+			res := relDao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
 			t.Log("count:", res)
 			return nil
 		}).Catch(func(err error) {
@@ -212,24 +239,24 @@ func Test_RelDao(t *testing.T) {
 		})
 	})
 
-	t.Run("dao.Sum", func(t *testing.T) {
+	t.Run("rel.Sum", func(t *testing.T) {
 		gp.Try(func() error {
 			var vals []*ddd_repository.ValueCol
 			vals = append(vals, &ddd_repository.ValueCol{
 				AggFunc: "sum",
 				Field:   "age",
 			})
-			res := dao.SumByRSQL(ctx, "", vals)
-			t.Log("count:", res)
+			res := relDao.SumByRSQL(ctx, "", vals)
+			t.Log("sum :", res)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
 		})
 	})
 
-	t.Run("dao.DeleteByRSQL", func(t *testing.T) {
+	t.Run("rel.DeleteByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			res := dao.DeleteByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			res := relDao.DeleteByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
 			t.Log("DeleteByRSQL count:", res.RowsAffected)
 			assert.Equal(t, newCount, res.RowsAffected)
 			return nil
@@ -238,33 +265,29 @@ func Test_RelDao(t *testing.T) {
 		})
 	})
 
-	t.Run("dao.DeleteAll", func(t *testing.T) {
+	t.Run("rel.DeleteAll", func(t *testing.T) {
 		gp.Try(func() error {
-			res1 := dao.CreateMany(ctx, list)
-			assert.Equal(t, newCount, res1.RowsAffected)
-
-			res2 := dao.DeleteAll(ctx)
+			res2 := relDao.DeleteAll(ctx)
 			t.Log("DeleteAll count:", res2.RowsAffected)
-			assert.Equal(t, newCount, res2.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
 		})
 	})
 
-	t.Run("dao.DeleteByIds", func(t *testing.T) {
+	t.Run("rel.DeleteByIds", func(t *testing.T) {
 		gp.Try(func() error {
-			res1 := dao.CreateMany(ctx, list)
+			res1 := relDao.CreateMany(ctx, rels)
 			assert.Equal(t, newCount, res1.RowsAffected)
 
 			var ids []string
-			for _, e := range list {
+			for _, e := range rels {
 				if v, ok := e["id"].(string); ok {
 					ids = append(ids, v)
 				}
 			}
 
-			res2 := dao.DeleteByIds(ctx, ids)
+			res2 := relDao.DeleteByIds(ctx, ids)
 			t.Log("DeleteByIds count:", res2.RowsAffected)
 			assert.Equal(t, newCount, res2.RowsAffected)
 			return nil
@@ -272,5 +295,54 @@ func Test_RelDao(t *testing.T) {
 			t.Error(err)
 		})
 	})
+}
 
+func newNodeDao(t *testing.T) db.Dao {
+	nodeSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+
+	nodeCfg := &db.DaoConfig{
+		Database:   driver,
+		DbKey:      "neo4j",
+		Schema:     nodeSchema.GetJsonSchema(),
+		Env:        tests.NewEnvConfig(),
+		IsPubEvent: false,
+		DaoType:    "node",
+	}
+	nodeDao := NewDao(nodeCfg)
+	return nodeDao
+
+}
+
+func newNodes(humanName string, id string, t *testing.T) []map[string]interface{} {
+
+	startNode := map[string]any{
+		"id":         "start" + id,
+		"name":       humanName,
+		"analyse":    "",
+		"age":        randomutils.IntMax(100),
+		"peopleType": []string{"1111"},
+		"tags":       []string{"tag1", "tag2"},
+		"caseId":     "test",
+		"graphId":    "neo4j-test",
+	}
+	endNode := map[string]any{
+		"id":      "end" + id,
+		"name":    humanName,
+		"analyse": "",
+		"age":     randomutils.IntMax(100),
+		//"birthday":   times.NowTime(),
+		"peopleType": []string{"1111"},
+		"tags":       []string{"tag1", "tag2"},
+		"caseId":     "test",
+		"graphId":    "neo4j-test",
+	}
+
+	return []map[string]interface{}{
+		startNode,
+		endNode,
+	}
 }

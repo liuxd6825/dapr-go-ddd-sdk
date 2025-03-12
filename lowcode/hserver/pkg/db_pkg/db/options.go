@@ -14,6 +14,7 @@ type DaoConfig struct {
 	Database           any                `json:"database"`           // 数据库连接对象
 	IsCancelModified   bool               `json:"isCancelModified"`   // 取消创建者与更新都信息
 	IsCancelSoftDelete bool               `json:"isCancelSoftDelete"` // 取消软删除
+	DaoType            string             `json:"daoType"`            // 节点类型 在neo4j: node, rel
 }
 
 func (c *DaoConfig) Valid() {

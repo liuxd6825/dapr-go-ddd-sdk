@@ -34,7 +34,7 @@ type DaoOptions struct {
 	Server          element.Server
 }
 
-func NewDao(cfg *db.DaoConfig) *Dao {
+func NewDao(cfg *db.DaoConfig, tableNames ...string) *Dao {
 	cfg.Valid()
 	var mongoDb *ddd_mongodb.MongoDB
 	if v, ok := cfg.Database.(*ddd_mongodb.MongoDB); ok {
@@ -48,6 +48,9 @@ func NewDao(cfg *db.DaoConfig) *Dao {
 	}
 
 	tableName := cfg.Schema.Name
+	if len(tableNames) > 0 {
+		tableName = tableNames[0]
+	}
 	opt := mongo_dao.NewRepositoryOptions(&mongo_dao.RepositoryOptions{
 		MongoDB: mongoDb,
 		//GetCollCallback: opts.GetCollCallback,

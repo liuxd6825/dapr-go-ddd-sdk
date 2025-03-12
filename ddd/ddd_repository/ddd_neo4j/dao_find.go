@@ -118,17 +118,19 @@ func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 func (d *Dao[T]) findPagingByCypher(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
 	res := ddd_repository.NewFindPagingResultEmpty[T]()
 	gp.Try(func() error {
+
+		err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("TenantId cannot be empty"))
+		if err != nil {
+			return err
+		}
+
 		cr, err := d.cypher.FindPaging(ctx, query)
 		if err != nil {
 			return err
 		}
 
-		err = assert.NotEmpty(query.GetTenantId(), assert.NewOptions("TenantId cannot be empty"))
-		if err != nil {
-			return err
-		}
-
 		cypher := cr.Cypher()
+		println(cypher)
 		result, err := d.Query(ctx, cypher, cr.Params())
 		if err != nil {
 			return err
@@ -139,11 +141,24 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query ddd_repository.Fi
 			return err
 		}
 		res.SetData(list)
+		res.Filter = query.GetFilter()
+		res.Fields = query.GetFields()
+		res.PageSize = query.GetPageSize()
+		res.PageNum = query.GetPageNum()
+		if len(list) > 0 {
+			res.IsFound = true
+		}
 
 		if query.GetIsTotalRows() {
-			countCr, err := d.cypher.Count(ctx, query.GetTenantId(), query.GetFilter())
-			result, err := d.Query(ctx, countCr.Cypher(), countCr.Params())
-			total, err := result.GetInteger(countCr.ResultOneKey(), 0)
+			count, err := d.cypher.Count(ctx, query.GetTenantId(), query.GetFilter())
+			if err != nil {
+				return err
+			}
+			result, err := d.Query(ctx, count.Cypher(), count.Params())
+			if err != nil {
+				return err
+			}
+			total, err := result.GetInteger(count.ResultOneKey(), 0)
 			if err != nil {
 				return err
 			}
@@ -173,7 +188,7 @@ func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId, filter string, opts .
 			return err
 		}
 
-		cr, err := d.cypher.GetFilter(ctx, tenantId, filter)
+		cr, err := d.cypher.GetRSQL(ctx, tenantId, filter)
 		if err != nil {
 			return err
 		}

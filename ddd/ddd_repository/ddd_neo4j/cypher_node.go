@@ -7,6 +7,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_neo4j"
 	"reflect"
 	"strings"
 )
@@ -34,7 +36,7 @@ func NewNodeCypher[T any](eb NodeEntityBuilder[T], schema *schema.Schema, labels
 	}
 }
 
-func (c *nodeCypher[T]) Insert(ctx context.Context, data T) (CypherResult, error) {
+func (c *nodeCypher[T]) Insert(ctx context.Context, tenantId string, data T) (CypherResult, error) {
 	props, dataMap, err := c.getCreateProperties(ctx, data)
 	if err != nil {
 		return nil, err
@@ -95,7 +97,7 @@ func (c *nodeCypher[T]) InsertMany(ctx context.Context, tenantId string, list []
 	return NewCypherBuilderResult(cyphers.String(), map[string]any{"data": createList}, nil), nil
 }
 
-func (c *nodeCypher[T]) Update(ctx context.Context, data T, setFields ...string) (CypherResult, error) {
+func (c *nodeCypher[T]) Update(ctx context.Context, tenantId string, data T, setFields ...string) (CypherResult, error) {
 	prosNames, mapData, err := c.getUpdateProperties(ctx, data, "n", setFields...)
 	if err != nil {
 		return nil, err
@@ -144,24 +146,6 @@ func (c *nodeCypher[T]) UpdateMany(ctx context.Context, tenantId string, list []
 	cyphers.WriteString("WITH n, 1 AS increment \n")
 	cyphers.WriteString("RETURN sum(increment) AS rows")
 	return NewCypherBuilderResult(cyphers.String(), map[string]any{"params": data}, []string{"rows"}), nil
-}
-
-func (c *nodeCypher[T]) newCreateList(ctx context.Context, list []T) []map[string]any {
-	var items []map[string]any
-	for _, node := range list {
-		item := c.newCreateMap(ctx, node)
-		items = append(items, item)
-	}
-	return items
-}
-
-func (c *nodeCypher[T]) newUpdateList(ctx context.Context, list []T) []map[string]any {
-	var items []map[string]any
-	for _, node := range list {
-		item := c.newUpdateMap(ctx, node)
-		items = append(items, item)
-	}
-	return items
 }
 
 func (c *nodeCypher[T]) UpdateByRSQL(ctx context.Context, tenantId string, rSQL string, data T, setFields ...string) (CypherResult, error) {
@@ -270,7 +254,7 @@ func (c *nodeCypher[T]) DeleteAll(ctx context.Context, tenantId string) (CypherR
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
-func (c *nodeCypher[T]) DeleteByFilter(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
+func (c *nodeCypher[T]) DeleteByRSQL(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
 	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
@@ -338,7 +322,7 @@ func (c *nodeCypher[T]) FindAll(ctx context.Context, tenantId string) (CypherRes
 	return NewCypherBuilderResult(cypher, params, []string{"n"}), nil
 }
 
-func (c *nodeCypher[T]) GetFilter(ctx context.Context, tenantId, filter string) (CypherResult, error) {
+func (c *nodeCypher[T]) GetRSQL(ctx context.Context, tenantId, filter string) (CypherResult, error) {
 	where, err := getNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
@@ -346,6 +330,12 @@ func (c *nodeCypher[T]) GetFilter(ctx context.Context, tenantId, filter string) 
 	cypher := fmt.Sprintf("MATCH (n%v) %v RETURN n  ", c.getLabels("tenant_"+tenantId), where)
 	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
+}
+
+func (c *nodeCypher[T]) GetMatchCypher(ctx context.Context, tenantId string) (CypherResult, error) {
+	cypher := fmt.Sprintf("MATCH (n%s) ", c.getLabels("tenant_"+tenantId))
+	res := NewCypherBuilderResult(cypher, nil, []string{"n"})
+	return res, nil
 }
 
 func (c *nodeCypher[T]) FindByLabel(ctx context.Context, tenantId string, labels []string) (CypherResult, error) {
@@ -389,6 +379,7 @@ func (c *nodeCypher[T]) getNodeLabels(node T) string {
 	label = append(label, "tenant_"+c.eb.GetTenantId(node))
 	return getLabels(label...)
 }
+
 func (c *nodeCypher[T]) getLabels(labels ...string) string {
 	s := c.labels
 	for _, l := range labels {
@@ -435,6 +426,47 @@ func (c *nodeCypher[T]) getCreateMatchProperties(ctx context.Context, data any, 
 		properties = properties[:len(properties)-1]
 	}
 	return properties, mapData, nil
+}
+
+func (c *nodeCypher[T]) Sum(ctx context.Context, tenantId string, rSQL string, valueCols []*ddd_repository.ValueCol) (CypherResult, error) {
+	// 解析rsql
+	process := rsql_neo4j.NewProcess(tenantId, "n")
+	if err := rsql.ParseProcess(rSQL, process); err != nil {
+		return nil, err
+	}
+
+	// 取match
+	match := c.getQueryMatch(tenantId)
+	sb := strings.Builder{}
+	sb.WriteString(match)
+
+	// 取得where条件
+	where, err := getNeo4jWhere(tenantId, "r", rSQL)
+	if err != nil {
+		return nil, err
+	}
+	sb.WriteString(where)
+
+	// 取得return sum 条件
+	sumFields := make([]string, 0)
+	for _, col := range valueCols {
+		sumFields = append(sumFields, fmt.Sprintf("sum(%s) AS %s", col.Field, col.Field))
+	}
+	sum := strings.Join(sumFields, ", ")
+	sb.WriteString(" RETURN ")
+	sb.WriteString(sum)
+
+	return NewCypherBuilderResult(sb.String(), nil, []string{"r"}), nil
+}
+
+func (c *nodeCypher[T]) tenant(tenantId string) string {
+	return ":tenant_" + tenantId
+}
+
+func (c *nodeCypher[T]) getQueryMatch(tenantId string, properties ...string) string {
+	props := strings.Join(properties, "")
+	cypher := fmt.Sprintf("MATCH (a%s{%s})", c.getLabels(c.labels), props)
+	return cypher
 }
 
 // getOrder
@@ -541,4 +573,22 @@ func (c *nodeCypher[T]) newMap(ctx context.Context, data any, opts ...func(map[s
 		panic(err)
 	}
 	return v
+}
+
+func (c *nodeCypher[T]) newCreateList(ctx context.Context, list []T) []map[string]any {
+	var items []map[string]any
+	for _, node := range list {
+		item := c.newCreateMap(ctx, node)
+		items = append(items, item)
+	}
+	return items
+}
+
+func (c *nodeCypher[T]) newUpdateList(ctx context.Context, list []T) []map[string]any {
+	var items []map[string]any
+	for _, node := range list {
+		item := c.newUpdateMap(ctx, node)
+		items = append(items, item)
+	}
+	return items
 }

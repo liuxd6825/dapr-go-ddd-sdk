@@ -2,12 +2,14 @@ package ddd_neo4j
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 )
 
 func (d *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
-	//TODO implement me
-	panic("implement me")
+	data := d.NewEntityList()
+	_, found, err := d.Sum(ctx, qry, &data, opts...)
+	return data, found, err
 }
 
 func (d *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
@@ -16,21 +18,77 @@ func (d *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery,
 }
 
 func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	if len(qry.GetValueCols()) == 0 {
+		return nil, false, nil
+	}
+	f1 := qry.GetFilter()
+	f2 := qry.GetMustFilter()
+	f3 := ""
+	mustWhere, ok := qry.(ddd_repository.FindPagingQueryMustWhere)
+	if ok {
+		f3, err = mustWhere.GetMustWhere()
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	filter := getSqlAnds(f1, f2, f3)
+	res, found, err := d.sum(ctx, qry.GetTenantId(), filter, qry.GetValueCols(), resData, opts...)
+	return res, found, err
 }
 
 func (d *Dao[T]) SumByRSQL(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) map[string]any {
-	//TODO implement me
-	panic("implement me")
+	data := map[string]any{}
+	_, _, err := d.sum(ctx, tenantId, rSql, valueCols, data, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
-func (d *Dao[T]) CountByMap(ctx context.Context, tenantId string, filterData any, opts ...ddd_repository.Options) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (d *Dao[T]) sum(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+	cr, err := d.cypher.Sum(ctx, tenantId, rSql, valueCols)
+	if err != nil {
+		return nil, false, err
+	}
+	cypher := cr.Cypher()
+	result, err := d.Query(ctx, cypher, cr.Params())
+	if err != nil {
+		return nil, false, err
+	}
+	err = result.GetSum(resData)
+	return resData, resData != nil, err
 }
 
-func (d *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (d *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rSql string, opts ...ddd_repository.Options) (int64, error) {
+	cr, err := d.cypher.Count(ctx, tenantId, rSql)
+	if err != nil {
+		return 0, err
+	}
+	cypher := cr.Cypher()
+	result, err := d.Query(ctx, cypher, cr.Params())
+	if err != nil {
+		return 0, err
+	}
+	count := result.GetInt("rows")
+	return count, nil
+}
+
+func getSqlAnds(s ...string) string {
+	res := ""
+	for _, item := range s {
+		res = getSqlAnd(res, item)
+	}
+	return res
+}
+
+func getSqlAnd(s1 string, s2 string) string {
+	b1 := len(s1) > 0
+	b2 := len(s2) > 0
+	if b1 && b2 {
+		return fmt.Sprintf("(%s) and (%s)", s1, s2)
+	} else if b1 {
+		return s1
+	}
+	return s2
 }

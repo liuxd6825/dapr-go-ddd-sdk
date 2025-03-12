@@ -295,3 +295,63 @@ func GetField(data any, fieldName string) any {
 	}
 	return fieldValue.Interface()
 }
+
+func GetFieldStrings(data any, fieldName string) []string {
+	if m, ok := data.(map[string]interface{}); ok {
+		v, ok := m[fieldName]
+		if !ok || v == nil {
+			return []string{}
+		}
+		if list, ok := v.([]string); ok {
+			return list
+		} else {
+			panic("GetFieldStrings cannot get []string")
+		}
+	}
+
+	refVal := reflect.ValueOf(data)
+	// 根据字段名称获取字段的反射值
+	fieldValue := refVal.FieldByName(fieldName)
+	// 根据字段类型设置值
+	switch fieldValue.Kind() {
+	case reflect.Slice:
+		val := fieldValue.Interface() // 设置字符串字段的值
+		if val == nil {
+			return []string{}
+		}
+		list, ok := val.([]string)
+		if !ok {
+			panic("GetFieldStrings cannot get []string")
+		}
+		if len(list) == 0 {
+			return []string{}
+		}
+		return list
+	default:
+		fmt.Println("Unsupported field type:", fieldName)
+	}
+	return []string{}
+}
+
+func SetFieldStrings(data any, fieldName string, val []string) {
+	if m, ok := data.(map[string]interface{}); ok {
+		m[fieldName] = val
+		return
+	}
+
+	fieldName = stringutils.FirstUpper(fieldName)
+	refVal := reflect.ValueOf(data)
+	// 根据字段名称获取字段的反射值
+	fieldValue := refVal.FieldByName(fieldName)
+	// 根据字段类型设置值
+	switch fieldValue.Kind() {
+	case reflect.Slice:
+		if fieldValue.CanSet() {
+			fieldValue.Set(reflect.ValueOf(val))
+		} else {
+			panic("SetString cannot set String")
+		}
+	default:
+		fmt.Println("Unsupported field type:", fieldName)
+	}
+}

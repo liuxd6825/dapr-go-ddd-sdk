@@ -238,7 +238,7 @@ func getLabels(labels ...string) string {
 	var s string
 	for _, l := range labels {
 		if len(l) > 0 {
-			s = fmt.Sprintf("%v :`%v`", s, l)
+			s = fmt.Sprintf("%v:`%v`", s, l)
 		}
 	}
 	return strings.ToLower(s)

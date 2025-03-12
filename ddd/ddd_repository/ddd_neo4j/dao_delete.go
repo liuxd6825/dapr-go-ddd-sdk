@@ -80,7 +80,7 @@ func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...ddd_rep
 }
 
 func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId string, filter string, opts ...ddd_repository.Options) error {
-	cr, err := d.cypher.DeleteByFilter(ctx, tenantId, filter)
+	cr, err := d.cypher.DeleteByRSQL(ctx, tenantId, filter)
 	if err != nil {
 		return err
 	}
@@ -106,16 +106,27 @@ func (d *Dao[T]) DeleteByTenantId(ctx context.Context, tenantId string, opts ...
 }
 
 func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	//TODO implement me
-	panic("implement me")
+	id := d.GetId(entity)
+	tenantId := d.GetTenantId(entity)
+	return d.DeleteById(ctx, tenantId, id)
 }
 
-func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	//TODO implement me
-	panic("implement me")
-}
+func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
+	res := ddd_repository.NewSetResult[T]()
+	gp.Try(func() error {
+		cr, err := d.cypher.DeleteByRSQL(ctx, tenantId, rSQL)
+		if err != nil {
+			return err
+		}
+		cypher := cr.Cypher()
+		nRes, err := d.doSet(ctx, tenantId, cypher, cr.Params(), opts...)
+		if err == nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 
-func (d *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	//TODO implement me
-	panic("implement me")
 }

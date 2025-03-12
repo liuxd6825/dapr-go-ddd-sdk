@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 )
 
+/*
 func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*db.CallOptions) int64 {
 	opt := db.NewCallOptions(opts...)
 
@@ -15,7 +16,7 @@ func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*db.Ca
 		panic(err)
 	}
 	return count
-}
+}*/
 
 func (d *DaoBase) CountByRSQL(ctx context.Context, rsql string, opts ...*db.CallOptions) int64 {
 	opt := db.NewCallOptions(opts...)
@@ -35,6 +36,7 @@ func (d *DaoBase) SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQ
 	return data
 }
 
+/*
 func (d *DaoBase) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) []map[string]any {
 	data, _, err := d.dao.SumMap(ctx, qry, db.NewRepositoryOptions(opts)...)
 	if err != nil {
@@ -42,6 +44,7 @@ func (d *DaoBase) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQuer
 	}
 	return data
 }
+*/
 
 func (d *DaoBase) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*db.CallOptions) any {
 	data, _, err := d.dao.Sum(ctx, qry, data, db.NewRepositoryOptions(opts)...)

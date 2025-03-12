@@ -31,8 +31,6 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, rSQL string, entity
 		if err != nil {
 			return err
 		}
-
-		tenantId := d.GetTenantId(entity)
 		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
@@ -57,11 +55,12 @@ func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		cr, err := d.cypher.Update(ctx, entity)
+		tenantId := d.GetTenantId(entity)
+		cr, err := d.cypher.Update(ctx, tenantId, entity)
 		if err != nil {
 			return err
 		}
-		tenantId := d.GetTenantId(entity)
+
 		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())

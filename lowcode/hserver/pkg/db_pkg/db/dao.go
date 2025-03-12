@@ -35,11 +35,11 @@ type Dao interface {
 	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
 
 	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
-	SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
+	//SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
 	Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
 	SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) map[string]any
 
-	CountByMap(ctx context.Context, filterData any, opts ...*CallOptions) int64
+	//CountByMap(ctx context.Context, filterData any, opts ...*CallOptions) int64
 	CountByRSQL(ctx context.Context, rSql string, opts ...*CallOptions) int64
 
 	Table() Table

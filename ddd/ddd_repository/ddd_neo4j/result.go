@@ -100,7 +100,7 @@ func (r *Neo4jResult) GetList(ctx context.Context, key string, resList any, opts
 
 	items, found := r.dataSet[key]
 	if !found {
-		return fmt.Errorf("dataKey '%s' not found in record", key)
+		return nil
 	}
 
 	for _, item := range items {
@@ -114,6 +114,22 @@ func (r *Neo4jResult) GetList(ctx context.Context, key string, resList any, opts
 	}
 
 	return nil
+}
+
+func (r *Neo4jResult) GetSum(data any) error {
+	if m, ok := data.(map[string]any); ok {
+		for k, list := range r.dataSet {
+			m[k] = list[0]
+		}
+		return nil
+	} else if v, ok := data.(*map[string]any); ok {
+		m := *v
+		for k, list := range r.dataSet {
+			m[k] = list[0]
+		}
+		return nil
+	}
+	return errors.New("data is not a map[string]any")
 }
 
 // GetOne
@@ -214,13 +230,28 @@ func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
 	return list
 }
 
-func (r *Neo4jResult) GetCount(dataKey string) int64 {
+func (r *Neo4jResult) GetLength(dataKey string) int64 {
 	var total int64 = 0
 	dataList, ok := r.dataSet[dataKey]
 	if !ok {
 		return total
 	}
 	total = int64(len(dataList))
+	return total
+}
+
+func (r *Neo4jResult) GetInt(dataKey string) int64 {
+	var total int64 = 0
+	dataList, ok := r.dataSet[dataKey]
+	if !ok {
+		return total
+	}
+	val := dataList[0]
+	if v, ok := val.(int64); ok {
+		return v
+	} else if v, ok := val.(int); ok {
+		return int64(v)
+	}
 	return total
 }
 

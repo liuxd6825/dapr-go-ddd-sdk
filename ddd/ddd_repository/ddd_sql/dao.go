@@ -25,7 +25,7 @@ type Dao[T any] struct {
 	entity        T
 	tableName     string
 	metadata      map[string]any
-	schema        schema.Schema
+	schema        *schema.Schema
 }
 
 const (

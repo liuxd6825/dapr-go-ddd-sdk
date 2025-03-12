@@ -91,8 +91,10 @@ func (d *DaoBase) DeleteByRSQL(ctx context.Context, filterRSQL string, opts ...*
 	return db.NewResult(res)
 }
 
+/*
 func (d *DaoBase) DeleteByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.DeleteByMap(ctx, tenantId, filterMap, db.NewRepositoryOptions(opts)...)
 	return db.NewResult(res)
 }
+*/

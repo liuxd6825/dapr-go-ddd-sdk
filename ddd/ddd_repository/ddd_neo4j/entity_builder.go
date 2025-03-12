@@ -42,18 +42,30 @@ func NewNodeEntityBuilder[T any](base ddd.EntityBuilder[T]) NodeEntityBuilder[T]
 	}
 }
 
+func (r *nodeEntityBuilder[T]) GetLabels(entity T) []string {
+	return reflectutils.GetFieldStrings(entity, "labels")
+}
+
 func (r *relationEntityBuilder[T]) GetStartId(entity T) string {
 	return reflectutils.GetFieldString(entity, "startId")
+}
+
+func (r *relationEntityBuilder[T]) SetStartId(entity T, val string) {
+	reflectutils.SetFieldString(entity, "startId", val)
 }
 
 func (r *relationEntityBuilder[T]) GetEndId(entity T) string {
 	return reflectutils.GetFieldString(entity, "endId")
 }
 
+func (r *relationEntityBuilder[T]) SetEndId(entity T, val string) {
+	reflectutils.SetFieldString(entity, "endId", val)
+}
+
 func (r *relationEntityBuilder[T]) GetRelType(entity T) string {
 	return reflectutils.GetFieldString(entity, "relType")
 }
 
-func (r *nodeEntityBuilder[T]) GetLabels(entity T) []string {
-	return []string{}
+func (r *relationEntityBuilder[T]) SetRelType(entity T, val string) {
+	reflectutils.SetFieldString(entity, "relType", val)
 }
