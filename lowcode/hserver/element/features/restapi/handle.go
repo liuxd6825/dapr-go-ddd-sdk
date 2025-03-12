@@ -134,7 +134,6 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 	ictx := wctx.ICtx()
 
 	for key, v := range paramsType {
-		key = strings.ToLower(key)
 		var val any
 		switch v.In {
 		case InParamTypeURL.String():

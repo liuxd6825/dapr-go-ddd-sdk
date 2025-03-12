@@ -55,12 +55,12 @@ func NewQueryGroup(qry ddd_repository.FindPagingQuery) *QueryGroup {
 // @Description:
 // @receiver b
 // @return bool
-func (b *QueryGroup) IsPaging() bool {
-	if !b.IsGroup() {
+func (q *QueryGroup) IsPaging() bool {
+	if !q.IsGroup() {
 		return true
 	}
 
-	if !b.IsExpand() {
+	if !q.IsExpand() {
 		return true
 	}
 	return false
@@ -70,8 +70,8 @@ func (b *QueryGroup) IsPaging() bool {
 // @Description:
 // @receiver b
 // @return bool
-func (b *QueryGroup) IsGroup() bool {
-	if b.GroupCols == nil || len(b.GroupCols) == 0 {
+func (q *QueryGroup) IsGroup() bool {
+	if q.GroupCols == nil || len(q.GroupCols) == 0 {
 		return false
 	}
 	return true
@@ -81,16 +81,16 @@ func (b *QueryGroup) IsGroup() bool {
 // @Description: 分组是否展开
 // @receiver b
 // @return bool
-func (b *QueryGroup) IsExpand() bool {
-	if b.GroupKeys == nil || len(b.GroupKeys) == 0 {
+func (q *QueryGroup) IsExpand() bool {
+	if q.GroupKeys == nil || len(q.GroupKeys) == 0 {
 		return false
 	}
 	return true
 }
 
 // IsLeaf 是树型查询的子数据
-func (b *QueryGroup) IsLeaf() bool {
-	if b.IsGroup() && b.IsExpand() && len(b.GroupCols) == len(b.GroupKeys) {
+func (q *QueryGroup) IsLeaf() bool {
+	if q.IsGroup() && q.IsExpand() && len(q.GroupCols) == len(q.GroupKeys) {
 		return true
 	}
 	return false
@@ -101,20 +101,20 @@ func (b *QueryGroup) IsLeaf() bool {
 // @receiver b
 // @return bson.D
 // @return error
-func (b *QueryGroup) GetGroup() bson.D {
-	if b.GroupCols == nil || len(b.GroupCols) == 0 {
+func (q *QueryGroup) GetGroup() bson.D {
+	if q.GroupCols == nil || len(q.GroupCols) == 0 {
 		return nil
 	}
 
 	gSubMap := make(map[string]any)
 	groupIndex := 0
-	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.GroupCols) {
-		groupIndex = len(b.GroupKeys)
+	if q.GroupKeys != nil && len(q.GroupKeys) > 0 && len(q.GroupKeys) < len(q.GroupCols) {
+		groupIndex = len(q.GroupKeys)
 	}
 
 	ids := make([]any, 0)
 	for i := 0; i <= groupIndex; i++ {
-		col := b.GroupCols[i]
+		col := q.GroupCols[i]
 		var newId any = map[string]any{"$toString": "$" + utils.SnakeString(col.Field)}
 		if col.DataType.IsDateTime() || col.DataType.IsDate() {
 			newId = map[string]any{"$dateToString": map[string]any{"date": "$" + utils.SnakeString(col.Field)}}
@@ -128,11 +128,11 @@ func (b *QueryGroup) GetGroup() bson.D {
 	}
 
 	gSubMap["_id"] = map[string]any{"$concat": ids}
-	field := utils.SnakeString(b.GroupCols[groupIndex].Field)
+	field := utils.SnakeString(q.GroupCols[groupIndex].Field)
 	gSubMap[field] = map[string]any{"$max": "$" + field}
 
-	if b.ValueCols != nil && len(b.ValueCols) > 0 {
-		for _, col := range b.ValueCols {
+	if q.ValueCols != nil && len(q.ValueCols) > 0 {
+		for _, col := range q.ValueCols {
 			gSubMap[utils.SnakeString(col.Field)] = map[string]any{"$" + col.AggFunc.Name(): "$" + utils.SnakeString(col.Field)}
 		}
 	}
@@ -144,21 +144,21 @@ func (b *QueryGroup) GetGroup() bson.D {
 	return group
 }
 
-func (b *QueryGroup) GetTotalGroup() bson.D {
+func (q *QueryGroup) GetTotalGroup() bson.D {
 	projectMap := make(map[string]interface{})
 	projectMap["_id"] = "null"
 	pushMap := make(map[string]interface{})
 	pushMap["_id"] = "$_id"
 
 	groupIndex := 0
-	if b.GroupKeys != nil && len(b.GroupKeys) > 0 && len(b.GroupKeys) < len(b.GroupCols) {
-		groupIndex = len(b.GroupKeys)
+	if q.GroupKeys != nil && len(q.GroupKeys) > 0 && len(q.GroupKeys) < len(q.GroupCols) {
+		groupIndex = len(q.GroupKeys)
 	}
-	if b.GroupCols != nil && len(b.GroupCols) > 0 {
-		pushMap[utils.SnakeString(b.GroupCols[groupIndex].Field)] = "$" + utils.SnakeString(b.GroupCols[groupIndex].Field)
+	if q.GroupCols != nil && len(q.GroupCols) > 0 {
+		pushMap[utils.SnakeString(q.GroupCols[groupIndex].Field)] = "$" + utils.SnakeString(q.GroupCols[groupIndex].Field)
 	}
-	if b.ValueCols != nil && len(b.ValueCols) > 0 {
-		for _, col := range b.ValueCols {
+	if q.ValueCols != nil && len(q.ValueCols) > 0 {
+		for _, col := range q.ValueCols {
 			pushMap[utils.SnakeString(col.Field)] = "$" + utils.SnakeString(col.Field)
 		}
 	}
@@ -182,13 +182,13 @@ func (q *QueryGroup) GetPageSize() int64 {
 // @receiver b
 // @return map[string]interface{}
 // @return error
-func (b *QueryGroup) GetFilter() *rsql_mongo.Filter {
-	if b.Filter == "" {
+func (q *QueryGroup) GetFilter() *rsql_mongo.Filter {
+	if q.Filter == "" {
 		return rsql_mongo.NewMongoFilter()
 	}
 
-	p := rsql_mongo.NewProcess(b.TenantId)
-	if err := rsql.ParseProcess(b.Filter, p); err != nil {
+	p := rsql_mongo.NewProcess(q.TenantId)
+	if err := rsql.ParseProcess(q.Filter, p); err != nil {
 		panic(err)
 
 	}
@@ -201,28 +201,28 @@ func (b *QueryGroup) GetFilter() *rsql_mongo.Filter {
 // @receiver b
 // @return map[string]interface{}
 // @return error
-func (b *QueryGroup) GetGroupExpandFilter() *rsql_mongo.Filter {
-	filter := b.GetFilter()
+func (q *QueryGroup) GetGroupExpandFilter() *rsql_mongo.Filter {
+	filter := q.GetFilter()
 	mMatch := filter.Match
 
 	if mMatch == nil {
 		mMatch = make(map[string]interface{})
 	}
 
-	if b.GroupKeys != nil && len(b.GroupKeys) > 0 {
+	if q.GroupKeys != nil && len(q.GroupKeys) > 0 {
 		subMap, ok := mMatch["$and"]
 		if !ok {
 			subMap = make([]interface{}, 0)
 		}
 		val, _ := subMap.([]interface{})
-		for i := 0; i < len(b.GroupKeys); i++ {
-			f := b.GroupCols[i]
+		for i := 0; i < len(q.GroupKeys); i++ {
+			f := q.GroupCols[i]
 			if f.DataType.IsDate() || f.DataType.IsDateTime() {
-				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toDate(b.GroupKeys[i])})
+				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toDate(q.GroupKeys[i])})
 			} else if f.DataType.IsFloat() || f.DataType.IsInt() || f.DataType.IsMoney() || f.DataType.IsYear() || f.DataType.IsMonth() || f.DataType.IsDay() {
-				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toNumber(b.GroupKeys[i])})
+				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): toNumber(q.GroupKeys[i])})
 			} else {
-				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): b.GroupKeys[i]})
+				val = append(val, map[string]interface{}{utils.SnakeString(f.Field): q.GroupKeys[i]})
 			}
 		}
 		mMatch["$and"] = val
@@ -251,8 +251,8 @@ func toNumber(v interface{}) *float64 {
 // @receiver b
 // @return bson.D
 // @return error
-func (b *QueryGroup) GetFilterSort() bson.D {
-	if len(b.Sort) == 0 {
+func (q *QueryGroup) GetFilterSort() bson.D {
+	if len(q.Sort) == 0 {
 		return bson.D{}
 	}
 	// 输入
@@ -263,7 +263,7 @@ func (b *QueryGroup) GetFilterSort() bson.D {
 		bson.E{"goods_id", -1},
 	}*/
 	res := bson.D{}
-	list := strings.Split(b.Sort, ",")
+	list := strings.Split(q.Sort, ",")
 	for _, s := range list {
 		sortItem := strings.Split(s, ":")
 		name := sortItem[0]
@@ -298,16 +298,16 @@ func (b *QueryGroup) GetFilterSort() bson.D {
 	return res
 }
 
-func (b *QueryGroup) GetBsonFilterSort() bson.D {
+func (q *QueryGroup) GetBsonFilterSort() bson.D {
 	sort := bson.D{}
 	flag := false
-	if len(b.Sort) > 0 {
-		list := strings.Split(b.Sort, ",")
+	if len(q.Sort) > 0 {
+		list := strings.Split(q.Sort, ",")
 		for _, s := range list {
 			if flag {
 				break
 			}
-			for _, rowGroupCol := range b.GroupCols {
+			for _, rowGroupCol := range q.GroupCols {
 				if strings.Contains(s, rowGroupCol.Field) {
 					flag = true
 					break
@@ -315,12 +315,12 @@ func (b *QueryGroup) GetBsonFilterSort() bson.D {
 			}
 		}
 	}
-	if (len(b.Sort) == 0 || !flag) && b.IsGroup() {
-		for _, rowGroupCol := range b.GroupCols {
+	if (len(q.Sort) == 0 || !flag) && q.IsGroup() {
+		for _, rowGroupCol := range q.GroupCols {
 			sort = append(sort, bson.E{Key: utils.SnakeString(rowGroupCol.Field), Value: 1})
 		}
 	}
-	sort1 := b.GetFilterSort()
+	sort1 := q.GetFilterSort()
 	if len(sort1) > 0 {
 		sort = append(sort, sort1...)
 	}

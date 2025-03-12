@@ -351,12 +351,12 @@ func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 
 func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResult[T]()
-	sql, err := d.getSql(tenantId, rSQL)
+	where, err := d.getSql(tenantId, rSQL)
 	if err != nil {
 		return res.SetError(err)
 	}
 	table := d.table(ctx, opts...)
-	db := table.Where("tenant_id=?", tenantId).Delete(sql)
+	db := table.Where("tenant_id=?", tenantId).Where(where).Delete(nil)
 	return res.SetError(db.Error).SetRowsAffected(db.RowsAffected)
 }
 
@@ -492,11 +492,11 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		qryDb := d.table(ctx, opts...)
 
 		if len(query.GetFields()) > 0 {
-			fields := strings.Split(query.GetFields(), ",")
-			for i, field := range fields {
-				fields[i] = stringutils.AsFieldName(field)
+			fs := strings.Split(query.GetFields(), ",")
+			for i, field := range fs {
+				fs[i] = stringutils.AsFieldName(field)
 			}
-			qryDb = qryDb.Select(strings.Join(fields, ","))
+			qryDb = qryDb.Select(strings.Join(fs, ","))
 		}
 
 		if len(sqlWhere) > 0 {
@@ -516,6 +516,7 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		}
 
 		countDb := d.table(ctx)
+		sumDb := d.table(ctx)
 		isGroup := false
 		// 是分组模式
 		if len(query.GetGroupCols()) > 0 {
@@ -524,6 +525,7 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 				field := query.GetGroupCols()[i]
 				qryDb = qryDb.Where(field.Field+"=?", value)
 				countDb = countDb.Where(field.Field+"=?", value)
+				sumDb = sumDb.Where(field.Field+"=?", value)
 			}
 			colLen := len(query.GetGroupCols())
 			keyLen := len(query.GetGroupKeys())
@@ -534,6 +536,10 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 				countDb.Group(field.Field).Select(field.Field)
 				isGroup = true
 			}
+			if isGroup {
+				d.setDbValueCols(qryDb, query.GetValueCols())
+			}
+
 		}
 
 		if err = qryDb.Find(&list).Error; err != nil {
@@ -562,9 +568,54 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		}
 
 		findData := ddd_repository.NewFindPagingResult[T](list, totalRows, query, err)
+		// 不是分组模式，并且有汇总数据
+		if !isGroup && len(query.GetValueCols()) > 0 {
+			if len(sqlWhere) > 0 {
+				sumDb = sumDb.Where(sqlWhere)
+			}
+			if isGroup {
+				d.setDbValueCols(sumDb, query.GetValueCols())
+			}
+			sumData := d.NewEntityList()
+			sumDb.Find(&sumData)
+			findData.SetSum(true, sumData, sumDb.Error)
+		}
+
 		return findData, true, err
 	})
 
+}
+
+func (d *Dao[T]) setDbValueCols(db *gorm.DB, valCols []*ddd_repository.ValueCol) {
+	if len(valCols) > 0 {
+		for _, valCol := range valCols {
+			switch valCol.AggFunc {
+			case ddd_repository.AggFuncSum:
+				db.Select(fmt.Sprintf("sum(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncCount:
+				db.Select(fmt.Sprintf("count(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncAvg:
+				db.Select(fmt.Sprintf("avg(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncFirst:
+				//qryDb.Select(fmt.Sprintf("fisrt(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncLast:
+				//qryDb.Select(fmt.Sprintf("last(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncMax:
+				db.Select(fmt.Sprintf("max(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncMin:
+				db.Select(fmt.Sprintf("min(%s)", valCol.Field))
+				break
+			case ddd_repository.AggFuncZero:
+				break
+			}
+		}
+	}
 }
 
 func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry ddd_repository.FindAutoCompleteQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {

@@ -79,6 +79,11 @@ func Test_Dao(t *testing.T) {
 		gp.Try(func() error {
 			res := dao.CreateMany(ctx, list)
 			assert.Equal(t, newCount, res.RowsAffected)
+
+			delRes := dao.DeleteByRSQL(ctx, "age>20")
+			t.Log("DeleteByRSQL count:", delRes.RowsAffected)
+			assert.Greater(t, delRes.RowsAffected, 0)
+
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -240,17 +245,6 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
-	t.Run("dao.DeleteByRSQL", func(t *testing.T) {
-		gp.Try(func() error {
-			res := dao.DeleteByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
-			t.Log("DeleteByRSQL count:", res.RowsAffected)
-			assert.Equal(t, newCount, res.RowsAffected)
-			return nil
-		}).Catch(func(err error) {
-			t.Error(err)
-		})
-	})
-
 	t.Run("dao.DeleteAll", func(t *testing.T) {
 		gp.Try(func() error {
 			res1 := dao.CreateMany(ctx, list)
@@ -286,4 +280,97 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
+}
+
+func TestDao_Sum(t *testing.T) {
+	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		t.Fatalf("数据库连接失败: %v", err)
+		return
+	}
+
+	//humanName := randomutils.NameCN()
+	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	daoCfg := &db.DaoConfig{
+		Database:   database,
+		DbKey:      "sql",
+		Schema:     humanSchema.GetJsonSchema(),
+		Env:        tests.NewEnvConfig(),
+		IsPubEvent: false,
+	}
+
+	dao := NewDao(daoCfg)
+	ctx, err := restapp.NewTestContext(context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	dao.Table().Drop(ctx)
+	dao.Table().AutoMigrate(ctx)
+
+	if count := dao.CountByRSQL(ctx, ""); count == 0 {
+		var list []map[string]any
+		newCount := int64(10)
+
+		for i := int64(0); i < newCount; i++ {
+			entity := map[string]any{
+				"id":         randomutils.NewId(),
+				"name":       "sum",
+				"analyse":    "",
+				"age":        randomutils.IntMax(100),
+				"birthday":   randomutils.Date(),
+				"peopleType": []string{"1111"},
+				"tags":       []string{"tag1", "tag2"},
+			}
+			list = append(list, entity)
+		}
+		res := dao.CreateMany(ctx, list)
+		assert.Equal(t, newCount, res.RowsAffected)
+	}
+
+	t.Run("sum", func(t *testing.T) {
+		valueCols := make([]*ddd_repository.ValueCol, 0)
+		valueCols = append(valueCols, &ddd_repository.ValueCol{
+			AggFunc: "sum", Field: "age",
+		})
+		qry := ddd_repository.NewFindPagingQueryRequest()
+		qry.SetTenantId("test")
+		qry.SetPageSize(2)
+		qry.SetValueCols(valueCols)
+
+		data := map[string]any{}
+		sumAny := dao.Sum(ctx, qry, data)
+		fmt.Println("data:", sumAny)
+	})
+
+	t.Run("group", func(t *testing.T) {
+		valueCols := make([]*ddd_repository.ValueCol, 0)
+		valueCols = append(valueCols, &ddd_repository.ValueCol{
+			AggFunc: "sum", Field: "age",
+		})
+
+		groupCols := make([]*ddd_repository.GroupCol, 0)
+		groupCols = append(groupCols, &ddd_repository.GroupCol{
+			Field: "gender", DataType: "string",
+		})
+
+		groupKeys := make([]any, 0)
+
+		qry := ddd_repository.NewFindPagingQueryRequest()
+		qry.SetTenantId("test")
+		qry.SetPageSize(2)
+		qry.SetValueCols(valueCols)
+		qry.SetGroupCols(groupCols)
+		qry.SetGroupKeys(groupKeys)
+		qry.SetIsTotalRows(true)
+
+		findRes := dao.FindPaging(ctx, qry)
+		fmt.Println("data:", findRes)
+
+	})
 }
