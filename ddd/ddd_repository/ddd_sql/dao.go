@@ -534,6 +534,7 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 				field := query.GetGroupCols()[keyLen]
 				qryDb = qryDb.Group(field.Field).Select(field.Field)
 				countDb.Group(field.Field).Select(field.Field)
+
 				isGroup = true
 			}
 			if isGroup {
@@ -548,13 +549,7 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 
 		// 是分组时，需要添加虚拟id
 		if isGroup {
-			for _, item := range list {
-				uid, err := uuid.NewUUID()
-				if err != nil {
-					return nil, false, err
-				}
-				d.entityBuilder.SetId(item, uid.String())
-			}
+			d.setListIds(list)
 		}
 
 		var totalRows int64 = -1
@@ -573,12 +568,12 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			if len(sqlWhere) > 0 {
 				sumDb = sumDb.Where(sqlWhere)
 			}
-			if isGroup {
-				d.setDbValueCols(sumDb, query.GetValueCols())
-			}
-			sumData := d.NewEntityList()
-			sumDb.Find(&sumData)
-			findData.SetSum(true, sumData, sumDb.Error)
+			d.setDbValueCols(sumDb, query.GetValueCols())
+			sumList := d.NewEntityList()
+			sumDb.Find(&sumList)
+			d.setListIds(sumList)
+
+			findData.SetSum(true, sumList, sumDb.Error)
 		}
 
 		return findData, true, err
@@ -586,18 +581,29 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 
 }
 
+func (d *Dao[T]) setListIds(list []T) {
+	for _, item := range list {
+		uid, err := uuid.NewUUID()
+		if err != nil {
+			panic(err)
+		}
+		d.entityBuilder.SetId(item, uid.String())
+	}
+}
+
 func (d *Dao[T]) setDbValueCols(db *gorm.DB, valCols []*ddd_repository.ValueCol) {
 	if len(valCols) > 0 {
+		fields := db.Statement.Selects
 		for _, valCol := range valCols {
 			switch valCol.AggFunc {
 			case ddd_repository.AggFuncSum:
-				db.Select(fmt.Sprintf("sum(%s)", valCol.Field))
+				fields = append(fields, fmt.Sprintf("sum(%s) as %s", valCol.Field, valCol.Field))
 				break
 			case ddd_repository.AggFuncCount:
-				db.Select(fmt.Sprintf("count(%s)", valCol.Field))
+				fields = append(fields, fmt.Sprintf("count(%s) as %s", valCol.Field, valCol.Field))
 				break
 			case ddd_repository.AggFuncAvg:
-				db.Select(fmt.Sprintf("avg(%s)", valCol.Field))
+				fields = append(fields, fmt.Sprintf("avg(%s) as %s", valCol.Field, valCol.Field))
 				break
 			case ddd_repository.AggFuncFirst:
 				//qryDb.Select(fmt.Sprintf("fisrt(%s)", valCol.Field))
@@ -606,15 +612,16 @@ func (d *Dao[T]) setDbValueCols(db *gorm.DB, valCols []*ddd_repository.ValueCol)
 				//qryDb.Select(fmt.Sprintf("last(%s)", valCol.Field))
 				break
 			case ddd_repository.AggFuncMax:
-				db.Select(fmt.Sprintf("max(%s)", valCol.Field))
+				fields = append(fields, fmt.Sprintf("max(%s) as %s", valCol.Field, valCol.Field))
 				break
 			case ddd_repository.AggFuncMin:
-				db.Select(fmt.Sprintf("min(%s)", valCol.Field))
+				fields = append(fields, fmt.Sprintf("min(%s) as %s", valCol.Field, valCol.Field))
 				break
 			case ddd_repository.AggFuncZero:
 				break
 			}
 		}
+		db.Statement.Selects = fields
 	}
 }
 
