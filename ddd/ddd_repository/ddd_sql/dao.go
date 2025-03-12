@@ -3,6 +3,7 @@ package ddd_sql
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
@@ -488,57 +489,74 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 
 		list := d.entityBuilder.NewEntityList()
 
-		tx := d.table(ctx, opts...)
+		qryDb := d.table(ctx, opts...)
 
 		if len(query.GetFields()) > 0 {
 			fields := strings.Split(query.GetFields(), ",")
 			for i, field := range fields {
 				fields[i] = stringutils.AsFieldName(field)
 			}
-			tx = tx.Select(strings.Join(fields, ","))
+			qryDb = qryDb.Select(strings.Join(fields, ","))
 		}
 
 		if len(sqlWhere) > 0 {
-			tx = tx.Where(sqlWhere)
+			qryDb = qryDb.Where(sqlWhere)
 		}
 
 		if query.GetPageSize() > 0 {
-			tx = tx.Limit(int(query.GetPageSize()))
+			qryDb = qryDb.Limit(int(query.GetPageSize()))
 		}
 
 		if query.GetPageNum() > 0 {
-			tx = tx.Offset(int(query.GetPageSize() * query.GetPageNum()))
+			qryDb = qryDb.Offset(int(query.GetPageSize() * query.GetPageNum()))
 		}
 
 		if len(query.GetSort()) > 0 {
-			tx = tx.Order(query.GetSort())
+			qryDb = qryDb.Order(query.GetSort())
 		}
 
+		countDb := d.table(ctx)
+		isGroup := false
+		// 是分组模式
 		if len(query.GetGroupCols()) > 0 {
-
+			// 分组where条件
 			for i, value := range query.GetGroupKeys() {
 				field := query.GetGroupCols()[i]
-				tx = tx.Where("%s=?", field.Field, value)
+				qryDb = qryDb.Where(field.Field+"=?", value)
+				countDb = countDb.Where(field.Field+"=?", value)
 			}
 			colLen := len(query.GetGroupCols())
 			keyLen := len(query.GetGroupKeys())
-			if colLen-keyLen == 1 {
-				field := query.GetGroupCols()[colLen-1]
-				tx = tx.Group(field.Field)
+			// 以groupKey位置的上个字段为分组字段
+			if colLen-keyLen > 0 {
+				field := query.GetGroupCols()[keyLen]
+				qryDb = qryDb.Group(field.Field).Select(field.Field)
+				countDb.Group(field.Field).Select(field.Field)
+				isGroup = true
 			}
 		}
 
-		if err = tx.Find(&list).Error; err != nil {
+		if err = qryDb.Find(&list).Error; err != nil {
 			return nil, false, err
+		}
+
+		// 是分组时，需要添加虚拟id
+		if isGroup {
+			for _, item := range list {
+				uid, err := uuid.NewUUID()
+				if err != nil {
+					return nil, false, err
+				}
+				d.entityBuilder.SetId(item, uid.String())
+			}
 		}
 
 		var totalRows int64 = -1
 		if query.GetIsTotalRows() {
-			tx := d.table(ctx)
 			if len(sqlWhere) > 0 {
-				tx = tx.Where(sqlWhere)
+				countDb = countDb.Where(sqlWhere)
 			}
-			if err := tx.Count(&totalRows).Error; err != nil {
+			if err := countDb.Count(&totalRows).Error; err != nil {
 				return nil, false, err
 			}
 		}
