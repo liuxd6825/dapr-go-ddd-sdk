@@ -512,7 +512,10 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		}
 
 		if len(query.GetSort()) > 0 {
-			qryDb = qryDb.Order(query.GetSort())
+			// 将sort格式  name:asc, sex:asc
+			// 转为sql格式  name asc, sex asc格式
+			sort := strings.ReplaceAll(query.GetSort(), ":", " ")
+			qryDb = qryDb.Order(sort)
 		}
 
 		countDb := d.table(ctx)
@@ -529,12 +532,12 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			}
 			colLen := len(query.GetGroupCols())
 			keyLen := len(query.GetGroupKeys())
+
 			// 以groupKey位置的上个字段为分组字段
 			if colLen-keyLen > 0 {
 				field := query.GetGroupCols()[keyLen]
 				qryDb = qryDb.Group(field.Field).Select(field.Field)
 				countDb.Group(field.Field).Select(field.Field)
-
 				isGroup = true
 			}
 			if isGroup {
@@ -664,17 +667,11 @@ func (d *Dao[T]) FindDistinct(ctx context.Context, qry ddd_repository.FindDistin
 
 func (d *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
 	data := d.NewEntityList()
-	_, found, err := d.Sum(ctx, qry, &data, opts...)
+	_, found, err := d.SumByQuery(ctx, qry, &data, opts...)
 	return data, found, err
 }
 
-func (d *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
-	data := make([]map[string]any, 0)
-	_, found, err := d.Sum(ctx, qry, &data, opts...)
-	return data, found, err
-}
-
-func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+func (d *Dao[T]) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
 	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
 	}
