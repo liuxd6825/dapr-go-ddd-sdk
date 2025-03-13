@@ -18,10 +18,10 @@ func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*db.Ca
 	return count
 }*/
 
-func (d *DaoBase) CountByRSQL(ctx context.Context, rsql string, opts ...*db.CallOptions) int64 {
+func (d *DaoBase) CountByRSQL(ctx context.Context, rSQL string, opts ...*db.CallOptions) int64 {
 	opt := db.NewCallOptions(opts...)
 	tenantId := d.GetTenantId(ctx)
-	count, err := d.dao.CountByRSQL(ctx, tenantId, rsql, opt)
+	count, err := d.dao.CountByRSQL(ctx, tenantId, rSQL, opt)
 	if err != nil {
 		panic(err)
 	}
@@ -46,16 +46,16 @@ func (d *DaoBase) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQuer
 }
 */
 
-func (d *DaoBase) Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*db.CallOptions) any {
-	data, _, err := d.dao.Sum(ctx, qry, data, db.NewRepositoryOptions(opts)...)
+func (d *DaoBase) SumByQuery(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*db.CallOptions) any {
+	data, _, err := d.dao.SumByQuery(ctx, qry, data, db.NewRepositoryOptions(opts)...)
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (d *DaoBase) SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*db.CallOptions) map[string]any {
+func (d *DaoBase) SumByRSQL(ctx context.Context, rSQL string, valueCols []*ddd_repository.ValueCol, opts ...*db.CallOptions) map[string]any {
 	opt := db.NewCallOptions(opts...)
 	tenantId := d.GetTenantId(ctx)
-	return d.dao.SumByRSQL(ctx, tenantId, rSql, valueCols, opt)
+	return d.dao.SumByRSQL(ctx, tenantId, rSQL, valueCols, opt)
 }
