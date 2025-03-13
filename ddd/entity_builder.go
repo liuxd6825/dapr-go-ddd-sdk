@@ -20,6 +20,8 @@ type EntityBuilder[T any] interface {
 	GetCaseId(entity T) string
 	SetCaseId(entity T, id string)
 
+	GetAggId(entity T) string
+
 	SetCreatedInfo(ctx context.Context, entity any)
 	SetUpdatedInfo(ctx context.Context, entity any)
 	SetDeletedInfo(ctx context.Context, entity any)
@@ -30,15 +32,17 @@ type EntityBuilder[T any] interface {
 }
 
 type EntityBuilderConfig struct {
-	IsMap            bool
-	IsCancelModified bool
-	Fields           Fields
+	AggIdField       string // 聚合根字段名称
+	IsMap            bool   // 是map对象
+	IsCancelModified bool   // 取消修改字段的自动化处理
+	Fields           Fields // 系统字段的名称
 }
 
 func NewEntityBuilderConfig() *EntityBuilderConfig {
 	fields := newFields()
 	return &EntityBuilderConfig{
-		Fields: *fields,
+		AggIdField: "id",
+		Fields:     *fields,
 	}
 }
 
@@ -46,14 +50,14 @@ type AnyEntityBuilder[T any] struct {
 	cfg *EntityBuilderConfig
 }
 
-func NewAnyEntityBuilder[T any](cfg *EntityBuilderConfig) EntityBuilder[T] {
+func NewAnyEntityBuilderWidthConfig[T any](cfg *EntityBuilderConfig) EntityBuilder[T] {
 	cfg.IsMap = reflectutils.IsMap[T]()
 	return &AnyEntityBuilder[T]{
 		cfg: cfg,
 	}
 }
 
-func NewAnyEntityBuilderDefault[T any]() EntityBuilder[T] {
+func NewAnyEntityBuilder[T any]() EntityBuilder[T] {
 	cfg := NewEntityBuilderConfig()
 	cfg.IsMap = reflectutils.IsMap[T]()
 	return &AnyEntityBuilder[T]{
@@ -105,6 +109,10 @@ func (b *AnyEntityBuilder[T]) SetCaseId(entity T, id string) {
 	reflectutils.SetFieldString(entity, fields.CaseId, id)
 }
 
+func (b *AnyEntityBuilder[T]) GetAggId(entity T) string {
+	return reflectutils.GetFieldString(entity, b.cfg.AggIdField)
+}
+
 func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 	e := any(entity)
 	if e == nil {
@@ -121,7 +129,7 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 			data[fields.CreatedTime] = timeNow
 			data[fields.CreatorName] = authUser.GetName()
 			data[fields.CreatorId] = authUser.GetId()
-			
+
 			data[fields.UpdatedTime] = timeNow
 			data[fields.UpdaterName] = authUser.GetName()
 			data[fields.UpdaterId] = authUser.GetId()
