@@ -56,8 +56,8 @@ type Dao[T any] interface {
 
 	SumEntity(ctx context.Context, qry FindPagingQuery, opts ...Options) ([]T, bool, error)
 	//SumMap(ctx context.Context, qry FindPagingQuery, opts ...Options) ([]map[string]any, bool, error)
-	Sum(ctx context.Context, qry FindPagingQuery, resData any, opts ...Options) (any, bool, error)
-	SumByRSQL(ctx context.Context, tenantId, rSql string, valueCols []*ValueCol, opts ...Options) map[string]any
+	SumByQuery(ctx context.Context, qry FindPagingQuery, resData any, opts ...Options) (any, bool, error)
+	SumByRSQL(ctx context.Context, tenantId string, rSql string, valueCols []*ValueCol, opts ...Options) map[string]any
 	// 总数
 
 	//CountByMap(ctx context.Context, tenantId string, filterData any, opts ...Options) (int64, error)
