@@ -28,7 +28,7 @@ type Field struct {
 	//AutoIncrementIncrement int64
 	//HasDefaultValue        bool
 	//DefaultValue           string
-	//DefaultValueInterface  interface{}
+	DefaultValueInterface interface{}
 	//Precision              int
 	//Scale                  int
 	//TagSettings            map[string]string

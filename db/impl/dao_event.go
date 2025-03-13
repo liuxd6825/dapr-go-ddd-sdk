@@ -2,15 +2,15 @@ package impl
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/impl/events"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
 )
 
-func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType db.AccessType, entity map[string]any, opts ...*db.CallOptions) {
+func (d *DaoBase) PublishEvent(ctx context.Context, opeType db.AccessType, entity map[string]any, opts ...*db.CallOptions) {
 	if !d.isPubEvent {
 		return
 	}
@@ -28,15 +28,15 @@ func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType db.AccessType, en
 	})
 	switch opeType {
 	case db.AccessTypeCreate:
-		server.GetEventPkg().CreateEvent(ctx, agg, event)
+		events.CreateEvent(ctx, agg, event)
 	case db.AccessTypeUpdate:
-		server.GetEventPkg().ApplyEvent(ctx, agg, event)
+		events.ApplyEvent(ctx, agg, event)
 	case db.AccessTypeDelete:
-		server.GetEventPkg().ApplyEvent(ctx, agg, event)
+		events.ApplyEvent(ctx, agg, event)
 	}
 }
 
-func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType db.AccessType, list []map[string]any, opts ...*db.CallOptions) {
+func (d *DaoBase) PublishBatchEvent(ctx context.Context, opeType db.AccessType, list []map[string]any, opts ...*db.CallOptions) {
 	if !d.isPubEvent {
 		return
 	}
@@ -65,7 +65,7 @@ func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType db.AccessTyp
 	*/
 }
 
-func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opt *db.CallOptions) (*common.Event, error) {
+func (d *DaoBase) NewEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opt *db.CallOptions) (*common.Event, error) {
 	o := db.NewCallOptions(opt)
 	eventId := idutils.NewId()
 	tenantId := d.dao.GetTenantId(entity)
@@ -88,7 +88,7 @@ func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType db.AccessType, en
 	return event, nil
 }
 
-func (d *DaoBase[T]) NewAggregateAndEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opts ...*db.CallOptions) (*server.Aggregate, *common.Event, error) {
+func (d *DaoBase) NewAggregateAndEvent(ctx context.Context, operateType db.AccessType, entity map[string]any, opts ...*db.CallOptions) (*events.Aggregate, *common.Event, error) {
 	opt := db.NewCallOptions(opts...)
 	event, err := d.NewEvent(ctx, operateType, entity, opt)
 	if err != nil {
@@ -101,7 +101,7 @@ func (d *DaoBase[T]) NewAggregateAndEvent(ctx context.Context, operateType db.Ac
 	return agg, event, nil
 }
 
-func (d *DaoBase[T]) GetEventType(accessType db.AccessType, opts *db.CallOptions) string {
+func (d *DaoBase) GetEventType(accessType db.AccessType, opts *db.CallOptions) string {
 	eventType := d.tableName
 	if opts != nil && opts.EventType != nil {
 		eventType = *opts.EventType
@@ -109,16 +109,16 @@ func (d *DaoBase[T]) GetEventType(accessType db.AccessType, opts *db.CallOptions
 	return common.GetEventType(d.appId, eventType, string(accessType))
 }
 
-func (d *DaoBase[T]) NewAggregate(entity map[string]any, opt *db.CallOptions) (*server.Aggregate, error) {
+func (d *DaoBase) NewAggregate(entity map[string]any, opt *db.CallOptions) (*events.Aggregate, error) {
 	tenantId := d.dao.GetTenantId(entity)
-	aggregateId, err := d.GetAggregateId(entity, opt)
+	aggId, err := d.GetAggregateId(entity, opt)
 	if err != nil {
 		return nil, err
 	}
-	agg := common.NewAggregate()
+	agg := events.NewAggregate()
 	agg.TenantId = tenantId
-	agg.AggregateId = aggregateId
-	agg.AggregateVersion = "v1.0"
-	agg.AggregateType = d.tableName
+	agg.AggId = aggId
+	agg.AggVer = "v1.0"
+	agg.AggType = d.tableName
 	return agg, nil
 }

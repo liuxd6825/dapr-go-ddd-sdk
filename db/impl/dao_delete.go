@@ -5,12 +5,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 )
 
-func (d *DaoBase[T]) Delete(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) Delete(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) *db.Result {
 	id := d.dao.GetId(entity)
 	return d.DeleteById(ctx, id, opts...)
 }
 
-func (d *DaoBase[T]) DeleteById(ctx context.Context, id string, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) DeleteById(ctx context.Context, id string, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
 
 	res := d.dao.DeleteById(ctx, tenantId, id, db.NewRepositoryOptions(opts)...)
@@ -28,7 +28,7 @@ func (d *DaoBase[T]) DeleteById(ctx context.Context, id string, opts ...*db.Call
 	return db.NewResult(res)
 }
 
-func (d *DaoBase[T]) deleteById(ctx context.Context, id string, opts ...*db.CallOptions) int64 {
+func (d *DaoBase) deleteById(ctx context.Context, id string, opts ...*db.CallOptions) int64 {
 	tenantId := d.GetTenantId(ctx)
 
 	res := d.dao.DeleteById(ctx, tenantId, id, db.NewRepositoryOptions(opts)...)
@@ -46,7 +46,7 @@ func (d *DaoBase[T]) deleteById(ctx context.Context, id string, opts ...*db.Call
 	return res.RowsAffected
 }
 
-func (d *DaoBase[T]) DeleteByIds(ctx context.Context, ids []string, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) DeleteByIds(ctx context.Context, ids []string, opts ...*db.CallOptions) *db.Result {
 
 	if d.GetIsPubEvent() {
 		count := int64(0)
@@ -76,7 +76,7 @@ func (d *DaoBase[T]) DeleteByIds(ctx context.Context, ids []string, opts ...*db.
 	return db.NewResult(res)
 }
 
-func (d *DaoBase[T]) DeleteAll(ctx context.Context, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) DeleteAll(ctx context.Context, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.DeleteAll(ctx, tenantId, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
@@ -85,7 +85,7 @@ func (d *DaoBase[T]) DeleteAll(ctx context.Context, opts ...*db.CallOptions) *db
 	return db.NewResult(res)
 }
 
-func (d *DaoBase[T]) DeleteByRSQL(ctx context.Context, filterRSQL string, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) DeleteByRSQL(ctx context.Context, filterRSQL string, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.DeleteByRSQL(ctx, tenantId, filterRSQL, db.NewRepositoryOptions(opts)...)
 	return db.NewResult(res)

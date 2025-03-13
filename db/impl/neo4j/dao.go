@@ -2,22 +2,22 @@ package neo4j
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_neo4j"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-type Dao[T map[string]any] struct {
-	*impl.DaoBase[map[string]any]
+type Dao struct {
+	*impl.DaoBase
 	cfg    *db.DaoConfig
 	dao    ddd_repository.Dao[map[string]any]
 	driver neo4j.DriverWithContext
 }
 
-func NewDao(cfg *db.DaoConfig, tableName ...string) db.Dao[map[string]any] {
+func NewDao(cfg *db.DaoConfig, tableName ...string) db.Dao {
 	cfg.Valid()
 	var driver neo4j.DriverWithContext
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
@@ -53,7 +53,7 @@ func NewDao(cfg *db.DaoConfig, tableName ...string) db.Dao[map[string]any] {
 		dao = ddd_neo4j.NewMapRelationDao(driver, labels, dbSchema)
 	}
 	daoBase := impl.NewDaoBase(dao, cfg)
-	return &Dao[map[string]any]{
+	return &Dao{
 		DaoBase: daoBase,
 		dao:     dao,
 		cfg:     cfg,
@@ -61,10 +61,10 @@ func NewDao(cfg *db.DaoConfig, tableName ...string) db.Dao[map[string]any] {
 	}
 }
 
-func (d *Dao[T]) Table() db.Table {
+func (d *Dao) Table() db.Table {
 	return newTable(d.driver, d.cfg.Schema)
 }
 
-func (d *Dao[T]) GetTableName() string {
+func (d *Dao) GetTableName() string {
 	return d.cfg.Schema.Name
 }

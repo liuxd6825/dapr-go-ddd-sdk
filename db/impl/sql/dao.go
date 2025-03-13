@@ -2,9 +2,9 @@ package sql
 
 import (
 	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_sql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"gorm.io/gorm"
@@ -13,14 +13,14 @@ import (
 )
 
 type Dao struct {
-	*impl.DaoBase[map[string]any]
+	*impl.DaoBase
 	cfg      *db.DaoConfig
 	db       *gorm.DB
 	dao      *ddd_sql.MapDao
 	dbSchema *dbschema.Schema
 }
 
-func NewDao(cfg *db.DaoConfig, tableNames ...string) db.Dao[map[string]any] {
+func NewDao(cfg *db.DaoConfig, tableNames ...string) db.Dao {
 	cfg.Valid()
 	var database *gorm.DB
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()

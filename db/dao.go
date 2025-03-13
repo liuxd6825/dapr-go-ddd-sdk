@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
-type Dao[T map[string]any] interface {
+type Dao[T any] interface {
 	GetSchema() *jsonschema.Schema
 	GetAggField() string
 
@@ -14,9 +14,9 @@ type Dao[T map[string]any] interface {
 	CreateMany(ctx context.Context, entity []T, opts ...*CallOptions) *Result
 
 	Update(ctx context.Context, entity T, opts ...*CallOptions) *Result
-	UpdateMap(ctx context.Context, id string, data T, opts ...*CallOptions) *Result
+	UpdateMap(ctx context.Context, id string, entity T, opts ...*CallOptions) *Result
 	UpdateMany(ctx context.Context, entities []T, opts ...*CallOptions) *Result
-	UpdateByRSQL(ctx context.Context, rsql string, data T, opts ...*CallOptions) *Result
+	UpdateByRSQL(ctx context.Context, rsql string, entity T, opts ...*CallOptions) *Result
 
 	Delete(ctx context.Context, entity T, opts ...*CallOptions) *Result
 	DeleteById(ctx context.Context, id string, opts ...*CallOptions) *Result
@@ -32,8 +32,8 @@ type Dao[T map[string]any] interface {
 	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
 	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
 
-	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []T
 	SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) T
+	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []T
 	SumByQuery(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
 
 	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64

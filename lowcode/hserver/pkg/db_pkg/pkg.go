@@ -21,7 +21,7 @@ import (
 
 type Pkg struct {
 	server element.Server
-	daoMap *types.CMap[db.Dao]
+	daoMap *types.CMap[db.Dao[map[string]any]]
 }
 
 type NewDaoConfig struct {
@@ -34,7 +34,7 @@ type NewDaoConfig struct {
 func New(server element.Server) *Pkg {
 	return &Pkg{
 		server: server,
-		daoMap: types.NewCMap[db.Dao](),
+		daoMap: types.NewCMap[db.Dao[map[string]any]](),
 	}
 }
 
@@ -42,7 +42,7 @@ func (p *Pkg) NewRSQLBuilder() *rsql.Builder {
 	return rsql.NewBuilder()
 }
 
-func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
+func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao[map[string]any] {
 	dbKey := opts.DbKey
 	if dbKey == "" {
 		dbKey = "default"
@@ -54,7 +54,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 	tableName := opts.Schema.Name
 	daoKey := getDaoKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
-		return v.(db.Dao)
+		return v.(db.Dao[map[string]any])
 	}
 
 	cfg := &db.DaoConfig{
@@ -65,7 +65,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 		Schema:     opts.Schema,
 	}
 
-	var dao db.Dao
+	var dao db.Dao[map[string]any]
 	item := p.getDbItem(dbKey)
 
 	switch item.GetDBType() {
@@ -89,10 +89,10 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao {
 	return dao
 }
 
-func (p *Pkg) GetDao(dbKey, tableName string) db.Dao {
+func (p *Pkg) GetDao(dbKey, tableName string) db.Dao[map[string]any] {
 	daoKey := getDaoKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
-		return v.(db.Dao)
+		return v.(db.Dao[map[string]any])
 	}
 	panic(fmt.Errorf("dao not found %s", daoKey))
 }

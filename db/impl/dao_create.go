@@ -3,10 +3,10 @@ package impl
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db"
 )
 
-func (d *DaoBase[T]) Create(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) Create(ctx context.Context, entity map[string]any, opts ...*db.CallOptions) *db.Result {
 	if entity == nil {
 		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
@@ -20,7 +20,7 @@ func (d *DaoBase[T]) Create(ctx context.Context, entity map[string]any, opts ...
 	return db.NewResult(res)
 }
 
-func (d *DaoBase[T]) CreateMany(ctx context.Context, list []map[string]any, opts ...*db.CallOptions) *db.Result {
+func (d *DaoBase) CreateMany(ctx context.Context, list []map[string]any, opts ...*db.CallOptions) *db.Result {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.InsertMany(ctx, tenantId, list, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {

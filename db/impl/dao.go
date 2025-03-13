@@ -4,24 +4,24 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
-type DaoBase[T map[string]any] struct {
+type DaoBase[T any] struct {
 	cfg         *db.DaoConfig
-	dbKey       string                             // 配置中的数据库Key
-	tableName   string                             // 表名
-	appId       string                             // 应用ID
-	aggField    string                             // 聚合根字段
-	isPubEvent  bool                               // 是否发布事件
-	eventPrefix string                             // 事件前缀
-	dao         ddd_repository.Dao[map[string]any] // 数据访问
-	env         common.IEnvConfig                  // 环境变量
+	dbKey       string                // 配置中的数据库Key
+	tableName   string                // 表名
+	appId       string                // 应用ID
+	aggField    string                // 聚合根字段
+	isPubEvent  bool                  // 是否发布事件
+	eventPrefix string                // 事件前缀
+	dao         ddd_repository.Dao[T] // 数据访问
+	env         restapp.IEnvConfig    // 环境变量
 }
 
 const (
@@ -39,7 +39,7 @@ const (
 	Id          = "id"
 )
 
-func NewDaoBase(dao ddd_repository.Dao[map[string]any], cfg *db.DaoConfig) *DaoBase[map[string]any] {
+func NewDaoBase[T any](dao ddd_repository.Dao[T], cfg *db.DaoConfig) *DaoBase[T] {
 	if cfg == nil {
 		panic("dao base config is nil")
 	}
@@ -48,7 +48,7 @@ func NewDaoBase(dao ddd_repository.Dao[map[string]any], cfg *db.DaoConfig) *DaoB
 		aggField = "id"
 	}
 	tableName := stringutils.AsFieldName(cfg.Schema.Name)
-	return &DaoBase[map[string]any]{
+	return &DaoBase[T]{
 		dao:         dao,
 		dbKey:       cfg.DbKey,
 		tableName:   tableName,
@@ -60,7 +60,7 @@ func NewDaoBase(dao ddd_repository.Dao[map[string]any], cfg *db.DaoConfig) *DaoB
 	}
 }
 
-func (d *DaoBase[T]) GetEnv() common.IEnvConfig {
+func (d *DaoBase[T]) GetEnv() restapp.IEnvConfig {
 	return d.env
 }
 
@@ -92,7 +92,7 @@ func (d *DaoBase[T]) GetSchema() *jsonschema.Schema {
 	return d.cfg.Schema
 }
 
-func (d *DaoBase[T]) GetAggregateId(entity map[string]any, opts *db.CallOptions) (string, error) {
+func (d *DaoBase[T]) GetAggregateId(entity T, opts *db.CallOptions) (string, error) {
 	var aggId string
 	if opts != nil && opts.AggId != nil {
 		aggId = *opts.AggId

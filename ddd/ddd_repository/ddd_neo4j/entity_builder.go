@@ -26,7 +26,7 @@ type relationEntityBuilder[T any] struct {
 
 func NewRelationEntityBuilder[T any](base ddd.EntityBuilder[T]) RelationEntityBuilder[T] {
 	if base == nil {
-		base = ddd.NewAnyEntityBuilderDefault[T]()
+		base = ddd.NewAnyEntityBuilder[T]()
 	}
 	return &relationEntityBuilder[T]{
 		EntityBuilder: base,
@@ -35,7 +35,7 @@ func NewRelationEntityBuilder[T any](base ddd.EntityBuilder[T]) RelationEntityBu
 
 func NewNodeEntityBuilder[T any](base ddd.EntityBuilder[T]) NodeEntityBuilder[T] {
 	if base == nil {
-		base = ddd.NewAnyEntityBuilderDefault[T]()
+		base = ddd.NewAnyEntityBuilder[T]()
 	}
 	return &nodeEntityBuilder[T]{
 		EntityBuilder: base,

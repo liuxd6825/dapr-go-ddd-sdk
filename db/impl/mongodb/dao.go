@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
@@ -11,8 +10,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type GetCollectionCallback func(ctx context.Context) (*ddd_mongodb.MongoDB, *mongo.Collection)
 
 type Dao struct {
 	*impl.DaoBase[map[string]any]
@@ -21,7 +23,14 @@ type Dao struct {
 	cfg *db.DaoConfig
 }
 
-type ModelOptions = mongodb.RepositoryOptions
+var _mongodb *ddd_mongodb.MongoDB
+
+func init() {
+	//设置bson使用自定义的日期json格式
+	primitive.UseCustomTimeFormat = true
+}
+
+type ModelOptions = RepositoryOptions
 
 type DaoOptions struct {
 	DbKey      string
@@ -30,11 +39,11 @@ type DaoOptions struct {
 	AggField   string
 	// mongo
 	MongoDB         ddd_repository.Dao[map[string]any]
-	GetCollCallback mongodb.GetCollectionCallback
+	GetCollCallback GetCollectionCallback
 	Server          element.Server
 }
 
-func NewDao(cfg *db.DaoConfig, tableNames ...string) db.Dao[map[string]any] {
+func NewDao(cfg *db.DaoConfig, tableNames ...string) *Dao {
 	cfg.Valid()
 	var mongoDb *ddd_mongodb.MongoDB
 	if v, ok := cfg.Database.(*ddd_mongodb.MongoDB); ok {
@@ -51,7 +60,7 @@ func NewDao(cfg *db.DaoConfig, tableNames ...string) db.Dao[map[string]any] {
 	if len(tableNames) > 0 {
 		tableName = tableNames[0]
 	}
-	opt := mongodb.NewRepositoryOptions(&mongodb.RepositoryOptions{
+	opt := NewRepositoryOptions(&RepositoryOptions{
 		MongoDB: mongoDb,
 		//GetCollCallback: opts.GetCollCallback,
 	})

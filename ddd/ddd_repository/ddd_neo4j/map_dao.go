@@ -13,14 +13,14 @@ type MapDao struct {
 }
 
 func NewMapNodeDao(driver neo4j.DriverWithContext, nodeLabels []string, schema *schema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
-	ebBase := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	ebBase := ddd.NewAnyEntityBuilder[map[string]any]()
 	eb := NewNodeEntityBuilder[map[string]any](ebBase)
 	dao := NewNodeDao[map[string]any](driver, eb, schema, nodeLabels, opts...)
 	return newMapDao(dao)
 }
 
 func NewMapRelationDao(driver neo4j.DriverWithContext, relTypes []string, schema *schema.Schema, opts ...*Options[map[string]any]) ddd_repository.Dao[map[string]any] {
-	ebBase := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	ebBase := ddd.NewAnyEntityBuilder[map[string]any]()
 	eb := NewRelationEntityBuilder[map[string]any](ebBase)
 	dao := NewRelationDao[map[string]any](driver, eb, schema, relTypes, opts...)
 	return newMapDao(dao)
@@ -173,8 +173,8 @@ func (m *MapDao) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery,
 }
 */
 
-func (m *MapDao) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
-	return m.dao.Sum(ctx, qry, resData, opts...)
+func (m *MapDao) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+	return m.dao.SumByQuery(ctx, qry, resData, opts...)
 }
 
 func (m *MapDao) SumByRSQL(ctx context.Context, tenantId, rSql string, valueCols []*ddd_repository.ValueCol, opts ...ddd_repository.Options) map[string]any {

@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
 )
 
-func (d *DaoBase[T]) FindById(ctx context.Context, id string, opts ...*db.CallOptions) map[string]any {
+func (d *DaoBase) FindById(ctx context.Context, id string, opts ...*db.CallOptions) map[string]any {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.FindById(ctx, tenantId, id, db.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
@@ -16,7 +16,7 @@ func (d *DaoBase[T]) FindById(ctx context.Context, id string, opts ...*db.CallOp
 	return res.Data
 }
 
-func (d *DaoBase[T]) FindByIds(ctx context.Context, ids []string, opts ...*db.CallOptions) []map[string]any {
+func (d *DaoBase) FindByIds(ctx context.Context, ids []string, opts ...*db.CallOptions) []map[string]any {
 	tenantId := d.GetTenantId(ctx)
 	data, _, err := d.dao.FindByIds(ctx, tenantId, ids, db.NewRepositoryOptions(opts)...).Result()
 	if err != nil {
@@ -25,7 +25,7 @@ func (d *DaoBase[T]) FindByIds(ctx context.Context, ids []string, opts ...*db.Ca
 	return data
 }
 
-func (d *DaoBase[T]) FindByRSQL(ctx context.Context, rsql string, opts ...*db.CallOptions) []map[string]any {
+func (d *DaoBase) FindByRSQL(ctx context.Context, rsql string, opts ...*db.CallOptions) []map[string]any {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.FindByRSQL(ctx, tenantId, rsql, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
@@ -34,7 +34,7 @@ func (d *DaoBase[T]) FindByRSQL(ctx context.Context, rsql string, opts ...*db.Ca
 	return res.Data
 }
 
-func (d *DaoBase[T]) FindAll(ctx context.Context, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
+func (d *DaoBase) FindAll(ctx context.Context, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.FindAll(ctx, tenantId, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
@@ -44,7 +44,7 @@ func (d *DaoBase[T]) FindAll(ctx context.Context, opts ...*db.CallOptions) *ddd_
 }
 
 /*
-func (d *DaoBase[T]) FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
+func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interface{}, opts ...*db.CallOptions) *ddd_repository.FindListResult[map[string]any] {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.FindListByMap(ctx, tenantId, filterMap, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
@@ -54,7 +54,7 @@ func (d *DaoBase[T]) FindListByMap(ctx context.Context, filterMap map[string]int
 }
 */
 
-func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
+func (d *DaoBase) FindPaging(ctx context.Context, findPaging *ddd_repository.FindPagingQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	findQuery := d.NewFindPagingQuery(ctx, findPaging)
 	res := d.dao.FindPaging(ctx, findQuery, db.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
@@ -63,7 +63,7 @@ func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging *ddd_repository.
 	return res
 }
 
-func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
+func (d *DaoBase) FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	if qry == nil {
 		panic(errors.New("FindAutoComplete query is nil"))
 	}
@@ -76,7 +76,7 @@ func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry *ddd_repository.F
 	return res
 }
 
-func (d *DaoBase[T]) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
+func (d *DaoBase) FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*db.CallOptions) *ddd_repository.FindPagingResult[map[string]any] {
 	if qry == nil {
 		panic(errors.New("FindDistinctQueryRequest query is nil"))
 	}
