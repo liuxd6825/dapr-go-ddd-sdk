@@ -6,41 +6,37 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
-type Dao interface {
+type Dao[T any] interface {
 	GetSchema() *jsonschema.Schema
 	GetAggField() string
 
-	Create(ctx context.Context, entity map[string]any, opts ...*CallOptions) *Result
-	CreateMany(ctx context.Context, entity []map[string]any, opts ...*CallOptions) *Result
+	Create(ctx context.Context, entity T, opts ...*CallOptions) *Result
+	CreateMany(ctx context.Context, entity []T, opts ...*CallOptions) *Result
 
-	Update(ctx context.Context, entity map[string]any, opts ...*CallOptions) *Result
-	UpdateMap(ctx context.Context, id string, data map[string]any, opts ...*CallOptions) *Result
-	UpdateMany(ctx context.Context, entities []map[string]any, opts ...*CallOptions) *Result
-	UpdateByRSQL(ctx context.Context, filterRSQL string, data map[string]any, opts ...*CallOptions) *Result
+	Update(ctx context.Context, entity T, opts ...*CallOptions) *Result
+	UpdateMap(ctx context.Context, id string, data T, opts ...*CallOptions) *Result
+	UpdateMany(ctx context.Context, entities []T, opts ...*CallOptions) *Result
+	UpdateByRSQL(ctx context.Context, rsql string, data T, opts ...*CallOptions) *Result
 
-	Delete(ctx context.Context, entity map[string]any, opts ...*CallOptions) *Result
+	Delete(ctx context.Context, entity T, opts ...*CallOptions) *Result
 	DeleteById(ctx context.Context, id string, opts ...*CallOptions) *Result
 	DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions) *Result
 	DeleteAll(ctx context.Context, opts ...*CallOptions) *Result
-	DeleteByRSQL(ctx context.Context, filterRSQL string, opts ...*CallOptions) *Result
-	//DeleteByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions)
+	DeleteByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) *Result
 
-	FindById(ctx context.Context, id string, opts ...*CallOptions) map[string]any
-	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []map[string]any
-	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []map[string]any
-	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[map[string]any]
-	//FindListByMap(ctx context.Context, filterMap map[string]any, opts ...*CallOptions) *ddd_repository.FindListResult[map[string]any]
-	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
-	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
-	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[map[string]any]
+	FindById(ctx context.Context, id string, opts ...*CallOptions) T
+	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []T
+	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []T
+	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[T]
+	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
+	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
+	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
 
-	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
-	//SumMap(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []map[string]any
-	Sum(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
-	SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) map[string]any
+	SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) T
+	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []T
+	SumByQuery(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, data any, opts ...*CallOptions) any
 
-	//CountByMap(ctx context.Context, filterData any, opts ...*CallOptions) int64
-	CountByRSQL(ctx context.Context, rSql string, opts ...*CallOptions) int64
+	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64
 
 	Table() Table
 	//GetFilterMap(tenantId string, rSql string) map[string]any
