@@ -52,7 +52,7 @@ func NewMongoDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, col
 	r.initFun = initFun
 	r.options = NewOptions[T](opts...)
 	if r.options.entityBuilder == nil {
-		r.options.entityBuilder = ddd.NewAnyEntityBuilderDefault[T]()
+		r.options.entityBuilder = ddd.NewAnyEntityBuilder[T]()
 		r.decoder = NewStructDecoder[T]()
 	}
 	r.eb = r.options.entityBuilder
@@ -1066,17 +1066,17 @@ func (r *Dao[T]) CopyTo(ctx context.Context, tenantId string, rsql string, toCol
 func (r *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
 	data := r.NewEntityList()
 	sCtx := r.getSessionCtx(ctx)
-	_, found, err := r.Sum(sCtx, qry, &data, opts...)
+	_, found, err := r.SumByQuery(sCtx, qry, &data, opts...)
 	return data, found, err
 }
 
 func (r *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
 	data := make([]map[string]any, 0)
-	_, found, err := r.Sum(r.getSessionCtx(ctx), qry, &data, opts...)
+	_, found, err := r.SumByQuery(r.getSessionCtx(ctx), qry, &data, opts...)
 	return data, found, err
 }
 
-func (r *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error) {
+func (r *Dao[T]) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQuery, data any, opts ...ddd_repository.Options) (any, bool, error) {
 	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
 	}
