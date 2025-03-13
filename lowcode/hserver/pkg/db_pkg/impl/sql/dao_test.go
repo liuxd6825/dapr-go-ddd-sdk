@@ -60,30 +60,28 @@ func Test_Dao(t *testing.T) {
 	dao.Table().Drop(ctx)
 	dao.Table().AutoMigrate(ctx)
 	newCount := int64(10)
-	var list []map[string]any
+	list := newHumanList(newCount, humanName)
 
-	for i := int64(0); i < newCount; i++ {
-		entity := map[string]any{
-			"id":         randomutils.NewId(),
-			"name":       humanName,
-			"analyse":    "",
-			"age":        randomutils.IntMax(100),
-			"birthday":   randomutils.Date(),
-			"peopleType": []string{"1111"},
-			"tags":       []string{"tag1", "tag2"},
-		}
-		list = append(list, entity)
-	}
+	t.Run("dao.DeleteByRSQL", func(t *testing.T) {
+		gp.Try(func() error {
+			list := newHumanList(newCount, "0000")
+			res := dao.CreateMany(ctx, list)
+			assert.Equal(t, newCount, res.RowsAffected)
+
+			delRes := dao.DeleteByRSQL(ctx, "name=='0000'")
+			t.Log("DeleteByRSQL count:", delRes.RowsAffected)
+			assert.Equal(t, newCount, delRes.RowsAffected)
+
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
 
 	t.Run("dao.CreateMany", func(t *testing.T) {
 		gp.Try(func() error {
 			res := dao.CreateMany(ctx, list)
 			assert.Equal(t, newCount, res.RowsAffected)
-
-			delRes := dao.DeleteByRSQL(ctx, "age>20")
-			t.Log("DeleteByRSQL count:", delRes.RowsAffected)
-			assert.Greater(t, delRes.RowsAffected, 0)
-
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -230,7 +228,7 @@ func Test_Dao(t *testing.T) {
 		})
 	})
 
-	t.Run("dao.Sum", func(t *testing.T) {
+	t.Run("dao.SumByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
 			var vals []*ddd_repository.ValueCol
 			vals = append(vals, &ddd_repository.ValueCol{
@@ -344,7 +342,7 @@ func TestDao_Sum(t *testing.T) {
 		qry.SetValueCols(valueCols)
 
 		data := map[string]any{}
-		sumAny := dao.Sum(ctx, qry, data)
+		sumAny := dao.SumByQuery(ctx, qry, data)
 		fmt.Println("data:", sumAny)
 	})
 
@@ -373,4 +371,21 @@ func TestDao_Sum(t *testing.T) {
 		fmt.Println("data:", findRes)
 
 	})
+}
+
+func newHumanList(count int64, humanName string) []map[string]any {
+	list := make([]map[string]any, count)
+	for i := int64(0); i < count; i++ {
+		entity := map[string]any{
+			"id":         randomutils.NewId(),
+			"name":       humanName,
+			"analyse":    "",
+			"age":        randomutils.IntMax(100),
+			"birthday":   randomutils.Date(),
+			"peopleType": []string{"1111"},
+			"tags":       []string{"tag1", "tag2"},
+		}
+		list[i] = entity
+	}
+	return list
 }
