@@ -13,7 +13,7 @@ type MapDao struct {
 }
 
 func NewMapDaoWithDbKey(dbKey string, tableName string) ddd_repository.Dao[map[string]any] {
-	eb := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	eb := ddd.NewAnyEntityBuilder[map[string]any]()
 	mapDao := NewDaoWithDbKey[map[string]any](dbKey, eb, tableName)
 	return &MapDao{
 		dao: mapDao,
@@ -21,7 +21,7 @@ func NewMapDaoWithDbKey(dbKey string, tableName string) ddd_repository.Dao[map[s
 }
 
 func NewMapDao(db *gorm.DB, dbKey string, tableName string) *MapDao {
-	eb := ddd.NewAnyEntityBuilderDefault[map[string]any]()
+	eb := ddd.NewAnyEntityBuilder[map[string]any]()
 	mapDao := NewDao[map[string]any](db, dbKey, eb, tableName)
 	return &MapDao{
 		dao: mapDao,
@@ -172,8 +172,8 @@ func (m *MapDao) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQue
 		return m.dao.SumMap(ctx, qry, opts...)
 	}
 */
-func (m *MapDao) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
-	return m.dao.Sum(ctx, qry, resData, opts...)
+func (m *MapDao) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+	return m.dao.SumByQuery(ctx, qry, resData, opts...)
 }
 
 /*

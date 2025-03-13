@@ -60,7 +60,7 @@ func Test_Dao(t *testing.T) {
 		return
 	}
 
-	eb := ddd.NewMapEntityBuilder()
+	eb := ddd.NewAnyEntityBuilder[map[string]any]()
 	dao := NewDao[map[string]any](db, "dbKey", eb, "users")
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {

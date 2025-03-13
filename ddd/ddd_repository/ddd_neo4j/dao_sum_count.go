@@ -8,16 +8,11 @@ import (
 
 func (d *Dao[T]) SumEntity(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]T, bool, error) {
 	data := d.NewEntityList()
-	_, found, err := d.Sum(ctx, qry, &data, opts...)
+	_, found, err := d.SumByQuery(ctx, qry, &data, opts...)
 	return data, found, err
 }
 
-func (d *Dao[T]) SumMap(ctx context.Context, qry ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) ([]map[string]any, bool, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (d *Dao[T]) Sum(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
+func (d *Dao[T]) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQuery, resData any, opts ...ddd_repository.Options) (any, bool, error) {
 	var err error
 	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
