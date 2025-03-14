@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_neo4j"
@@ -21,7 +21,7 @@ type Dao[T any] struct {
 	eb       ddd.EntityBuilder[T]
 	labels   []string
 	metadata map[string]any
-	schema   *schema.Schema
+	schema   *dbschema.Schema
 }
 
 func (d *Dao[T]) NewEntity() T {
@@ -48,36 +48,42 @@ func (d *Dao[T]) SetId(entity T, id string) {
 	d.eb.SetId(entity, id)
 }
 
-func (d *Dao[T]) GetSchema() *schema.Schema {
+func (d *Dao[T]) GetAggId(entity T) string {
+	return d.eb.GetAggId(entity)
+}
+
+func (d *Dao[T]) GetSchema() *dbschema.Schema {
 	return d.schema
 }
 
-func NewNodeDao[T any](driver neo4j.DriverWithContext, eb NodeEntityBuilder[T], schema *schema.Schema, labels []string, opts ...*Options[T]) ddd_repository.Dao[T] {
-	cypher := NewNodeCypher[T](eb, schema, labels...)
-	return NewDao(driver, labels, cypher, eb, schema, opts...)
+func NewNodeDao[T any](driver neo4j.DriverWithContext, dbSch *dbschema.Schema, labels []string, opts ...*Options[T]) ddd_repository.Dao[T] {
+	eb := NewNodeEntityBuilder[T]()
+	cypher := NewNodeCypher[T](eb, dbSch, labels...)
+	return NewDao(driver, labels, cypher, eb, dbSch, opts...)
 }
 
-func NewRelationDao[T any](driver neo4j.DriverWithContext, eb RelationEntityBuilder[T], schema *schema.Schema, labels []string, opts ...*Options[T]) ddd_repository.Dao[T] {
-	cypher := NewRelationCypher[T](eb, schema, labels...)
-	return NewDao(driver, labels, cypher, eb, schema, opts...)
+func NewRelationDao[T any](driver neo4j.DriverWithContext, dbSch *dbschema.Schema, labels []string, opts ...*Options[T]) ddd_repository.Dao[T] {
+	eb := NewRelationEntityBuilder[T]()
+	cypher := NewRelationCypher[T](eb, dbSch, labels...)
+	return NewDao(driver, labels, cypher, eb, dbSch, opts...)
 }
 
-func NewDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], eb ddd.EntityBuilder[T], schema *schema.Schema, opts ...*Options[T]) ddd_repository.Dao[T] {
-	return newDao(driver, labels, cypher, eb, schema, opts...)
+func NewDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], eb ddd.EntityBuilder[T], dbSch *dbschema.Schema, opts ...*Options[T]) ddd_repository.Dao[T] {
+	return newDao(driver, labels, cypher, eb, dbSch, opts...)
 }
 
-func newNodeDao[T any](driver neo4j.DriverWithContext, labels []string, eb NodeEntityBuilder[T], schema *schema.Schema, opts ...*Options[T]) *Dao[T] {
-	cypher := NewNodeCypher(eb, schema, labels...)
-	return newDao(driver, labels, cypher, eb, schema, opts...)
+func newNodeDao[T any](driver neo4j.DriverWithContext, labels []string, eb NodeEntityBuilder[T], dbSch *dbschema.Schema, opts ...*Options[T]) *Dao[T] {
+	cypher := NewNodeCypher(eb, dbSch, labels...)
+	return newDao(driver, labels, cypher, eb, dbSch, opts...)
 }
 
-func newDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], eb ddd.EntityBuilder[T], schema *schema.Schema, opts ...*Options[T]) *Dao[T] {
+func newDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], eb ddd.EntityBuilder[T], dbSch *dbschema.Schema, opts ...*Options[T]) *Dao[T] {
 	dao := &Dao[T]{
 		driver:   driver,
 		cypher:   cypher,
 		eb:       eb,
 		labels:   labels,
-		schema:   schema,
+		schema:   dbSch,
 		metadata: make(map[string]any),
 	}
 	return dao

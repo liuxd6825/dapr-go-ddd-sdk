@@ -1,43 +1,6 @@
-package common
+package dbevent
 
-import (
-	"fmt"
-	"time"
-)
-
-type EventType string
-
-const (
-	EventType_Create EventType = "create"
-	EventType_Update EventType = "update"
-	EventType_Delete EventType = "delete"
-)
-
-var tableEventTypes = []string{
-	EventType_Create.String(),
-	EventType_Update.String(),
-	EventType_Delete.String(),
-}
-
-func TableEventTypes() []string {
-	return tableEventTypes
-}
-
-func (e EventType) String() string {
-	return string(e)
-}
-
-// GetEventType
-//
-//	@Description: 获取事件类型
-//	@param appId 应用ID
-//	@param aggName 聚合根类型名称
-//	@param operateType 操作类型 增加，更新，删除等
-//	@param eventVersion 版本号
-//	@return string
-func GetEventType(appId string, aggName string, operateType string) string {
-	return fmt.Sprintf("%s.%s.%s", appId, aggName, operateType)
-}
+import "time"
 
 type Event struct {
 	TenantId     string    `json:"tenantId,omitempty"`

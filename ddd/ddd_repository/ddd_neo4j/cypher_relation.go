@@ -3,8 +3,8 @@ package ddd_neo4j
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
@@ -17,14 +17,14 @@ type relationCypher[T any] struct {
 	matchTypes    string
 	isEmptyLabels bool
 	eb            RelationEntityBuilder[T]
-	schema        *schema.Schema
+	schema        *dbschema.Schema
 }
 
 // NewRelationCypher
 // @Description:
 // @param labels 关系标签，可以为空值；为空：由Relation.GetRelType()决定标签名称
 // @return Cypher
-func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *schema.Schema, relTypes ...string) Cypher[T] {
+func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *dbschema.Schema, relTypes ...string) Cypher[T] {
 	matchTypes := ":" + strings.Join(relTypes, "|")
 
 	rel := &relationCypher[T]{
@@ -494,9 +494,9 @@ func (c *relationCypher[T]) getCreateMatchProperties(ctx context.Context, data a
 	var properties string
 	for _, f := range c.schema.Fields {
 		dbName := f.DBName
-		if f.DataType == schema.Time {
+		if f.DataType == dbschema.Time {
 			properties = fmt.Sprintf(`%s%s:dateTime(%s.%s),`, properties, dbName, asName, dbName)
-		} else if f.DataType == schema.Date {
+		} else if f.DataType == dbschema.Date {
 			properties = fmt.Sprintf(`%s%s:date(%s.%s),`, properties, dbName, asName, dbName)
 		} else {
 			properties = fmt.Sprintf(`%s%s:%s.%s,`, properties, dbName, asName, dbName)

@@ -2,7 +2,7 @@ package ddd_repository
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 )
 
 type TxFunc func(ctx context.Context, options ...*SessionOptions) error
@@ -16,6 +16,8 @@ type Dao[T any] interface {
 
 	GetId(entity T) string
 	SetId(entity T, id string)
+
+	GetAggId(entity T) string
 
 	// 添加
 
@@ -64,8 +66,10 @@ type Dao[T any] interface {
 	CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...Options) (int64, error)
 
 	StartTx(ctx context.Context, fun TxFunc, options ...*SessionOptions) error
-	SetMetadata(metadata map[string]any)
-	GetMetadata() map[string]any
-	AddMetadata(key string, val any)
-	GetSchema() *schema.Schema
+	/*
+		SetMetadata(metadata map[string]any)
+		GetMetadata() map[string]any
+		AddMetadata(key string, val any)
+	*/
+	GetSchema() *dbschema.Schema
 }

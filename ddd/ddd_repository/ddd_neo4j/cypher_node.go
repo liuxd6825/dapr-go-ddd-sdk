@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_neo4j"
@@ -16,7 +16,7 @@ import (
 type nodeCypher[T any] struct {
 	labels string
 	eb     NodeEntityBuilder[T]
-	schema *schema.Schema
+	schema *dbschema.Schema
 }
 
 const (
@@ -28,7 +28,7 @@ const (
 // @Description:
 // @param labels Neo4j标签
 // @return nodeCypher
-func NewNodeCypher[T any](eb NodeEntityBuilder[T], schema *schema.Schema, labels ...string) Cypher[T] {
+func NewNodeCypher[T any](eb NodeEntityBuilder[T], schema *dbschema.Schema, labels ...string) Cypher[T] {
 	return &nodeCypher[T]{
 		eb:     eb,
 		labels: getLabels(labels...),
@@ -413,9 +413,9 @@ func (c *nodeCypher[T]) getCreateMatchProperties(ctx context.Context, data any, 
 	var properties string
 	for _, f := range c.schema.Fields {
 		dbName := f.DBName
-		if f.DataType == schema.Time {
+		if f.DataType == dbschema.Time {
 			properties = fmt.Sprintf(`%s%s:dateTime(%s.%s),`, properties, dbName, asName, dbName)
-		} else if f.DataType == schema.Date {
+		} else if f.DataType == dbschema.Date {
 			properties = fmt.Sprintf(`%s%s:date(%s.%s),`, properties, dbName, asName, dbName)
 		} else {
 			properties = fmt.Sprintf(`%s%s:%s.%s,`, properties, dbName, asName, dbName)

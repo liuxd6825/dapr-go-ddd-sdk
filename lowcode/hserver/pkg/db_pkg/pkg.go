@@ -3,14 +3,15 @@ package db_pkg
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/neo4j"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/sql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/neo4j"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -21,7 +22,7 @@ import (
 
 type Pkg struct {
 	server element.Server
-	daoMap *types.CMap[db.Dao[map[string]any]]
+	daoMap *types.CMap[any]
 }
 
 type NewDaoConfig struct {
@@ -34,7 +35,7 @@ type NewDaoConfig struct {
 func New(server element.Server) *Pkg {
 	return &Pkg{
 		server: server,
-		daoMap: types.NewCMap[db.Dao[map[string]any]](),
+		daoMap: types.NewCMap[any](),
 	}
 }
 
@@ -42,7 +43,7 @@ func (p *Pkg) NewRSQLBuilder() *rsql.Builder {
 	return rsql.NewBuilder()
 }
 
-func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao[map[string]any] {
+func (p *Pkg) NewDao(opts *NewDaoConfig) idao.Dao[map[string]any] {
 	dbKey := opts.DbKey
 	if dbKey == "" {
 		dbKey = "default"
@@ -54,33 +55,33 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao[map[string]any] {
 	tableName := opts.Schema.Name
 	daoKey := getDaoKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
-		return v.(db.Dao[map[string]any])
+		return v.(idao.Dao[map[string]any])
 	}
 
-	cfg := &db.DaoConfig{
+	cfg := &idao.DaoConfig{
 		DbKey:      opts.DbKey,
 		IsPubEvent: opts.IsPubEvent,
 		AggField:   opts.AggField,
 		Env:        p.server.GetEnvCfg(),
-		Schema:     opts.Schema,
+		Schema:     dbschema.NewSchemaWithJsonschema(opts.Schema),
 	}
 
-	var dao db.Dao[map[string]any]
+	var dao idao.Dao[map[string]any]
 	item := p.getDbItem(dbKey)
 
 	switch item.GetDBType() {
 	case restapp.DbType_MongoDB:
-		dao = mongodb.NewDao(cfg)
+		dao = mongodb.NewDao[map[string]any](cfg)
 	case restapp.DbType_Sqlite,
 		restapp.DbType_Oracle,
 		restapp.DbType_Postgres,
 		restapp.DbType_MySQL,
 		restapp.DbType_MsSQL:
-		dao = sql.NewDao(cfg)
+		dao = sql.NewDao[map[string]any](cfg)
 	case restapp.DbType_Redis:
 		panic(errors.New(fmt.Sprintf("%s database nonsupport Redis", dbKey)))
 	case restapp.DbType_Neo4j:
-		dao = neo4j.NewDao(cfg)
+		dao = neo4j.NewDao[map[string]any](cfg)
 	default:
 		panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
 	}
@@ -89,10 +90,10 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) db.Dao[map[string]any] {
 	return dao
 }
 
-func (p *Pkg) GetDao(dbKey, tableName string) db.Dao[map[string]any] {
+func (p *Pkg) GetDao(dbKey, tableName string) idao.Dao[map[string]any] {
 	daoKey := getDaoKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
-		return v.(db.Dao[map[string]any])
+		return v.(idao.Dao[map[string]any])
 	}
 	panic(fmt.Errorf("dao not found %s", daoKey))
 }
@@ -103,18 +104,20 @@ type NewTableOptions struct {
 	Schema    *jsonschema.Schema `json:"schema"`
 }
 
-func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
+func (p *Pkg) NewTable(opts *NewTableOptions) idao.Table {
 	dbKey := opts.DbKey
 	if dbKey == "" {
 		dbKey = "default"
 	}
 
-	var table db.Table
+	dbSch := dbschema.NewSchemaWithJsonschema(opts.Schema)
+
+	var table idao.Table
 	item := p.getDbItem(opts.DbKey)
 
 	switch item.GetDBType() {
 	case restapp.DbType_MongoDB:
-		table = mongodb.NewTable(item.GetMongo(), opts.Schema)
+		table = mongodb.NewTable(item.GetMongo(), dbSch)
 	case restapp.DbType_Sqlite,
 		restapp.DbType_Oracle,
 		restapp.DbType_Postgres,
@@ -124,10 +127,10 @@ func (p *Pkg) NewTable(opts *NewTableOptions) db.Table {
 		if ok {
 			panic(errors.New(fmt.Sprintf("%s database nonsupport gorm.DB", dbKey)))
 		}
-		table = sql.NewTable(database, opts.Schema)
+		table = sql.NewTable(database, dbSch)
 	case restapp.DbType_Neo4j:
 		if driver, ok := item.GetDB().(neo4jdriver.DriverWithContext); ok {
-			table = neo4j.NewTable(driver, opts.Schema)
+			table = neo4j.NewTable(driver, dbSch)
 		} else {
 			panic(errors.New(fmt.Sprintf("%s database nonsupport neo4j.Driver", dbKey)))
 		}

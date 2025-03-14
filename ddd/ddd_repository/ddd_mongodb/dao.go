@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
@@ -38,7 +38,7 @@ type Dao[T any] struct {
 	initFun    func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 	options    *Options[T]
 	metadata   map[string]any
-	schema     *schema.Schema
+	schema     *dbschema.Schema
 }
 
 func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) ddd_repository.Dao[T] {
@@ -81,7 +81,7 @@ func (r *Dao[T]) AddMetadata(key string, val any) {
 	r.metadata[key] = val
 }
 
-func (r *Dao[T]) GetSchema() *schema.Schema {
+func (r *Dao[T]) GetSchema() *dbschema.Schema {
 	return r.schema
 }
 
@@ -107,6 +107,10 @@ func (r *Dao[T]) GetId(entity T) string {
 
 func (r *Dao[T]) SetId(entity T, id string) {
 	r.eb.SetId(entity, id)
+}
+
+func (d *Dao[T]) GetAggId(entity T) string {
+	return d.eb.GetAggId(entity)
 }
 
 func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.Collection) error {

@@ -24,19 +24,15 @@ type relationEntityBuilder[T any] struct {
 	ddd.EntityBuilder[T]
 }
 
-func NewRelationEntityBuilder[T any](base ddd.EntityBuilder[T]) RelationEntityBuilder[T] {
-	if base == nil {
-		base = ddd.NewAnyEntityBuilder[T]()
-	}
+func NewRelationEntityBuilder[T any]() RelationEntityBuilder[T] {
+	base := ddd.NewAnyEntityBuilder[T]()
 	return &relationEntityBuilder[T]{
 		EntityBuilder: base,
 	}
 }
 
-func NewNodeEntityBuilder[T any](base ddd.EntityBuilder[T]) NodeEntityBuilder[T] {
-	if base == nil {
-		base = ddd.NewAnyEntityBuilder[T]()
-	}
+func NewNodeEntityBuilder[T any]() NodeEntityBuilder[T] {
+	base := ddd.NewAnyEntityBuilder[T]()
 	return &nodeEntityBuilder[T]{
 		EntityBuilder: base,
 	}

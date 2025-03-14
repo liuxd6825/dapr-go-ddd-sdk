@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
@@ -15,18 +15,19 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"gorm.io/gorm"
+	gormschema "gorm.io/gorm/schema"
 	"strings"
 )
 
 type Dao[T any] struct {
-	options       *Options[T]
-	entityBuilder ddd.EntityBuilder[T] // 实体构造器
-	db            *gorm.DB
-	dbKey         string
-	entity        T
-	tableName     string
-	metadata      map[string]any
-	schema        *schema.Schema
+	options    *Options[T]
+	eb         ddd.EntityBuilder[T] // 实体构造器
+	db         *gorm.DB
+	dbKey      string
+	entity     T
+	tableName  string
+	dbSchema   *dbschema.Schema
+	gormSchema *gormschema.Schema
 }
 
 const (
@@ -38,58 +39,95 @@ var initializePlugin bool = false
 
 var fields = ddd.GetFields()
 
-func NewDaoWithDbKey[T any](dbKey string, eb ddd.EntityBuilder[T], tableName string) ddd_repository.Dao[T] {
+func NewDaoWithDbKey[T any](cfg *NewConfig) ddd_repository.Dao[T] {
+	dbKey := cfg.DbKey
 	item := restapp.GetDb(dbKey)
 	if item == nil {
 		panic(errors.New(fmt.Sprintf("db key %s not found", dbKey)))
 	}
-	var db *gorm.DB
-	switch item.GetDBType() {
-	case restapp.DbType_Postgres:
-		db = item.GetPostgres()
-	case restapp.DbType_MySQL:
-		db = item.GetMySQL()
-	case restapp.DbType_Sqlite:
-		db = item.GetSqlite()
-	case restapp.DbType_MsSQL:
-		db = item.GetMsSQL()
-	case restapp.DbType_Oracle:
-		db = item.GetOracle()
-	default:
-		panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))
+	db := cfg.Db
+	if db == nil {
+		switch item.GetDBType() {
+		case restapp.DbType_Postgres:
+			db = item.GetPostgres()
+		case restapp.DbType_MySQL:
+			db = item.GetMySQL()
+		case restapp.DbType_Sqlite:
+			db = item.GetSqlite()
+		case restapp.DbType_MsSQL:
+			db = item.GetMsSQL()
+		case restapp.DbType_Oracle:
+			db = item.GetOracle()
+		default:
+			panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))
+		}
 	}
-	return NewDao[T](db, dbKey, eb, tableName)
+	cfg.Db = db
+	return NewDao[T](cfg)
 }
 
-func NewDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T], tableName string) *Dao[T] {
-	entity := entityBuilder.NewEntity()
+type NewConfig struct {
+	DbKey      string
+	TableName  string
+	Db         *gorm.DB
+	DBSchema   *dbschema.Schema
+	GormSchema *gormschema.Schema
+}
 
+func (c *NewConfig) Check() error {
+	if c.Db == nil {
+		return errors.New(fmt.Sprintf("ddd_sql.NewConfig.DB is nil"))
+	}
+	if c.DBSchema == nil {
+		return errors.New(fmt.Sprintf("ddd_sql.NewConfig.DbSchema is nil"))
+	}
+	if c.TableName == "" || c.DBSchema.TableName == "" {
+		return errors.New(fmt.Sprintf("ddd_sql.NewConfig.TableName and ddd_sql.NewConfig.DBSchema.TableName is empty "))
+	}
+	return nil
+}
+
+func NewDao[T any](cfg *NewConfig) *Dao[T] {
 	if !initializePlugin {
 		initializePlugin = true
-		if err := db.Use(NewGormFieldPlugin()); err != nil {
+		if err := cfg.Db.Use(NewGormFieldPlugin()); err != nil {
 			panic(err)
 		}
 	}
-
-	return &Dao[T]{
-		entityBuilder: entityBuilder,
-		db:            db,
-		dbKey:         dbKey,
-		entity:        entity,
-		tableName:     tableName,
-		metadata:      make(map[string]any),
-	}
+	return newDao[T](cfg)
 }
 
-func newDao[T any](db *gorm.DB, dbKey string, entityBuilder ddd.EntityBuilder[T], tableName string) *Dao[T] {
-	entity := entityBuilder.NewEntity()
+func newDao[T any](cfg *NewConfig) *Dao[T] {
+	var err error
+
+	if err = cfg.Check(); err != nil {
+		panic(err)
+	}
+
+	eb := ddd.NewAnyEntityBuilder[T]()
+	entity := eb.NewEntity()
+
+	gormSch := cfg.GormSchema
+	if gormSch == nil {
+		gormSch, err = NewGormSchema(cfg.DBSchema)
+		if err != nil {
+			panic(fmt.Sprintf("newDao() gorm schema error:%s", err.Error()))
+		}
+	}
+
+	tableName := cfg.TableName
+	if tableName == "" {
+		tableName = cfg.DBSchema.TableName
+	}
 
 	return &Dao[T]{
-		entityBuilder: entityBuilder,
-		db:            db,
-		dbKey:         dbKey,
-		entity:        entity,
-		tableName:     tableName,
+		eb:         eb,
+		db:         cfg.Db,
+		dbKey:      cfg.DbKey,
+		entity:     entity,
+		tableName:  cfg.TableName,
+		dbSchema:   cfg.DBSchema,
+		gormSchema: gormSch,
 	}
 }
 
@@ -101,20 +139,8 @@ func (d *Dao[T]) getIds(entities []T) []string {
 	return ids
 }
 
-func (d *Dao[T]) GetSchema() *schema.Schema {
-	return d.schema
-}
-
-func (d *Dao[T]) SetMetadata(metadata map[string]any) {
-	d.metadata = metadata
-}
-
-func (d *Dao[T]) GetMetadata() map[string]any {
-	return d.metadata
-}
-
-func (d *Dao[T]) AddMetadata(key string, val any) {
-	d.metadata[key] = val
+func (d *Dao[T]) GetSchema() *dbschema.Schema {
+	return d.dbSchema
 }
 
 func (d *Dao[T]) ExecSql(sql string) error {
@@ -122,34 +148,38 @@ func (d *Dao[T]) ExecSql(sql string) error {
 }
 
 func (d *Dao[T]) NewEntity() T {
-	return d.entityBuilder.NewEntity()
+	return d.eb.NewEntity()
 }
 
 func (d *Dao[T]) NewEntityList() []T {
-	return d.entityBuilder.NewEntityList()
+	return d.eb.NewEntityList()
 }
 
 func (d *Dao[T]) GetTenantId(entity T) string {
-	return d.entityBuilder.GetTenantId(entity)
+	return d.eb.GetTenantId(entity)
 }
 
 func (d *Dao[T]) SetTenantId(entity T, tenantId string) {
-	d.entityBuilder.SetTenantId(entity, tenantId)
+	d.eb.SetTenantId(entity, tenantId)
 }
 
 func (d *Dao[T]) GetId(entity T) string {
-	return d.entityBuilder.GetId(entity)
+	return d.eb.GetId(entity)
 }
 
 func (d *Dao[T]) SetId(entity T, id string) {
-	d.entityBuilder.SetId(entity, id)
+	d.eb.SetId(entity, id)
+}
+
+func (d *Dao[T]) GetAggId(entity T) string {
+	return d.eb.GetAggId(entity)
 }
 
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
 	res = ddd_repository.NewSetResult[T]()
 	res.Error = gp.Try(func() error {
 		db := d.table(ctx)
-		d.entityBuilder.SetCreatedInfo(ctx, entity)
+		d.eb.SetCreatedInfo(ctx, entity)
 		db = db.Create(entity)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
@@ -160,7 +190,7 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]any, opts ...ddd_repository.Options) (res *ddd_repository.SetResult[T]) {
 	res = ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		d.entityBuilder.SetCreatedInfo(ctx, data)
+		d.eb.SetCreatedInfo(ctx, data)
 		db := d.table(ctx).Model(data).Create(data)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
@@ -174,7 +204,7 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		for _, entity := range entities {
-			d.entityBuilder.SetCreatedInfo(ctx, entity)
+			d.eb.SetCreatedInfo(ctx, entity)
 			d.SetTenantId(entity, tenantId)
 		}
 		db := d.table(ctx).Model(d.NewEntity()).CreateInBatches(entities, len(entities))
@@ -214,8 +244,8 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...ddd_repository.Op
 	res := ddd_repository.NewSetResult[T]()
 	_ = gp.Try(func() error {
 		opt := ddd_repository.NewOptions(opts...)
-		d.entityBuilder.SetUpdatedInfo(ctx, entity)
-		tenantId := d.entityBuilder.GetTenantId(entity)
+		d.eb.SetUpdatedInfo(ctx, entity)
+		tenantId := d.eb.GetTenantId(entity)
 		table := d.updateTable(ctx, opt).Where("id=? and tenant_id=?", d.GetId(entity), tenantId)
 
 		// 是否空值更新
@@ -247,7 +277,7 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId string, filterRSQL s
 		if err != nil {
 			return err
 		}
-		d.entityBuilder.SetUpdatedInfo(ctx, data)
+		d.eb.SetUpdatedInfo(ctx, data)
 		db := d.updateTable(ctx, opts...).Where(where).Model(v).Updates(data)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
@@ -261,7 +291,7 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, 
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		for _, e := range entities {
-			d.entityBuilder.SetUpdatedInfo(ctx, e)
+			d.eb.SetUpdatedInfo(ctx, e)
 		}
 		db := d.updateTable(ctx, opts...).Model(d.NewEntity()).Save(entities)
 		res.SetRowsAffected(db.RowsAffected)
@@ -280,7 +310,7 @@ func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 		model := d.updateTable(ctx, opt).Model(d.entity)
 		for _, e := range entities {
 			id := d.GetId(e)
-			d.entityBuilder.SetUpdatedInfo(ctx, e)
+			d.eb.SetUpdatedInfo(ctx, e)
 			db := model.Where("id = ?", id).UpdateColumn(strings.Join(mask, ","), e)
 			if err != nil {
 				return db.Error
@@ -297,7 +327,7 @@ func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 	res := ddd_repository.NewSetResult[T]()
 	gp.Try(func() error {
 		data[TenantId] = tenantId
-		d.entityBuilder.SetUpdatedInfo(ctx, data)
+		d.eb.SetUpdatedInfo(ctx, data)
 		db := d.updateTable(ctx, opts...).Model(d.entity).Where("id", id).Updates(data)
 		res.Error = db.Error
 		res.RowsAffected = db.RowsAffected
@@ -315,7 +345,7 @@ func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 		var count int64
 		table := d.updateTable(ctx, opts...)
 		res.Error = d.asFilter(filter, func(data map[string]any) error {
-			d.entityBuilder.SetUpdatedInfo(ctx, data)
+			d.eb.SetUpdatedInfo(ctx, data)
 			db = table.Where(filter).Updates(data)
 			return res.Error
 		}, func(sql string) error {
@@ -339,7 +369,7 @@ func (d *Dao[T]) Delete(ctx context.Context, entity T, opts ...ddd_repository.Op
 	gp.Try(func() error {
 		tenantId := d.GetTenantId(entity)
 		id := d.GetId(entity)
-		d.entityBuilder.SetDeletedInfo(ctx, entity)
+		d.eb.SetDeletedInfo(ctx, entity)
 		db := d.table(ctx).Where("tenant_id=? and id=?", tenantId, id).Delete(entity)
 		res.SetRowsAffected(db.RowsAffected)
 		return res.Error
@@ -409,7 +439,7 @@ func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, o
 }
 
 func (d *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (T, error) {
-	d.entityBuilder.SetUpdatedInfo(ctx, data)
+	d.eb.SetUpdatedInfo(ctx, data)
 	d.UpdateMap(ctx, tenantId, id, data, opts...)
 	res := d.FindById(ctx, tenantId, id, opts...)
 	return res.Data, res.Error
@@ -487,8 +517,6 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 			err = errors.GetRecoverError(err, recover())
 		}()
 
-		list := d.entityBuilder.NewEntityList()
-
 		qryDb := d.table(ctx, opts...)
 
 		if len(query.GetFields()) > 0 {
@@ -521,8 +549,11 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 		countDb := d.table(ctx)
 		sumDb := d.table(ctx)
 		isGroup := false
+		colLen := len(query.GetGroupCols())
+		keyLen := len(query.GetGroupKeys())
 		// 是分组模式
-		if len(query.GetGroupCols()) > 0 {
+		if colLen > 0 {
+			isGroup = true
 			// 分组where条件
 			for i, value := range query.GetGroupKeys() {
 				field := query.GetGroupCols()[i]
@@ -530,28 +561,26 @@ func (d *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 				countDb = countDb.Where(field.Field+"=?", value)
 				sumDb = sumDb.Where(field.Field+"=?", value)
 			}
-			colLen := len(query.GetGroupCols())
-			keyLen := len(query.GetGroupKeys())
-
 			// 以groupKey位置的上个字段为分组字段
 			if colLen-keyLen > 0 {
 				field := query.GetGroupCols()[keyLen]
 				qryDb = qryDb.Group(field.Field).Select(field.Field)
 				countDb.Group(field.Field).Select(field.Field)
-				isGroup = true
+
 			}
-			if isGroup {
+			if isGroup && colLen-keyLen > 0 {
 				d.setDbValueCols(qryDb, query.GetValueCols())
 			}
 
 		}
 
+		list := d.eb.NewEntityList()
 		if err = qryDb.Find(&list).Error; err != nil {
 			return nil, false, err
 		}
 
 		// 是分组时，需要添加虚拟id
-		if isGroup {
+		if isGroup && colLen-keyLen > 0 {
 			d.setListIds(list)
 		}
 
@@ -590,10 +619,11 @@ func (d *Dao[T]) setListIds(list []T) {
 		if err != nil {
 			panic(err)
 		}
-		d.entityBuilder.SetId(item, uid.String())
+		d.eb.SetId(item, uid.String())
 	}
 }
 
+// setDbValueCols 设置sum,count,avg,max,min,
 func (d *Dao[T]) setDbValueCols(db *gorm.DB, valCols []*ddd_repository.ValueCol) {
 	if len(valCols) > 0 {
 		fields := db.Statement.Selects
@@ -754,18 +784,7 @@ func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gor
 	if tx == nil {
 		tx = d.db
 	}
-	items := plugins.Items()
-	hasPlugin := false
-	for _, item := range items {
-		if plugin, ok := item.(GetTablePlugin); ok {
-			hasPlugin = true
-			tx = plugin.GetTable(ctx, d, tx, d.tableName, opts...)
-		}
-	}
-	if hasPlugin {
-		return tx.Unscoped()
-	}
-	return tx.Table(d.tableName).Unscoped()
+	return tx.Table(d.tableName).MapSchema(d.gormSchema).Unscoped()
 }
 
 func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, sqlFunc func(sql string) error) error {
