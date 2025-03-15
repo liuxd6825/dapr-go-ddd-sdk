@@ -145,6 +145,37 @@ func New(t reflect.Type) (res reflect.Value, resErr error) {
 	return reflect.New(t), nil
 }
 
+// NewInstance 泛型函数：根据类型参数 T 创建实例
+func NewInstance[T any]() T {
+	var t T
+	// 获取类型 T 的反射类型
+	typ := reflect.TypeOf(t)
+
+	// 如果 T 是指针类型，创建指针指向的实例
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()         // 获取指针指向的类型
+		v := reflect.New(typ)    // 创建新实例
+		return v.Interface().(T) // 转换为 T 类型
+	}
+
+	// 如果 T 是非指针类型，直接创建实例
+	return reflect.New(typ).Elem().Interface().(T)
+}
+
+// IsMapStringKey 泛型函数：检查 T 是否是 map[string]... 类型
+func IsMapStringKey[T any](t T) bool {
+	// 获取类型 T 的反射类型
+	typ := reflect.TypeOf(t)
+
+	// 检查是否是 map 类型
+	if typ.Kind() != reflect.Map {
+		return false
+	}
+
+	// 检查 key 的类型是否是 string
+	return typ.Key().Kind() == reflect.String
+}
+
 // NewObject 支持map和struct的创建
 func NewObject[T any]() (res T, resErr error) {
 	defer func() {
@@ -267,19 +298,23 @@ func SetFieldString(data any, fieldName string, val string) {
 	}
 }
 
-func SetField(data any, fieldName string, val any) {
+func SetField(data any, fieldName string, val any) bool {
 	if m, ok := data.(map[string]interface{}); ok {
 		m[fieldName] = val
-		return
+		return true
 	}
 
 	refVal := reflect.ValueOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
-	if !fieldValue.CanSet() {
-		panic("SetField cannot set")
+	if fieldValue.IsValid() {
+		if !fieldValue.CanSet() {
+			return false
+		}
+		fieldValue.Set(reflect.ValueOf(val))
+		return true
 	}
-	fieldValue.Set(reflect.ValueOf(val))
+	return true
 }
 
 func GetField(data any, fieldName string) any {

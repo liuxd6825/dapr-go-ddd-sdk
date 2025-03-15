@@ -104,7 +104,7 @@ func newDao[T any](cfg *NewConfig) *Dao[T] {
 		panic(err)
 	}
 
-	eb := ddd.NewAnyEntityBuilder[T]()
+	eb := ddd.NewAnyEntityBuilder[T](cfg.DBSchema)
 	entity := eb.NewEntity()
 
 	gormSch := cfg.GormSchema
@@ -207,7 +207,7 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 			d.eb.SetCreatedInfo(ctx, entity)
 			d.SetTenantId(entity, tenantId)
 		}
-		db := d.table(ctx).Model(d.NewEntity()).CreateInBatches(entities, len(entities))
+		db := d.table(ctx).CreateInBatches(entities, len(entities))
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
 	}).Catch(func(err error) {

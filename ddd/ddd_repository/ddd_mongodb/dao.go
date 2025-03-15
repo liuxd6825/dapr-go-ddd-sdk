@@ -41,18 +41,18 @@ type Dao[T any] struct {
 	schema     *dbschema.Schema
 }
 
-func NewDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) ddd_repository.Dao[T] {
-	return NewMongoDao(initFun, opts...)
+func NewDao[T any](dbSch *dbschema.Schema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) ddd_repository.Dao[T] {
+	return NewMongoDao(dbSch, initFun, opts...)
 }
 
-func NewMongoDao[T any](initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
+func NewMongoDao[T any](dbSch *dbschema.Schema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
 	r := &Dao[T]{
 		metadata: make(map[string]any),
 	}
 	r.initFun = initFun
 	r.options = NewOptions[T](opts...)
 	if r.options.entityBuilder == nil {
-		r.options.entityBuilder = ddd.NewAnyEntityBuilder[T]()
+		r.options.entityBuilder = ddd.NewAnyEntityBuilder[T](dbSch)
 		r.decoder = NewStructDecoder[T]()
 	}
 	r.eb = r.options.entityBuilder

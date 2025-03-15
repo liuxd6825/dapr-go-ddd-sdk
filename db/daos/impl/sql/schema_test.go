@@ -38,7 +38,7 @@ func Test_Schema(t *testing.T) {
 
 	var dbSchema *gormschema.Schema
 	t.Run("NewDBSchema", func(t *testing.T) {
-		dschema := dbschema.NewSchemaWithJsonschema(dest.GetJsonSchema())
+		dschema := dbschema.NewSchemaWithJsonSchema(dest.GetJsonSchema())
 		dschema.Name = "table"
 		v, err := NewGormSchema(dschema)
 		if err != nil {

@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func NewSchemaWithJsonschema(sch *jsonschema.Schema) *Schema {
+func NewSchemaWithJsonSchema(sch *jsonschema.Schema) *Schema {
 	s := NewSchema()
 	s.TableName = sch.Name
 	s.Name = sch.Name

@@ -14,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -22,12 +23,32 @@ import (
 )
 
 type Human struct {
-	Id         string    `gorm:"primaryKey"`
-	Name       string    `gorm:"name"`
-	Age        int       `gorm:"age"`
-	Analyse    string    `gorm:"analyse"`
-	Birthday   time.Time `gorm:"birthday"`
-	PeopleType []string  `gorm:"people_type;type:text[]"`
+	Id         string
+	TenantId   string
+	Name       string
+	Age        int
+	Analyse    string
+	Birthday   *time.Time
+	PeopleType string
+	Tags       string
+}
+
+func Test_DaoStruct(t *testing.T) {
+	defer func() {
+		if err := recover(); err != nil {
+			t.Error(err)
+		}
+	}()
+	ctx, err := restapp.NewTestContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	dao := newDaoByStruct[*Human](ctx, "human_struct")
+	humanName := randomutils.NameCN()
+	newCount := int64(10)
+	list := newStructList(newCount, humanName)
+	dao.CreateMany(ctx, list)
 }
 
 func Test_Dao(t *testing.T) {
@@ -36,14 +57,14 @@ func Test_Dao(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	dao := newDao(ctx, t, "human")
+	dao := newDao[map[string]any](ctx, "human")
 	humanName := randomutils.NameCN()
 	newCount := int64(10)
-	list := newHumanList(newCount, humanName)
+	list := newMapList(newCount, humanName)
 
 	t.Run("dao.DeleteByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			list := newHumanList(newCount, "0000")
+			list := newMapList(newCount, "0000")
 			res := dao.CreateMany(ctx, list)
 			assert.Equal(t, newCount, res.RowsAffected)
 
@@ -265,7 +286,7 @@ func TestDao_Sum(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	dao := newDao(ctx, t, "human_sum")
+	dao := newDao[map[string]any](ctx, "human_sum")
 	if dao == nil {
 		return
 	}
@@ -337,11 +358,11 @@ func TestDao_Find(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	dao := newDao(ctx, t, "human_sum")
+	dao := newDao[map[string]any](ctx, "human_sum")
 
 	dao.DeleteAll(ctx)
 	newCount := int64(10)
-	newList := newHumanList(newCount, "000")
+	newList := newMapList(newCount, "000")
 	res := dao.CreateMany(ctx, newList)
 	assert.Equal(t, newCount, res.RowsAffected)
 
@@ -352,7 +373,24 @@ func TestDao_Find(t *testing.T) {
 
 }
 
-func newHumanList(count int64, humanName string) []map[string]any {
+func newStructList(count int64, humanName string) []*Human {
+	list := make([]*Human, count)
+	for i := int64(0); i < count; i++ {
+		entity := &Human{
+			Id:         randomutils.NewId(),
+			Name:       humanName,
+			Analyse:    "",
+			Age:        randomutils.IntMax(100),
+			Birthday:   randomutils.PDate(),
+			PeopleType: randomutils.String(10),
+			Tags:       randomutils.String(10),
+		}
+		list[i] = entity
+	}
+	return list
+}
+
+func newMapList(count int64, humanName string) []map[string]any {
 	list := make([]map[string]any, count)
 	for i := int64(0); i < count; i++ {
 		entity := map[string]any{
@@ -369,7 +407,28 @@ func newHumanList(count int64, humanName string) []map[string]any {
 	return list
 }
 
-func newDao(ctx context.Context, t *testing.T, tableName string) idao.Dao[map[string]any] {
+func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
+	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic(fmt.Sprintf("数据库连接失败: %v", err))
+	}
+	data := reflectutils.NewInstance[T]()
+	dbSch := dbschema.NewSchemaWithStruct(tableName, data, tableName)
+	daoCfg := &idao.DaoConfig{
+		Database:   database,
+		DbKey:      "sql",
+		Schema:     dbSch,
+		Env:        tests.NewEnvConfig(),
+		IsPubEvent: false,
+	}
+
+	dao := NewDao[T](daoCfg)
+	dao.Table().Drop(ctx)
+	dao.Table().AutoMigrate(ctx)
+	return dao
+}
+
+func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic(fmt.Sprintf("数据库连接失败: %v", err))
@@ -381,7 +440,7 @@ func newDao(ctx context.Context, t *testing.T, tableName string) idao.Dao[map[st
 		panic(err)
 	}
 
-	dbSch := dbschema.NewSchemaWithJsonschema(humanSchema.GetJsonSchema())
+	dbSch := dbschema.NewSchemaWithJsonSchema(humanSchema.GetJsonSchema())
 	dbSch.TableName = tableName
 
 	daoCfg := &idao.DaoConfig{
@@ -392,11 +451,7 @@ func newDao(ctx context.Context, t *testing.T, tableName string) idao.Dao[map[st
 		IsPubEvent: false,
 	}
 
-	dao := NewDao[map[string]any](daoCfg)
-
-	if err != nil {
-		panic(err)
-	}
+	dao := NewDao[T](daoCfg)
 	dao.Table().Drop(ctx)
 	dao.Table().AutoMigrate(ctx)
 	return dao

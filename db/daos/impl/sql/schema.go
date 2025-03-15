@@ -16,7 +16,7 @@ func NewGormSchema(sch *dbschema.Schema) (*gormschema.Schema, error) {
 	}
 
 	gormSch := newGormSchema(sch)
-	primaryField := addFields(sch, gormSch)
+	primaryField := addGormFields(sch, gormSch)
 
 	if primaryField == nil {
 		idField := gormSch.FieldsByDBName["id"]
@@ -27,7 +27,7 @@ func NewGormSchema(sch *dbschema.Schema) (*gormschema.Schema, error) {
 		idField.Updatable = false
 	}
 
-	tenantIdField := gormSch.FieldsByName["tenantId"]
+	tenantIdField := getTenantIdField(gormSch)
 	if tenantIdField == nil {
 		tenantIdField = addDbField(gormSch, "tenantId", gormschema.String, 20)
 	} else {
@@ -39,11 +39,22 @@ func NewGormSchema(sch *dbschema.Schema) (*gormschema.Schema, error) {
 	return gormSch, nil
 }
 
-func addFields(sch *dbschema.Schema, dbSch *gormschema.Schema) (primaryField *gormschema.Field) {
-	for _, f := range sch.Fields {
+func getTenantIdField(gormSch *gormschema.Schema) *gormschema.Field {
+	tenantIdField := gormSch.FieldsByDBName["tenant_id"]
+	if tenantIdField == nil {
+		tenantIdField = gormSch.FieldsByName["tenantId"]
+	}
+	if tenantIdField == nil {
+		tenantIdField = gormSch.FieldsByName["TenantId"]
+	}
+	return tenantIdField
+}
+
+func addGormFields(dbSch *dbschema.Schema, gormSch *gormschema.Schema) (primaryField *gormschema.Field) {
+	for _, f := range dbSch.Fields {
 		dataType := getDataType(f)
 		size := 0
-		field := addDbField(dbSch, f.Name, dataType, size)
+		field := addDbField(gormSch, f.Name, dataType, size)
 		if field.PrimaryKey {
 			primaryField = field
 		}
@@ -79,6 +90,7 @@ func newGormSchema(dest *dbschema.Schema) *gormschema.Schema {
 	//addDbField(s, "tenantId", dbschema.String)
 	return s
 }
+
 func getDataType(field *dbschema.Field) gormschema.DataType {
 	if field == nil {
 		panic("getDataType: property is nil")
@@ -108,6 +120,7 @@ func getDataType(field *dbschema.Field) gormschema.DataType {
 	}
 	return gormschema.String
 }
+
 func addDbField(s *gormschema.Schema, name string, dataType gormschema.DataType, size int) *gormschema.Field {
 	dbName := stringutils.AsFieldName(name)
 	fieldType := getFieldType(dataType)
@@ -130,20 +143,21 @@ func addDbField(s *gormschema.Schema, name string, dataType gormschema.DataType,
 	return field
 }
 
-func setDbField(field *gormschema.Field, propField *dbschema.Field) {
-	if field == nil || propField == nil {
+func setDbField(gField *gormschema.Field, dbField *dbschema.Field) {
+	if gField == nil || dbField == nil {
 		return
 	}
-	/*
-		field.PrimaryKey = propField.PrimaryKey
-		field.NotNull = propField.NotNull
-		field.DefaultValue = propField.DefaultValue
-		if propField.Size != nil {
-			field.Size = *propField.Size
-		}
-		field.Unique = propField.Unique
 
-	*/
+	gField.PrimaryKey = dbField.PrimaryKey
+	gField.NotNull = dbField.NotNull
+	gField.DefaultValue = dbField.DefaultValue
+	gField.Updatable = dbField.Updatable
+	gField.Tag = dbField.Tag
+
+	gField.DataType = dbField.DataType
+	gField.Size = dbField.Size
+	gField.Unique = dbField.Unique
+
 }
 
 func getFieldSize(fieldType gormschema.DataType, size int) int {

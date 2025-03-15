@@ -8,8 +8,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"gorm.io/gorm"
 	gormschema "gorm.io/gorm/schema"
+	"sync"
 	"time"
 )
 
@@ -52,11 +54,23 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	if len(tableNames) > 0 {
 		tableName = tableNames[0]
 	}
-
-	gormSch, err := NewGormSchema(cfg.Schema)
-	if err != nil {
-		panic(err)
+	var t T
+	var gormSch *gormschema.Schema
+	if reflectutils.IsMapStringKey[T](t) {
+		sch, err := NewGormSchema(cfg.Schema)
+		if err != nil {
+			panic(err)
+		}
+		gormSch = sch
+	} else {
+		ins := reflectutils.NewInstance[T]()
+		sch, err := gormschema.Parse(ins, &sync.Map{}, gormschema.NamingStrategy{})
+		if err != nil {
+			panic(err)
+		}
+		gormSch = sch
 	}
+
 	newDaoCfg := &ddd_sql.NewConfig{
 		DbKey:      cfg.DbKey,
 		Db:         db,

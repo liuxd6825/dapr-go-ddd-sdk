@@ -1,8 +1,10 @@
 package dbschema
 
+import gormschema "gorm.io/gorm/schema"
+
 type (
 	// DataType GORM data type
-	DataType string
+	DataType = gormschema.DataType
 	// TimeType GORM time type
 	TimeType int64
 )

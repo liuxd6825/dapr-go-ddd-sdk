@@ -3,6 +3,7 @@ package ddd
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"time"
 )
@@ -36,6 +37,7 @@ type EntityBuilderConfig struct {
 	IsMap            bool   // 是map对象
 	IsCancelModified bool   // 取消修改字段的自动化处理
 	Fields           Fields // 系统字段的名称
+	DbSchema         *dbschema.Schema
 }
 
 func NewEntityBuilderConfig() *EntityBuilderConfig {
@@ -47,7 +49,8 @@ func NewEntityBuilderConfig() *EntityBuilderConfig {
 }
 
 type AnyEntityBuilder[T any] struct {
-	cfg *EntityBuilderConfig
+	cfg    *EntityBuilderConfig
+	schema *dbschema.Schema
 }
 
 func NewAnyEntityBuilderWidthConfig[T any](cfg *EntityBuilderConfig) EntityBuilder[T] {
@@ -57,11 +60,12 @@ func NewAnyEntityBuilderWidthConfig[T any](cfg *EntityBuilderConfig) EntityBuild
 	}
 }
 
-func NewAnyEntityBuilder[T any]() EntityBuilder[T] {
+func NewAnyEntityBuilder[T any](schema *dbschema.Schema) EntityBuilder[T] {
 	cfg := NewEntityBuilderConfig()
 	cfg.IsMap = reflectutils.IsMap[T]()
 	return &AnyEntityBuilder[T]{
-		cfg: cfg,
+		cfg:    cfg,
+		schema: schema,
 	}
 }
 
@@ -90,7 +94,9 @@ func (b *AnyEntityBuilder[T]) GetTenantId(entity T) string {
 }
 
 func (b *AnyEntityBuilder[T]) SetTenantId(entity T, id string) {
-	reflectutils.SetFieldString(entity, b.cfg.Fields.TenantId, id)
+	if field := b.schema.LookedField(b.cfg.Fields.TenantId); field != nil {
+		reflectutils.SetFieldString(entity, b.cfg.Fields.TenantId, id)
+	}
 }
 
 func (b *AnyEntityBuilder[T]) GetId(entity T) string {
@@ -187,7 +193,9 @@ func (b *AnyEntityBuilder[T]) setFieldString(entity any, fieldName, val string) 
 }
 
 func (b *AnyEntityBuilder[T]) setField(entity any, fieldName string, val any) {
-	reflectutils.SetField(entity, fieldName, val)
+	if field := b.schema.LookedField(fieldName); field != nil {
+		reflectutils.SetField(entity, fieldName, val)
+	}
 }
 
 func (b *AnyEntityBuilder[T]) getFieldString(entity any, fieldName string) string {

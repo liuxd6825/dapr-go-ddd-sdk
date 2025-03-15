@@ -16,9 +16,11 @@ type Schema struct {
 
 func NewSchema() *Schema {
 	return &Schema{
-		Name:      "",
-		TableName: "",
-		Fields:    []*Field{},
+		Name:        "",
+		TableName:   "",
+		Fields:      []*Field{},
+		fieldName:   map[string]*Field{},
+		fieldDbName: map[string]*Field{},
 	}
 }
 
@@ -34,6 +36,10 @@ func (sch *Schema) SetTableName(name string) *Schema {
 
 func (sch *Schema) AddField(field ...*Field) *Schema {
 	sch.Fields = append(sch.Fields, field...)
+	for _, f := range sch.Fields {
+		sch.fieldName[f.Name] = f
+		sch.fieldDbName[f.DBName] = f
+	}
 	return sch
 }
 
