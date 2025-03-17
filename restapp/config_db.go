@@ -25,7 +25,6 @@ const (
 type DBItem interface {
 	GetDBType() DbType
 	GetDBKey() string
-
 	GetRedis() *redis.Client
 	GetNeo4j() neo4j.DriverWithContext
 	GetMongo() *ddd_mongodb.MongoDB
@@ -38,7 +37,14 @@ type DBItem interface {
 
 	GetDB() any
 	CloseDB(ctx context.Context) error
+
+	GetConfig() any
 }
+
+type EventPublish interface {
+	GetEventPublish() bool
+}
+
 type dbItem struct {
 	dbKey  string
 	dbType DbType
@@ -52,6 +58,7 @@ type dbItem struct {
 	sqlserver *gorm.DB
 	sqlite    *gorm.DB
 	oracle    *gorm.DB
+	config    any
 }
 
 var _dbs map[string]DBItem
@@ -162,6 +169,10 @@ func (d *dbItem) gormClose(gormDb *gorm.DB) error {
 	return nil
 }
 
+func (d *dbItem) GetConfig() any {
+	return d.config
+}
+
 func addDb(dbItem DBItem) {
 	dbKey := dbItem.GetDBKey()
 	_, ok := _dbs[dbKey]
@@ -180,45 +191,5 @@ func CloseAllDb(ctx context.Context) error {
 
 func GetDb(dbKey string) DBItem {
 	item := _dbs[dbKey]
-	return item
-}
-
-func addOracle(dbKey string, db *gorm.DB) DBItem {
-	item := &dbItem{
-		dbKey:  dbKey,
-		dbType: DbType_Oracle,
-		sqlite: db,
-	}
-	addDb(item)
-	return item
-}
-
-func addSqlite(dbKey string, db *gorm.DB) DBItem {
-	item := &dbItem{
-		dbKey:  dbKey,
-		dbType: DbType_Sqlite,
-		sqlite: db,
-	}
-	addDb(item)
-	return item
-}
-
-func addMsSql(dbKey string, db *gorm.DB) DBItem {
-	item := &dbItem{
-		dbKey:  dbKey,
-		dbType: DbType_MsSQL,
-		sqlite: db,
-	}
-	addDb(item)
-	return item
-}
-
-func addPostgres(dbKey string, db *gorm.DB) DBItem {
-	item := &dbItem{
-		dbKey:    dbKey,
-		dbType:   DbType_Postgres,
-		postgres: db,
-	}
-	addDb(item)
 	return item
 }

@@ -36,6 +36,8 @@ type MongoConfig struct {
 	MaxConnIdleTime        string `yaml:"maxConnIdleTime" json:"maxConnIdleTime"`               // 时间长度
 	ServerSelectionTimeout string `yaml:"serverSelectionTimeout" json:"serverSelectionTimeout"` // 时间长度
 	SocketTimeout          string `yaml:"socketTimeout" json:"socketTimeout"`                   // 时间长度
+
+	EventPublish bool `yaml:"eventPublish" json:"eventPublish"` // 是否发送领域事件
 }
 
 var _mongoDbs map[string]*ddd_mongodb.MongoDB
@@ -89,7 +91,7 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 		c.DbKey = dbKey
 		_mongoDbs[dbKey] = mongodb
 		_mongoDefault = mongodb
-		addMongoDb(dbKey, mongodb)
+		addMongoDb(dbKey, mongodb, config)
 	}
 	if len(_mongoDbs) > 1 {
 		_mongoDefault = nil
@@ -246,11 +248,12 @@ func defaultTimeout(val string, def string) time.Duration {
 	return v
 }
 
-func addMongoDb(dbKey string, mongoDb *ddd_mongodb.MongoDB) DBItem {
+func addMongoDb(dbKey string, mongoDb *ddd_mongodb.MongoDB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
 		dbType: DbType_MongoDB,
 		mongo:  mongoDb,
+		config: config,
 	}
 	addDb(item)
 	return item

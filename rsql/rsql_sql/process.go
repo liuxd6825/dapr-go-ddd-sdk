@@ -196,9 +196,8 @@ func (p *Process) getValue(value rsql.Value) any {
 		if date, er := time.Parse(rsql.DateLayout, sv.Value); er != nil {
 			err = er
 		} else {
-			v = fmt.Sprintf("'%v-%v-%v'", date.Year(), date.Month(), date.Day())
+			v = fmt.Sprintf("'%d-%02d-%02d'", date.Year(), date.Month(), date.Day())
 		}
-
 	case *rsql.DoubleValue:
 		sv, _ := value.(*rsql.DoubleValue)
 		v = sv.Value
@@ -207,7 +206,7 @@ func (p *Process) getValue(value rsql.Value) any {
 		if date, er := time.Parse(rsql.DateTimeLayout, sv.Value); er != nil {
 			err = er
 		} else {
-			v = fmt.Sprintf("'%v-%v-%v %v:%v:%v'", date.Year(), date.Month(), date.Day(), date.Hour(), date.Minute(), date.Second())
+			v = fmt.Sprintf("'%d-%02d-%02d %02d:%02d:%02d'", date.Year(), date.Month(), date.Day(), date.Hour(), date.Minute(), date.Second())
 		}
 	case *rsql.BooleanValue:
 		sv, _ := value.(*rsql.BooleanValue)

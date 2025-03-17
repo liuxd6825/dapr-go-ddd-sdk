@@ -12,17 +12,18 @@ import (
 	"strings"
 )
 
-// DBConfig 结构体用于存储 MySQL 连接信息
+// MySqlConfig 结构体用于存储 MySQL 连接信息
 type MySqlConfig struct {
-	Username  string          `yaml:"user"`      // MySQL 用户名
-	Password  string          `yaml:"pwd"`       // MySQL 密码
-	Host      string          `yaml:"host"`      // MySQL 主机地址
-	Port      string          `yaml:"port"`      // MySQL 端口
-	DbName    string          `yaml:"dbname"`    // 数据库名称
-	Charset   string          `yaml:"charset"`   // 字符集
-	ParseTime *bool           `yaml:"parseTime"` // 是否解析时间
-	Loc       string          `yaml:"loc"`       // 时区
-	LogLevel  logger.LogLevel `yaml:"loglevel"`
+	Username     string          `yaml:"user"`      // MySQL 用户名
+	Password     string          `yaml:"pwd"`       // MySQL 密码
+	Host         string          `yaml:"host"`      // MySQL 主机地址
+	Port         string          `yaml:"port"`      // MySQL 端口
+	DbName       string          `yaml:"dbname"`    // 数据库名称
+	Charset      string          `yaml:"charset"`   // 字符集
+	ParseTime    *bool           `yaml:"parseTime"` // 是否解析时间
+	Loc          string          `yaml:"loc"`       // 时区
+	LogLevel     logger.LogLevel `yaml:"loglevel"`
+	EventPublish bool            `yaml:"eventPublish" json:"eventPublish"` // 是否发送领域事件
 }
 
 // DSN 构造 MySQL 连接字符串
@@ -79,16 +80,17 @@ func initMySql(configs map[string]*MySqlConfig) error {
 			os.Exit(1)
 		}
 
-		addMysql(key, db)
+		addMysql(key, db, cfg)
 	}
 	return nil
 }
 
-func addMysql(dbKey string, mysqlDb *gorm.DB) DBItem {
+func addMysql(dbKey string, mysqlDb *gorm.DB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
 		dbType: DbType_MySQL,
 		mysql:  mysqlDb,
+		config: config,
 	}
 	addDb(item)
 	return item

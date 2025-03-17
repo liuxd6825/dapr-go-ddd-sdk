@@ -12,12 +12,13 @@ import (
 )
 
 type Neo4jConfig struct {
-	DbKey    string
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	Database string `yaml:"dbname"`
-	UserName string `yaml:"user"`
-	Password string `yaml:"pwd"`
+	DbKey        string
+	Host         string `yaml:"host"`
+	Port         string `yaml:"port"`
+	Database     string `yaml:"dbname"`
+	UserName     string `yaml:"user"`
+	Password     string `yaml:"pwd"`
+	EventPublish bool   `yaml:"eventPublish" json:"eventPublish"` // 是否发送领域事件
 }
 
 var _neo4js = make(map[string]neo4j.DriverWithContext)
@@ -49,7 +50,7 @@ func initNeo4j(configs map[string]*Neo4jConfig) error {
 		config.DbKey = key
 		_neo4js[key] = driver
 		_neo4jDefault = driver
-		addNeo4j(key, driver)
+		addNeo4j(key, driver, config.EventPublish)
 	}
 	return nil
 }
@@ -79,11 +80,12 @@ func CloseAllNeo4j(ctx context.Context) error {
 	return nil
 }
 
-func addNeo4j(dbKey string, neo4jDb neo4j.DriverWithContext) DBItem {
+func addNeo4j(dbKey string, neo4jDb neo4j.DriverWithContext, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
 		dbType: DbType_Neo4j,
 		neo4j:  neo4jDb,
+		config: config,
 	}
 	addDb(item)
 	return item

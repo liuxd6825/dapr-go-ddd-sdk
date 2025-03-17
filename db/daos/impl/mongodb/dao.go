@@ -79,10 +79,10 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	if opt.GetCollCallback != nil {
 		getCollCallback = opt.GetCollCallback
 	}
-	eb := ddd.NewAnyEntityBuilder[T]()
+	eb := ddd.NewAnyEntityBuilder[T](cfg.Schema)
 	daoOpts := ddd_mongodb.NewOptions[T]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(eb)
 
-	dao := ddd_mongodb.NewDao[T](getCollCallback, daoOpts)
+	dao := ddd_mongodb.NewDao[T](cfg.Schema, getCollCallback, daoOpts)
 	res := &Dao[T]{
 		dao:     dao,
 		DaoBase: impl.NewDaoBase[T](dao, cfg),

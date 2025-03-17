@@ -57,13 +57,13 @@ func (d *Dao[T]) GetSchema() *dbschema.Schema {
 }
 
 func NewNodeDao[T any](driver neo4j.DriverWithContext, dbSch *dbschema.Schema, labels []string, opts ...*Options[T]) ddd_repository.Dao[T] {
-	eb := NewNodeEntityBuilder[T]()
+	eb := NewNodeEntityBuilder[T](dbSch)
 	cypher := NewNodeCypher[T](eb, dbSch, labels...)
 	return NewDao(driver, labels, cypher, eb, dbSch, opts...)
 }
 
 func NewRelationDao[T any](driver neo4j.DriverWithContext, dbSch *dbschema.Schema, labels []string, opts ...*Options[T]) ddd_repository.Dao[T] {
-	eb := NewRelationEntityBuilder[T]()
+	eb := NewRelationEntityBuilder[T](dbSch)
 	cypher := NewRelationCypher[T](eb, dbSch, labels...)
 	return NewDao(driver, labels, cypher, eb, dbSch, opts...)
 }

@@ -63,7 +63,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) idao.Dao[map[string]any] {
 		IsPubEvent: opts.IsPubEvent,
 		AggField:   opts.AggField,
 		Env:        p.server.GetEnvCfg(),
-		Schema:     dbschema.NewSchemaWithJsonschema(opts.Schema),
+		Schema:     dbschema.NewSchemaWithJsonSchema(opts.Schema),
 	}
 
 	var dao idao.Dao[map[string]any]
@@ -110,7 +110,7 @@ func (p *Pkg) NewTable(opts *NewTableOptions) idao.Table {
 		dbKey = "default"
 	}
 
-	dbSch := dbschema.NewSchemaWithJsonschema(opts.Schema)
+	dbSch := dbschema.NewSchemaWithJsonSchema(opts.Schema)
 
 	var table idao.Table
 	item := p.getDbItem(opts.DbKey)

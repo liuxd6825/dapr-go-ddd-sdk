@@ -13,10 +13,10 @@ import (
 )
 
 type NewConfig struct {
-	DbKey      string           `json:"dbKey"`
-	IsPubEvent bool             `json:"isPubEvent"`
-	AggField   string           `json:"aggField"`
-	DbSchema   *dbschema.Schema `json:"dbSchema"`
+	DbKey        string           `json:"dbKey"`
+	EventPublish *bool            `json:"eventPublish"`
+	AggField     string           `json:"aggField"`
+	DbSchema     *dbschema.Schema `json:"dbSchema"`
 }
 
 var daoMap = types.NewCMap[any]()
@@ -36,17 +36,25 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	if v, ok := daoMap.Get(daoKey); v != nil && ok {
 		return v.(idao.Dao[T])
 	}
+	
+	item := getDbItem(dbKey)
+
+	eventPublish := false
+	if newCfg.EventPublish != nil {
+		eventPublish = *newCfg.EventPublish
+	} else if ep, ok := item.GetConfig().(restapp.EventPublish); ok {
+		eventPublish = ep.GetEventPublish()
+	}
 
 	daoCfg := &idao.DaoConfig{
 		DbKey:      newCfg.DbKey,
-		IsPubEvent: newCfg.IsPubEvent,
+		IsPubEvent: eventPublish,
 		AggField:   newCfg.AggField,
 		Env:        restapp.GetEnvConfig(),
 		Schema:     newCfg.DbSchema,
 	}
 
 	var dao idao.Dao[T]
-	item := getDbItem(dbKey)
 
 	switch item.GetDBType() {
 	case restapp.DbType_MongoDB:

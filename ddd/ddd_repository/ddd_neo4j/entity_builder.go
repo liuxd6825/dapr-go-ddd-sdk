@@ -1,6 +1,7 @@
 package ddd_neo4j
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 )
@@ -24,15 +25,15 @@ type relationEntityBuilder[T any] struct {
 	ddd.EntityBuilder[T]
 }
 
-func NewRelationEntityBuilder[T any]() RelationEntityBuilder[T] {
-	base := ddd.NewAnyEntityBuilder[T]()
+func NewRelationEntityBuilder[T any](sch *dbschema.Schema) RelationEntityBuilder[T] {
+	base := ddd.NewAnyEntityBuilder[T](sch)
 	return &relationEntityBuilder[T]{
 		EntityBuilder: base,
 	}
 }
 
-func NewNodeEntityBuilder[T any]() NodeEntityBuilder[T] {
-	base := ddd.NewAnyEntityBuilder[T]()
+func NewNodeEntityBuilder[T any](sch *dbschema.Schema) NodeEntityBuilder[T] {
+	base := ddd.NewAnyEntityBuilder[T](sch)
 	return &nodeEntityBuilder[T]{
 		EntityBuilder: base,
 	}
