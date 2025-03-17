@@ -62,6 +62,8 @@ require (
 )
 
 require (
+	github.com/casbin/gorm-adapter/v3 v3.32.0
+	github.com/casbin/mongodb-adapter/v3 v3.7.0
 	github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/CloudyKit/fastprinter v0.0.0-20200109182630-33d98a066a53 // indirect

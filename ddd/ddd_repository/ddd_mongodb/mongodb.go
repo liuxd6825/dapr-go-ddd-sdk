@@ -108,6 +108,10 @@ func NewMongoDB(config *Config, optionsFunc InitOptionsFunc) (*MongoDB, error) {
 	return mongodb, nil
 }
 
+func (m *MongoDB) GetDatabase() *mongo.Database {
+	return m.database
+}
+
 func NenMongoDBWithClient(dbName string, client *mongo.Client) *MongoDB {
 	config := Config{}
 	mongodb := &MongoDB{

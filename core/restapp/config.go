@@ -21,18 +21,19 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	Name      string                     `yaml:"-" json:"name"`
-	App       AppConfig                  `yaml:"app" json:"app"`
-	Log       LogConfig                  `yaml:"log" json:"log"`
-	Dapr      DaprConfig                 `yaml:"dapr" json:"dapr"`
-	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
-	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
-	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
-	Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
-	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
-	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
-	Fs        []map[string]any           `yaml:"fs" json:"fs"`
-	fsManager *fsm.Manager               `yaml:"-" json:"-"`
+	Name       string                     `yaml:"-" json:"name"`
+	App        AppConfig                  `yaml:"app" json:"app"`
+	Log        LogConfig                  `yaml:"log" json:"log"`
+	Dapr       DaprConfig                 `yaml:"dapr" json:"dapr"`
+	Resources  map[string]*ResourceConfig `yaml:"resources" json:"resources"`
+	Mongo      map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
+	Neo4j      map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
+	Mysql      map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
+	Minio      map[string]*MinioConfig    `yaml:"minio" json:"minio"`
+	Redis      map[string]*RedisConfig    `yaml:"redis" json:"redis"`
+	Fs         []map[string]any           `yaml:"fs" json:"fs"`
+	AuthConfig *AuthConfig                `yaml:"auth" json:"auth"`
+	fsManager  *fsm.Manager               `yaml:"-" json:"-"`
 }
 
 // FsRootPath fs文件系统取根路径

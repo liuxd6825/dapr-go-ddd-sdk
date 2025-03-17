@@ -1,0 +1,64 @@
+package auth
+
+import (
+	"github.com/casbin/casbin/v2"
+	_ "github.com/casbin/casbin/v2"
+	gormadapter "github.com/casbin/gorm-adapter/v3"
+	mongodbadapter "github.com/casbin/mongodb-adapter/v3"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"gorm.io/gorm"
+)
+
+var _enforcer = NewEnforcerEmpty()
+
+/*  Init modelConfFile : "rbac_model.conf" */
+func Init(dbKey string, modelConfFile string) {
+
+	dbItem := restapp.GetDb(dbKey)
+	if dbItem == nil {
+		panic(errors.New("db item not found"))
+	}
+
+	dbType := dbItem.GetDBType()
+	switch dbType {
+	case restapp.DbType_MongoDB:
+		if db, ok := dbItem.GetDB().(*ddd_mongodb.MongoDB); ok {
+			adapter, err := mongodbadapter.NewAdapterByDB(db.Client(), &mongodbadapter.AdapterConfig{
+				DatabaseName:   db.GetDatabase().Name(),
+				CollectionName: "casbin_rule",
+				IsFiltered:     false,
+			})
+			if err != nil {
+				panic("Failed to create Casbin adapter")
+			}
+			enforcer, err := casbin.NewEnforcer(modelConfFile, adapter)
+			if err != nil {
+				panic("Failed to create Casbin enforcer")
+			}
+			_enforcer = enforcer
+		}
+		break
+	case restapp.DbType_Postgres, restapp.DbType_MySQL, restapp.DbType_Oracle, restapp.DbType_MsSQL, restapp.DbType_Sqlite:
+		if db, ok := dbItem.GetDB().(*gorm.DB); ok {
+			adapter, err := gormadapter.NewAdapterByDB(db)
+			if err != nil {
+				panic("Failed to create Casbin adapter")
+			}
+			enforcer, err := casbin.NewEnforcer(modelConfFile, adapter)
+			if err != nil {
+				panic("Failed to create Casbin enforcer")
+			}
+			_enforcer = enforcer
+		}
+		break
+	default:
+		panic("auth Database type not supported")
+	}
+
+}
+
+func Enforcer() IEnforcer {
+	return _enforcer
+}
