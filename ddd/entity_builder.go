@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"time"
 )
 
@@ -94,9 +95,7 @@ func (b *AnyEntityBuilder[T]) GetTenantId(entity T) string {
 }
 
 func (b *AnyEntityBuilder[T]) SetTenantId(entity T, id string) {
-	if field := b.schema.LookedField(b.cfg.Fields.TenantId); field != nil {
-		reflectutils.SetFieldString(entity, b.cfg.Fields.TenantId, id)
-	}
+	b.setFieldString(entity, b.cfg.Fields.TenantId, id)
 }
 
 func (b *AnyEntityBuilder[T]) GetId(entity T) string {
@@ -104,7 +103,7 @@ func (b *AnyEntityBuilder[T]) GetId(entity T) string {
 }
 
 func (b *AnyEntityBuilder[T]) SetId(entity T, id string) {
-	reflectutils.SetFieldString(entity, b.cfg.Fields.Id, id)
+	b.setFieldString(entity, b.cfg.Fields.Id, id)
 }
 
 func (b *AnyEntityBuilder[T]) GetCaseId(entity T) string {
@@ -112,7 +111,7 @@ func (b *AnyEntityBuilder[T]) GetCaseId(entity T) string {
 }
 
 func (b *AnyEntityBuilder[T]) SetCaseId(entity T, id string) {
-	reflectutils.SetFieldString(entity, fields.CaseId, id)
+	b.setFieldString(entity, fields.CaseId, id)
 }
 
 func (b *AnyEntityBuilder[T]) GetAggId(entity T) string {
@@ -130,25 +129,13 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 	authUser := b.GetAuthUser(ctx)
 	timeNow := time.Now().UTC()
 
-	if b.cfg.IsMap {
-		if data, ok := e.(map[string]any); ok {
-			data[fields.CreatedTime] = timeNow
-			data[fields.CreatorName] = authUser.GetName()
-			data[fields.CreatorId] = authUser.GetId()
+	b.setField(entity, fields.CreatedTime, timeNow)
+	b.setField(entity, fields.CreatorName, authUser.GetName())
+	b.setField(entity, fields.CreatorId, authUser.GetId())
 
-			data[fields.UpdatedTime] = timeNow
-			data[fields.UpdaterName] = authUser.GetName()
-			data[fields.UpdaterId] = authUser.GetId()
-		}
-	} else {
-		b.setField(entity, fields.CreatedTime, timeNow)
-		b.setField(entity, fields.CreatorName, authUser.GetName())
-		b.setField(entity, fields.CreatorId, authUser.GetId())
-
-		b.setField(entity, fields.UpdatedTime, timeNow)
-		b.setField(entity, fields.UpdaterName, authUser.GetName())
-		b.setField(entity, fields.UpdaterId, authUser.GetId())
-	}
+	b.setField(entity, fields.UpdatedTime, timeNow)
+	b.setField(entity, fields.UpdaterName, authUser.GetName())
+	b.setField(entity, fields.UpdaterId, authUser.GetId())
 
 }
 
@@ -163,18 +150,9 @@ func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 	authUser := b.GetAuthUser(ctx)
 	timeNow := time.Now().UTC()
 
-	if b.cfg.IsMap {
-		if data, ok := any(entity).(map[string]any); ok {
-			data[fields.UpdatedTime] = timeNow
-			data[fields.UpdaterName] = authUser.GetName()
-			data[fields.UpdaterId] = authUser.GetId()
-		}
-	} else {
-		b.setField(entity, fields.UpdatedTime, timeNow)
-		b.setField(entity, fields.UpdaterName, authUser.GetName())
-		b.setField(entity, fields.UpdaterId, authUser.GetId())
-	}
-
+	b.setField(entity, fields.UpdatedTime, timeNow)
+	b.setField(entity, fields.UpdaterName, authUser.GetName())
+	b.setField(entity, fields.UpdaterId, authUser.GetId())
 }
 
 func (b *AnyEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
@@ -189,21 +167,36 @@ func (b *AnyEntityBuilder[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
 }
 
 func (b *AnyEntityBuilder[T]) setFieldString(entity any, fieldName, val string) {
-	reflectutils.SetFieldString(entity, fieldName, val)
+	fieldName = b.getFieldName(fieldName)
+	if field := b.schema.LookedField(fieldName); field != nil {
+		reflectutils.SetFieldString(entity, fieldName, val)
+	}
+}
+
+func (b *AnyEntityBuilder[T]) getFieldString(entity any, fieldName string) string {
+	fieldName = b.getFieldName(fieldName)
+	return reflectutils.GetFieldString(entity, fieldName)
 }
 
 func (b *AnyEntityBuilder[T]) setField(entity any, fieldName string, val any) {
+	fieldName = b.getFieldName(fieldName)
 	if field := b.schema.LookedField(fieldName); field != nil {
 		reflectutils.SetField(entity, fieldName, val)
 	}
 }
 
-func (b *AnyEntityBuilder[T]) getFieldString(entity any, fieldName string) string {
-	return reflectutils.GetFieldString(entity, fieldName)
+func (b *AnyEntityBuilder[T]) getField(entity any, fieldName string) any {
+	fieldName = b.getFieldName(fieldName)
+	return reflectutils.GetField(entity, fieldName)
 }
 
-func (b *AnyEntityBuilder[T]) getField(entity any, fieldName string) any {
-	return reflectutils.GetField(entity, fieldName)
+func (b *AnyEntityBuilder[T]) getFieldName(fieldName string) string {
+	if b.cfg.IsMap {
+		fieldName = stringutils.FirstLower(fieldName)
+	} else {
+		fieldName = stringutils.FirstUpper(fieldName)
+	}
+	return fieldName
 }
 
 func (c *EntityBuilderConfig) SetIsMap(isMap bool) *EntityBuilderConfig {

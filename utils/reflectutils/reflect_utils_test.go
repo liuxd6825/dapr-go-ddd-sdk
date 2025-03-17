@@ -1,6 +1,7 @@
 package reflectutils
 
 import (
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
@@ -83,4 +84,14 @@ func Test_MappingSlice(t *testing.T) {
 		t.Error(err)
 	}
 	println(targetList)
+}
+
+type HumanTest struct {
+	TenantId string `json:"tenantId"`
+}
+
+func Test_MappingStruct(t *testing.T) {
+	h := new(HumanTest)
+	SetFieldString(h, "TenantId", "123")
+	assert.Equal(t, h.TenantId, "123")
 }

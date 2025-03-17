@@ -29,7 +29,7 @@ type Human struct {
 	Age        int
 	Analyse    string
 	Birthday   *time.Time
-	PeopleType string
+	PeopleType []string `gorm:"type:text;serializer:json"`
 	Tags       string
 }
 
@@ -45,10 +45,13 @@ func Test_DaoStruct(t *testing.T) {
 		return
 	}
 	dao := newDaoByStruct[*Human](ctx, "human_struct")
+	dao.DeleteAll(ctx)
+
 	humanName := randomutils.NameCN()
 	newCount := int64(10)
 	list := newStructList(newCount, humanName)
 	dao.CreateMany(ctx, list)
+
 }
 
 func Test_Dao(t *testing.T) {
@@ -382,7 +385,7 @@ func newStructList(count int64, humanName string) []*Human {
 			Analyse:    "",
 			Age:        randomutils.IntMax(100),
 			Birthday:   randomutils.PDate(),
-			PeopleType: randomutils.String(10),
+			PeopleType: []string{randomutils.String(10)},
 			Tags:       randomutils.String(10),
 		}
 		list[i] = entity

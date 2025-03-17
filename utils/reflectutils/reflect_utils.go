@@ -262,7 +262,7 @@ func GetFieldString(data any, fieldName string) string {
 		return fmt.Sprintf("%v", v)
 	}
 
-	refVal := reflect.ValueOf(data)
+	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
 	// 根据字段类型设置值
@@ -281,8 +281,7 @@ func SetFieldString(data any, fieldName string, val string) {
 		return
 	}
 
-	fieldName = stringutils.FirstUpper(fieldName)
-	refVal := reflect.ValueOf(data)
+	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
 	// 根据字段类型设置值
@@ -304,7 +303,7 @@ func SetField(data any, fieldName string, val any) bool {
 		return true
 	}
 
-	refVal := reflect.ValueOf(data)
+	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
 	if fieldValue.IsValid() {
@@ -322,7 +321,7 @@ func GetField(data any, fieldName string) any {
 		return m[fieldName]
 	}
 
-	refVal := reflect.ValueOf(data)
+	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
 	if !fieldValue.CanSet() {
@@ -344,7 +343,7 @@ func GetFieldStrings(data any, fieldName string) []string {
 		}
 	}
 
-	refVal := reflect.ValueOf(data)
+	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
 	// 根据字段类型设置值
@@ -375,7 +374,7 @@ func SetFieldStrings(data any, fieldName string, val []string) {
 	}
 
 	fieldName = stringutils.FirstUpper(fieldName)
-	refVal := reflect.ValueOf(data)
+	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
 	// 根据字段类型设置值
@@ -389,4 +388,16 @@ func SetFieldStrings(data any, fieldName string, val []string) {
 	default:
 		fmt.Println("Unsupported field type:", fieldName)
 	}
+}
+
+func ValueElemOf(data any) reflect.Value {
+	refVal := reflect.ValueOf(data)
+	for {
+		if refVal.Kind() == reflect.Ptr {
+			refVal = refVal.Elem()
+		} else {
+			break
+		}
+	}
+	return refVal
 }
