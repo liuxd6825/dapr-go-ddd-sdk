@@ -2,9 +2,9 @@ package db
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
 type DB struct {

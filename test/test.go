@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/iris-contrib/httpexpect/v2"
 	"github.com/kataras/iris/v12/httptest"
+	restapp2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"testing"
 )
 
@@ -20,7 +20,7 @@ var (
 type Option struct {
 	fileName   *string
 	envName    *string
-	eventTypes []restapp.RegisterEventType
+	eventTypes []restapp2.RegisterEventType
 }
 
 func NewOption(options ...*Option) *Option {
@@ -66,7 +66,7 @@ func InitCommand(options ...*Option) error {
 
 // InitQuery
 // @Description: 初始化QueryService测试环境
-func Init(ctx context.Context, fileName string, envName string, eventTypes []restapp.RegisterEventType) error {
+func Init(ctx context.Context, fileName string, envName string, eventTypes []restapp2.RegisterEventType) error {
 	if fileName == "" {
 		return errors.New("fileName is null")
 	}
@@ -74,7 +74,7 @@ func Init(ctx context.Context, fileName string, envName string, eventTypes []res
 		return errors.New("envName is null")
 	}
 	// 加载配置文件
-	config, err := restapp.NewConfigByFile("${search}/config/" + fileName)
+	config, err := restapp2.NewConfigByFile("${search}/config/" + fileName)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func Init(ctx context.Context, fileName string, envName string, eventTypes []res
 		return err
 	}
 
-	return restapp.InitApplication(ctx, env, eventTypes, true, nil)
+	return restapp2.InitApplication(ctx, env, eventTypes, true, nil)
 }
 
 // GetResponseData
@@ -188,7 +188,7 @@ func (o *Option) FileName() string {
 	return *o.fileName
 }
 
-func (o *Option) EventTypes() []restapp.RegisterEventType {
+func (o *Option) EventTypes() []restapp2.RegisterEventType {
 	if o.eventTypes == nil {
 		return nil
 	}
@@ -205,7 +205,7 @@ func (o *Option) SetFileName(val string) *Option {
 	return o
 }
 
-func (o *Option) SetEventTypes(val []restapp.RegisterEventType) *Option {
+func (o *Option) SetEventTypes(val []restapp2.RegisterEventType) *Option {
 	o.eventTypes = val
 	return o
 }

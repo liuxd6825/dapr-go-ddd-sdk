@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 )
 
 type Environment struct {

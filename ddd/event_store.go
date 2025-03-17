@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"reflect"
 	"strings"
@@ -59,25 +59,25 @@ func PubsubName(pubsubName string) EventStoreOption {
 }
 
 func checkEvent(aggregate Aggregate, event DomainEvent) error {
-	if err := assert.NotNil(event, assert.NewOptions("event is nil")); err != nil {
+	if err := assert2.NotNil(event, assert2.NewOptions("event is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(aggregate, assert.NewOptions("agg is nil")); err != nil {
+	if err := assert2.NotNil(aggregate, assert2.NewOptions("agg is nil")); err != nil {
 		return err
 	}
 
 	tenantId := event.GetTenantId()
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return err
 	}
 
 	aggId := event.GetAggregateId()
-	if err := assert.NotEmpty(aggId, assert.NewOptions("aggregateId is empty")); err != nil {
+	if err := assert2.NotEmpty(aggId, assert2.NewOptions("aggregateId is empty")); err != nil {
 		return err
 	}
 
 	aggregateType := aggregate.GetAggregateType()
-	if err := assert.NotEmpty(aggregateType, assert.NewOptions("aggregateType is empty")); err != nil {
+	if err := assert2.NotEmpty(aggregateType, assert2.NewOptions("aggregateType is empty")); err != nil {
 		return err
 	}
 	return nil

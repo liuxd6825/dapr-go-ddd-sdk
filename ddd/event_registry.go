@@ -3,8 +3,8 @@ package ddd
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 )
 
 type NewEventFunc func() interface{}
@@ -32,13 +32,13 @@ func RegisterOptionMarshaler(marshaler JsonMarshaler) RegisterOption {
 // @param options 选项
 // @return error 错误
 func RegisterEventType(eventType string, eventVersion string, newEventFunc NewEventFunc, options ...RegisterOption) error {
-	if err := assert.NotEmpty(eventType, assert.NewOptions("ddd.RegisterEventType() eventType is nil")); err != nil {
+	if err := assert2.NotEmpty(eventType, assert2.NewOptions("ddd.RegisterEventType() eventType is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotEmpty(eventVersion, assert.NewOptions("ddd.RegisterEventType() eventVersion is nil")); err != nil {
+	if err := assert2.NotEmpty(eventVersion, assert2.NewOptions("ddd.RegisterEventType() eventVersion is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(newEventFunc, assert.NewOptions("ddd.RegisterEventType() newEventFunc is nil")); err != nil {
+	if err := assert2.NotNil(newEventFunc, assert2.NewOptions("ddd.RegisterEventType() newEventFunc is nil")); err != nil {
 		return err
 	}
 	return _eventTypeRegistry.add(eventType, eventVersion, newEventFunc, options...)

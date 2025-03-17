@@ -3,17 +3,17 @@ package state_pkg
 import (
 	"context"
 	"github.com/dapr/go-sdk/client"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 )
 
 type StatePkg struct {
 	server element.Server
-	client dapr.Client
+	client dapr2.Client
 }
 
 func New(server element.Server) *StatePkg {
-	cli, err := dapr.GetClient()
+	cli, err := dapr2.GetClient()
 	if err != nil {
 		panic(err)
 	}

@@ -1,8 +1,8 @@
 package idao
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 )
 
 type DaoConfig struct {

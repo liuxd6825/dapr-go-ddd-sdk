@@ -3,6 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
+	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"testing"
@@ -20,7 +21,7 @@ func TestEventStorage_LoadAggregate(t *testing.T) {
 
 func TestEventStorage_LoadEvents(t *testing.T) {
 	eventStorage, err := NewEventStorage()
-	req := &dapr.LoadEventsRequest{
+	req := &dapr2.LoadEventsRequest{
 		TenantId:    "tenant_1",
 		AggregateId: "001",
 	}
@@ -37,7 +38,7 @@ func TestEventStorage_LoadEvents(t *testing.T) {
 func TestEventStorage_ApplyEvent(t *testing.T) {
 	eventStorage, err := NewEventStorage()
 	// id := newId()
-	req := &dapr.ApplyEventRequest{
+	req := &dapr2.ApplyEventRequest{
 		TenantId:      "tenantId_1",
 		AggregateId:   "001",
 		AggregateType: "system.user",
@@ -54,7 +55,7 @@ func TestEventStorage_ApplyEvent(t *testing.T) {
 
 func TestEventStorage_SaveSnapshot(t *testing.T) {
 	eventStorage, err := NewEventStorage()
-	req := &dapr.SaveSnapshotRequest{
+	req := &dapr2.SaveSnapshotRequest{
 		TenantId:         "tenantId_1",
 		AggregateId:      "aggregateId_001",
 		AggregateType:    "system.user",

@@ -1,7 +1,7 @@
 package runtime
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
 	"github.com/spf13/afero"
 	"io"
 	"os"

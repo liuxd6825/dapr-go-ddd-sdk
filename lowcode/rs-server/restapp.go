@@ -2,9 +2,9 @@ package rs_server
 
 import (
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/server"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/spf13/afero"
 )
 

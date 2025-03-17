@@ -1,7 +1,7 @@
 package pkg
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
 	"os"
 )
 

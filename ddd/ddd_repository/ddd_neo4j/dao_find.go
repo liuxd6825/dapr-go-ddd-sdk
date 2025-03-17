@@ -3,8 +3,8 @@ package ddd_neo4j
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"strings"
@@ -119,7 +119,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query ddd_repository.Fi
 	res := ddd_repository.NewFindPagingResultEmpty[T]()
 	gp.Try(func() error {
 
-		err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("TenantId cannot be empty"))
+		err := assert2.NotEmpty(query.GetTenantId(), assert2.NewOptions("TenantId cannot be empty"))
 		if err != nil {
 			return err
 		}
@@ -184,7 +184,7 @@ func (d *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap ma
 func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId, filter string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
 	res := ddd_repository.NewFindListResultEmpty[T]()
 	gp.Try(func() error {
-		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
 

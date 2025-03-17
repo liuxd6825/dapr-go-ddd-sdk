@@ -1,8 +1,8 @@
 package fs_pkg
 
 import (
-	fstest "github.com/liuxd6825/dapr-go-ddd-sdk/fs/test"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/test"
+	fstest "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/test"
 	"testing"
 )
 
@@ -37,5 +37,5 @@ func TestFs_RemoveFile(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-	fsPkg.RemoveFile("/testfile/master/remove.txt")
+	fsPkg.RemoveFile("/testfile/master/xremove.txt")
 }

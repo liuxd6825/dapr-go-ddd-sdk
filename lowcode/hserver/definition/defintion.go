@@ -2,8 +2,8 @@ package definition
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/spf13/afero"
 	"path/filepath"

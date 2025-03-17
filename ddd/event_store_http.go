@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"io"
 	"net/http"
 )
@@ -20,12 +20,12 @@ const (
 )
 
 type httpEventStore struct {
-	client     dapr.DaprClient
+	client     dapr2.DaprClient
 	pubsubName string
 	subscribes []*Subscribe
 }
 
-func NewHttpEventStore(httpClient dapr.DaprClient, options ...func(s EventStore)) (EventStore, error) {
+func NewHttpEventStore(httpClient dapr2.DaprClient, options ...func(s EventStore)) (EventStore, error) {
 	subscribes = make([]*Subscribe, 0)
 	res := &httpEventStore{
 		client:     httpClient,
@@ -37,37 +37,37 @@ func NewHttpEventStore(httpClient dapr.DaprClient, options ...func(s EventStore)
 	return res, nil
 }
 
-func (s *httpEventStore) Commit(ctx context.Context, req *dapr.CommitRequest) (res *dapr.CommitResponse, resErr error) {
+func (s *httpEventStore) Commit(ctx context.Context, req *dapr2.CommitRequest) (res *dapr2.CommitResponse, resErr error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStore) Rollback(ctx context.Context, req *dapr.RollbackRequest) (res *dapr.RollbackResponse, resErr error) {
+func (s *httpEventStore) Rollback(ctx context.Context, req *dapr2.RollbackRequest) (res *dapr2.RollbackResponse, resErr error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStore) GetEvents(ctx context.Context, req *dapr.GetEventsRequest) (*dapr.GetEventsResponse, error) {
+func (s *httpEventStore) GetEvents(ctx context.Context, req *dapr2.GetEventsRequest) (*dapr2.GetEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStore) GetRelations(ctx context.Context, req *dapr.GetRelationsRequest) (*dapr.GetRelationsResponse, error) {
+func (s *httpEventStore) GetRelations(ctx context.Context, req *dapr2.GetRelationsRequest) (*dapr2.GetRelationsResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStore) LoadEvent(ctx context.Context, req *dapr.LoadEventsRequest) (*dapr.LoadEventsResponse, error) {
+func (s *httpEventStore) LoadEvent(ctx context.Context, req *dapr2.LoadEventsRequest) (*dapr2.LoadEventsResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStore) CreateEvent(ctx context.Context, req *dapr.CreateEventRequest) (*dapr.CreateEventResponse, error) {
+func (s *httpEventStore) CreateEvent(ctx context.Context, req *dapr2.CreateEventRequest) (*dapr2.CreateEventResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *httpEventStore) DeleteEvent(ctx context.Context, req *dapr.DeleteEventRequest) (*dapr.DeleteEventResponse, error) {
+func (s *httpEventStore) DeleteEvent(ctx context.Context, req *dapr2.DeleteEventRequest) (*dapr2.DeleteEventResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -77,17 +77,17 @@ func (s *httpEventStore) GetPubsubName() string {
 }
 
 func (s *httpEventStore) LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any) (Aggregate, bool, error) {
-	if err := assert.NotNil(aggregate, assert.NewOptions("agg is nil")); err != nil {
+	if err := assert2.NotNil(aggregate, assert2.NewOptions("agg is nil")); err != nil {
 		return nil, false, err
 	}
-	if err := assert.NotEmpty(aggregateId, assert.NewOptions("aggregateId is nil")); err != nil {
+	if err := assert2.NotEmpty(aggregateId, assert2.NewOptions("aggregateId is nil")); err != nil {
 		return nil, false, err
 	}
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is nil")); err != nil {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is nil")); err != nil {
 		return nil, false, err
 	}
 
-	req := &dapr.LoadEventsRequest{
+	req := &dapr2.LoadEventsRequest{
 		TenantId:    tenantId,
 		AggregateId: aggregateId,
 	}
@@ -121,9 +121,9 @@ func (s *httpEventStore) LoadAggregate(ctx context.Context, tenantId string, agg
 	return agg, true, nil
 }
 
-func (s *httpEventStore) LoadEvents(ctx context.Context, req *dapr.LoadEventsRequest) (res *dapr.LoadEventsResponse, resErr error) {
+func (s *httpEventStore) LoadEvents(ctx context.Context, req *dapr2.LoadEventsRequest) (res *dapr2.LoadEventsResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageLoadEvents, req.TenantId, req.AggregateId)
-	data := &dapr.LoadEventsResponse{}
+	data := &dapr2.LoadEventsResponse{}
 	s.client.HttpGet(ctx, url).OnSuccess(data, func() error {
 		res = data
 		return nil
@@ -133,7 +133,7 @@ func (s *httpEventStore) LoadEvents(ctx context.Context, req *dapr.LoadEventsReq
 	return
 }
 
-func (s *httpEventStore) ApplyEvent(ctx context.Context, req *dapr.ApplyEventRequest) (res *dapr.ApplyEventResponse, resErr error) {
+func (s *httpEventStore) ApplyEvent(ctx context.Context, req *dapr2.ApplyEventRequest) (res *dapr2.ApplyEventResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageEventApply)
 	if err := ddd_utils.IsEmpty(req.TenantId, "tenantId"); err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (s *httpEventStore) ApplyEvent(ctx context.Context, req *dapr.ApplyEventReq
 		}
 	}
 
-	data := &dapr.ApplyEventResponse{}
+	data := &dapr2.ApplyEventResponse{}
 	s.client.HttpPost(ctx, url, req).OnSuccess(data, func() error {
 		res = data
 		return nil
@@ -178,9 +178,9 @@ func (s *httpEventStore) ApplyEvent(ctx context.Context, req *dapr.ApplyEventReq
 	return
 }
 
-func (s *httpEventStore) SaveSnapshot(ctx context.Context, req *dapr.SaveSnapshotRequest) (res *dapr.SaveSnapshotResponse, resErr error) {
+func (s *httpEventStore) SaveSnapshot(ctx context.Context, req *dapr2.SaveSnapshotRequest) (res *dapr2.SaveSnapshotResponse, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageSnapshotSave)
-	data := &dapr.SaveSnapshotResponse{}
+	data := &dapr2.SaveSnapshotResponse{}
 	s.client.HttpPost(ctx, url, req).OnSuccess(data, func() error {
 		res = data
 		return nil
@@ -192,7 +192,7 @@ func (s *httpEventStore) SaveSnapshot(ctx context.Context, req *dapr.SaveSnapsho
 
 func (s *httpEventStore) ExistAggregate(ctx context.Context, tenantId string, aggregateId string) (isFind bool, resErr error) {
 	url := fmt.Sprintf(ApiEventStorageExistAggregate, tenantId, aggregateId)
-	data := &dapr.ExistAggregateResponse{}
+	data := &dapr2.ExistAggregateResponse{}
 	isFind = false
 	s.client.HttpGet(ctx, url).OnSuccess(data, func() error {
 		isFind = data.IsExist

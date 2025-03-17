@@ -2,7 +2,7 @@ package runtime
 
 import (
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 

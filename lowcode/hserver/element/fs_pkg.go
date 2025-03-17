@@ -1,8 +1,8 @@
 package element
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
 	"github.com/spf13/afero"
 	"os"
 )

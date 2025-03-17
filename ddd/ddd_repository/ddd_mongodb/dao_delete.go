@@ -2,10 +2,10 @@ package ddd_mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -34,7 +34,7 @@ func (r *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opt
 
 func (r *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResult[T]()
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return res.SetError(err)
 	}
 	if len(ids) == 0 {
@@ -65,10 +65,10 @@ func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map
 }
 
 func (r *Dao[T]) deleteByAny(ctx context.Context, tenantId string, filterAny any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
-	if err := assert.NotNil(filterAny, assert.NewOptions("filterMap is nil")); err != nil {
+	if err := assert2.NotNil(filterAny, assert2.NewOptions("filterMap is nil")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewSetResultError[T](err)
 	}
 	if filterMap, ok := filterAny.(map[string]any); ok {

@@ -3,7 +3,7 @@ package xschema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/spf13/afero"
 	"net/url"

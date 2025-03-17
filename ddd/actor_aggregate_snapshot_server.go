@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr/actor"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
+	actor2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr/actor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 )
 
 type AggregateSnapshotActorServer struct {
-	actor.ServerImplBaseCtx
+	actor2.ServerImplBaseCtx
 	daprClient dapr.Client
 }
 
@@ -28,7 +28,7 @@ type SaveSnapshotRequest struct {
 	EventStoreKey string `json:"eventStoreKey"`
 }
 
-type SaveSnapshotResponse = actor.Response
+type SaveSnapshotResponse = actor2.Response
 
 const AggregateSnapshotActorType = "ddd.AggregateSnapshotActorType"
 
@@ -41,14 +41,14 @@ func NewAggregateSnapshotClient(client dapr.Client, aggregateType, aggregateId s
 	return actor
 }
 
-func NewAggregateSnapshotActorServer(daprClient dapr.Client) actor.ServerContext {
+func NewAggregateSnapshotActorServer(daprClient dapr.Client) actor2.ServerContext {
 	return &AggregateSnapshotActorServer{
 		daprClient: daprClient,
 	}
 }
 
 func (s *AggregateSnapshotActorServer) SaveSnapshot(ctx context.Context, req *SaveSnapshotRequest) (resp *SaveSnapshotResponse, err error) {
-	resp = actor.NewResponse(nil)
+	resp = actor2.NewResponse(nil)
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			resp.SetError(err)

@@ -2,8 +2,8 @@ package schema_pkg
 
 import (
 	"bytes"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/spf13/afero"

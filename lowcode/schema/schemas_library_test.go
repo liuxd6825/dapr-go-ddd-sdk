@@ -2,7 +2,7 @@ package schema
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
 	"io/ioutil"
 	"os"
 	"testing"

@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql/rsql_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_neo4j"
 	"reflect"
 	"strings"
 )
@@ -176,7 +176,7 @@ func (c *nodeCypher[T]) UpdateLabelByFilter(ctx context.Context, tenantId string
 	}
 	setLabels := getLabels(labels...)
 	// 设置标签
-	// match (n:CAR) set n:NEW remove n:CAR
+	// match (n:CAR) set n:NEW xremove n:CAR
 	cypher := fmt.Sprintf("MATCH (n{tenantId:'%v'}) %v SET n%v ", tenantId, where, setLabels)
 	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
@@ -266,7 +266,7 @@ func (c *nodeCypher[T]) DeleteByRSQL(ctx context.Context, tenantId string, filte
 
 func (c *nodeCypher[T]) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
 	// 设置标签
-	// match (n:CAR) set n:NEW remove n:CAR
+	// match (n:CAR) set n:NEW xremove n:CAR
 	cypher := fmt.Sprintf("MATCH (n%v{id:'%v'}) REMOVE n:%v ", c.getLabels("tenant_"+tenantId), id, label)
 	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
@@ -279,7 +279,7 @@ func (c *nodeCypher[T]) DeleteLabelByFilter(ctx context.Context, tenantId string
 	}
 	setLabels := getLabels(labels...)
 	// 设置标签
-	// match (n:CAR) set n:NEW remove n:CAR
+	// match (n:CAR) set n:NEW xremove n:CAR
 	cypher := fmt.Sprintf("MATCH (n%v) %v REMOVE n%v ", c.getLabels("tenant_"+tenantId), where, setLabels)
 	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil

@@ -1,7 +1,7 @@
 package rs_server
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
 	"github.com/spf13/afero"
 )
 

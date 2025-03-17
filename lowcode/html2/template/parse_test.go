@@ -1,7 +1,7 @@
 package template
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"

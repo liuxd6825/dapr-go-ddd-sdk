@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
+	rsql_mongo2 "github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
 	"go.mongodb.org/mongo-driver/bson"
 	"strconv"
 	"strings"
@@ -182,17 +182,17 @@ func (q *QueryGroup) GetPageSize() int64 {
 // @receiver b
 // @return map[string]interface{}
 // @return error
-func (q *QueryGroup) GetFilter() *rsql_mongo.Filter {
+func (q *QueryGroup) GetFilter() *rsql_mongo2.Filter {
 	if q.Filter == "" {
-		return rsql_mongo.NewMongoFilter()
+		return rsql_mongo2.NewMongoFilter()
 	}
 
-	p := rsql_mongo.NewProcess(q.TenantId)
+	p := rsql_mongo2.NewProcess(q.TenantId)
 	if err := rsql.ParseProcess(q.Filter, p); err != nil {
 		panic(err)
 
 	}
-	filter := p.GetFilter().(*rsql_mongo.Filter)
+	filter := p.GetFilter().(*rsql_mongo2.Filter)
 	return filter
 }
 
@@ -201,7 +201,7 @@ func (q *QueryGroup) GetFilter() *rsql_mongo.Filter {
 // @receiver b
 // @return map[string]interface{}
 // @return error
-func (q *QueryGroup) GetGroupExpandFilter() *rsql_mongo.Filter {
+func (q *QueryGroup) GetGroupExpandFilter() *rsql_mongo2.Filter {
 	filter := q.GetFilter()
 	mMatch := filter.Match
 

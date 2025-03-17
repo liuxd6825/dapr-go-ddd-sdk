@@ -3,7 +3,7 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
 	"net/url"
 )
 

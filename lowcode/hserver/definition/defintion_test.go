@@ -2,7 +2,7 @@ package definition
 
 import (
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
 	"os"
 	"path/filepath"
 	"testing"

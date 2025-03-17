@@ -2,7 +2,7 @@ package applog
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/sirupsen/logrus"
 )
 

@@ -3,13 +3,13 @@ package ddd_neo4j
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql/rsql_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_neo4j"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
 	"strings"
@@ -129,7 +129,7 @@ func (d *Dao[T]) newSetManyResult(ctx context.Context, result *Neo4jResult, err 
 }
 
 func (d *Dao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...ddd_repository.Options) (*Neo4jResult, error) {
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return nil, err
 	}
 	return d.Run(ctx, cypher, params, true, opts...)

@@ -3,14 +3,14 @@ package eventbus_pkg
 import (
 	"context"
 	"github.com/dapr/go-sdk/client"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 )
 
 type EventBus struct {
 	server element.Server
-	client dapr.DaprClient
+	client dapr2.DaprClient
 }
 
 func New(server element.Server) *EventBus {
@@ -21,27 +21,27 @@ func New(server element.Server) *EventBus {
 	}
 }
 
-func (p *EventBus) ApplyEvent(ctx context.Context, agg *Aggregate, event *DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
+func (p *EventBus) ApplyEvent(ctx context.Context, agg *Aggregate, event *DomainEvent, opts ...*ApplyEventOptions) (*dapr2.ApplyEventResponse, error) {
 	return ddd.ApplyEvent(ctx, agg, event, opts...)
 }
 
-func (p *EventBus) ApplyEvents(ctx context.Context, agg *Aggregate, events []*DomainEvent, opts ...*ApplyEventOptions) (*dapr.ApplyEventResponse, error) {
+func (p *EventBus) ApplyEvents(ctx context.Context, agg *Aggregate, events []*DomainEvent, opts ...*ApplyEventOptions) (*dapr2.ApplyEventResponse, error) {
 	return ddd.ApplyEvents(ctx, agg, newEvents(events), opts...)
 }
 
-func (p *EventBus) CreateEvent(ctx context.Context, agg *Aggregate, event *DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
+func (p *EventBus) CreateEvent(ctx context.Context, agg *Aggregate, event *DomainEvent, opts ...*ApplyEventOptions) (*dapr2.CreateEventResponse, error) {
 	return ddd.CreateEvent(ctx, agg, event, opts...)
 }
 
-func (p *EventBus) CreateEvents(ctx context.Context, agg *Aggregate, events []*DomainEvent, opts ...*ApplyEventOptions) (*dapr.CreateEventResponse, error) {
+func (p *EventBus) CreateEvents(ctx context.Context, agg *Aggregate, events []*DomainEvent, opts ...*ApplyEventOptions) (*dapr2.CreateEventResponse, error) {
 	return ddd.CreateEvents(ctx, agg, newEvents(events), opts...)
 }
 
-func (p *EventBus) DeleteEvent(ctx context.Context, agg *Aggregate, event *DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
+func (p *EventBus) DeleteEvent(ctx context.Context, agg *Aggregate, event *DomainEvent, opts ...*ApplyEventOptions) (*dapr2.DeleteEventResponse, error) {
 	return ddd.DeleteEvent(ctx, agg, event, opts...)
 }
 
-func (p *EventBus) DeleteEvents(ctx context.Context, agg *Aggregate, events []*DomainEvent, opts ...*ApplyEventOptions) (*dapr.DeleteEventResponse, error) {
+func (p *EventBus) DeleteEvents(ctx context.Context, agg *Aggregate, events []*DomainEvent, opts ...*ApplyEventOptions) (*dapr2.DeleteEventResponse, error) {
 	return ddd.DeleteEvents(ctx, agg, newEvents(events), opts...)
 }
 

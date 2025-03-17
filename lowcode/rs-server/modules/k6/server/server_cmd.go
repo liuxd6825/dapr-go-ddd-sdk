@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 )
 
 type CmdFunc func(ctx context.Context, command *Command) error

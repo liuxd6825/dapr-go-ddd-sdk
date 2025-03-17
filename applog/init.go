@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"runtime"
 	"strings"
 	"time"
@@ -65,13 +65,13 @@ func DoEventLog(ctx context.Context, structName string, event Event, funcName st
 // @param fun
 // @return error
 func DoAppLog(ctx context.Context, info *LogInfo, fun DoFunc) error {
-	if err := assert.NotNil(info, assert.NewOptions("info is nil")); err != nil {
+	if err := assert2.NotNil(info, assert2.NewOptions("info is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(ctx, assert.NewOptions("ctx is nil")); err != nil {
+	if err := assert2.NotNil(ctx, assert2.NewOptions("ctx is nil")); err != nil {
 		return err
 	}
-	if err := assert.NotNil(fun, assert.NewOptions("fun is nil")); err != nil {
+	if err := assert2.NotNil(fun, assert2.NewOptions("fun is nil")); err != nil {
 		return err
 	}
 	// resp, err := fun()

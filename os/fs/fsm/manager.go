@@ -1,0 +1,350 @@
+package fsm
+
+import (
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	fs2 "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	giteafs2 "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/giteafs"
+	httpfs2 "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/httpfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
+	memoryfs2 "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/memoryfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/orcaman/concurrent-map"
+	"github.com/spf13/afero"
+	"io/fs"
+	iofs "io/fs"
+	"os"
+)
+
+//	Manager
+//
+// @Description: 文件系统管理器
+// @author liuxd6825
+type Manager struct {
+	fsMap         cmap.ConcurrentMap
+	DefaultFsName string
+}
+
+type WriteModel fs.FileMode
+
+const (
+	WriteModelAllWriteRead       WriteModel = 0666 // 所有用户都可读写
+	WriteModelSelfWriteOtherRead WriteModel = 0644 // 当前用户读写，其他用户只读
+)
+
+func NewManager() *Manager {
+	fsMap := cmap.New()
+	return &Manager{fsMap: fsMap}
+}
+
+// NewManagerWithConfigs
+//
+//	@Description: 使用map[string]any配置创建文件系统管理器, 目前支持local和gitea
+//	@param maps
+//	@return *Manager
+//	@return error
+func NewManagerWithConfigs(maps []map[string]any, defaultFsName string) (*Manager, error) {
+	clist := make(map[string]any)
+	i := 0
+	for _, m := range maps {
+		i++
+		o := types.Object(m)
+		typeVal := o.GetString("type")
+		if typeVal == "" {
+			return nil, errors.New("maps[%d]. type not found in config")
+		}
+		nameVal := o.GetString("name")
+		if nameVal == "" {
+			return nil, errors.New("maps[%d].name cannot be empty", i)
+		}
+
+		var cfg any
+		var err error
+		switch typeVal {
+		case localfs.Name():
+			cfg, err = localfs.NewConfig(m)
+		case giteafs2.Name():
+			cfg, err = giteafs2.NewConfig(m)
+		case httpfs2.Name():
+			cfg, err = httpfs2.NewConfig(m)
+		case memoryfs2.Name():
+			cfg, err = memoryfs2.NewConfig(m)
+		default:
+			return nil, errors.New(" maps[%d].type not support : " + typeVal)
+		}
+		if err != nil {
+			return nil, err
+		}
+		clist[nameVal] = cfg
+	}
+	manger := NewManager()
+	manger.DefaultFsName = defaultFsName
+	for id, cfg := range clist {
+		var fs afero.Fs
+		var err error
+		switch cfg.(type) {
+		case *localfs.Config:
+			c := *cfg.(*localfs.Config)
+			fs, err = localfs.NewFs(c)
+		case *giteafs2.Config:
+			fs, err = giteafs2.NewFs(cfg.(*giteafs2.Config))
+		case *httpfs2.Config:
+			fs, err = httpfs2.NewFs(cfg.(*httpfs2.Config))
+		case *memoryfs2.Config:
+			fs, err = memoryfs2.NewFs(cfg.(*memoryfs2.Config))
+		default:
+			return nil, errors.New("fs.NewManagerWithConfigs() fs.config not support")
+		}
+		if err != nil {
+			return nil, err
+		}
+		manger.AddFs(id, fs)
+	}
+	return manger, nil
+}
+
+func (m *Manager) NewFsm(fsName string) (*Manager, error) {
+	fsm := NewManager()
+	fsm.DefaultFsName = fsName
+	for _, name := range m.fsMap.Keys() {
+		if v, ok := m.GetFs(name); ok {
+			fsm.AddFs(name, v)
+		}
+	}
+	return fsm, nil
+}
+
+func (m *Manager) HasFs(name string) bool {
+	return m.fsMap.Has(name)
+}
+
+func (m *Manager) AddFs(name string, fs afero.Fs) {
+	m.fsMap.Set(name, fs)
+}
+
+func (m *Manager) GetFs(name string) (afero.Fs, bool) {
+	fs, ok := m.fsMap.Get(name)
+	if !ok {
+		return nil, false
+	}
+	return fs.(afero.Fs), true
+}
+
+func (m *Manager) RemoveFs(name string) {
+	m.fsMap.Remove(name)
+}
+
+func (m *Manager) MapFs() map[string]afero.Fs {
+	data := make(map[string]afero.Fs)
+	for k, v := range m.fsMap.Items() {
+		data[k] = v.(afero.Fs)
+	}
+	return data
+}
+
+func (m *Manager) GetFsByFileUrl(fileUrl string) (afero.Fs, error) {
+	afs, _, err := m.parse(fileUrl)
+	return afs, err
+}
+
+func (m *Manager) CreateFile(filename string, opts ...*fsopts.Options) (afero.File, error) {
+	opt := fsopts.NewOptions(opts...)
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return nil, err
+	}
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.Create(afs, fileName, opt)
+}
+
+func (m *Manager) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
+	opt := fsopts.NewOptions(opts...)
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return nil, err
+	}
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.ReadFile(afs, fileName, opt)
+}
+
+// WriteFile
+//
+//	@Description: 写文件
+//	@receiver m
+//	@param filename 文件名称
+//	@param pwd
+//	@param bytes
+//	@param writeModel
+//	@return error
+func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel, opts ...*fsopts.Options) error {
+	opt := fsopts.NewOptions(opts...)
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return err
+	}
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.WriteFile(afs, fileName, bytes, fs.FileMode(writeModel), opt)
+}
+
+// RemoveFile
+//
+//	@Description: removes a file identified by name, returning an error, if any
+//	@receiver m
+//	@param filename 文件名称
+//	@return error
+func (m *Manager) RemoveFile(filename string, opts ...*fsopts.Options) error {
+	opt := fsopts.NewOptions(opts...)
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return err
+	}
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	fileName = fsopts.GetAbsPath(filename, opt)
+	return afs.Remove(fileName)
+}
+
+// RemoveAll
+//
+//	@Description:  RemoveAll removes a directory path and any children it contains. It
+//	@receiver m
+//	@param path 路径名称
+//	@return error
+func (m *Manager) RemoveAll(path string, opts ...*fsopts.Options) error {
+	opt := fsopts.NewOptions(opts...)
+	afs, path, err := m.parse(path)
+	if err != nil {
+		return err
+	}
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	path = fsopts.GetAbsPath(path, opt)
+	return afs.RemoveAll(path)
+}
+
+// Rename
+//
+//	@Description:  文件重命名
+//	@receiver m
+//	@param aOldName 原文件名
+//	@param aNewName 新文件名
+//	@return error
+func (m *Manager) Rename(aOldName, aNewName string, opts ...*fsopts.Options) error {
+	afs, oldName, err := m.parse(aOldName)
+	if err != nil {
+		return err
+	}
+	afs, newName, err := m.parse(aNewName)
+	if err != nil {
+		return err
+	}
+
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return afs.Rename(oldName, newName)
+}
+
+// Mkdir
+//
+//	@Description:
+//	@receiver m
+//	@param path
+//	@param perm
+//	@param opts
+//	@return error
+func (m *Manager) Mkdir(path string, perm os.FileMode, opts ...*fsopts.Options) error {
+	afs, name, err := m.parse(path)
+	if err != nil {
+		return err
+	}
+
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+
+	name = fsopts.GetAbsPath(name, opt)
+	return afs.Mkdir(name, perm)
+}
+
+// MkdirAll
+//
+//	@Description:
+//	@receiver m
+//	@param filename
+//	@param fileMode
+//	@param opts
+//	@return error
+func (m *Manager) MkdirAll(filename string, fileMode fs.FileMode, opts ...*fsopts.Options) error {
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return err
+	}
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+	return fs2.MkdirAll(afs, fileName, fileMode, opts...)
+}
+
+// Exists 文件是否存在
+func (m *Manager) Exists(filename string, opts ...*fsopts.Options) (bool, error) {
+	afs, fileName, err := m.parse(filename)
+	if err != nil {
+		return false, err
+	}
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+
+	return fs2.Exists(afs, fileName, opt)
+}
+
+// ReadDir
+//
+//	@Description: 取得所有子目录与文件
+//	@receiver m
+//	@param path
+//	@return []iofs.FileInfo
+//	@return error
+func (m *Manager) ReadDir(path string, opts ...*fsopts.Options) ([]iofs.FileInfo, error) {
+	afs, _, err := m.parse(path)
+	if err != nil {
+		return nil, err
+	}
+
+	opt := fsopts.NewOptions(opts...)
+	if opt.Fs != nil {
+		afs = opt.Fs
+	}
+
+	return afero.ReadDir(afs, path)
+}
+
+func (m *Manager) parse(filename string) (afs afero.Fs, fileName string, err error) {
+	var fsName string
+	err = fsopts.ParseFileName(filename, m.DefaultFsName, func(aFsName, aFileName string) {
+		fsName = aFsName
+		fileName = aFileName
+	})
+	if err != nil {
+		return nil, "", err
+	}
+	fs, ok := m.GetFs(fsName)
+	if !ok {
+		return nil, "", errors.New(fmt.Sprintf("fs name \"%s\" not found", fsName))
+	}
+	return fs, fileName, nil
+}

@@ -2,8 +2,8 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsopts"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
 	"github.com/spf13/afero"
 	"io"
 	"os"

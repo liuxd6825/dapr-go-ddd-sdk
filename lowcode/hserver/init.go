@@ -2,9 +2,9 @@ package hserver
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs"
+	restapp2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -17,7 +17,7 @@ import (
 //	@param webFsName
 //	@param httpServer
 //	@return error
-func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp.HttpServer, autoRestart bool) error {
+func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp2.HttpServer, autoRestart bool) error {
 	fact := NewFactory()
 	env := httpServer.EnvConfig()
 	if !env.App.HServer.Enable {
@@ -37,7 +37,7 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 			return fmt.Errorf(" %s fs not exists", webFsName)
 		}
 	}
- 
+
 	server, err := fact.NewServer(httpServer, fileName, srcFs, fact, envCfg)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	if srcFs != nil && autoRestart {
 		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {
 			server.Logs(logrus.InfoLevel, "server.restart()")
-			return restapp.Restart()
+			return restapp2.Restart()
 		})
 	}
 

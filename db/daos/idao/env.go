@@ -1,6 +1,8 @@
 package idao
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
+)
 
 type IEnvConfig interface {
 	GetAppId() string

@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
 )
 
 type EnvConfig struct {

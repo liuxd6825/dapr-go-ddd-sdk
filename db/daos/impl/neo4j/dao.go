@@ -2,11 +2,11 @@ package neo4j
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_neo4j"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/restapp"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 

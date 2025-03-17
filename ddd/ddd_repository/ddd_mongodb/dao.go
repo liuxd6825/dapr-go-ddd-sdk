@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
+	rsql_mongo2 "github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/rsql/rsql_mongo"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
@@ -284,7 +284,7 @@ func (r *Dao[T]) getSessionCtx(ctx context.Context) context.Context {
 func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		if err := assert.NotEmpty(r.GetTenantId(entity), assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert2.NotEmpty(r.GetTenantId(entity), assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
 		filter := r.NewFilter(r.GetTenantId(entity), map[string]interface{}{"id": r.GetId(entity)})
@@ -318,7 +318,7 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...ddd_repository.Op
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		ctx := r.getSessionCtx(ctx)
-		if err := assert.NotEmpty(r.GetTenantId(entity), assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert2.NotEmpty(r.GetTenantId(entity), assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
 		r.eb.SetCreatedInfo(ctx, entity)
@@ -348,7 +348,7 @@ func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 	res = ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		ctx := r.getSessionCtx(ctx)
-		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
 		data["tenant_id"] = tenantId
@@ -371,7 +371,7 @@ func (r *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 			return errors.New("entities is nil")
 		}
 		for _, e := range entities {
-			if err := assert.NotEmpty(r.GetTenantId(e), assert.NewOptions("tenantId is empty")); err != nil {
+			if err := assert2.NotEmpty(r.GetTenantId(e), assert2.NewOptions("tenantId is empty")); err != nil {
 				return err
 			}
 		}
@@ -515,7 +515,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 		}
 
 		for _, e := range entities {
-			if err := assert.NotEmpty(r.GetTenantId(e), assert.NewOptions("tenantId is empty")); err != nil {
+			if err := assert2.NotEmpty(r.GetTenantId(e), assert2.NewOptions("tenantId is empty")); err != nil {
 				return err
 			}
 		}
@@ -607,11 +607,11 @@ func (r *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, 
 
 func (r *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...ddd_repository.Options) (T, error) {
 	var null T
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return null, err
 	}
 
-	if err := assert.NotEmpty(id, assert.NewOptions("id is empty")); err != nil {
+	if err := assert2.NotEmpty(id, assert2.NewOptions("id is empty")); err != nil {
 		return null, err
 	}
 	filter := bson.M{"tenant_id": tenantId, "_id": id}
@@ -643,11 +643,11 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...ddd_repository.Options) *ddd_repository.SetResult[T] {
 	res := ddd_repository.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
 
-		if err := assert.NotNil(filter, assert.NewOptions("filterMap is nil")); err != nil {
+		if err := assert2.NotNil(filter, assert2.NewOptions("filterMap is nil")); err != nil {
 			return err
 		}
 		updateOptions := getUpdateOptions(opts...)
@@ -781,7 +781,7 @@ func (r *Dao[T]) FindListByBsonM(ctx context.Context, tenantId string, filter bs
 }
 
 func (r *Dao[T]) FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...ddd_repository.Options) *ddd_repository.FindListResult[T] {
-	return r.doList(tenantId, rsql, func(filter *rsql_mongo.Filter) ([]T, bool, error) {
+	return r.doList(tenantId, rsql, func(filter *rsql_mongo2.Filter) ([]T, bool, error) {
 		list := r.NewEntityList()
 		ctx = r.getSessionCtx(ctx)
 		findOpts := &findByFilterOptions{
@@ -800,8 +800,8 @@ func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...ddd_repos
 }
 
 func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPagingQuery, opts ...ddd_repository.Options) *ddd_repository.FindPagingResult[T] {
-	return r.doFilter(query.GetTenantId(), query.GetFilter(), func(filter *rsql_mongo.Filter) (*ddd_repository.FindPagingResult[T], bool, error) {
-		if err := assert.NotEmpty(query.GetTenantId(), assert.NewOptions("tenantId is empty")); err != nil {
+	return r.doFilter(query.GetTenantId(), query.GetFilter(), func(filter *rsql_mongo2.Filter) (*ddd_repository.FindPagingResult[T], bool, error) {
+		if err := assert2.NotEmpty(query.GetTenantId(), assert2.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
 		ctx = r.getSessionCtx(ctx)
@@ -819,13 +819,13 @@ func (r *Dao[T]) findPaging(ctx context.Context, query ddd_repository.FindPaging
 }
 
 type findOption struct {
-	filter    *rsql_mongo.Filter             // rsql的查询条件
+	filter    *rsql_mongo2.Filter            // rsql的查询条件
 	query     ddd_repository.FindPagingQuery // 分页查询条件
 	results   any                            // 返回数据
 	totalRows int64                          // 返回记录数
 }
 
-func newFindOption(filter *rsql_mongo.Filter, query ddd_repository.FindPagingQuery, results any) *findOption {
+func newFindOption(filter *rsql_mongo2.Filter, query ddd_repository.FindPagingQuery, results any) *findOption {
 	return &findOption{
 		filter:    filter,
 		query:     query,
@@ -1086,7 +1086,7 @@ func (r *Dao[T]) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQu
 	}
 
 	var err error
-	process := rsql_mongo.NewProcess(qry.GetTenantId())
+	process := rsql_mongo2.NewProcess(qry.GetTenantId())
 
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
@@ -1103,7 +1103,7 @@ func (r *Dao[T]) SumByQuery(ctx context.Context, qry ddd_repository.FindPagingQu
 	if err := rsql.ParseProcess(filterRSQL, process); err != nil {
 		return nil, false, err
 	}
-	filter, ok := process.GetFilter().(*rsql_mongo.Filter)
+	filter, ok := process.GetFilter().(*rsql_mongo2.Filter)
 	if !ok {
 		return nil, false, errors.New("filter does not implement Filter")
 	}
@@ -1125,7 +1125,7 @@ func (r *Dao[T]) SumByRSQL(ctx context.Context, tenantId string, rSql string, va
 	return list[0]
 }
 
-func (r *Dao[T]) sum(ctx context.Context, filter *rsql_mongo.Filter, valueCols []*ddd_repository.ValueCol, list any, opts ...ddd_repository.Options) (any, bool, error) {
+func (r *Dao[T]) sum(ctx context.Context, filter *rsql_mongo2.Filter, valueCols []*ddd_repository.ValueCol, list any, opts ...ddd_repository.Options) (any, bool, error) {
 	coll := r.getCollection(ctx)
 	/*
 		var match map[string]any
@@ -1196,8 +1196,8 @@ func (r *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, 
 	return total, err
 }
 
-func (r *Dao[T]) doList(tenantId, rsql string, fun func(filter *rsql_mongo.Filter) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+func (r *Dao[T]) doList(tenantId, rsql string, fun func(filter *rsql_mongo2.Filter) ([]T, bool, error)) *ddd_repository.FindListResult[T] {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindListResultError[T](err)
 	}
 	filterData, err := r.getFilter(tenantId, rsql)
@@ -1213,8 +1213,8 @@ func (r *Dao[T]) doList(tenantId, rsql string, fun func(filter *rsql_mongo.Filte
 	return ddd_repository.NewFindListResult(data, ok, err)
 }
 
-func (r *Dao[T]) doFilter(tenantId, rsql string, fun func(filter *rsql_mongo.Filter) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
-	if err := assert.NotEmpty(tenantId, assert.NewOptions("tenantId is empty")); err != nil {
+func (r *Dao[T]) doFilter(tenantId, rsql string, fun func(filter *rsql_mongo2.Filter) (*ddd_repository.FindPagingResult[T], bool, error)) *ddd_repository.FindPagingResult[T] {
+	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return ddd_repository.NewFindPagingResultWithError[T](err)
 	}
 	filterData, err := r.getFilter(tenantId, rsql)
@@ -1230,7 +1230,7 @@ func (r *Dao[T]) doFilter(tenantId, rsql string, fun func(filter *rsql_mongo.Fil
 	return data
 }
 
-func (r *Dao[T]) GetFilterMap(tenantId, rsql string) *rsql_mongo.Filter {
+func (r *Dao[T]) GetFilterMap(tenantId, rsql string) *rsql_mongo2.Filter {
 	data, err := r.getFilter(tenantId, rsql)
 	if err != nil {
 		panic(err)
@@ -1238,12 +1238,12 @@ func (r *Dao[T]) GetFilterMap(tenantId, rsql string) *rsql_mongo.Filter {
 	return data
 }
 
-func (r *Dao[T]) getFilter(tenantId, rSql string) (*rsql_mongo.Filter, error) {
-	process := rsql_mongo.NewProcess(tenantId)
+func (r *Dao[T]) getFilter(tenantId, rSql string) (*rsql_mongo2.Filter, error) {
+	process := rsql_mongo2.NewProcess(tenantId)
 	if err := rsql.ParseProcess(rSql, process); err != nil {
 		return nil, err
 	}
-	filter := process.GetFilter().(*rsql_mongo.Filter)
+	filter := process.GetFilter().(*rsql_mongo2.Filter)
 	return filter, nil
 }
 
