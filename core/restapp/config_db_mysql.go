@@ -89,7 +89,7 @@ func addMysql(dbKey string, mysqlDb *gorm.DB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
 		dbType: DbType_MySQL,
-		mysql:  mysqlDb,
+		gormDb: mysqlDb,
 		config: config,
 	}
 	addDb(item)

@@ -34,19 +34,19 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc ddd_repository.TxFunc,
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
 			case restapp.DbType_Sqlite:
-				newTxFunc = newGormFunc(item.GetSqlite(), dbKey, newTxFunc)
+				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			case restapp.DbType_MySQL:
-				newTxFunc = newGormFunc(item.GetMySQL(), dbKey, newTxFunc)
+				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			case restapp.DbType_MsSQL:
-				newTxFunc = newGormFunc(item.GetMsSQL(), dbKey, newTxFunc)
+				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			case restapp.DbType_Oracle:
-				newTxFunc = newGormFunc(item.GetOracle(), dbKey, newTxFunc)
+				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			case restapp.DbType_Postgres:
-				newTxFunc = newGormFunc(item.GetPostgres(), dbKey, newTxFunc)
+				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			}
 		}

@@ -49,15 +49,15 @@ func NewDaoWithDbKey[T any](cfg *NewConfig) ddd_repository.Dao[T] {
 	if db == nil {
 		switch item.GetDBType() {
 		case restapp.DbType_Postgres:
-			db = item.GetPostgres()
+			db = item.GetGormDB()
 		case restapp.DbType_MySQL:
-			db = item.GetMySQL()
+			db = item.GetGormDB()
 		case restapp.DbType_Sqlite:
-			db = item.GetSqlite()
+			db = item.GetGormDB()
 		case restapp.DbType_MsSQL:
-			db = item.GetMsSQL()
+			db = item.GetGormDB()
 		case restapp.DbType_Oracle:
-			db = item.GetOracle()
+			db = item.GetGormDB()
 		default:
 			panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))
 		}
