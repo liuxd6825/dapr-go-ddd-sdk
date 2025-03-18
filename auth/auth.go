@@ -7,7 +7,6 @@ import (
 	mongodbadapter "github.com/casbin/mongodb-adapter/v3"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"gorm.io/gorm"
 )
 
 var _enforcer = NewEnforcerEmpty()
@@ -37,10 +36,14 @@ func Init(dbKey string, modelConfFile string) {
 				panic("Failed to create Casbin enforcer")
 			}
 			_enforcer = enforcer
+		} else {
+			panic(errors.New("db type not supported"))
 		}
 		break
-	case restapp.DbType_Postgres, restapp.DbType_MySQL, restapp.DbType_Oracle, restapp.DbType_MsSQL, restapp.DbType_Sqlite:
-		if db, ok := dbItem.GetPostgres() ok {
+	case restapp.DbType_Postgres, restapp.DbType_MySQL,
+		restapp.DbType_Oracle, restapp.DbType_MsSQL,
+		restapp.DbType_Sqlite:
+		if db := dbItem.GetGormDB(); db != nil {
 			adapter, err := gormadapter.NewAdapterByDB(db)
 			if err != nil {
 				panic("Failed to create Casbin adapter")
@@ -50,6 +53,8 @@ func Init(dbKey string, modelConfFile string) {
 				panic("Failed to create Casbin enforcer")
 			}
 			_enforcer = enforcer
+		} else {
+			panic(errors.New("db type not supported"))
 		}
 		break
 	default:

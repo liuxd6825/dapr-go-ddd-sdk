@@ -15,6 +15,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -432,11 +433,7 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 }
 
 func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
-	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		panic(fmt.Sprintf("数据库连接失败: %v", err))
-	}
-
+	db := xtest.NewSqlite()
 	//humanName := randomutils.NameCN()
 	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
 	if err != nil {
@@ -447,7 +444,7 @@ func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 	dbSch.TableName = tableName
 
 	daoCfg := &idao.DaoConfig{
-		Database:   database,
+		Database:   db,
 		DbKey:      "sql",
 		Schema:     dbSch,
 		Env:        tests.NewEnvConfig(),
