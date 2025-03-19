@@ -10,34 +10,56 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type NewConfig struct {
 	DbKey        string           `json:"dbKey"`
+	Db           any              `json:"db"`
 	EventPublish *bool            `json:"eventPublish"`
 	AggField     string           `json:"aggField"`
 	DbSchema     *dbschema.Schema `json:"dbSchema"`
+	TableName    string           `json:"tableName"`
 }
 
 var daoMap = types.NewCMap[any]()
 
 func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
-	dbKey := newCfg.DbKey
-	if dbKey == "" {
-		dbKey = "default"
+	if newCfg == nil {
+		panic("new dao must have a non-nil pointer")
 	}
+	if newCfg.DbKey == "" {
+		db := restapp2.GetDBDefault()
+		newCfg.DbKey = db.GetDBKey()
+	}
+	dbKey := newCfg.DbKey
+	tableName := newCfg.TableName
+
+	if newCfg.DbSchema == nil && !reflectutils.IsMap[T]() {
+		entity := reflectutils.NewInstance[T]()
+		if tableName == "" {
+			tableName = reflectutils.GetStructName(entity)
+			tableName = stringutils.SnakeString(tableName)
+		}
+		dbSchema := dbschema.NewSchemaWithStruct(tableName, entity, tableName)
+		newCfg.DbSchema = dbSchema
+	}
+
 	if newCfg.DbSchema == nil {
 		panic("db.NewDao() args schema is required")
 	}
 
-	tableName := newCfg.DbSchema.Name
+	if tableName == "" && newCfg.DbSchema != nil {
+		tableName = newCfg.DbSchema.TableName
+	}
 	daoKey := getDaoKey(dbKey, tableName)
 
 	if v, ok := daoMap.Get(daoKey); v != nil && ok {
 		return v.(idao.Dao[T])
 	}
 
-	item := getDbItem(dbKey)
+	item := getDBItem(dbKey)
 
 	eventPublish := false
 	if newCfg.EventPublish != nil {
@@ -48,6 +70,7 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 
 	daoCfg := &idao.DaoConfig{
 		DbKey:      newCfg.DbKey,
+		Database:   newCfg.Db,
 		IsPubEvent: eventPublish,
 		AggField:   newCfg.AggField,
 		Env:        restapp2.GetEnvConfig(),
@@ -81,8 +104,8 @@ func getDaoKey(dbKey, tableName string) string {
 	return fmt.Sprintf("%s.%s", dbKey, tableName)
 }
 
-func getDbItem(dbKey string) restapp2.DBItem {
-	item := restapp2.GetDb(dbKey)
+func getDBItem(dbKey string) restapp2.DBItem {
+	item := restapp2.GetDB(dbKey)
 	if item == nil {
 		panic(errors.New(" %s dbKey not exists", dbKey))
 	}

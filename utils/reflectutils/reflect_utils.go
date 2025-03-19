@@ -210,6 +210,40 @@ func IsMap[T any]() bool {
 	return false
 }
 
+// GetStructName 获取 any 变量的结构体类型名称（不包含包路径）
+func GetStructName(v any) string {
+	// 获取反射类型
+	t := reflect.TypeOf(v)
+
+	// 处理指针类型
+	if t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem() // 解引用指针
+	}
+
+	// 检查是否为结构体类型
+	if t != nil && t.Kind() == reflect.Struct {
+		return t.Name() // 返回完整的类型名称（包路径 + 类型名）
+	}
+	return ""
+}
+
+// GetStructFullName 获取 any 变量的结构体类型名称（包含包路径）
+func GetStructFullName(v any) string {
+	// 获取反射类型
+	t := reflect.TypeOf(v)
+
+	// 处理指针类型
+	if t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem() // 解引用指针
+	}
+
+	// 检查是否为结构体类型
+	if t != nil && t.Kind() == reflect.Struct {
+		return t.String() // 返回完整的类型名称（包路径 + 类型名）
+	}
+	return ""
+}
+
 func NewStruct[T any]() (res T, resErr error) {
 	defer func() {
 		if err := errors2.GetError(recover()); err != nil {

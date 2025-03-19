@@ -44,7 +44,7 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	userlog.Init(env.App.AppId, env.App.AppName)
 
 	//设置CPU与内容
-	if err := setCpuMemory(env.Name, &env.App); err != nil {
+	if err := setCpuMemory(env.Name, env.App); err != nil {
 		return err
 	}
 
@@ -86,19 +86,22 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 
 	SetEnvConfig(env)
 
-	// 启动服务，创建dapr客户端
-	daprClient, err := dapr2.NewDaprClient(ctx, env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort(), func(ops *dapr2.DaprHttpOptions) {
-		ops.MaxCallRecvMsgSize = intutils.P2IntDefault(env.Dapr.MaxCallRecvMsgSize, dapr2.GetMaxCallRecvMsgSize())
-		ops.MaxIdleConns = intutils.P2IntDefault(env.Dapr.MaxIdleConns, dapr2.DefaultMaxIdleConns)
-		ops.MaxIdleConnsPerHost = intutils.P2IntDefault(env.Dapr.MaxIdleConnsPerHost, dapr2.DefaultMaxIdleConnsPerHost)
-		ops.IdleConnTimeout = intutils.P2IntDefault(env.Dapr.IdleConnTimeout, dapr2.DefaultIdleConnTimeout)
-	})
-
-	if err != nil {
-		return err
+	var daprClient dapr2.DaprClient
+	var err error
+	if env.Dapr.IsEnable() {
+		// 启动服务，创建dapr客户端
+		daprClient, err = dapr2.NewDaprClient(ctx, env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort(), func(ops *dapr2.DaprHttpOptions) {
+			ops.MaxCallRecvMsgSize = intutils.P2IntDefault(env.Dapr.MaxCallRecvMsgSize, dapr2.GetMaxCallRecvMsgSize())
+			ops.MaxIdleConns = intutils.P2IntDefault(env.Dapr.MaxIdleConns, dapr2.DefaultMaxIdleConns)
+			ops.MaxIdleConnsPerHost = intutils.P2IntDefault(env.Dapr.MaxIdleConnsPerHost, dapr2.DefaultMaxIdleConnsPerHost)
+			ops.IdleConnTimeout = intutils.P2IntDefault(env.Dapr.IdleConnTimeout, dapr2.DefaultIdleConnTimeout)
+		})
+		if err != nil {
+			return err
+		}
+		dapr2.SetDaprClient(daprClient)
 	}
 
-	dapr2.SetDaprClient(daprClient)
 	ddd.Init(env.App.AppId)
 
 	level, err := logs.ParseLevel(env.Log.Level)
@@ -115,7 +118,7 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	}
 
 	// 注册事件存储器
-	eventStoresMap := newEventStores(&env.Dapr, daprClient)
+	eventStoresMap := newEventStores(env.Dapr, daprClient)
 	for key, es := range eventStoresMap {
 		ddd.RegisterEventStore(key, es)
 	}
@@ -220,6 +223,9 @@ func setMem(val string) (string, error) {
 func newEventStores(cfg *DaprConfig, client dapr2.DaprClient) map[string]ddd.EventStore {
 	//创建dapr事件存储器
 	eventStoresMap := make(map[string]ddd.EventStore)
+	if !cfg.IsEnable() {
+		return eventStoresMap
+	}
 	esMap := cfg.EventStores
 	if len(esMap) == 0 {
 		logs.Panicf(context.Background(), "", nil, "config eventStores is empity")

@@ -1,9 +1,4 @@
-package tests
-
-import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
-	"time"
-)
+package xtest
 
 const HumanSchema = `
 	{
@@ -230,59 +225,3 @@ const HumanRelSchema = `
 	  }
 	}
 	`
-
-type Human struct {
-	Id         string    `gorm:"primaryKey"`
-	Name       string    `gorm:"name"`
-	Age        int       `gorm:"age"`
-	Analyse    string    `gorm:"analyse"`
-	Birthday   time.Time `gorm:"birthday"`
-	PeopleType []string  `gorm:"people_type;type:text[]"`
-}
-
-type EnvConfig struct {
-}
-
-func (e EnvConfig) GetAppId() string {
-	return "test"
-}
-
-func (e EnvConfig) GetAppName() string {
-	return "app"
-}
-
-func (e EnvConfig) GetAppHttpHost() string {
-	return "localhost"
-}
-
-func (e EnvConfig) GetAppHttpPort() int {
-	return 0
-}
-
-func (e EnvConfig) GetDaprHost() string {
-	return "localhost"
-}
-
-func (e EnvConfig) GetDaprHttpPort() int64 {
-	return 0
-}
-
-func (e EnvConfig) GetDaprGrpcPort() int64 {
-	return 0
-}
-
-func (e EnvConfig) GetFsManager() *fsm.Manager {
-	return nil
-}
-
-func (e EnvConfig) GetHServerSrcPath() string {
-	return ""
-}
-
-func (e EnvConfig) GetHServerEnable() bool {
-	return false
-}
-
-func NewEnvConfig() *EnvConfig {
-	return &EnvConfig{}
-}

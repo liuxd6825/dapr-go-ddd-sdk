@@ -76,7 +76,7 @@ func RegisterOnStartInit(startEvent OnStartEvent) {
 	}
 }
 
-func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.Service {
+func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Service {
 	actorRuntime := runtime.GetActorRuntimeInstanceContext()
 	envConfig := opts.EnvConfig
 
@@ -94,7 +94,7 @@ func NewHttpServer(daprDddClient dapr.DaprClient, opts *ServiceOptions) common.S
 		httpHost:         opts.HttpHost,
 		appId:            opts.AppId,
 		logLevel:         opts.LogLevel,
-		daprDddClient:    daprDddClient,
+		daprDddClient:    daprClient,
 		actorFactories:   opts.ActorFactories,
 		subscribes:       opts.Subscribes,
 		controllers:      opts.Controllers,
@@ -171,19 +171,24 @@ func (s *HttpServer) Start() error {
 	}
 
 	// 注册基础控制器
-	s.registerBaseHandler()
+	s.registerDaprBaseHandler()
+
+	// 注册swagger
+	s.registerSwagger()
 
 	// 注册Swagger控制器
 	if err := s.addSwaggerHandler(app); err != nil {
 		panic(err.Error())
 	}
 
-	// 注册actor服务
-	var actors []actor.FactoryContext
-	actors = append(actors, s.actorFactories...)
-	actors = append(actors, GetActors()...)
-	for _, f := range actors {
-		s.RegisterActorImplFactoryContext(f)
+	if s.daprDddClient != nil {
+		// 注册actor服务
+		var actors []actor.FactoryContext
+		actors = append(actors, s.actorFactories...)
+		actors = append(actors, GetActors()...)
+		for _, f := range actors {
+			s.RegisterActorImplFactoryContext(f)
+		}
 	}
 
 	app.ConfigureHost(func(su *host.Supervisor) {

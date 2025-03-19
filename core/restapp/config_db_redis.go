@@ -141,6 +141,6 @@ func addRedis(dbKey string, redisDb *redis.Client) DBItem {
 		dbType: DbType_Redis,
 		redis:  redisDb,
 	}
-	addDb(item)
+	addDB(item)
 	return item
 }

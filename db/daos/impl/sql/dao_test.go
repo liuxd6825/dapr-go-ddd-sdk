@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/tests"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
@@ -422,7 +421,7 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 		Database:   database,
 		DbKey:      "sql",
 		Schema:     dbSch,
-		Env:        tests.NewEnvConfig(),
+		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
@@ -435,7 +434,7 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 	db := xtest.NewSqlite()
 	//humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+	humanSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
 	if err != nil {
 		panic(err)
 	}
@@ -447,7 +446,7 @@ func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 		Database:   db,
 		DbKey:      "sql",
 		Schema:     dbSch,
-		Env:        tests.NewEnvConfig(),
+		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 

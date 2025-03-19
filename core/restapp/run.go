@@ -14,6 +14,17 @@ import (
 )
 
 type RunConfig struct {
+	Subs        func() []RegisterSubscribe
+	Controllers func() []Controller
+	EventTypes  func() []RegisterEventType
+	Actors      func() []actor.FactoryContext
+}
+
+func NewRunConfig() *RunConfig {
+	return &RunConfig{}
+}
+
+type runConfig struct {
 	AppId                  string
 	HttpHost               string
 	HttpPort               int
@@ -22,20 +33,17 @@ type RunConfig struct {
 	DaprClient             dapr.DaprClient
 	EnvConfig              *EnvConfig
 	FsManager              *fsm.Manager
+	SubsFunc               func() []RegisterSubscribe
+	ControllersFunc        func() []Controller
+	EventTypeFunc          func() []RegisterEventType
+	ActorsFunc             func() []actor.FactoryContext
 }
 
 type RegisterHandler interface {
 	RegisterHandler(app *iris.Application)
 }
 
-func RunWithConfig(
-	envName string,
-	configFile string,
-	subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller,
-	eventsFunc func() []RegisterEventType,
-	actorsFunc func() []actor.FactoryContext,
-	options ...*RunOptions,
+func RunWithConfig(envName string, configFile string, cfg *RunConfig, options ...*RunOptions,
 ) (common.Service, error) {
 
 	config, err := NewConfigByFile(configFile)
@@ -55,10 +63,10 @@ func RunWithConfig(
 		return nil, err
 	}
 
-	return RubWithEnvConfig(envConfig, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
+	return Run(envConfig, cfg, options...)
 }
 
-// RubWithEnvConfig
+// Run
 //
 //	@Description: 服务启动
 //	@param config  环境配置
@@ -69,9 +77,7 @@ func RunWithConfig(
 //	@param options 启动参数， 可以根据参数启动服务，初始化数据库，生成数据库脚本等
 //	@return common.Service 服务
 //	@return error  错误
-func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller, eventsFunc func() []RegisterEventType, actorsFunc func() []actor.FactoryContext, options ...*RunOptions) (common.Service, error) {
-
+func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.Service, error) {
 	SetEnvConfig(envConfig)
 	/*
 		ctx := context.Background()
@@ -133,8 +139,8 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 	}
 
 	var eventType []RegisterEventType
-	if eventsFunc != nil {
-		eventType = eventsFunc()
+	if cfg.EventTypes != nil {
+		eventType = cfg.EventTypes()
 	}
 
 	// 初始化应用
@@ -143,7 +149,7 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 	}
 
 	daprClient := dapr.GetDaprClient()
-	runCfg := &RunConfig{
+	runCfg := &runConfig{
 		AppId:      envConfig.App.AppId,
 		HttpHost:   envConfig.App.HttpHost,
 		HttpPort:   envConfig.App.HttpPort,
@@ -153,7 +159,7 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 		FsManager:  envConfig.fsManager,
 	}
 
-	return run(runCfg, envConfig.App.RootUrl, subsFunc, controllersFunc, eventsFunc, actorsFunc, options...)
+	return run(runCfg, envConfig.App.RootUrl, cfg, options...)
 }
 
 // Run
@@ -166,14 +172,7 @@ func RubWithEnvConfig(envConfig *EnvConfig, subsFunc func() []RegisterSubscribe,
 // @param eventStorages
 // @param eventTypesFunc
 // @return error
-func run(
-	runCfg *RunConfig,
-	webRootPath string,
-	subsFunc func() []RegisterSubscribe,
-	controllersFunc func() []Controller,
-	eventTypesFunc func() []RegisterEventType,
-	actorsFunc func() []actor.FactoryContext,
-	runOptions ...*RunOptions,
+func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions ...*RunOptions,
 ) (res common.Service, err error) {
 
 	defer func() {
@@ -191,23 +190,23 @@ func run(
 	}
 
 	var subscribes []RegisterSubscribe
-	if subsFunc != nil {
-		subscribes = subsFunc()
+	if runCfgs.Subs != nil {
+		subscribes = runCfgs.Subs()
 	}
 
 	var controllers []Controller
-	if controllersFunc != nil {
-		controllers = controllersFunc()
+	if runCfgs.Controllers != nil {
+		controllers = runCfgs.Controllers()
 	}
 
 	var actorFactories []actor.FactoryContext
-	if actorsFunc != nil {
-		actorFactories = actorsFunc()
+	if runCfgs.Actors != nil {
+		actorFactories = runCfgs.Actors()
 	}
 
 	var eventTypes []RegisterEventType
-	if eventTypesFunc != nil {
-		eventTypes = eventTypesFunc()
+	if runCfgs.EventTypes != nil {
+		eventTypes = runCfgs.EventTypes()
 	}
 
 	serverOptions := &ServiceOptions{

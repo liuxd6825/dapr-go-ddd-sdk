@@ -37,7 +37,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	}
 
 	if db == nil {
-		item := restapp.GetDb(cfg.DbKey)
+		item := restapp.GetDB(cfg.DbKey)
 		if item == nil {
 			panic("db item not found")
 		}

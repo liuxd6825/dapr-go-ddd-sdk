@@ -91,7 +91,7 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 		c.DbKey = dbKey
 		_mongoDbs[dbKey] = mongodb
 		_mongoDefault = mongodb
-		addMongoDb(dbKey, mongodb, config)
+		addMongoDB(dbKey, mongodb, config)
 	}
 	if len(_mongoDbs) > 1 {
 		_mongoDefault = nil
@@ -248,13 +248,13 @@ func defaultTimeout(val string, def string) time.Duration {
 	return v
 }
 
-func addMongoDb(dbKey string, mongoDb *ddd_mongodb.MongoDB, config any) DBItem {
+func addMongoDB(dbKey string, mongoDb *ddd_mongodb.MongoDB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
 		dbType: DbType_MongoDB,
 		mongo:  mongoDb,
 		config: config,
 	}
-	addDb(item)
+	addDB(item)
 	return item
 }

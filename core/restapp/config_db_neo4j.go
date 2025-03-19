@@ -87,6 +87,6 @@ func addNeo4j(dbKey string, neo4jDb neo4j.DriverWithContext, config any) DBItem 
 		neo4j:  neo4jDb,
 		config: config,
 	}
-	addDb(item)
+	addDB(item)
 	return item
 }

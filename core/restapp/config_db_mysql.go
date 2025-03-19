@@ -92,6 +92,6 @@ func addMysql(dbKey string, mysqlDb *gorm.DB, config any) DBItem {
 		gormDb: mysqlDb,
 		config: config,
 	}
-	addDb(item)
+	addDB(item)
 	return item
 }

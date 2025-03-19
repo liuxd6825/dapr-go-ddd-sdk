@@ -30,7 +30,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableName ...string) idao.Dao[T] {
 	}
 
 	if driver == nil {
-		item := restapp.GetDb(cfg.DbKey)
+		item := restapp.GetDB(cfg.DbKey)
 		if item == nil {
 			panic(fmt.Sprintf("dbKey %s not found", cfg.DbKey))
 		}

@@ -49,7 +49,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	if v, ok := cfg.Database.(*ddd_mongodb.MongoDB); ok {
 		mongoDb = v
 	} else {
-		item := restapp.GetDb(cfg.DbKey)
+		item := restapp.GetDB(cfg.DbKey)
 		if item == nil {
 			panic(errors.New(" %s database not found", cfg.DbKey))
 		}

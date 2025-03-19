@@ -1,9 +1,9 @@
 package sql
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/tests"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormschema "gorm.io/gorm/schema"
@@ -30,7 +30,7 @@ func Test_Schema(t *testing.T) {
 		return
 	}
 
-	dest, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+	dest, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
 	if err != nil {
 		t.Error(err)
 		return

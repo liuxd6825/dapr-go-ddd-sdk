@@ -41,7 +41,7 @@ var fields = ddd.GetFields()
 
 func NewDaoWithDbKey[T any](cfg *NewConfig) ddd_repository.Dao[T] {
 	dbKey := cfg.DbKey
-	item := restapp.GetDb(dbKey)
+	item := restapp.GetDB(dbKey)
 	if item == nil {
 		panic(errors.New(fmt.Sprintf("db key %s not found", dbKey)))
 	}
@@ -784,7 +784,7 @@ func (d *Dao[T]) table(ctx context.Context, opts ...ddd_repository.Options) *gor
 	if tx == nil {
 		tx = d.db
 	}
-	return tx.Table(d.tableName).MapSchema(d.gormSchema).Unscoped()
+	return tx.Table(d.tableName).CustomSchema(d.gormSchema).Unscoped()
 }
 
 func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, sqlFunc func(sql string) error) error {

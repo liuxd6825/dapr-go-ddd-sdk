@@ -132,7 +132,7 @@ func (d *dbItem) GetConfig() any {
 	return d.config
 }
 
-func addDb(dbItem DBItem) {
+func addDB(dbItem DBItem) {
 	dbKey := dbItem.GetDBKey()
 	_, ok := _dbs[dbKey]
 	if ok {
@@ -141,14 +141,21 @@ func addDb(dbItem DBItem) {
 	_dbs[dbKey] = dbItem
 }
 
-func CloseAllDb(ctx context.Context) error {
+func CloseAllDB(ctx context.Context) error {
 	for _, d := range _dbs {
 		_ = d.CloseDB(ctx)
 	}
 	return nil
 }
 
-func GetDb(dbKey string) DBItem {
+func GetDB(dbKey string) DBItem {
 	item := _dbs[dbKey]
 	return item
+}
+
+func GetDBDefault() DBItem {
+	for _, d := range _dbs {
+		return d
+	}
+	return nil
 }

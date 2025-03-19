@@ -22,9 +22,9 @@ type Config struct {
 
 type EnvConfig struct {
 	Name       string                     `yaml:"-" json:"name"`
-	App        AppConfig                  `yaml:"app" json:"app"`
-	Log        LogConfig                  `yaml:"log" json:"log"`
-	Dapr       DaprConfig                 `yaml:"dapr" json:"dapr"`
+	App        *AppConfig                 `yaml:"app" json:"app"`
+	Log        *LogConfig                 `yaml:"log" json:"log"`
+	Dapr       *DaprConfig                `yaml:"dapr" json:"dapr"`
 	Resources  map[string]*ResourceConfig `yaml:"resources" json:"resources"`
 	Mongo      map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
 	Neo4j      map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
@@ -34,6 +34,41 @@ type EnvConfig struct {
 	Fs         []map[string]any           `yaml:"fs" json:"fs"`
 	AuthConfig *AuthConfig                `yaml:"auth" json:"auth"`
 	fsManager  *fsm.Manager               `yaml:"-" json:"-"`
+}
+
+func NewEnvConfig(name string) *EnvConfig {
+	return &EnvConfig{
+		Name:       name,
+		App:        NewAppConfig(),
+		Log:        newLogConfig(),
+		Dapr:       newDaprConfig(),
+		Resources:  map[string]*ResourceConfig{},
+		Mongo:      map[string]*MongoConfig{},
+		Neo4j:      map[string]*Neo4jConfig{},
+		Mysql:      map[string]*MySqlConfig{},
+		Minio:      map[string]*MinioConfig{},
+		Redis:      map[string]*RedisConfig{},
+		Fs:         []map[string]any{},
+		AuthConfig: &AuthConfig{},
+		fsManager:  fsm.NewManager(),
+	}
+}
+
+func newLogConfig() *LogConfig {
+	return &LogConfig{
+		Level:      "info",
+		SaveDays:   10,
+		SplitHour:  12,
+		OutputType: "console",
+		level:      logs.InfoLevel,
+	}
+}
+
+func newDaprConfig() *DaprConfig {
+	enable := false
+	return &DaprConfig{
+		Enable: &enable,
+	}
 }
 
 // FsRootPath fs文件系统取根路径
@@ -59,6 +94,14 @@ type AppConfig struct {
 	Template  HtmlTemplate      `yaml:"template" json:"template"` // html模板配置
 }
 
+func NewAppConfig() *AppConfig {
+	return &AppConfig{
+		AppId:    "",
+		AppName:  "",
+		HttpHost: "0.0.0.0",
+		HttpPort: 1984,
+	}
+}
 func (a *AppConfig) GetAppId() string {
 	return a.AppId
 }
@@ -133,6 +176,7 @@ type DaprConfig struct {
 	Actor               ActorConfig            `yaml:"actor" json:"actor"`
 	Start               bool                   `yaml:"start" json:"start"`
 	StartArgs           Metadata               `yaml:"startArgs" json:"startArgs"`
+	Enable              *bool                  `yaml:"enable" json:"enable"`
 }
 
 // DaprServerConfig dapr服务端参数
@@ -371,6 +415,10 @@ func (c *DaprConfig) init(e *EnvConfig) error {
 
 	return nil
 
+}
+
+func (c *DaprConfig) IsEnable() bool {
+	return c.Enable != nil && *c.Enable
 }
 
 func (c *DaprConfig) GetHost() string {

@@ -218,39 +218,39 @@ func (s *HttpServer) registerBaseHandler() {
 */
 
 // registerBaseHandler 注册基础控制器
-func (s *HttpServer) registerBaseHandler() {
-	//app.Use(GlobalJsonSerialization)
-	// register subscribe handler
-	s.app.Get("dapr/subscribe", s.subscribesHandler)
+func (s *HttpServer) registerDaprBaseHandler() {
+	if s.daprDddClient != nil {
+		//app.Use(GlobalJsonSerialization)
+		// register subscribe handler
+		s.app.Get("dapr/subscribe", s.subscribesHandler)
 
-	// register domain event types
-	s.app.Get("dapr/event-types", s.eventTypesHandler)
+		// register domain event types
+		s.app.Get("dapr/event-types", s.eventTypesHandler)
 
-	//	register health check handler
-	s.app.Get("/healthz", func(ictx *iris_context.Context) {
-		ictx.ResponseWriter().WriteHeader(http.StatusOK)
-	})
+		//	register health check handler
+		s.app.Get("/healthz", func(ictx *iris_context.Context) {
+			ictx.ResponseWriter().WriteHeader(http.StatusOK)
+		})
 
-	// register actor config handler
-	s.app.Get("/dapr/config", s.actorConfigHandler)
+		// register actor config handler
+		s.app.Get("/dapr/config", s.actorConfigHandler)
 
-	// register actor method invoke handler
-	s.app.Put("/actors/{actorType}/{actorId}/method/{methodName}", s.actorInvokeHandler)
+		// register actor method invoke handler
+		s.app.Put("/actors/{actorType}/{actorId}/method/{methodName}", s.actorInvokeHandler)
 
-	// register deactivate actor handler
-	s.app.Delete("/actors/{actorType}/{actorId}", s.actorDeactivateHandler)
+		// register deactivate actor handler
+		s.app.Delete("/actors/{actorType}/{actorId}", s.actorDeactivateHandler)
 
-	// register actor reminder invoke handler
-	s.app.Put("/actors/{actorType}/{actorId}/method/remind/{reminderName}", s.actorReminderInvokeHandler)
+		// register actor reminder invoke handler
+		s.app.Put("/actors/{actorType}/{actorId}/method/remind/{reminderName}", s.actorReminderInvokeHandler)
 
-	// register actor reminder invoke handler
-	s.app.Put("/actors/{actorType}/{actorId}/method/timer/{timerName}", s.actorTimerInvokeHandler)
+		// register actor reminder invoke handler
+		s.app.Put("/actors/{actorType}/{actorId}/method/timer/{timerName}", s.actorTimerInvokeHandler)
 
-	s.app.HandleMany("ALL", "/jobs/{name}", func(context *iris_context.Context) {
-		println("/jobs/{name}")
-	})
-	// register swagger doc
-	s.registerSwagger()
+		s.app.HandleMany("ALL", "/jobs/{name}", func(context *iris_context.Context) {
+			println("/jobs/{name}")
+		})
+	}
 
 }
 
