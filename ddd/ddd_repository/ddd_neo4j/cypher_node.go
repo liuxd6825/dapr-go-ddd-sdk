@@ -16,7 +16,7 @@ import (
 type nodeCypher[T any] struct {
 	labels string
 	eb     NodeEntityBuilder[T]
-	schema *dbschema.Schema
+	schema *dbschema.DBSchema
 }
 
 const (
@@ -28,7 +28,7 @@ const (
 // @Description:
 // @param labels Neo4j标签
 // @return nodeCypher
-func NewNodeCypher[T any](eb NodeEntityBuilder[T], schema *dbschema.Schema, labels ...string) Cypher[T] {
+func NewNodeCypher[T any](eb NodeEntityBuilder[T], schema *dbschema.DBSchema, labels ...string) Cypher[T] {
 	return &nodeCypher[T]{
 		eb:     eb,
 		labels: getLabels(labels...),

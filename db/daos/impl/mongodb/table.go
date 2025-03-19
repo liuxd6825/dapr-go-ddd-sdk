@@ -10,15 +10,15 @@ import (
 
 type Table struct {
 	tableName string
-	schema    *dbschema.Schema
+	schema    *dbschema.DBSchema
 	db        *ddd_mongodb.MongoDB
 }
 
-func NewTable(db *ddd_mongodb.MongoDB, schema *dbschema.Schema) idao.Table {
+func NewTable(db *ddd_mongodb.MongoDB, schema *dbschema.DBSchema) idao.Table {
 	return newTable(db, schema)
 }
 
-func newTable(db *ddd_mongodb.MongoDB, schema *dbschema.Schema) *Table {
+func newTable(db *ddd_mongodb.MongoDB, schema *dbschema.DBSchema) *Table {
 	tableName := stringutils.AsFieldName(schema.Name)
 	return &Table{db: db, tableName: tableName, schema: schema}
 }
@@ -27,7 +27,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *dbschema.Schema {
+func (t *Table) GetSchema() *dbschema.DBSchema {
 	return t.schema
 }
 

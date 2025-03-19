@@ -17,14 +17,14 @@ type relationCypher[T any] struct {
 	matchTypes    string
 	isEmptyLabels bool
 	eb            RelationEntityBuilder[T]
-	schema        *dbschema.Schema
+	schema        *dbschema.DBSchema
 }
 
 // NewRelationCypher
 // @Description:
 // @param labels 关系标签，可以为空值；为空：由Relation.GetRelType()决定标签名称
 // @return Cypher
-func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *dbschema.Schema, relTypes ...string) Cypher[T] {
+func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *dbschema.DBSchema, relTypes ...string) Cypher[T] {
 	matchTypes := ":" + strings.Join(relTypes, "|")
 
 	rel := &relationCypher[T]{

@@ -26,7 +26,7 @@ type Dao[T any] struct {
 	dbKey      string
 	entity     T
 	tableName  string
-	dbSchema   *dbschema.Schema
+	dbSchema   *dbschema.DBSchema
 	gormSchema *gormschema.Schema
 }
 
@@ -70,7 +70,7 @@ type NewConfig struct {
 	DbKey      string
 	TableName  string
 	Db         *gorm.DB
-	DBSchema   *dbschema.Schema
+	DBSchema   *dbschema.DBSchema
 	GormSchema *gormschema.Schema
 }
 
@@ -139,7 +139,7 @@ func (d *Dao[T]) getIds(entities []T) []string {
 	return ids
 }
 
-func (d *Dao[T]) GetSchema() *dbschema.Schema {
+func (d *Dao[T]) GetSchema() *dbschema.DBSchema {
 	return d.dbSchema
 }
 

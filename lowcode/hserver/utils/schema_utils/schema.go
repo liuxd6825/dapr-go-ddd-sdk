@@ -3,7 +3,7 @@ package schema_utils
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema/formats"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -43,7 +43,7 @@ func newCompiler() *jsonschema.Compiler {
 	compiler := jsonschema.NewCompiler()
 	compiler.AssertFormat()
 	compiler.AssertContent()
-	compiler.RegisterFormat(formats.DateTimeFormat)
-	compiler.RegisterFormat(formats.DateFormat)
+	compiler.RegisterFormat(jsonschemautils.DateTimeFormat)
+	compiler.RegisterFormat(jsonschemautils.DateFormat)
 	return compiler
 }

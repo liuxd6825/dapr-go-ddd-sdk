@@ -56,7 +56,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 		mongoDb = item.GetMongo()
 	}
 
-	tableName := cfg.Schema.Name
+	tableName := cfg.DBSchema.Name
 	if len(tableNames) > 0 {
 		tableName = tableNames[0]
 	}
@@ -79,10 +79,10 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	if opt.GetCollCallback != nil {
 		getCollCallback = opt.GetCollCallback
 	}
-	eb := ddd.NewAnyEntityBuilder[T](cfg.Schema)
+	eb := ddd.NewAnyEntityBuilder[T](cfg.DBSchema)
 	daoOpts := ddd_mongodb.NewOptions[T]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(eb)
 
-	dao := ddd_mongodb.NewDao[T](cfg.Schema, getCollCallback, daoOpts)
+	dao := ddd_mongodb.NewDao[T](cfg.DBSchema, getCollCallback, daoOpts)
 	res := &Dao[T]{
 		dao:     dao,
 		DaoBase: impl.NewDaoBase[T](dao, cfg),
@@ -93,9 +93,9 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 }
 
 func (d *Dao[T]) Table() idao.Table {
-	return NewTable(d.db, d.cfg.Schema)
+	return NewTable(d.db, d.cfg.DBSchema)
 }
 
 func (d *Dao[T]) GetTableName() string {
-	return d.cfg.Schema.TableName
+	return d.cfg.DBSchema.TableName
 }

@@ -41,11 +41,11 @@ func NewDao[T any](cfg *idao.DaoConfig, tableName ...string) idao.Dao[T] {
 		}
 	}
 
-	labels := []string{cfg.Schema.Name}
+	labels := []string{cfg.DBSchema.Name}
 	if len(tableName) > 0 {
 		labels = tableName
 	}
-	dbSch := cfg.Schema
+	dbSch := cfg.DBSchema
 	var dao ddd_repository.Dao[T]
 	if cfg.DaoType == "node" {
 		dao = ddd_neo4j.NewNodeDao[T](driver, dbSch, labels)
@@ -62,9 +62,9 @@ func NewDao[T any](cfg *idao.DaoConfig, tableName ...string) idao.Dao[T] {
 }
 
 func (d *Dao[T]) Table() idao.Table {
-	return newTable(d.driver, d.cfg.Schema)
+	return newTable(d.driver, d.cfg.DBSchema)
 }
 
 func (d *Dao[T]) GetTableName() string {
-	return d.cfg.Schema.Name
+	return d.cfg.DBSchema.Name
 }

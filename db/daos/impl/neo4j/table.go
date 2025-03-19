@@ -10,15 +10,15 @@ import (
 
 type Table struct {
 	tableName string
-	schema    *dbschema.Schema
+	schema    *dbschema.DBSchema
 	driver    neo4j.DriverWithContext
 }
 
-func NewTable(driver neo4j.DriverWithContext, schema *dbschema.Schema) idao.Table {
+func NewTable(driver neo4j.DriverWithContext, schema *dbschema.DBSchema) idao.Table {
 	return newTable(driver, schema)
 }
 
-func newTable(driver neo4j.DriverWithContext, schema *dbschema.Schema) *Table {
+func newTable(driver neo4j.DriverWithContext, schema *dbschema.DBSchema) *Table {
 	tableName := stringutils.AsFieldName(schema.Name)
 	return &Table{driver: driver, tableName: tableName, schema: schema}
 }
@@ -27,7 +27,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *dbschema.Schema {
+func (t *Table) GetSchema() *dbschema.DBSchema {
 	return t.schema
 }
 

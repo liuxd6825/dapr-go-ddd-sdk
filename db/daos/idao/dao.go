@@ -7,7 +7,7 @@ import (
 )
 
 type Dao[T any] interface {
-	GetSchema() *dbschema.Schema
+	GetSchema() *dbschema.DBSchema
 	GetAggField() string
 
 	Create(ctx context.Context, entity T, opts ...*CallOptions) *Result

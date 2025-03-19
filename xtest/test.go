@@ -64,7 +64,7 @@ func InitCommand(options ...*Option) error {
 	return Init(ctx, o.FileName(), o.EnvName(), o.EventTypes())
 }
 
-// InitQuery
+// Init
 // @Description: 初始化QueryService测试环境
 func Init(ctx context.Context, fileName string, envName string, eventTypes []restapp2.RegisterEventType) error {
 	if fileName == "" {

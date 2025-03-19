@@ -45,7 +45,7 @@ func NewDaoBase[T any](dao ddd_repository.Dao[T], cfg *idao.DaoConfig) *DaoBase[
 	if aggField == "" {
 		aggField = "id"
 	}
-	tableName := stringutils.AsFieldName(cfg.Schema.Name)
+	tableName := stringutils.AsFieldName(cfg.DBSchema.Name)
 	return &DaoBase[T]{
 		dao:         dao,
 		dbKey:       cfg.DbKey,
@@ -86,8 +86,8 @@ func (d *DaoBase[T]) GetEventPrefix() string {
 	return d.eventPrefix
 }
 
-func (d *DaoBase[T]) GetSchema() *dbschema.Schema {
-	return d.cfg.Schema
+func (d *DaoBase[T]) GetSchema() *dbschema.DBSchema {
+	return d.cfg.DBSchema
 }
 
 func (d *DaoBase[T]) GetAggregateId(entity T, opts *idao.CallOptions) (string, error) {

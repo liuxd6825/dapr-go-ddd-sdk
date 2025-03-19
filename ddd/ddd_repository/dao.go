@@ -71,5 +71,5 @@ type Dao[T any] interface {
 		GetMetadata() map[string]any
 		AddMetadata(key string, val any)
 	*/
-	GetSchema() *dbschema.Schema
+	GetSchema() *dbschema.DBSchema
 }

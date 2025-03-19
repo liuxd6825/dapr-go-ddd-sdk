@@ -11,6 +11,10 @@ const HumanSchema = `
 		  "type": ["string"],
 		  "title": "ID"
 		},
+		"tenantId": {
+		  "type": ["string"],
+		  "title": "租户ID"
+		},
 		"age": {
 		  "type": ["integer", "null"],
 		  "title": "年龄",
@@ -224,4 +228,4 @@ const HumanRelSchema = `
 		}
 	  }
 	}
-	`
+`

@@ -10,7 +10,7 @@ import (
 )
 
 // NewGormSchema get data type from dialector with extra schema table
-func NewGormSchema(sch *dbschema.Schema) (*gormschema.Schema, error) {
+func NewGormSchema(sch *dbschema.DBSchema) (*gormschema.Schema, error) {
 	if sch == nil {
 		return nil, fmt.Errorf("%w: %+v", gormschema.ErrUnsupportedDataType, sch)
 	}
@@ -50,7 +50,7 @@ func getTenantIdField(gormSch *gormschema.Schema) *gormschema.Field {
 	return tenantIdField
 }
 
-func addGormFields(dbSch *dbschema.Schema, gormSch *gormschema.Schema) (primaryField *gormschema.Field) {
+func addGormFields(dbSch *dbschema.DBSchema, gormSch *gormschema.Schema) (primaryField *gormschema.Field) {
 	for _, f := range dbSch.Fields {
 		dataType := getDataType(f)
 		size := 0
@@ -72,7 +72,7 @@ func initGormSchema(s *gormschema.Schema) {
 	}
 }
 
-func newGormSchema(dest *dbschema.Schema) *gormschema.Schema {
+func newGormSchema(dest *dbschema.DBSchema) *gormschema.Schema {
 	tableName := stringutils.AsFieldName(dest.Name)
 	s := &gormschema.Schema{
 		Name:                dest.Name,

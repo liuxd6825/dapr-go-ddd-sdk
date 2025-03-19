@@ -30,3 +30,19 @@ func NewHumanList(count int64, humanName string) []*Human {
 	}
 	return list
 }
+
+func NewHumanMapList(count int64, humanName string) []map[string]any {
+	list := make([]map[string]any, count)
+	for i := int64(0); i < count; i++ {
+		entity := map[string]any{
+			"id":         randomutils.NewId(),
+			"name":       humanName,
+			"analyse":    "",
+			"age":        randomutils.IntMax(100),
+			"birthday":   randomutils.PDate(),
+			"peopleType": []string{randomutils.String(10)},
+		}
+		list[i] = entity
+	}
+	return list
+}

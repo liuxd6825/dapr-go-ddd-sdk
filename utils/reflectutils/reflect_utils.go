@@ -210,6 +210,18 @@ func IsMap[T any]() bool {
 	return false
 }
 
+func IsStruct[T any]() bool {
+	var null T
+	t := reflect.TypeOf(null)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Struct {
+		return true
+	}
+	return false
+}
+
 // GetStructName 获取 any 变量的结构体类型名称（不包含包路径）
 func GetStructName(v any) string {
 	// 获取反射类型
@@ -305,6 +317,23 @@ func GetFieldString(data any, fieldName string) string {
 		return fieldValue.String() // 设置字符串字段的值
 	default:
 		fmt.Println("Unsupported field type:", fieldName)
+	}
+	return ""
+}
+
+func GetClassName[T any]() string {
+	var null T
+	t := reflect.TypeOf(null)
+	// 处理指针类型
+	if t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem() // 解引用指针
+	}
+
+	// 检查是否为结构体类型
+	if t.Kind() == reflect.Struct {
+		return t.String() // 返回完整的类型名称（包路径 + 类型名）
+	} else if t.Kind() == reflect.Map {
+		return t.String()
 	}
 	return ""
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema/formats"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -16,13 +16,9 @@ type Validate struct {
 }
 
 func NewValidate(schema *Schema) *Validate {
-	compiler := jsonschema.NewCompiler()
-	compiler.AssertFormat()
-	compiler.AssertContent()
-	compiler.RegisterFormat(formats.DateTimeFormat)
-	compiler.RegisterFormat(formats.DateFormat)
-	return &Validate{schema: schema, compiler: jsonschema.NewCompiler()}
+	return &Validate{schema: schema, compiler: jsonschemautils.NewCompiler()}
 }
+
 func (v *Validate) UseLoader(loader URLLoader) {
 	v.compiler.UseLoader(loader)
 }

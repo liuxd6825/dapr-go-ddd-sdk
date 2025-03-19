@@ -38,14 +38,14 @@ type Dao[T any] struct {
 	initFun    func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
 	options    *Options[T]
 	metadata   map[string]any
-	schema     *dbschema.Schema
+	schema     *dbschema.DBSchema
 }
 
-func NewDao[T any](dbSch *dbschema.Schema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) ddd_repository.Dao[T] {
+func NewDao[T any](dbSch *dbschema.DBSchema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) ddd_repository.Dao[T] {
 	return NewMongoDao(dbSch, initFun, opts...)
 }
 
-func NewMongoDao[T any](dbSch *dbschema.Schema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
+func NewMongoDao[T any](dbSch *dbschema.DBSchema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
 	r := &Dao[T]{
 		metadata: make(map[string]any),
 	}
@@ -81,7 +81,7 @@ func (r *Dao[T]) AddMetadata(key string, val any) {
 	r.metadata[key] = val
 }
 
-func (r *Dao[T]) GetSchema() *dbschema.Schema {
+func (r *Dao[T]) GetSchema() *dbschema.DBSchema {
 	return r.schema
 }
 

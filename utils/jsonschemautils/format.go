@@ -1,4 +1,4 @@
-package formats
+package jsonschemautils
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
@@ -7,7 +7,7 @@ import (
 
 // DateTimeFormat represents a datetime format.
 var DateTimeFormat = &jsonschema.Format{
-	Name: "date-time",
+	Name: "datetime",
 	Validate: func(v any) error {
 		if v, ok := v.(string); ok {
 			_, err := ParseDateTime(v)

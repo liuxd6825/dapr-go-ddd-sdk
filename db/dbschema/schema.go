@@ -3,19 +3,21 @@ package dbschema
 import (
 	"context"
 	"fmt"
+	gormschema "gorm.io/gorm/schema"
 	"reflect"
 )
 
-type Schema struct {
+type DBSchema struct {
 	Name        string
 	TableName   string
 	Fields      []*Field
 	fieldName   map[string]*Field
 	fieldDbName map[string]*Field
+	GormSchema  *gormschema.Schema
 }
 
-func NewSchema() *Schema {
-	return &Schema{
+func NewDBSchema() *DBSchema {
+	return &DBSchema{
 		Name:        "",
 		TableName:   "",
 		Fields:      []*Field{},
@@ -24,17 +26,17 @@ func NewSchema() *Schema {
 	}
 }
 
-func (sch *Schema) SetName(name string) *Schema {
+func (sch *DBSchema) SetName(name string) *DBSchema {
 	sch.Name = name
 	return sch
 }
 
-func (sch *Schema) SetTableName(name string) *Schema {
+func (sch *DBSchema) SetTableName(name string) *DBSchema {
 	sch.TableName = name
 	return sch
 }
 
-func (sch *Schema) AddField(field ...*Field) *Schema {
+func (sch *DBSchema) AddField(field ...*Field) *DBSchema {
 	sch.Fields = append(sch.Fields, field...)
 	for _, f := range sch.Fields {
 		sch.fieldName[f.Name] = f
@@ -43,25 +45,21 @@ func (sch *Schema) AddField(field ...*Field) *Schema {
 	return sch
 }
 
-func (sch *Schema) InitFields() {
-	sch.fieldName = nil
+func (sch *DBSchema) InitFields() {
 	sch.initFields()
 }
 
-func (sch *Schema) initFields() {
-	if sch.fieldName == nil {
-		sch.fieldName = map[string]*Field{}
-		sch.fieldDbName = map[string]*Field{}
-	} else {
-		return
-	}
-	for _, field := range sch.Fields {
-		sch.fieldName[field.Name] = field
-		sch.fieldDbName[field.DBName] = field
+func (sch *DBSchema) initFields() {
+	if len(sch.fieldName) == 0 {
+		for _, field := range sch.Fields {
+			sch.fieldName[field.Name] = field
+			sch.fieldDbName[field.DBName] = field
+		}
 	}
 }
 
-func (sch *Schema) LookedField(name string) *Field {
+func (sch *DBSchema) LookedField(name string) *Field {
+	sch.initFields()
 	if f, ok := sch.fieldDbName[name]; ok {
 		return f
 	}
@@ -71,7 +69,7 @@ func (sch *Schema) LookedField(name string) *Field {
 	return nil
 }
 
-func (sch *Schema) NewMap(ctx context.Context, obj any, opts ...func(map[string]any)) (map[string]any, error) {
+func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[string]any)) (map[string]any, error) {
 	sch.initFields()
 
 	res := map[string]any{}

@@ -3,13 +3,19 @@ package dbschema
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
 	"reflect"
 	"time"
 )
 
-func NewSchemaWithJsonSchema(sch *jsonschema.Schema) *Schema {
-	s := NewSchema()
+func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
+	jsSchema := jsonschemautils.NewJsonSchemaWidthJson(fileName, jsonText)
+	return NewDBSchemaWithJsonSchema(jsSchema)
+}
+
+func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
+	s := NewDBSchema()
 	s.TableName = sch.Name
 	s.Name = sch.Name
 	props := sch.GetAllProperties()
@@ -17,16 +23,16 @@ func NewSchemaWithJsonSchema(sch *jsonschema.Schema) *Schema {
 		dataType := getDataType(prop)
 		f := &Field{
 			Name:                  prop.Name,
-			DBName:                prop.Name,
+			DBName:                prop.DB.Name,
 			DataType:              dataType,
-			Size:                  getSize(dataType, prop.DBField.Size),
+			Size:                  getSize(dataType, prop.DB.Size),
 			DefaultValueInterface: prop.Default,
-			Updatable:             sch.DBField.Updatable,
-			Creatable:             sch.DBField.Creatable,
-			Readable:              sch.DBField.Readable,
-			Unique:                sch.DBField.Unique,
-			NotNull:               sch.DBField.NotNull,
-			PrimaryKey:            sch.DBField.PrimaryKey,
+			Updatable:             sch.DB.Updatable,
+			Creatable:             sch.DB.Creatable,
+			Readable:              sch.DB.Readable,
+			Unique:                sch.DB.Unique,
+			NotNull:               sch.DB.NotNull,
+			PrimaryKey:            sch.DB.PrimaryKey,
 		}
 		initField(f)
 		s.Fields = append(s.Fields, f)

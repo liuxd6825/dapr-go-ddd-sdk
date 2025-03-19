@@ -15,28 +15,29 @@ import (
 
 type Table struct {
 	tableName string
-	dbSch     *dbschema.Schema
+	dbSch     *dbschema.DBSchema
 	gormSch   *gormschema.Schema
 	db        *gorm.DB
+	entity    any
 }
 
-func NewTable(db *gorm.DB, dbSch *dbschema.Schema) idao.Table {
+func NewTable(db *gorm.DB, dbSch *dbschema.DBSchema, entity any) idao.Table {
 	gormSchema, err := NewGormSchema(dbSch)
 	if err != nil {
 		panic(err)
 	}
-	return newTable(db, dbSch.TableName, dbSch, gormSchema)
+	return newTable(db, dbSch.TableName, entity, dbSch, gormSchema)
 }
 
-func newTable(db *gorm.DB, tableName string, schema *dbschema.Schema, gormSchema *gormschema.Schema) *Table {
-	return &Table{db: db, tableName: tableName, dbSch: schema, gormSch: gormSchema}
+func newTable(db *gorm.DB, tableName string, entity any, schema *dbschema.DBSchema, gormSchema *gormschema.Schema) *Table {
+	return &Table{db: db, tableName: tableName, entity: entity, dbSch: schema, gormSch: gormSchema}
 }
 
 func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *dbschema.Schema {
+func (t *Table) GetSchema() *dbschema.DBSchema {
 	return t.dbSch
 }
 
@@ -44,7 +45,13 @@ func (t *Table) AutoMigrate(ctx context.Context) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	err := t.db.Table(t.tableName).AutoMigrate(t.gormSch)
+	var err error
+	if _, ok := t.entity.(map[string]any); ok {
+		err = t.db.Table(t.tableName).AutoMigrate(t.gormSch)
+	} else {
+		err = t.db.Table(t.tableName).CustomSchema(t.gormSch).AutoMigrate(t.entity)
+	}
+
 	if err != nil {
 		panic(err)
 	}

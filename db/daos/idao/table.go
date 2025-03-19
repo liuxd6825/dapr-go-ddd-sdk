@@ -7,7 +7,7 @@ import (
 
 type Table interface {
 	GetTableName() string
-	GetSchema() *dbschema.Schema
+	GetSchema() *dbschema.DBSchema
 	AutoMigrate(ctx context.Context)
 	Exist(ctx context.Context) bool
 	Drop(ctx context.Context)

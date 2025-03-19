@@ -25,14 +25,14 @@ type relationEntityBuilder[T any] struct {
 	ddd.EntityBuilder[T]
 }
 
-func NewRelationEntityBuilder[T any](sch *dbschema.Schema) RelationEntityBuilder[T] {
+func NewRelationEntityBuilder[T any](sch *dbschema.DBSchema) RelationEntityBuilder[T] {
 	base := ddd.NewAnyEntityBuilder[T](sch)
 	return &relationEntityBuilder[T]{
 		EntityBuilder: base,
 	}
 }
 
-func NewNodeEntityBuilder[T any](sch *dbschema.Schema) NodeEntityBuilder[T] {
+func NewNodeEntityBuilder[T any](sch *dbschema.DBSchema) NodeEntityBuilder[T] {
 	base := ddd.NewAnyEntityBuilder[T](sch)
 	return &nodeEntityBuilder[T]{
 		EntityBuilder: base,

@@ -10,7 +10,7 @@ import (
 )
 
 // NewGormSchema get data type from dialector with extra schema table
-func NewGormSchema(sch *dbschema.Schema) (*gormschema.Schema, error) {
+func NewGormSchema(sch *dbschema.DBSchema) (*gormschema.Schema, error) {
 	if sch == nil {
 		return nil, fmt.Errorf("%w: %+v", gormschema.ErrUnsupportedDataType, sch)
 	}
@@ -39,7 +39,7 @@ func NewGormSchema(sch *dbschema.Schema) (*gormschema.Schema, error) {
 	return gormSch, nil
 }
 
-func addFields(sch *dbschema.Schema, dbSch *gormschema.Schema) (primaryField *gormschema.Field) {
+func addFields(sch *dbschema.DBSchema, dbSch *gormschema.Schema) (primaryField *gormschema.Field) {
 	for _, f := range sch.Fields {
 		dataType := getDataType(f)
 		size := 0
@@ -61,7 +61,7 @@ func initGormSchema(s *gormschema.Schema) {
 	}
 }
 
-func newGormSchema(dest *dbschema.Schema) *gormschema.Schema {
+func newGormSchema(dest *dbschema.DBSchema) *gormschema.Schema {
 	tableName := stringutils.AsFieldName(dest.Name)
 	s := &gormschema.Schema{
 		Name:                dest.Name,
@@ -122,6 +122,7 @@ func addDbField(s *gormschema.Schema, name string, dataType gormschema.DataType,
 		Updatable:         true,
 		Readable:          true,
 		Size:              fieldSize,
+		TagSettings:       nil,
 	}
 	s.Fields = append(s.Fields, field)
 	s.FieldsByDBName[dbName] = field

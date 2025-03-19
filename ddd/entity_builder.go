@@ -38,7 +38,7 @@ type EntityBuilderConfig struct {
 	IsMap            bool   // 是map对象
 	IsCancelModified bool   // 取消修改字段的自动化处理
 	Fields           Fields // 系统字段的名称
-	DbSchema         *dbschema.Schema
+	DbSchema         *dbschema.DBSchema
 }
 
 func NewEntityBuilderConfig() *EntityBuilderConfig {
@@ -51,7 +51,7 @@ func NewEntityBuilderConfig() *EntityBuilderConfig {
 
 type AnyEntityBuilder[T any] struct {
 	cfg    *EntityBuilderConfig
-	schema *dbschema.Schema
+	schema *dbschema.DBSchema
 }
 
 func NewAnyEntityBuilderWidthConfig[T any](cfg *EntityBuilderConfig) EntityBuilder[T] {
@@ -61,7 +61,7 @@ func NewAnyEntityBuilderWidthConfig[T any](cfg *EntityBuilderConfig) EntityBuild
 	}
 }
 
-func NewAnyEntityBuilder[T any](schema *dbschema.Schema) EntityBuilder[T] {
+func NewAnyEntityBuilder[T any](schema *dbschema.DBSchema) EntityBuilder[T] {
 	cfg := NewEntityBuilderConfig()
 	cfg.IsMap = reflectutils.IsMap[T]()
 	return &AnyEntityBuilder[T]{

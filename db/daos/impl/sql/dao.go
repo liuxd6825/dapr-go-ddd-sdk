@@ -47,9 +47,9 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 			panic("database config error")
 		}
 	}
-	tableName := cfg.Schema.TableName
+	tableName := cfg.DBSchema.TableName
 	if tableName == "" {
-		tableName = cfg.Schema.Name
+		tableName = cfg.DBSchema.Name
 	}
 	if len(tableNames) > 0 {
 		tableName = tableNames[0]
@@ -57,7 +57,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	var t T
 	var gormSch *gormschema.Schema
 	if reflectutils.IsMapStringKey[T](t) {
-		sch, err := NewGormSchema(cfg.Schema)
+		sch, err := NewGormSchema(cfg.DBSchema)
 		if err != nil {
 			panic(err)
 		}
@@ -75,7 +75,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 		DbKey:      cfg.DbKey,
 		Db:         db,
 		TableName:  tableName,
-		DBSchema:   cfg.Schema,
+		DBSchema:   cfg.DBSchema,
 		GormSchema: gormSch,
 	}
 
@@ -97,7 +97,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 }
 
 func (d *Dao[T]) Table() idao.Table {
-	return newTable(d.db, d.tableName, d.cfg.Schema, d.gormSch)
+	return newTable(d.db, d.tableName, d.dao.NewEntity(), d.cfg.DBSchema, d.gormSch)
 }
 
 func init() {

@@ -7,19 +7,36 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-func NewSchemaWithStruct(name string, data any, tableName string) *Schema {
-	sch := NewSchema()
-	sch.SetTableName(tableName)
-	sch.SetName(name)
-	v := reflect.ValueOf(data)
-	fields := getFieldsByValue(v)
-	for _, field := range fields {
-		sch.AddField(field)
+func NewDBSchemaWithStruct(name string, data any, tableName string) *DBSchema {
+	gSch, err := gormschema.ParseWithSpecialTableName(data, &sync.Map{}, gormschema.NamingStrategy{}, tableName)
+	if err != nil {
+		panic(err)
 	}
-	return sch
+	dbSch := NewDBSchema()
+	for _, f := range gSch.Fields {
+		field := NewField()
+		field.Name = f.Name
+		field.DBName = f.DBName
+		field.StructField = f.StructField
+		field.IndirectFieldType = f.IndirectFieldType
+		field.Serializer = f.Serializer
+		field.FieldType = f.FieldType
+		field.Tag = f.Tag
+		field.FieldType = f.FieldType
+		field.DataType = f.DataType
+		field.ValueOf = f.ValueOf
+		field.Creatable = f.Creatable
+		field.Updatable = f.Updatable
+		dbSch.AddField(field)
+	}
+	dbSch.SetTableName(tableName)
+	dbSch.SetName(name)
+	dbSch.GormSchema = gSch
+	return dbSch
 }
 
 func getFieldsByValue(refVal reflect.Value) []*Field {
