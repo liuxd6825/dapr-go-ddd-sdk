@@ -32,14 +32,16 @@ func (cfg *MySqlConfig) DSN() string {
 	if cfg.Charset != "" {
 		dsn = fmt.Sprintf("%s&charset=%s", dsn, cfg.params(cfg.Charset))
 	}
-
+	parseTime := true
 	if cfg.ParseTime != nil {
-		parseTime := *cfg.ParseTime
-		dsn = fmt.Sprintf("%s&parseTime=%v", dsn, parseTime)
+		parseTime = *cfg.ParseTime
 	}
+	dsn = fmt.Sprintf("%s&parseTime=%v", dsn, parseTime)
+	loc := "Local"
 	if cfg.Loc != "" {
-		dsn = fmt.Sprintf("%s&loc=%s", dsn, cfg.params(cfg.Loc))
+		loc = cfg.params(cfg.Loc)
 	}
+	dsn = fmt.Sprintf("%s&loc=%s", dsn, loc)
 	dsn = strings.ReplaceAll(dsn, "?&", "?")
 	return dsn
 }

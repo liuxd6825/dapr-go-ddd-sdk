@@ -32,6 +32,18 @@ func main() {
 				return ictx.JSON(humans)
 			}).Catch(func(e error) {
 				ictx.SetErr(e)
+				ictx.StatusCode(504)
+			})
+		})
+
+		server.App().Get("/api/v1/human:list", func(ictx *icontext.Context) {
+			gp.Try(func() error {
+				ctx := xtest.NewContext()
+				humans := humanDao.FindAll(ctx)
+				return ictx.JSON(humans)
+			}).Catch(func(e error) {
+				ictx.SetErr(e)
+				ictx.StatusCode(504)
 			})
 		})
 
