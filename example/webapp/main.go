@@ -33,7 +33,7 @@ func main() {
 }
 
 func appInit(app *iris.Application) {
-	//human_handler(app)
+	human_handler(app)
 	humanMap_handler(app)
 }
 
