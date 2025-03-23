@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"net/http"
 )
 
 func main() {
@@ -51,7 +52,7 @@ func humanMap_handler(app *iris.Application) {
 			return ictx.JSON(humans)
 		}).Catch(func(e error) {
 			ictx.SetErr(e)
-			ictx.StatusCode(504)
+			ictx.StatusCode(http.StatusInternalServerError)
 		})
 	})
 
@@ -62,7 +63,7 @@ func humanMap_handler(app *iris.Application) {
 			return ictx.JSON(humans)
 		}).Catch(func(e error) {
 			ictx.SetErr(e)
-			ictx.StatusCode(504)
+			ictx.StatusCode(http.StatusInternalServerError)
 		})
 	})
 }

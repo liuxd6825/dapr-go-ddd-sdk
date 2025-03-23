@@ -63,7 +63,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) idao.Dao[map[string]any] {
 		IsPubEvent: opts.IsPubEvent,
 		AggField:   opts.AggField,
 		Env:        p.server.GetEnvCfg(),
-		Schema:     dbschema.NewSchemaWithJsonSchema(opts.Schema),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(opts.Schema),
 	}
 
 	var dao idao.Dao[map[string]any]
@@ -110,7 +110,7 @@ func (p *Pkg) NewTable(opts *NewTableOptions) idao.Table {
 		dbKey = "default"
 	}
 
-	dbSch := dbschema.NewSchemaWithJsonSchema(opts.Schema)
+	dbSch := dbschema.NewDBSchemaWithJsonSchema(opts.Schema)
 
 	var table idao.Table
 	item := p.getDbItem(opts.DbKey)
@@ -127,7 +127,7 @@ func (p *Pkg) NewTable(opts *NewTableOptions) idao.Table {
 		if ok {
 			panic(errors.New(fmt.Sprintf("%s database nonsupport gorm.DB", dbKey)))
 		}
-		table = sql.NewTable(database, dbSch)
+		table = sql.NewTable(database, dbSch, map[string]any{})
 	case restapp.DbType_Neo4j:
 		if driver, ok := item.GetDB().(neo4jdriver.DriverWithContext); ok {
 			table = neo4j.NewTable(driver, dbSch)
@@ -144,7 +144,7 @@ func (p *Pkg) NewTable(opts *NewTableOptions) idao.Table {
 }
 
 func (p *Pkg) getDbItem(dbKey string) restapp.DBItem {
-	item := restapp.GetDb(dbKey)
+	item := restapp.GetDB(dbKey)
 	if item == nil {
 		panic(errors.New(" %s dbKey not exists", dbKey))
 	}

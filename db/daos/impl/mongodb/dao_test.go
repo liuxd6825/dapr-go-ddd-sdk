@@ -4,16 +4,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/tests"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -34,21 +35,21 @@ func Test_Dao(t *testing.T) {
 	database := ddd_mongodb.NenMongoDBWithClient(DB_NAME, client)
 
 	humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+	humanSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	daoCfg := &db.DaoConfig{
+	daoCfg := &idao.DaoConfig{
 		Database:   database,
 		DbKey:      "sql",
-		Schema:     humanSchema.GetJsonSchema(),
-		Env:        tests.NewEnvConfig(),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema.GetJsonSchema()),
+		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
-	dao := NewDao(daoCfg)
+	dao := NewDao[map[string]any](daoCfg)
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {
 		t.Error(err)

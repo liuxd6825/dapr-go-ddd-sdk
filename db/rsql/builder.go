@@ -57,10 +57,23 @@ func (c *outCondition) Build() string {
 }
 
 // Builder RSQL语包生成器
-type Builder struct{}
+type Builder struct {
+	conditions []Condition
+}
 
-func NewBuilder() *Builder {
-	return &Builder{}
+type NewBuilderOptions func(b *Builder) Condition
+
+func NewBuilder(opts ...NewBuilderOptions) *Builder {
+	b := &Builder{}
+	var conditions []Condition
+	for _, opt := range opts {
+		c := opt(b)
+		if c != nil {
+			conditions = append(conditions, c)
+		}
+		b.conditions = conditions
+	}
+	return b
 }
 
 // formatValue 处理不同数据类型的值格式化
@@ -222,6 +235,14 @@ func (b *Builder) Le(field string, value interface{}) Condition {
 	}
 }
 
+func (b *Builder) RSQL(filter string) Condition {
+	return &baseCondition{
+		field:    "",
+		operator: "",
+		value:    filter,
+	}
+}
+
 // In 条件生成方法
 func (b *Builder) In(field string, values interface{}) Condition {
 	val := reflect.ValueOf(values)
@@ -281,4 +302,12 @@ func (b *Builder) GetList(list any, filed string) []string {
 		panic(err)
 	}
 	return res
+}
+
+func (b *Builder) Build() string {
+	sb := strings.Builder{}
+	for _, item := range b.conditions {
+		sb.WriteString(item.Build())
+	}
+	return sb.String()
 }

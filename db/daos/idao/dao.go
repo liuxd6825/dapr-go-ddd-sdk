@@ -27,6 +27,7 @@ type Dao[T any] interface {
 	FindById(ctx context.Context, id string, opts ...*CallOptions) T
 	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []T
 	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []T
+	FindOneByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) T
 	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[T]
 	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
 	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]

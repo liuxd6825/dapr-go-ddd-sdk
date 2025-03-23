@@ -2,10 +2,10 @@ package impl
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
 )
@@ -106,7 +106,7 @@ func (d *DaoBase[T]) GetEventType(accessType idao.AccessType, opts *idao.CallOpt
 	if opts != nil && opts.EventType != nil {
 		eventType = *opts.EventType
 	}
-	return common.GetEventType(d.appId, eventType, string(accessType))
+	return fmt.Sprintf("%s.%s.%s", d.appId, eventType, string(accessType))
 }
 
 func (d *DaoBase[T]) NewAggregate(entity T, opt *idao.CallOptions) (*dbevent.Aggregate, error) {

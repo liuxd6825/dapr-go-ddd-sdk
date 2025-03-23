@@ -9,7 +9,8 @@ import (
 	"github.com/dapr/durabletask-go/api/helpers"
 	"github.com/dapr/durabletask-go/api/protos"
 	"github.com/dapr/durabletask-go/backend"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dao/mongo_dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
 	"go.mongodb.org/mongo-driver/mongo"
 	"time"
@@ -29,16 +30,14 @@ type mongoBackend struct {
 	options      *Options
 	db           *ddd_mongodb.MongoDB
 	logger       backend.Logger
-	instancesDao *mongo_dao.Dao[*Instances]
-	historyDao   *mongo_dao.Dao[*History]
-	newEventsDao *mongo_dao.Dao[*NewEvents]
-	newTasksDao  *mongo_dao.Dao[*NewTasks]
+	instancesDao *idao.Dao[*Instances]
+	historyDao   *idao.Dao[*History]
+	newEventsDao *idao.Dao[*NewEvents]
+	newTasksDao  *idao.Dao[*NewTasks]
 }
 
 func (m *mongoBackend) CreateTaskHub(ctx context.Context) error {
-	m.instancesDao = mongo_dao.NewDao[*Instances]("Instances", &mongo_dao.RepositoryOptions{
-		MongoDB: m.db,
-	})
+	m.instancesDao = daos.NewDao[*Instances]("Instances")
 	m.historyDao = mongo_dao.NewDao[*History]("History", &mongo_dao.RepositoryOptions{
 		MongoDB: m.db,
 	})

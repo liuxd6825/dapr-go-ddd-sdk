@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/db"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/db_pkg/impl/tests"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -20,21 +21,21 @@ import (
 func Test_RelDao(t *testing.T) {
 	humanName := randomutils.NameCN()
 
-	relSchema, err := schema.NewSchemaWithJson("humanRel.json", tests.HumanRelSchema)
+	relSchema, err := schema.NewSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	relCfg := &db.DaoConfig{
+	relCfg := &idao.DaoConfig{
 		Database:   driver,
 		DbKey:      "neo4j",
-		Schema:     relSchema.GetJsonSchema(),
-		Env:        tests.NewEnvConfig(),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema.GetJsonSchema()),
+		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
-	relDao := NewDao(relCfg)
+	relDao := NewDao[map[string]any](relCfg)
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -123,22 +124,22 @@ func Test_RelDao(t *testing.T) {
 func TestRelDao_Many(t *testing.T) {
 	humanName := randomutils.NameCN()
 
-	relSchema, err := schema.NewSchemaWithJson("humanRel.json", tests.HumanRelSchema)
+	relSchema, err := schema.NewSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	relCfg := &db.DaoConfig{
+	relCfg := &idao.DaoConfig{
 		Database:   driver,
 		DbKey:      "neo4j",
-		Schema:     relSchema.GetJsonSchema(),
-		Env:        tests.NewEnvConfig(),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema.GetJsonSchema()),
+		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "rel",
 	}
 
-	relDao := NewDao(relCfg, "rel0", "rel1")
+	relDao := NewDao[map[string]any](relCfg, "rel0", "rel1")
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -297,22 +298,22 @@ func TestRelDao_Many(t *testing.T) {
 	})
 }
 
-func newNodeDao(t *testing.T) db.Dao {
-	nodeSchema, err := schema.NewSchemaWithJson("human.json", tests.HumanSchema)
+func newNodeDao(t *testing.T) idao.Dao[map[string]any] {
+	nodeSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
 	if err != nil {
 		t.Error(err)
 		return nil
 	}
 
-	nodeCfg := &db.DaoConfig{
+	nodeCfg := &idao.DaoConfig{
 		Database:   driver,
 		DbKey:      "neo4j",
-		Schema:     nodeSchema.GetJsonSchema(),
-		Env:        tests.NewEnvConfig(),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(nodeSchema.GetJsonSchema()),
+		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "node",
 	}
-	nodeDao := NewDao(nodeCfg)
+	nodeDao := NewDao[map[string]any](nodeCfg)
 	return nodeDao
 
 }

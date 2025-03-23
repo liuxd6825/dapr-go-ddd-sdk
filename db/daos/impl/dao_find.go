@@ -25,6 +25,19 @@ func (d *DaoBase[T]) FindByIds(ctx context.Context, ids []string, opts ...*idao.
 	return data
 }
 
+func (d *DaoBase[T]) FindOneByRSQL(ctx context.Context, rsql string, opts ...*idao.CallOptions) T {
+	tenantId := d.GetTenantId(ctx)
+	list := d.dao.FindByRSQL(ctx, tenantId, rsql, idao.NewRepositoryOptions(opts)...)
+	if list.Error != nil {
+		panic(list.Error)
+	}
+	if len(list.Data) == 0 {
+		var null T
+		return null
+	}
+	return list.Data[0]
+}
+
 func (d *DaoBase[T]) FindByRSQL(ctx context.Context, rsql string, opts ...*idao.CallOptions) []T {
 	tenantId := d.GetTenantId(ctx)
 	res := d.dao.FindByRSQL(ctx, tenantId, rsql, idao.NewRepositoryOptions(opts)...)

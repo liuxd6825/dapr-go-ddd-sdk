@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
+	"github.com/liuxd6825/jsonschema/v6"
 	"strings"
 )
 
@@ -16,11 +16,11 @@ type Feign struct {
 }
 
 type FeignParam struct {
-	In       string         `json:"in"` // InParamType
-	Required bool           `json:"required"`
-	Type     string         `json:"type"`
-	Desc     string         `json:"desc"`
-	Schema   *schema.Schema `json:"schema"`
+	In       string             `json:"in"` // InParamType
+	Required bool               `json:"required"`
+	Type     string             `json:"type"`
+	Desc     string             `json:"desc"`
+	Schema   *jsonschema.Schema `json:"schema"`
 }
 
 type FeignOptions struct {

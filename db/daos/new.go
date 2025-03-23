@@ -15,8 +15,8 @@ import (
 )
 
 type NewConfig struct {
-	DbKey        string             `json:"dbKey"`
-	Db           any                `json:"db"`
+	DBKey        string             `json:"dbKey"`
+	DB           any                `json:"db"`
 	EventPublish *bool              `json:"eventPublish"`
 	AggField     string             `json:"aggField"`
 	DBSchema     *dbschema.DBSchema `json:"dbSchema"`
@@ -29,11 +29,11 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	if newCfg == nil {
 		panic("new dao must have a non-nil pointer")
 	}
-	if newCfg.DbKey == "" {
+	if newCfg.DBKey == "" {
 		db := restapp.GetDBDefault()
-		newCfg.DbKey = db.GetDBKey()
+		newCfg.DBKey = db.GetDBKey()
 	}
-	dbKey := newCfg.DbKey
+	dbKey := newCfg.DBKey
 	tableName := newCfg.TableName
 
 	// 是struct类型
@@ -71,8 +71,8 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	}
 
 	daoCfg := &idao.DaoConfig{
-		DbKey:      newCfg.DbKey,
-		Database:   newCfg.Db,
+		DbKey:      newCfg.DBKey,
+		Database:   newCfg.DB,
 		IsPubEvent: eventPublish,
 		AggField:   newCfg.AggField,
 		Env:        restapp.GetEnvConfig(),

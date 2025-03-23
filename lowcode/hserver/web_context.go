@@ -10,8 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/k6/schema"
-	schema2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
@@ -448,13 +447,13 @@ var parseTime = func(val string, key any) (timeVal any, err error) {
 //	@Description: 从schema中读取date类型定义
 //	@param props schema2.Properties
 //	@return map[string]any
-func getTimeFields(s schema2.ISchema) map[string]any {
+func getTimeFields(s schema.ISchema) map[string]any {
 	if s == nil {
 		return nil
 	}
 	s.Init(s)
 
-	var props schema2.Properties
+	var props schema.Properties
 	resFields := map[string]any{}
 	timeFields := resFields
 	dataType := s.GetType()
@@ -472,10 +471,10 @@ func getTimeFields(s schema2.ISchema) map[string]any {
 		if p == nil {
 			continue
 		}
-		if p.IncludeType(schema2.TypeDate) {
-			timeFields[k] = schema2.TypeDate
-		} else if p.IncludeType(schema2.TypeDatetime) {
-			timeFields[k] = schema2.TypeDatetime
+		if p.IncludeType(schema.TypeDate) {
+			timeFields[k] = schema.TypeDate
+		} else if p.IncludeType(schema.TypeDatetime) {
+			timeFields[k] = schema.TypeDatetime
 		}
 		if p.Properties != nil || p.Items != nil {
 			if ps := getTimeFields(p); ps != nil {
@@ -522,9 +521,9 @@ func getTimeFieldsProps2(props map[string]*jsonschema.Schema, timeFields map[str
 		}
 		if p.Types != nil {
 			if p.Types.Contains(jsonschema.JsonType_DateType) {
-				timeFields[k] = schema2.TypeDate
+				timeFields[k] = schema.TypeDate
 			} else if p.Types.Contains(jsonschema.JsonType_DateTimeType) {
-				timeFields[k] = schema2.TypeDatetime
+				timeFields[k] = schema.TypeDatetime
 			}
 		}
 		if p.Properties != nil || p.Items != nil || p.Ref != nil || p.Items2020 != nil {

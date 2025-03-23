@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/rs-server/modules/common"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
@@ -57,7 +57,7 @@ func (v *Validate) Validate(val any) error {
 			return err
 		}
 	}
-	if m, ok := val.(common.Object); ok {
+	if m, ok := val.(types.Object); ok {
 		val = m.AsMap()
 	}
 	err := v.validator.Validate(val)

@@ -82,3 +82,12 @@ func Test_NewBuilder(t *testing.T) {
 	})
 
 }
+
+func Test_Builder_Build(t *testing.T) {
+	account := "Alice"
+	newRSQL := NewBuilder(func(b *Builder) Condition {
+		return b.And(b.Eq("account", account))
+	}).Build()
+
+	t.Log("newRSQL:", newRSQL)
+}

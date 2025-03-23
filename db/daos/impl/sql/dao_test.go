@@ -416,11 +416,11 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 		panic(fmt.Sprintf("数据库连接失败: %v", err))
 	}
 	data := reflectutils.NewInstance[T]()
-	dbSch := dbschema.NewSchemaWithStruct(tableName, data, tableName)
+	dbSch := dbschema.NewDBSchemaWithStruct(tableName, data, tableName)
 	daoCfg := &idao.DaoConfig{
 		Database:   database,
 		DbKey:      "sql",
-		Schema:     dbSch,
+		DBSchema:   dbSch,
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
@@ -439,13 +439,13 @@ func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 		panic(err)
 	}
 
-	dbSch := dbschema.NewSchemaWithJsonSchema(humanSchema.GetJsonSchema())
+	dbSch := dbschema.NewDBSchemaWithJsonSchema(humanSchema.GetJsonSchema())
 	dbSch.TableName = tableName
 
 	daoCfg := &idao.DaoConfig{
 		Database:   db,
 		DbKey:      "sql",
-		Schema:     dbSch,
+		DBSchema:   dbSch,
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
