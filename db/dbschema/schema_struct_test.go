@@ -1,6 +1,7 @@
 package dbschema
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschemaext"
 	"testing"
 	"time"
 )
@@ -21,6 +22,6 @@ func Test_NewSchemaWithStruct(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	humanSch := NewSchemaWithStruct("human", &Human{}, "human")
+	humanSch := jsonschemaext.NewJsonSchemaWithStruct("human.json", &Human{})
 	println(humanSch)
 }

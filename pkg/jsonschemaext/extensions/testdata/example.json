@@ -1,0 +1,92 @@
+{
+  "$vocabulary": {
+    "https://json-schema.org/draft/2020-12/vocab/core": true,
+    "https://extensions.com/schemas/metadata": true
+  },
+  "name": "human",
+  "type": "object",
+  "required": ["id","name"],
+  "description": "人员基本信息",
+  "meta": {
+    "dbTable": {
+      "name": "human"
+    },
+    "lang": {
+      "cn": "人员",
+      "en": "human",
+      "de": "HUMAN"
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string",
+      "name": "id",
+      "title": "人员类型",
+      "order": 1,
+      "meta": {
+        "dbField":{
+          "name": "id",
+          "primaryKey": true
+        },
+        "lang": {
+          "cn": "主键",
+          "en": "ID",
+          "de": "ID"
+        }
+      }
+    },
+    "peopleType": {
+      "type": "array",
+      "items": { "type": "string" },
+      "name": "peopleType",
+      "title": "人员类型",
+      "order": 1,
+      "meta": {
+        "dbField": {
+          "name": "people_type",
+          "size": 1000
+        },
+        "lang": {
+          "cn": "人员类型",
+          "en": "PeopleType",
+          "de": "PeopleType"
+        }
+      }
+    },
+    "tags": {
+      "name": "tags",
+      "title": "标签",
+      "type": "array",
+      "items": { "type": "string" },
+      "order":2,
+      "meta": {
+        "dbField":{
+          "name": "tags",
+          "size": 1000
+        },
+        "lang": {
+          "cn": "标签",
+          "en": "Tag",
+          "de": "Tag"
+        }
+      }
+    },
+    "remark": {
+      "type": ["string", "null"],
+      "name": "remark",
+      "title": "备注",
+      "order": 3,
+      "meta": {
+        "dbField":{
+          "name": "remark",
+          "size": 1000
+        },
+        "lang": {
+          "cn": "备注",
+          "en": "Remark",
+          "de": "Remark"
+        }
+      }
+    }
+  }
+}

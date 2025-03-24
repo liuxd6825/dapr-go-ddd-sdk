@@ -109,6 +109,76 @@ func (s *ApiHandle) run(ctx context.Context, wctx element.WebContext, params any
 	}
 }
 
+// GetParams
+//
+//	@Description: 获取请求的参数
+//	@param wctx 请求的web上下文
+//	@param aParams  通过对象定义的参数类型
+//	@param cfgUrl  通过url定义的参数类型,
+//	@return map[string]any 参数
+func (s *ApiHandle) GetParams(wctx element.WebContext) map[string]any {
+	var err error
+
+	// 获取参数文件与参数类型
+	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ICtx())
+	if paramsType == nil {
+		return nil
+	}
+
+	if paramsTypeFileName == "/definition/params/findPaging.json" {
+		return wctx.GetFindPaging().AsMap()
+	}
+
+	// 要返回的值
+	data := map[string]any{}
+	ictx := wctx.ICtx()
+
+	for key, v := range paramsType {
+		var val any
+		switch v.In {
+		case InParamTypeURL.String():
+			val = ictx.URLParam(key)
+		case InParamTypePath.String():
+			val = ictx.Params().Get(key)
+		case InParamTypeBody.String():
+			if v.Schema != nil {
+				schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
+				val = wctx.ReadObject(schema)
+			} else {
+				panic(errors.New("paramType %s is no schema defined", key))
+			}
+		case InParamTypeFormValue.String():
+			val = wctx.FormValue(key, v.Required)
+		case InParamTypeFormObject.String():
+			if v.Schema != nil {
+				schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
+				val = wctx.FormObject(key, v.Required, schema)
+			}
+		case InParamTypeFormFile.String():
+			val = wctx.FormFile(key)
+		default:
+			panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, v.In))
+		}
+
+		if (val == nil || val == "") && v.Default != nil {
+			val = v.Default
+		}
+
+		if v.Type != "" {
+			val, err = types.Convert(v.Type, val)
+			if err != nil {
+				panic(fmt.Sprintf("params.%s types.Convert() error: %s", key, err.Error()))
+			}
+		}
+		if v.Required && (val == "" || val == nil) {
+			err = errors.New("The requested parameter %s cannot be empty", key)
+			panic(err)
+		}
+		data[key] = val
+	}
+	return data
+}
+
 // GetParamsValue
 //
 //	@Description: 获取请求的参数

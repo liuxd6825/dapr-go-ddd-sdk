@@ -2,16 +2,16 @@ package dbschema
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschemaext"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschemaext/extensions"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
-	"github.com/liuxd6825/jsonschema/v6/extensions"
 	"reflect"
 	"time"
 )
 
 func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
-	jsSchema := jsonschemautils.NewJsonSchemaWidthJson(fileName, jsonText)
+	jsSchema := jsonschemaext.NewJsonSchemaWithJson(fileName, jsonText)
 	return NewDBSchemaWithJsonSchema(jsSchema)
 }
 
@@ -22,22 +22,25 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 	props := sch.GetAllProperties()
 
 	for _, prop := range props {
-		metaField := extensions.GetField(prop)
+		schField := extensions.GetField(prop)
+		if schField != nil && schField.NotField {
+			continue
+		}
 		dataType := getDataType(prop)
 		field := &Field{
 			Name:                  prop.Name(),
 			DataType:              dataType,
 			DefaultValueInterface: prop.Default,
 		}
-		if metaField != nil {
+		if schField != nil {
 			field.DBName = extensions.GetFieldName(prop)
-			field.Size = getSize(dataType, metaField.Size)
-			field.Updatable = metaField.Updatable
-			field.Creatable = metaField.Creatable
-			field.Readable = metaField.Readable
-			field.Unique = metaField.Unique
-			field.NotNull = metaField.NotNull
-			field.PrimaryKey = metaField.PrimaryKey
+			field.Size = getSize(dataType, schField.Size)
+			field.Updatable = schField.Updatable
+			field.Creatable = schField.Creatable
+			field.Readable = schField.Readable
+			field.Unique = schField.Unique
+			field.NotNull = schField.NotNull
+			field.PrimaryKey = schField.PrimaryKey
 		}
 		initField(field)
 		s.Fields = append(s.Fields, field)
