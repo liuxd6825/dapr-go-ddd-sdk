@@ -45,7 +45,13 @@ func StartApp(opts *AppStartOptions) {
 		runOpts.AddOnInitEvent(opts.OnInitEvent)
 
 		restapp2.GetSysPaths().Set("HomePath", flag.HomePath)
-		_, err := restapp2.RunWithConfig(flag.Env, flag.Config, opts.Subs, opts.Controllers, opts.Events, opts.Actors, runOpts)
+		runCfg := &restapp2.RunConfig{
+			Subs:        opts.Subs,
+			Controllers: opts.Controllers,
+			EventTypes:  opts.Events,
+			Actors:      opts.Actors,
+		}
+		_, err := restapp2.RunWithConfig(flag.Env, flag.Config, runCfg, runOpts)
 		return err
 	}, func(o *Option) {
 		o.AppTitle = opts.AppTitle

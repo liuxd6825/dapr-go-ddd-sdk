@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
+	"github.com/liuxd6825/jsonschema/v6/extensions"
 	"reflect"
 	"time"
 )
@@ -16,33 +17,37 @@ func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
 
 func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 	s := NewDBSchema()
-	s.TableName = sch.Name
-	s.Name = sch.Name
+	s.TableName = extensions.GetTableName(sch)
+	s.Name = sch.Name()
 	props := sch.GetAllProperties()
+
 	for _, prop := range props {
+		metaField := extensions.GetField(prop)
 		dataType := getDataType(prop)
-		f := &Field{
-			Name:                  prop.Name,
-			DBName:                prop.DB.Name,
+		field := &Field{
+			Name:                  prop.Name(),
 			DataType:              dataType,
-			Size:                  getSize(dataType, prop.DB.Size),
 			DefaultValueInterface: prop.Default,
-			Updatable:             sch.DB.Updatable,
-			Creatable:             sch.DB.Creatable,
-			Readable:              sch.DB.Readable,
-			Unique:                sch.DB.Unique,
-			NotNull:               sch.DB.NotNull,
-			PrimaryKey:            sch.DB.PrimaryKey,
 		}
-		initField(f)
-		s.Fields = append(s.Fields, f)
+		if metaField != nil {
+			field.DBName = extensions.GetFieldName(prop)
+			field.Size = getSize(dataType, metaField.Size)
+			field.Updatable = metaField.Updatable
+			field.Creatable = metaField.Creatable
+			field.Readable = metaField.Readable
+			field.Unique = metaField.Unique
+			field.NotNull = metaField.NotNull
+			field.PrimaryKey = metaField.PrimaryKey
+		}
+		initField(field)
+		s.Fields = append(s.Fields, field)
 	}
 	return s
 }
 
-func getSize(dataType DataType, size *int) int {
-	if size != nil {
-		return *size
+func getSize(dataType DataType, size int64) int {
+	if size != 0 {
+		return int(size)
 	}
 	switch dataType {
 	case Int:
@@ -108,4 +113,8 @@ func getDataType(prop *jsonschema.Schema) DataType {
 		return Array
 	}
 	return String
+}
+
+func getTableName(sch *jsonschema.Schema) string {
+	return extensions.GetTableName(sch)
 }

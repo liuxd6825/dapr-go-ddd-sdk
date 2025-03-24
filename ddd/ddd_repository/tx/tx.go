@@ -20,7 +20,7 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc ddd_repository.TxFunc,
 	newTxFunc := txFunc
 	if dbKeys != nil && len(dbKeys) > 0 {
 		for _, dbKey := range dbKeys {
-			item := restapp.GetDb(dbKey)
+			item := restapp.GetDB(dbKey)
 			if item == nil {
 				return fmt.Errorf("db %s not found", dbKey)
 			}

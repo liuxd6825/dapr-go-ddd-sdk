@@ -28,11 +28,12 @@ func (b *Builder) CreateHTML(schema *jsonschema.Schema, templateType TemplateTyp
 	// 将属性转换成Field类型
 	fields := make([]Field, 0)
 	for _, prop := range props {
+		name := prop.Name()
 		formField := Field{
-			Name:     prop.Name,
+			Name:     name,
 			Title:    prop.Title,
 			Type:     prop.GetType(),
-			Required: schema.IsRequired(prop.Name),
+			Required: schema.IsRequired(name),
 		}
 		fields = append(fields, formField)
 	}

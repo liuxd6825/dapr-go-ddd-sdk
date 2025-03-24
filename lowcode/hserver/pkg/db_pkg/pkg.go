@@ -52,7 +52,7 @@ func (p *Pkg) NewDao(opts *NewDaoConfig) idao.Dao[map[string]any] {
 		panic("db.NewDao() args schema is required")
 	}
 
-	tableName := opts.Schema.Name
+	tableName := opts.Schema.Name()
 	daoKey := getDaoKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); v != nil && ok {
 		return v.(idao.Dao[map[string]any])
