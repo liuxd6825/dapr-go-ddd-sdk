@@ -166,7 +166,7 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.FindPaging", func(t *testing.T) {
 		gp.Try(func() error {
-			paging := ddd_repository.NewFindPagingQueryRequest()
+			paging := store.NewFindPagingQueryRequest()
 			paging.PageSize = 2
 			paging.IsTotalRows = true
 			paging.Filter = fmt.Sprintf("creatorName=='%s'", "test")
@@ -233,8 +233,8 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.SumByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			var vals []*ddd_repository.ValueCol
-			vals = append(vals, &ddd_repository.ValueCol{
+			var vals []*store.ValueCol
+			vals = append(vals, &store.ValueCol{
 				AggFunc: "sum",
 				Field:   "age",
 			})
@@ -315,11 +315,11 @@ func TestDao_Sum(t *testing.T) {
 	}
 
 	t.Run("sum", func(t *testing.T) {
-		valueCols := make([]*ddd_repository.ValueCol, 0)
-		valueCols = append(valueCols, &ddd_repository.ValueCol{
+		valueCols := make([]*store.ValueCol, 0)
+		valueCols = append(valueCols, &store.ValueCol{
 			AggFunc: "sum", Field: "age",
 		})
-		qry := ddd_repository.NewFindPagingQueryRequest()
+		qry := store.NewFindPagingQueryRequest()
 		qry.SetTenantId("test")
 		qry.SetPageSize(2)
 		qry.SetValueCols(valueCols)
@@ -329,19 +329,19 @@ func TestDao_Sum(t *testing.T) {
 	})
 
 	t.Run("group", func(t *testing.T) {
-		valueCols := make([]*ddd_repository.ValueCol, 0)
-		valueCols = append(valueCols, &ddd_repository.ValueCol{
+		valueCols := make([]*store.ValueCol, 0)
+		valueCols = append(valueCols, &store.ValueCol{
 			AggFunc: "sum", Field: "age",
 		})
 
-		groupCols := make([]*ddd_repository.GroupCol, 0)
-		groupCols = append(groupCols, &ddd_repository.GroupCol{
+		groupCols := make([]*store.GroupCol, 0)
+		groupCols = append(groupCols, &store.GroupCol{
 			Field: "gender", DataType: "string",
 		})
 
 		groupKeys := make([]any, 0)
 
-		qry := ddd_repository.NewFindPagingQueryRequest()
+		qry := store.NewFindPagingQueryRequest()
 		qry.SetTenantId("test")
 		qry.SetPageSize(2)
 		qry.SetValueCols(valueCols)

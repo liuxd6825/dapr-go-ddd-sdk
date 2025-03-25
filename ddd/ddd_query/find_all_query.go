@@ -1,5 +1,7 @@
 package ddd_query
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+)
 
-type FindAllQuery = ddd_repository.FindByAllRequest
+type FindAllQuery = store.FindByAllRequest

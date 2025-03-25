@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -204,7 +204,7 @@ func (m *MongoManager) Update(ctx context.Context, table *Table, env *EnvConfig,
 	panic("implement me")
 }
 
-func (m *MongoManager) getDb(ctx context.Context, dbKey string) (*ddd_mongodb.MongoDB, error) {
+func (m *MongoManager) getDb(ctx context.Context, dbKey string) (*store_mongodb.MongoDB, error) {
 	mongodb, ok := GetMongoByKey(dbKey)
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Dbkey %s 不存在", dbKey))

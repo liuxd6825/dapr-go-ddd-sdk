@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"github.com/liuxd6825/jsonschema/v6"
@@ -25,7 +25,7 @@ type WebContext interface {
 
 	GetId() string
 	GetCaseId() string
-	GetFindPaging() *ddd_repository.FindPagingQueryRequest
+	GetFindPaging() *store.FindPagingQueryRequest
 
 	Valid(data any, schema *schema.Schema)
 	FormFile(key string) *common.FormFile

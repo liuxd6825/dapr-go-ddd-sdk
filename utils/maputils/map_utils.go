@@ -1,7 +1,7 @@
 package maputils
 
 import (
-	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
@@ -70,20 +70,28 @@ func GetString(m map[string]interface{}, key string, result *string, def string)
 }*/
 
 func GetString(m map[string]interface{}, key string, def string) (string, error) {
-	resutl := def
+	res := def
 	if v, ok := m[key]; ok {
-		resutl = fmt.Sprintf("%v", v)
+		return convert.ConvertString(v)
 	}
-	return resutl, nil
+	return res, nil
+}
+
+func GetBool(m map[string]interface{}, key string, def bool) (bool, error) {
+	res := def
+	if v, ok := m[key]; ok {
+		return convert.ConvertBool(v)
+	}
+	return res, nil
 }
 
 func GetInt64(m map[string]interface{}, key string, def int64) (int64, error) {
-	var result = def
+	var res = def
 	if v, ok := m[key]; ok {
 		if val, ok := v.(int64); ok {
-			result = val
+			res = val
 		} else if val, ok := v.(*int64); ok {
-			result = *val
+			res = *val
 		} else if str, ok := v.(string); ok {
 			if str != "" {
 				// 转换为 int64
@@ -91,11 +99,12 @@ func GetInt64(m map[string]interface{}, key string, def int64) (int64, error) {
 				if err != nil {
 					return 0, err
 				}
-				result = num
+				res = num
 			}
 		}
+		return convert.ConvertInt(v)
 	}
-	return result, nil
+	return res, nil
 }
 
 func Decode(input interface{}, out interface{}) error {

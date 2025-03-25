@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mapperutils"
 )
 
 type Item interface {
@@ -54,7 +55,7 @@ func (t *Items[T]) AddMapper(ctx context.Context, id string, data interface{}) (
 	if err != nil {
 		return t.null, err
 	}
-	err = Mapper(data, newItem)
+	err = mapperutils.Mapper(data, newItem)
 	if err == nil {
 		t.items[id] = newItem
 	}
@@ -87,7 +88,7 @@ func (t *Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}
 	if !ok {
 		return item, ok, fmt.Errorf("types.Items.UpdateMapper() id %s ", id)
 	}
-	err := MaskMapper(data, item, updateMask)
+	err := mapperutils.MaskMapper(data, item, updateMask)
 	return item, ok, err
 }
 

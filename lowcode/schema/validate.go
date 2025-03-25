@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -16,7 +16,7 @@ type Validate struct {
 }
 
 func NewValidate(schema *Schema) *Validate {
-	return &Validate{schema: schema, compiler: jsonschemautils.NewCompiler()}
+	return &Validate{schema: schema, compiler: jsonschema_ext.NewCompiler()}
 }
 
 func (v *Validate) UseLoader(loader URLLoader) {

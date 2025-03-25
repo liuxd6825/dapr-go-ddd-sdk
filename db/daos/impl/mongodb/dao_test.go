@@ -158,7 +158,7 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.FindPaging", func(t *testing.T) {
 		gp.Try(func() error {
-			paging := ddd_repository.NewFindPagingQueryRequest()
+			paging := store.NewFindPagingQueryRequest()
 			paging.PageSize = 2
 			paging.IsTotalRows = true
 			paging.Filter = rsql.NewBuilder().Eq("creatorName", "test").Build()
@@ -223,8 +223,8 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.Sum", func(t *testing.T) {
 		gp.Try(func() error {
-			var vals []*ddd_repository.ValueCol
-			vals = append(vals, &ddd_repository.ValueCol{
+			var vals []*store.ValueCol
+			vals = append(vals, &store.ValueCol{
 				AggFunc: "sum",
 				Field:   "age",
 			})

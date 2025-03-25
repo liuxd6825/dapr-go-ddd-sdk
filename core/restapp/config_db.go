@@ -2,7 +2,7 @@ package restapp
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/redis/go-redis/v9"
@@ -27,7 +27,7 @@ type DBItem interface {
 	GetDBKey() string
 	GetRedis() *redis.Client
 	GetNeo4j() neo4j.DriverWithContext
-	GetMongo() *ddd_mongodb.MongoDB
+	GetMongo() *store_mongodb.MongoDB
 	GetGormDB() *gorm.DB
 	GetDB() any
 	CloseDB(ctx context.Context) error
@@ -43,7 +43,7 @@ type dbItem struct {
 	dbType DbType
 	redis  *redis.Client
 	neo4j  neo4j.DriverWithContext
-	mongo  *ddd_mongodb.MongoDB
+	mongo  *store_mongodb.MongoDB
 	gormDb *gorm.DB
 	config any
 }
@@ -93,7 +93,7 @@ func (d *dbItem) GetNeo4j() neo4j.DriverWithContext {
 	return d.neo4j
 }
 
-func (d *dbItem) GetMongo() *ddd_mongodb.MongoDB {
+func (d *dbItem) GetMongo() *store_mongodb.MongoDB {
 	return d.mongo
 }
 

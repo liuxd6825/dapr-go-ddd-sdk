@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
@@ -35,7 +35,8 @@ type Func interface {
 	Run(ctx context.Context, opts ...RunOptions) (res any, err error)
 	Config() *FuncConfig
 	AsJsFunc() any
-	GetParamsType(urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType)
+	//GetParamsType(urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType)
+	GetParamsSchema(urlPars map[string]any, fsOpt *fsopts.Options) *jsonschema.Schema
 }
 
 type FuncManager interface {

@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
@@ -414,7 +414,7 @@ func (c *WebContext) GetCaseId() string {
 	return c.ictx.Params().GetString("caseId")
 }
 
-func (c *WebContext) GetFindPaging() *ddd_repository.FindPagingQueryRequest {
+func (c *WebContext) GetFindPaging() *store.FindPagingQueryRequest {
 	v, _ := c.RestAssembler.AsFindPagingRequest(c.ictx)
 	v.TenantId = c.GetTenantId()
 	return v

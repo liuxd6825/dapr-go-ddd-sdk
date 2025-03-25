@@ -3,14 +3,12 @@ package schema_utils
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonschemautils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
-func Compile(fileName string, schemaConfig any, opts ...func(comilper *jsonschema.Compiler) error) (schemaCompiler *jsonschema.Schema, err error) {
-	compiler := newCompiler()
-	compiler.AssertFormat()
-	compiler.AssertContent()
+func Compile(fileName string, schemaConfig any, opts ...func(compiler *jsonschema.Compiler) error) (schemaCompiler *jsonschema.Schema, err error) {
+	compiler := jsonschema_ext.NewCompiler()
 
 	for _, opt := range opts {
 		if opt != nil {
@@ -37,13 +35,4 @@ func Compile(fileName string, schemaConfig any, opts ...func(comilper *jsonschem
 		return nil, err
 	}
 	return newSchema, nil
-}
-
-func newCompiler() *jsonschema.Compiler {
-	compiler := jsonschema.NewCompiler()
-	compiler.AssertFormat()
-	compiler.AssertContent()
-	compiler.RegisterFormat(jsonschemautils.DateTimeFormat)
-	compiler.RegisterFormat(jsonschemautils.DateFormat)
-	return compiler
 }

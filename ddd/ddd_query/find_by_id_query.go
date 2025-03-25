@@ -1,8 +1,8 @@
 package ddd_query
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 
-type FindByIdQuery = ddd_repository.FindByIdQuery
+type FindByIdQuery = store.FindByIdQuery
 
 func NewFindByIdQuery() *FindByIdQuery {
 	return &FindByIdQuery{}

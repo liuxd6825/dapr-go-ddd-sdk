@@ -1,19 +1,19 @@
 package ddd_query
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 
-type FindPagingQuery = ddd_repository.FindPagingQueryRequest
-type FindPagingResult = ddd_repository.FindPagingResult[any]
-type FindPagingByCaseIdQuery = ddd_repository.FindPagingByCaseIdQueryRequest
+type FindPagingQuery = store.FindPagingQueryRequest
+type FindPagingResult = store.FindPagingResult[any]
+type FindPagingByCaseIdQuery = store.FindPagingByCaseIdQueryRequest
 
-func NewFindPagingQuery() ddd_repository.FindPagingQuery {
-	return ddd_repository.NewFindPagingQuery()
+func NewFindPagingQuery() store.FindPagingQuery {
+	return store.NewFindPagingQuery()
 }
 
 func NewFindPagingByCaseIdQuery(paging *FindPagingQuery, caseId string) *FindPagingByCaseIdQuery {
-	return ddd_repository.NewFindPagingByCaseIdQuery(paging, caseId)
+	return store.NewFindPagingByCaseIdQuery(paging, caseId)
 }
 
-func NewFindPagingQueryDTO() *ddd_repository.FindPagingQueryDTO {
-	return ddd_repository.NewFindPagingQueryDTO()
+func NewFindPagingQueryDTO() *store.FindPagingQueryDTO {
+	return store.NewFindPagingQueryDTO()
 }

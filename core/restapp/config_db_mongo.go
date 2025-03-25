@@ -3,7 +3,7 @@ package restapp
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
@@ -40,8 +40,8 @@ type MongoConfig struct {
 	EventPublish bool `yaml:"eventPublish" json:"eventPublish"` // 是否发送领域事件
 }
 
-var _mongoDbs map[string]*ddd_mongodb.MongoDB
-var _mongoDefault *ddd_mongodb.MongoDB
+var _mongoDbs map[string]*store_mongodb.MongoDB
+var _mongoDefault *store_mongodb.MongoDB
 var _initMongo = false
 
 func (m MongoConfig) IsEmpty() bool {
@@ -52,7 +52,7 @@ func (m MongoConfig) IsEmpty() bool {
 }
 
 func init() {
-	_mongoDbs = make(map[string]*ddd_mongodb.MongoDB)
+	_mongoDbs = make(map[string]*store_mongodb.MongoDB)
 }
 
 func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
@@ -74,7 +74,7 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 			continue
 		}
 		config := NewDddMongodbConfig(c)
-		mongodb, err := ddd_mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
+		mongodb, err := store_mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
 			GetLogger().Infof("config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
 				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
 				opts.Hosts, opts.Auth.Username, pstr(opts.ReplicaSet), pint(opts.MaxPoolSize), config.ConnectTimeout,
@@ -99,7 +99,7 @@ func initMongo(appName string, appMongoConfigs map[string]*MongoConfig) error {
 	return nil
 }
 
-func NewDddMongodbConfig(c *MongoConfig) *ddd_mongodb.Config {
+func NewDddMongodbConfig(c *MongoConfig) *store_mongodb.Config {
 	operationTimeout := defaultTimeout(c.OperationTimeout, "30s")
 	connectTimeout := defaultTimeout(c.ConnectTimeout, "5s")
 	heartbeatInterval := defaultTimeout(c.HeartbeatInterval, "5s")
@@ -108,7 +108,7 @@ func NewDddMongodbConfig(c *MongoConfig) *ddd_mongodb.Config {
 	serverSelectionTimeout := defaultTimeout(c.ServerSelectionTimeout, "5s")
 	socketTimeout := defaultTimeout(c.SocketTimeout, "60s")
 
-	config := &ddd_mongodb.Config{
+	config := &store_mongodb.Config{
 		AppName:                c.AppName,
 		Host:                   strings.ReplaceAll(c.Host, " ", ""),
 		DatabaseName:           c.DbName,
@@ -190,17 +190,17 @@ func newMongoServerMonitor() *event.ServerMonitor {
 	return monitor
 }
 
-func GetMongoDB() *ddd_mongodb.MongoDB {
+func GetMongoDB() *store_mongodb.MongoDB {
 	return _mongoDefault
 }
 
-func GetMongoByKey(dbKey string) (*ddd_mongodb.MongoDB, bool) {
+func GetMongoByKey(dbKey string) (*store_mongodb.MongoDB, bool) {
 	d, ok := _mongoDbs[strings.ToLower(dbKey)]
 	return d, ok
 }
 
 func CloseMongoDB(ctx context.Context) error {
-	c := func(d *ddd_mongodb.MongoDB) (err error) {
+	c := func(d *store_mongodb.MongoDB) (err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
@@ -248,7 +248,7 @@ func defaultTimeout(val string, def string) time.Duration {
 	return v
 }
 
-func addMongoDB(dbKey string, mongoDb *ddd_mongodb.MongoDB, config any) DBItem {
+func addMongoDB(dbKey string, mongoDb *store_mongodb.MongoDB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
 		dbType: DbType_MongoDB,

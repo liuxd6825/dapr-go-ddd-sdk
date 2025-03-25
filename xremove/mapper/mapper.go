@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mapperutils"
 )
 
 // Mapper
@@ -10,7 +10,7 @@ import (
 // @param toObj 目标
 // @return error
 func Mapper(fromObj, toObj interface{}) error {
-	return types.Mapper(fromObj, toObj)
+	return mapperutils.Mapper(fromObj, toObj)
 }
 
 // MaskMapper
@@ -20,7 +20,7 @@ func Mapper(fromObj, toObj interface{}) error {
 // @param mask 要复制属性列表
 // @return error
 func MaskMapper(fromObj, toObj interface{}, mask []string) error {
-	return types.MaskMapper(fromObj, toObj, mask)
+	return mapperutils.MaskMapper(fromObj, toObj, mask)
 }
 
 // NewMap
@@ -36,5 +36,5 @@ func NewMap(formObj interface{}) (map[string]any, error) {
 		}
 		return res, nil
 	*/
-	return types.NewMap(formObj)
+	return mapperutils.NewMap(formObj)
 }

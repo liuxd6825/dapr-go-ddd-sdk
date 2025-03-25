@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"strconv"
 	"time"
 )
@@ -70,7 +70,7 @@ func (a *RestAssembler) AsFindAllRequest(ictx iris.Context) (*ddd_query.FindAllQ
 
 func (a *RestAssembler) AsFindAutoCompleteRequest(ictx iris.Context) (ddd_query.FindAutoCompleteQuery, error) {
 	var err error
-	dto := ddd_repository.NewFindAutoCompleteQueryDTO()
+	dto := store.NewFindAutoCompleteQueryDTO()
 
 	dto.Field = ictx.URLParamDefault("field", "")
 	dto.Value = ictx.URLParamDefault("value", "")
@@ -92,7 +92,7 @@ func (a *RestAssembler) AsFindAutoCompleteRequest(ictx iris.Context) (ddd_query.
 
 func (a *RestAssembler) AsDistinctRequest(ictx iris.Context) (ddd_query.FindDistinctQuery, error) {
 	var err error
-	dto := ddd_repository.NewFindDistinctQueryDTO()
+	dto := store.NewFindDistinctQueryDTO()
 
 	dto.CaseId = ictx.URLParamDefault("caseId", "")
 	dto.PageNum = ictx.URLParamInt64Default("page-num", 0)
@@ -124,7 +124,7 @@ func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*ddd_query.Find
 	valueCols := ictx.URLParamDefault("value-cols", "")
 	mustFilter := ictx.URLParamDefault("must-filter", "")
 
-	req := ddd_repository.FindPagingQueryDTO{
+	req := store.FindPagingQueryDTO{
 		PageNum:     pageNum,
 		PageSize:    pageSize,
 		Filter:      filter,

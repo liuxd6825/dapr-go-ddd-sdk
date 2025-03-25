@@ -2,7 +2,7 @@ package sql
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	gormschema "gorm.io/gorm/schema"
 	"reflect"
@@ -10,7 +10,7 @@ import (
 )
 
 // NewGormSchema get data type from dialector with extra schema table
-func NewGormSchema(sch *dbschema.DBSchema) (*gormschema.Schema, error) {
+func NewGormSchema(sch *store.DBSchema) (*gormschema.Schema, error) {
 	if sch == nil {
 		return nil, fmt.Errorf("%w: %+v", gormschema.ErrUnsupportedDataType, sch)
 	}
@@ -50,7 +50,7 @@ func getTenantIdField(gormSch *gormschema.Schema) *gormschema.Field {
 	return tenantIdField
 }
 
-func addGormFields(dbSch *dbschema.DBSchema, gormSch *gormschema.Schema) (primaryField *gormschema.Field) {
+func addGormFields(dbSch *store.DBSchema, gormSch *gormschema.Schema) (primaryField *gormschema.Field) {
 	for _, f := range dbSch.Fields {
 		dataType := getDataType(f)
 		size := 0
@@ -72,7 +72,7 @@ func initGormSchema(s *gormschema.Schema) {
 	}
 }
 
-func newGormSchema(dest *dbschema.DBSchema) *gormschema.Schema {
+func newGormSchema(dest *store.DBSchema) *gormschema.Schema {
 	tableName := stringutils.AsFieldName(dest.Name)
 	s := &gormschema.Schema{
 		Name:                dest.Name,
@@ -91,31 +91,31 @@ func newGormSchema(dest *dbschema.DBSchema) *gormschema.Schema {
 	return s
 }
 
-func getDataType(field *dbschema.Field) gormschema.DataType {
+func getDataType(field *store.Field) gormschema.DataType {
 	if field == nil {
 		panic("getDataType: property is nil")
 	}
 
 	switch field.DataType {
-	case dbschema.Date:
+	case store.Date:
 		return gormschema.Date
-	case dbschema.Time:
+	case store.Time:
 		return gormschema.Time
-	case dbschema.String:
+	case store.String:
 		return gormschema.String
-	case dbschema.Int:
+	case store.Int:
 		return gormschema.Int
-	case dbschema.Float:
+	case store.Float:
 		return gormschema.Float
-	case dbschema.Bool:
+	case store.Bool:
 		return gormschema.Bool
-	case dbschema.Bytes:
+	case store.Bytes:
 		return gormschema.Bytes
-	case dbschema.Array:
+	case store.Array:
 		return gormschema.Array
-	case dbschema.Object:
+	case store.Object:
 		return gormschema.Object
-	case dbschema.Uint:
+	case store.Uint:
 		return gormschema.Uint
 	}
 	return gormschema.String
@@ -143,7 +143,7 @@ func addDbField(s *gormschema.Schema, name string, dataType gormschema.DataType,
 	return field
 }
 
-func setDbField(gField *gormschema.Field, dbField *dbschema.Field) {
+func setDbField(gField *gormschema.Field, dbField *store.Field) {
 	if gField == nil || dbField == nil {
 		return
 	}

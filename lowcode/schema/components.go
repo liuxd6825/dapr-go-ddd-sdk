@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 
 var components = map[string]*Schema{
 	"string":     &Schema{Type: []string{TypeString}},
@@ -18,15 +18,15 @@ func findPaging() *Schema {
 		Type: []string{TypeObject},
 		Properties: map[string]*Property{
 			"filter": &Property{
-				Description: ddd_repository.FilterDescription,
+				Description: store.FilterDescription,
 				Type:        []string{TypeString},
 			},
 			"sort": &Property{
-				Description: ddd_repository.SortDescription,
+				Description: store.SortDescription,
 				Type:        []string{TypeString},
 			},
 			"fields": &Property{
-				Description: ddd_repository.FieldsDescription,
+				Description: store.FieldsDescription,
 				Type:        []string{TypeString},
 			},
 			"pageNum": &Property{
@@ -36,15 +36,15 @@ func findPaging() *Schema {
 				Type: []string{TypeNumber},
 			},
 			"groupCols": &Property{
-				Description: ddd_repository.GroupColsDescription,
+				Description: store.GroupColsDescription,
 				Type:        []string{TypeString},
 			},
 			"groupKeys": &Property{
-				Description: ddd_repository.GroupKeysDescription,
+				Description: store.GroupKeysDescription,
 				Type:        []string{TypeString},
 			},
 			"valueCols": &Property{
-				Description: ddd_repository.ValueColsDescription,
+				Description: store.ValueColsDescription,
 				Type:        []string{TypeString},
 			},
 		},

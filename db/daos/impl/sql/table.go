@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
 	"gorm.io/gorm"
 	gormschema "gorm.io/gorm/schema"
@@ -15,13 +15,13 @@ import (
 
 type Table struct {
 	tableName string
-	dbSch     *dbschema.DBSchema
+	dbSch     *store.DBSchema
 	gormSch   *gormschema.Schema
 	db        *gorm.DB
 	entity    any
 }
 
-func NewTable(db *gorm.DB, dbSch *dbschema.DBSchema, entity any) idao.Table {
+func NewTable(db *gorm.DB, dbSch *store.DBSchema, entity any) idao.Table {
 	gormSchema, err := NewGormSchema(dbSch)
 	if err != nil {
 		panic(err)
@@ -29,7 +29,7 @@ func NewTable(db *gorm.DB, dbSch *dbschema.DBSchema, entity any) idao.Table {
 	return newTable(db, dbSch.TableName, entity, dbSch, gormSchema)
 }
 
-func newTable(db *gorm.DB, tableName string, entity any, schema *dbschema.DBSchema, gormSchema *gormschema.Schema) *Table {
+func newTable(db *gorm.DB, tableName string, entity any, schema *store.DBSchema, gormSchema *gormschema.Schema) *Table {
 	return &Table{db: db, tableName: tableName, entity: entity, dbSch: schema, gormSch: gormSchema}
 }
 
@@ -37,7 +37,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *dbschema.DBSchema {
+func (t *Table) GetSchema() *store.DBSchema {
 	return t.dbSch
 }
 

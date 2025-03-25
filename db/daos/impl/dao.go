@@ -5,21 +5,20 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type DaoBase[T any] struct {
 	cfg         *idao.DaoConfig
-	dbKey       string                // 配置中的数据库Key
-	tableName   string                // 表名
-	appId       string                // 应用ID
-	aggField    string                // 聚合根字段
-	isPubEvent  bool                  // 是否发布事件
-	eventPrefix string                // 事件前缀
-	dao         ddd_repository.Dao[T] // 数据访问
-	env         idao.IEnvConfig       // 环境变量
+	dbKey       string          // 配置中的数据库Key
+	tableName   string          // 表名
+	appId       string          // 应用ID
+	aggField    string          // 聚合根字段
+	isPubEvent  bool            // 是否发布事件
+	eventPrefix string          // 事件前缀
+	store       store.IStore[T] // 数据访问
+	env         idao.IEnvConfig // 环境变量
 }
 
 const (
@@ -37,7 +36,7 @@ const (
 	Id          = "id"
 )
 
-func NewDaoBase[T any](dao ddd_repository.Dao[T], cfg *idao.DaoConfig) *DaoBase[T] {
+func NewDaoBase[T any](store store.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
 	if cfg == nil {
 		panic("dao base config is nil")
 	}
@@ -47,7 +46,7 @@ func NewDaoBase[T any](dao ddd_repository.Dao[T], cfg *idao.DaoConfig) *DaoBase[
 	}
 	tableName := stringutils.AsFieldName(cfg.DBSchema.Name)
 	return &DaoBase[T]{
-		dao:         dao,
+		store:       store,
 		dbKey:       cfg.DbKey,
 		tableName:   tableName,
 		appId:       cfg.GetEnv().GetAppId(),
@@ -86,12 +85,12 @@ func (d *DaoBase[T]) GetEventPrefix() string {
 	return d.eventPrefix
 }
 
-func (d *DaoBase[T]) GetSchema() *dbschema.DBSchema {
+func (d *DaoBase[T]) GetSchema() *store.DBSchema {
 	return d.cfg.DBSchema
 }
 
 func (d *DaoBase[T]) GetAggregateId(entity T, opts *idao.CallOptions) (string, error) {
-	aggId := d.dao.GetAggId(entity)
+	aggId := d.store.GetAggId(entity)
 	return aggId, nil
 }
 
@@ -109,14 +108,14 @@ func (d *DaoBase[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
 	panic("token is error")
 }
 
-func (d *DaoBase[T]) NewFindPagingQuery(ctx context.Context, findPagingMap any) ddd_repository.FindPagingQuery {
-	var qry ddd_repository.FindPagingQuery
-	if v, ok := findPagingMap.(ddd_repository.FindPagingQuery); ok {
+func (d *DaoBase[T]) NewFindPagingQuery(ctx context.Context, findPagingMap any) store.FindPagingQuery {
+	var qry store.FindPagingQuery
+	if v, ok := findPagingMap.(store.FindPagingQuery); ok {
 		qry = v
 	} else if mapData, ok := findPagingMap.(map[string]any); ok {
-		builder := ddd_repository.NewFindPagingQueryBuilder()
+		builder := store.NewFindPagingQueryBuilder()
 		qry = builder.SetMapToQuery(mapData).Build()
-	} else if query, ok := findPagingMap.(ddd_repository.FindPagingQuery); ok {
+	} else if query, ok := findPagingMap.(store.FindPagingQuery); ok {
 		qry = query
 	} else {
 		panic("FindPaging(findPagingMap:any) findPagingMap is map[string]any or ddd_repository.FindPagingQuery ")

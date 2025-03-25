@@ -5,15 +5,15 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_neo4j"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 type Dao[T any] struct {
 	*impl.DaoBase[T]
 	cfg    *idao.DaoConfig
-	dao    ddd_repository.Dao[T]
+	dao    store.IStore[T]
 	driver neo4j.DriverWithContext
 }
 
@@ -46,16 +46,16 @@ func NewDao[T any](cfg *idao.DaoConfig, tableName ...string) idao.Dao[T] {
 		labels = tableName
 	}
 	dbSch := cfg.DBSchema
-	var dao ddd_repository.Dao[T]
+	var storeImp store.IStore[T]
 	if cfg.DaoType == "node" {
-		dao = ddd_neo4j.NewNodeDao[T](driver, dbSch, labels)
+		storeImp = store_neo4j.NewNodeDao[T](driver, dbSch, labels)
 	} else {
-		dao = ddd_neo4j.NewRelationDao[T](driver, dbSch, labels)
+		storeImp = store_neo4j.NewRelationDao[T](driver, dbSch, labels)
 	}
-	daoBase := impl.NewDaoBase[T](dao, cfg)
+	daoBase := impl.NewDaoBase[T](storeImp, cfg)
 	return &Dao[T]{
 		DaoBase: daoBase,
-		dao:     dao,
+		dao:     storeImp,
 		cfg:     cfg,
 		driver:  driver,
 	}

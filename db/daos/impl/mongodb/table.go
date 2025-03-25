@@ -3,22 +3,22 @@ package mongodb
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type Table struct {
 	tableName string
-	schema    *dbschema.DBSchema
-	db        *ddd_mongodb.MongoDB
+	schema    *store.DBSchema
+	db        *store_mongodb.MongoDB
 }
 
-func NewTable(db *ddd_mongodb.MongoDB, schema *dbschema.DBSchema) idao.Table {
+func NewTable(db *store_mongodb.MongoDB, schema *store.DBSchema) idao.Table {
 	return newTable(db, schema)
 }
 
-func newTable(db *ddd_mongodb.MongoDB, schema *dbschema.DBSchema) *Table {
+func newTable(db *store_mongodb.MongoDB, schema *store.DBSchema) *Table {
 	tableName := stringutils.AsFieldName(schema.Name)
 	return &Table{db: db, tableName: tableName, schema: schema}
 }
@@ -27,7 +27,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *dbschema.DBSchema {
+func (t *Table) GetSchema() *store.DBSchema {
 	return t.schema
 }
 

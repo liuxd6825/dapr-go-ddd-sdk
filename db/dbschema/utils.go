@@ -3,6 +3,7 @@ package dbschema
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils"
 	"reflect"
@@ -68,7 +69,7 @@ func appendSettingFromTag(tag reflect.StructTag, value string) reflect.StructTag
 }
 
 // GetIdentityFieldValuesMap get identity map from fields
-func GetIdentityFieldValuesMap(ctx context.Context, reflectValue reflect.Value, fields []*Field) (map[string][]reflect.Value, [][]interface{}) {
+func GetIdentityFieldValuesMap(ctx context.Context, reflectValue reflect.Value, fields []*store.Field) (map[string][]reflect.Value, [][]interface{}) {
 	var (
 		results       = [][]interface{}{}
 		dataResults   = map[string][]reflect.Value{}
@@ -131,7 +132,7 @@ func GetIdentityFieldValuesMap(ctx context.Context, reflectValue reflect.Value, 
 }
 
 // GetIdentityFieldValuesMapFromValues get identity map from fields
-func GetIdentityFieldValuesMapFromValues(ctx context.Context, values []interface{}, fields []*Field) (map[string][]reflect.Value, [][]interface{}) {
+func GetIdentityFieldValuesMapFromValues(ctx context.Context, values []interface{}, fields []*store.Field) (map[string][]reflect.Value, [][]interface{}) {
 	resultsMap := map[string][]reflect.Value{}
 	results := [][]interface{}{}
 

@@ -1,14 +1,14 @@
 package ddd_query
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 
-type FindDistinctQuery = ddd_repository.FindDistinctQuery
-type FindDistinctQueryDTO = ddd_repository.FindDistinctQueryDTO
+type FindDistinctQuery = store.FindDistinctQuery
+type FindDistinctQueryDTO = store.FindDistinctQueryDTO
 
 func NewFindDistinctQuery() FindDistinctQuery {
-	return ddd_repository.NewFindDistinctQuery()
+	return store.NewFindDistinctQuery()
 }
 
 func NewFindDistinctQueryDTO() *FindDistinctQueryDTO {
-	return ddd_repository.NewFindDistinctQueryDTO()
+	return store.NewFindDistinctQueryDTO()
 }

@@ -2,38 +2,43 @@ package dbschema
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschemaext"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschemaext/extensions"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/jsonschema/v6"
 	"reflect"
 	"time"
 )
 
-func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
-	jsSchema := jsonschemaext.NewJsonSchemaWithJson(fileName, jsonText)
+func NewDBSchemaWithJsonSchemaBytes(fileName string, jsonBytes []byte) *store.DBSchema {
+	jsSchema := jsonschema_ext.NewJsonSchemaWithBytes(fileName, jsonBytes)
 	return NewDBSchemaWithJsonSchema(jsSchema)
 }
 
-func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
-	s := NewDBSchema()
-	s.TableName = extensions.GetTableName(sch)
+func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *store.DBSchema {
+	jsSchema := jsonschema_ext.NewJsonSchemaWithJson(fileName, jsonText)
+	return NewDBSchemaWithJsonSchema(jsSchema)
+}
+
+func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *store.DBSchema {
+	s := store.NewDBSchema()
+	s.TableName = jsonschema_ext.GetTableName(sch)
 	s.Name = sch.Name()
 	props := sch.GetAllProperties()
 
 	for _, prop := range props {
-		schField := extensions.GetField(prop)
+		schField := jsonschema_ext.GetField(prop)
 		if schField != nil && schField.NotField {
 			continue
 		}
 		dataType := getDataType(prop)
-		field := &Field{
+		field := &store.Field{
 			Name:                  prop.Name(),
 			DataType:              dataType,
 			DefaultValueInterface: prop.Default,
 		}
 		if schField != nil {
-			field.DBName = extensions.GetFieldName(prop)
+			field.DBName = jsonschema_ext.GetFieldName(prop)
 			field.Size = getSize(dataType, schField.Size)
 			field.Updatable = schField.Updatable
 			field.Creatable = schField.Creatable
@@ -70,7 +75,7 @@ func getSize(dataType DataType, size int64) int {
 	}
 }
 
-func initField(field *Field) {
+func initField(field *store.Field) {
 	if field.DataType == Time || field.DataType == Date {
 		field.Set = func(ctx context.Context, value reflect.Value, i interface{}) error {
 			value.Set(reflect.ValueOf(i))
@@ -119,5 +124,5 @@ func getDataType(prop *jsonschema.Schema) DataType {
 }
 
 func getTableName(sch *jsonschema.Schema) string {
-	return extensions.GetTableName(sch)
+	return jsonschema_ext.GetTableName(sch)
 }

@@ -2,7 +2,6 @@ package restapi
 
 import (
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/jsonschema/v6"
 )
@@ -43,14 +42,14 @@ type RequestData struct {
 }
 
 type HandleOptions struct {
-	Method      MethodType                                               `json:"method"`      // 请求类型
-	Path        string                                                   `json:"path"`        // 请求的URL
-	Description string                                                   `json:"description"` // 方法说明
-	Body        *jsonschema.Schema                                       `json:"body"`        // 请求时body的数据定义
-	Params      map[string]common.RequestParam                           `json:"params"`      // 参数定义
-	ParamsUrl   string                                                   `json:"paramsUrl"`   // 从URL中加载params的定义
-	HandleName  string                                                   `json:"handleName"`  // 名称
-	Handle      func(cxt *element.WebContext, params map[string]any) any `json:"-"`           // 控制器
+	Method       MethodType                                               `json:"method"`       // 请求类型
+	Path         string                                                   `json:"path"`         // 请求的URL
+	Description  string                                                   `json:"description"`  // 方法说明
+	Body         *jsonschema.Schema                                       `json:"body"`         // 请求时body的数据定义
+	ParamsSchema *jsonschema.Schema                                       `json:"paramsSchema"` // 参数定义
+	ParamsUrl    string                                                   `json:"paramsUrl"`    // 从URL中加载params的定义
+	HandleName   string                                                   `json:"handleName"`   // 名称
+	Handle       func(cxt *element.WebContext, params map[string]any) any `json:"-"`            // 控制器
 }
 
 func (h HandleOptions) GetMethod() MethodType {
@@ -69,6 +68,6 @@ func (h *HandleOptions) GetBody() *jsonschema.Schema {
 	return h.Body
 }
 
-func (h *HandleOptions) GetParams() map[string]common.RequestParam {
-	return h.Params
+func (h *HandleOptions) GetParamsSchema() *jsonschema.Schema {
+	return h.ParamsSchema
 }

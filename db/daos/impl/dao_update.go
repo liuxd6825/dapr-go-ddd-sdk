@@ -11,8 +11,8 @@ func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...*idao.CallOpt
 		panic(fmt.Errorf("Dao.Update() entity is nil"))
 	}
 	tenantId := d.GetTenantId(ctx)
-	d.dao.SetTenantId(entity, tenantId)
-	res := d.dao.Update(ctx, entity, idao.NewRepositoryOptions(opts)...)
+	d.store.SetTenantId(entity, tenantId)
+	res := d.store.Update(ctx, entity, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}
@@ -23,7 +23,7 @@ func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...*idao.CallOpt
 
 func (d *DaoBase[T]) UpdateMap(ctx context.Context, id string, data map[string]any, opts ...*idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.UpdateMap(ctx, tenantId, id, data, idao.NewRepositoryOptions(opts)...)
+	res := d.store.UpdateMap(ctx, tenantId, id, data, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}
@@ -33,7 +33,7 @@ func (d *DaoBase[T]) UpdateMap(ctx context.Context, id string, data map[string]a
 
 func (d *DaoBase[T]) UpdateMany(ctx context.Context, list []T, opts ...*idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.UpdateMany(ctx, tenantId, list, idao.NewRepositoryOptions(opts)...)
+	res := d.store.UpdateMany(ctx, tenantId, list, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}
@@ -42,7 +42,7 @@ func (d *DaoBase[T]) UpdateMany(ctx context.Context, list []T, opts ...*idao.Cal
 
 func (d *DaoBase[T]) UpdateByRSQL(ctx context.Context, filterRSQL string, data T, opts ...*idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.UpdateByRSQL(ctx, tenantId, filterRSQL, data, idao.NewRepositoryOptions(opts)...)
+	res := d.store.UpdateByRSQL(ctx, tenantId, filterRSQL, data, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}

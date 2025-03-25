@@ -2,12 +2,11 @@ package idao
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 )
 
 type Dao[T any] interface {
-	GetSchema() *dbschema.DBSchema
+	GetSchema() *store.DBSchema
 	GetAggField() string
 
 	Create(ctx context.Context, entity T, opts ...*CallOptions) *Result
@@ -28,15 +27,15 @@ type Dao[T any] interface {
 	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []T
 	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []T
 	FindOneByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) T
-	FindAll(ctx context.Context, opts ...*CallOptions) *ddd_repository.FindListResult[T]
-	FindPaging(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
-	FindAutoComplete(ctx context.Context, qry *ddd_repository.FindAutoCompleteQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
-	FindDistinct(ctx context.Context, qry *ddd_repository.FindDistinctQueryRequest, opts ...*CallOptions) *ddd_repository.FindPagingResult[T]
+	FindAll(ctx context.Context, opts ...*CallOptions) *store.FindListResult[T]
+	FindPaging(ctx context.Context, qry *store.FindPagingQueryRequest, opts ...*CallOptions) *store.FindPagingResult[T]
+	FindAutoComplete(ctx context.Context, qry *store.FindAutoCompleteQueryRequest, opts ...*CallOptions) *store.FindPagingResult[T]
+	FindDistinct(ctx context.Context, qry *store.FindDistinctQueryRequest, opts ...*CallOptions) *store.FindPagingResult[T]
 
 	//SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) T
-	SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) map[string]any
-	SumEntity(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) []T
-	SumByQuery(ctx context.Context, qry *ddd_repository.FindPagingQueryRequest, opts ...*CallOptions) map[string]any
+	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...*CallOptions) map[string]any
+	SumEntity(ctx context.Context, qry *store.FindPagingQueryRequest, opts ...*CallOptions) []T
+	SumByQuery(ctx context.Context, qry *store.FindPagingQueryRequest, opts ...*CallOptions) map[string]any
 
 	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64
 	Table() Table
@@ -48,11 +47,11 @@ type CallOptions struct {
 	EventType    *string
 	EventVersion *string
 	CommandId    *string
-	ddd_repository.RepositoryOptions
+	store.RepositoryOptions
 }
 
-func NewRepositoryOptions(opts []*CallOptions) []ddd_repository.Options {
-	var res []ddd_repository.Options
+func NewRepositoryOptions(opts []*CallOptions) []store.Options {
+	var res []store.Options
 	for _, o := range opts {
 		res = append(res, o)
 	}

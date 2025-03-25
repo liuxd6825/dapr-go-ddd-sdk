@@ -5,8 +5,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_sql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"gorm.io/gorm"
@@ -19,7 +19,7 @@ type Dao[T any] struct {
 	*impl.DaoBase[T]
 	cfg       *idao.DaoConfig
 	db        *gorm.DB
-	dao       ddd_repository.Dao[T]
+	dao       store.IStore[T]
 	gormSch   *gormschema.Schema
 	tableName string
 }
@@ -71,7 +71,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 		gormSch = sch
 	}
 
-	newDaoCfg := &ddd_sql.NewConfig{
+	newDaoCfg := &store_sql.NewConfig{
 		DbKey:      cfg.DbKey,
 		Db:         db,
 		TableName:  tableName,
@@ -79,7 +79,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 		GormSchema: gormSch,
 	}
 
-	sqlDao := ddd_sql.NewDao[T](newDaoCfg)
+	sqlDao := store_sql.NewDao[T](newDaoCfg)
 
 	//sqlDao.AddMetadata("dbSchema", gormSch)
 	//sqlDao.AddMetadata("schema", cfg.Schema)

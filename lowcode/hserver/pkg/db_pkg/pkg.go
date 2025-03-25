@@ -10,8 +10,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -151,7 +151,7 @@ func (p *Pkg) getDbItem(dbKey string) restapp.DBItem {
 	return item
 }
 
-func (p *Pkg) StartTx(ctx context.Context, dbKeys []string, txFunc ddd_repository.TxFunc, options ...*ddd_repository.SessionOptions) (err error) {
+func (p *Pkg) StartTx(ctx context.Context, dbKeys []string, txFunc store.TxFunc, options ...*store.SessionOptions) (err error) {
 	return tx.StartTx(ctx, dbKeys, txFunc, options...)
 }
 

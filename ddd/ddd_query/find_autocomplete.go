@@ -1,14 +1,16 @@
 package ddd_query
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+)
 
-type FindAutoCompleteQuery = ddd_repository.FindAutoCompleteQuery
-type FindAutoCompleteQueryDTO = ddd_repository.FindAutoCompleteQueryDTO
+type FindAutoCompleteQuery = store.FindAutoCompleteQuery
+type FindAutoCompleteQueryDTO = store.FindAutoCompleteQueryDTO
 
 func NewFindAutoCompleteQuery() FindAutoCompleteQuery {
-	return ddd_repository.NewFindAutoCompleteQuery()
+	return store.NewFindAutoCompleteQuery()
 }
 
 func NewFindAutoCompleteQueryDTO() *FindAutoCompleteQueryDTO {
-	return ddd_repository.NewFindAutoCompleteQueryDTO()
+	return store.NewFindAutoCompleteQueryDTO()
 }

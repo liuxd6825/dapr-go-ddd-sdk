@@ -2,11 +2,11 @@ package mongodb
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 )
 
 type RepositoryOptions struct {
-	MongoDB         *ddd_mongodb.MongoDB
+	MongoDB         *store_mongodb.MongoDB
 	GetCollCallback GetCollectionCallback
 }
 
@@ -29,7 +29,7 @@ func NewRepositoryOptions(opts ...*RepositoryOptions) *RepositoryOptions {
 	return o
 }
 
-func GetDB() *ddd_mongodb.MongoDB {
+func GetDB() *store_mongodb.MongoDB {
 	if _mongodb != nil {
 		return _mongodb
 	}

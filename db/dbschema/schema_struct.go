@@ -3,6 +3,7 @@ package dbschema
 import (
 	"fmt"
 	"github.com/jinzhu/now"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	gormschema "gorm.io/gorm/schema"
 	"reflect"
 	"strconv"
@@ -11,14 +12,14 @@ import (
 	"time"
 )
 
-func NewDBSchemaWithStruct(name string, data any, tableName string) *DBSchema {
+func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSchema {
 	gSch, err := gormschema.ParseWithSpecialTableName(data, &sync.Map{}, gormschema.NamingStrategy{}, tableName)
 	if err != nil {
 		panic(err)
 	}
-	dbSch := NewDBSchema()
+	dbSch := store.NewDBSchema()
 	for _, f := range gSch.Fields {
-		field := NewField()
+		field := store.NewField()
 		field.Name = f.Name
 		field.DBName = f.DBName
 		field.StructField = f.StructField
@@ -39,13 +40,13 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *DBSchema {
 	return dbSch
 }
 
-func getFieldsByValue(refVal reflect.Value) []*Field {
+func getFieldsByValue(refVal reflect.Value) []*store.Field {
 	// 如果传入的是指针，解引用
 	if refVal.Kind() == reflect.Ptr {
 		refVal = refVal.Elem()
 	}
 
-	fields := make([]*Field, 0)
+	fields := make([]*store.Field, 0)
 	for i := 0; i < refVal.NumField(); i++ {
 		rField := refVal.Type().Field(i)
 		rVal := refVal.Field(i)
@@ -59,7 +60,7 @@ func getFieldsByValue(refVal reflect.Value) []*Field {
 		if rField.Anonymous {
 			fields = append(fields, getFieldsByValue(rVal)...)
 		}
-		field := &Field{
+		field := &store.Field{
 			DBName:            rField.Name,
 			Name:              rField.Name,
 			FieldType:         rField.Type,
@@ -75,7 +76,7 @@ func getFieldsByValue(refVal reflect.Value) []*Field {
 	return fields
 }
 
-func setFieldByReflect(fieldValue reflect.Value, field *Field) {
+func setFieldByReflect(fieldValue reflect.Value, field *store.Field) {
 	var err error
 	skipParseDefaultValue := strings.Contains(field.DefaultValue, "(") &&
 		strings.Contains(field.DefaultValue, ")") || strings.ToLower(field.DefaultValue) == "null" || field.DefaultValue == ""
@@ -119,9 +120,9 @@ func setFieldByReflect(fieldValue reflect.Value, field *Field) {
 	case reflect.Struct:
 		if _, ok := fieldValue.Interface().(*time.Time); ok {
 			field.DataType = Time
-		} else if fieldValue.Type().ConvertibleTo(TimeReflectType) {
+		} else if fieldValue.Type().ConvertibleTo(store.TimeReflectType) {
 			field.DataType = Time
-		} else if fieldValue.Type().ConvertibleTo(TimePtrReflectType) {
+		} else if fieldValue.Type().ConvertibleTo(store.TimePtrReflectType) {
 			field.DataType = Time
 		}
 		if field.HasDefaultValue && !skipParseDefaultValue && (field.DataType == Time || field.DataType == Date) {
@@ -130,7 +131,7 @@ func setFieldByReflect(fieldValue reflect.Value, field *Field) {
 			}
 		}
 	case reflect.Array, reflect.Slice:
-		if reflect.Indirect(fieldValue).Type().Elem() == ByteReflectType && field.DataType == "" {
+		if reflect.Indirect(fieldValue).Type().Elem() == store.ByteReflectType && field.DataType == "" {
 			field.DataType = Bytes
 		} else {
 			field.DataType = Array

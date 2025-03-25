@@ -199,7 +199,7 @@ func TestRelDao_Many(t *testing.T) {
 
 	t.Run("rel.FindPaging", func(t *testing.T) {
 		gp.Try(func() error {
-			paging := ddd_repository.NewFindPagingQueryRequest()
+			paging := store.NewFindPagingQueryRequest()
 			paging.PageSize = 2
 			paging.IsTotalRows = true
 			paging.Filter = "creatorName=='test'"
@@ -242,8 +242,8 @@ func TestRelDao_Many(t *testing.T) {
 
 	t.Run("rel.Sum", func(t *testing.T) {
 		gp.Try(func() error {
-			var vals []*ddd_repository.ValueCol
-			vals = append(vals, &ddd_repository.ValueCol{
+			var vals []*store.ValueCol
+			vals = append(vals, &store.ValueCol{
 				AggFunc: "sum",
 				Field:   "age",
 			})

@@ -4,9 +4,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 )
 
-type Options = ddd_repository.Options
+type Options = store.Options
 
-type ServiceOptions = ddd_repository.RepositoryOptions
+type ServiceOptions = store.RepositoryOptions
 
 func NewOptions() Options {
 	return &ServiceOptions{}
@@ -17,8 +17,8 @@ func MergeOptions(opts ...Options) Options {
 	return o
 }
 
-func NewRepositoryOptions(opts ...Options) []ddd_repository.Options {
-	var list []ddd_repository.Options
+func NewRepositoryOptions(opts ...Options) []store.Options {
+	var list []store.Options
 	for _, o := range opts {
 		list = append(list, o)
 	}

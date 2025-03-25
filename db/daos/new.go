@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -15,12 +16,12 @@ import (
 )
 
 type NewConfig struct {
-	DBKey        string             `json:"dbKey"`
-	DB           any                `json:"db"`
-	EventPublish *bool              `json:"eventPublish"`
-	AggField     string             `json:"aggField"`
-	DBSchema     *dbschema.DBSchema `json:"dbSchema"`
-	TableName    string             `json:"tableName"`
+	DBKey        string          `json:"dbKey"`
+	DB           any             `json:"db"`
+	EventPublish *bool           `json:"eventPublish"`
+	AggField     string          `json:"aggField"`
+	DBSchema     *store.DBSchema `json:"dbSchema"`
+	TableName    string          `json:"tableName"`
 }
 
 var cache = types.NewCMap[any]()

@@ -5,17 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -152,7 +154,7 @@ func (s *Func) Run(ctx context.Context, opts ...RunOptions) (res any, err error)
 	}
 
 	// 开启数据库事务
-	err = tx.StartTx(ctx, dbKeys, func(ctx context.Context, options ...*ddd_repository.SessionOptions) error {
+	err = tx.StartTx(ctx, dbKeys, func(ctx context.Context, options ...*store.SessionOptions) error {
 		opts = append(opts, func(vm *goja.Runtime) error {
 			return vm.Set("ctx", ctx)
 		})
@@ -167,6 +169,7 @@ func (s *Func) Run(ctx context.Context, opts ...RunOptions) (res any, err error)
 	return data, err
 }
 
+/*
 // GetParamsType
 //
 //	@Description: 获取参数类型定义
@@ -194,17 +197,78 @@ func (s *Func) GetParamsType(urlPars map[string]any, fsOpt *fsopts.Options) (par
 
 	return s.paramsTypeFile, s.paramsType
 }
+*/
 
+func (s *Func) GetParamsSchema(urlPars map[string]any, fsOpt *fsopts.Options) (sch *jsonschema.Schema) {
+	if s.paramsTypeFile != "" {
+		return nil
+	}
+	// 引用Schema文件
+	if s.config.ParamsUrl != "" {
+		sch = s.getParamsSchemaTypeByUrl(s.config.ParamsUrl, urlPars, fsOpt)
+	} else if s.config.ParamsType != "" {
+		sch = s.getParamsSchemaByType(s.config.ParamsType, fsOpt)
+	} else {
+		sch = s.getParamsSchemaTypeByUrl("./params/"+s.config.FuncName, urlPars, fsOpt)
+		if sch == nil {
+			sch = s.getParamsSchemaByType(s.config.FuncName, fsOpt)
+		}
+	}
+	return sch
+}
+
+// getParamsSchemaFileNameByUrl 在definition中查找参数类型定义
+func (s *Func) getParamsSchemaFileNameByUrl(aParamsType string, urlPars map[string]any, fsOpt *fsopts.Options) string {
+	fileName := fmt.Sprintf("/definition/params/%s.json", aParamsType)
+	return fileName
+}
+
+// getParamsTypeByType 在definition中查找参数类型定义
+func (s *Func) getParamsSchemaByType(schemaFile string, fsOpt *fsopts.Options) *jsonschema.Schema {
+	fileName := fmt.Sprintf("/definition/params/%s.json", schemaFile)
+	if sch := s.server.Definition().GetParam(fileName); sch != nil {
+		// 引用系统中的schema定义文件
+		return sch
+	}
+	return nil
+}
+
+// getParamsTypeByUrl 在文件中查找参数类型定义
+func (s *Func) getParamsSchemaTypeByUrl(paramsUrl string, urlPars map[string]any, fsOpt *fsopts.Options) (sch *jsonschema.Schema) {
+	fsOpts := &fsopts.Options{
+		RootPath: s.server.RootPath(),
+		WorkPath: fsOpt.WorkPath,
+	}
+
+	fileUrl := paramsUrl + ".json"
+	if (urlPars != nil) && (len(urlPars) > 0) {
+		fileUrl = stringutils.ReplacePlaceholders(fileUrl, urlPars)
+	}
+	if !s.server.FsPkg().Exists(fileUrl, fsOpts) {
+		return
+	}
+	bytes, err := s.server.ReadFile(fileUrl, fsOpts)
+	if err != nil {
+		panic(err)
+	}
+	if bytes != nil && len(bytes) > 0 {
+		sch = jsonschema_ext.NewJsonSchemaWithBytes(fileUrl, bytes)
+	}
+	return sch
+}
+
+/*
 // getParamsTypeByType 在definition中查找参数类型定义
 func (s *Func) getParamsTypeByType(aParamsType string, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType) {
 	fileName := fmt.Sprintf("/definition/params/%s.json", aParamsType)
-	if pt := s.server.Definition().GetParamsType(aParamsType + ".json"); pt != nil {
+	if pt := s.server.Definition().GetParam(aParamsType + ".json"); pt != nil {
 		// 引用系统中的schema定义文件
 		paramsTypeFile = fileName
 		paramsType = pt
 	}
 	return paramsTypeFile, paramsType
 }
+*/
 
 // getParamsTypeByUrl 在文件中查找参数类型定义
 func (s *Func) getParamsTypeByUrl(paramsUrl string, urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType) {

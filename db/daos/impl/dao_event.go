@@ -68,7 +68,7 @@ func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessT
 func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType idao.AccessType, entity T, opt *idao.CallOptions) (*dbevent.Event, error) {
 	o := idao.NewCallOptions(opt)
 	eventId := idutils.NewId()
-	tenantId := d.dao.GetTenantId(entity)
+	tenantId := d.store.GetTenantId(entity)
 	aggId, err := d.GetAggregateId(entity, opt)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (d *DaoBase[T]) GetEventType(accessType idao.AccessType, opts *idao.CallOpt
 }
 
 func (d *DaoBase[T]) NewAggregate(entity T, opt *idao.CallOptions) (*dbevent.Aggregate, error) {
-	tenantId := d.dao.GetTenantId(entity)
+	tenantId := d.store.GetTenantId(entity)
 	aggId, err := d.GetAggregateId(entity, opt)
 	if err != nil {
 		return nil, err

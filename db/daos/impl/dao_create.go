@@ -11,8 +11,8 @@ func (d *DaoBase[T]) Create(ctx context.Context, entity T, opts ...*idao.CallOpt
 		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
 	tenantId := d.GetTenantId(ctx)
-	d.dao.SetTenantId(entity, tenantId)
-	res := d.dao.Insert(ctx, entity, idao.NewRepositoryOptions(opts)...)
+	d.store.SetTenantId(entity, tenantId)
+	res := d.store.Insert(ctx, entity, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}
@@ -22,7 +22,7 @@ func (d *DaoBase[T]) Create(ctx context.Context, entity T, opts ...*idao.CallOpt
 
 func (d *DaoBase[T]) CreateMany(ctx context.Context, list []T, opts ...*idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.dao.InsertMany(ctx, tenantId, list, idao.NewRepositoryOptions(opts)...)
+	res := d.store.InsertMany(ctx, tenantId, list, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
 		panic(res.Error)
 	}

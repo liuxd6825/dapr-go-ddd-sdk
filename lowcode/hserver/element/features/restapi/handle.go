@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
@@ -11,7 +12,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
 	"github.com/liuxd6825/jsonschema/v6"
 	"strings"
 )
@@ -74,7 +77,7 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 		return
 	}
 	wctx := s.server.Factory().NewWebContext(ctx, ictx)
-	params := s.GetParamsValue(wctx)
+	params := s.GetParams(wctx)
 	s.run(wctx.Ctx(), wctx, params)
 }
 
@@ -116,67 +119,119 @@ func (s *ApiHandle) run(ctx context.Context, wctx element.WebContext, params any
 //	@param aParams  通过对象定义的参数类型
 //	@param cfgUrl  通过url定义的参数类型,
 //	@return map[string]any 参数
-func (s *ApiHandle) GetParams(wctx element.WebContext) map[string]any {
+func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 	var err error
 
 	// 获取参数文件与参数类型
-	paramsTypeFileName, paramsType := s.GetParamsType(wctx.ICtx())
-	if paramsType == nil {
+	sch := s.GetParamsSchema(wctx.ICtx())
+	if sch == nil {
 		return nil
-	}
-
-	if paramsTypeFileName == "/definition/params/findPaging.json" {
-		return wctx.GetFindPaging().AsMap()
 	}
 
 	// 要返回的值
 	data := map[string]any{}
 	ictx := wctx.ICtx()
 
-	for key, v := range paramsType {
+	metaSch := jsonschema_ext.GetMetaExtension(sch)
+	if metaSch != nil {
+		if metaSch.Param != nil && metaSch.Param.Type == jsonschema_ext.HParamType_Body {
+			res := wctx.ReadObject(sch)
+			return res
+		}
+	}
+
+	properties := sch.GetAllProperties()
+	for key, prop := range properties {
 		var val any
-		switch v.In {
-		case InParamTypeURL.String():
-			val = ictx.URLParam(key)
-		case InParamTypePath.String():
-			val = ictx.Params().Get(key)
-		case InParamTypeBody.String():
-			if v.Schema != nil {
-				schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
-				val = wctx.ReadObject(schema)
-			} else {
-				panic(errors.New("paramType %s is no schema defined", key))
-			}
-		case InParamTypeFormValue.String():
-			val = wctx.FormValue(key, v.Required)
-		case InParamTypeFormObject.String():
-			if v.Schema != nil {
-				schema := v.Schema.Init(paramsTypeFileName, s.server.SchemaLoader())
-				val = wctx.FormObject(key, v.Required, schema)
-			}
-		case InParamTypeFormFile.String():
-			val = wctx.FormFile(key)
+		meta := jsonschema_ext.GetMetaExtension(prop)
+		if meta == nil {
+			panic("no metadata")
+		}
+		if meta.Param == nil {
+			panic("no param")
+		}
+		param := meta.Param
+		paramName := param.Name
+		required := sch.IsRequired(key)
+		switch param.Type {
+		case jsonschema_ext.HParamType_Path:
+			val = ictx.URLParam(paramName)
+		case jsonschema_ext.HParamType_Query:
+			val = ictx.URLParam(paramName)
+		case jsonschema_ext.HParamType_Body:
+			val = wctx.ReadObject(prop)
+		case jsonschema_ext.HParamTypee_FormValue:
+			val = wctx.FormValue(paramName, required)
+		case jsonschema_ext.HParamType_FormObject:
+			val = wctx.FormObject(paramName, required, sch)
+		case jsonschema_ext.HParamType_FormFile:
+			val = wctx.FormFile(paramName)
 		default:
-			panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, v.In))
+			panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, param.Name))
 		}
 
-		if (val == nil || val == "") && v.Default != nil {
-			val = v.Default
+		if (val == nil || val == "") && prop.Default != nil {
+			val = prop.Default
+			switch val.(type) {
+			case json.Number:
+				num := val.(json.Number)
+				val, err = num.Int64()
+			case string:
+				val = val.(string)
+			}
 		}
 
-		if v.Type != "" {
-			val, err = types.Convert(v.Type, val)
+		if prop.Types != nil {
+			val, err = s.convert(prop.Name(), prop.Types, val)
 			if err != nil {
 				panic(fmt.Sprintf("params.%s types.Convert() error: %s", key, err.Error()))
 			}
 		}
-		if v.Required && (val == "" || val == nil) {
+		if required && (val == "" || val == nil) {
 			err = errors.New("The requested parameter %s cannot be empty", key)
 			panic(err)
 		}
 		data[key] = val
 	}
-	return data
+
+	paramData, err := jsonschema_ext.DoConvert(sch, data)
+	if err != nil {
+		panic(err)
+	}
+	return paramData
+}
+
+func (s *ApiHandle) convert(propName string, schTypes *jsonschema.Types, val any) (res any, err error) {
+	isNull := false
+	if ok := schTypes.Contains(jsonschema.JsonType_NullType); ok {
+		isNull = true
+	}
+	if val == nil {
+		if isNull {
+			return nil, errors.New("%s not null", propName)
+		}
+	}
+	if ok := schTypes.Contains(jsonschema.JsonType_DateTimeType); ok {
+		res, err = convert.Convert(convert.ConvertTypeDateTime, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_StringType); ok {
+		res, err = convert.Convert(convert.ConvertTypeString, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_IntegerType); ok {
+		res, err = convert.Convert(convert.ConvertTypeInt, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_BooleanType); ok {
+		res, err = convert.Convert(convert.ConvertTypeBool, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_NumberType); ok {
+		res, err = convert.Convert(convert.ConvertTypeNumber, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_ObjectType); ok {
+		res, err = convert.Convert(convert.ConvertTypeString, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_ArrayType); ok {
+		res, err = convert.Convert(convert.ConvertTypeString, val)
+	} else if ok := schTypes.Contains(jsonschema.JsonType_DateType); ok {
+		res, err = convert.Convert(convert.ConvertTypeDateTime, val)
+	}
+	if err != nil {
+		err = errors.New("%s types.Convert() error: %s", propName, err.Error())
+	}
+	return res, err
 }
 
 // GetParamsValue
@@ -186,6 +241,8 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) map[string]any {
 //	@param aParams  通过对象定义的参数类型
 //	@param cfgUrl  通过url定义的参数类型,
 //	@return map[string]any 参数
+
+/*
 func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 	var err error
 
@@ -249,6 +306,20 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 	return data
 }
 
+*/
+
+// GetParamsSchema
+//
+//	@Description: 获取参数类型定义
+//	@receiver r
+//	@param ictx
+//	@return string  参数文件名
+//	@return xtype.ParamsType  参数配置类型
+func (s *ApiHandle) GetParamsSchema(ictx iris.Context) *jsonschema.Schema {
+	urlPars := s.GetUrlParams(ictx)
+	return s.fun.GetParamsSchema(urlPars, s.service.FsOpts())
+}
+
 // GetParamsType
 //
 //	@Description: 获取参数类型定义
@@ -256,10 +327,12 @@ func (s *ApiHandle) GetParamsValue(wctx element.WebContext) map[string]any {
 //	@param ictx
 //	@return string  参数文件名
 //	@return xtype.ParamsType  参数配置类型
-func (s *ApiHandle) GetParamsType(ictx iris.Context) (string, common.ParamsType) {
+/*
+func (s *ApiHandle) GetParams(ictx iris.Context) (string, common.ParamsType) {
 	urlPars := s.GetUrlParams(ictx)
 	return s.fun.GetParamsType(urlPars, s.service.FsOpts())
 }
+*/
 
 // GetUrlParams
 //
