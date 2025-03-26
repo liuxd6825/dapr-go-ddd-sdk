@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/readexcel"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 	"github.com/minio/minio-go/v7"
 	"os"
 	"testing"

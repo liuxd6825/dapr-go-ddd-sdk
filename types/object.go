@@ -3,7 +3,7 @@ package types
 import (
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/gookit/goutil/maputil"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 )

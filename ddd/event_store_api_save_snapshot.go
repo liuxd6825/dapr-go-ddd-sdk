@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
 func SaveSnapshot(ctx context.Context, tenantId string, aggType string, aggId string, eventStoreKey string) (resErr error) {

@@ -7,12 +7,11 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
 	"github.com/liuxd6825/jsonschema/v6"
@@ -24,7 +23,7 @@ type ApiHandle struct {
 	service         element.Service
 	tag             *element.FuncTag
 	fun             element.Func
-	paramsTypeCache *types.CMap[common.ParamsType]
+	paramsTypeCache *types.CMap[*jsonschema.Schema]
 	schemaCache     *types.CMap[*jsonschema.Schema]
 	config          *RestConfig
 }
@@ -44,7 +43,7 @@ func NewApiHandle(service element.Service, tag *element.FuncTag, fun element.Fun
 		tag:             tag,
 		fun:             fun,
 		config:          cfg,
-		paramsTypeCache: types.NewCMap[common.ParamsType](),
+		paramsTypeCache: types.NewCMap[*jsonschema.Schema](),
 		schemaCache:     types.NewCMap[*jsonschema.Schema](),
 	}
 }
@@ -132,9 +131,9 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 	data := map[string]any{}
 	ictx := wctx.ICtx()
 
-	metaSch := jsonschema_ext.GetMetaExtension(sch)
+	metaSch := schema.GetMetaExtension(sch)
 	if metaSch != nil {
-		if metaSch.Param != nil && metaSch.Param.Type == jsonschema_ext.HParamType_Body {
+		if metaSch.Param != nil && metaSch.Param.Type == schema.HParamType_Body {
 			res := wctx.ReadObject(sch)
 			return res
 		}
@@ -143,7 +142,7 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 	properties := sch.GetAllProperties()
 	for key, prop := range properties {
 		var val any
-		meta := jsonschema_ext.GetMetaExtension(prop)
+		meta := schema.GetMetaExtension(prop)
 		if meta == nil {
 			panic("no metadata")
 		}
@@ -154,17 +153,17 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 		paramName := param.Name
 		required := sch.IsRequired(key)
 		switch param.Type {
-		case jsonschema_ext.HParamType_Path:
+		case schema.HParamType_Path:
 			val = ictx.URLParam(paramName)
-		case jsonschema_ext.HParamType_Query:
+		case schema.HParamType_Query:
 			val = ictx.URLParam(paramName)
-		case jsonschema_ext.HParamType_Body:
+		case schema.HParamType_Body:
 			val = wctx.ReadObject(prop)
-		case jsonschema_ext.HParamTypee_FormValue:
+		case schema.HParamTypee_FormValue:
 			val = wctx.FormValue(paramName, required)
-		case jsonschema_ext.HParamType_FormObject:
+		case schema.HParamType_FormObject:
 			val = wctx.FormObject(paramName, required, sch)
-		case jsonschema_ext.HParamType_FormFile:
+		case schema.HParamType_FormFile:
 			val = wctx.FormFile(paramName)
 		default:
 			panic(fmt.Sprintf("The requested parameter [%s] type [%s] is incorrect, please use url,path,body,formValue", key, param.Name))
@@ -194,7 +193,7 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 		data[key] = val
 	}
 
-	paramData, err := jsonschema_ext.DoConvert(sch, data)
+	paramData, err := schema.DoConvert(sch, data)
 	if err != nil {
 		panic(err)
 	}

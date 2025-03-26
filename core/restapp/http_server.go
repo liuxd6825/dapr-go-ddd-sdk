@@ -15,11 +15,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/html2/template"
-	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/swagger/v3"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+	swagger3 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/swagger/v3"
 	"net/http"
 	"time"
 )
@@ -61,9 +60,8 @@ type HttpServer struct {
 	onStartEvents    []OnStartEvent
 	swagger          *swagger3.Swagger
 	fs               *fsm.Manager
-
-	httpServer *http.Server
-	daprServer common.Service
+	httpServer       *http.Server
+	daprServer       common.Service
 }
 
 type OnStartEvent func(server *HttpServer) error
@@ -89,22 +87,22 @@ func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Serv
 	}
 
 	return &HttpServer{
-		app:              iris.New(),
-		httpPort:         opts.HttpPort,
-		httpHost:         opts.HttpHost,
-		appId:            opts.AppId,
-		logLevel:         opts.LogLevel,
-		daprDddClient:    daprClient,
-		actorFactories:   opts.ActorFactories,
-		subscribes:       opts.Subscribes,
-		controllers:      opts.Controllers,
-		eventTypes:       opts.EventTypes,
-		authToken:        opts.AuthToken,
-		webRootPath:      opts.WebRootPath,
-		envConfig:        opts.EnvConfig,
-		onInitEvents:     opts.OnInitEvents,
-		onStartEvents:    opts.OnStartEvents,
-		swagger:          swagger3.NewSwagger(),
+		app:            iris.New(),
+		httpPort:       opts.HttpPort,
+		httpHost:       opts.HttpHost,
+		appId:          opts.AppId,
+		logLevel:       opts.LogLevel,
+		daprDddClient:  daprClient,
+		actorFactories: opts.ActorFactories,
+		subscribes:     opts.Subscribes,
+		controllers:    opts.Controllers,
+		eventTypes:     opts.EventTypes,
+		authToken:      opts.AuthToken,
+		webRootPath:    opts.WebRootPath,
+		envConfig:      opts.EnvConfig,
+		onInitEvents:   opts.OnInitEvents,
+		onStartEvents:  opts.OnStartEvents,
+		//swagger:          swagger3.NewSwagger(),
 		jobEventHandlers: make(map[string]common.JobEventHandler),
 	}
 
@@ -270,6 +268,7 @@ func (s *HttpServer) addSwaggerHandler(app *iris.Application) error {
 	return nil
 }
 
+/*
 func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	if !s.envConfig.App.Template.Enable {
 		return nil
@@ -297,6 +296,7 @@ func (s *HttpServer) addRenderHandler(app *iris.Application) error {
 	})
 	return nil
 }
+*/
 
 func (s *HttpServer) Stop() error {
 	ctxShutDown, cancel := context2.WithTimeout(context2.Background(), 5*time.Second)

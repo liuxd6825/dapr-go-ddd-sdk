@@ -9,8 +9,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/funcs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/base"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/server"

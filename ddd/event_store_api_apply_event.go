@@ -2,10 +2,10 @@ package ddd
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	appctx2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 type Metadata = map[string][]string
@@ -58,13 +58,13 @@ func (a *ApplyEventOptions) SetMetadataFromCtx(ctx context.Context) *ApplyEventO
 	if ctx == nil {
 		return a
 	}
-	if header, ok := appctx.GetHeader(ctx); ok {
+	if header, ok := appctx2.GetHeader(ctx); ok {
 		a.Metadata = header
 	}
-	if tenantId, ok := appctx.GetTenantId(ctx); ok {
+	if tenantId, ok := appctx2.GetTenantId(ctx); ok {
 		a.Metadata["TenantId"] = []string{tenantId}
 	}
-	if auth, ok := appctx.GetAuthToken(ctx); ok {
+	if auth, ok := appctx2.GetAuthToken(ctx); ok {
 		a.Metadata[Authorization] = []string{auth.GetToken()}
 	}
 	return a

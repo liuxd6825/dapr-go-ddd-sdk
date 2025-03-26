@@ -1,6 +1,8 @@
 package xtest
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+)
 
 type EnvConfig struct {
 }

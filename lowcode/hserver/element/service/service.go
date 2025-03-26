@@ -4,11 +4,11 @@ import (
 	"context"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/features/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/features/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
 )

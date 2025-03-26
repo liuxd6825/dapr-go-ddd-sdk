@@ -3,7 +3,7 @@ package restapp
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"

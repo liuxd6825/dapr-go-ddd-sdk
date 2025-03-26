@@ -3,8 +3,8 @@ package runtime
 import (
 	"fmt"
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"strings"
 )
 

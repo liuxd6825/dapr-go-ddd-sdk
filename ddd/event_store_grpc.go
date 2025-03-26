@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"io"
 	"net/http"
 )

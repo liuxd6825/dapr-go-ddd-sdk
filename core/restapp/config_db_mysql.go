@@ -3,8 +3,8 @@ package restapp
 import (
 	"context"
 	"fmt"
-	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

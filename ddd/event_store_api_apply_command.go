@@ -2,7 +2,7 @@ package ddd
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"reflect"
 	"strings"
 )

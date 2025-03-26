@@ -3,7 +3,6 @@ package timeutils
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"reflect"
@@ -37,7 +36,7 @@ func PNow() *time.Time {
 
 func now() time.Time {
 	t := time.Now()
-	if setting.IsUTCTimeZone() {
+	if times.IsUTCTimeZone() {
 		return t.UTC()
 	}
 	return t

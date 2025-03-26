@@ -1,8 +1,8 @@
 package definition
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/spf13/afero"
 	"path/filepath"
@@ -54,7 +54,7 @@ func (d *Definition) newParam(srcFs afero.Fs, fileName string) (*jsonschema.Sche
 		return nil, err
 	}
 	if data != nil && len(data) > 0 {
-		sch := jsonschema_ext.NewJsonSchemaWithJson(fileName, string(data))
+		sch := schema.NewJsonSchemaWithJson(fileName, string(data))
 		return sch, nil
 	}
 	return nil, nil

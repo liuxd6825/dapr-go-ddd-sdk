@@ -2,7 +2,7 @@ package jsonutils
 
 import (
 	"github.com/json-iterator/go"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"time"
 	"unsafe"
 )
@@ -48,7 +48,7 @@ func (e *CustomTimeExtension) UpdateStructDescriptor(structDescriptor *jsoniter.
 			timeFormat = "2006-01-02"
 		}
 
-		locale := setting.GetTimeZone()
+		locale := times.GetTimeZone()
 		binding.Encoder = &funcEncoder{fun: func(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 			if typeErr != nil {
 				stream.Error = typeErr

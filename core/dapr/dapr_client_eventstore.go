@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	pb "github.com/dapr/dapr/pkg/proto/runtime/v1"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
 func (c *daprClient) LoadEvents(ctx context.Context, req *LoadEventsRequest) (*LoadEventsResponse, error) {

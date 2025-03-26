@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	appctx2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
@@ -21,7 +20,7 @@ import (
 
 type WebContext struct {
 	restapp.RestAssembler
-	authToken  appctx.AuthToken
+	authToken  appctx2.AuthToken
 	ictx       iris.Context
 	ctx        context.Context
 	vu         modules.VU
@@ -33,7 +32,7 @@ const dateFormat = "2006-01-02"
 const dateTimeFormat = "2006-01-02 15:04:05"
 
 func NewWebContext(ctx context.Context, ictx iris.Context) *WebContext {
-	authToken, ok := appctx.GetAuthToken(ctx)
+	authToken, ok := appctx2.GetAuthToken(ctx)
 	if !ok {
 		panic("auth token not found")
 	}
@@ -59,7 +58,7 @@ func (c *WebContext) ICtx() iris.Context {
 //	@Description: 取Token中的用户信息
 //	@receiver c
 //	@return appctx.AuthUser
-func (c *WebContext) GetTokenUser() appctx.AuthUser {
+func (c *WebContext) GetTokenUser() appctx2.AuthUser {
 	return c.authToken.GetUser()
 }
 
@@ -86,7 +85,7 @@ func (c *WebContext) GetTenantName() string {
 //	@Description: 取token信息
 //	@receiver c
 //	@return appctx.AuthToken
-func (c *WebContext) GetToken() appctx.AuthToken {
+func (c *WebContext) GetToken() appctx2.AuthToken {
 	return c.authToken
 }
 
@@ -173,8 +172,8 @@ func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
 //	@param runValues
 //	@param schema
 //	@return error
-func (c *WebContext) Valid(data any, schema *schema.Schema) {
-	schema.Validate(data)
+func (c *WebContext) Valid(data any, sch *jsonschema.Schema) {
+	sch.Validate(data)
 }
 
 // FormFile
@@ -235,7 +234,7 @@ func (c *WebContext) FormObject(name string, required bool, schema *jsonschema.S
 	bytes := []byte(text)
 
 	if schema != nil {
-		getTimeFields2(schema, timeFields, "")
+		//getTimeFields2(schema, timeFields, "")
 	}
 
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
@@ -447,6 +446,7 @@ var parseTime = func(val string, key any) (timeVal any, err error) {
 //	@Description: 从schema中读取date类型定义
 //	@param props schema2.Properties
 //	@return map[string]any
+/*
 func getTimeFields(s schema.ISchema) map[string]any {
 	if s == nil {
 		return nil
@@ -484,7 +484,9 @@ func getTimeFields(s schema.ISchema) map[string]any {
 	}
 	return timeFields
 }
+*/
 
+/*
 func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any, propName string) {
 	if s == nil {
 		return
@@ -509,7 +511,9 @@ func getTimeFields2(s *jsonschema.Schema, timeFields map[string]any, propName st
 	}
 
 }
+*/
 
+/*
 func getTimeFieldsProps2(props map[string]*jsonschema.Schema, timeFields map[string]any) {
 	if props == nil {
 		return
@@ -521,9 +525,9 @@ func getTimeFieldsProps2(props map[string]*jsonschema.Schema, timeFields map[str
 		}
 		if p.Types != nil {
 			if p.Types.Contains(jsonschema.JsonType_DateType) {
-				timeFields[k] = schema.TypeDate
+				timeFields[k] = jsonschema.JsonType_DateType
 			} else if p.Types.Contains(jsonschema.JsonType_DateTimeType) {
-				timeFields[k] = schema.TypeDatetime
+				timeFields[k] = jsonschema.JsonType_DateTimeType
 			}
 		}
 		if p.Properties != nil || p.Items != nil || p.Ref != nil || p.Items2020 != nil {
@@ -535,3 +539,4 @@ func getTimeFieldsProps2(props map[string]*jsonschema.Schema, timeFields map[str
 		}
 	}
 }
+*/

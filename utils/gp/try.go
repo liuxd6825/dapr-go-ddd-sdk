@@ -1,6 +1,6 @@
 package gp
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 
 // const string with rethrow message
 const gotry_rethrow = "----> Founded an Exception!!!\n"

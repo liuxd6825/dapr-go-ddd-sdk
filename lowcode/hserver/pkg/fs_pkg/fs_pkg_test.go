@@ -2,7 +2,7 @@ package fs_pkg
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/test"
-	fstest "github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/test"
+	fstest "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/test"
 	"testing"
 )
 

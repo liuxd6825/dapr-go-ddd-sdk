@@ -2,7 +2,7 @@ package hserver
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/spf13/afero"
 )
 

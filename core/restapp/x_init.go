@@ -6,11 +6,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs/userlog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs/userlog"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"runtime"
@@ -33,13 +33,13 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 		env.App.HttpHost = "0.0.0.0"
 	}
 
-	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", env.App.AppId, env.Name))
-	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", env.App.HttpHost, env.App.HttpPort, env.App.RootUrl))
-	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort()))
-	logs.Infof(ctx, "", nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(env.Dapr.EventStores)))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", env.App.AppId, env.Name))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", env.App.HttpHost, env.App.HttpPort, env.App.RootUrl))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort()))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(env.Dapr.EventStores)))
 
 	// 设置全局时区为本地时区
-	setting.SetLocalTimeZone()
+	times.SetLocalTimeZone()
 
 	userlog.Init(env.App.AppId, env.App.AppName)
 
@@ -104,7 +104,7 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 
 	ddd.Init(env.App.AppId)
 
-	level, err := logs.ParseLevel(env.Log.Level)
+	level, err := logs2.ParseLevel(env.Log.Level)
 	if err != nil {
 		return errors.ErrorOf("log.Level is error %s", err)
 	}
@@ -129,12 +129,12 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	return err
 }
 
-func initLogs(level logs.Level, saveDays int, rotationHour int, logFile string, outputType string) error {
-	outType, err := logs.ParseOutputType(outputType)
+func initLogs(level logs2.Level, saveDays int, rotationHour int, logFile string, outputType string) error {
+	outType, err := logs2.ParseOutputType(outputType)
 	if err != nil {
 		return err
 	}
-	logs.Init(AbsFileName(logFile), level, saveDays, rotationHour, outType)
+	logs2.Init(AbsFileName(logFile), level, saveDays, rotationHour, outType)
 	return nil
 }
 
@@ -150,26 +150,26 @@ func setCpuMemory(envName string, config *AppConfig) error {
 		return nil
 	}
 
-	var fields logs.Fields
+	var fields logs2.Fields
 	ctx := context.Background()
 
 	if config.CPU != nil {
 		cpu, err := setCpu(*config.CPU)
 		if err != nil {
-			logs.Errorf(ctx, "", fields, "ctype=app; envName=%s; cpu=%v; error=%s ", envName, cpu, err.Error())
+			logs2.Errorf(ctx, "", fields, "ctype=app; envName=%s; cpu=%v; error=%s ", envName, cpu, err.Error())
 			return err
 		} else {
-			logs.Infof(ctx, "", fields, "ctype=app; cpu=%v;", cpu)
+			logs2.Infof(ctx, "", fields, "ctype=app; cpu=%v;", cpu)
 		}
 	}
 
 	if config.Memory != nil {
 		memTxt, err := setMem(*config.Memory)
 		if err != nil {
-			logs.Errorf(ctx, "", fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
+			logs2.Errorf(ctx, "", fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
 			return err
 		} else {
-			logs.Infof(ctx, "", fields, "ctype=app; memory=%s; ", memTxt)
+			logs2.Infof(ctx, "", fields, "ctype=app; memory=%s; ", memTxt)
 		}
 	}
 
@@ -228,7 +228,7 @@ func newEventStores(cfg *DaprConfig, client dapr2.DaprClient) map[string]ddd.Eve
 	}
 	esMap := cfg.EventStores
 	if len(esMap) == 0 {
-		logs.Panicf(context.Background(), "", nil, "config eventStores is empity")
+		logs2.Panicf(context.Background(), "", nil, "config eventStores is empity")
 	} else {
 		var defEs ddd.EventStore
 		for _, item := range esMap {
@@ -307,6 +307,6 @@ func GetHttpsInvoke(appId string) string {
 	return fmt.Sprintf("https://%s:%v/v1.0/invoke/%v/method/", GetDaprHost(), GetDaprHttpPort(), appId)
 }
 
-func GetLogger() logs.Logger {
-	return logs.GetLogger()
+func GetLogger() logs2.Logger {
+	return logs2.GetLogger()
 }

@@ -2,7 +2,7 @@ package file_handler
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/localfs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/localfs"
 	"os"
 	"testing"
 )

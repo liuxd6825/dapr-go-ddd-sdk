@@ -2,7 +2,7 @@ package file_handler
 
 import (
 	"github.com/flosch/pongo2/v6"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/spf13/afero"
 	"io"

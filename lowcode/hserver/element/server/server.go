@@ -8,7 +8,6 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
 	common "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
@@ -17,10 +16,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
@@ -51,8 +50,6 @@ type Server struct {
 
 // NewServer 解析 HTML 并返回 Server 对象
 func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
-	fsma := env.GetFsManager()
-
 	fsPkg, err := fs_pkg.NewFsPkg(env, "")
 	if err != nil {
 		return nil, err
@@ -71,7 +68,7 @@ func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.F
 		srcFs:        srcFs,
 		cacheEnable:  true,
 		factory:      factory,
-		schemaLoader: schema_utils.NewSchemaLoader(fsma),
+		schemaLoader: schema.NewJSONLoader(),
 		eventPrefix:  env.GetAppId(),
 	}
 	server.SetPkgSetup(NewPkgSetup(server))

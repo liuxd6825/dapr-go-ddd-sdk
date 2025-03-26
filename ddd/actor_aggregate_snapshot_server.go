@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	actor2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr/actor"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 type AggregateSnapshotActorServer struct {

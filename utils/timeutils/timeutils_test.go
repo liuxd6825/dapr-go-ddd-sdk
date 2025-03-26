@@ -2,7 +2,7 @@ package timeutils
 
 import (
 	"errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/setting"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -76,7 +76,7 @@ func Test_StrToDateTime(t *testing.T) {
 }
 
 func TestNow(t *testing.T) {
-	setting.SetLocalTimeZone()
+	times.SetLocalTimeZone()
 	now := Now().UTC()
 	t.Logf("now=%v", now)
 }

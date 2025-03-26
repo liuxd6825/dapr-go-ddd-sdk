@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 )
 
 type IEnvConfig interface {

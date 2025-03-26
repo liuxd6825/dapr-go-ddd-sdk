@@ -3,7 +3,7 @@ package element
 import (
 	"context"
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 )

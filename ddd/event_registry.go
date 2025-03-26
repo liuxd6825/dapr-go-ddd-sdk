@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 )
 
 type NewEventFunc func() interface{}

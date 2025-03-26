@@ -5,8 +5,8 @@ import (
 	"github.com/kataras/iris/v12"
 	icontext "github.com/kataras/iris/v12/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/daos"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"net/http"
@@ -39,7 +39,7 @@ func appInit(app *iris.Application) {
 }
 
 func humanMap_handler(app *iris.Application) {
-	humanDao := daos.NewDao[map[string]any](&daos.NewConfig{
+	humanDao := dao.NewDao[map[string]any](&dao.NewConfig{
 		DBSchema: dbschema.NewDBSchemaWithJsonSchemaText("humanMap.json", xtest.HumanSchema),
 	})
 	humanDao.Table().AutoMigrate(context.Background())
@@ -69,7 +69,7 @@ func humanMap_handler(app *iris.Application) {
 }
 
 func human_handler(app *iris.Application) {
-	humanDao := daos.NewDao[*xtest.Human](&daos.NewConfig{})
+	humanDao := dao.NewDao[*xtest.Human](&dao.NewConfig{})
 	humanDao.Table().AutoMigrate(context.Background())
 
 	app.Get("/api/v1/human:create", func(ictx *icontext.Context) {

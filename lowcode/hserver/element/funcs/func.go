@@ -7,15 +7,13 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/sirupsen/logrus"
@@ -36,9 +34,10 @@ type Func struct {
 	transType      runtime.TransformType //转换类型
 	isBuildCode    bool
 	logger         logrus.FieldLogger
-	paramsTypeFile string            // 参数文件
-	paramsType     common.ParamsType // 参数类型定义
+	paramsTypeFile string // 参数文件
 	params         []*FuncParam
+	//paramsType     common.ParamsType // 参数类型定义
+
 }
 
 type RunOptions = func(vm *goja.Runtime) error
@@ -252,7 +251,7 @@ func (s *Func) getParamsSchemaTypeByUrl(paramsUrl string, urlPars map[string]any
 		panic(err)
 	}
 	if bytes != nil && len(bytes) > 0 {
-		sch = jsonschema_ext.NewJsonSchemaWithBytes(fileUrl, bytes)
+		sch = schema.NewJsonSchemaWithBytes(fileUrl, bytes)
 	}
 	return sch
 }
@@ -270,6 +269,7 @@ func (s *Func) getParamsTypeByType(aParamsType string, fsOpt *fsopts.Options) (p
 }
 */
 
+/*
 // getParamsTypeByUrl 在文件中查找参数类型定义
 func (s *Func) getParamsTypeByUrl(paramsUrl string, urlPars map[string]any, fsOpt *fsopts.Options) (paramsTypeFile string, paramsType common.ParamsType) {
 	fsOpts := &fsopts.Options{
@@ -296,3 +296,4 @@ func (s *Func) getParamsTypeByUrl(paramsUrl string, urlPars map[string]any, fsOp
 	}
 	return paramsTypeFile, paramsType
 }
+*/

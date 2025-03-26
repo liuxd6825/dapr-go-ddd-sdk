@@ -1,7 +1,7 @@
 package feign_pkg
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/xschema"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type InParamType string
@@ -17,11 +17,11 @@ func (f InParamType) String() string {
 }
 
 type Param struct {
-	In       string          `json:"in"` // InParamType
-	Required bool            `json:"required"`
-	Type     string          `json:"type"`
-	Desc     string          `json:"desc"`
-	Schema   *xschema.Schema `json:"schema"`
+	In       string             `json:"in"` // InParamType
+	Required bool               `json:"required"`
+	Type     string             `json:"type"`
+	Desc     string             `json:"desc"`
+	Schema   *jsonschema.Schema `json:"schema"`
 }
 
 type Options struct {

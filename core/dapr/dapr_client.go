@@ -6,8 +6,8 @@ import (
 	"fmt"
 	pb "github.com/dapr/dapr/pkg/proto/runtime/v1"
 	daprsdkclient "github.com/dapr/go-sdk/client"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"google.golang.org/grpc/status"
 	"strings"
 

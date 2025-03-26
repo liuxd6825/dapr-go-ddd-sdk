@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-playground/validator/v10"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
 // use a single instance of Validate, it caches struct info

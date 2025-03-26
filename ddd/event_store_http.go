@@ -7,7 +7,7 @@ import (
 	"fmt"
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
-	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors/assert"
+	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"io"
 	"net/http"
 )

@@ -3,9 +3,9 @@ package restapp
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+	appctx2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"strings"
 )
@@ -69,10 +69,10 @@ func NewTestContext(ctx context.Context, opts ...ContextOptions) (newCtx context
 
 	//添加 租户 上下文
 	if opt.TenantId != nil {
-		newCtx = appctx.NewTenantContext(newCtx, gp.String(opt.TenantId, ""))
+		newCtx = appctx2.NewTenantContext(newCtx, gp.String(opt.TenantId, ""))
 	}
 
-	newCtx, err = appctx.NewAuthContext(newCtx, TestToken)
+	newCtx, err = appctx2.NewAuthContext(newCtx, TestToken)
 	if err != nil {
 		return nil, err
 	}
@@ -109,18 +109,18 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 
 	if ictx != nil {
 		// 添加 ServerHeader 上下文
-		newCtx = appctx.NewServerContext(newCtx, &irisServer{ictx})
-		newCtx = appctx.NewIrisContext(newCtx, ictx)
+		newCtx = appctx2.NewServerContext(newCtx, &irisServer{ictx})
+		newCtx = appctx2.NewIrisContext(newCtx, ictx)
 	}
 
 	//添加 租户 上下文
 	if opt.TenantId != nil {
-		newCtx = appctx.NewTenantContext(newCtx, gp.String(opt.TenantId, ""))
+		newCtx = appctx2.NewTenantContext(newCtx, gp.String(opt.TenantId, ""))
 	}
 
 	// 添加 Header 上下文
 	header := newHeader(ictx)
-	newCtx = appctx.NewHeaderContext(newCtx, header)
+	newCtx = appctx2.NewHeaderContext(newCtx, header)
 
 	//添加 用户认证 上下文
 	newCtx, _, err = NewAuthTokenContext(newCtx, header[Authorization], gp.Bool(opt.CheckAuth))
@@ -131,13 +131,13 @@ func NewContext(ictx iris.Context, opts ...ContextOptions) (newCtx context.Conte
 	return newCtx, err
 }
 
-func newHeader(ictx iris.Context) appctx.Header {
-	var header appctx.Header
+func newHeader(ictx iris.Context) appctx2.Header {
+	var header appctx2.Header
 	if ictx != nil {
-		header = appctx.Header(ictx.Request().Header)
+		header = appctx2.Header(ictx.Request().Header)
 	}
 	if header == nil {
-		header = appctx.Header{}
+		header = appctx2.Header{}
 	}
 
 	isHave := false
@@ -176,7 +176,7 @@ func NewAuthTokenContext(parent context.Context, headerValues []string, checkAut
 			return parent, "", nil
 		}
 	}
-	newCtx, err = appctx.NewAuthContext(parent, token)
+	newCtx, err = appctx2.NewAuthContext(parent, token)
 	return newCtx, token, err
 }
 

@@ -2,16 +2,16 @@ package params_pkg
 
 import (
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type ParamsPkg struct {
 	server element.Server
-	cache  *types.CMap[*common.ParamsType]
+	cache  *types.CMap[*jsonschema.Schema]
 }
 
 func New(server element.Server) *ParamsPkg {
@@ -21,7 +21,7 @@ func New(server element.Server) *ParamsPkg {
 func NewParamsPkg(server element.Server) *ParamsPkg {
 	return &ParamsPkg{
 		server: server,
-		cache:  types.NewCMap[*common.ParamsType](),
+		cache:  types.NewCMap[*jsonschema.Schema](),
 	}
 }
 
@@ -32,7 +32,7 @@ func (s *ParamsPkg) NewProxy(vm *goja.Runtime, workPath string) *element.Proxy {
 	return element.NewProxy(s.server, vm, workPath, values)
 }
 
-func (s *ParamsPkg) LoadFile(fileUrl string, workPath string) *common.ParamsType {
+func (s *ParamsPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema {
 	if s.server.CacheEnable() {
 		val, ok := s.cache.Get(fileUrl)
 		if ok {
@@ -43,11 +43,16 @@ func (s *ParamsPkg) LoadFile(fileUrl string, workPath string) *common.ParamsType
 	if len(data) == 0 {
 		return nil
 	}
-	var paramsType *common.ParamsType
-	err := jsonutils.Unmarshal(data, &paramsType)
-	if err != nil {
-		panic(err)
-	}
-	s.cache.Set(fileUrl, paramsType)
-	return paramsType
+	sch := schema.NewJsonSchemaWithBytes(fileUrl, data)
+	s.cache.Set(fileUrl, sch)
+	return sch
+	/*
+		var paramsType *common.ParamsType
+		err := jsonutils.Unmarshal(data, &paramsType)
+		if err != nil {
+			panic(err)
+		}
+		s.cache.Set(fileUrl, paramsType)
+		return paramsType
+	*/
 }

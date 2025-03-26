@@ -3,7 +3,7 @@ package reflectutils
 import (
 	"errors"
 	"fmt"
-	errors2 "github.com/liuxd6825/dapr-go-ddd-sdk/errors"
+	errors2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
 )

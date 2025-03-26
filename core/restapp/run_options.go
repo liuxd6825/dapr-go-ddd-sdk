@@ -1,6 +1,8 @@
 package restapp
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/logs"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+)
 
 type OnInitEvent func(server *HttpServer) error
 
