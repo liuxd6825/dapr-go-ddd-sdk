@@ -10,8 +10,8 @@ type DomainEvent interface {
 	GetCommandId() string      // 命令Id
 	GetEventId() string        // 事件Id
 	GetEventType() string      // 事件类型
-	GetEventVersion() string   // 事件版本号
-	GetAggregateId() string    // 聚合根Id
+	GetEventVer() string       // 事件版本号
+	GetAggId() string          // 聚合根Id
 	GetCreatedTime() time.Time // 创建时间
 	GetData() interface{}      // 事件数据
 }

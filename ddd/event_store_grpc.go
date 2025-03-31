@@ -59,7 +59,7 @@ func (s *grpcEventStore) LoadAggregate(ctx context.Context, tenantId string, agg
 
 	req := &dapr2.LoadEventsRequest{
 		TenantId:      tenantId,
-		AggregateType: a.GetAggregateType(),
+		AggregateType: a.GetAggType(),
 		AggregateId:   aggregateId,
 	}
 

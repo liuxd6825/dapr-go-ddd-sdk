@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,9 +17,9 @@ type GetCollectionCallback func(ctx context.Context) (*store_mongodb.MongoDB, *m
 
 type Dao[T any] struct {
 	*impl.DaoBase[T]
-	db  *store_mongodb.MongoDB
-	dao store.IStore[T] // 数据访问对象
-	cfg *idao2.DaoConfig
+	db    *store_mongodb.MongoDB
+	store store.IStore[T] // 数据访问对象
+	cfg   *idao.DaoConfig
 }
 
 var _mongodb *store_mongodb.MongoDB
@@ -42,10 +42,10 @@ type DaoOptions struct {
 	Server          element.Server
 }
 
-func NewDao[T any](cfg *idao2.DaoConfig, tableNames ...string) idao2.Dao[T] {
+func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	cfg.Valid()
 	var mongoDb *store_mongodb.MongoDB
-	if v, ok := cfg.Database.(*store_mongodb.MongoDB); ok {
+	if v, ok := cfg.DB.(*store_mongodb.MongoDB); ok {
 		mongoDb = v
 	} else {
 		item := restapp.GetDB(cfg.DbKey)
@@ -80,18 +80,18 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableNames ...string) idao2.Dao[T] {
 	}
 	eb := store.NewAnyEntityBuilder[T](cfg.DBSchema)
 	daoOpts := store_mongodb.NewOptions[T]().SetAutoCreateCollection(true).SetAutoCreateIndex(true).SetEntityBuilder(eb)
+	mongoStore := store_mongodb.NewDao[T](cfg.DBSchema, getCollCallback, daoOpts)
 
-	dao := store_mongodb.NewDao[T](cfg.DBSchema, getCollCallback, daoOpts)
 	res := &Dao[T]{
-		dao:     dao,
-		DaoBase: impl.NewDaoBase[T](dao, cfg),
+		DaoBase: impl.NewDaoBase[T](mongoStore, cfg),
+		store:   mongoStore,
 		cfg:     cfg,
 		db:      mongoDb,
 	}
 	return res
 }
 
-func (d *Dao[T]) Table() idao2.Table {
+func (d *Dao[T]) Table() idao.Table {
 	return NewTable(d.db, d.cfg.DBSchema)
 }
 

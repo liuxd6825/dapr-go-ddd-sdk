@@ -152,6 +152,9 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 		param := meta.Param
 		paramName := param.Name
 		required := sch.IsRequired(key)
+		if prop.Default == nil {
+			val = prop.Default
+		}
 		switch param.Type {
 		case schema.HParamType_Path:
 			val = ictx.URLParam(paramName)

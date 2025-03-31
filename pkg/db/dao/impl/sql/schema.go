@@ -112,9 +112,9 @@ func getDataType(field *store.Field) gormschema.DataType {
 	case store.Bytes:
 		return gormschema.Bytes
 	case store.Array:
-		return gormschema.Array
+		return gormschema.Json
 	case store.Object:
-		return gormschema.Object
+		return gormschema.Json
 	case store.Uint:
 		return gormschema.Uint
 	}
@@ -177,10 +177,8 @@ func getFieldSize(fieldType gormschema.DataType, size int) int {
 		return 10
 	case gormschema.Date:
 		return 10
-	case gormschema.Object:
+	case gormschema.Json:
 		return 1000
-	case gormschema.Array:
-		return 100
 	default:
 		return size
 	}
@@ -200,10 +198,8 @@ func getFieldType(dbType gormschema.DataType) reflect.Type {
 		return reflect.TypeOf(time.Time{})
 	case gormschema.Date:
 		return reflect.TypeOf(time.Time{})
-	case gormschema.Object:
+	case gormschema.Json:
 		return reflect.TypeOf("map[string]any{}")
-	case gormschema.Array:
-		return reflect.TypeOf("[]any{}")
 	default:
 		return reflect.TypeOf("")
 	}

@@ -45,7 +45,7 @@ func (t *Table) AutoMigrate(ctx context.Context) {
 	if _, ok := t.entity.(map[string]any); ok {
 		err = t.db.Table(t.tableName).AutoMigrate(t.gormSch)
 	} else {
-		err = t.db.Table(t.tableName).CustomSchema(t.gormSch).AutoMigrate(t.entity)
+		err = t.db.Table(t.tableName).AutoMigrate(t.gormSch)
 	}
 
 	if err != nil {

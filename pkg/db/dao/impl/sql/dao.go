@@ -5,8 +5,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_sql"
-	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	idao "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"gorm.io/gorm"
@@ -17,19 +18,19 @@ import (
 
 type Dao[T any] struct {
 	*impl.DaoBase[T]
-	cfg       *idao2.DaoConfig
+	cfg       *idao.DaoConfig
 	db        *gorm.DB
 	dao       store.IStore[T]
 	gormSch   *gormschema.Schema
 	tableName string
 }
 
-func NewDao[T any](cfg *idao2.DaoConfig, tableNames ...string) idao2.Dao[T] {
+func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	cfg.Valid()
 	var db *gorm.DB
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
-	if cfg.Database != nil {
-		if val, ok := cfg.Database.(*gorm.DB); ok {
+	if cfg.DB != nil {
+		if val, ok := cfg.DB.(*gorm.DB); ok {
 			db = val
 		} else {
 			panic("database config error")
@@ -65,7 +66,7 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableNames ...string) idao2.Dao[T] {
 	} else {
 		ins := reflectutils.NewInstance[T]()
 		sch, err := gormschema.Parse(ins, &sync.Map{}, gormschema.NamingStrategy{})
-		if err != nil {
+		if sch == nil && err != nil {
 			panic(err)
 		}
 		gormSch = sch
@@ -96,14 +97,14 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableNames ...string) idao2.Dao[T] {
 	}
 }
 
-func (d *Dao[T]) Table() idao2.Table {
+func (d *Dao[T]) Table() idao.Table {
 	return newTable(d.db, d.tableName, d.dao.NewEntity(), d.cfg.DBSchema, d.gormSch)
 }
 
 func init() {
 	gorm.GetGoToDbValue = func(db *gorm.DB, field *gormschema.Field, value any) (any, bool) {
 		// liuxd lxd
-		if field.DataType == gormschema.Object || field.DataType == gormschema.Array {
+		if field.DataType == dbschema.Json {
 			if value == nil {
 				return nil, false
 			}
@@ -133,17 +134,12 @@ func init() {
 	}
 
 	gorm.GetDbToGoValue = func(db *gorm.DB, field *gormschema.Field, value any) (any, bool) {
-		if field.DataType == gormschema.Object || field.DataType == gormschema.Array {
+		if field.DataType == gormschema.Json {
 			if value == nil {
 				return nil, false
 			}
 			val := getJsonText(value)
 			var data any
-			if field.DataType == gormschema.Object {
-				data = make(map[string]any)
-			} else {
-				data = make([]any, 0)
-			}
 			if len(val) > 0 {
 				err := json.Unmarshal([]byte(val), &data)
 				if err != nil {

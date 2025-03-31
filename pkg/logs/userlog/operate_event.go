@@ -10,15 +10,15 @@ import (
 )
 
 type OperateEvent struct {
-	CommandId     string       `json:"commandId"`
-	TenantId      string       `json:"tenantId"`
-	EventId       string       `json:"eventId"`
-	eventType     string       `json:"eventType"`     // 事件类型
-	eventVersion  string       `json:"eventVersion"`  // 事件版本号
-	AggregateId   string       `json:"aggregateId"`   // 聚合根Id
-	AggregateType string       `json:"aggregateType"` // 聚合类型
-	CreatedTime   time.Time    `json:"createdTime"`   // 创建时间
-	Data          *OperateData `json:"data"`
+	CommandId   string       `json:"commandId"`
+	TenantId    string       `json:"tenantId"`
+	EventId     string       `json:"eventId"`
+	EventType   string       `json:"eventType"`   // 事件类型
+	EventVer    string       `json:"eventVer"`    // 事件版本号
+	AggId       string       `json:"aggId"`       // 聚合根Id
+	AggType     string       `json:"aggType"`     // 聚合类型
+	CreatedTime time.Time    `json:"createdTime"` // 创建时间
+	Data        *OperateData `json:"data"`
 }
 
 type OperateData struct {
@@ -43,19 +43,15 @@ type DomainEvent interface {
 
 func NewOperateEvent(ctx context.Context, commandId string, eventId string, oData *OperateData) *OperateEvent {
 	event := &OperateEvent{
-		CommandId: commandId,
-		TenantId:  oData.TenantId,
-
+		CommandId:   commandId,
+		TenantId:    oData.TenantId,
 		EventId:     eventId,
 		CreatedTime: time.Now(),
-
-		AggregateId:   newAggregateId(oData.UserId),
-		AggregateType: AggregateType,
-
-		eventType:    OperateEventType,
-		eventVersion: OperateEventVersion,
-
-		Data: oData,
+		AggId:       newAggregateId(oData.UserId),
+		AggType:     AggregateType,
+		EventType:   OperateEventType,
+		EventVer:    OperateEventVersion,
+		Data:        oData,
 	}
 	return event
 }
@@ -141,19 +137,19 @@ func (l *OperateEvent) GetEventId() string {
 }
 
 func (l *OperateEvent) GetEventType() string {
-	return l.eventType
+	return l.EventType
 }
 
-func (l *OperateEvent) GetEventVersion() string {
-	return l.eventVersion
+func (l *OperateEvent) GetEventVer() string {
+	return l.EventVer
 }
 
-func (l *OperateEvent) GetAggregateId() string {
-	return l.AggregateId
+func (l *OperateEvent) GetAggId() string {
+	return l.AggId
 }
 
-func (l *OperateEvent) GetAggregateType() string {
-	return l.AggregateType
+func (l *OperateEvent) GetAggType() string {
+	return l.AggType
 }
 
 func (l *OperateEvent) GetCreatedTime() time.Time {

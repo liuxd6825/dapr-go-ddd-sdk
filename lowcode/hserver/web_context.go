@@ -10,6 +10,7 @@ import (
 	appctx2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
@@ -140,24 +141,27 @@ func (c *WebContext) ReadBytes() []byte {
 //	@receiver c
 //	@param schema 有空：进行验证;  nil:不验证
 //	@return map[string]any
-func (c *WebContext) ReadObject(schema *jsonschema.Schema) map[string]any {
+func (c *WebContext) ReadObject(sch *jsonschema.Schema) map[string]any {
 	var err error
 
 	bytes := c.ReadBytes()
 	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
-		TimeFields: schema.GetTimeFields(),
+		TimeFields: sch.GetTimeFields(),
 		ParseTime:  parseTime,
 	})
 	if err != nil {
 		panic(err)
 	}
 
+	schema.ApplyDefaults(sch, val)
+	
 	object, ok := val.(map[string]any)
 	if !ok {
 		panic("ReadObject() invalid object")
 	}
-	if schema != nil {
-		err = schema.Validate(object)
+
+	if sch != nil {
+		err = schema.Validate(sch, object)
 	}
 	if err != nil {
 		panic(err)

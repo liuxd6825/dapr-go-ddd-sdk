@@ -180,6 +180,9 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) (r
 		d.eb.SetCreatedInfo(ctx, entity)
 		db = db.Create(entity)
 		res.SetRowsAffected(db.RowsAffected)
+		if db.Error != nil {
+			println(db.Error.Error())
+		}
 		return db.Error
 	}).Error
 	return res

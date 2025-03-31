@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/daos/idao"
-	dbschema2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
@@ -409,15 +410,15 @@ func newMapList(count int64, humanName string) []map[string]any {
 	return list
 }
 
-func newDaoByStruct[T any](ctx context.Context, tableName string) idao2.Dao[T] {
+func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic(fmt.Sprintf("数据库连接失败: %v", err))
 	}
 	data := reflectutils.NewInstance[T]()
-	dbSch := dbschema2.NewDBSchemaWithStruct(tableName, data, tableName)
-	daoCfg := &idao2.DaoConfig{
-		Database:   database,
+	dbSch := dbschema.NewDBSchemaWithStruct(tableName, data, tableName)
+	daoCfg := &idao.DaoConfig{
+		DB:         database,
 		DbKey:      "sql",
 		DBSchema:   dbSch,
 		Env:        xtest.NewEnvConfig(),
@@ -430,19 +431,16 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao2.Dao[T] {
 	return dao
 }
 
-func newDao[T any](ctx context.Context, tableName string) idao2.Dao[T] {
+func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 	db := xtest.NewSqlite()
 	//humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
-	if err != nil {
-		panic(err)
-	}
+	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
-	dbSch := dbschema2.NewDBSchemaWithJsonSchema(humanSchema.GetJsonSchema())
+	dbSch := dbschema.NewDBSchemaWithJsonSchema(humanSchema)
 	dbSch.TableName = tableName
 
-	daoCfg := &idao2.DaoConfig{
-		Database:   db,
+	daoCfg := &idao.DaoConfig{
+		DB:         db,
 		DbKey:      "sql",
 		DBSchema:   dbSch,
 		Env:        xtest.NewEnvConfig(),

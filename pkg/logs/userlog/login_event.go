@@ -3,15 +3,15 @@ package userlog
 import "time"
 
 type LoginEvent struct {
-	CommandId     string    `json:"commandId"`
-	TenantId      string    `json:"tenantId"`
-	EventId       string    `json:"eventId"`
-	EventType     string    `json:"eventType"`     // 事件类型
-	EventVersion  string    `json:"eventVersion"`  // 事件版本号
-	AggregateId   string    `json:"aggregateId"`   // 聚合根Id
-	AggregateType string    `json:"aggregateType"` // 聚合类型
-	CreatedTime   time.Time `json:"createdTime"`   // 创建时间
-	Data          LoginData `json:"data"`
+	CommandId   string    `json:"commandId"`
+	TenantId    string    `json:"tenantId"`
+	EventId     string    `json:"eventId"`
+	EventType   string    `json:"eventType"`   // 事件类型
+	EventVer    string    `json:"eventVer"`    // 事件版本号
+	AggId       string    `json:"aggId"`       // 聚合根Id
+	AggType     string    `json:"aggType"`     // 聚合类型
+	CreatedTime time.Time `json:"createdTime"` // 创建时间
+	Data        LoginData `json:"data"`
 }
 
 type LoginData struct {
@@ -26,15 +26,12 @@ const UserLoginEventVersion = "v1.0"
 
 func NewLoginEvent(commandId string, logId string, userId, userName string, logTime time.Time) *LoginEvent {
 	return &LoginEvent{
-		CommandId: commandId,
-		TenantId:  SystemTenantId,
-
-		EventType:    UserLoginEventType,
-		EventVersion: UserLoginEventVersion,
-
-		AggregateId:   newAggregateId(userId),
-		AggregateType: AggregateType,
-
+		CommandId:   commandId,
+		TenantId:    SystemTenantId,
+		EventType:   UserLoginEventType,
+		EventVer:    UserLoginEventVersion,
+		AggId:       newAggregateId(userId),
+		AggType:     AggregateType,
 		CreatedTime: logTime,
 		Data: LoginData{
 			Id:       logId,
@@ -61,16 +58,16 @@ func (l *LoginEvent) GetEventType() string {
 	return UserLogoutEventType
 }
 
-func (l *LoginEvent) GetEventVersion() string {
+func (l *LoginEvent) GetEventVer() string {
 	return UserLogoutEventEventVersion
 }
 
-func (l *LoginEvent) GetAggregateId() string {
-	return l.AggregateId
+func (l *LoginEvent) GetAggId() string {
+	return l.AggId
 }
 
-func (l *LoginEvent) GetAggregateType() string {
-	return l.AggregateType
+func (l *LoginEvent) GetAggType() string {
+	return l.AggType
 }
 
 func (l *LoginEvent) GetCreatedTime() time.Time {

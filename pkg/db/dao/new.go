@@ -16,15 +16,27 @@ import (
 )
 
 type NewConfig struct {
-	DBKey        string          `json:"dbKey"`
-	DB           any             `json:"db"`
-	EventPublish *bool           `json:"eventPublish"`
-	AggField     string          `json:"aggField"`
-	DBSchema     *store.DBSchema `json:"dbSchema"`
-	TableName    string          `json:"tableName"`
+	DBKey      string          `json:"dbKey"`
+	DB         any             `json:"db"`
+	IsPubEvent *bool           `json:"isPubEvent"`
+	AggField   string          `json:"aggField"`
+	AggType    string          `json:"aggType"`
+	DBSchema   *store.DBSchema `json:"dbSchema"`
+	TableName  string          `json:"tableName"`
 }
 
 var cache = types.NewCMap[any]()
+
+var isFalse bool = false
+var isTrue bool = true
+
+func IsFalse() *bool {
+	return &isFalse
+}
+
+func IsTrue() *bool {
+	return &isTrue
+}
 
 func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	if newCfg == nil {
@@ -36,6 +48,17 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	}
 	dbKey := newCfg.DBKey
 	tableName := newCfg.TableName
+
+	if tableName == "" && newCfg.DBSchema != nil {
+		tableName = newCfg.DBSchema.TableName
+	}
+
+	// dao缓存 取得daoKey
+	className := reflectutils.GetClassName[T]()
+	daoKey := getDaoKey(dbKey, tableName, className)
+	if v, ok := cache.Get(daoKey); v != nil && ok {
+		return v.(idao.Dao[T])
+	}
 
 	// 是struct类型
 	if newCfg.DBSchema == nil && reflectutils.IsStruct[T]() {
@@ -52,34 +75,27 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		panic("db.NewDao() args schema is required")
 	}
 
-	if tableName == "" && newCfg.DBSchema != nil {
-		tableName = newCfg.DBSchema.TableName
-	}
-
-	// dao缓存 取得daoKey
-	className := reflectutils.GetClassName[T]()
-	daoKey := getDaoKey(dbKey, tableName, className)
-	if v, ok := cache.Get(daoKey); v != nil && ok {
-		return v.(idao.Dao[T])
-	}
-
 	item := getDBItem(dbKey)
-	eventPublish := false
-	if newCfg.EventPublish != nil {
-		eventPublish = *newCfg.EventPublish
+	isPubEvent := false
+	if newCfg.IsPubEvent != nil {
+		isPubEvent = *newCfg.IsPubEvent
 	} else if ep, ok := item.GetConfig().(restapp.EventPublish); ok {
-		eventPublish = ep.GetEventPublish()
+		isPubEvent = ep.GetEventPublish()
 	}
 
 	daoCfg := &idao.DaoConfig{
 		DbKey:      newCfg.DBKey,
-		Database:   newCfg.DB,
-		IsPubEvent: eventPublish,
+		DB:         newCfg.DB,
+		IsPubEvent: isPubEvent,
 		AggField:   newCfg.AggField,
+		AggType:    newCfg.AggType,
 		Env:        restapp.GetEnvConfig(),
 		DBSchema:   newCfg.DBSchema,
 	}
 
+	if isPubEvent {
+		daoCfg.OutboxDao = NewOutboxDao(newCfg.DBKey)
+	}
 	var dao idao.Dao[T]
 
 	switch item.GetDBType() {

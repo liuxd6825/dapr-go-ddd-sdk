@@ -27,6 +27,5 @@ const (
 	Date   DataType = "date"
 	Time   DataType = "time"
 	Bytes  DataType = "bytes"
-	Object DataType = "object"
-	Array  DataType = "array"
+	Json   DataType = "json"
 )

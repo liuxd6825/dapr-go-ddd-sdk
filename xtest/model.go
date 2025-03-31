@@ -6,13 +6,14 @@ import (
 )
 
 type Human struct {
-	Id         string     `gorm:"primaryKey" json:"id"`
-	TenantId   string     `gorm:"tenant_id" json:"tenantId"`
-	Name       string     `gorm:"name" json:"name"`
-	Age        int        `gorm:"age" json:"age"`
-	Analyse    string     `gorm:"analyse" json:"analyse"`
-	Birthday   *time.Time `gorm:"birthday" json:"birthday"`
-	PeopleType []string   `gorm:"type:text;serializer:json" json:"peopleType"`
+	Id          string     `gorm:"primaryKey" json:"id"`
+	TenantId    string     `gorm:"tenant_id" json:"tenantId"`
+	Name        string     `gorm:"name" json:"name"`
+	Age         int        `gorm:"age" json:"age"`
+	Analyse     string     `gorm:"analyse" json:"analyse"`
+	Birthday    *time.Time `gorm:"birthday,index:,sort:desc," json:"birthday"`
+	PeopleType  []string   `gorm:"type:json;,serializer:json" json:"peopleType"`
+	CreatedTime time.Time  `gorm:"index:,sort:desc,created_time" json:"createdTime"` // 发生事件
 }
 
 func NewHumanList(count int64, humanName string) []*Human {

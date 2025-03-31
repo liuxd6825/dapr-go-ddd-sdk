@@ -190,8 +190,8 @@ func PublishEvents(ctx context.Context, callEventType CallEventType, aggregate A
 	}
 
 	tenantId := aggregate.GetTenantId()
-	aggId := aggregate.GetAggregateId()
-	aggType := aggregate.GetAggregateType()
+	aggId := aggregate.GetAggId()
+	aggType := aggregate.GetAggType()
 
 	errs := errors.NewErrors()
 	if len(tenantId) == 0 {
@@ -263,7 +263,7 @@ func PublishEvents(ctx context.Context, callEventType CallEventType, aggregate A
 				ApplyType:    callEventType.ToString(),
 				CommandId:    event.GetCommandId(),
 				EventId:      event.GetEventId(),
-				EventVersion: event.GetEventVersion(),
+				EventVersion: event.GetEventVer(),
 				EventType:    event.GetEventType(),
 				Metadata:     options.GetMetadata(),
 				PubsubName:   pubsubName,
@@ -282,7 +282,7 @@ func PublishEvents(ctx context.Context, callEventType CallEventType, aggregate A
 
 		if defaultIsSourcing {
 			for _, event := range events {
-				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVersion(), event, options.GetMetadata()); err != nil {
+				if err = callEventHandler(ctx, aggregate, event.GetEventType(), event.GetEventVer(), event, options.GetMetadata()); err != nil {
 					return err
 				}
 			}

@@ -80,6 +80,12 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (jsonschem
 				err = meta.InitParam(vals)
 			}
 			break
+		case "ddd":
+			vals, ok := value.(map[string]any)
+			if ok {
+				err = meta.InitDDD(vals)
+			}
+			break
 		case "convert":
 			if vals, ok := value.(map[string]any); ok {
 				err = meta.InitConvert(vals)

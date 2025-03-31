@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"gorm.io/gorm/clause"
 	"gorm.io/gorm/utils"
 	"reflect"
@@ -167,4 +168,8 @@ func ToQueryValues(table string, foreignKeys []string, foreignValues [][]interfa
 	}
 
 	return columns, queryValues
+}
+
+func AsFieldName(name string) string {
+	return stringutils.AsFieldName(name)
 }

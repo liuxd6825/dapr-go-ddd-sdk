@@ -3,23 +3,28 @@ package dbevent
 import "time"
 
 type Event struct {
-	TenantId     string    `json:"tenantId,omitempty"`
-	EventId      string    `json:"eventId,omitempty"`
-	EventType    string    `json:"eventType,omitempty"`
-	EventVersion string    `json:"eventVersion,omitempty"`
-	CommandId    string    `json:"commandId,omitempty"`
-	AggregateId  string    `json:"aggregateId,omitempty"`
-	CreatedTime  time.Time `json:"createdTime"`
-	IsValidOnly  bool      `json:"isValidOnly,omitempty"`
-	Data         any       `json:"data,omitempty"`
+	TenantId    string    `json:"tenantId,omitempty"`
+	EventId     string    `json:"eventId,omitempty"`
+	EventType   string    `json:"eventType,omitempty"`
+	EventVer    string    `json:"eventVersion,omitempty"`
+	CommandId   string    `json:"commandId,omitempty"`
+	AggId       string    `json:"aggId,omitempty"`
+	AggType     string    `json:"aggType,omitempty"`
+	CreatedTime time.Time `json:"createdTime"`
+	IsValidOnly bool      `json:"isValidOnly,omitempty"`
+	Data        any       `json:"data,omitempty"`
 }
 
 func NewEvent() *Event {
 	return &Event{}
 }
 
-func (c *Event) GetAggregateId() string {
-	return c.AggregateId
+func (c *Event) GetAggId() string {
+	return c.AggId
+}
+
+func (c *Event) GetAggType() string {
+	return c.AggType
 }
 
 func (c *Event) GetEventId() string {
@@ -78,6 +83,6 @@ func (c *Event) SetCommandId(val string) {
 	c.CommandId = val
 }
 
-func (c *Event) GetEventVersion() string {
-	return c.EventVersion
+func (c *Event) GetEventVer() string {
+	return c.EventVer
 }

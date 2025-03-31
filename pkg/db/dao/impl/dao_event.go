@@ -3,9 +3,10 @@ package impl
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
 )
@@ -14,26 +15,30 @@ func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, 
 	if !d.isPubEvent {
 		return
 	}
-
-	agg, event, err := d.NewAggregateAndEvent(ctx, opeType, entity, opts...)
+	_, event, err := d.NewAggregateAndEvent(ctx, opeType, entity, opts...)
 	if err != nil {
 		panic(err)
 	}
-	logs.Debug(ctx, "", logs.Fields{
-		"eventId":     event.EventId,
-		"eventType":   event.EventType,
-		"commandId":   event.CommandId,
-		"aggregateId": event.AggregateId,
-		"tenantId":    d.GetTenantId(ctx),
-	})
-	switch opeType {
-	case idao.AccessTypeCreate:
-		dbevent.CreateEvent(ctx, agg, event)
-	case idao.AccessTypeUpdate:
-		dbevent.ApplyEvent(ctx, agg, event)
-	case idao.AccessTypeDelete:
-		dbevent.ApplyEvent(ctx, agg, event)
+
+	if d.cfg != nil && d.cfg.OutboxDao != nil {
+		metadata := ddd_context.GetMetadataContext(ctx)
+		outbox := &dbevent.Outbox{
+			Id:          uuid.NewString(),
+			TenantId:    event.TenantId,
+			AppId:       "test",
+			EventId:     event.EventId,
+			EventType:   event.EventType,
+			EventVer:    event.EventVer,
+			CommandId:   event.CommandId,
+			AggId:       event.AggId,
+			AggType:     event.AggType,
+			CreatedTime: event.CreatedTime,
+			Data:        event.Data,
+			Metadata:    metadata,
+		}
+		d.cfg.OutboxDao.Create(ctx, outbox, opts...)
 	}
+
 }
 
 func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessType, list []map[string]any, opts ...*idao.CallOptions) {
@@ -69,21 +74,21 @@ func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType idao.AccessType, 
 	o := idao.NewCallOptions(opt)
 	eventId := idutils.NewId()
 	tenantId := d.store.GetTenantId(entity)
-	aggId, err := d.GetAggregateId(entity, opt)
+	aggId, err := d.GetAggId(entity, opt)
 	if err != nil {
 		return nil, err
 	}
 	eventType := d.GetEventType(operateType, opt)
-
 	event := dbevent.NewEvent()
 	event.CommandId = o.GetCommandId(idutils.NewId())
 	event.EventId = eventId
 	event.EventType = eventType
+	event.EventVer = o.GetEventVer("v1.0")
 	event.TenantId = tenantId
 	event.CreatedTime = time.Now()
-	event.AggregateId = aggId
+	event.AggId = aggId
+	event.AggType = d.GetAggType()
 	event.Data = entity
-	event.EventVersion = o.GetEventVersion("v1.0")
 
 	return event, nil
 }
@@ -111,7 +116,7 @@ func (d *DaoBase[T]) GetEventType(accessType idao.AccessType, opts *idao.CallOpt
 
 func (d *DaoBase[T]) NewAggregate(entity T, opt *idao.CallOptions) (*dbevent.Aggregate, error) {
 	tenantId := d.store.GetTenantId(entity)
-	aggId, err := d.GetAggregateId(entity, opt)
+	aggId, err := d.GetAggId(entity, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +124,13 @@ func (d *DaoBase[T]) NewAggregate(entity T, opt *idao.CallOptions) (*dbevent.Agg
 	agg.TenantId = tenantId
 	agg.AggId = aggId
 	agg.AggVer = "v1.0"
-	agg.AggType = d.tableName
+	agg.AggType = d.GetAggType()
 	return agg, nil
+}
+
+func (d *DaoBase[T]) GetAggType() string {
+	if d.aggType == "" {
+		d.aggType = fmt.Sprintf("%s.%s", d.appId, d.tableName)
+	}
+	return d.aggType
 }

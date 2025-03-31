@@ -11,14 +11,14 @@ func NewAggregate() *Aggregate {
 	return &Aggregate{}
 }
 func (a *Aggregate) GetTenantId() string {
-	return ""
+	return a.TenantId
 }
-func (a *Aggregate) GetAggregateId() string {
-	return ""
+func (a *Aggregate) GetAggId() string {
+	return a.AggId
 }
-func (a *Aggregate) GetAggregateType() string {
-	return ""
+func (a *Aggregate) GetAggType() string {
+	return a.AggType
 }
-func (a *Aggregate) GetAggregateVersion() string {
-	return ""
+func (a *Aggregate) GetAggVer() string {
+	return a.AggVer
 }

@@ -1,10 +1,10 @@
 package userlog
 
 type aggregate struct {
-	TenantId         string
-	AggregateId      string
-	AggregateType    string
-	AggregateVersion string
+	TenantId string
+	AggId    string
+	AggType  string
+	AggVer   string
 }
 
 const AggregateType = "system.UserLog"
@@ -12,10 +12,10 @@ const SystemTenantId = "system"
 
 func newAggregate(tenantId, userId string) *aggregate {
 	return &aggregate{
-		TenantId:         SystemTenantId,
-		AggregateId:      newAggregateId(userId),
-		AggregateType:    AggregateType,
-		AggregateVersion: "v1",
+		TenantId: SystemTenantId,
+		AggId:    newAggregateId(userId),
+		AggType:  AggregateType,
+		AggVer:   "v1",
 	}
 }
 
@@ -27,14 +27,14 @@ func (a *aggregate) GetTenantId() string {
 	return a.TenantId
 }
 
-func (a *aggregate) GetAggregateId() string {
-	return a.AggregateId
+func (a *aggregate) GetAggId() string {
+	return a.AggId
 }
 
-func (a *aggregate) GetAggregateType() string {
-	return a.AggregateType
+func (a *aggregate) GetAggType() string {
+	return a.AggType
 }
 
-func (a *aggregate) GetAggregateVersion() string {
-	return a.AggregateVersion
+func (a *aggregate) GetAggVer() string {
+	return a.AggVer
 }

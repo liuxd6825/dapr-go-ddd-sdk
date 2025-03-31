@@ -43,10 +43,9 @@ type Dao[T any] interface {
 }
 
 type CallOptions struct {
-	AggId        *string
-	EventType    *string
-	EventVersion *string
-	CommandId    *string
+	EventType *string
+	EventVer  *string
+	CommandId *string
 	store.RepositoryOptions
 }
 
@@ -61,31 +60,21 @@ func NewRepositoryOptions(opts []*CallOptions) []store.Options {
 func NewCallOptions(opts ...*CallOptions) *CallOptions {
 	o := new(CallOptions)
 	for _, i := range opts {
-		if i.EventVersion != nil {
-			o.EventVersion = i.EventVersion
+		if i.EventVer != nil {
+			o.EventVer = i.EventVer
 		}
 		if i.EventType != nil {
 			o.EventType = i.EventType
-		}
-		if i.AggId != nil {
-			o.AggId = i.AggId
 		}
 	}
 	return o
 }
 
-func (e *CallOptions) GetAggId(defVal string) string {
-	if e != nil && e.AggId == nil {
+func (e *CallOptions) GetEventVer(defVal string) string {
+	if e != nil && e.EventVer == nil {
 		return defVal
 	}
-	return *e.AggId
-}
-
-func (e *CallOptions) GetEventVersion(defVal string) string {
-	if e != nil && e.EventVersion == nil {
-		return defVal
-	}
-	return *e.EventVersion
+	return *e.EventVer
 }
 
 func (e *CallOptions) GetCommandId(defVal string) string {

@@ -21,8 +21,8 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableName ...string) idao2.Dao[T] {
 	cfg.Valid()
 	var driver neo4j.DriverWithContext
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
-	if cfg.Database != nil {
-		if val, ok := cfg.Database.(neo4j.DriverWithContext); ok {
+	if cfg.DB != nil {
+		if val, ok := cfg.DB.(neo4j.DriverWithContext); ok {
 			driver = val
 		} else {
 			panic("database config error neo4j.DriverWithContext")

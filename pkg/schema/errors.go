@@ -21,6 +21,17 @@ func NewFieldsError(vError *jsonschema.ValidationError) error {
 	return err
 }
 
+func Error(err error) error {
+	if err != nil {
+		if e, ok := err.(*jsonschema.ValidationError); ok {
+			err = NewFieldsError(e)
+		} else if e, ok := err.(*jsonschema.SchemaValidationError); ok {
+			err = NewSchemaError(e)
+		}
+	}
+	return err
+}
+
 func getErrorField(cause *jsonschema.ValidationError) string {
 	field := strings.Join(cause.InstanceLocation, ".")
 	return field

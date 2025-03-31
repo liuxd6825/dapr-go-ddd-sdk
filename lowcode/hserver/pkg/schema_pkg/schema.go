@@ -10,15 +10,14 @@ import (
 	"github.com/spf13/afero"
 )
 
+var cache *types.CMap[*jsonschema.Schema] = types.NewCMap[*jsonschema.Schema]() //缓存
 type SchemaPkg struct {
 	server element.Server
-	cache  *types.CMap[*jsonschema.Schema] //缓存
 }
 
 func New(server element.Server) *SchemaPkg {
 	return &SchemaPkg{
 		server: server,
-		cache:  types.NewCMap[*jsonschema.Schema](),
 	}
 }
 
@@ -33,7 +32,7 @@ func (s *SchemaPkg) openFile(fileUrl string, workPath string) ([]byte, error) {
 
 func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema {
 	if s.server.CacheEnable() {
-		val, ok := s.cache.Get(fileUrl)
+		val, ok := cache.Get(fileUrl)
 		if ok {
 			return val
 		}
@@ -70,6 +69,6 @@ func (s *SchemaPkg) LoadFile(fileUrl string, workPath string) *jsonschema.Schema
 			}
 		}*/
 
-	s.cache.Set(fileUrl, sch)
+	cache.Set(fileUrl, sch)
 	return sch
 }

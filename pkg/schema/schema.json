@@ -1,24 +1,27 @@
 {
-  "properties" : {
-    "meta" : {
-      "type" : "object",
-      "patternProperties" : {
-        "column":{
-          "type" : "object"
+  "properties": {
+    "meta": {
+      "type": "object",
+      "patternProperties": {
+        "column": {
+          "type": "object"
         },
-        "lang":{
-          "type" : "object"
+        "lang": {
+          "type": "object"
         },
-        "query":{
-          "type" : "object"
+        "query": {
+          "type": "object"
         },
-        "control":{
-          "type" : "object"
+        "control": {
+          "type": "object"
         },
-        "dbTable":{
-          "type" : "object",
+        "dbTable": {
+          "type": "object",
           "patternProperties": {
             "name": {
+              "type": "string"
+            },
+            "dbKey": {
               "type": "string"
             }
           }
@@ -32,7 +35,10 @@
             "size": {
               "type": "integer"
             },
-            "primaryKey":{
+            "primaryKey": {
+              "type": "boolean"
+            },
+            "notField": {
               "type": "boolean"
             },
             "notNull": {
@@ -50,14 +56,14 @@
               "default": true
             },
             "order": {
-              "type": "string"
+              "type": "integer"
             }
           }
         },
-        "param":{
-          "type" : "object",
+        "param": {
+          "type": "object",
           "patternProperties": {
-            "name":{
+            "name": {
               "type": "string"
             },
             "type": {

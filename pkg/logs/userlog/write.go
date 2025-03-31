@@ -80,8 +80,8 @@ func WriteOperate(ctx context.Context, modelName string, actionType string, tena
 		return err
 	}
 
-	oEvent := NewOperateEvent(ctx, idutils.NewId(), idutils.NewId(), oData)
-	err = applyEvent(ctx, tenantId, userId, oEvent)
+	ev := NewOperateEvent(ctx, idutils.NewId(), idutils.NewId(), oData)
+	err = applyEvent(ctx, tenantId, userId, ev)
 	return err
 }
 

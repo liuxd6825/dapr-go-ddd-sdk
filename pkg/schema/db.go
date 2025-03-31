@@ -19,8 +19,9 @@ const (
 )
 
 type DBField struct {
-	NotField   bool        `json:"notField"`   // 不是数据库字段
-	Name       string      `json:"name"`       // 字段名称
+	NotField   bool        `json:"notField"` // 不是数据库字段
+	Name       string      `json:"name"`     // 字段名称
+	DbType     string      `json:"dbType"`
 	Size       int64       `json:"size"`       // 字段大小
 	PrimaryKey bool        `json:"primaryKey"` // 是主健
 	NotNull    bool        `json:"notNull"`    // 不能为空
@@ -34,7 +35,8 @@ type DBField struct {
 }
 
 type DBTable struct {
-	Name string `json:"name"`
+	Name  string `json:"name"`
+	DBKey string `json:"dbKey"`
 }
 
 func (db *DBTable) init(values map[string]any) error {
@@ -43,12 +45,21 @@ func (db *DBTable) init(values map[string]any) error {
 		switch k {
 		case "name":
 			db.Name = v.(string)
+		case "dbKey":
+			db.DBKey = v.(string)
 		}
 	}
 	return err
 }
 
 func (db *DBField) init(values map[string]any) error {
+	db.Updatable = true
+	db.Readable = true
+	db.Creatable = true
+	db.PrimaryKey = false
+	db.NotNull = false
+	db.Unique = false
+
 	var err error
 	for key, value := range values {
 		switch key {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/now"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	gormschema "gorm.io/gorm/schema"
 	"reflect"
 	"strconv"
@@ -13,6 +14,13 @@ import (
 )
 
 func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSchema {
+	var err error = nil
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			panic(fmt.Errorf("tableName:%s; %s", tableName, err.Error()))
+		}
+	}()
 	gSch, err := gormschema.ParseWithSpecialTableName(data, &sync.Map{}, gormschema.NamingStrategy{}, tableName)
 	if err != nil {
 		panic(err)
@@ -83,35 +91,35 @@ func setFieldByReflect(fieldValue reflect.Value, field *store.Field) {
 
 	switch reflect.Indirect(fieldValue).Kind() {
 	case reflect.Bool:
-		field.DataType = Bool
+		field.DataType = gormschema.Bool
 		if field.HasDefaultValue && !skipParseDefaultValue {
 			if field.DefaultValueInterface, err = strconv.ParseBool(field.DefaultValue); err != nil {
 				panic(fmt.Errorf("failed to parse %s as default value for bool, got error: %v", field.DefaultValue, err))
 			}
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		field.DataType = Int
+		field.DataType = gormschema.Int
 		if field.HasDefaultValue && !skipParseDefaultValue {
 			if field.DefaultValueInterface, err = strconv.ParseInt(field.DefaultValue, 0, 64); err != nil {
 				panic(fmt.Errorf("failed to parse %s as default value for int, got error: %v", field.DefaultValue, err))
 			}
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		field.DataType = Uint
+		field.DataType = gormschema.Uint
 		if field.HasDefaultValue && !skipParseDefaultValue {
 			if field.DefaultValueInterface, err = strconv.ParseUint(field.DefaultValue, 0, 64); err != nil {
 				panic(fmt.Errorf("failed to parse %s as default value for uint, got error: %v", field.DefaultValue, err))
 			}
 		}
 	case reflect.Float32, reflect.Float64:
-		field.DataType = Float
+		field.DataType = gormschema.Float
 		if field.HasDefaultValue && !skipParseDefaultValue {
 			if field.DefaultValueInterface, err = strconv.ParseFloat(field.DefaultValue, 64); err != nil {
 				panic(fmt.Errorf("failed to parse %s as default value for float, got error: %v", field.DefaultValue, err))
 			}
 		}
 	case reflect.String:
-		field.DataType = String
+		field.DataType = gormschema.String
 		if field.HasDefaultValue && !skipParseDefaultValue {
 			field.DefaultValue = strings.Trim(field.DefaultValue, "'")
 			field.DefaultValue = strings.Trim(field.DefaultValue, `"`)
@@ -119,22 +127,22 @@ func setFieldByReflect(fieldValue reflect.Value, field *store.Field) {
 		}
 	case reflect.Struct:
 		if _, ok := fieldValue.Interface().(*time.Time); ok {
-			field.DataType = Time
+			field.DataType = gormschema.Time
 		} else if fieldValue.Type().ConvertibleTo(store.TimeReflectType) {
-			field.DataType = Time
+			field.DataType = gormschema.Time
 		} else if fieldValue.Type().ConvertibleTo(store.TimePtrReflectType) {
-			field.DataType = Time
+			field.DataType = gormschema.Time
 		}
-		if field.HasDefaultValue && !skipParseDefaultValue && (field.DataType == Time || field.DataType == Date) {
+		if field.HasDefaultValue && !skipParseDefaultValue && (field.DataType == gormschema.Time || field.DataType == gormschema.Date) {
 			if t, err := now.Parse(field.DefaultValue); err == nil {
 				field.DefaultValueInterface = t
 			}
 		}
 	case reflect.Array, reflect.Slice:
 		if reflect.Indirect(fieldValue).Type().Elem() == store.ByteReflectType && field.DataType == "" {
-			field.DataType = Bytes
+			field.DataType = gormschema.Bytes
 		} else {
-			field.DataType = Array
+			field.DataType = gormschema.Json
 		}
 	}
 

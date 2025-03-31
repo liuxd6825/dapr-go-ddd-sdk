@@ -71,13 +71,13 @@ func checkEvent(aggregate Aggregate, event DomainEvent) error {
 		return err
 	}
 
-	aggId := event.GetAggregateId()
-	if err := assert2.NotEmpty(aggId, assert2.NewOptions("aggregateId is empty")); err != nil {
+	aggId := event.GetAggId()
+	if err := assert2.NotEmpty(aggId, assert2.NewOptions("aggId is empty")); err != nil {
 		return err
 	}
 
-	aggregateType := aggregate.GetAggregateType()
-	if err := assert2.NotEmpty(aggregateType, assert2.NewOptions("aggregateType is empty")); err != nil {
+	aggregateType := aggregate.GetAggType()
+	if err := assert2.NotEmpty(aggregateType, assert2.NewOptions("aggType is empty")); err != nil {
 		return err
 	}
 	return nil

@@ -5,20 +5,21 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 type DaoBase[T any] struct {
-	cfg         *idao2.DaoConfig
-	dbKey       string           // 配置中的数据库Key
-	tableName   string           // 表名
-	appId       string           // 应用ID
-	aggField    string           // 聚合根字段
-	isPubEvent  bool             // 是否发布事件
-	eventPrefix string           // 事件前缀
-	store       store.IStore[T]  // 数据访问
-	env         idao2.IEnvConfig // 环境变量
+	cfg         *idao.DaoConfig
+	dbKey       string          // 配置中的数据库Key
+	tableName   string          // 表名
+	appId       string          // 应用ID
+	aggField    string          // 聚合根字段
+	aggType     string          // 聚合根类型名称
+	isPubEvent  bool            // 是否发布事件
+	eventPrefix string          // 事件前缀
+	store       store.IStore[T] // 数据访问
+	env         idao.IEnvConfig // 环境变量
 }
 
 const (
@@ -36,7 +37,7 @@ const (
 	Id          = "id"
 )
 
-func NewDaoBase[T any](store store.IStore[T], cfg *idao2.DaoConfig) *DaoBase[T] {
+func NewDaoBase[T any](store store.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
 	if cfg == nil {
 		panic("dao base config is nil")
 	}
@@ -47,11 +48,13 @@ func NewDaoBase[T any](store store.IStore[T], cfg *idao2.DaoConfig) *DaoBase[T] 
 	tableName := stringutils.AsFieldName(cfg.DBSchema.Name)
 	return &DaoBase[T]{
 		store:       store,
+		cfg:         cfg,
 		dbKey:       cfg.DbKey,
 		tableName:   tableName,
 		appId:       cfg.GetEnv().GetAppId(),
 		isPubEvent:  cfg.GetIsPubEvent(),
 		aggField:    aggField,
+		aggType:     cfg.AggType,
 		eventPrefix: "eventPrefix",
 		env:         cfg.Env,
 	}
@@ -89,7 +92,7 @@ func (d *DaoBase[T]) GetSchema() *store.DBSchema {
 	return d.cfg.DBSchema
 }
 
-func (d *DaoBase[T]) GetAggregateId(entity T, opts *idao2.CallOptions) (string, error) {
+func (d *DaoBase[T]) GetAggId(entity T, opts *idao.CallOptions) (string, error) {
 	aggId := d.store.GetAggId(entity)
 	return aggId, nil
 }

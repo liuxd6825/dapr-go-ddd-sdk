@@ -13,6 +13,7 @@ type MetaExtension struct {
 	Lang    *Lang      `json:"lang,omitempty"`
 	Param   *HttpParam `json:"param,omitempty"`
 	Convert *Convert   `json:"convert,omitempty"` // 数据转换器的名称
+	DDD     *DDD       `json:"ddd,omitempty"`
 }
 
 //go:embed schema.json
@@ -46,6 +47,11 @@ func (m *MetaExtension) InitLang(vals map[string]any) error {
 func (m *MetaExtension) InitParam(vals map[string]any) error {
 	m.Param = &HttpParam{}
 	return m.Param.init(vals)
+}
+
+func (m *MetaExtension) InitDDD(vals map[string]any) error {
+	m.DDD = &DDD{}
+	return m.DDD.init(vals)
 }
 
 func (m *MetaExtension) InitQuery(vals map[string]any) error {

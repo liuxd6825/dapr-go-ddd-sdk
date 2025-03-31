@@ -38,6 +38,9 @@ func DoConvert(sch *jsonschema.Schema, data any) (any, error) {
 	if sch == nil {
 		return data, nil
 	}
+	if err := Validate(sch, data); err != nil {
+		return nil, err
+	}
 	metaSch := GetMetaExtension(sch)
 	if metaSch == nil {
 		return data, nil
@@ -50,6 +53,16 @@ func DoConvert(sch *jsonschema.Schema, data any) (any, error) {
 		return converter(data, sch, metaSch)
 	}
 	return data, nil
+}
+
+func Validate(sch *jsonschema.Schema, data any) error {
+	err := sch.Validate(data)
+	if e, ok := err.(*jsonschema.ValidationError); ok {
+		err = NewFieldsError(e)
+	} else if e, ok := err.(*jsonschema.SchemaValidationError); ok {
+		err = NewSchemaError(e)
+	}
+	return err
 }
 
 func init() {

@@ -54,7 +54,7 @@ func SaveSnapshot(ctx context.Context, tenantId string, aggType string, aggId st
 			AggregateData:    agg,
 			AggregateId:      aggId,
 			AggregateType:    aggType,
-			AggregateVersion: agg.GetAggregateVersion(),
+			AggregateVersion: agg.GetAggVer(),
 			SequenceNumber:   sequenceNumber,
 		}
 		eventStorage, err := GetEventStore(eventStoreKey)

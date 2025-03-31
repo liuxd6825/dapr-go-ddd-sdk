@@ -9,16 +9,16 @@ import (
 // Aggregate 聚合根接口类
 type Aggregate interface {
 	GetTenantId() string
-	GetAggregateId() string
-	GetAggregateType() string
-	GetAggregateVersion() string
+	GetAggId() string
+	GetAggType() string
+	GetAggVer() string
 }
 
 type agg struct {
-	tenantId         string
-	aggregateId      string
-	aggregateType    string
-	aggregateVersion string
+	tenantId string
+	aggId    string
+	aggType  string
+	aggVer   string
 }
 
 type AggregateFactory func() Aggregate
@@ -58,12 +58,12 @@ func NewAggregateByType(aggregateType string) (Aggregate, error) {
 	return fn(), nil
 }
 
-func NewAggregateEmpty(tenantId, aggId, aggType, aggVersion string) Aggregate {
+func NewAggregateEmpty(tenantId, aggId, aggType, aggVer string) Aggregate {
 	return &agg{
-		tenantId:         tenantId,
-		aggregateId:      aggId,
-		aggregateType:    aggType,
-		aggregateVersion: aggVersion,
+		tenantId: tenantId,
+		aggId:    aggId,
+		aggType:  aggType,
+		aggVer:   aggVer,
 	}
 }
 
@@ -71,14 +71,14 @@ func (a *agg) GetTenantId() string {
 	return a.tenantId
 }
 
-func (a *agg) GetAggregateId() string {
-	return a.aggregateId
+func (a *agg) GetAggId() string {
+	return a.aggId
 }
 
-func (a *agg) GetAggregateType() string {
-	return a.aggregateType
+func (a *agg) GetAggType() string {
+	return a.aggType
 }
 
-func (a *agg) GetAggregateVersion() string {
-	return a.aggregateVersion
+func (a *agg) GetAggVer() string {
+	return a.aggVer
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/jsonschema/v6"
+	gormschema "gorm.io/gorm/schema"
 	"reflect"
 	"time"
 )
@@ -34,11 +35,14 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *store.DBSchema {
 		dataType := getDataType(prop)
 		field := &store.Field{
 			Name:                  prop.Name(),
+			DBName:                AsFieldName(prop.Name()),
 			DataType:              dataType,
 			DefaultValueInterface: prop.Default,
 		}
 		if schField != nil {
-			field.DBName = schema.GetFieldName(prop)
+			if schField.Name != "" {
+				field.DBName = schField.Name
+			}
 			field.Size = getSize(dataType, schField.Size)
 			field.Updatable = schField.Updatable
 			field.Creatable = schField.Creatable
@@ -58,25 +62,27 @@ func getSize(dataType DataType, size int64) int {
 		return int(size)
 	}
 	switch dataType {
-	case Int:
+	case gormschema.Int:
 		return 8
-	case Float:
+	case gormschema.Float:
 		return 8
-	case String:
+	case gormschema.String:
 		return 50
-	case Date:
+	case gormschema.Date:
 		return 8
-	case Time:
+	case gormschema.Time:
 		return 8
-	case Bool:
+	case gormschema.Bool:
 		return 1
+	case gormschema.Json:
+		return 100
 	default:
-		return 0
+		return 100
 	}
 }
 
 func initField(field *store.Field) {
-	if field.DataType == Time || field.DataType == Date {
+	if field.DataType == gormschema.Time || field.DataType == gormschema.Date {
 		field.Set = func(ctx context.Context, value reflect.Value, i interface{}) error {
 			value.Set(reflect.ValueOf(i))
 			return nil
@@ -106,21 +112,21 @@ func initField(field *store.Field) {
 
 func getDataType(prop *jsonschema.Schema) DataType {
 	if prop.Types.Contains(jsonschema.JsonType_DateTimeType) {
-		return Time
+		return gormschema.Time
 	} else if prop.Types.Contains(jsonschema.JsonType_StringType) {
-		return String
+		return gormschema.String
 	} else if prop.Types.Contains(jsonschema.JsonType_IntegerType) {
-		return Int
+		return gormschema.Int
 	} else if prop.Types.Contains(jsonschema.JsonType_BooleanType) {
-		return Bool
+		return gormschema.Bool
 	} else if prop.Types.Contains(jsonschema.JsonType_DateType) {
-		return Date
+		return gormschema.Date
 	} else if prop.Types.Contains(jsonschema.JsonType_ObjectType) {
-		return Object
+		return gormschema.Json
 	} else if prop.Types.Contains(jsonschema.JsonType_ArrayType) {
-		return Array
+		return gormschema.Json
 	}
-	return String
+	return gormschema.String
 }
 
 func getTableName(sch *jsonschema.Schema) string {
