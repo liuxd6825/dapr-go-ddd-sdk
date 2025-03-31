@@ -86,7 +86,6 @@ func (s *fileService) ReadPath(ctx context.Context, pathName string, isDeep bool
 }
 
 func (s *fileService) RemovePath(ctx context.Context, pathName string, isDeep bool, opts ...*Options) error {
-
 	s.fsPkg.RemoveAll(pathName, newFsOptions(opts...))
 	return nil
 }
