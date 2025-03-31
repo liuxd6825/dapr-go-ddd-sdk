@@ -1,4 +1,4 @@
-package types
+package fspkg
 
 type FileInfo struct {
 	IsDir     bool        `json:"isDir,omitempty"`

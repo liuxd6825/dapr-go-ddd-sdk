@@ -1,4 +1,4 @@
-package common
+package env
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"

@@ -25,6 +25,10 @@ func NewMetaExtension() *MetaExtension {
 	return &MetaExtension{}
 }
 
+func (m *MetaExtension) TagName() string {
+	return META_TAG_NAME
+}
+
 func (m *MetaExtension) InitDBField(vals map[string]any) error {
 	m.DBField = &DBField{}
 	return m.DBField.init(vals)

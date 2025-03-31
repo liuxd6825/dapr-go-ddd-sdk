@@ -13,10 +13,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/funcs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/console_pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/tpl_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
@@ -33,9 +34,9 @@ type Server struct {
 	app          *iris.Application            // App应用实例
 	httpServer   *restapp.HttpServer          // Http服务实例
 	srcFs        afero.Fs                     // 源代码文件系统
-	fsPkg        element.FsPkg                // 文件系统管理器
+	fsPkg        fspkg.IFsPkg                 // 文件系统管理器
 	services     *types.CMap[element.Service] // 服务Map
-	envCfg       common.IEnvConfig            // 环境变量
+	envCfg       env.IEnvConfig               // 环境变量
 	tpl          *tpl_pkg.Template            // 模板渲染服务
 	definition   *definition.Definition       // 系统定义类
 	cacheEnable  bool                         // 是否启用缓存
@@ -49,8 +50,8 @@ type Server struct {
 }
 
 // NewServer 解析 HTML 并返回 Server 对象
-func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
-	fsPkg, err := fs_pkg.NewFsPkg(env, "")
+func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env env.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
+	fsPkg, err := fspkg.NewFsPkg(env, "")
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +140,7 @@ func (s *Server) App() *iris.Application {
 	return s.app
 }
 
-func (s *Server) FsPkg() element.FsPkg {
+func (s *Server) FsPkg() fspkg.IFsPkg {
 	return s.fsPkg
 }
 
@@ -378,7 +379,7 @@ func (s *Server) Logs(level logrus.Level, format string, args ...interface{}) {
 	}
 }
 
-func (s *Server) EnvConfig() common.IEnvConfig {
+func (s *Server) EnvConfig() env.IEnvConfig {
 	return s.envCfg
 }
 
@@ -458,7 +459,7 @@ func (s *Server) GetIsPubEvent() bool {
 	return s.isPubEvent
 }
 
-func (s *Server) GetEnvCfg() common.IEnvConfig {
+func (s *Server) GetEnvCfg() env.IEnvConfig {
 	return s.envCfg
 }
 

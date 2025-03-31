@@ -1,31 +1,44 @@
-package fs_pkg
+package fspkg
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/json_pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/spf13/afero"
 	"os"
 	"sort"
 )
 
+type IFsPkg interface {
+	NewFs(fsName string) *FsPkg
+	Exists(fileName string, opts ...*fsopts.Options) bool
+	Create(name string, opts ...*fsopts.Options) afero.File
+	Rename(oldName, newName string, opts ...*fsopts.Options) error
+	ReadFile(filename string, opts ...*fsopts.Options) []byte
+	WriteJson(filename string, data any, opts ...*fsopts.Options)
+	WriteFile(filename string, data any, opts ...*fsopts.Options)
+	RemoveFile(filename string, opts ...*fsopts.Options)
+	RemoveAll(name string, opts ...*fsopts.Options)
+	Mkdir(name string, perm os.FileMode, opts ...*fsopts.Options)
+	ReadPath(path string, opts ...*fsopts.Options) []*FileInfo
+	ReadAllPath(path string, opts ...*fsopts.Options) []*FileInfo
+	SortFileInfos(files []*FileInfo)
+}
+
 // FsPkg
 // @Description:  文件系统
 type FsPkg struct {
 	base        *fsm.Manager
-	cfg         common.IEnvConfig
+	cfg         env.IEnvConfig
 	WriteModels *FsWriteModel
 	fsName      string
-	fs          afero.Fs
 }
-
-var jsonPkg *json_pkg.JsonPkg = json_pkg.NewJsonPkg()
 
 // FsWriteModel
 // @Description: 读写权限
@@ -47,7 +60,7 @@ func NewFsWriteModel() *FsWriteModel {
 //	@param cfg
 //	@return *FsPkg
 //	@return error
-func NewFsPkg(cfg common.IEnvConfig, fsName string) (element.FsPkg, error) {
+func NewFsPkg(cfg env.IEnvConfig, fsName string) (*FsPkg, error) {
 	var err error
 	fsM := cfg.GetFsManager()
 
@@ -68,7 +81,7 @@ func NewFsPkg(cfg common.IEnvConfig, fsName string) (element.FsPkg, error) {
 	return fsPkg, nil
 }
 
-func (m *FsPkg) NewFs(fsName string) element.FsPkg {
+func (m *FsPkg) NewFs(fsName string) *FsPkg {
 	fs, err := NewFsPkg(m.cfg, fsName)
 	if err != nil {
 		panic(err)
@@ -88,14 +101,6 @@ func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
 		panic(err)
 	}
 	return file
-}
-
-func (m *FsPkg) newOptions(opts ...*fsopts.Options) *fsopts.Options {
-	opt := fsopts.NewOptions(opts...)
-	if m.fs != nil {
-		opt.Fs = m.fs
-	}
-	return opt
 }
 
 // Rename
@@ -133,10 +138,9 @@ func (m *FsPkg) ReadFile(filename string, opts ...*fsopts.Options) []byte {
 //	@param data
 //	@param opts
 func (m *FsPkg) WriteJson(filename string, data any, opts ...*fsopts.Options) {
-	var bytes = pkg.ToBytes(data)
-
-	bytes = jsonPkg.Format(bytes)
-	err := m.base.WriteFile(filename, bytes, fsm.WriteModelAllWriteRead, opts...)
+	var toBytes = ToBytes(data)
+	toBytes = m.JsonFormat(toBytes)
+	err := m.base.WriteFile(filename, toBytes, fsm.WriteModelAllWriteRead, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -150,8 +154,8 @@ func (m *FsPkg) WriteJson(filename string, data any, opts ...*fsopts.Options) {
 //	@param data
 //	@param opts
 func (m *FsPkg) WriteFile(filename string, data any, opts ...*fsopts.Options) {
-	var bytes = pkg.ToBytes(data)
-	err := m.base.WriteFile(filename, bytes, fsm.WriteModelAllWriteRead, opts...)
+	var toBytes = ToBytes(data)
+	err := m.base.WriteFile(filename, toBytes, fsm.WriteModelAllWriteRead, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -205,21 +209,21 @@ func (m *FsPkg) Exists(fileName string, opts ...*fsopts.Options) bool {
 	return v
 }
 
-// ReadDir
+// ReadPath
 //
 //	@Description: 读取指定目录中的子目录与文件。
 //	@receiver m
 //	@param path
 //	@param opts
 //	@return []*FileInfo
-func (m *FsPkg) ReadDir(path string, opts ...*fsopts.Options) []*types.FileInfo {
-	res := make([]*types.FileInfo, 0)
+func (m *FsPkg) ReadPath(path string, opts ...*fsopts.Options) []*FileInfo {
+	res := make([]*FileInfo, 0)
 	files, err := m.base.ReadDir(path)
 	if err != nil {
 		panic(err)
 	}
 	for _, file := range files {
-		fileInfo := &types.FileInfo{
+		fileInfo := &FileInfo{
 			IsDir:     file.IsDir(),
 			Name:      file.Name(),
 			Size:      file.Size(),
@@ -231,18 +235,18 @@ func (m *FsPkg) ReadDir(path string, opts ...*fsopts.Options) []*types.FileInfo 
 	return res
 }
 
-// ReadAllDir
+// ReadAllPath
 //
 //	@Description:  深度读取目录内容，读取所有子目录与文件。
 //	@receiver m
 //	@param path
 //	@param opts
 //	@return []*FileInfo
-func (m *FsPkg) ReadAllDir(path string, opts ...*fsopts.Options) []*types.FileInfo {
-	fileInfos := m.ReadDir(path, opts...)
+func (m *FsPkg) ReadAllPath(path string, opts ...*fsopts.Options) []*FileInfo {
+	fileInfos := m.ReadPath(path, opts...)
 	for _, file := range fileInfos {
 		if file.IsDir {
-			file.SubFiles = m.ReadAllDir(file.Path+"/"+file.Name, opts...)
+			file.SubFiles = m.ReadPath(file.Path+"/"+file.Name, opts...)
 		}
 	}
 	m.SortFileInfos(fileInfos)
@@ -253,7 +257,7 @@ func (m *FsPkg) ReadAllDir(path string, opts ...*fsopts.Options) []*types.FileIn
 //
 //	@Description: sorts a slice of *FileInfo by Name and IsDir, and recursively sorts SubFiles.
 //	@param files
-func (m *FsPkg) SortFileInfos(files []*types.FileInfo) {
+func (m *FsPkg) SortFileInfos(files []*FileInfo) {
 	sort.Slice(files, func(i, j int) bool {
 		if files[i].IsDir != files[j].IsDir {
 			return files[i].IsDir // Directories come first
@@ -266,4 +270,45 @@ func (m *FsPkg) SortFileInfos(files []*types.FileInfo) {
 			m.SortFileInfos(file.SubFiles) // Recursively sort SubFiles
 		}
 	}
+}
+
+// JsonFormat
+//
+//	@Description: 对json字符串进行格式化
+//	@receiver j
+//	@param rawJSON
+//	@return []byte
+func (m *FsPkg) JsonFormat(rawJSON any) []byte {
+	data := ToBytes(rawJSON)
+	// 创建一个缓冲区来存储格式化后的 JSON
+	var formattedJSON bytes.Buffer
+	// 使用 json.Indent 进行格式化
+	err := json.Indent(&formattedJSON, data, "", "  ") // 第二个参数是缩进字符串
+	if err != nil {
+		panic(errors.New("json format error: %s", err.Error()))
+	}
+	return formattedJSON.Bytes()
+}
+
+// ToBytes
+//
+//	@Description: 将any转换成byte数组，支持string, []byte, map[string]any类型的转换
+//	@param data
+//	@return []byte
+func ToBytes(data any) []byte {
+	var bytes []byte = nil
+	if str, ok := data.(string); ok {
+		bytes = []byte(str)
+	} else if bs, ok := data.([]byte); ok {
+		bytes = bs
+	} else if mapData, ok := data.(map[string]any); ok {
+		str, err := jsonutils.Marshal(mapData)
+		if err != nil {
+			panic(err)
+		}
+		bytes = []byte(str)
+	} else {
+		panic("WriteFile() invalid runValues is string or []byte or map[string]any")
+	}
+	return bytes
 }

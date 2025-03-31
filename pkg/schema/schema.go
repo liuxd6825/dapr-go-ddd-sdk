@@ -23,7 +23,6 @@ func NewJsonSchemaWithJson(fileName string, jsonText string) *jsonschema.Schema 
 func NewJsonSchemaWithBytes(fileName string, fileBytes []byte) *jsonschema.Schema {
 	sch, err := jsonschema.NewSchemaWithBytes(fileName, fileBytes, func(compiler *jsonschema.Compiler) {
 		initCompiler(compiler)
-
 	})
 	if err != nil {
 		panic(err)

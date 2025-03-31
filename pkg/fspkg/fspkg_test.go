@@ -1,4 +1,4 @@
-package fs_pkg
+package fspkg
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/test"
@@ -31,8 +31,8 @@ func TestFs_RemoveFile(t *testing.T) {
 		t.Fatal(err)
 		return
 	}
-
-	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""), "")
+	env := test.NewEnvConfig(fsm, "")
+	fsPkg, err := NewFsPkg(env, "")
 	if err != nil {
 		t.Fatal(err)
 		return

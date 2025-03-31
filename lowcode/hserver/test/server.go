@@ -1,10 +1,10 @@
 package test
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils/schema_utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/test"
 	"github.com/spf13/afero"
@@ -13,7 +13,7 @@ import (
 type TestServer struct {
 	FsPkg        pkg.FsPkg
 	SrcFs        afero.Fs
-	EnvCfg       common.IEnvConfig
+	EnvCfg       env.IEnvConfig
 	SchemaLoader *schema_utils.SchemaLoader
 }
 
@@ -39,11 +39,11 @@ func NewServer(rootPath string, opts ...Options) (pkg.Server, error) {
 	return server, nil
 }
 
-func (s *TestServer) GetEnvConfig() common.IEnvConfig {
+func (s *TestServer) GetEnvConfig() env.IEnvConfig {
 	return s.EnvCfg
 }
 
-func NewTestServer(cfg common.IEnvConfig) (*TestServer, error) {
+func NewTestServer(cfg env.IEnvConfig) (*TestServer, error) {
 	return &TestServer{
 		FsPkg:  nil,
 		SrcFs:  afero.NewOsFs(),

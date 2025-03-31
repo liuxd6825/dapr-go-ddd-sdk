@@ -60,8 +60,8 @@ func (c *EnvConfig) GetDaprGrpcPort() int64 {
 	return c.DaprGrpcPort
 }
 
-func (c *EnvConfig) GetFsManager() (*fsm.Manager, error) {
-	return c.Fsm, nil
+func (c *EnvConfig) GetFsManager() *fsm.Manager {
+	return c.Fsm
 }
 
 func (c *EnvConfig) GetHServerSrcPath() string {

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/dapr/go-sdk/actor"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/restapi"
 	restapp2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver"
 )
@@ -34,6 +35,8 @@ func StartApp(opts *AppStartOptions) {
 			if envCfg.Enable {
 				srcName := envCfg.SrcName
 				webName := envCfg.WebName
+
+				restapi.RegisterSchema(server.App(), "/api/v1.0/", server.EnvConfig(), "")
 				return hserver.InitServer(flag.MainFile, srcName, webName, server, envCfg.WatchRestart)
 			}
 			return nil

@@ -5,10 +5,10 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/funcs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 
@@ -34,7 +34,7 @@ func (f *factory) NewFunc(server element.Server, config *element.FuncConfig, log
 	return funcs.NewFunc(server, config, logger, reader, pkg)
 }
 
-func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env common.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
+func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env env.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
 	return server.NewServer(httpServer, srcFileName, srcFs, factory, env, opts...)
 }
 

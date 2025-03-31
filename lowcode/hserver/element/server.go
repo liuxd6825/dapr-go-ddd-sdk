@@ -4,8 +4,9 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/definition"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/jsonschema/v6"
@@ -25,7 +26,7 @@ type Server interface {
 	SchemaLoader() schema.URLLoader
 	App() *iris.Application
 	Restart() error
-	FsPkg() FsPkg
+	FsPkg() fspkg.IFsPkg
 	Definition() *definition.Definition
 	RootPath() string
 	CacheEnable() bool
@@ -42,6 +43,6 @@ type Server interface {
 	HttpServer() *restapp.HttpServer  // 取得HTTP服务实例
 	GetEventPrefix() string           // 取得事件前缀
 	GetIsPubEvent() bool              // 取得DAO更新数据时，是否发布事件的默认值
-	GetEnvCfg() common.IEnvConfig     // 取当前配置环境变量
+	GetEnvCfg() env.IEnvConfig        // 取当前配置环境变量
 	Init(opts *ServerInitOptions)     // 初始化参数
 }
