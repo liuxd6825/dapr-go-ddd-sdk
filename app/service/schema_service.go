@@ -14,7 +14,6 @@ type ISchemaService interface {
 	WriteFile(ctx context.Context, fileName string, data []byte) error
 	ReadPath(ctx context.Context, pathName string) []*fspkg.FileInfo
 	ReadAllPath(ctx context.Context, pathName string) []*fspkg.FileInfo
-	GetProperties(ctx context.Context, fileName string) map[string]*jsonschema.Schema
 	GetSchema(ctx context.Context, fileName string) *jsonschema.Schema
 }
 
@@ -46,11 +45,6 @@ func (s *schemaService) ReadPath(ctx context.Context, pathName string) []*fspkg.
 
 func (s *schemaService) ReadAllPath(ctx context.Context, pathName string) []*fspkg.FileInfo {
 	return s.fileService.ReadPath(ctx, pathName, true)
-}
-
-func (s *schemaService) GetProperties(ctx context.Context, fileName string) map[string]*jsonschema.Schema {
-	sch := s.GetSchema(ctx, fileName)
-	return sch.GetAllProperties()
 }
 
 func (s *schemaService) GetSchema(ctx context.Context, fileName string) *jsonschema.Schema {
