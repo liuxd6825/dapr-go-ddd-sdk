@@ -96,6 +96,7 @@ func (m *FsPkg) NewFs(fsName string) *FsPkg {
 //	@param name
 //	@param opts
 func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
+	name = "/" + name
 	file, err := m.base.CreateFile(name, opts...)
 	if err != nil {
 		panic(err)
@@ -112,6 +113,8 @@ func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
 //	@param opts
 //	@return error
 func (m *FsPkg) Rename(oldName, newName string, opts ...*fsopts.Options) error {
+	oldName = "/" + oldName
+	newName = "/" + newName
 	return m.base.Rename(oldName, newName)
 }
 
@@ -123,6 +126,7 @@ func (m *FsPkg) Rename(oldName, newName string, opts ...*fsopts.Options) error {
 //	@param basePath 当前目录
 //	@return []byte
 func (m *FsPkg) ReadFile(filename string, opts ...*fsopts.Options) []byte {
+	filename = "/" + filename
 	res, err := m.base.ReadFile(filename, opts...)
 	if err != nil {
 		panic(fmt.Sprintf("fsPkg.readFile() %s %s ", filename, err.Error()))
@@ -138,6 +142,7 @@ func (m *FsPkg) ReadFile(filename string, opts ...*fsopts.Options) []byte {
 //	@param data
 //	@param opts
 func (m *FsPkg) WriteJson(filename string, data any, opts ...*fsopts.Options) {
+	filename = "/" + filename
 	var toBytes = ToBytes(data)
 	toBytes = m.JsonFormat(toBytes)
 	err := m.base.WriteFile(filename, toBytes, fsm.WriteModelAllWriteRead, opts...)
@@ -154,6 +159,7 @@ func (m *FsPkg) WriteJson(filename string, data any, opts ...*fsopts.Options) {
 //	@param data
 //	@param opts
 func (m *FsPkg) WriteFile(filename string, data any, opts ...*fsopts.Options) {
+	filename = "/" + filename
 	var toBytes = ToBytes(data)
 	err := m.base.WriteFile(filename, toBytes, fsm.WriteModelAllWriteRead, opts...)
 	if err != nil {
@@ -168,6 +174,7 @@ func (m *FsPkg) WriteFile(filename string, data any, opts ...*fsopts.Options) {
 //	@param filename
 //	@param opts
 func (m *FsPkg) RemoveFile(filename string, opts ...*fsopts.Options) {
+	filename = "/" + filename
 	err := m.base.RemoveFile(filename, opts...)
 	if err != nil {
 		panic(err)
@@ -181,6 +188,7 @@ func (m *FsPkg) RemoveFile(filename string, opts ...*fsopts.Options) {
 //	@param name
 //	@param opts
 func (m *FsPkg) RemoveAll(name string, opts ...*fsopts.Options) {
+	name = "/" + name
 	err := m.base.RemoveAll(name, opts...)
 	if err != nil {
 		panic(err)
@@ -195,6 +203,7 @@ func (m *FsPkg) RemoveAll(name string, opts ...*fsopts.Options) {
 //	@param perm
 //	@param opts
 func (m *FsPkg) Mkdir(name string, perm os.FileMode, opts ...*fsopts.Options) {
+	name = "/" + name
 	err := m.base.Mkdir(name, perm)
 	if err != nil {
 		panic(err)
@@ -202,6 +211,7 @@ func (m *FsPkg) Mkdir(name string, perm os.FileMode, opts ...*fsopts.Options) {
 }
 
 func (m *FsPkg) Exists(fileName string, opts ...*fsopts.Options) bool {
+	fileName = "/" + fileName
 	v, err := m.base.Exists(fileName, opts...)
 	if err != nil {
 		panic(err)
@@ -217,6 +227,7 @@ func (m *FsPkg) Exists(fileName string, opts ...*fsopts.Options) bool {
 //	@param opts
 //	@return []*FileInfo
 func (m *FsPkg) ReadPath(path string, opts ...*fsopts.Options) []*FileInfo {
+	path = "/" + path
 	res := make([]*FileInfo, 0)
 	files, err := m.base.ReadDir(path)
 	if err != nil {
@@ -243,6 +254,7 @@ func (m *FsPkg) ReadPath(path string, opts ...*fsopts.Options) []*FileInfo {
 //	@param opts
 //	@return []*FileInfo
 func (m *FsPkg) ReadAllPath(path string, opts ...*fsopts.Options) []*FileInfo {
+	path = "/" + path
 	fileInfos := m.ReadPath(path, opts...)
 	for _, file := range fileInfos {
 		if file.IsDir {
@@ -296,19 +308,19 @@ func (m *FsPkg) JsonFormat(rawJSON any) []byte {
 //	@param data
 //	@return []byte
 func ToBytes(data any) []byte {
-	var bytes []byte = nil
+	var b []byte = nil
 	if str, ok := data.(string); ok {
-		bytes = []byte(str)
+		b = []byte(str)
 	} else if bs, ok := data.([]byte); ok {
-		bytes = bs
+		b = bs
 	} else if mapData, ok := data.(map[string]any); ok {
 		str, err := jsonutils.Marshal(mapData)
 		if err != nil {
 			panic(err)
 		}
-		bytes = []byte(str)
+		b = []byte(str)
 	} else {
 		panic("WriteFile() invalid runValues is string or []byte or map[string]any")
 	}
-	return bytes
+	return b
 }

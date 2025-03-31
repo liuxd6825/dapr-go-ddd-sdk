@@ -28,18 +28,15 @@ func NewSchemaService(env env.IEnvConfig, rootPath string) ISchemaService {
 }
 
 func (s *schemaService) ReadFile(ctx context.Context, fileName string) ([]byte, error) {
-	fileName = "/" + fileName
 	data, err := s.fileService.ReadFile(ctx, fileName)
 	return data, err
 }
 
 func (s *schemaService) WriteFile(ctx context.Context, fileName string, data []byte) error {
-	fileName = "/" + fileName
 	return s.fileService.WriteFile(ctx, fileName, data)
 }
 
 func (s *schemaService) ReadPath(ctx context.Context, pathName string) []*fspkg.FileInfo {
-	pathName = "/" + pathName
 	return s.fileService.ReadPath(ctx, pathName, false)
 }
 
@@ -48,7 +45,6 @@ func (s *schemaService) ReadAllPath(ctx context.Context, pathName string) []*fsp
 }
 
 func (s *schemaService) GetSchema(ctx context.Context, fileName string) *jsonschema.Schema {
-	fileName = "/" + fileName
 	data, err := s.fileService.ReadFile(ctx, fileName)
 	if err != nil {
 		panic(err)

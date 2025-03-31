@@ -45,16 +45,19 @@ func NewFileService(env env.IEnvConfig, rootPath string) IFileService {
 }
 
 func (s *fileService) CreateFile(ctx context.Context, fileName string, data []byte, opts ...*Options) error {
+	fileName = "/" + fileName
 	fs := s.fsPkg.Create(fileName, newFsOptions(opts...))
 	_, err := fs.Write(data)
 	return err
 }
 
 func (s *fileService) ReadFile(ctx context.Context, fileName string, opts ...*Options) ([]byte, error) {
+	fileName = "/" + fileName
 	return s.fsPkg.ReadFile(fileName, newFsOptions(opts...)), nil
 }
 
 func (s *fileService) WriteFile(ctx context.Context, fileName string, schema []byte, opts ...*Options) error {
+	fileName = "/" + fileName
 	fs := s.fsPkg.Create(fileName, newFsOptions(opts...))
 	_, err := fs.Write(schema)
 	return err
@@ -62,15 +65,18 @@ func (s *fileService) WriteFile(ctx context.Context, fileName string, schema []b
 }
 
 func (s *fileService) RemoveFile(ctx context.Context, fileName string, opts ...*Options) error {
+	fileName = "/" + fileName
 	s.fsPkg.RemoveFile(fileName, newFsOptions(opts...))
 	return nil
 }
 
 func (s *fileService) RenameFile(ctx context.Context, fileName string, newName string, opts ...*Options) error {
+	fileName = "/" + fileName
 	return s.fsPkg.Rename(fileName, newName, newFsOptions(opts...))
 }
 
 func (s *fileService) CreatePath(ctx context.Context, pathName string, opts ...*Options) (err error) {
+	pathName = "/" + pathName
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
@@ -79,6 +85,7 @@ func (s *fileService) CreatePath(ctx context.Context, pathName string, opts ...*
 }
 
 func (s *fileService) ReadPath(ctx context.Context, pathName string, isDeep bool, opts ...*Options) []*fspkg.FileInfo {
+	pathName = "/" + pathName
 	if isDeep {
 		return s.fsPkg.ReadAllPath(pathName, newFsOptions(opts...))
 	}
@@ -86,6 +93,7 @@ func (s *fileService) ReadPath(ctx context.Context, pathName string, isDeep bool
 }
 
 func (s *fileService) RemovePath(ctx context.Context, pathName string, isDeep bool, opts ...*Options) error {
+
 	s.fsPkg.RemoveAll(pathName, newFsOptions(opts...))
 	return nil
 }
