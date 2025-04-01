@@ -227,9 +227,15 @@ func (d *Dao[T]) updateTable(ctx context.Context, opts ...store.Options) *gorm.D
 		for _, v := range updateFields {
 			table = table.Select(v)
 		}
+	} else {
+		for _, f := range d.gormSchema.Fields {
+			if f.Updatable {
+				updateFields = append(updateFields, f.Name)
+			}
+		}
 	}
 
-	table = table.Omit(fields.CreatedTime, fields.CreatorId, fields.CreatorName)
+	table = table.Select(updateFields).Omit(fields.CreatedTime, fields.CreatorId, fields.CreatorName)
 
 	// 指定取消更新的字段
 	cancelFields := opt.GetUpdateCancel()
@@ -246,8 +252,9 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *s
 	_ = gp.Try(func() error {
 		opt := store.NewOptions(opts...)
 		d.eb.SetUpdatedInfo(ctx, entity)
+		id := d.eb.GetId(entity)
 		tenantId := d.eb.GetTenantId(entity)
-		table := d.updateTable(ctx, opt).Where("id=? and tenant_id=?", d.GetId(entity), tenantId)
+		table := d.updateTable(ctx, opt)
 
 		// 是否空值更新
 		if !opt.GetNullUpdate() {
@@ -259,8 +266,7 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *s
 				}
 			}
 		}
-
-		db := table.UpdateColumns(entity)
+		db := table.Where("id=? and tenant_id=? ", id, tenantId).Updates(entity)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
 	}).Catch(func(err error) {
@@ -785,7 +791,7 @@ func (d *Dao[T]) table(ctx context.Context, opts ...store.Options) *gorm.DB {
 	if tx == nil {
 		tx = d.db
 	}
-	return tx.Table(d.tableName).CustomSchema(d.gormSchema).Unscoped()
+	return tx.Table(d.tableName).CustomSchema(d.gormSchema)
 }
 
 func (d *Dao[T]) asFilter(filter any, mapFunc func(data map[string]any) error, sqlFunc func(sql string) error) error {

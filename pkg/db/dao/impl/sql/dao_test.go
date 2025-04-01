@@ -54,6 +54,56 @@ func Test_DaoStruct(t *testing.T) {
 
 }
 
+func Test_Update(t *testing.T) {
+	ctx, err := restapp.NewTestContext(context.Background())
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	dao := newDao[map[string]any](ctx, "human")
+	humanName := randomutils.NameCN()
+
+	id := idutils.NewId()
+	human := map[string]any{
+		"id":         id,
+		"tenantId":   "test",
+		"analyse":    "",
+		"birthday":   time.Now(),
+		"peopleType": []string{"1111"},
+		"name":       humanName,
+		"age":        1,
+		"tags":       []string{"tag1", "tag2"},
+	}
+
+	t.Run("dao.Create", func(t *testing.T) {
+		gp.Try(func() error {
+			res := dao.Create(ctx, human)
+			assert.Equal(t, int64(1), res.RowsAffected)
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+	t.Run("dao.Update", func(t *testing.T) {
+		gp.Try(func() error {
+			human["name"] = humanName + "2"
+			human["birthday"] = times.NewDate()
+			count := dao.Update(ctx, human)
+			assert.Equal(t, int64(1), count.RowsAffected)
+
+			human["birthday"] = times.NewTime()
+			count = dao.Update(ctx, human)
+			assert.Equal(t, int64(1), count.RowsAffected)
+
+			return nil
+		}).Catch(func(err error) {
+			t.Error(err)
+		})
+	})
+
+}
+
 func Test_Dao(t *testing.T) {
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {

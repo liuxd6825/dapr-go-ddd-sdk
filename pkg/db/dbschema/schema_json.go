@@ -38,6 +38,9 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *store.DBSchema {
 			DBName:                AsFieldName(prop.Name()),
 			DataType:              dataType,
 			DefaultValueInterface: prop.Default,
+			Creatable:             true,
+			Updatable:             true,
+			Readable:              true,
 		}
 		if schField != nil {
 			if schField.Name != "" {

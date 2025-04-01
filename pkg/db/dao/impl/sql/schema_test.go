@@ -1,8 +1,8 @@
 package sql
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -30,15 +30,11 @@ func Test_Schema(t *testing.T) {
 		return
 	}
 
-	dest, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	dest := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
 	var dbSchema *gormschema.Schema
 	t.Run("NewDBSchema", func(t *testing.T) {
-		dschema := dbschema.NewSchemaWithJsonSchema(dest.GetJsonSchema())
+		dschema := dbschema.NewDBSchemaWithJsonSchema(dest)
 		dschema.Name = "table"
 		v, err := NewGormSchema(dschema)
 		if err != nil {
