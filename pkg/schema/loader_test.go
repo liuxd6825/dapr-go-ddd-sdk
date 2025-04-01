@@ -3,7 +3,6 @@ package schema
 import (
 	"fmt"
 	"github.com/liuxd6825/jsonschema/v6"
-	"github.com/spf13/afero"
 	"github.com/xeipuuv/gojsonschema"
 	"testing"
 )
@@ -11,7 +10,7 @@ import (
 func Test_JSONLoader(t *testing.T) {
 	// 定义主 Schema 的路径
 	mainSchemaPath := "./testfile/person.json"
-	fs := afero.NewOsFs()
+	// fs := afero.NewOsFs()
 	// 创建 SchemaLoader 实例
 	compiler := jsonschema.NewCompiler()
 

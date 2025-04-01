@@ -157,9 +157,11 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 		}
 		switch param.Type {
 		case schema.HParamType_Path:
-			val = ictx.URLParam(paramName)
+			val = ictx.Params().GetString(paramName)
 		case schema.HParamType_Query:
 			val = ictx.URLParam(paramName)
+		case schema.HParamTypee_Header:
+			val = ictx.GetHeader(paramName)
 		case schema.HParamType_Body:
 			val = wctx.ReadObject(prop)
 		case schema.HParamTypee_FormValue:

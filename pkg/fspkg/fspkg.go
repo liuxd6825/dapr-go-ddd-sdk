@@ -327,9 +327,7 @@ func ToBytes(data any) []byte {
 }
 
 func getFileName(name string) string {
-	if strings.HasSuffix(name, "/") {
-		return name
-	} else if strings.HasSuffix(name, "./") {
+	if strings.HasPrefix(name, "/") || strings.HasPrefix(name, "./") || strings.HasPrefix(name, "../") {
 		return name
 	}
 	return "/" + name
