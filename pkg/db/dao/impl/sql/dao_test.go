@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -33,17 +35,16 @@ type Human struct {
 	Tags       string
 }
 
+var dbKey = "sql"
+var db *gorm.DB
+
 func Test_DaoStruct(t *testing.T) {
 	defer func() {
 		if err := recover(); err != nil {
 			t.Error(err)
 		}
 	}()
-	ctx, err := restapp.NewTestContext(context.Background())
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	ctx := xtest.NewContext()
 	dao := newDaoByStruct[*Human](ctx, "human_struct")
 	dao.DeleteAll(ctx)
 
@@ -54,12 +55,45 @@ func Test_DaoStruct(t *testing.T) {
 
 }
 
-func Test_Update(t *testing.T) {
-	ctx, err := restapp.NewTestContext(context.Background())
-	if err != nil {
-		t.Fatal(err)
-		return
+func Test_Transaction(t *testing.T) {
+
+	ctx := xtest.NewContext()
+	dao := newDao[map[string]any](ctx, "human")
+	humanName := randomutils.NameCN()
+
+	id := idutils.NewId()
+	human := map[string]any{
+		"id":         id,
+		"tenantId":   "test",
+		"analyse":    "",
+		"birthday":   time.Now(),
+		"peopleType": []string{"1111"},
+		"name":       humanName,
+		"age":        1,
+		"tags":       []string{"tag1", "tag2"},
 	}
+
+	txDb := tx.TxDB{}
+	txDb = append(txDb, tx.TxDBItem{DBKey: "sql", DB: db, DBType: restapp.DBType_Sqlite})
+
+	_ = tx.Start(ctx, txDb, func(ctx context.Context, options ...*store.SessionOptions) error {
+		iCount := dao.Create(ctx, human).RowsAffected
+		human["name"] = humanName + "2"
+		human["birthday"] = times.NewDate()
+		uCount := dao.Update(ctx, human).RowsAffected
+		if uCount == iCount {
+			return errors.New("test error")
+		}
+		return nil
+	})
+	//t.Log(err)
+	row := dao.FindById(ctx, id)
+	assert.Nil(t, row)
+
+}
+
+func Test_Update(t *testing.T) {
+	ctx := xtest.NewContext()
 	dao := newDao[map[string]any](ctx, "human")
 	humanName := randomutils.NameCN()
 
@@ -105,11 +139,7 @@ func Test_Update(t *testing.T) {
 }
 
 func Test_Dao(t *testing.T) {
-	ctx, err := restapp.NewTestContext(context.Background())
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	ctx := xtest.NewContext()
 	dao := newDao[map[string]any](ctx, "human")
 	humanName := randomutils.NameCN()
 	newCount := int64(10)
@@ -334,11 +364,7 @@ func Test_Dao(t *testing.T) {
 }
 
 func TestDao_Sum(t *testing.T) {
-	ctx, err := restapp.NewTestContext(context.Background())
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	ctx := xtest.NewContext()
 	dao := newDao[map[string]any](ctx, "human_sum")
 	if dao == nil {
 		return
@@ -406,11 +432,7 @@ func TestDao_Sum(t *testing.T) {
 }
 
 func TestDao_Find(t *testing.T) {
-	ctx, err := restapp.NewTestContext(context.Background())
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
+	ctx := xtest.NewContext()
 	dao := newDao[map[string]any](ctx, "human_sum")
 
 	dao.DeleteAll(ctx)
@@ -482,7 +504,7 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 }
 
 func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
-	db := xtest.NewSqlite()
+	db = xtest.NewSqlite()
 	//humanName := randomutils.NameCN()
 	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 

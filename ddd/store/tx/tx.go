@@ -22,31 +22,50 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc store.TxFunc, options 
 		for _, dbKey := range dbKeys {
 			item := restapp.GetDB(dbKey)
 			if item == nil {
-				return fmt.Errorf("db %s not found", dbKey)
+				return fmt.Errorf("dbKey %s not found", dbKey)
 			}
-			dbType := item.GetDBType()
-			switch dbType {
-			case restapp.DbType_Redis:
+			DBType := item.GetDBType()
+			switch DBType {
+			case restapp.DBType_Redis:
 				break
-			case restapp.DbType_Neo4j:
+			case restapp.DBType_Neo4j:
 				break
-			case restapp.DbType_MongoDB:
+			case restapp.DBType_MongoDB, restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
-			case restapp.DbType_Sqlite:
-				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
+			}
+		}
+	}
+	return newTxFunc(newCtx, options...)
+}
+
+type TxDB []TxDBItem
+
+type TxDBItem struct {
+	DB     any
+	DBKey  string
+	DBType restapp.DBType
+}
+
+// Start 开启事务
+func Start(ctx context.Context, txDb TxDB, txFunc store.TxFunc, options ...*store.SessionOptions) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	newCtx := ctx
+	newTxFunc := txFunc
+	if txDb != nil && len(txDb) > 0 {
+		for _, item := range txDb {
+			switch item.DBType {
+			case restapp.DBType_Redis:
 				break
-			case restapp.DbType_MySQL:
-				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
+			case restapp.DBType_Neo4j:
 				break
-			case restapp.DbType_MsSQL:
-				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
+			case restapp.DBType_MongoDB:
 				break
-			case restapp.DbType_Oracle:
-				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
-				break
-			case restapp.DbType_Postgres:
-				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
+			case restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
+				db := item.DB.(*gorm.DB)
+				newTxFunc = newGormFunc(db, item.DBKey, newTxFunc)
 				break
 			}
 		}

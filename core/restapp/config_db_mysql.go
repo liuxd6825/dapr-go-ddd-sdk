@@ -93,7 +93,7 @@ func initMySql(configs map[string]*MySqlConfig) error {
 func addMysql(dbKey string, mysqlDb *gorm.DB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
-		dbType: DbType_MySQL,
+		dbType: DBType_MySQL,
 		gormDb: mysqlDb,
 		config: config,
 	}

@@ -46,15 +46,15 @@ func NewDaoWithDbKey[T any](cfg *NewConfig) store.IStore[T] {
 	db := cfg.Db
 	if db == nil {
 		switch item.GetDBType() {
-		case restapp.DbType_Postgres:
+		case restapp.DBType_Postgres:
 			db = item.GetGormDB()
-		case restapp.DbType_MySQL:
+		case restapp.DBType_MySQL:
 			db = item.GetGormDB()
-		case restapp.DbType_Sqlite:
+		case restapp.DBType_Sqlite:
 			db = item.GetGormDB()
-		case restapp.DbType_MsSQL:
+		case restapp.DBType_MsSQL:
 			db = item.GetGormDB()
-		case restapp.DbType_Oracle:
+		case restapp.DBType_Oracle:
 			db = item.GetGormDB()
 		default:
 			panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))
@@ -788,7 +788,7 @@ func (d *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, 
 }
 
 func (d *Dao[T]) table(ctx context.Context, opts ...store.Options) *gorm.DB {
-	tx := GetTx(ctx, d.db.Name())
+	tx := GetTx(ctx, d.dbKey)
 	if tx == nil {
 		tx = d.db
 	}

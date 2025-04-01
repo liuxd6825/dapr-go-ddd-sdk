@@ -83,7 +83,7 @@ func CloseAllNeo4j(ctx context.Context) error {
 func addNeo4j(dbKey string, neo4jDb neo4j.DriverWithContext, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
-		dbType: DbType_Neo4j,
+		dbType: DBType_Neo4j,
 		neo4j:  neo4jDb,
 		config: config,
 	}

@@ -251,7 +251,7 @@ func defaultTimeout(val string, def string) time.Duration {
 func addMongoDB(dbKey string, mongoDb *store_mongodb.MongoDB, config any) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
-		dbType: DbType_MongoDB,
+		dbType: DBType_MongoDB,
 		mongo:  mongoDb,
 		config: config,
 	}

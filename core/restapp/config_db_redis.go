@@ -138,7 +138,7 @@ func CloseRedis(ctx context.Context) error {
 func addRedis(dbKey string, redisDb *redis.Client) DBItem {
 	item := &dbItem{
 		dbKey:  dbKey,
-		dbType: DbType_Redis,
+		dbType: DBType_Redis,
 		redis:  redisDb,
 	}
 	addDB(item)

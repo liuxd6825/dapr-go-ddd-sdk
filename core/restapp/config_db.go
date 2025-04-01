@@ -9,21 +9,21 @@ import (
 	"gorm.io/gorm"
 )
 
-type DbType string
+type DBType string
 
 const (
-	DbType_Postgres DbType = "postgres"
-	DbType_MySQL    DbType = "mysql"
-	DbType_Sqlite   DbType = "sqlite"
-	DbType_Neo4j    DbType = "neo4j"
-	DbType_Redis    DbType = "redis"
-	DbType_MongoDB  DbType = "mongodb"
-	DbType_MsSQL    DbType = "mssql"
-	DbType_Oracle   DbType = "oracle"
+	DBType_Postgres DBType = "postgres"
+	DBType_MySQL    DBType = "mysql"
+	DBType_Sqlite   DBType = "sqlite"
+	DBType_Neo4j    DBType = "neo4j"
+	DBType_Redis    DBType = "redis"
+	DBType_MongoDB  DBType = "mongodb"
+	DBType_MsSQL    DBType = "mssql"
+	DBType_Oracle   DBType = "oracle"
 )
 
 type DBItem interface {
-	GetDBType() DbType
+	GetDBType() DBType
 	GetDBKey() string
 	GetRedis() *redis.Client
 	GetNeo4j() neo4j.DriverWithContext
@@ -40,7 +40,7 @@ type EventPublish interface {
 
 type dbItem struct {
 	dbKey  string
-	dbType DbType
+	dbType DBType
 	redis  *redis.Client
 	neo4j  neo4j.DriverWithContext
 	mongo  *store_mongodb.MongoDB
@@ -56,28 +56,28 @@ func init() {
 
 func (d *dbItem) GetDB() any {
 	switch d.dbType {
-	case DbType_Postgres:
+	case DBType_Postgres:
 		return d.gormDb
-	case DbType_MySQL:
+	case DBType_MySQL:
 		return d.gormDb
-	case DbType_Sqlite:
+	case DBType_Sqlite:
 		return d.gormDb
-	case DbType_Neo4j:
+	case DBType_Neo4j:
 		return d.neo4j
-	case DbType_Redis:
+	case DBType_Redis:
 		return d.redis
-	case DbType_MongoDB:
+	case DBType_MongoDB:
 		return d.mongo
-	case DbType_MsSQL:
+	case DBType_MsSQL:
 		return d.gormDb
-	case DbType_Oracle:
+	case DBType_Oracle:
 		return d.gormDb
 	default:
 		panic("db type not supported")
 	}
 }
 
-func (d *dbItem) GetDBType() DbType {
+func (d *dbItem) GetDBType() DBType {
 	return d.dbType
 }
 
