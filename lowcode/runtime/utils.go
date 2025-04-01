@@ -26,8 +26,8 @@ func RecoverError(e error, recover any) error {
 type TransformType = int
 
 const (
-	TransformTypeTypeScript TransformType = iota
-	TransformTypeES6
+	TransformType_TypeScript TransformType = iota
+	TransformType_ES6
 )
 
 // TransformCode
@@ -41,9 +41,9 @@ func TransformCode(tsCode string, fileName string, transType TransformType) ([]b
 	var err error
 	var params []*transform.FuncParam
 	switch transType {
-	case TransformTypeTypeScript:
+	case TransformType_TypeScript:
 		codeBytes, params, err = transform.TransformFromTypeScript(tsCode, fileName)
-	case TransformTypeES6:
+	case TransformType_ES6:
 		codeBytes, params, err = transform.TransformFromEs6(tsCode, fileName)
 	}
 	return codeBytes, params, err

@@ -6,9 +6,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
-type OnCreate func(ctx context.Context, entity any, opts ...*idao.CallOptions)
-
-var OnCreateBefore []OnCreate
+//type OnCreate func(ctx context.Context, entity any, opts ...*idao.CallOptions)
+//var OnCreateBefore []OnCreate
 
 func (d *DaoBase[T]) Create(ctx context.Context, entity T, opts ...*idao.CallOptions) *idao.Result {
 	if d.IsNil(entity) {
@@ -16,10 +15,6 @@ func (d *DaoBase[T]) Create(ctx context.Context, entity T, opts ...*idao.CallOpt
 	}
 	tenantId := d.GetTenantId(ctx)
 	d.store.SetTenantId(entity, tenantId)
-
-	for _, onCreate := range OnCreateBefore {
-		onCreate(ctx, entity, opts...)
-	}
 
 	res := d.store.Insert(ctx, entity, idao.NewRepositoryOptions(opts)...)
 	if res.Error != nil {
@@ -34,9 +29,7 @@ func (d *DaoBase[T]) CreateMany(ctx context.Context, list []T, opts ...*idao.Cal
 	tenantId := d.GetTenantId(ctx)
 
 	for _, entity := range list {
-		for _, onCreate := range OnCreateBefore {
-			onCreate(ctx, entity, opts...)
-		}
+		d.store.SetTenantId(entity, tenantId)
 	}
 
 	res := d.store.InsertMany(ctx, tenantId, list, idao.NewRepositoryOptions(opts)...)

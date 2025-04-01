@@ -1,7 +1,10 @@
 package funcs
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/dop251/goja"
@@ -58,6 +61,7 @@ func NewFunc(server element.Server, config *element.FuncConfig, logger logrus.Fi
 		logger:    logger,
 		transType: config.TransType,
 		params:    []*FuncParam{},
+		fs:        server.SrcFs(),
 	}
 
 	err := fun.BuildCode()
@@ -78,18 +82,82 @@ func (s *Func) Config() *element.FuncConfig {
 
 // BuildCode 构建es5源代码
 func (s *Func) BuildCode() error {
+
 	if !s.isBuildCode {
-		codeBytes, params, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
-		if err != nil {
-			return err
+		codeFile := fmt.Sprintf("/dist/%s.js", s.CodeId())
+		if s.fs != nil {
+			has, err := afero.Exists(s.fs, codeFile)
+			if err != nil {
+				return err
+			}
+			newHasId := fastFileHash([]byte(s.config.Code))
+
+			if has {
+				data, err := afero.ReadFile(s.fs, codeFile)
+				if err != nil {
+					return err
+				}
+
+				fRow := getFirstLine(data)
+				oldHashId := string(fRow)
+				oldHashId = oldHashId[2 : len(oldHashId)-1]
+				if oldHashId == newHasId {
+					s.isBuildCode = true
+					s.runCode = string(data)
+				}
+			}
+			
+			if s.runCode == "" {
+				//codeBytes, params, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
+				codeBytes, _, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
+				if err != nil {
+					return err
+				}
+
+				s.isBuildCode = true
+				s.runCode = string(codeBytes)
+				/*
+					for _, param := range params {
+						s.params = append(s.params, &FuncParam{Name: param.Name, Type: param.Type})
+					}
+				*/
+
+				var fileData = []byte("//" + newHasId + "\r\n")
+				fileData = mergeBytesWithCopy(fileData, codeBytes)
+				afero.WriteFile(s.fs, codeFile, fileData, 0644)
+			}
+
 		}
-		s.isBuildCode = true
-		s.runCode = string(codeBytes)
-		for _, param := range params {
-			s.params = append(s.params, &FuncParam{Name: param.Name, Type: param.Type})
-		}
+
 	}
 	return nil
+}
+
+func mergeBytesWithCopy(a, b []byte) []byte {
+	result := make([]byte, len(a)+len(b))
+	copy(result, a)
+	copy(result[len(a):], b)
+	return result
+}
+
+func getFirstLine(data []byte) []byte {
+	if idx := bytes.IndexByte(data, '\n'); idx >= 0 {
+		return data[:idx] // 不包括换行符
+	}
+	return data // 如果没有换行符，返回全部内容
+}
+
+// 仅读取文件前1KB计算哈希（适用于大文件快速检查）
+func fastFileHash(code []byte) string {
+	hasher := sha256.New()
+	hasher.Write(code)
+	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func (s *Func) CodeId() string {
+	id := fmt.Sprintf("%s_%s", s.config.SrcFileName, s.config.FuncName)
+	id = fastFileHash([]byte(id))
+	return id
 }
 
 func (s *Func) AsJsFunc() any {
