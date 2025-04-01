@@ -192,6 +192,7 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 	res = store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		d.eb.SetCreatedInfo(ctx, data)
+		data[TenantId] = tenantId
 		db := d.table(ctx).Model(data).Create(data)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
