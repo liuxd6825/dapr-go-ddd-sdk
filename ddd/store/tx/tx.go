@@ -30,7 +30,10 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc store.TxFunc, options 
 				break
 			case restapp.DBType_Neo4j:
 				break
-			case restapp.DBType_MongoDB, restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
+			case restapp.DBType_MongoDB:
+				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
+				break
+			case restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
 			}
@@ -62,7 +65,8 @@ func Start(ctx context.Context, txDb TxDB, txFunc store.TxFunc, options ...*stor
 			case restapp.DBType_Neo4j:
 				break
 			case restapp.DBType_MongoDB:
-				break
+				db := item.DB.(*store_mongodb.MongoDB)
+				newTxFunc = newMongoFunc(db, item.DBKey, newTxFunc)
 			case restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
 				db := item.DB.(*gorm.DB)
 				newTxFunc = newGormFunc(db, item.DBKey, newTxFunc)
