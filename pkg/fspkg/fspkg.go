@@ -259,7 +259,7 @@ func (m *FsPkg) ReadAllPath(path string, opts ...*fsopts.Options) []*FileInfo {
 	fileInfos := m.ReadPath(path, opts...)
 	for _, file := range fileInfos {
 		if file.IsDir {
-			file.SubFiles = m.ReadPath(file.Path+"/"+file.Name, opts...)
+			file.SubFiles = m.ReadAllPath(file.Path+"/"+file.Name, opts...)
 		}
 	}
 	m.SortFileInfos(fileInfos)
