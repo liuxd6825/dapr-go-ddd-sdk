@@ -16,6 +16,10 @@ func NewFs(cfg *Config) (afero.Fs, error) {
 	return &Fs{cfg: cfg, client: resty.New()}, nil
 }
 
+func (f *Fs) Tags() []string {
+	return f.cfg.Tags
+}
+
 func (f *Fs) GetRootPath() string {
 	return f.cfg.BaseUrl
 }

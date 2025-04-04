@@ -1,0 +1,36 @@
+@startuml CQRS事务一致性时序图
+
+actor User as "用户"
+participant "API层" as API
+participant "应用服务\n(OrderService)" as AppService
+participant "数据库\n(主库)" as Database
+participant "Outbox表" as Outbox
+participant "事件发布者\n(后台进程)" as Publisher
+participant "消息队列\n(Kafka)" as Kafka
+participant "读模型数据库\n(从库)" as ReadDB
+
+== 命令侧（写模型） ==
+User -> API: 提交创建订单请求
+API -> AppService: CreateOrder(cmd)
+group 数据库事务
+    AppService -> Database: 开启事务
+    AppService -> Database: INSERT订单数据
+    AppService -> Outbox: INSERT事件记录
+    AppService -> Database: 提交事务
+end
+API -> User: 返回操作成功
+
+== 事件侧（最终一致性） ==
+loop 后台轮询
+    Publisher -> Outbox: 查询未发布事件
+    Outbox --> Publisher: 返回事件列表
+    Publisher -> Kafka: Publish(event)
+    alt 发布成功
+        Publisher -> Outbox: 标记事件为已发布
+        Kafka -> ReadDB: 更新读模型
+    else 发布失败
+        Publisher -> Publisher: 等待重试
+    end
+end
+
+@enduml

@@ -1,35 +1,44 @@
 package file_handler
 
 import (
+	"bytes"
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/spf13/afero"
 	"path/filepath"
 	"strings"
 )
 
+type Config struct {
+	SrcFs       afero.Fs
+	NodeModules []afero.Fs
+	Env         env.IEnvConfig
+}
+
 type Handler struct {
-	fs        afero.Fs
+	cfg       *Config
 	pageCache *types.CMap[bool]
 	app       *iris.Application
 	vdata     map[string]any
 }
 
-func NewHandler(srcFs afero.Fs, app *iris.Application, data map[string]any) *Handler {
+func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handler {
 	f := &Handler{
 		app:       app,
-		fs:        srcFs,
+		cfg:       cfg,
 		pageCache: types.NewCMap[bool](),
 		vdata:     data,
 	}
 	ctx := context.Background()
-	if err := f.preloadDynamicPages(ctx, "/"); err != nil {
+	if err := f.preloadDynamicPages(ctx, nil, "/"); err != nil {
 		panic(err)
 	}
 	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
-	engine := NewEngine(srcFs, ".html")
+	engine := NewEngine(cfg.SrcFs, cfg.Env, ".html")
 	// 注册模板引擎到 Iris
 	app.RegisterView(engine)
 	return f
@@ -45,7 +54,6 @@ func (h *Handler) Handle(ictx iris.Context) {
 			utils.SetError(ictx, err)
 		}
 	}()
-
 	// 获取文件路径
 	fileName := "/" + ictx.Params().Get("file")
 	if fileName == "" || fileName == "/" {
@@ -53,10 +61,17 @@ func (h *Handler) Handle(ictx iris.Context) {
 	} else if !strings.Contains(fileName, ".") {
 		fileName = fileName + ".html"
 	}
+	logs.Infofmt(ctx, "", "file handle %s", fileName)
 
 	// 检查目录中存在文件
-	var isFound bool
-	isFound, err = IsFileExist(h.fs, fileName)
+	fs, _, isFound, err := h.isFileExist(fileName)
+	if err != nil {
+		return
+	}
+	// 对js和ts文件进行转换
+	if !isFound {
+		fs, fileName, isFound, err = h.GetJsTsFile(fileName)
+	}
 	if err != nil {
 		return
 	}
@@ -73,7 +88,7 @@ func (h *Handler) Handle(ictx iris.Context) {
 	isRender := false
 	isHtml := strings.HasSuffix(fileName, ".html")
 	if isHtml {
-		if isRender, err = h.renderFile(ctx, ictx, fileName); err != nil {
+		if isRender, err = h.renderFile(ctx, ictx, fs, fileName); err != nil {
 			ictx.StatusCode(iris.StatusInternalServerError)
 			ictx.SetErr(err)
 			return
@@ -81,7 +96,7 @@ func (h *Handler) Handle(ictx iris.Context) {
 
 	}
 	if !isRender {
-		err = h.writeFile(ictx, fileName)
+		err = h.writeFile(ictx, fs, fileName)
 	}
 	if err != nil {
 		ictx.StatusCode(iris.StatusInternalServerError)
@@ -90,8 +105,36 @@ func (h *Handler) Handle(ictx iris.Context) {
 
 }
 
-func (h *Handler) renderFile(ctx context.Context, ictx iris.Context, fileName string) (bool, error) {
-	isRender, err := isDynamicPage(ctx, h.fs, fileName)
+func (h *Handler) isFileExist(fileName string) (fs afero.Fs, resFileName string, exist bool, err error) {
+	resFileName = fileName
+	exist, err = afero.Exists(h.cfg.SrcFs, fileName)
+	if exist {
+		fs = h.cfg.SrcFs
+		return
+	}
+	for _, f := range h.cfg.NodeModules {
+		exist, err = afero.Exists(f, fileName)
+		if exist {
+			fs = f
+			return
+		}
+	}
+	return
+}
+
+func (h *Handler) GetJsTsFile(fileName string) (fs afero.Fs, resFileName string, exist bool, err error) {
+	if strings.HasSuffix(fileName, ".js") {
+		fileName = fileName[:len(fileName)-len(".js")] + ".ts"
+		fs, resFileName, exist, err = h.isFileExist(fileName)
+	} else if strings.HasSuffix(fileName, ".ts") {
+		fileName = fileName[:len(fileName)-len(".ts")] + ".js"
+		fs, resFileName, exist, err = h.isFileExist(fileName)
+	}
+	return fs, resFileName, exist, err
+}
+
+func (h *Handler) renderFile(ctx context.Context, ictx iris.Context, fs afero.Fs, fileName string) (bool, error) {
+	isRender, err := isDynamicPage(ctx, ictx, fs, fileName, h.cfg.Env.GetProdMode())
 	if isRender {
 		// 动态渲染模板
 		err = ictx.View(fileName, h.vdata)
@@ -100,31 +143,34 @@ func (h *Handler) renderFile(ctx context.Context, ictx iris.Context, fileName st
 	return false, nil
 }
 
-func (h *Handler) writeFile(ictx iris.Context, fileName string) error {
-	// 动态模板判断
-	/*
-		var content []byte
-		content, err := afero.ReadFile(h.fs, fileName)
-		if err != nil {
-			ictx.StatusCode(iris.StatusInternalServerError)
-			_, err = ictx.WriteString("Error reading template file")
-			return err
-		}
-		_, err = ictx.Write(content)
-	*/
+func (h *Handler) writeFile(ictx iris.Context, fs afero.Fs, fileName string) error {
 
-	file, err := h.fs.Open(fileName)
+	file, err := fs.Open(fileName)
 	if err != nil {
 		ictx.StatusCode(iris.StatusInternalServerError)
 		_, err = ictx.WriteString("Error reading template file")
 		return err
 	}
 
-	defer file.Close()
+	//defer file.Close()
 	info, err := file.Stat()
 	if err != nil {
 		ictx.StatusCode(iris.StatusInternalServerError)
 		_, err = ictx.WriteString("Error reading template file")
+		return err
+	}
+
+	if strings.HasSuffix(fileName, ".ts") {
+		tsData, err := afero.ReadFile(fs, fileName)
+		if err != nil {
+			return err
+		}
+		jsData, err := CompileTS(tsData)
+		if err != nil {
+			return err
+		}
+		reader := bytes.NewReader(jsData) // 直接返回 io.ReadSeeker
+		ictx.ServeContentWithRate(reader, fileName, info.ModTime(), 0, 0)
 		return err
 	}
 
@@ -142,12 +188,13 @@ func (h *Handler) writeFile(ictx iris.Context, fileName string) error {
 //	@param fs
 //	@param path
 //	@return error
-func (h *Handler) preloadDynamicPages(ctx context.Context, path string) error {
-	files, _ := afero.ReadDir(h.fs, path)
+func (h *Handler) preloadDynamicPages(ctx context.Context, ictx iris.Context, path string) error {
+	srcFs := h.cfg.SrcFs
+	files, _ := afero.ReadDir(srcFs, path)
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".html") {
 			fileName := path + file.Name()
-			isDynamic, err := isDynamicPage(ctx, h.fs, fileName)
+			isDynamic, err := isDynamicPage(ctx, ictx, srcFs, fileName, h.cfg.Env.GetProdMode())
 			if err != nil {
 				return err
 			}
@@ -169,6 +216,8 @@ func setContentType(ctx iris.Context, filename string) {
 	case ".css":
 		ctx.ContentType("text/css; charset=utf-8")
 	case ".js":
+		ctx.ContentType("application/javascript; charset=utf-8")
+	case ".ts":
 		ctx.ContentType("application/javascript; charset=utf-8")
 	case ".jpg", ".jpeg":
 		ctx.ContentType("image/jpeg; charset=utf-8")

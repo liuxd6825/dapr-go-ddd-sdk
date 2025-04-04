@@ -12,6 +12,7 @@ import (
 type Fs struct {
 	cfg   *Config
 	gitea *gitea.Client
+	tags  []string
 }
 
 func NewFs(cfg *Config) (afero.Fs, error) {
@@ -32,6 +33,10 @@ func NewGiteaClient(url, user, password string) (*gitea.Client, error) {
 		return client, err
 	}
 	return client, nil
+}
+
+func (s *Fs) Tags() []string {
+	return s.cfg.Tags
 }
 
 // Decode

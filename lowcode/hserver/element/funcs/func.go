@@ -10,11 +10,12 @@ import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/runtime"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -34,7 +35,7 @@ type Func struct {
 	runtime        *runtime.Pool
 	config         *element.FuncConfig
 	fs             afero.Fs
-	transType      runtime.TransformType //转换类型
+	transType      common.TransformType //转换类型
 	isBuildCode    bool
 	logger         logrus.FieldLogger
 	paramsTypeFile string // 参数文件
@@ -106,10 +107,10 @@ func (s *Func) BuildCode() error {
 					s.runCode = string(data)
 				}
 			}
-			
+
 			if s.runCode == "" {
 				//codeBytes, params, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
-				codeBytes, _, err := runtime.TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
+				codeBytes, _, err := TransformCode(s.config.Code, s.config.SrcFileName, s.config.TransType)
 				if err != nil {
 					return err
 				}

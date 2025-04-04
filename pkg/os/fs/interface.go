@@ -20,3 +20,7 @@ type Decode interface {
 type Reader interface {
 	ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error)
 }
+
+type Tags interface {
+	Tags() []string
+}

@@ -1,10 +1,15 @@
 package file_handler
 
 import (
+	"fmt"
 	"github.com/flosch/pongo2/v6"
+	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/spf13/afero"
+	"html/template"
 	"io"
 	"path/filepath"
 )
@@ -16,6 +21,7 @@ type Engine struct {
 	templates   *pongo2.TemplateSet    // Pongo2 模板集合
 	funcs       map[string]interface{} // 自定义模板函数
 	templateMap *types.CMap[*pongo2.Template]
+	env         env.IEnvConfig
 }
 
 func (e *Engine) Name() string {
@@ -27,16 +33,47 @@ func (e *Engine) Ext() string {
 }
 
 // NewEngine 创建一个新的 Afero Pongo2 引擎
-func NewEngine(fs afero.Fs, extension string) *Engine {
+func NewEngine(fs afero.Fs, env env.IEnvConfig, extension string) *Engine {
 	loader := NewLoader(fs)
 	set := pongo2.NewSet("afero", loader)
-	return &Engine{
+	engin := &Engine{
 		fs:          fs,
+		env:         env,
 		loader:      loader,
 		extension:   extension,
 		templates:   set,
 		templateMap: types.NewCMap[*pongo2.Template](),
 		funcs:       make(map[string]interface{}),
+	}
+	// 在注册时
+	//set.Globals["include"] = engin.includeHTML()
+	return engin
+}
+
+var ctxKey = "iris_ctx"
+
+func RegisterTemplateFuncs(app *iris.Application) {
+	app.OnAnyErrorCode(func(ctx iris.Context) {
+		// 确保错误页面也能获取到Context
+		ctx.ViewData(ctxKey, ctx)
+		ctx.Next()
+	})
+
+	app.Use(func(ctx iris.Context) {
+		ctx.ViewData(ctxKey, ctx)
+		ctx.Next()
+	})
+}
+
+func (e *Engine) includeHTML(workDir string) func(string) template.HTML {
+	return func(filename string) template.HTML {
+		fileName := fileutils.AbsPath(filename, &fileutils.ReadOptions{RootPath: "", WorkPath: workDir})
+		// 获取文件的绝对路径（可选，根据你的需求调整）
+		data, err := afero.ReadFile(e.fs, fileName)
+		if err != nil {
+			return template.HTML(fmt.Sprintf("<!-- 错误: 无法读取文件 %s: %v -->", fileName, err))
+		}
+		return template.HTML(data)
 	}
 }
 
@@ -46,18 +83,20 @@ func (e *Engine) Load() error {
 }
 
 // ExecuteWriter 渲染模板
-func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData interface{}) (err error) {
+func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData any) (err error) {
 	if filepath.Ext(filename) == "" {
 		filename += e.extension
 	}
 	fileName := "/" + filename
 
+	prodMode := e.env.GetProdMode()
+
 	var tmpl *pongo2.Template
-	var data []byte
+	var fileContent []byte
 	if t, ok := e.templateMap.Get(fileName); ok {
 		tmpl = t
 	} else {
-		data, err = afero.ReadFile(e.fs, fileName)
+		fileContent, err = afero.ReadFile(e.fs, fileName)
 		if err != nil {
 			return err
 		}
@@ -65,20 +104,28 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 
 	if tmpl == nil {
 		// 获取模板
-		tmpl, err = e.templates.FromBytes(data)
+		tmpl, err = e.templates.FromBytes(fileContent)
 		if err != nil {
 			return err
 		}
-		e.templateMap.Set(fileName, tmpl)
-	}
-	// 检查绑定数据
-	ctx, ok := bindingData.(map[string]any)
-	if !ok {
-		return errors.New("binding data should be of type map[string]interface{}")
+		if prodMode {
+			e.templateMap.Set(fileName, tmpl)
+		}
 	}
 
+	ctx, ok := w.(iris.Context)
+	if !ok {
+		println("ctx:", ctx)
+	}
+	data, ok := bindingData.(map[string]any)
+	if !ok {
+		return errors.New("the view engine binding data is not of type map[string]any")
+	}
+	workDir := filepath.Dir(fileName)
+	data["include"] = e.includeHTML(workDir)
+
 	// 渲染模板
-	return tmpl.ExecuteWriter(ctx, w)
+	return tmpl.ExecuteWriter(data, w)
 }
 
 // AddFunc 添加自定义模板函数

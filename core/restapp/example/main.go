@@ -13,6 +13,7 @@ var (
 )
 
 func main() {
+	restapp.GetEnvConfig()
 	//config := "./config.yaml"
 	cmd.StartCmd(func(flag *restapp.RunFlag) error {
 		opts := restapp.NewRunOptions().SetFlag(flag)

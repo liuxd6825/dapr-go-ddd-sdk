@@ -20,7 +20,8 @@ func TestHandler_Handle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := NewHandler(fs, app)
+	data := make(map[string]any)
+	handler := NewHandler(fs, app, data)
 	app.Handle("GET", "/{file:path}", handler.Handle)
 	err = app.Run(iris.Addr(":8080"))
 	if err != nil {

@@ -3,14 +3,15 @@ package file_handler
 import (
 	"context"
 	"fmt"
+	"github.com/kataras/iris/v12"
 	"github.com/spf13/afero"
 	"regexp"
 	"sync"
 )
 
 // 定义动态标记的正则表达式
-var dynamicMetaRegex = regexp.MustCompile(`<meta\s+name="dynamic-page"\s+content="true"\s*/?>`)
-var dynamicCommentRegex = regexp.MustCompile(`<!--\s*dynamic-page\s*-->`)
+var dynamicMetaRegex = regexp.MustCompile(`<meta\s+name="ssr"\s+content="true"\s*/?>`)
+var dynamicCommentRegex = regexp.MustCompile(`<!--\s*ssr\s*-->`)
 
 // 缓存文件的动态标记状态
 var dynamicCache sync.Map
@@ -22,10 +23,15 @@ func IsFileExist(fs afero.Fs, path string) (bool, error) {
 }
 
 // isDynamicPageRegex 使用正则表达式检查 HTML 文件是否是动态页面
-func isDynamicPage(ctx context.Context, fs afero.Fs, filePath string) (bool, error) {
+func isDynamicPage(ctx context.Context, ictx iris.Context, fs afero.Fs, filePath string, prodMode bool) (bool, error) {
+	if ictx != nil && ictx.Params().Exists("ssr") {
+		return true, nil
+	}
 	// 检查缓存
-	if cached, ok := dynamicCache.Load(filePath); ok {
-		return cached.(bool), nil
+	if prodMode {
+		if cached, ok := dynamicCache.Load(filePath); ok {
+			return cached.(bool), nil
+		}
 	}
 
 	// 打开文件
@@ -52,6 +58,8 @@ func isDynamicPage(ctx context.Context, fs afero.Fs, filePath string) (bool, err
 	isDynamic := dynamicMetaRegex.Match(content) || dynamicCommentRegex.Match(content)
 
 	// 缓存结果
-	dynamicCache.Store(filePath, isDynamic)
+	if prodMode {
+		dynamicCache.Store(filePath, isDynamic)
+	}
 	return isDynamic, nil
 }

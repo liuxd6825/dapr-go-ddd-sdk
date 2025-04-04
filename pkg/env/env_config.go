@@ -7,6 +7,7 @@ import (
 type IEnvConfig interface {
 	GetAppId() string
 	GetAppName() string
+	GetProdMode() bool
 
 	GetAppHttpHost() string
 	GetAppHttpPort() int

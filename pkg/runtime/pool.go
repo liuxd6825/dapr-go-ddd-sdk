@@ -84,7 +84,7 @@ func (p *Pool) run(runtime *Runtime, code string, opts ...RunOptions) (dat any, 
 	}()
 	for _, opt := range opts {
 		if opt != nil {
-			if err := opt(runtime.vm); err != nil {
+			if err := opt(runtime.VM); err != nil {
 				return nil, err
 			}
 		}

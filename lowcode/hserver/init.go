@@ -46,10 +46,16 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 		"server": server,
 		"pkg":    server.Pkg().Items(),
 	}
-	vApp := httpServer.App()
+	irisApp := httpServer.App()
 
 	if webFs != nil {
-		fileHandler := file_handler.NewHandler(webFs, vApp, vData)
+		nodeModulesFs := env.GetFsByTag("node-modules")
+		cfg := &file_handler.Config{
+			SrcFs:       webFs,
+			NodeModules: nodeModulesFs,
+			Env:         env,
+		}
+		fileHandler := file_handler.NewHandler(irisApp, vData, cfg)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)
 	}
 	if srcFs != nil && autoRestart {

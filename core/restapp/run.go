@@ -172,8 +172,7 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 // @param eventStorages
 // @param eventTypesFunc
 // @return error
-func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions ...*RunOptions,
-) (res common.Service, err error) {
+func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions ...*RunOptions) (res common.Service, err error) {
 
 	defer func() {
 		err = errors.GetRecoverError(err, recover())

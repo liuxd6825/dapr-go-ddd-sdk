@@ -10,8 +10,9 @@ import (
 )
 
 type Config struct {
-	Name string `yaml:"name"`
-	Path string `yaml:"path"`
+	Name string   `yaml:"name"`
+	Path string   `yaml:"path"`
+	Tags []string `yaml:"tags"`
 }
 
 type Fs struct {
@@ -34,6 +35,7 @@ func NewConfig(metadata map[string]any) (*Config, error) {
 	if cfg.Path == "" {
 		vErr.AppendField("path", "missing url")
 	}
+
 	if vErr.HasError() {
 		return nil, vErr
 	}
@@ -46,6 +48,10 @@ func NewFs(cfg Config) (afero.Fs, error) {
 		return nil, fmt.Errorf("localfs is not a OsFs")
 	}
 	return &Fs{OsFs: osFs, cfg: cfg, rootPath: cfg.Path}, nil
+}
+
+func (f *Fs) Tags() []string {
+	return f.cfg.Tags
 }
 
 func (f *Fs) NewWatcher() (fs.Watcher, error) {

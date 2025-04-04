@@ -9,10 +9,10 @@ import (
 )
 
 type Runtime struct {
-	vm          *goja.Runtime
-	moduleCache map[string]*goja.Object
+	VM          *goja.Runtime
+	ModuleCache map[string]*goja.Object
 	reader      fs.Reader
-	pkg         *types.CMap[any]
+	Pkg         *types.CMap[any]
 }
 
 // 模块缓存
@@ -24,13 +24,13 @@ func NewRuntime(reader fs.Reader, pkg *types.CMap[any]) *Runtime {
 	vm := goja.New()
 	vm.SetFieldNameMapper(fieldNameMapper)
 	r := &Runtime{
-		vm:          vm,
-		moduleCache: map[string]*goja.Object{},
+		VM:          vm,
+		ModuleCache: map[string]*goja.Object{},
 		reader:      reader,
-		pkg:         pkg,
+		Pkg:         pkg,
 	}
-	r.setRequire(r.vm, reader)
-	r.SetPkg(r.vm, r.pkg)
+	r.SetRequire(r.VM, reader)
+	r.SetPkg(r.VM, r.Pkg)
 	return r
 }
 
@@ -39,35 +39,35 @@ func (r *Runtime) SetPkg(vm *goja.Runtime, pkg *types.CMap[any]) error {
 }
 
 func (r *Runtime) RunString(code string) (goja.Value, error) {
-	return r.vm.RunString(code)
+	return r.VM.RunString(code)
 }
 
 func (r *Runtime) GetVM() *goja.Runtime {
-	return r.vm
+	return r.VM
 }
 
 func (r *Runtime) Set(name string, val any) error {
-	return r.vm.Set(name, val)
+	return r.VM.Set(name, val)
 }
 
 func (r *Runtime) Get(name string) goja.Value {
-	return r.vm.Get(name)
+	return r.VM.Get(name)
 }
 
 func (r *Runtime) NewObject() *goja.Object {
-	return r.vm.NewObject()
+	return r.VM.NewObject()
 }
 
 func (r *Runtime) NewDynamicObject(val goja.DynamicObject) *goja.Object {
-	return r.vm.NewDynamicObject(val)
+	return r.VM.NewDynamicObject(val)
 }
 
 func (r *Runtime) NewArray(item ...any) *goja.Object {
-	return r.vm.NewArray(item...)
+	return r.VM.NewArray(item...)
 }
 
 func (r *Runtime) NewDynamicArray(a goja.DynamicArray) *goja.Object {
-	return r.vm.NewDynamicArray(a)
+	return r.VM.NewDynamicArray(a)
 }
 
 type FieldNameMapper struct{}

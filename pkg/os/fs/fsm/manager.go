@@ -131,6 +131,32 @@ func (m *Manager) GetFs(name string) (afero.Fs, bool) {
 	return fs.(afero.Fs), true
 }
 
+func (m *Manager) GetFsByTag(tags ...string) (res []afero.Fs) {
+	res = make([]afero.Fs, 0)
+	for _, key := range m.fsMap.Keys() {
+		f, ok := m.fsMap.Get(key)
+		if ok {
+			fs := f.(afero.Fs)
+			if list, ok := f.(fs2.Tags); ok {
+				isAdd := false
+				for _, tag1 := range list.Tags() {
+					for _, tag2 := range tags {
+						if tag1 == tag2 {
+							isAdd = true
+							res = append(res, fs)
+							break
+						}
+					}
+					if isAdd {
+						break
+					}
+				}
+			}
+		}
+	}
+	return res
+}
+
 func (m *Manager) RemoveFs(name string) {
 	m.fsMap.Remove(name)
 }

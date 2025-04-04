@@ -3,7 +3,8 @@ package element
 import (
 	"context"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
+	//"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element/funcs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/jsonschema/v6"
@@ -13,20 +14,20 @@ import (
 )
 
 type FuncConfig struct {
-	FuncName    string                // 方法名称
-	Code        string                // 代码内容
-	CodeType    string                // 代码类型
-	SrcFileName string                // 源文件名称
-	UsePool     bool                  // 是否使用脚本缓存
-	ParamsUrl   string                // 方法参数定义
-	ParamsType  string                // 参数类型
-	TransType   runtime.TransformType //转换类型
-	Tags        []*FuncTag            // 其它扩展标签
-	Selection   *goquery.Selection    // HTML选择器
-	TimeoutAttr string                // 请求超时时间
-	TxAttr      string                // 数据库事务HTML属性
-	txDbKeys    []string              // 要开启的数据库事务
-	timeout     time.Duration         // 超时时间
+	FuncName    string               // 方法名称
+	Code        string               // 代码内容
+	CodeType    string               // 代码类型
+	SrcFileName string               // 源文件名称
+	UsePool     bool                 // 是否使用脚本缓存
+	ParamsUrl   string               // 方法参数定义
+	ParamsType  string               // 参数类型
+	TransType   common.TransformType //转换类型
+	Tags        []*FuncTag           // 其它扩展标签
+	Selection   *goquery.Selection   // HTML选择器
+	TimeoutAttr string               // 请求超时时间
+	TxAttr      string               // 数据库事务HTML属性
+	txDbKeys    []string             // 要开启的数据库事务
+	timeout     time.Duration        // 超时时间
 }
 
 type Func interface {

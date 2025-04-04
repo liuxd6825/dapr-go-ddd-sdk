@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/common"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/runtime"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/sirupsen/logrus"
@@ -16,7 +16,7 @@ type Manager struct {
 	funcs     *types.CMap[element.Func]
 	logger    logrus.FieldLogger
 	reader    fs.Reader
-	transType runtime.TransformType
+	transType common.TransformType
 }
 
 func NewFuncManager(logger logrus.FieldLogger, reader fs.Reader) *Manager {

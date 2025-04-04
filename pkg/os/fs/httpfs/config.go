@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	Name    string `json:"name"`
-	BaseUrl string `json:"baseUrl"`
+	Name    string   `yaml:"name"`
+	BaseUrl string   `yaml:"baseUrl"`
+	Tags    []string `yaml:"tags"`
 }
 
 func NewConfig(metadata map[string]any) (*Config, error) {

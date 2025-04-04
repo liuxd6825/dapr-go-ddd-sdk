@@ -19,6 +19,10 @@ func (f *Fs) Name() string {
 	return FsName
 }
 
+func (f *Fs) Tags() []string {
+	return f.cfg.Tags
+}
+
 func Name() string {
 	return FsName
 }

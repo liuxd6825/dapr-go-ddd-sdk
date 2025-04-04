@@ -78,20 +78,21 @@ type FsRootPath interface {
 
 // AppConfig
 // @Description:  应用配置
-// @Author:       liuxd
+// @Author:       liuxdl
 // @Date:         2021/10/18 10:57
 type AppConfig struct {
-	AppId     string            `yaml:"id" json:"id"`
-	AppName   string            `yaml:"name" json:"name"`
-	HttpHost  string            `yaml:"httpHost" json:"httpHost"`
-	HttpPort  int               `yaml:"httpPort" json:"httpPort"`
-	RootUrl   string            `yaml:"rootUrl" json:"rootUrl"`
-	CPU       *int              `yaml:"cpu" json:"cpu"`
-	Memory    *string           `yaml:"memory" json:"memory"`
-	Values    map[string]string `yaml:"values" json:"values"`
-	AuthToken string            `yaml:"authToken" json:"authToken"`
-	HServer   HServer           `yaml:"hServer" json:"hServer"`   // 脚本服务配置
-	Template  HtmlTemplate      `yaml:"template" json:"template"` // html模板配置
+	AppId     string            `yaml:"id" json:"id"`               // 应用ID
+	AppName   string            `yaml:"name" json:"name"`           // 应用名称
+	ProdMode  bool              `yaml:"prodMode" json:"prodMode"`   // 是生产模式
+	HttpHost  string            `yaml:"httpHost" json:"httpHost"`   // 绑定HTTP IP
+	HttpPort  int               `yaml:"httpPort" json:"httpPort"`   // 绑定HTTP 端口
+	RootUrl   string            `yaml:"rootUrl" json:"rootUrl"`     // URL根
+	CPU       *int              `yaml:"cpu" json:"cpu"`             // CPU数量
+	Memory    *string           `yaml:"memory" json:"memory"`       // 内存大小
+	Values    map[string]string `yaml:"values" json:"values"`       // 系统变量
+	AuthToken string            `yaml:"authToken" json:"authToken"` // 开发时Token
+	HServer   HServer           `yaml:"hServer" json:"hServer"`     // 脚本服务配置
+	Template  HtmlTemplate      `yaml:"template" json:"template"`   // html模板配置
 }
 
 func NewAppConfig() *AppConfig {
@@ -108,6 +109,10 @@ func (a *AppConfig) GetAppId() string {
 
 func (a *AppConfig) GetAppName() string {
 	return a.AppName
+}
+
+func (a *AppConfig) GetProdMode() bool {
+	return a.ProdMode
 }
 
 func (a *AppConfig) GetHttpHost() string {
@@ -331,6 +336,14 @@ func (e *EnvConfig) GetFsManager() *fsm.Manager {
 	return e.fsManager
 }
 
+func (e *EnvConfig) GetProdMode() bool {
+	return e.App.ProdMode
+}
+
+func (e *EnvConfig) GetValue() map[string]string {
+	return e.App.Values
+}
+
 func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
 	m := e.GetFsManager()
 	fs, ok := m.GetFs(name)
@@ -338,6 +351,12 @@ func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
 		return fs, nil
 	}
 	return nil, errors.New(" %s fs not exist", name)
+}
+
+func (e *EnvConfig) GetFsByTag(tags ...string) []afero.Fs {
+	m := e.GetFsManager()
+	fsList := m.GetFsByTag(tags...)
+	return fsList
 }
 
 func (s *HServer) GetEnable() bool {
