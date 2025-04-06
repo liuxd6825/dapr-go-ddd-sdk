@@ -52,7 +52,7 @@ func NewEngine(fs afero.Fs, env env.IEnvConfig, extension string) *Engine {
 
 var ctxKey = "iris_ctx"
 
-func RegisterTemplateFuncs(app *iris.Application) {
+func RegisterTemplateFunc(app *iris.Application) {
 	app.OnAnyErrorCode(func(ctx iris.Context) {
 		// 确保错误页面也能获取到Context
 		ctx.ViewData(ctxKey, ctx)

@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/spf13/afero"
@@ -23,7 +24,8 @@ type Handler struct {
 	cfg       *Config
 	pageCache *types.CMap[bool]
 	app       *iris.Application
-	vdata     map[string]any
+	vData     map[string]any
+	prodMode  bool
 }
 
 func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handler {
@@ -31,7 +33,8 @@ func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handle
 		app:       app,
 		cfg:       cfg,
 		pageCache: types.NewCMap[bool](),
-		vdata:     data,
+		vData:     data,
+		prodMode:  cfg.Env.GetProdMode(),
 	}
 	ctx := context.Background()
 	if err := f.preloadDynamicPages(ctx, nil, "/"); err != nil {
@@ -39,6 +42,9 @@ func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handle
 	}
 	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
 	engine := NewEngine(cfg.SrcFs, cfg.Env, ".html")
+
+	engine.AddFunc("litSSR", litSSR)
+
 	// 注册模板引擎到 Iris
 	app.RegisterView(engine)
 	return f
@@ -85,19 +91,7 @@ func (h *Handler) Handle(ictx iris.Context) {
 	// 不设置 Content-Type，浏览器将自动推断 MIME 类型
 	setContentType(ictx, fileName)
 
-	isRender := false
-	isHtml := strings.HasSuffix(fileName, ".html")
-	if isHtml {
-		if isRender, err = h.renderFile(ctx, ictx, fs, fileName); err != nil {
-			ictx.StatusCode(iris.StatusInternalServerError)
-			ictx.SetErr(err)
-			return
-		}
-
-	}
-	if !isRender {
-		err = h.writeFile(ictx, fs, fileName)
-	}
+	err = h.render(ctx, ictx, fs, fileName)
 	if err != nil {
 		ictx.StatusCode(iris.StatusInternalServerError)
 		ictx.SetErr(err)
@@ -133,30 +127,33 @@ func (h *Handler) GetJsTsFile(fileName string) (fs afero.Fs, resFileName string,
 	return fs, resFileName, exist, err
 }
 
-func (h *Handler) renderFile(ctx context.Context, ictx iris.Context, fs afero.Fs, fileName string) (bool, error) {
-	isRender, err := isDynamicPage(ctx, ictx, fs, fileName, h.cfg.Env.GetProdMode())
-	if isRender {
-		// 动态渲染模板
-		err = ictx.View(fileName, h.vdata)
-		return true, err
+func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fileName string) error {
+	var err error
+	isRender := false
+	isHtml := strings.HasSuffix(fileName, ".html")
+	if isHtml {
+		isRender, err = isDynamicPage(ctx, ictx, fs, fileName, h.prodMode)
+		if isRender {
+			err = ictx.View(fileName, h.vData)
+			return err
+		}
 	}
-	return false, nil
+	if isRender == false {
+		err = h.writeFile(ictx, fs, fileName)
+	}
+	return err
 }
 
 func (h *Handler) writeFile(ictx iris.Context, fs afero.Fs, fileName string) error {
-
 	file, err := fs.Open(fileName)
 	if err != nil {
-		ictx.StatusCode(iris.StatusInternalServerError)
-		_, err = ictx.WriteString("Error reading template file")
+		err = errors.New("Error reading template file ", fileName)
 		return err
 	}
 
 	//defer file.Close()
 	info, err := file.Stat()
 	if err != nil {
-		ictx.StatusCode(iris.StatusInternalServerError)
-		_, err = ictx.WriteString("Error reading template file")
 		return err
 	}
 
