@@ -17,6 +17,7 @@ type IFileService interface {
 	CreateFile(ctx context.Context, fileName string, data []byte, opts ...*Options) error
 	ReadFile(ctx context.Context, fileName string, opts ...*Options) ([]byte, error)
 	WriteFile(ctx context.Context, fileName string, data []byte, opts ...*Options) error
+	WriteJson(ctx context.Context, fileName string, data []byte, opts ...*Options) error
 	RemoveFile(ctx context.Context, fileName string, opts ...*Options) error
 	RenameFile(ctx context.Context, fileName string, newName string, opts ...*Options) error
 	CreatePath(ctx context.Context, folderName string, opts ...*Options) error
@@ -58,7 +59,11 @@ func (s *fileService) WriteFile(ctx context.Context, fileName string, schema []b
 	fs := s.fsPkg.Create(fileName, newFsOptions(opts...))
 	_, err := fs.Write(schema)
 	return err
+}
 
+func (s *fileService) WriteJson(ctx context.Context, fileName string, data []byte, opts ...*Options) error {
+	s.fsPkg.WriteJson(fileName, data, newFsOptions(opts...))
+	return nil
 }
 
 func (s *fileService) RemoveFile(ctx context.Context, fileName string, opts ...*Options) error {

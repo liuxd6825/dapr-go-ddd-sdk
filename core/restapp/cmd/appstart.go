@@ -36,7 +36,7 @@ func StartApp(opts *AppStartOptions) {
 				srcName := envCfg.SrcName
 				webName := envCfg.WebName
 
-				restapi.RegisterSchema(server.App(), "/api/v1.0/", server.EnvConfig(), "")
+				restapi.RegisterApi(server.App(), "/api/v1.0/", server.EnvConfig(), "")
 				return hserver.InitServer(flag.MainFile, srcName, webName, server, envCfg.WatchRestart)
 			}
 			return nil
