@@ -71,7 +71,7 @@ func (e *Engine) includeHTML(workDir string) func(string) template.HTML {
 		// 获取文件的绝对路径（可选，根据你的需求调整）
 		data, err := afero.ReadFile(e.fs, fileName)
 		if err != nil {
-			return template.HTML(fmt.Sprintf("<!-- 错误: 无法读取文件 %s: %v -->", fileName, err))
+			return template.HTML(fmt.Sprintf("<div> 错误: 无法读取文件 %s: %v </div>", fileName, err))
 		}
 		return template.HTML(data)
 	}
@@ -90,12 +90,22 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 	fileName := "/" + filename
 
 	prodMode := e.env.GetProdMode()
+	data, ok := bindingData.(map[string]any)
+	if !ok {
+		return errors.New("the view engine binding data is not of type map[string]any")
+	}
 
 	var tmpl *pongo2.Template
 	var fileContent []byte
+	if !prodMode {
+		if fc, ok := data["templateData"]; ok {
+			fileContent = fc.([]byte)
+		}
+	}
+
 	if t, ok := e.templateMap.Get(fileName); ok {
 		tmpl = t
-	} else {
+	} else if fileContent == nil {
 		fileContent, err = afero.ReadFile(e.fs, fileName)
 		if err != nil {
 			return err
@@ -117,10 +127,7 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 	if !ok {
 		println("ctx:", ctx)
 	}
-	data, ok := bindingData.(map[string]any)
-	if !ok {
-		return errors.New("the view engine binding data is not of type map[string]any")
-	}
+
 	workDir := filepath.Dir(fileName)
 	data["include"] = e.includeHTML(workDir)
 

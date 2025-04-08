@@ -3,6 +3,9 @@ package file_handler
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -26,28 +29,73 @@ type Handler struct {
 	app       *iris.Application
 	vData     map[string]any
 	prodMode  bool
+	webCfg    *WebConfig
+	htmlJs    *types.CMap[string]
 }
 
 func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handler {
+	webCfg := newWebConfig(cfg.SrcFs, "/hserver.config.json")
 	f := &Handler{
 		app:       app,
 		cfg:       cfg,
 		pageCache: types.NewCMap[bool](),
 		vData:     data,
 		prodMode:  cfg.Env.GetProdMode(),
+		webCfg:    webCfg,
+		htmlJs:    types.NewCMap[string](),
 	}
 	ctx := context.Background()
 	if err := f.preloadDynamicPages(ctx, nil, "/"); err != nil {
 		panic(err)
 	}
+
 	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
 	engine := NewEngine(cfg.SrcFs, cfg.Env, ".html")
 
-	engine.AddFunc("litSSR", litSSR)
+	app.Use(f.PathInterceptor)
+	// engine.AddFunc("litSSR", litSSR)
 
 	// 注册模板引擎到 Iris
 	app.RegisterView(engine)
 	return f
+}
+
+// 路径拦截器（支持.html.js和普通路径）
+func (h *Handler) PathInterceptor(ctx iris.Context) {
+	// 获取原始路径（如 /human/subdir/bill.html.js）
+	rawPath := ctx.Path()
+
+	// 仅拦截特定后缀的请求
+	if strings.HasSuffix(rawPath, ".html.js") {
+		ctx.StatusCode(200)
+		ctx.ContentType("application/javascript; charset=utf-8")
+		str, ok := h.htmlJs.Get(rawPath)
+		if ok {
+			ctx.WriteString(str)
+		}
+		return
+	}
+	ctx.Next() // 继续执行后续中间件/路由
+}
+
+func newWebConfig(fs afero.Fs, fileName string) *WebConfig {
+	exists, err := afero.Exists(fs, fileName)
+	if err != nil {
+		panic(err)
+	}
+	if !exists {
+		return &WebConfig{Npm: &Npm{Links: make([]*NpmLink, 0)}}
+	}
+	data, err := afero.ReadFile(fs, fileName)
+	if err != nil {
+		panic(err)
+	}
+	cfg := &WebConfig{}
+	err = json.Unmarshal(data, cfg)
+	if err != nil {
+		panic(err)
+	}
+	return cfg
 }
 
 func (h *Handler) Handle(ictx iris.Context) {
@@ -132,12 +180,54 @@ func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fi
 	isRender := false
 	isHtml := strings.HasSuffix(fileName, ".html")
 	if isHtml {
-		isRender, err = isDynamicPage(ctx, ictx, fs, fileName, h.prodMode)
+		fsData, err := afero.ReadFile(fs, fileName)
+		if err != nil {
+			return err
+		}
+		if !h.prodMode {
+			reader := bytes.NewReader(fsData)
+			doc, err := goquery.NewDocumentFromReader(reader)
+			if err != nil {
+				return err
+			}
+			fsData, err = parserHtml(doc, h.webCfg, func(scripts *goquery.Selection, sb *strings.Builder) {
+				if sb != nil {
+					scripts.Remove()
+					// 插入方式1：插入到#container末尾
+					doc.Find("body").AppendHtml(fmt.Sprintf(`<script type="module" src="%s"></script>`, fileName+".js"))
+					h.htmlJs.Set(fileName+".js", sb.String())
+				}
+			})
+			if err != nil {
+				return err
+			}
+			doc.Find("meta").Each(func(i int, s *goquery.Selection) {
+				name, exists := s.Attr("name")
+				if exists && name == "ssr" {
+					isRender = true
+				}
+			})
+		}
+		if !isRender {
+			isRender, err = h.isDynamicPage(ctx, ictx, fs, fileName, h.prodMode)
+			if err != nil {
+				return err
+			}
+		}
+
 		if isRender {
-			err = ictx.View(fileName, h.vData)
+			vdata := make(map[string]interface{})
+			for k, v := range h.vData {
+				vdata[k] = v
+			}
+			if fsData != nil {
+				vdata["templateData"] = fsData
+			}
+			err = ictx.View(fileName, vdata)
 			return err
 		}
 	}
+
 	if isRender == false {
 		err = h.writeFile(ictx, fs, fileName)
 	}
@@ -147,7 +237,7 @@ func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fi
 func (h *Handler) writeFile(ictx iris.Context, fs afero.Fs, fileName string) error {
 	file, err := fs.Open(fileName)
 	if err != nil {
-		err = errors.New("Error reading template file ", fileName)
+		err = errors.New("Error reading template file %s ", fileName)
 		return err
 	}
 
@@ -191,7 +281,7 @@ func (h *Handler) preloadDynamicPages(ctx context.Context, ictx iris.Context, pa
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".html") {
 			fileName := path + file.Name()
-			isDynamic, err := isDynamicPage(ctx, ictx, srcFs, fileName, h.cfg.Env.GetProdMode())
+			isDynamic, err := h.isDynamicPage(ctx, ictx, srcFs, fileName, h.cfg.Env.GetProdMode())
 			if err != nil {
 				return err
 			}
