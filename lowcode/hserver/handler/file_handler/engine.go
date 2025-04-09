@@ -33,13 +33,14 @@ func (e *Engine) Ext() string {
 }
 
 // NewEngine 创建一个新的 Afero Pongo2 引擎
-func NewEngine(fs afero.Fs, extension string) *Engine {
+func NewEngine(env *env.Env, fs afero.Fs, extension string) *Engine {
 	loader := NewLoader(fs)
 	set := pongo2.NewSet("afero", loader)
 	engin := &Engine{
 		fs:          fs,
 		loader:      loader,
 		extension:   extension,
+		env:         env,
 		templates:   set,
 		templateMap: types.NewCMap[*pongo2.Template](),
 		funcs:       make(map[string]interface{}),
@@ -83,6 +84,12 @@ func (e *Engine) Load() error {
 
 // ExecuteWriter 渲染模板
 func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bindingData any) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			err = errors.NewErr(err, "file_handler.Engine.ExecuteWriter()")
+		}
+	}()
 	if filepath.Ext(filename) == "" {
 		filename += e.extension
 	}
@@ -122,9 +129,8 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 		}
 	}
 
-	ctx, ok := w.(iris.Context)
-	if !ok {
-		println("ctx:", ctx)
+	if _, ok = w.(iris.Context); !ok {
+		return errors.New("the view engine binding context is not of type iris.Context")
 	}
 
 	workDir := filepath.Dir(fileName)

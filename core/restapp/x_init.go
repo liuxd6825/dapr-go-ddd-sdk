@@ -45,10 +45,10 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 	e.Init()
 	env.SetEnv(e)
 
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", e.App.AppId, e.Name))
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", e.App.HttpHost, e.App.HttpPort, e.App.RootUrl))
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", e.Dapr.GetHost(), e.Dapr.GetHttpPort(), e.Dapr.GetGrpcPort()))
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(e.Dapr.EventStores)))
+	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", e.App.AppId, e.Name))
+	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", e.App.HttpHost, e.App.HttpPort, e.App.RootUrl))
+	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", e.Dapr.GetHost(), e.Dapr.GetHttpPort(), e.Dapr.GetGrpcPort()))
+	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(e.Dapr.EventStores)))
 
 	// 注册领域事件类型
 	for _, t := range eventTypes {
@@ -96,20 +96,20 @@ func setCpuMemory(envName string, config *AppConfig) error {
 	if config.CPU != nil {
 		cpu, err := setCpu(*config.CPU)
 		if err != nil {
-			logs2.Errorf(ctx, "", fields, "ctype=app; envName=%s; cpu=%v; error=%s ", envName, cpu, err.Error())
+			logs2.Errorf(ctx, fields, "ctype=app; envName=%s; cpu=%v; error=%s ", envName, cpu, err.Error())
 			return err
 		} else {
-			logs2.Infof(ctx, "", fields, "ctype=app; cpu=%v;", cpu)
+			logs2.Infof(ctx, fields, "ctype=app; cpu=%v;", cpu)
 		}
 	}
 
 	if config.Memory != nil {
 		memTxt, err := setMem(*config.Memory)
 		if err != nil {
-			logs2.Errorf(ctx, "", fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
+			logs2.Errorf(ctx, fields, "ctype=app; memory=%s; error=%s; 值不正确。示例: 10G, 10M, 10K", envName, memTxt, err.Error())
 			return err
 		} else {
-			logs2.Infof(ctx, "", fields, "ctype=app; memory=%s; ", memTxt)
+			logs2.Infof(ctx, fields, "ctype=app; memory=%s; ", memTxt)
 		}
 	}
 
@@ -168,7 +168,7 @@ func newEventStores(cfg *env.Dapr, client dapr2.DaprClient) map[string]ddd.Event
 	}
 	esMap := cfg.EventStores
 	if len(esMap) == 0 {
-		logs2.Panicf(context.Background(), "", nil, "config eventStores is empity")
+		logs2.Panicf(context.Background(), nil, "config eventStores is empity")
 	} else {
 		var defEs ddd.EventStore
 		for _, item := range esMap {

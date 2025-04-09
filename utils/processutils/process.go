@@ -36,11 +36,11 @@ func NewProcess(cmdName string, args []string, checkArgs ...string) Process {
 }
 
 func logInfo(format string, args ...interface{}) {
-	logs.Infof(nil, "", nil, format, args)
+	logs.Infof(nil, nil, format, args)
 }
 
 func logError(format string, args ...interface{}) {
-	logs.Errorf(nil, "", nil, format, args)
+	logs.Errorf(nil, nil, format, args)
 }
 
 func (p *process) Start() error {

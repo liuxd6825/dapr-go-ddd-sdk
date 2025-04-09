@@ -154,7 +154,7 @@ func (c *WebContext) ReadObject(sch *jsonschema.Schema) map[string]any {
 	}
 
 	schema.ApplyDefaults(sch, val)
-	
+
 	object, ok := val.(map[string]any)
 	if !ok {
 		panic("ReadObject() invalid object")
@@ -333,7 +333,7 @@ func (c *WebContext) SetError(errOrMsg any, httpStatus ...int) {
 		err = errors.New("未知的错误类型")
 	}
 
-	logs.Error(c.ctx, c.GetTenantId(), logs.Fields{"errorId": errId, "error": err})
+	logs.Error(c.ctx, logs.Fields{"errorId": errId, "error": err})
 	if logs.GetLevel() == 0 {
 		c.ictx.SetErr(err)
 	} else {

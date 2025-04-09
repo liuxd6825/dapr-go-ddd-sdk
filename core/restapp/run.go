@@ -168,7 +168,7 @@ func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions .
 		err = errors.GetRecoverError(err, recover())
 		if err != nil {
 			fmt.Println("exit error " + err.Error())
-			logs.Errorf(context.Background(), "", nil, "exit error %s", err.Error())
+			logs.Errorf(context.Background(), nil, "exit error %s", err.Error())
 		}
 	}()
 	opt := NewRunOptions(runOptions...)

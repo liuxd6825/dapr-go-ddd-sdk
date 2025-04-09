@@ -60,6 +60,7 @@ func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName str
 		cfg := &file_handler.Config{
 			SrcFs:       webFs,
 			NodeModules: nodeModulesFs,
+			Env:         env,
 		}
 		fileHandler := file_handler.NewHandler(irisApp, vData, cfg)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)

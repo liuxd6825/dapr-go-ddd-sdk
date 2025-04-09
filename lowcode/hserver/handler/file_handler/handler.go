@@ -18,6 +18,7 @@ import (
 )
 
 type Config struct {
+	Env         *env.Env
 	SrcFs       afero.Fs
 	NodeModules []afero.Fs
 }
@@ -47,7 +48,7 @@ func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handle
 	}
 
 	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
-	engine := NewEngine(cfg.SrcFs, ".html")
+	engine := NewEngine(cfg.Env, cfg.SrcFs, ".html")
 
 	app.Use(f.PathInterceptor)
 	// engine.AddFunc("litSSR", litSSR)
@@ -57,7 +58,7 @@ func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handle
 	return f
 }
 
-// 路径拦截器（支持.html.js和普通路径）
+// PathInterceptor 路径拦截器（支持.html.js和普通路径）
 func (h *Handler) PathInterceptor(ctx iris.Context) {
 	// 获取原始路径（如 /human/subdir/bill.html.js）
 	rawPath := ctx.Path()
@@ -97,14 +98,13 @@ func newWebConfig(fs afero.Fs, fileName string) *WebConfig {
 
 func (h *Handler) Handle(ictx iris.Context) {
 	var err error
-	ctx := context.Background()
-
 	defer func() {
 		err = utils.RecoverError(err, recover())
 		if err != nil {
 			utils.SetError(ictx, err)
 		}
 	}()
+	ctx := context.Background()
 	// 获取文件路径
 	fileName := "/" + ictx.Params().Get("file")
 	if fileName == "" || fileName == "/" {

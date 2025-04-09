@@ -28,7 +28,7 @@ func LoadEvents(ctx context.Context, req *dapr.LoadEventsRequest, eventStorageKe
 		"level":     logs.InfoLevel,
 	}
 
-	err = logs.DebugStart(ctx, req.TenantId, fields, func() error {
+	err = logs.DebugStart(ctx, fields, func() error {
 		eventStorage, e := GetEventStore(eventStorageKey)
 		if e != nil {
 			resp, err = nil, e

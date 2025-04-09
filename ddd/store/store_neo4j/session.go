@@ -81,7 +81,7 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc store.SessionF
 		})
 	}
 	if err != nil {
-		logs.ErrorErr(ctx, "", err)
+		logs.ErrorErr(ctx, err)
 	}
 	return err
 }

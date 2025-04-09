@@ -63,7 +63,7 @@ func initRedis(env *Env) {
 		})
 
 		if _, err := rdb.Ping(context.Background()).Result(); err != nil {
-			logs.Errorf(context.Background(), "", nil, "连接neo4j失败, host:%s, error:%s  ", c.Host, err.Error())
+			logs.Errorf(context.Background(), nil, "连接neo4j失败, host:%s, error:%s  ", c.Host, err.Error())
 			os.Exit(0)
 		}
 		c.DbKey = strings.ToLower(key)

@@ -67,7 +67,7 @@ func SetError(ctx context.Context, err error) {
 	if err == nil {
 		return
 	}
-	logs.Error(ctx, "", logs.Fields{"error": err.Error()})
+	logs.Error(ctx, logs.Fields{"error": err.Error()})
 
 	ictx, ok := appctx.GetIrisContext(ctx)
 	if !ok {
@@ -116,11 +116,11 @@ func DoCmd(ictx iris.Context, tenantId string, fun CmdFunc, opts ...DoOptions) (
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
 			SetError(ctx, err)
-			logs.ErrorErr(ctx, tenantId, err)
+			logs.ErrorErr(ctx, err)
 		}
 	}()
 
-	err = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
+	err = logs.DebugStart(ctx, newLogFields(ictx), func() error {
 		return fun(ctx)
 	})
 
@@ -161,11 +161,11 @@ func Do(ictx iris.Context, tenantId string, fun func(ctx context.Context) error,
 
 	defer func() {
 		if err = errors.GetRecoverError(err, recover()); err != nil {
-			logs.ErrorErr(ctx, tenantId, err)
+			logs.ErrorErr(ctx, err)
 		}
 	}()
 	if fun != nil {
-		err = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
+		err = logs.DebugStart(ctx, newLogFields(ictx), func() error {
 			return fun(ctx)
 		})
 		if err != nil {
@@ -194,7 +194,7 @@ func DoDto[T any](ictx iris.Context, tenantId string, fun func(ctx context.Conte
 		}
 	}()
 	if fun != nil {
-		_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
+		_ = logs.DebugStart(ctx, newLogFields(ictx), func() error {
 			dto, err = fun(ctx)
 			return err
 		})
@@ -229,7 +229,7 @@ func DoQueryOne(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOpt
 		}
 	}()
 
-	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
+	_ = logs.DebugStart(ctx, newLogFields(ictx), func() error {
 		data, _, err = fun(ctx)
 		return err
 	})
@@ -272,7 +272,7 @@ func DoQuery(ictx iris.Context, tenantId string, fun QueryFunc, opts ...DoOption
 		}
 	}()
 
-	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
+	_ = logs.DebugStart(ctx, newLogFields(ictx), func() error {
 		data, isFound, err = fun(ctx)
 		return err
 	})
@@ -364,7 +364,7 @@ func doCmdAndQuery(ictx iris.Context, tenantId string, queryAppId string, isGetO
 		}
 	}()
 
-	_ = logs.DebugStart(ctx, tenantId, newLogFields(ictx), func() error {
+	_ = logs.DebugStart(ctx, newLogFields(ictx), func() error {
 		err = DoCmd(ictx, tenantId, cmdFun)
 		return err
 	})

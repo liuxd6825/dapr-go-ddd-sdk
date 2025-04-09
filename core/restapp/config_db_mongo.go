@@ -75,7 +75,7 @@ func NewDddMongodbConfig(c *MongoConfig) *mongodb.Config {
 func newMongoMonitor() *event.CommandMonitor {
 	monitor := &event.CommandMonitor{}
 	monitor.Failed = func(ctx context.Context, failedEvent *event.CommandFailedEvent) {
-		logs.Errorf(context.Background(), "", nil, "Mongodb CommandMonitor Failed %s", func() any {
+		logs.Errorf(context.Background(), nil, "Mongodb CommandMonitor Failed %s", func() any {
 			if text, err := jsonutils.Marshal(failedEvent); err != nil {
 				return err.Error()
 			} else {
@@ -85,7 +85,7 @@ func newMongoMonitor() *event.CommandMonitor {
 	}
 	/*
 		monitor.Succeeded = func(ctx context.Context, succeededEvent *event.CommandSucceededEvent) {
-			logs.Infof(context.Background(), "", nil, "Mongodb CommandMonitor Succeeded %s", func() any {
+			logs.Infof(context.Background(), nil, "Mongodb CommandMonitor Succeeded %s", func() any {
 				if text, err := jsonutils.Marshal(succeededEvent); err != nil {
 					return err.Error()
 				} else {
@@ -94,7 +94,7 @@ func newMongoMonitor() *event.CommandMonitor {
 			})
 		}
 		monitor.Started = func(ctx context.Context, startedEvent *event.CommandStartedEvent) {
-			logs.Infof(context.Background(), "", nil, "Mongodb CommandMonitor Started %s", func() any {
+			logs.Infof(context.Background(), nil, "Mongodb CommandMonitor Started %s", func() any {
 				if text, err := jsonutils.Marshal(startedEvent); err != nil {
 					return err.Error()
 				} else {
@@ -109,25 +109,25 @@ func newMongoMonitor() *event.CommandMonitor {
 func newMongoServerMonitor() *event.ServerMonitor {
 	monitor := &event.ServerMonitor{}
 	monitor.ServerClosed = func(event *event.ServerClosedEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerClosed Address=%s, TopologyID=%v  ", event.Address, event.TopologyID)
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor ServerClosed Address=%s, TopologyID=%v  ", event.Address, event.TopologyID)
 	}
 	monitor.ServerHeartbeatFailed = func(event *event.ServerHeartbeatFailedEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerHeartbeatFailed Failure=%s ", event.Failure.Error())
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor ServerHeartbeatFailed Failure=%s ", event.Failure.Error())
 	}
 	monitor.ServerDescriptionChanged = func(event *event.ServerDescriptionChangedEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerDescriptionChanged Address=%s, NewDescription=%v  ", event.Address, event.NewDescription)
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor ServerDescriptionChanged Address=%s, NewDescription=%v  ", event.Address, event.NewDescription)
 	}
 	monitor.ServerOpening = func(event *event.ServerOpeningEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor ServerOpening Address=%s, TopologyID=%v  ", event.Address, event.TopologyID)
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor ServerOpening Address=%s, TopologyID=%v  ", event.Address, event.TopologyID)
 	}
 	monitor.TopologyClosed = func(event *event.TopologyClosedEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor TopologyClosed TopologyID=%v ", event.TopologyID)
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor TopologyClosed TopologyID=%v ", event.TopologyID)
 	}
 	monitor.TopologyDescriptionChanged = func(event *event.TopologyDescriptionChangedEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor TopologyDescriptionChanged TopologyID=%s, NewDescription=%v  ", event.TopologyID, event.NewDescription)
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor TopologyDescriptionChanged TopologyID=%s, NewDescription=%v  ", event.TopologyID, event.NewDescription)
 	}
 	monitor.TopologyOpening = func(event *event.TopologyOpeningEvent) {
-		logs.Infof(context.Background(), "", nil, "Mongodb ServerMonitor TopologyOpening TopologyID=%v  ", event.TopologyID)
+		logs.Infof(context.Background(), nil, "Mongodb ServerMonitor TopologyOpening TopologyID=%v  ", event.TopologyID)
 	}
 	return monitor
 }

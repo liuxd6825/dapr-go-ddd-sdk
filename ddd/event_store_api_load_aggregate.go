@@ -37,7 +37,7 @@ func (o *LoadAggregateOptions) Merge(opts ...*LoadAggregateOptions) *LoadAggrega
 // @return err 错误
 func LoadAggregate(ctx context.Context, tenantId string, aggregateId string, aggregate any, opts ...*LoadAggregateOptions) (agg Aggregate, isFound bool, err error) {
 	options := NewLoadAggregateOptions().Merge(opts...)
-	err = logs.DebugStart(ctx, "", nil, func() error {
+	err = logs.DebugStart(ctx, nil, func() error {
 		eventStorage, e := GetEventStore(options.eventStorageKey)
 		if e != nil {
 			agg, isFound, err = nil, false, e

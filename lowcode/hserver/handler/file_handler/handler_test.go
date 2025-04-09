@@ -23,6 +23,7 @@ func TestHandler_Handle(t *testing.T) {
 	data := make(map[string]any)
 	cfg := &Config{
 		SrcFs: fs,
+		Env:   nil,
 	}
 
 	handler := NewHandler(app, data, cfg)

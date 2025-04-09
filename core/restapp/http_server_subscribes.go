@@ -55,7 +55,7 @@ func (s *HttpServer) subscribesHandler(ictx *context.Context) {
 				"func":  "restapp.HttpServer.subscribesHandler()",
 				"error": err.Error(),
 			}
-			logs.Error(ctx, "", fields)
+			logs.Error(ctx, fields)
 		}
 	}()
 

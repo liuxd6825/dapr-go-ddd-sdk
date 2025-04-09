@@ -96,9 +96,8 @@ func isLevel(lvl Level) bool {
 	return false
 }
 
-func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
+func getFields(ctx context.Context, fields Fields) Fields {
 	f := Fields{}
-
 	for key, val := range fields {
 		if fun, ok := val.(ArgFunc); ok {
 			f[key] = fun()
@@ -111,27 +110,24 @@ func getFields(ctx context.Context, tenantId string, fields Fields) Fields {
 			SetField(f, "userId", user.GetId())
 			SetField(f, "userName", user.GetName())
 		}
-		if tenantId == "" {
-			tenantId, _ = appctx2.GetTenantId(ctx)
-		}
-		if tenantId != "" {
+		if tenantId, ok := appctx2.GetTenantId(ctx); ok {
 			SetField(f, "tenantId", tenantId)
 		}
 	}
 	return f
 }
 
-func write(ctx context.Context, tenantId string, fields Fields, level Level, args []any, fun func(ctx context.Context, l Logger, args ...any)) {
+func write(ctx context.Context, fields Fields, level Level, args []any, fun func(ctx context.Context, l Logger, args ...any)) {
 	if !isLevel(level) {
 		return
 	}
-	print(ctx, tenantId, fields, args, fun)
+	print(ctx, fields, args, fun)
 }
 
-func print(ctx context.Context, tenantId string, fields Fields, args []any, fun func(ctx context.Context, l Logger, args ...any)) {
+func print(ctx context.Context, fields Fields, args []any, fun func(ctx context.Context, l Logger, args ...any)) {
 	var entry *logrus.Entry
 	arg := getArgs(getArgs(args...)...)
-	fs := getFields(ctx, tenantId, fields)
+	fs := getFields(ctx, fields)
 	entry = logger.WithFields(fs)
 	fun(ctx, entry, arg...)
 }
@@ -148,44 +144,44 @@ func GetLevel() Level {
 	return loggerLevel
 }
 
-func Trace(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
-	write(ctx, tenantId, fields, TraceLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Trace(ctx context.Context, fields Fields, args ...interface{}) {
+	write(ctx, fields, TraceLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Trace(args...)
 	})
 }
 
-func Print(ctx context.Context, tenantId string, fields Fields) {
-	print(ctx, tenantId, fields, nil, func(ctx context.Context, l Logger, args ...any) {
+func Print(ctx context.Context, fields Fields) {
+	print(ctx, fields, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Print()
 	})
 }
 
-func Printf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...any) {
-	print(ctx, tenantId, fields, nil, func(ctx context.Context, l Logger, args ...any) {
+func Printf(ctx context.Context, fields Fields, fmt string, args ...any) {
+	print(ctx, fields, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Printf(fmt, args)
 	})
 }
 
-func Println(ctx context.Context, tenantId string, fields Fields, fmt string, args ...any) {
-	print(ctx, tenantId, fields, nil, func(ctx context.Context, l Logger, args ...any) {
+func Println(ctx context.Context, fields Fields, fmt string, args ...any) {
+	print(ctx, fields, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Println()
 	})
 }
 
-func Debug(ctx context.Context, tenantId string, fields Fields) {
-	write(ctx, tenantId, fields, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+func Debug(ctx context.Context, fields Fields) {
+	write(ctx, fields, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Debug()
 	})
 }
 
-func DebugMsg(ctx context.Context, tenantId string, args ...any) {
-	write(ctx, tenantId, nil, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func DebugMsg(ctx context.Context, args ...any) {
+	write(ctx, nil, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Debug(args...)
 	})
 }
 
-func Debugf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
-	write(ctx, tenantId, fields, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Debugf(ctx context.Context, fields Fields, fmt string, args ...interface{}) {
+	write(ctx, fields, DebugLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Debugf(fmt, args...)
 	})
 }
@@ -195,125 +191,126 @@ func DebugEvent(ctx context.Context, event Event, funcName string) {
 		data, _ := json.Marshal(event)
 		return string(data)
 	}
-	Debug(ctx, event.GetTenantId(), Fields{"event": eventFunc, "func": funcName})
+	Debug(ctx, Fields{"event": eventFunc, "func": funcName})
 }
 
-func Debugfmt(ctx context.Context, tenantId string, fmt string, args ...interface{}) {
-	write(ctx, tenantId, nil, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Debugfmt(ctx context.Context, fmt string, args ...interface{}) {
+	write(ctx, nil, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Debugf(fmt, args...)
 	})
 }
 
-func Info(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
-	write(ctx, tenantId, fields, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Info(ctx context.Context, fields Fields, args ...interface{}) {
+	write(ctx, fields, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Info(args...)
 	})
 }
 
-func Infof(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
-	write(ctx, tenantId, fields, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Infof(ctx context.Context, fields Fields, fmt string, args ...interface{}) {
+	write(ctx, fields, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Infof(fmt, args...)
 	})
 }
 
-func InfoMsg(ctx context.Context, tenantId string, args ...any) {
-	write(ctx, tenantId, nil, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func InfoMsg(ctx context.Context, args ...any) {
+	write(ctx, nil, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Info(args...)
 	})
 }
 
-func Infofmt(ctx context.Context, tenantId string, fmt string, args ...any) {
-	write(ctx, tenantId, nil, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Infofmt(ctx context.Context, fmt string, args ...any) {
+	write(ctx, nil, InfoLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Infof(fmt, args...)
 	})
 }
 
-func Warn(ctx context.Context, tenantId string, fields Fields) {
-	write(ctx, tenantId, fields, WarnLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+func Warn(ctx context.Context, fields Fields) {
+	write(ctx, fields, WarnLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Warn()
 	})
 }
 
-func Warnf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
-	write(ctx, tenantId, fields, WarnLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Warnf(ctx context.Context, fields Fields, fmt string, args ...interface{}) {
+	write(ctx, fields, WarnLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Infof(fmt, args...)
 	})
 }
 
-func WarnMsg(ctx context.Context, tenantId string, args ...any) {
-	write(ctx, tenantId, nil, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+func WarnMsg(ctx context.Context, args ...any) {
+	write(ctx, nil, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Warn(args...)
 	})
 }
 
-func Warning(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
-	write(ctx, tenantId, fields, WarnLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Warning(ctx context.Context, fields Fields, args ...interface{}) {
+	write(ctx, fields, WarnLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Warning(args...)
 	})
 }
 
-func Error(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
-	write(ctx, tenantId, fields, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Error(ctx context.Context, fields Fields, args ...interface{}) {
+	write(ctx, fields, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Error(args...)
 	})
 }
 
-func ErrorErr(ctx context.Context, tenantId string, err error) {
+func ErrorErr(ctx context.Context, err error) {
 	if err == nil {
 		return
 	}
 	fields := Fields{
-		"error": err.Error(),
+		"error": errors.WithStack(err),
 	}
-	write(ctx, tenantId, fields, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+
+	write(ctx, fields, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Error(args...)
 	})
 }
 
-func Errorf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
-	write(ctx, tenantId, fields, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Errorf(ctx context.Context, fields Fields, fmt string, args ...interface{}) {
+	write(ctx, fields, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Errorf(fmt, args...)
 	})
 }
 
-func Errorfmt(ctx context.Context, tenantId string, fmt string, args ...interface{}) {
-	write(ctx, tenantId, nil, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Errorfmt(ctx context.Context, fmt string, args ...interface{}) {
+	write(ctx, nil, ErrorLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Errorf(fmt, args...)
 	})
 }
 
-func ErrorMsg(ctx context.Context, tenantId string, args ...any) {
-	write(ctx, tenantId, nil, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+func ErrorMsg(ctx context.Context, args ...any) {
+	write(ctx, nil, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Error(args...)
 	})
 }
 
-func Panic(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
-	write(ctx, tenantId, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Panic(ctx context.Context, fields Fields, args ...interface{}) {
+	write(ctx, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panic(args...)
 	})
 }
 
-func Panicf(ctx context.Context, tenantId string, fields Fields, fmt string, args ...interface{}) {
-	write(ctx, tenantId, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Panicf(ctx context.Context, fields Fields, fmt string, args ...interface{}) {
+	write(ctx, fields, PanicLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panicf(fmt, args...)
 	})
 }
 
-func PanicError(ctx context.Context, tenantId string, err error) {
-	write(ctx, tenantId, nil, PanicLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+func PanicError(ctx context.Context, err error) {
+	write(ctx, nil, PanicLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 		l.Panicln(err)
 	})
 }
 
-func Fatal(ctx context.Context, tenantId string, fields Fields, args ...interface{}) {
-	write(ctx, tenantId, fields, FatalLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func Fatal(ctx context.Context, fields Fields, args ...interface{}) {
+	write(ctx, fields, FatalLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panic(args...)
 	})
 }
 
-func FatalMsg(ctx context.Context, tenantId string, args ...interface{}) {
-	write(ctx, tenantId, nil, FatalLevel, args, func(ctx context.Context, l Logger, args ...any) {
+func FatalMsg(ctx context.Context, args ...interface{}) {
+	write(ctx, nil, FatalLevel, args, func(ctx context.Context, l Logger, args ...any) {
 		l.Panic(args...)
 	})
 }
@@ -328,7 +325,7 @@ func FatalMsg(ctx context.Context, tenantId string, args ...interface{}) {
 //	@param format
 //	@param args
 //	@return err
-func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() error) (err error) {
+func DebugStart(ctx context.Context, fields Fields, fun func() error) (err error) {
 	if isLevel(DebugLevel) {
 		logId := idutils.NewId()
 		funcName := runtimeutils.GetFuncName(2)
@@ -340,7 +337,7 @@ func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() 
 		for key, val := range fields {
 			fs[key] = val
 		}
-		write(ctx, tenantId, fs, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+		write(ctx, fs, DebugLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 			l.Debug()
 		})
 		startTime := time.Now()
@@ -351,7 +348,7 @@ func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() 
 				logLevel = ErrorLevel
 				SetField(fs, "error", err.Error())
 			}
-			write(ctx, tenantId, fs, logLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+			write(ctx, fs, logLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 				if logLevel == ErrorLevel {
 					l.Error()
 				} else if logLevel == DebugLevel {
@@ -370,7 +367,7 @@ func DebugStart(ctx context.Context, tenantId string, fields Fields, fun func() 
 	} else {
 		defer func() {
 			if err = errors.GetRecoverError(err, recover()); err != nil {
-				write(ctx, tenantId, nil, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
+				write(ctx, nil, ErrorLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 					l.Error()
 				})
 			}

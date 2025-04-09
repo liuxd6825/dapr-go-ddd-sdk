@@ -3,6 +3,7 @@ package errors
 import (
 	"errors"
 	"fmt"
+	errors2 "github.com/pkg/errors"
 )
 
 func GetMessage(e any) (res string, ok bool) {
@@ -74,4 +75,8 @@ func GetRecoverError(err error, rerr any) (resErr error) {
 		}
 	}
 	return resErr
+}
+
+func WithStack(err error) error {
+	return errors2.WithStack(err)
 }

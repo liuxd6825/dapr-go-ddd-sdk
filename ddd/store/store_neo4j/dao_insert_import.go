@@ -212,7 +212,7 @@ func (d *Dao[T]) importCsv(ctx context.Context, cmd ImportCsvCmd, opts ...store.
 
 	_, err = session.Run(ctx, cypher.String(), nil)
 	if err != nil {
-		logs.Error(ctx, cmd.TenantId, logs.Fields{"cypher": cypher.String()})
+		logs.Error(ctx, logs.Fields{"cypher": cypher.String()})
 	}
 	return err
 }
@@ -430,9 +430,7 @@ func (d *Dao[T]) ImportJson(ctx context.Context, cmd ImportJsonCmd, opts ...stor
 
 	cypher := fmt.Sprintf(`CALL apoc.import.json("file:///%s",{cleanup:false, importIdName:"id"} )`, cmd.ImportFile)
 
-	fmt.Println("***********")
-	logs.Debug(ctx, "", logs.Fields{"cypher": cypher})
-	fmt.Println("***********")
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 
 	session := d.Driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer session.Close(ctx)

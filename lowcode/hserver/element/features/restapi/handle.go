@@ -69,7 +69,7 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 			logs.Errorfmt(ctx, "", "%s error:%s", ictx.Request().RequestURI, err.Error())
 		}
 	}()
-	logs.Infof(ctx, "", nil, "request %s %s", ictx.Request().Method, ictx.Request().RequestURI)
+	logs.Infof(ctx, nil, "request %s %s", ictx.Request().Method, ictx.Request().RequestURI)
 
 	ctx, err = restapp.NewContext(ictx)
 	if err != nil {

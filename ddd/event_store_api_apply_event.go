@@ -230,7 +230,7 @@ func PublishEvents(ctx context.Context, callEventType CallEventType, aggregate A
 	//默认事件溯源为true
 	defaultIsSourcing := true
 
-	err = logs.DebugStart(ctx, tenantId, field, func() error {
+	err = logs.DebugStart(ctx, field, func() error {
 		var eventStore EventStore
 		applyEvents := make([]*dapr2.EventDto, 0)
 

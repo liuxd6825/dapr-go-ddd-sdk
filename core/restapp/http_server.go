@@ -146,7 +146,7 @@ func (s *HttpServer) Start() error {
 	ctx := logs.NewContext(context2.Background())
 	defer func() {
 		if err := errors.GetRecoverError(nil, recover()); err != nil {
-			logs.Info(ctx, "", logs.Fields{"func": "restapp.HttpServer.Start()", "error": err.Error()})
+			logs.Info(ctx, logs.Fields{"func": "restapp.HttpServer.Start()", "error": err.Error()})
 		}
 	}()
 	app := s.app

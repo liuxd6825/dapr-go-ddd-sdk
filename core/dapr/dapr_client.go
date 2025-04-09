@@ -144,11 +144,11 @@ func newDaprClient(ctx context.Context, host string, grpcPort int64, retry uint)
 
 	for i := 0; i <= int(retry); i++ {
 		if grpcClient, err = newClientWithAddressContext(ctx, addr); err != nil {
-			logs.Errorf(ctx, "", nil, "dapr %s", err.Error())
+			logs.Errorf(ctx, nil, "dapr %s", err.Error())
 			continue
 		}
 		if grpcClient != nil {
-			logs.Infof(ctx, "", nil, "dapr client connection success")
+			logs.Infof(ctx, nil, "dapr client connection success")
 			break
 		}
 	}

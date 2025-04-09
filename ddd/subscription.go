@@ -139,7 +139,7 @@ func (h *subscribeHandler) SubscribeHandler(ctx context.Context, sctx SubscribeC
 		"requestUri": sctx.GetRequestURI(),
 	}
 
-	err := logs.DebugStart(ctx, "", fields, func() error {
+	err := logs.DebugStart(ctx, fields, func() error {
 		cancel, err := h.interceptor(ctx, sctx)
 		if cancel || err != nil {
 			return err

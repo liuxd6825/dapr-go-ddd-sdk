@@ -53,7 +53,7 @@ func (c *relationCypher[T]) InsertOrUpdate(ctx context.Context, data T) (CypherR
 	sb.WriteString(fmt.Sprintf("MERGE (s)-[r%s{id:'%v'}]->(e) ", c.matchTypes, c.eb.GetId(data)))
 	sb.WriteString(fmt.Sprintf("ON CREATE SET %s ", props))
 	sb.WriteString(fmt.Sprintf("ON MATCH  SET %s ", props))
-	logs.Debug(ctx, "", logs.Fields{"cypher": func() any { return sb.String() }})
+	logs.Debug(ctx, logs.Fields{"cypher": func() any { return sb.String() }})
 	return NewCypherBuilderResult(sb.String(), dataMap, nil), nil
 }
 
@@ -94,7 +94,7 @@ func (c *relationCypher[T]) UpdateByRSQL(ctx context.Context, tenantId string, r
 	}
 	tenant := ":tenant_" + tenantId
 	cypher := fmt.Sprintf("MATCH (n%s)-[r]->(m%s) %s DELETE r RETURN count(r) as rows", tenant, tenant, where)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"rows"}), nil
 }
 
@@ -102,7 +102,7 @@ func (c *relationCypher[T]) UpdateLabelById(ctx context.Context, tenantId string
 	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
 	match := c.getQueryMatch(tenantId)
 	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v',id:'%v'}]->(n) CREATE (n)-[r2:%v]-(m) SET r2=r WITH r DELETE r ", match, id, label)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -180,7 +180,7 @@ func (c *relationCypher[T]) UpdateLabelByFilter(ctx context.Context, tenantId st
 	}
 	// match(n)-[r:测试]->(m) create(n)-[r2:包括]->(m) set r2=r with r delete r
 	cypher := fmt.Sprintf("MATCH (n)-[r{tenantId:'%v'}]-(n) create (n)-[r2:{tenantId:'%v'}]-(m)  %s SET r2=r WITH r DELETE r ", tenantId, tenantId, where)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -201,14 +201,14 @@ func (c *relationCypher[T]) DeleteByLabels(ctx context.Context, tenantId string,
 
 func (c *relationCypher[T]) DeleteByTenantId(ctx context.Context, tenantId string) (CypherResult, error) {
 	cypher := fmt.Sprintf(`MATCH (a)-[r{tenantId:'%v'}]-(b) DELETE r RETURN count(r) as rows`, tenantId)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher[T]) DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error) {
 	tenant := ":tenant_" + tenantId
 	cypher := fmt.Sprintf(`MATCH (a%s)-[r{id:'%v'}]-(b%s) DELETE r RETURN count(r) as rows `, tenant, id, tenant)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -216,14 +216,14 @@ func (c *relationCypher[T]) DeleteByIds(ctx context.Context, tenantId string, id
 	tenant := ":tenant_" + tenantId
 	delIds := getSqlInStr(ids)
 	cypher := fmt.Sprintf(`MATCH (a%s)-[r]-(b%s) WHERE r.id in [%v] DELETE r RETURN count(r) as rows `, tenant, tenant, delIds)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher[T]) DeleteAll(ctx context.Context, tenantId string) (CypherResult, error) {
 	match := c.getDeleteMatch(tenantId)
 	cypher := fmt.Sprintf(`%s DELETE r RETURN count(r) as rows  `, match)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -234,14 +234,14 @@ func (c *relationCypher[T]) DeleteByRSQL(ctx context.Context, tenantId string, f
 	}
 	match := c.getDeleteMatch(tenantId)
 	cypher := fmt.Sprintf(`%s %v DELETE r RETURN count(r) as rows `, match, where)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
 func (c *relationCypher[T]) FindById(ctx context.Context, tenantId, id string) (CypherResult, error) {
 	match := c.getQueryMatch(tenantId, fmt.Sprintf("id:'%v'", id))
 	cypher := fmt.Sprintf(`%s RETURN r `, match)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, nil), nil
 }
 
@@ -253,7 +253,7 @@ func (c *relationCypher[T]) FindByIds(ctx context.Context, tenantId string, ids 
 	strIds := getSqlInStr(ids)
 	match := c.getQueryMatch(tenantId)
 	cypher := fmt.Sprintf("%s WHERE r.id in [%v] RETURN r", match, strIds)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"r"}), nil
 }
 
@@ -338,7 +338,7 @@ func (c *relationCypher[T]) FindPaging(ctx context.Context, qry store.FindPaging
 	if qry.GetIsTotalRows() {
 		countCypher = fmt.Sprintf("%s %s RETURN count(r) AS rows  ", match, where)
 	}
-	logs.Debug(ctx, qry.GetTenantId(), logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"r", "rows"}, NewCypherResultOptions().SetCountCypher(countCypher)), nil
 }
 
@@ -349,7 +349,7 @@ func (c *relationCypher[T]) FindByRSQL(ctx context.Context, tenantId string, fil
 	}
 	match := c.getQueryMatch(tenantId)
 	cypher := fmt.Sprintf(`%s %s return r, count(r) AS rows `, match, where)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"n"}), nil
 }
 
@@ -361,7 +361,7 @@ func (c *relationCypher[T]) Count(ctx context.Context, tenantId, filter string) 
 
 	match := c.getQueryMatch(tenantId)
 	cypher := fmt.Sprintf("%s %s RETURN count(r) AS rows ", match, where)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"rows"}), nil
 }
 
@@ -372,7 +372,7 @@ func (c *relationCypher[T]) GetRSQL(ctx context.Context, tenantId, filter string
 	}
 	match := c.getQueryMatch(tenantId)
 	cypher := fmt.Sprintf("%s %s RETURN r, count(r) AS rows  ", match, where)
-	logs.Debug(ctx, tenantId, logs.Fields{"cypher": cypher})
+	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, []string{"r"}), nil
 }
 

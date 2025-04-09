@@ -44,7 +44,7 @@ func initMinio(configs map[string]*MinioConfig) error {
 		}
 		minioClient, err := minio.New(c.Endpoint, options)
 		if err != nil {
-			logs.Errorf(context.Background(), "", nil, "连接mysql失败, error:%s", c.Endpoint, err.Error())
+			logs.Errorf(context.Background(), nil, "连接mysql失败, error:%s", c.Endpoint, err.Error())
 			os.Exit(0)
 		}
 		c.client = minioClient

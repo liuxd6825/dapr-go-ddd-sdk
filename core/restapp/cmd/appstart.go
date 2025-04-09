@@ -31,13 +31,13 @@ func StartApp(opts *AppStartOptions) {
 	StartCmd(func(flag *restapp2.RunFlag) error {
 		runOpts := restapp2.NewRunOptions().SetFlag(flag).SetTable(nil)
 		runOpts.AddOnInitEvent(func(server *restapp2.HttpServer) error {
-			envCfg := server.EnvConfig().App.HServer
-			if envCfg.Enable {
-				srcName := envCfg.SrcName
-				webName := envCfg.WebName
-
+			env := server.EnvConfig()
+			serverEnv := env.App.HServer
+			if serverEnv.Enable {
+				srcName := serverEnv.SrcName
+				webName := serverEnv.WebName
 				restapi.RegisterSchema(server.App(), "/api/v1.0/", server.EnvConfig(), "")
-				return hserver.InitServer(flag.MainFile, srcName, webName, server, envCfg.WatchRestart)
+				return hserver.InitHServer(server, flag.MainFile, srcName, webName, server.EnvConfig(), serverEnv.WatchRestart)
 			}
 			return nil
 		})
