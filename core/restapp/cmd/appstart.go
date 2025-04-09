@@ -5,7 +5,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/restapi"
 	restapp2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
 type AppStartOptions struct {
@@ -38,7 +37,7 @@ func StartApp(opts *AppStartOptions) {
 				webName := envCfg.WebName
 
 				restapi.RegisterSchema(server.App(), "/api/v1.0/", server.EnvConfig(), "")
-				return hserver.InitHServer(server, flag.MainFile, srcName, webName, env.GetEnv(), envCfg.WatchRestart)
+				return hserver.InitServer(flag.MainFile, srcName, webName, server, envCfg.WatchRestart)
 			}
 			return nil
 		})
