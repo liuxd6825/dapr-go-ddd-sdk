@@ -4,12 +4,14 @@ import (
 	"fmt"
 	restapp2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
 
-// InitServer
+// InitHServer
 //
 //	@Description:
 //	@param fileName
@@ -17,28 +19,33 @@ import (
 //	@param webFsName
 //	@param httpServer
 //	@return error
-func InitServer(fileName string, srcFsName string, webFsName string, httpServer *restapp2.HttpServer, autoRestart bool) error {
+func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName string, webFsName string, env *env.Env, autoRestart bool) (err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			err = errors.NewErr(err, "hserver.InitHServer()")
+		}
+	}()
 	fact := NewFactory()
-	env := httpServer.EnvConfig()
-	if !env.App.HServer.Enable {
+	hServer := env.App.HServer
+	if !hServer.Enable {
 		return nil
 	}
-	envCfg := httpServer.EnvConfig()
 
-	srcFs, err := httpServer.EnvConfig().GetFs(srcFsName)
-	if err != nil {
+	srcFs, ok := env.Fsm.GetFs(srcFsName)
+	if !ok {
 		return fmt.Errorf("%s fs not exists", srcFsName)
 	}
 
 	var webFs afero.Fs
 	if webFsName != "" {
-		webFs, err = httpServer.EnvConfig().GetFs(webFsName)
-		if err != nil {
+		webFs, ok = env.Fsm.GetFs(webFsName)
+		if !ok {
 			return fmt.Errorf(" %s fs not exists", webFsName)
 		}
 	}
 
-	server, err := fact.NewServer(httpServer, fileName, srcFs, fact, envCfg)
+	server, err := fact.NewServer(httpServer, fileName, srcFs, fact, env)
 	if err != nil {
 		return err
 	}
@@ -49,11 +56,10 @@ func InitServer(fileName string, srcFsName string, webFsName string, httpServer 
 	irisApp := httpServer.App()
 
 	if webFs != nil {
-		nodeModulesFs := env.GetFsByTag("node-modules")
+		nodeModulesFs := env.Fsm.GetFsByTag("node-modules")
 		cfg := &file_handler.Config{
 			SrcFs:       webFs,
 			NodeModules: nodeModulesFs,
-			Env:         env,
 		}
 		fileHandler := file_handler.NewHandler(irisApp, vData, cfg)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)

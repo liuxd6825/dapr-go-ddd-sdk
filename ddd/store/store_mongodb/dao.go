@@ -20,6 +20,7 @@ import (
 	mongo_options "go.mongodb.org/mongo-driver/mongo/options"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
@@ -28,24 +29,42 @@ const (
 	TenantIdField      = "tenant_id"
 )
 
+type IMongoDB interface {
+	GetClient() *mongo.Client
+	GetOperationTimeout() time.Duration
+	GetDatabase() *mongo.Database
+	GetServerCount() int
+	ExistCollection(ctx context.Context, name any) (bool, error)
+	GetCollection(collectionName string) *mongo.Collection
+	CreateCollection(collectionName string) error
+}
+
+type ObjectId string
+
+type InitOptionsFunc = func(options *mongo_options.ClientOptions) error
+
+func (i ObjectId) String() string {
+	return string(i)
+}
+
 type Dao[T any] struct {
 	eb         store.EntityBuilder[T] // 实体构造器
 	decoder    Decoder[T]             // mongo数据解码器
 	collection *mongo.Collection
-	mongodb    *MongoDB
+	mongodb    IMongoDB
 	null       T
 	newFun     func() T                                                                   // 新建实体结构方法
-	initFun    func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection) // 初始化
+	initFun    func(ctx context.Context) (mongodb IMongoDB, collection *mongo.Collection) // 初始化
 	options    *Options[T]
 	metadata   map[string]any
 	schema     *store.DBSchema
 }
 
-func NewDao[T any](dbSch *store.DBSchema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) store.IStore[T] {
+func NewDao[T any](dbSch *store.DBSchema, initFun func(ctx context.Context) (mongodb IMongoDB, collection *mongo.Collection), opts ...*Options[T]) store.IStore[T] {
 	return NewMongoDao(dbSch, initFun, opts...)
 }
 
-func NewMongoDao[T any](dbSch *store.DBSchema, initFun func(ctx context.Context) (mongodb *MongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
+func NewMongoDao[T any](dbSch *store.DBSchema, initFun func(ctx context.Context) (mongodb IMongoDB, collection *mongo.Collection), opts ...*Options[T]) *Dao[T] {
 	r := &Dao[T]{
 		metadata: make(map[string]any),
 	}
@@ -109,11 +128,11 @@ func (r *Dao[T]) SetId(entity T, id string) {
 	r.eb.SetId(entity, id)
 }
 
-func (d *Dao[T]) GetAggId(entity T) string {
-	return d.eb.GetAggId(entity)
+func (r *Dao[T]) GetAggId(entity T) string {
+	return r.eb.GetAggId(entity)
 }
 
-func (r *Dao[T]) Init(ctx context.Context, mongodb *MongoDB, collection *mongo.Collection) error {
+func (r *Dao[T]) Init(ctx context.Context, mongodb IMongoDB, collection *mongo.Collection) error {
 	r.mongodb = mongodb
 	r.collection = collection
 	/*
@@ -274,7 +293,7 @@ func (r *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...store.O
 }
 
 func (r *Dao[T]) getSessionCtx(ctx context.Context) context.Context {
-	sCtx := getSessionContext(ctx, r.mongodb.database.Name())
+	sCtx := getSessionContext(ctx, r.mongodb.GetDatabase().Name())
 	if sCtx == nil {
 		return ctx
 	}
@@ -1275,7 +1294,7 @@ func (r *Dao[T]) DoSet(fun func() (T, error)) *store.SetResult[T] {
 }
 
 func (r *Dao[T]) StartTx(ctx context.Context, txFun store.TxFunc, options ...*store.SessionOptions) (err error) {
-	return StartTx(ctx, r.mongodb, r.mongodb.Name(), txFun, options...)
+	return StartTx(ctx, r.mongodb, r.mongodb.GetDatabase().Name(), txFun, options...)
 }
 
 /*
@@ -1355,3 +1374,11 @@ func (r *Dao[T]) getDocument(entity any) any {
 }
 
 */
+
+// AsFieldName
+// @Description: 转换为mongodb规范的字段名称
+// @param name
+// @return string
+func AsFieldName(name string) string {
+	return stringutils.SnakeString(name)
+}

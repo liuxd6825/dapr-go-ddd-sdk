@@ -2,6 +2,7 @@ package restapp
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"os"
 	"strings"
 )
@@ -15,16 +16,12 @@ func InitDbWithConfig(envName string, prefix string, dbKey string, config *Confi
 		name = config.Env
 	}
 
-	env, err := config.GetEnvConfig(name)
-	if err != nil {
-		return err
-	}
+	env := env.GetEnv()
 
-	initMongo(env.App.AppId, env.Mongo)
 	return InitDb(dbKey, tables, env, prefix)
 }
 
-func InitDb(dbKey string, tables *Tables, env *EnvConfig, prefix string) error {
+func InitDb(dbKey string, tables *Tables, env *env.Env, prefix string) error {
 	if dbKey == "" {
 		panic("dbkey is not emtiy")
 	}
@@ -45,7 +42,7 @@ func InitDb(dbKey string, tables *Tables, env *EnvConfig, prefix string) error {
 	return nil
 }
 
-func InitDbScript(dbKey string, tables *Tables, env *EnvConfig, prefix string, saveFile string) error {
+func InitDbScript(dbKey string, tables *Tables, env *env.Env, prefix string, saveFile string) error {
 	if dbKey == "" {
 		panic("dbkey is not emtiy")
 	}

@@ -43,6 +43,6 @@ type Server interface {
 	HttpServer() *restapp.HttpServer  // 取得HTTP服务实例
 	GetEventPrefix() string           // 取得事件前缀
 	GetIsPubEvent() bool              // 取得DAO更新数据时，是否发布事件的默认值
-	GetEnvCfg() env.IEnvConfig        // 取当前配置环境变量
+	GetEnvCfg() *env.Env              // 取当前配置环境变量
 	Init(opts *ServerInitOptions)     // 初始化参数
 }

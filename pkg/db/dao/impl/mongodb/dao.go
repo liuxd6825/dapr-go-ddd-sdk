@@ -2,27 +2,27 @@ package mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type GetCollectionCallback func(ctx context.Context) (*store_mongodb.MongoDB, *mongo.Collection)
+type GetCollectionCallback func(ctx context.Context) (store_mongodb.IMongoDB, *mongo.Collection)
 
 type Dao[T any] struct {
 	*impl.DaoBase[T]
-	db    *store_mongodb.MongoDB
+	db    store_mongodb.IMongoDB
 	store store.IStore[T] // 数据访问对象
 	cfg   *idao.DaoConfig
 }
 
-var _mongodb *store_mongodb.MongoDB
+var _mongodb store_mongodb.IMongoDB
 
 func init() {
 	//设置bson使用自定义的日期json格式
@@ -44,11 +44,11 @@ type DaoOptions struct {
 
 func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	cfg.Valid()
-	var mongoDb *store_mongodb.MongoDB
-	if v, ok := cfg.DB.(*store_mongodb.MongoDB); ok {
+	var mongoDb store_mongodb.IMongoDB
+	if v, ok := cfg.DB.(store_mongodb.IMongoDB); ok {
 		mongoDb = v
 	} else {
-		item := restapp.GetDB(cfg.DbKey)
+		item := env.GetDB(cfg.DbKey)
 		if item == nil {
 			panic(errors.New(" %s database not found", cfg.DbKey))
 		}
@@ -64,13 +64,13 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 		//GetCollCallback: opts.GetCollCallback,
 	})
 
-	var mongodb *store_mongodb.MongoDB
+	var mongodb store_mongodb.IMongoDB
 	var coll *mongo.Collection
 
-	getCollCallback := func(ctx context.Context) (*store_mongodb.MongoDB, *mongo.Collection) {
+	getCollCallback := func(ctx context.Context) (store_mongodb.IMongoDB, *mongo.Collection) {
 		if mongodb == nil || coll == nil {
 			mongodb = opt.MongoDB
-			coll = opt.MongoDB.GetCollection(tableName)
+			coll = opt.MongoDB.GetDatabase().Collection(tableName)
 		}
 		return mongodb, coll
 	}

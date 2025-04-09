@@ -21,7 +21,7 @@ type Engine struct {
 	templates   *pongo2.TemplateSet    // Pongo2 模板集合
 	funcs       map[string]interface{} // 自定义模板函数
 	templateMap *types.CMap[*pongo2.Template]
-	env         env.IEnvConfig
+	env         *env.Env
 }
 
 func (e *Engine) Name() string {
@@ -33,12 +33,11 @@ func (e *Engine) Ext() string {
 }
 
 // NewEngine 创建一个新的 Afero Pongo2 引擎
-func NewEngine(fs afero.Fs, env env.IEnvConfig, extension string) *Engine {
+func NewEngine(fs afero.Fs, extension string) *Engine {
 	loader := NewLoader(fs)
 	set := pongo2.NewSet("afero", loader)
 	engin := &Engine{
 		fs:          fs,
-		env:         env,
 		loader:      loader,
 		extension:   extension,
 		templates:   set,

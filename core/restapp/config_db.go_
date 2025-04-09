@@ -2,7 +2,7 @@ package restapp
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/redis/go-redis/v9"
@@ -27,7 +27,7 @@ type DBItem interface {
 	GetDBKey() string
 	GetRedis() *redis.Client
 	GetNeo4j() neo4j.DriverWithContext
-	GetMongo() *store_mongodb.MongoDB
+	GetMongo() *mongodb.MongoDB
 	GetGormDB() *gorm.DB
 	GetDB() any
 	CloseDB(ctx context.Context) error
@@ -43,7 +43,7 @@ type dbItem struct {
 	dbType DBType
 	redis  *redis.Client
 	neo4j  neo4j.DriverWithContext
-	mongo  *store_mongodb.MongoDB
+	mongo  *mongodb.MongoDB
 	gormDb *gorm.DB
 	config any
 }
@@ -93,7 +93,7 @@ func (d *dbItem) GetNeo4j() neo4j.DriverWithContext {
 	return d.neo4j
 }
 
-func (d *dbItem) GetMongo() *store_mongodb.MongoDB {
+func (d *dbItem) GetMongo() *mongodb.MongoDB {
 	return d.mongo
 }
 
@@ -141,6 +141,7 @@ func addDB(dbItem DBItem) {
 	_dbs[dbKey] = dbItem
 }
 
+/*
 func CloseAllDB(ctx context.Context) error {
 	for _, d := range _dbs {
 		_ = d.CloseDB(ctx)
@@ -159,3 +160,4 @@ func GetDBDefault() DBItem {
 	}
 	return nil
 }
+*/

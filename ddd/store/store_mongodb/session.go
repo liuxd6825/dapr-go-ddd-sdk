@@ -11,13 +11,13 @@ import (
 )
 
 type MongoSession struct {
-	mongodb *MongoDB
+	mongodb IMongoDB
 }
 
 type sessionCtxKey struct {
 }
 
-func NewSession(isWrite bool, db *MongoDB) store.Session {
+func NewSession(isWrite bool, db IMongoDB) store.Session {
 	return &MongoSession{mongodb: db}
 }
 
@@ -40,8 +40,8 @@ func (r *MongoSession) UseTransaction(ctx context.Context, dbFunc store.SessionF
 	}
 
 	// 事务处理
-	err = r.mongodb.client.UseSessionWithOptions(ctx, opt, func(ctx mongo.SessionContext) error {
-		serverCount := r.mongodb.config.ServerCount()
+	err = r.mongodb.GetClient().UseSessionWithOptions(ctx, opt, func(ctx mongo.SessionContext) error {
+		serverCount := r.mongodb.GetServerCount()
 		if serverCount == 1 {
 			return dbFunc(ctx)
 		} else {

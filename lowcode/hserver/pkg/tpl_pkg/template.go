@@ -12,12 +12,12 @@ import (
 var tplCache = cmap.New()
 
 type Template struct {
-	cfg    env.IEnvConfig
+	cfg    *env.Env
 	server element.Server
 	fs     afero.Fs
 }
 
-func New(cfg env.IEnvConfig, server element.Server, fs afero.Fs) *Template {
+func New(cfg *env.Env, server element.Server, fs afero.Fs) *Template {
 	return &Template{
 		cfg:    cfg,
 		server: server,

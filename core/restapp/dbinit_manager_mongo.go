@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,7 +26,7 @@ func NewMongoScriptManager() DbScriptManager {
 	return &MongoManager{}
 }
 
-func (m *MongoManager) GetScript(ctx context.Context, dbKey string, tables []*Table, env *EnvConfig, options *CreateOptions) (*strings.Builder, error) {
+func (m *MongoManager) GetScript(ctx context.Context, dbKey string, tables []*Table, env *env.Env, options *CreateOptions) (*strings.Builder, error) {
 	cfg, ok := env.Mongo[dbKey]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("dbKey not found %s", dbKey))
@@ -56,7 +57,7 @@ db.createUser({
 	return sb, nil
 }
 
-func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbName string, table *Table, sb *strings.Builder, options *CreateOptions) string {
+func (m *MongoManager) getTableScript(ctx context.Context, env *env.Env, dbName string, table *Table, sb *strings.Builder, options *CreateOptions) string {
 	opt := options
 	if opt == nil {
 		opt = NewCreateOptions()
@@ -144,20 +145,26 @@ func (m *MongoManager) getTableScript(ctx context.Context, env *EnvConfig, dbNam
 	return sb.String()
 }
 
-func (m *MongoManager) Create(ctx context.Context, table *Table, env *EnvConfig, options *CreateOptions) {
+func (m *MongoManager) Create(ctx context.Context, table *Table, env *env.Env, options *CreateOptions) {
 	opt := options
 	if opt == nil {
 		opt = NewCreateOptions()
 	}
 	opt.Printf("dbKey:%s; tableName:%s; ", table.DbKey, table.TableName)
 
-	mongodb, ok := GetMongoByKey(table.DbKey)
-	if !ok {
+	db := env.GetDB(table.DbKey)
+	if db == nil {
 		opt.Log(errors.New(fmt.Sprintf("Dbkey:%s 不存在", table.DbKey)))
 		return
 	}
 
-	opt.Printf("dbName:%s; ", mongodb.Name())
+	mongodb := db.GetMongo()
+	if mongodb == nil {
+		opt.Log(errors.New(fmt.Sprintf("Dbkey:%s 不存在", table.DbKey)))
+		return
+	}
+
+	opt.Printf("dbName:%s; ", mongodb.GetDatabase().Name())
 	collName := options.Prefix + table.TableName
 
 	has, err := mongodb.ExistCollection(ctx, collName)
@@ -199,13 +206,13 @@ func (m *MongoManager) Create(ctx context.Context, table *Table, env *EnvConfig,
 	return
 }
 
-func (m *MongoManager) Update(ctx context.Context, table *Table, env *EnvConfig, options *UpdateOptions) {
+func (m *MongoManager) Update(ctx context.Context, table *Table, env *env.Env, options *UpdateOptions) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m *MongoManager) getDb(ctx context.Context, dbKey string) (*store_mongodb.MongoDB, error) {
-	mongodb, ok := GetMongoByKey(dbKey)
+func (m *MongoManager) getDb(ctx context.Context, dbKey string) (*mongodb.MongoDB, error) {
+	mongodb, ok := env.GetMongoByKey(dbKey)
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Dbkey %s 不存在", dbKey))
 	}
@@ -214,7 +221,7 @@ func (m *MongoManager) getDb(ctx context.Context, dbKey string) (*store_mongodb.
 
 func (m *MongoManager) getCollection(ctx context.Context, dbKey string, prefix string, tableName string) (*mongo.Collection, error) {
 	collName := prefix + tableName
-	mongodb, ok := GetMongoByKey(collName)
+	mongodb, ok := env.GetMongoByKey(collName)
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Dbkey %s 不存在", dbKey))
 	}

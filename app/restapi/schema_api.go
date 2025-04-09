@@ -13,7 +13,7 @@ type SchemaAPI struct {
 	service service.ISchemaService
 }
 
-func NewSchemaAPI(env env.IEnvConfig, rootPath string) *SchemaAPI {
+func NewSchemaAPI(env *env.Env, rootPath string) *SchemaAPI {
 	return &SchemaAPI{
 		service: service.NewSchemaService(env, rootPath),
 	}

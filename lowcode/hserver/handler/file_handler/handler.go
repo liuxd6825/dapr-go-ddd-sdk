@@ -20,7 +20,6 @@ import (
 type Config struct {
 	SrcFs       afero.Fs
 	NodeModules []afero.Fs
-	Env         env.IEnvConfig
 }
 
 type Handler struct {
@@ -34,14 +33,12 @@ type Handler struct {
 }
 
 func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handler {
-	webCfg := newWebConfig(cfg.SrcFs, "/hserver.config.json")
 	f := &Handler{
 		app:       app,
 		cfg:       cfg,
 		pageCache: types.NewCMap[bool](),
 		vData:     data,
-		prodMode:  cfg.Env.GetProdMode(),
-		webCfg:    webCfg,
+		prodMode:  env.GetEnv().GetProdMode(),
 		htmlJs:    types.NewCMap[string](),
 	}
 	ctx := context.Background()
@@ -50,7 +47,7 @@ func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handle
 	}
 
 	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
-	engine := NewEngine(cfg.SrcFs, cfg.Env, ".html")
+	engine := NewEngine(cfg.SrcFs, ".html")
 
 	app.Use(f.PathInterceptor)
 	// engine.AddFunc("litSSR", litSSR)
@@ -190,7 +187,7 @@ func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fi
 			if err != nil {
 				return err
 			}
-			fsData, err = parserHtml(doc, h.webCfg, func(scripts *goquery.Selection, sb *strings.Builder) {
+			fsData, err = parserHtml(doc, &env.GetEnv().App.HServer.Npm, func(scripts *goquery.Selection, sb *strings.Builder) {
 				if sb != nil {
 					scripts.Remove()
 					// 插入方式1：插入到#container末尾
@@ -281,7 +278,7 @@ func (h *Handler) preloadDynamicPages(ctx context.Context, ictx iris.Context, pa
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".html") {
 			fileName := path + file.Name()
-			isDynamic, err := h.isDynamicPage(ctx, ictx, srcFs, fileName, h.cfg.Env.GetProdMode())
+			isDynamic, err := h.isDynamicPage(ctx, ictx, srcFs, fileName, env.GetEnv().GetProdMode())
 			if err != nil {
 				return err
 			}

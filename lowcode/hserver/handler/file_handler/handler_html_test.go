@@ -16,11 +16,12 @@ func Test_parserHtml(t *testing.T) {
 		Name: "ui5e",
 		Path: "/@fs/Users/lxd/Projects/duxm/h-master/packages/ui5e",
 	})
-	h, err := parserHtml("index.html", html, &WebConfig{
+	webCfg := &WebConfig{
 		Npm: &Npm{
 			Links: links,
 		},
-	})
+	}
+	h, err := parserHtml(nil, webCfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

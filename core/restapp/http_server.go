@@ -15,6 +15,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
@@ -35,7 +36,7 @@ type ServiceOptions struct {
 	AuthToken      string
 	WebRootPath    string
 	SwaggerDoc     string
-	EnvConfig      *EnvConfig
+	Env            *env.Env
 	OnInitEvents   []OnInitEvent
 	OnStartEvents  []OnStartEvent
 }
@@ -55,7 +56,7 @@ type HttpServer struct {
 	jobEventHandlers map[string]common.JobEventHandler // 任务
 	authToken        string
 	webRootPath      string
-	envConfig        *EnvConfig
+	env              *env.Env
 	onInitEvents     []OnInitEvent
 	onStartEvents    []OnStartEvent
 	swagger          *swagger3.Swagger
@@ -76,9 +77,9 @@ func RegisterOnStartInit(startEvent OnStartEvent) {
 
 func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Service {
 	actorRuntime := runtime.GetActorRuntimeInstanceContext()
-	envConfig := opts.EnvConfig
+	envConfig := opts.Env
 
-	if opts.EnvConfig != nil {
+	if opts.Env != nil {
 		actorConfig := actorRuntime.Config()
 		actorConfig.DrainOngingCallTimeout = envConfig.Dapr.Actor.DrainOngingCallTimeout
 		actorConfig.ActorScanInterval = envConfig.Dapr.Actor.ActorScanInterval
@@ -99,7 +100,7 @@ func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Serv
 		eventTypes:     opts.EventTypes,
 		authToken:      opts.AuthToken,
 		webRootPath:    opts.WebRootPath,
-		envConfig:      opts.EnvConfig,
+		env:            opts.Env,
 		onInitEvents:   opts.OnInitEvents,
 		onStartEvents:  opts.OnStartEvents,
 		//swagger:          swagger3.NewSwagger(),
@@ -113,8 +114,8 @@ func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Serv
 //	@Description:
 //	@receiver s
 //	@return *EnvConfig
-func (s *HttpServer) EnvConfig() *EnvConfig {
-	return s.envConfig
+func (s *HttpServer) EnvConfig() *env.Env {
+	return s.env
 }
 
 // App
@@ -228,10 +229,10 @@ func (s *HttpServer) doOnStartEvents(ctx context2.Context, app *iris.Application
 		}
 	}
 
-	fmt.Printf("---------- %s running ----------\r\n", s.envConfig.App.AppId)
+	fmt.Printf("---------- %s running ----------\r\n", s.env.App.AppId)
 	if logs.GetLevel() <= logs.DebugLevel {
 		for _, v := range app.GetRoutes() {
-			fmt.Printf("> %-8s: http://localhost:%v%s \r\n", v.Method, s.envConfig.App.HttpPort, v.Path)
+			fmt.Printf("> %-8s: http://localhost:%v%s \r\n", v.Method, s.env.App.HttpPort, v.Path)
 		}
 	}
 	fmt.Println()

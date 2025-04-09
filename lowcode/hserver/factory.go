@@ -34,7 +34,7 @@ func (f *factory) NewFunc(server element.Server, config *element.FuncConfig, log
 	return funcs.NewFunc(server, config, logger, reader, pkg)
 }
 
-func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env env.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
+func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env *env.Env, opts ...element.NewServerOptions) (element.Server, error) {
 	return server.NewServer(httpServer, srcFileName, srcFs, factory, env, opts...)
 }
 

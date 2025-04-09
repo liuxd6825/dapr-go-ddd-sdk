@@ -2,10 +2,10 @@ package impl
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
@@ -19,7 +19,7 @@ type DaoBase[T any] struct {
 	isPubEvent  bool            // 是否发布事件
 	eventPrefix string          // 事件前缀
 	store       store.IStore[T] // 数据访问
-	env         idao.IEnvConfig // 环境变量
+	env         *env.Env        // 环境变量
 }
 
 const (
@@ -51,16 +51,15 @@ func NewDaoBase[T any](store store.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
 		cfg:         cfg,
 		dbKey:       cfg.DbKey,
 		tableName:   tableName,
-		appId:       cfg.GetEnv().GetAppId(),
+		appId:       cfg.GetEnv().App.AppId,
 		isPubEvent:  cfg.GetIsPubEvent(),
 		aggField:    aggField,
 		aggType:     cfg.AggType,
 		eventPrefix: "eventPrefix",
-		env:         cfg.Env,
 	}
 }
 
-func (d *DaoBase[T]) GetEnv() restapp.IEnvConfig {
+func (d *DaoBase[T]) GetEnv() *env.Env {
 	return d.env
 }
 

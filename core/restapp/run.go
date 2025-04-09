@@ -8,6 +8,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
@@ -31,7 +32,7 @@ type runConfig struct {
 	LogLevel               applog.Level
 	DaprMaxCallRecvMsgSize *int64
 	DaprClient             dapr.DaprClient
-	EnvConfig              *EnvConfig
+	EnvConfig              *env.Env
 	FsManager              *fsm.Manager
 	SubsFunc               func() []RegisterSubscribe
 	ControllersFunc        func() []Controller
@@ -43,8 +44,7 @@ type RegisterHandler interface {
 	RegisterHandler(app *iris.Application)
 }
 
-func RunWithConfig(envName string, configFile string, cfg *RunConfig, options ...*RunOptions,
-) (common.Service, error) {
+func RunWithConfig(envName string, configFile string, cfg *RunConfig, options ...*RunOptions) (common.Service, error) {
 
 	config, err := NewConfigByFile(configFile)
 	if err != nil {
@@ -78,18 +78,6 @@ func RunWithConfig(envName string, configFile string, cfg *RunConfig, options ..
 //	@return common.Service 服务
 //	@return error  错误
 func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.Service, error) {
-	SetEnvConfig(envConfig)
-	/*
-		ctx := context.Background()
-		logs.Infof(ctx, "", nil, "env config: %s", func() any {
-			jsonText, err := jsonutils.Marshal(envConfig)
-			if err != nil {
-				return err.Error()
-			}
-			return jsonText
-		})
-	*/
-
 	var err error
 	opt := NewRunOptions(options...)
 	runType := RunTypeStart
@@ -100,12 +88,14 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 	switch runType {
 	case RunTypeInitDB: // 是数据库初始化
 		if opt.tables != nil {
-			err = InitDb(opt.GetDbKey(), opt.tables, envConfig, opt.GetPrefix())
+			env := env.GetEnv()
+			err = InitDb(opt.GetDbKey(), opt.tables, env, opt.GetPrefix())
 		}
 		return nil, err
 	case RunTypeCreateSqlFile: // 是生成数据库脚本
 		if opt.tables != nil {
-			err = InitDbScript(opt.GetDbKey(), opt.tables, envConfig, opt.GetPrefix(), opt.GetSqlFile())
+			env := env.GetEnv()
+			err = InitDbScript(opt.GetDbKey(), opt.tables, env, opt.GetPrefix(), opt.GetSqlFile())
 		}
 		return nil, err
 	case RunTypeStatus: // 查看服务状态
@@ -147,7 +137,7 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 	if err = InitApplication(context.Background(), envConfig, eventType, false, nil); err != nil {
 		return nil, err
 	}
-
+	env := env.GetEnv()
 	daprClient := dapr.GetDaprClient()
 	runCfg := &runConfig{
 		AppId:      envConfig.App.AppId,
@@ -155,8 +145,8 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 		HttpPort:   envConfig.App.HttpPort,
 		LogLevel:   envConfig.Log.level,
 		DaprClient: daprClient,
-		EnvConfig:  envConfig,
-		FsManager:  envConfig.fsManager,
+		EnvConfig:  env,
+		FsManager:  env.Fsm,
 	}
 
 	return run(runCfg, envConfig.App.RootUrl, cfg, options...)
@@ -209,23 +199,21 @@ func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions .
 	}
 
 	serverOptions := &ServiceOptions{
-		AppId:      runCfg.AppId,
-		HttpHost:   runCfg.HttpHost,
-		HttpPort:   runCfg.HttpPort,
-		LogLevel:   level,
-		EventTypes: eventTypes,
-
+		AppId:          runCfg.AppId,
+		HttpHost:       runCfg.HttpHost,
+		HttpPort:       runCfg.HttpPort,
+		LogLevel:       level,
+		EventTypes:     eventTypes,
 		Subscribes:     subscribes,
 		Controllers:    controllers,
 		ActorFactories: actorFactories,
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
-		EnvConfig:      runCfg.EnvConfig,
-
-		OnInitEvents:  opt.onInitEvents,
-		OnStartEvents: opt.onStartEvents,
+		Env:            env.GetEnv(),
+		OnInitEvents:   opt.onInitEvents,
+		OnStartEvents:  opt.onStartEvents,
 	}
-	_envConfig = runCfg.EnvConfig
+
 	// 启动HTTP服务器
 	service := NewHttpServer(runCfg.DaprClient, serverOptions)
 	if err := service.Start(); err != nil {

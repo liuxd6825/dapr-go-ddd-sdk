@@ -1,10 +1,6 @@
 package idao
 
-import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
-)
-
-type IEnvConfig interface {
+/*type IEnvConfig interface {
 	GetAppId() string
 	GetAppName() string
 
@@ -17,3 +13,4 @@ type IEnvConfig interface {
 	GetHServerSrcPath() string
 	GetHServerEnable() bool
 }
+*/

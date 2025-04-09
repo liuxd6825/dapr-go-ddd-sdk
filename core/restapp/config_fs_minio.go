@@ -16,7 +16,7 @@ type MinioConfig struct {
 	AccessKey       string `yaml:"accessKey"`
 	SecretAccessKey string `yaml:"secretAccessKey"`
 	UseSSL          bool   `yaml:"useSSL"`
-	minioClient     *minio.Client
+	client          *minio.Client
 }
 
 var _minioList = make(map[string]*minio.Client)
@@ -47,7 +47,7 @@ func initMinio(configs map[string]*MinioConfig) error {
 			logs.Errorf(context.Background(), "", nil, "连接mysql失败, error:%s", c.Endpoint, err.Error())
 			os.Exit(0)
 		}
-		c.minioClient = minioClient
+		c.client = minioClient
 		_minioList[k] = minioClient
 		if k == "default" {
 			_minioDefault = minioClient

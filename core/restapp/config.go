@@ -2,12 +2,8 @@ package restapp
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
-	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
-	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -21,36 +17,34 @@ type Config struct {
 }
 
 type EnvConfig struct {
-	Name       string                     `yaml:"-" json:"name"`
-	App        *AppConfig                 `yaml:"app" json:"app"`
-	Log        *LogConfig                 `yaml:"log" json:"log"`
-	Dapr       *DaprConfig                `yaml:"dapr" json:"dapr"`
-	Resources  map[string]*ResourceConfig `yaml:"resources" json:"resources"`
-	Mongo      map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
-	Neo4j      map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
-	Mysql      map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
-	Minio      map[string]*MinioConfig    `yaml:"minio" json:"minio"`
-	Redis      map[string]*RedisConfig    `yaml:"redis" json:"redis"`
-	Fs         []map[string]any           `yaml:"fs" json:"fs"`
-	AuthConfig *AuthConfig                `yaml:"auth" json:"auth"`
-	fsManager  *fsm.Manager               `yaml:"-" json:"-"`
+	Name      string                     `yaml:"-" json:"name"`
+	App       *AppConfig                 `yaml:"app" json:"app"`
+	Log       *LogConfig                 `yaml:"log" json:"log"`
+	Dapr      *DaprConfig                `yaml:"dapr" json:"dapr"`
+	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
+	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
+	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
+	Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
+	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
+	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
+	Fs        []map[string]any           `yaml:"fs" json:"fs"`
+	Auth      *AuthConfig                `yaml:"auth" json:"auth"`
 }
 
 func NewEnvConfig(name string) *EnvConfig {
 	return &EnvConfig{
-		Name:       name,
-		App:        NewAppConfig(),
-		Log:        newLogConfig(),
-		Dapr:       newDaprConfig(),
-		Resources:  map[string]*ResourceConfig{},
-		Mongo:      map[string]*MongoConfig{},
-		Neo4j:      map[string]*Neo4jConfig{},
-		Mysql:      map[string]*MySqlConfig{},
-		Minio:      map[string]*MinioConfig{},
-		Redis:      map[string]*RedisConfig{},
-		Fs:         []map[string]any{},
-		AuthConfig: &AuthConfig{},
-		fsManager:  fsm.NewManager(),
+		Name:      name,
+		App:       NewAppConfig(),
+		Log:       newLogConfig(),
+		Dapr:      newDaprConfig(),
+		Resources: map[string]*ResourceConfig{},
+		Mongo:     map[string]*MongoConfig{},
+		Neo4j:     map[string]*Neo4jConfig{},
+		Mysql:     map[string]*MySqlConfig{},
+		Minio:     map[string]*MinioConfig{},
+		Redis:     map[string]*RedisConfig{},
+		Fs:        []map[string]any{},
+		Auth:      &AuthConfig{},
 	}
 }
 
@@ -81,18 +75,19 @@ type FsRootPath interface {
 // @Author:       liuxdl
 // @Date:         2021/10/18 10:57
 type AppConfig struct {
-	AppId     string            `yaml:"id" json:"id"`               // 应用ID
-	AppName   string            `yaml:"name" json:"name"`           // 应用名称
-	ProdMode  bool              `yaml:"prodMode" json:"prodMode"`   // 是生产模式
-	HttpHost  string            `yaml:"httpHost" json:"httpHost"`   // 绑定HTTP IP
-	HttpPort  int               `yaml:"httpPort" json:"httpPort"`   // 绑定HTTP 端口
-	RootUrl   string            `yaml:"rootUrl" json:"rootUrl"`     // URL根
-	CPU       *int              `yaml:"cpu" json:"cpu"`             // CPU数量
-	Memory    *string           `yaml:"memory" json:"memory"`       // 内存大小
-	Values    map[string]string `yaml:"values" json:"values"`       // 系统变量
-	AuthToken string            `yaml:"authToken" json:"authToken"` // 开发时Token
-	HServer   HServer           `yaml:"hServer" json:"hServer"`     // 脚本服务配置
-	Template  HtmlTemplate      `yaml:"template" json:"template"`   // html模板配置
+	AppId      string         `yaml:"id" json:"id"`                 // 应用ID
+	AppName    string         `yaml:"name" json:"name"`             // 应用名称
+	ProdMode   bool           `yaml:"prodMode" json:"prodMode"`     // 是生产模式
+	HttpHost   string         `yaml:"httpHost" json:"httpHost"`     // 绑定HTTP IP
+	HttpPort   int            `yaml:"httpPort" json:"httpPort"`     // 绑定HTTP 端口
+	RootUrl    string         `yaml:"rootUrl" json:"rootUrl"`       // URL根
+	CPU        *int           `yaml:"cpu" json:"cpu"`               // CPU数量
+	Memory     *string        `yaml:"memory" json:"memory"`         // 内存大小
+	Meta       map[string]any `yaml:"meta" json:"meta"`             // 自定义配置
+	AuthToken  string         `yaml:"authToken" json:"authToken"`   // 开发时Token
+	HServer    HServer        `yaml:"hServer" json:"hServer"`       // 脚本服务配置
+	Template   HtmlTemplate   `yaml:"template" json:"template"`     // html模板配置
+	IsPubEvent bool           `yaml:"isPubEvent" json:"isPubEvent"` // 是否发送领域事件
 }
 
 func NewAppConfig() *AppConfig {
@@ -103,45 +98,28 @@ func NewAppConfig() *AppConfig {
 		HttpPort: 1984,
 	}
 }
-func (a *AppConfig) GetAppId() string {
-	return a.AppId
-}
-
-func (a *AppConfig) GetAppName() string {
-	return a.AppName
-}
-
-func (a *AppConfig) GetProdMode() bool {
-	return a.ProdMode
-}
-
-func (a *AppConfig) GetHttpHost() string {
-	return a.HttpHost
-}
-
-func (a *AppConfig) GetHttpPort() int {
-	return a.HttpPort
-}
-
-func (a *AppConfig) GetRootUrl() string {
-	return a.RootUrl
-}
-
-func (a *AppConfig) GetSrcPath() string {
-	return a.HServer.BasePath
-}
 
 // HServer
 // @Description: 脚本服务配置
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
 type HServer struct {
-	Enable       bool   `yaml:"enable" json:"enable"`             // 是否启用脚本服务
-	SrcName      string `yaml:"srcName" json:"srcName"`           // API源码文件系统名称
-	WebName      string `yaml:"webName" json:"webName"`           // Web源码文件系统名称
-	BasePath     string `yaml:"basePath" json:"basePath"`         // 脚本文件路径
-	Reload       bool   `yaml:"reload" json:"reload"`             // 是否自动加载脚本
-	WatchRestart bool   `yaml:"watchRestart" json:"watchRestart"` // 检查文件变化，重新启动
+	Enable       bool           `yaml:"enable" json:"enable"`             // 是否启用脚本服务
+	SrcName      string         `yaml:"srcName" json:"srcName"`           // API源码文件系统名称
+	WebName      string         `yaml:"webName" json:"webName"`           // Web源码文件系统名称
+	BasePath     string         `yaml:"basePath" json:"basePath"`         // 脚本文件路径
+	Reload       bool           `yaml:"reload" json:"reload"`             // 是否自动加载脚本
+	WatchRestart bool           `yaml:"watchRestart" json:"watchRestart"` // 检查文件变化，重新启动
+	Meta         map[string]any `yaml:"meta" json:"meta"`
+	Npm          Npm            `yaml:"npm" json:"npm"`
+}
+type Npm struct {
+	Links []*NpmLink `yaml:"links" json:"links"`
+}
+
+type NpmLink struct {
+	Name string `yaml:"name" json:"name"`
+	Path string `yaml:"path" json:"path"`
 }
 
 type IHServer interface {
@@ -207,7 +185,7 @@ type ActorConfig struct {
 // EventStore 事件存储
 type EventStore struct {
 	CompName   string `yaml:"name" json:"name"`     // Dapr EventStarge 组件名称
-	PubsubName string `yaml:"pubsub" json:"pubsub"` // Dapr Pubsub 组件名称
+	PubSubName string `yaml:"pubsub" json:"pubsub"` // Dapr Pubsub 组件名称
 }
 
 // LogConfig 日志配置
@@ -295,170 +273,11 @@ func (e *EnvConfig) Init(name string) error {
 	e.Log.level = level
 
 	//初始化Dapr
-	if err := e.Dapr.init(e); err != nil {
+	/*if err := e.Dapr.init(e); err != nil {
 		return err
-	}
+	}*/
 
 	return nil
-}
-
-func (e *EnvConfig) GetEnvInt(envName string, defValue *int64) *int64 {
-	value, ok := os.LookupEnv(envName)
-	if !ok {
-		return defValue
-	}
-	parseInt, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	return &parseInt
-}
-
-func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
-	value, ok := os.LookupEnv(envName)
-	if !ok {
-		return defValue
-	}
-	return &value
-}
-
-func (e *EnvConfig) GetFsManager() *fsm.Manager {
-	if e.fsManager != nil {
-		return e.fsManager
-	}
-	if len(e.Fs) != 0 {
-		fsManager, err := fsm.NewManagerWithConfigs(e.Fs, e.App.HServer.SrcName)
-		if err != nil {
-			panic(errors.New("fs.NewManagerWithConfigs() err: %s", err.Error()))
-		}
-		e.fsManager = fsManager
-	}
-	return e.fsManager
-}
-
-func (e *EnvConfig) GetProdMode() bool {
-	return e.App.ProdMode
-}
-
-func (e *EnvConfig) GetValue() map[string]string {
-	return e.App.Values
-}
-
-func (e *EnvConfig) GetFs(name string) (afero.Fs, error) {
-	m := e.GetFsManager()
-	fs, ok := m.GetFs(name)
-	if ok {
-		return fs, nil
-	}
-	return nil, errors.New(" %s fs not exist", name)
-}
-
-func (e *EnvConfig) GetFsByTag(tags ...string) []afero.Fs {
-	m := e.GetFsManager()
-	fsList := m.GetFsByTag(tags...)
-	return fsList
-}
-
-func (s *HServer) GetEnable() bool {
-	return s.Enable
-}
-
-func (s *HServer) GetBasePath() string {
-	return s.BasePath
-}
-
-func (l *LogConfig) GetLevel() applog.Level {
-	return l.level
-}
-
-func (c *ActorConfig) init() {
-	if c.ActorIdleTimeout == "" {
-		c.ActorIdleTimeout = "1h"
-	}
-	if c.ActorScanInterval == "" {
-		c.ActorScanInterval = "30s"
-	}
-	if c.DrainOngingCallTimeout == "" {
-		c.DrainOngingCallTimeout = "5m"
-	}
-}
-
-func (c *DaprConfig) init(e *EnvConfig) error {
-	if c.Host == nil {
-		var value = "localhost"
-		c.Host = e.GetEnvString("DAPR_HOST", &value)
-	}
-
-	if e.Dapr.HttpPort == nil {
-		var value int64 = 3500
-		c.HttpPort = e.GetEnvInt("DAPR_HTTP_PORT", &value)
-	}
-
-	if e.Dapr.GrpcPort == nil {
-		var value int64 = 50001
-		c.GrpcPort = e.GetEnvInt("DAPR_GRPC_PORT", &value)
-	}
-
-	if c.MaxCallRecvMsgSize == nil {
-		val := dapr2.GetMaxCallRecvMsgSize()
-		c.MaxCallRecvMsgSize = &val
-	}
-
-	if c.MaxIdleConnsPerHost == nil {
-		val := dapr2.DefaultMaxIdleConnsPerHost
-		c.MaxIdleConns = &val
-	}
-
-	if c.IdleConnTimeout == nil {
-		val := dapr2.DefaultIdleConnTimeout
-		c.IdleConnTimeout = &val
-	}
-
-	if c.MaxIdleConns == nil {
-		val := dapr2.DefaultMaxIdleConns
-		c.MaxIdleConnsPerHost = &val
-	}
-
-	if len(c.EventStores) > 0 {
-		for compName, es := range e.Dapr.EventStores {
-			if es.CompName == "" {
-				es.CompName = compName
-			}
-			if len(es.PubsubName) == 0 {
-				return errors.ErrorOf("config env:%s  Dapr.EventStores.%s pubsub is null", e.Name, compName)
-			}
-		}
-	}
-
-	e.Dapr.Actor.init()
-
-	return nil
-
-}
-
-func (c *DaprConfig) IsEnable() bool {
-	return c.Enable != nil && *c.Enable
-}
-
-func (c *DaprConfig) GetHost() string {
-	if c.Host == nil {
-		return ""
-	}
-	return *c.Host
-}
-
-func (c *DaprConfig) GetHttpPort() int64 {
-	if c.HttpPort == nil {
-		return 0
-	}
-	return *c.HttpPort
-}
-
-func (c *DaprConfig) GetGrpcPort() int64 {
-	if c.GrpcPort == nil {
-		return 0
-	}
-	return *c.GrpcPort
 }
 
 func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
@@ -474,17 +293,148 @@ func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
 	return nil, NewEnvTypeError(fmt.Sprintf("error config env is \"%s\". choose one of: [dev, test, prod]", env))
 }
 
-func initResources(resCfg map[string]*ResourceConfig) error {
-	if resCfg == nil {
-		return nil
+func (e *EnvConfig) GetEnvInt(envName string, defValue *int64) *int64 {
+	value, ok := os.LookupEnv(envName)
+	if !ok {
+		return defValue
 	}
-
-	for k, v := range resCfg {
-		v.Name = k
+	parseInt, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		panic(err)
 	}
-	return nil
+	return &parseInt
 }
 
+/*
+	func (e *EnvConfig) GetEnvString(envName string, defValue *string) *string {
+		value, ok := os.LookupEnv(envName)
+		if !ok {
+			return defValue
+		}
+		return &value
+	}
+
+	func (e *EnvConfig) GetProdMode() bool {
+		return e.App.ProdMode
+	}
+
+	func (e *EnvConfig) GetMeta() map[string]any {
+		return e.App.Meta
+	}
+
+	func (s *HServer) GetEnable() bool {
+		return s.Enable
+	}
+
+	func (s *HServer) GetBasePath() string {
+		return s.BasePath
+	}
+
+	func (l *LogConfig) GetLevel() applog.Level {
+		return l.level
+	}
+
+	func (c *ActorConfig) init() {
+		if c.ActorIdleTimeout == "" {
+			c.ActorIdleTimeout = "1h"
+		}
+		if c.ActorScanInterval == "" {
+			c.ActorScanInterval = "30s"
+		}
+		if c.DrainOngingCallTimeout == "" {
+			c.DrainOngingCallTimeout = "5m"
+		}
+	}
+
+	func (c *DaprConfig) init(e *EnvConfig) error {
+		if c.Host == nil {
+			var value = "localhost"
+			c.Host = e.GetEnvString("DAPR_HOST", &value)
+		}
+
+		if e.Dapr.HttpPort == nil {
+			var value int64 = 3500
+			c.HttpPort = e.GetEnvInt("DAPR_HTTP_PORT", &value)
+		}
+
+		if e.Dapr.GrpcPort == nil {
+			var value int64 = 50001
+			c.GrpcPort = e.GetEnvInt("DAPR_GRPC_PORT", &value)
+		}
+
+		if c.MaxCallRecvMsgSize == nil {
+			val := dapr2.GetMaxCallRecvMsgSize()
+			c.MaxCallRecvMsgSize = &val
+		}
+
+		if c.MaxIdleConnsPerHost == nil {
+			val := dapr2.DefaultMaxIdleConnsPerHost
+			c.MaxIdleConns = &val
+		}
+
+		if c.IdleConnTimeout == nil {
+			val := dapr2.DefaultIdleConnTimeout
+			c.IdleConnTimeout = &val
+		}
+
+		if c.MaxIdleConns == nil {
+			val := dapr2.DefaultMaxIdleConns
+			c.MaxIdleConnsPerHost = &val
+		}
+
+		if len(c.EventStores) > 0 {
+			for compName, es := range e.Dapr.EventStores {
+				if es.CompName == "" {
+					es.CompName = compName
+				}
+				if len(es.PubSubName) == 0 {
+					return errors.ErrorOf("config env:%s  Dapr.EventStores.%s pubsub is null", e.Name, compName)
+				}
+			}
+		}
+
+		e.Dapr.Actor.init()
+
+		return nil
+
+}
+
+	func (c *DaprConfig) IsEnable() bool {
+		return c.Enable != nil && *c.Enable
+	}
+
+	func (c *DaprConfig) GetHost() string {
+		if c.Host == nil {
+			return ""
+		}
+		return *c.Host
+	}
+
+	func (c *DaprConfig) GetHttpPort() int64 {
+		if c.HttpPort == nil {
+			return 0
+		}
+		return *c.HttpPort
+	}
+
+	func (c *DaprConfig) GetGrpcPort() int64 {
+		if c.GrpcPort == nil {
+			return 0
+		}
+		return *c.GrpcPort
+	}
+
+	func initResources(resCfg map[string]*ResourceConfig) error {
+		if resCfg == nil {
+			return nil
+		}
+
+		for k, v := range resCfg {
+			v.Name = k
+		}
+		return nil
+	}
+*/
 func searchConfigFile(path, configName string, fileName string) (string, bool, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {

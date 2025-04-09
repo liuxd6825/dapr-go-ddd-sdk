@@ -36,7 +36,7 @@ type IFsPkg interface {
 // @Description:  文件系统
 type FsPkg struct {
 	base        *fsm.Manager
-	cfg         env.IEnvConfig
+	cfg         *env.Env
 	WriteModels *FsWriteModel
 	fsName      string
 }
@@ -61,10 +61,9 @@ func NewFsWriteModel() *FsWriteModel {
 //	@param cfg
 //	@return *FsPkg
 //	@return error
-func NewFsPkg(cfg env.IEnvConfig, fsName string) (*FsPkg, error) {
+func NewFsPkg(cfg *env.Env, fsName string) (*FsPkg, error) {
 	var err error
-	fsM := cfg.GetFsManager()
-
+	fsM := cfg.Fsm
 	if fsName != "" {
 		fsM, err = fsM.NewFsm(fsName)
 		if err != nil {

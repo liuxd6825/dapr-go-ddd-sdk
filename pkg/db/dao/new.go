@@ -2,13 +2,13 @@ package dao
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -43,7 +43,7 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		panic("new dao must have a non-nil pointer")
 	}
 	if newCfg.DBKey == "" {
-		db := restapp.GetDBDefault()
+		db := env.GetDBDefault()
 		newCfg.DBKey = db.GetDBKey()
 	}
 	dbKey := newCfg.DBKey
@@ -79,8 +79,8 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	isPubEvent := false
 	if newCfg.IsPubEvent != nil {
 		isPubEvent = *newCfg.IsPubEvent
-	} else if ep, ok := item.GetConfig().(restapp.EventPublish); ok {
-		isPubEvent = ep.GetEventPublish()
+	} else {
+		isPubEvent = env.GetEnv().App.IsPubEvent
 	}
 
 	daoCfg := &idao.DaoConfig{
@@ -89,7 +89,7 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		IsPubEvent: isPubEvent,
 		AggField:   newCfg.AggField,
 		AggType:    newCfg.AggType,
-		Env:        restapp.GetEnvConfig(),
+		Env:        env.GetEnv(),
 		DBSchema:   newCfg.DBSchema,
 	}
 
@@ -99,17 +99,15 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	var dao idao.Dao[T]
 
 	switch item.GetDBType() {
-	case restapp.DBType_MongoDB:
+	case env.DBType_MongoDB:
 		dao = mongodb.NewDao[T](daoCfg)
-	case restapp.DBType_Sqlite,
-		restapp.DBType_Oracle,
-		restapp.DBType_Postgres,
-		restapp.DBType_MySQL,
-		restapp.DBType_MsSQL:
+	case env.DBType_Sqlite,
+		env.DBType_Oracle,
+		env.DBType_Postgres,
+		env.DBType_MySQL,
+		env.DBType_MsSQL:
 		dao = sql.NewDao[T](daoCfg)
-	case restapp.DBType_Redis:
-		panic(errors.New(fmt.Sprintf("%s database nonsupport Redis", dbKey)))
-	case restapp.DBType_Neo4j:
+	case env.DBType_Neo4j:
 		dao = neo4j.NewDao[T](daoCfg)
 	default:
 		panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
@@ -123,8 +121,8 @@ func getDaoKey(dbKey, tableName string, className string) string {
 	return fmt.Sprintf("%s.%s.%s", dbKey, tableName, className)
 }
 
-func getDBItem(dbKey string) restapp.DBItem {
-	item := restapp.GetDB(dbKey)
+func getDBItem(dbKey string) env.DBItem {
+	item := env.GetDB(dbKey)
 	if item == nil {
 		panic(errors.New(" %s dbKey not exists", dbKey))
 	}

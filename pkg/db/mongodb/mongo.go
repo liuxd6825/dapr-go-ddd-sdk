@@ -1,10 +1,11 @@
-package store_mongodb
+package mongodb
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,34 +15,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-)
-
-const (
-	host                   = "Host"
-	username               = "User"
-	password               = "Pwd"
-	databaseName           = "DatabaseName"
-	eventCollectionName    = "eventCollectionName"
-	snapshotCollectionName = "snapshotCollectionName"
-	server                 = "server"
-	writeConcern           = "writeConcern"
-	readConcern            = "readConcern"
-	operationTimeout       = "operationTimeout"
-	params                 = "Params"
-	id                     = "_id"
-	value                  = "value"
-	etag                   = "_etag"
-
-	defaultTimeout = 30 * time.Second
-
-	// mongodb://<User>:<Pwd@<Host>/<database><Params>
-	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s"
-
-	// mongodb://<Host>/<database><Params>
-	connectionURIFormat = "mongodb://%s/%s%s"
-
-	// mongodb+srv://<server>/<Params>
-	connectionURIFormatWithSrv = "mongodb+srv://%s/%s"
 )
 
 // MongoDB is a state store implementation for MongoDB.
@@ -86,6 +59,34 @@ func (i ObjectId) String() string {
 	return string(i)
 }
 
+const (
+	host                   = "Host"
+	username               = "User"
+	password               = "Pwd"
+	databaseName           = "DatabaseName"
+	eventCollectionName    = "eventCollectionName"
+	snapshotCollectionName = "snapshotCollectionName"
+	server                 = "server"
+	writeConcern           = "writeConcern"
+	readConcern            = "readConcern"
+	operationTimeout       = "operationTimeout"
+	params                 = "Params"
+	id                     = "_id"
+	value                  = "value"
+	etag                   = "_etag"
+
+	defaultTimeout = 30 * time.Second
+
+	// mongodb://<User>:<Pwd@<Host>/<database><Params>
+	connectionURIFormatWithAuthentication = "mongodb://%s:%s@%s/%s"
+
+	// mongodb://<Host>/<database><Params>
+	connectionURIFormat = "mongodb://%s/%s%s"
+
+	// mongodb+srv://<server>/<Params>
+	connectionURIFormatWithSrv = "mongodb+srv://%s/%s"
+)
+
 // ServerCount
 // @Description: 获取服务器的数量
 // @receiver c
@@ -110,6 +111,14 @@ func NewMongoDB(config *Config, optionsFunc InitOptionsFunc) (*MongoDB, error) {
 
 func (m *MongoDB) GetDatabase() *mongo.Database {
 	return m.database
+}
+
+func (m *MongoDB) GetClient() *mongo.Client {
+	return m.client
+}
+
+func (m *MongoDB) GetOperationTimeout() time.Duration {
+	return m.operationTimeout
 }
 
 func NenMongoDBWithClient(dbName string, client *mongo.Client) *MongoDB {
@@ -173,6 +182,10 @@ func (m *MongoDB) Name() string {
 	return m.database.Name()
 }
 
+func (m *MongoDB) GetServerCount() int {
+	return m.config.ServerCount()
+}
+
 func (m *MongoDB) Drop(ctx context.Context) error {
 	return m.database.Drop(ctx)
 }
@@ -202,7 +215,9 @@ func (m *MongoDB) Client() *mongo.Client {
 }
 
 func (m *MongoDB) Close(ctx context.Context) error {
-	return m.client.Disconnect(ctx)
+	return gp.Try(func() error {
+		return m.client.Disconnect(ctx)
+	}).Error
 }
 
 func (m *MongoDB) Ping() error {

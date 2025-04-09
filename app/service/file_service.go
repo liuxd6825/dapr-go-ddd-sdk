@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
@@ -25,12 +24,12 @@ type IFileService interface {
 }
 
 type fileService struct {
-	env      restapp.IEnvConfig
+	env      *env.Env
 	rootPath string
 	fsPkg    fspkg.IFsPkg
 }
 
-func NewFileService(env env.IEnvConfig, rootPath string) IFileService {
+func NewFileService(env *env.Env, rootPath string) IFileService {
 	fsPkg, err := fspkg.NewFsPkg(env, rootPath)
 	if err != nil {
 		panic(err)

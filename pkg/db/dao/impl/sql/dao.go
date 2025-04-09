@@ -2,12 +2,12 @@ package sql
 
 import (
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_sql"
 	idao "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"gorm.io/gorm"
@@ -38,7 +38,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	}
 
 	if db == nil {
-		item := restapp.GetDB(cfg.DbKey)
+		item := env.GetDB(cfg.DbKey)
 		if item == nil {
 			panic("db item not found")
 		}

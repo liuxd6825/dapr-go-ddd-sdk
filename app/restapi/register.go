@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
-func RegisterSchema(app *iris.Application, baseUrl string, env env.IEnvConfig, rootPath string) {
+func RegisterSchema(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
 	schemaAPI := NewSchemaAPI(env, rootPath)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(schemaAPI)

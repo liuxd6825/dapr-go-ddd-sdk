@@ -3,112 +3,52 @@ package restapp
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs/userlog"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"runtime"
 	"runtime/debug"
 	"strings"
 )
 
-var (
-	_envConfig *EnvConfig
-)
-
 const SystemTenantId = "system"
 
-func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterEventType, isTest bool, fun func(cxt context.Context) error) error {
-	if env == nil {
+func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []RegisterEventType, isTest bool, fun func(cxt context.Context) error) error {
+	if envCfg == nil {
 		return errors.New("envConfig is null")
 	}
 
-	if len(env.App.HttpHost) == 0 {
-		env.App.HttpHost = "0.0.0.0"
+	if len(envCfg.App.HttpHost) == 0 {
+		envCfg.App.HttpHost = "0.0.0.0"
 	}
-
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", env.App.AppId, env.Name))
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", env.App.HttpHost, env.App.HttpPort, env.App.RootUrl))
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort()))
-	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(env.Dapr.EventStores)))
 
 	// 设置全局时区为本地时区
 	times.SetLocalTimeZone()
 
-	userlog.Init(env.App.AppId, env.App.AppName)
+	userlog.Init(envCfg.App.AppId, envCfg.App.AppName)
 
 	//设置CPU与内容
-	if err := setCpuMemory(env.Name, env.App); err != nil {
+	if err := setCpuMemory(envCfg.Name, envCfg.App); err != nil {
 		return err
 	}
 
-	if err := initMongo(env.App.AppId, env.Mongo); err != nil {
-		return err
+	if envCfg.App.AuthToken != "" {
+		DefaultAuthToken = envCfg.App.AuthToken
 	}
 
-	if err := initNeo4j(env.Neo4j); err != nil {
-		return err
-	}
+	e := NewEnv(envCfg)
+	e.Init()
+	env.SetEnv(e)
 
-	if err := initResources(env.Resources); err != nil {
-		return err
-	}
-
-	if err := initMinio(env.Minio); err != nil {
-		return err
-	}
-
-	if err := initRedis(env.Redis); err != nil {
-		return err
-	}
-
-	if err := initMySql(env.Mysql); err != nil {
-		return err
-	}
-
-	if env.App.AuthToken != "" {
-		DefaultAuthToken = env.App.AuthToken
-	}
-
-	if len(env.Fs) != 0 {
-		fsManager, err := fsm.NewManagerWithConfigs(env.Fs, env.App.HServer.SrcName)
-		if err != nil {
-			return errors.New("fs.NewManagerWithConfigs() err: %s", err.Error())
-		}
-		env.fsManager = fsManager
-	}
-
-	SetEnvConfig(env)
-
-	var daprClient dapr2.DaprClient
-	var err error
-	if env.Dapr.IsEnable() {
-		// 启动服务，创建dapr客户端
-		daprClient, err = dapr2.NewDaprClient(ctx, env.Dapr.GetHost(), env.Dapr.GetHttpPort(), env.Dapr.GetGrpcPort(), func(ops *dapr2.DaprHttpOptions) {
-			ops.MaxCallRecvMsgSize = intutils.P2IntDefault(env.Dapr.MaxCallRecvMsgSize, dapr2.GetMaxCallRecvMsgSize())
-			ops.MaxIdleConns = intutils.P2IntDefault(env.Dapr.MaxIdleConns, dapr2.DefaultMaxIdleConns)
-			ops.MaxIdleConnsPerHost = intutils.P2IntDefault(env.Dapr.MaxIdleConnsPerHost, dapr2.DefaultMaxIdleConnsPerHost)
-			ops.IdleConnTimeout = intutils.P2IntDefault(env.Dapr.IdleConnTimeout, dapr2.DefaultIdleConnTimeout)
-		})
-		if err != nil {
-			return err
-		}
-		dapr2.SetDaprClient(daprClient)
-	}
-
-	ddd.Init(env.App.AppId)
-
-	level, err := logs2.ParseLevel(env.Log.Level)
-	if err != nil {
-		return errors.ErrorOf("log.Level is error %s", err)
-	}
-	applog.Init(daprClient, env.App.AppId, level)
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", e.App.AppId, e.Name))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", e.App.HttpHost, e.App.HttpPort, e.App.RootUrl))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=dapr; daprHost=%s; daprHttpPort=%d; daprGrpcPort=%d;", e.Dapr.GetHost(), e.Dapr.GetHttpPort(), e.Dapr.GetGrpcPort()))
+	logs2.Infof(ctx, "", nil, fmt.Sprintf("ctype=eventStores; length=%v;", len(e.Dapr.EventStores)))
 
 	// 注册领域事件类型
 	for _, t := range eventTypes {
@@ -118,11 +58,11 @@ func InitApplication(ctx context.Context, env *EnvConfig, eventTypes []RegisterE
 	}
 
 	// 注册事件存储器
-	eventStoresMap := newEventStores(env.Dapr, daprClient)
+	eventStoresMap := newEventStores(e.Dapr, e.Dapr.GetClient())
 	for key, es := range eventStoresMap {
 		ddd.RegisterEventStore(key, es)
 	}
-
+	var err error
 	if fun != nil {
 		err = fun(ctx)
 	}
@@ -220,7 +160,7 @@ func setMem(val string) (string, error) {
 	return memTxt, nil
 }
 
-func newEventStores(cfg *DaprConfig, client dapr2.DaprClient) map[string]ddd.EventStore {
+func newEventStores(cfg *env.Dapr, client dapr2.DaprClient) map[string]ddd.EventStore {
 	//创建dapr事件存储器
 	eventStoresMap := make(map[string]ddd.EventStore)
 	if !cfg.IsEnable() {
@@ -232,7 +172,7 @@ func newEventStores(cfg *DaprConfig, client dapr2.DaprClient) map[string]ddd.Eve
 	} else {
 		var defEs ddd.EventStore
 		for _, item := range esMap {
-			eventStorage, err := ddd.NewGrpcEventStore(item.CompName, item.PubsubName, client)
+			eventStorage, err := ddd.NewGrpcEventStore(item.CompName, item.PubSubName, client)
 			if err != nil {
 				panic(err)
 			}
@@ -244,69 +184,4 @@ func newEventStores(cfg *DaprConfig, client dapr2.DaprClient) map[string]ddd.Eve
 		eventStoresMap[""] = defEs
 	}
 	return eventStoresMap
-}
-
-func GetAppValue(name string) (string, error) {
-	var err error
-	v, ok := _envConfig.App.Values[name]
-	if !ok {
-		err = errors.New(fmt.Sprintf("配置变量%s不存在", name))
-	}
-	return v, err
-}
-
-func GetAppValues() map[string]string {
-	return _envConfig.App.Values
-}
-
-func GetEnvConfig() *EnvConfig {
-	return _envConfig
-}
-
-func SetEnvConfig(envConfig *EnvConfig) {
-	_envConfig = envConfig
-	if envConfig != nil {
-		SetEnvName(envConfig.Name)
-
-		envConfig.Log.LogFile = AbsFileName(envConfig.Log.LogFile)
-		//envConfig.Dapr.Server.Config = AbsFileName(envConfig.Dapr.Server.Config)
-		//envConfig.Dapr.Server.LogFile = AbsFileName(envConfig.Dapr.Server.LogFile)
-		//envConfig.Dapr.Server.ComponentsPath = AbsFileName(envConfig.Dapr.Server.ComponentsPath)
-	}
-}
-
-func GetDaprHost() string {
-	return _envConfig.Dapr.GetHost()
-}
-
-func GetDaprHttpPort() int64 {
-	return _envConfig.Dapr.GetHttpPort()
-}
-
-func GetDaprGrpcPort() int64 {
-	return _envConfig.Dapr.GetGrpcPort()
-}
-
-func GetAppId() string {
-	return _envConfig.App.AppId
-}
-
-func GetAppName() string {
-	return _envConfig.App.AppName
-}
-
-func GetAppHttpHost() string {
-	return _envConfig.App.HttpHost
-}
-
-func GetHttpInvoke(appId string) string {
-	return fmt.Sprintf("http://%s:%v/v1.0/invoke/%v/method/", GetDaprHost(), GetDaprHttpPort(), appId)
-}
-
-func GetHttpsInvoke(appId string) string {
-	return fmt.Sprintf("https://%s:%v/v1.0/invoke/%v/method/", GetDaprHost(), GetDaprHttpPort(), appId)
-}
-
-func GetLogger() logs2.Logger {
-	return logs2.GetLogger()
 }

@@ -21,7 +21,7 @@ type schemaService struct {
 	fileService IFileService
 }
 
-func NewSchemaService(env env.IEnvConfig, rootPath string) ISchemaService {
+func NewSchemaService(env *env.Env, rootPath string) ISchemaService {
 	return &schemaService{
 		fileService: NewFileService(env, rootPath),
 	}

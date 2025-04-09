@@ -3,10 +3,10 @@ package tx
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_sql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -20,20 +20,18 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc store.TxFunc, options 
 	newTxFunc := txFunc
 	if dbKeys != nil && len(dbKeys) > 0 {
 		for _, dbKey := range dbKeys {
-			item := restapp.GetDB(dbKey)
+			item := env.GetDB(dbKey)
 			if item == nil {
 				return fmt.Errorf("dbKey %s not found", dbKey)
 			}
 			DBType := item.GetDBType()
 			switch DBType {
-			case restapp.DBType_Redis:
+			case env.DBType_Neo4j:
 				break
-			case restapp.DBType_Neo4j:
-				break
-			case restapp.DBType_MongoDB:
+			case env.DBType_MongoDB:
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
-			case restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
+			case env.DBType_Sqlite, env.DBType_MySQL, env.DBType_MsSQL, env.DBType_Oracle, env.DBType_Postgres:
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
 			}
@@ -47,7 +45,7 @@ type TxDB []TxDBItem
 type TxDBItem struct {
 	DB     any
 	DBKey  string
-	DBType restapp.DBType
+	DBType env.DBType
 }
 
 // Start 开启事务
@@ -60,14 +58,15 @@ func Start(ctx context.Context, txDb TxDB, txFunc store.TxFunc, options ...*stor
 	if txDb != nil && len(txDb) > 0 {
 		for _, item := range txDb {
 			switch item.DBType {
-			case restapp.DBType_Redis:
+			case env.DBType_Neo4j:
 				break
-			case restapp.DBType_Neo4j:
-				break
-			case restapp.DBType_MongoDB:
-				db := item.DB.(*store_mongodb.MongoDB)
+			case env.DBType_MongoDB:
+				db, ok := item.DB.(store_mongodb.IMongoDB)
+				if !ok {
+					return fmt.Errorf("db %s type %s is not MongoDB", item.DBKey, item.DBType)
+				}
 				newTxFunc = newMongoFunc(db, item.DBKey, newTxFunc)
-			case restapp.DBType_Sqlite, restapp.DBType_MySQL, restapp.DBType_MsSQL, restapp.DBType_Oracle, restapp.DBType_Postgres:
+			case env.DBType_Sqlite, env.DBType_MySQL, env.DBType_MsSQL, env.DBType_Oracle, env.DBType_Postgres:
 				db := item.DB.(*gorm.DB)
 				newTxFunc = newGormFunc(db, item.DBKey, newTxFunc)
 				break
@@ -83,7 +82,7 @@ func newGormFunc(db *gorm.DB, dbKey string, txFunc store.TxFunc, opts ...*store.
 	}
 }
 
-func newMongoFunc(mongodb *store_mongodb.MongoDB, dbKey string, txFunc store.TxFunc, opts ...*store.SessionOptions) store.TxFunc {
+func newMongoFunc(mongodb store_mongodb.IMongoDB, dbKey string, txFunc store.TxFunc, opts ...*store.SessionOptions) store.TxFunc {
 	return func(ctx context.Context, opts ...*store.SessionOptions) error {
 		return store_mongodb.StartTx(ctx, mongodb, dbKey, txFunc, opts...)
 	}

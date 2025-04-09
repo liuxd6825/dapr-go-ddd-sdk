@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -50,7 +50,7 @@ func initCompiler(compiler *jsonschema.Compiler) {
 	compiler.RegisterFormat(DateFormat)
 	compiler.RegisterVocabulary(NewMetaVocabulary())
 
-	if restapp.GetEnvConfig() != nil {
+	if env.GetEnv() != nil && env.GetEnv().Fsm != nil {
 		compiler.UseLoader(NewJSONLoader())
 	}
 

@@ -11,14 +11,14 @@ import (
 type Table struct {
 	tableName string
 	schema    *store.DBSchema
-	db        *store_mongodb.MongoDB
+	db        store_mongodb.IMongoDB
 }
 
-func NewTable(db *store_mongodb.MongoDB, schema *store.DBSchema) idao.Table {
+func NewTable(db store_mongodb.IMongoDB, schema *store.DBSchema) idao.Table {
 	return newTable(db, schema)
 }
 
-func newTable(db *store_mongodb.MongoDB, schema *store.DBSchema) *Table {
+func newTable(db store_mongodb.IMongoDB, schema *store.DBSchema) *Table {
 	tableName := stringutils.AsFieldName(schema.Name)
 	return &Table{db: db, tableName: tableName, schema: schema}
 }
@@ -62,8 +62,8 @@ func (t *Table) Drop(ctx context.Context) {
 		ctx = context.Background()
 	}
 	var err error
-	if isExist, e := t.db.ExistCollection(ctx, t.tableName); e != nil {
-		err = e
+	if isExist, e1 := t.db.ExistCollection(ctx, t.tableName); e1 != nil {
+		err = e1
 	} else if isExist {
 		err = t.db.GetCollection(t.tableName).Drop(ctx)
 	}

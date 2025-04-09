@@ -22,10 +22,10 @@ func getSessionContext(ctx ctx.Context, dbKey string) mongo.SessionContext {
 	return db
 }
 
-func StartTx(ctx context.Context, mongodb *MongoDB, dbKey string, txFun store.TxFunc, opts ...*store.SessionOptions) error {
+func StartTx(ctx context.Context, mongodb IMongoDB, dbKey string, txFun store.TxFunc, opts ...*store.SessionOptions) error {
 	sOpts := &mongo_options.SessionOptions{}
-	client := mongodb.client
-	serverCount := mongodb.config.ServerCount()
+	client := mongodb.GetClient()
+	serverCount := mongodb.GetServerCount()
 
 	sessionCtx := getSessionContext(ctx, dbKey)
 	if sessionCtx != nil {

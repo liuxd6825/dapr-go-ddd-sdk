@@ -1,13 +1,11 @@
 package env
 
-import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
-)
-
+/*
 type IEnvConfig interface {
 	GetAppId() string
 	GetAppName() string
 	GetProdMode() bool
+	GetMeta() map[string]any
 
 	GetAppHttpHost() string
 	GetAppHttpPort() int
@@ -19,3 +17,4 @@ type IEnvConfig interface {
 	GetHServerSrcPath() string
 	GetHServerEnable() bool
 }
+*/

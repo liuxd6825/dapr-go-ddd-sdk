@@ -36,7 +36,7 @@ type Server struct {
 	srcFs        afero.Fs                     // 源代码文件系统
 	fsPkg        fspkg.IFsPkg                 // 文件系统管理器
 	services     *types.CMap[element.Service] // 服务Map
-	envCfg       env.IEnvConfig               // 环境变量
+	env          *env.Env                     // 环境变量
 	tpl          *tpl_pkg.Template            // 模板渲染服务
 	definition   *definition.Definition       // 系统定义类
 	cacheEnable  bool                         // 是否启用缓存
@@ -50,7 +50,7 @@ type Server struct {
 }
 
 // NewServer 解析 HTML 并返回 Server 对象
-func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env env.IEnvConfig, opts ...element.NewServerOptions) (element.Server, error) {
+func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element.Factory, env *env.Env, opts ...element.NewServerOptions) (element.Server, error) {
 	fsPkg, err := fspkg.NewFsPkg(env, "")
 	if err != nil {
 		return nil, err
@@ -65,12 +65,12 @@ func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.F
 		app:          app,
 		services:     types.NewCMap[element.Service](),
 		fsPkg:        fsPkg,
-		envCfg:       env,
+		env:          env,
 		srcFs:        srcFs,
 		cacheEnable:  true,
 		factory:      factory,
 		schemaLoader: schema.NewJSONLoader(),
-		eventPrefix:  env.GetAppId(),
+		eventPrefix:  env.App.AppId,
 	}
 	server.SetPkgSetup(NewPkgSetup(server))
 
@@ -379,8 +379,8 @@ func (s *Server) Logs(level logrus.Level, format string, args ...interface{}) {
 	}
 }
 
-func (s *Server) EnvConfig() env.IEnvConfig {
-	return s.envCfg
+func (s *Server) EnvConfig() *env.Env {
+	return s.env
 }
 
 func (s *Server) RootPath() string {
@@ -459,8 +459,8 @@ func (s *Server) GetIsPubEvent() bool {
 	return s.isPubEvent
 }
 
-func (s *Server) GetEnvCfg() env.IEnvConfig {
-	return s.envCfg
+func (s *Server) GetEnvCfg() *env.Env {
+	return s.env
 }
 
 func (s *Server) Init(opts *element.ServerInitOptions) {

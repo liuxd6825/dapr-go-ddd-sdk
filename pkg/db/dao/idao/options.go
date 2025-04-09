@@ -1,9 +1,9 @@
 package idao
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
 type DaoConfig struct {
@@ -11,7 +11,7 @@ type DaoConfig struct {
 	IsPubEvent         bool            `json:"isPubEvent"`         // 是否发布消息
 	AggField           string          `json:"aggField"`           // 聚合根字段
 	AggType            string          `json:"aggType"`            // 聚合根类型
-	Env                IEnvConfig      `json:"env"`                // 环境配置
+	Env                *env.Env        `json:"env"`                // 环境配置
 	DBSchema           *store.DBSchema `json:"schema"`             // 数据结构
 	DB                 any             `json:"db"`                 // 数据库连接对象
 	IsCancelModified   bool            `json:"isCancelModified"`   // 取消创建者与更新都信息
@@ -43,7 +43,7 @@ func (c *DaoConfig) GetAggField() string {
 	return c.AggField
 }
 
-func (c *DaoConfig) GetEnv() restapp.IEnvConfig {
+func (c *DaoConfig) GetEnv() *env.Env {
 	return c.Env
 }
 

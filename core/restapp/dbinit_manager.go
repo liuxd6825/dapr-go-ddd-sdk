@@ -3,16 +3,17 @@ package restapp
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"strings"
 )
 
 type DbManager interface {
-	Create(ctx context.Context, table *Table, env *EnvConfig, options *CreateOptions)
-	Update(ctx context.Context, table *Table, env *EnvConfig, options *UpdateOptions)
+	Create(ctx context.Context, table *Table, env *env.Env, options *CreateOptions)
+	Update(ctx context.Context, table *Table, env *env.Env, options *UpdateOptions)
 }
 
 type DbScriptManager interface {
-	GetScript(ctx context.Context, dbKey string, table []*Table, env *EnvConfig, options *CreateOptions) (*strings.Builder, error)
+	GetScript(ctx context.Context, dbKey string, table []*Table, env *env.Env, options *CreateOptions) (*strings.Builder, error)
 }
 
 type InitOptions struct {

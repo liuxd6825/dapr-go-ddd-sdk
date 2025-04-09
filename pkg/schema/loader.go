@@ -3,7 +3,7 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"net/url"
 )
@@ -23,7 +23,7 @@ func NewJSONLoaderWithFsm(fsm *fsm.Manager) *JSONLoader {
 }
 
 func NewJSONLoader() *JSONLoader {
-	return &JSONLoader{fsm: restapp.GetEnvConfig().GetFsManager()}
+	return &JSONLoader{fsm: env.GetEnv().Fsm}
 }
 
 func (cl *JSONLoader) Load(refUrl string) (any, error) {

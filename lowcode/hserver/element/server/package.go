@@ -88,7 +88,7 @@ func (p *pkgSetup) params() any {
 }
 
 func (p *pkgSetup) env() any {
-	return p.server.envCfg
+	return p.server.env
 }
 
 func (p *pkgSetup) logs() any {

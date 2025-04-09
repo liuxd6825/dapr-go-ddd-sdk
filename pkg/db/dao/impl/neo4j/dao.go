@@ -2,11 +2,11 @@ package neo4j
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -30,7 +30,7 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableName ...string) idao2.Dao[T] {
 	}
 
 	if driver == nil {
-		item := restapp.GetDB(cfg.DbKey)
+		item := env.GetDB(cfg.DbKey)
 		if item == nil {
 			panic(fmt.Sprintf("dbKey %s not found", cfg.DbKey))
 		}

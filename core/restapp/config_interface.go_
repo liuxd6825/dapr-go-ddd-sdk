@@ -12,6 +12,7 @@ type IEnvConfig interface {
 	GetHServerEnable() bool
 }
 
+/*
 func (e *EnvConfig) RsConfig() IEnvConfig {
 	return e
 }

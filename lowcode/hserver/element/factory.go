@@ -39,7 +39,7 @@ type Factory interface {
 	//  @return Server
 	//  @return error
 	//
-	NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory Factory, env env.IEnvConfig, opts ...NewServerOptions) (Server, error)
+	NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory Factory, env *env.Env, opts ...NewServerOptions) (Server, error)
 
 	//
 	// NewService

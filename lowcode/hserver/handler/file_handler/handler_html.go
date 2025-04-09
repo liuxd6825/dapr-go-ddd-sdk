@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/spf13/afero"
 	"regexp"
 	"strings"
@@ -69,9 +70,9 @@ func (h *Handler) isDynamicPage(ctx context.Context, ictx iris.Context, fs afero
 	return isDynamic, nil
 }
 
-func parserHtml(doc *goquery.Document, webCfg *WebConfig, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) ([]byte, error) {
+func parserHtml(doc *goquery.Document, envNpm *env.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) ([]byte, error) {
 	doc.Find("script").Each(func(i int, s *goquery.Selection) {
-		parserImport(s, webCfg, importFileFun)
+		parserImport(s, envNpm, importFileFun)
 	})
 	html, err := doc.Html()
 	if err != nil {
@@ -94,10 +95,10 @@ func processRawTemplate(tpl string) string {
 	return buf.String()
 }
 
-func parserImport(s *goquery.Selection, webCfg *WebConfig, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) {
+func parserImport(s *goquery.Selection, envNpm *env.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) {
 	typeAttr, exists := s.Attr("type")
 	if exists && typeAttr == "module" && len(s.Nodes) > 0 && s.Nodes[0].FirstChild != nil {
-		sb := transformImports(s.Nodes[0].FirstChild.Data, webCfg)
+		sb := transformImports(s.Nodes[0].FirstChild.Data, envNpm)
 		if sb != nil && importFileFun != nil {
 			importFileFun(s, sb)
 		}
@@ -105,7 +106,7 @@ func parserImport(s *goquery.Selection, webCfg *WebConfig, importFileFun func(sc
 }
 
 // 转换导入路径
-func transformImports(content string, webCfg *WebConfig) *strings.Builder {
+func transformImports(content string, envNpm *env.Npm) *strings.Builder {
 	lines := strings.Split(content, "\n")
 	sb := &strings.Builder{}
 	for _, line := range lines {
@@ -114,7 +115,7 @@ func transformImports(content string, webCfg *WebConfig) *strings.Builder {
 			line = line[index+7:]
 			line = strings.ReplaceAll(line, "\"", "")
 			line = strings.TrimSpace(line)
-			for _, link := range webCfg.Npm.Links {
+			for _, link := range envNpm.Links {
 				if link != nil && strings.HasPrefix(line, link.Name) {
 					sb.WriteString(fmt.Sprintf("import \"%s/%s\"\n", link.Path, line))
 					break
