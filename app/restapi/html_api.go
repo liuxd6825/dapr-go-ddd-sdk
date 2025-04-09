@@ -13,7 +13,7 @@ type HtmlAPI struct {
 	service service.IFileService
 }
 
-func NewHtmlAPI(env env.IEnvConfig, rootPath string) *HtmlAPI {
+func NewHtmlAPI(env *env.Env, rootPath string) *HtmlAPI {
 	return &HtmlAPI{
 		service: service.NewFileService(env, rootPath),
 	}
