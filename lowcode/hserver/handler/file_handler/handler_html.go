@@ -30,14 +30,17 @@ func (h *Handler) IsFileExist(fs afero.Fs, path string) (bool, error) {
 
 // isDynamicPageRegex 使用正则表达式检查 HTML 文件是否是动态页面
 func (h *Handler) isDynamicPage(ctx context.Context, ictx iris.Context, fs afero.Fs, filePath string, prodMode bool) (bool, error) {
+	// 在dev模式下，默认为后端渲染。
+	if !h.prodMode {
+		return true, nil
+	}
+
 	if ictx != nil && ictx.Params().Exists("ssr") {
 		return true, nil
 	}
 	// 检查缓存
-	if prodMode {
-		if cached, ok := dynamicCache.Load(filePath); ok {
-			return cached.(bool), nil
-		}
+	if cached, ok := dynamicCache.Load(filePath); ok {
+		return cached.(bool), nil
 	}
 
 	// 打开文件
@@ -62,11 +65,8 @@ func (h *Handler) isDynamicPage(ctx context.Context, ictx iris.Context, fs afero
 
 	// 检查是否匹配动态标记
 	isDynamic := dynamicMetaRegex.Match(content) || dynamicCommentRegex.Match(content)
-
 	// 缓存结果
-	if prodMode {
-		dynamicCache.Store(filePath, isDynamic)
-	}
+	dynamicCache.Store(filePath, isDynamic)
 	return isDynamic, nil
 }
 

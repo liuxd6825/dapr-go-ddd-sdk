@@ -24,13 +24,13 @@ type Config struct {
 }
 
 type Handler struct {
-	cfg       *Config
-	pageCache *types.CMap[bool]
-	app       *iris.Application
-	vData     map[string]any
-	prodMode  bool
-	webCfg    *WebConfig
-	htmlJs    *types.CMap[string]
+	cfg       *Config             // 配置
+	pageCache *types.CMap[bool]   // 页面缓存
+	app       *iris.Application   // iris APP对象
+	vData     map[string]any      // view模板数据
+	prodMode  bool                // 是生产模式
+	webCfg    *WebConfig          //
+	htmlJs    *types.CMap[string] // 将html中的<script>import * </script>转为js代码文件的内容
 }
 
 func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handler {
@@ -69,7 +69,7 @@ func (h *Handler) PathInterceptor(ctx iris.Context) {
 		ctx.ContentType("application/javascript; charset=utf-8")
 		str, ok := h.htmlJs.Get(rawPath)
 		if ok {
-			ctx.WriteString(str)
+			_, _ = ctx.WriteString(str)
 		}
 		return
 	}
