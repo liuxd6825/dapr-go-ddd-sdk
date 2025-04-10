@@ -32,7 +32,7 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc store.TxFunc, options 
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
 			case env.DBType_Sqlite, env.DBType_MySQL, env.DBType_MsSQL, env.DBType_Oracle, env.DBType_Postgres:
-				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
+				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			}
 		}

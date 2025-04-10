@@ -83,6 +83,7 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 func (s *ApiHandle) run(ctx context.Context, wctx element.WebContext, params any) {
 	values := &element.ApiRunValues{
 		Server:     s.server,
+		Service:    s.service,
 		Self:       s.service,
 		WebContext: wctx,
 		WorkPath:   s.service.WorkPath(),
