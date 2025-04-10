@@ -115,11 +115,16 @@ func transformImports(content string, envNpm *env.Npm) *strings.Builder {
 			line = line[index+7:]
 			line = strings.ReplaceAll(line, "\"", "")
 			line = strings.TrimSpace(line)
+			isImport := false
 			for _, link := range envNpm.Links {
 				if link != nil && strings.HasPrefix(line, link.Name) {
+					isImport = true
 					sb.WriteString(fmt.Sprintf("import \"%s/%s\"\n", link.Path, line))
 					break
 				}
+			}
+			if !isImport {
+				sb.WriteString(fmt.Sprintf("import \"%s\"\n", line))
 			}
 		}
 	}

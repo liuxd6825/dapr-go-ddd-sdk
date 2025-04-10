@@ -112,7 +112,7 @@ func (h *Handler) Handle(ictx iris.Context) {
 	} else if !strings.Contains(fileName, ".") {
 		fileName = fileName + ".html"
 	}
-	logs.Infofmt(ctx, "", "file handle %s", fileName)
+	logs.Infofmt(ctx, "file handle %s", fileName)
 
 	// 检查目录中存在文件
 	fs, _, isFound, err := h.isFileExist(fileName)
