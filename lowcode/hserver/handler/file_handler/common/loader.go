@@ -1,4 +1,4 @@
-package file_handler
+package common
 
 import (
 	"bytes"

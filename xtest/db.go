@@ -3,7 +3,7 @@ package xtest
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
@@ -16,7 +16,7 @@ type MongoConn struct {
 	Client *mongo.Client
 }
 
-func NewMongo() *store_mongodb.MongoDB {
+func NewMongo() *mongodb.MongoDB {
 	var client *mongo.Client
 
 	// 设置MongoDB连接URL
@@ -34,7 +34,7 @@ func NewMongo() *store_mongodb.MongoDB {
 		panic(err)
 	}
 
-	db := store_mongodb.NenMongoDBWithClient("test", client)
+	db := mongodb.NenMongoDBWithClient("test", client)
 	return db
 }
 

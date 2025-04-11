@@ -9,6 +9,10 @@ func (c Column) init(vals map[string]any) error {
 	return nil
 }
 
+func NewColumn() *Column {
+	return &Column{}
+}
+
 /*
 type ColumnType string
 

@@ -1,22 +1,22 @@
-package file_handler
+package engine
 
 import (
-	"fmt"
 	"github.com/flosch/pongo2/v6"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler/common"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
 	"github.com/spf13/afero"
-	"html/template"
 	"io"
 	"path/filepath"
 )
 
 type Engine struct {
-	fs          afero.Fs
-	loader      *Loader                // Afero 文件加载器
+	serverFs    afero.Fs
+	webFs       afero.Fs
+	loader      *common.Loader         // Afero 文件加载器
 	extension   string                 // 模板文件扩展名
 	templates   *pongo2.TemplateSet    // Pongo2 模板集合
 	funcs       map[string]interface{} // 自定义模板函数
@@ -33,11 +33,12 @@ func (e *Engine) Ext() string {
 }
 
 // NewEngine 创建一个新的 Afero Pongo2 引擎
-func NewEngine(env *env.Env, fs afero.Fs, extension string) *Engine {
-	loader := NewLoader(fs)
+func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string) *Engine {
+	loader := common.NewLoader(webFs)
 	set := pongo2.NewSet("afero", loader)
-	engin := &Engine{
-		fs:          fs,
+	engine := &Engine{
+		serverFs:    serverFs,
+		webFs:       webFs,
 		loader:      loader,
 		extension:   extension,
 		env:         env,
@@ -45,9 +46,15 @@ func NewEngine(env *env.Env, fs afero.Fs, extension string) *Engine {
 		templateMap: types.NewCMap[*pongo2.Template](),
 		funcs:       make(map[string]interface{}),
 	}
+
+	sheet := NewSheetTemplate(serverFs, webFs)
+	include := NewInclude(engine, serverFs, webFs)
 	// 在注册时
 	//set.Globals["include"] = engin.includeHTML()
-	return engin
+	//engine.AddFunc("litSSR", litSSR)
+	engine.AddFunc("sheet", sheet.Render)
+	engine.AddFunc("include", include.Render)
+	return engine
 }
 
 var ctxKey = "iris_ctx"
@@ -63,18 +70,6 @@ func RegisterTemplateFunc(app *iris.Application) {
 		ctx.ViewData(ctxKey, ctx)
 		ctx.Next()
 	})
-}
-
-func (e *Engine) includeHTML(workDir string) func(string) template.HTML {
-	return func(filename string) template.HTML {
-		fileName := fileutils.AbsPath(filename, &fileutils.ReadOptions{RootPath: "", WorkPath: workDir})
-		// 获取文件的绝对路径（可选，根据你的需求调整）
-		data, err := afero.ReadFile(e.fs, fileName)
-		if err != nil {
-			return template.HTML(fmt.Sprintf("<div> 错误: 无法读取文件 %s: %v </div>", fileName, err))
-		}
-		return template.HTML(data)
-	}
 }
 
 // Load 加载模板（无需操作，Afero 动态加载）
@@ -112,7 +107,7 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 	if t, ok := e.templateMap.Get(fileName); ok {
 		tmpl = t
 	} else if fileContent == nil {
-		fileContent, err = afero.ReadFile(e.fs, fileName)
+		fileContent, err = afero.ReadFile(e.webFs, fileName)
 		if err != nil {
 			return err
 		}
@@ -133,8 +128,7 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 		return errors.New("the view engine binding context is not of type iris.Context")
 	}
 
-	workDir := filepath.Dir(fileName)
-	data["include"] = e.includeHTML(workDir)
+	data["_workDir"] = filepath.Dir(fileName)
 
 	// 渲染模板
 	return tmpl.ExecuteWriter(data, w)

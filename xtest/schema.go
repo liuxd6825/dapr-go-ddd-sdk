@@ -1,5 +1,10 @@
 package xtest
 
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
+	"github.com/liuxd6825/jsonschema/v6"
+)
+
 const HumanSchema = `
 	{
 	  "name": "human",
@@ -9,11 +14,13 @@ const HumanSchema = `
 	  "properties": {
 		"id": {
 		  "type": ["string"],
-		  "title": "ID"
+		  "title": "ID",
+ 			"order": 1
 		},
 		"tenantId": {
 		  "type": ["string"],
-		  "title": "租户ID"
+		  "title": "租户ID",
+			"order": 2
 		},
 		"age": {
 		  "type": ["integer", "null"],
@@ -55,7 +62,8 @@ const HumanSchema = `
 		"remark": {
 		  "name": "remark",
 		  "type": ["string", "null"],
-		  "title": "备注"
+		  "title": "备注",
+           "order": 107
 		},
 		"createdTime": {
 		  "name": "createdTime",
@@ -229,3 +237,7 @@ const HumanRelSchema = `
 	  }
 	}
 `
+
+func GetHumanSchema() *jsonschema.Schema {
+	return schema.NewJsonSchemaWithJson("human.json", HumanSchema)
+}

@@ -1,0 +1,10 @@
+{%- for prop in properties -%}
+    {%- set name = prop.Name() -%}
+    {% if prop.IsIdField==true %}
+    <ui5e-sheet-column name="{{name}}" title="{{prop.Title}}" type="text" pk hide sch-create></ui5e-sheet-column>
+    {% elif prop.Readonly()==true %}
+    <ui5e-sheet-column name="{{name}}" title="{{prop.Title}}" type="{{prop.Type()}}" readonly sch-create></ui5e-sheet-column>
+    {% else %}
+    <ui5e-sheet-column name="{{name}}" title="{{prop.Title}}" type="{{prop.Type()}}" sch-create></ui5e-sheet-column>
+    {%- endif -%}
+{%- endfor -%}

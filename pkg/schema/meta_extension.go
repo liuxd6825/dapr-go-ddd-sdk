@@ -22,7 +22,16 @@ var content string
 const META_TAG_NAME = "meta"
 
 func NewMetaExtension() *MetaExtension {
-	return &MetaExtension{}
+	return &MetaExtension{
+		DBField: NewDBField(),
+		DBTable: NewDBTable(),
+		Column:  NewColumn(),
+		Query:   NewQuery(),
+		Lang:    NewLang(),
+		Param:   NewHttpParam(),
+		Convert: NewConvert(),
+		DDD:     NewDDD(),
+	}
 }
 
 func (m *MetaExtension) TagName() string {

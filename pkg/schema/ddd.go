@@ -8,6 +8,10 @@ type DDD struct {
 	IsPubEvent bool   `json:"isPubEvent"`
 }
 
+func NewDDD() *DDD {
+	return &DDD{}
+}
+
 func (p *DDD) init(values map[string]any) error {
 	for k, v := range values {
 		switch k {

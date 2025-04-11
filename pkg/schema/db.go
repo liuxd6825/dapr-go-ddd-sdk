@@ -39,6 +39,20 @@ type DBTable struct {
 	DBKey string `json:"dbKey"`
 }
 
+func NewDBTable() *DBTable {
+	return &DBTable{}
+}
+
+func NewDBField() *DBField {
+	return &DBField{
+		NotField:   false,
+		Creatable:  true,
+		Updatable:  true,
+		NotNull:    false,
+		PrimaryKey: false,
+	}
+}
+
 func (db *DBTable) init(values map[string]any) error {
 	var err error
 	for k, v := range values {
@@ -50,6 +64,16 @@ func (db *DBTable) init(values map[string]any) error {
 		}
 	}
 	return err
+}
+
+func (db *DBField) Readonly() bool {
+	if db.NotField {
+		return false
+	}
+	if !db.Creatable && !db.Updatable {
+		return true
+	}
+	return false
 }
 
 func (db *DBField) init(values map[string]any) error {

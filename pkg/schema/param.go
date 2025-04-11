@@ -18,6 +18,10 @@ type HttpParam struct {
 	Convert string     `json:"convert"`
 }
 
+func NewHttpParam() *HttpParam {
+	return &HttpParam{}
+}
+
 func (p *HttpParam) init(values map[string]any) error {
 	for k, v := range values {
 		switch k {

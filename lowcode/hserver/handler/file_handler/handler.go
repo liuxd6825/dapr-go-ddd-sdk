@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
+	engine2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler/engine"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -19,7 +20,8 @@ import (
 
 type Config struct {
 	Env         *env.Env
-	SrcFs       afero.Fs
+	ServerFs    afero.Fs
+	WebFs       afero.Fs
 	NodeModules []afero.Fs
 }
 
@@ -47,14 +49,13 @@ func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handle
 		panic(err)
 	}
 
-	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
-	engine := NewEngine(cfg.Env, cfg.SrcFs, ".html")
-
 	app.Use(f.PathInterceptor)
-	// engine.AddFunc("litSSR", litSSR)
+
+	// 初始化 Pongo2 模板引擎，使用 Afero 文件系统
+	en := engine2.NewEngine(cfg.Env, cfg.ServerFs, cfg.WebFs, ".html")
 
 	// 注册模板引擎到 Iris
-	app.RegisterView(engine)
+	app.RegisterView(en)
 	return f
 }
 
@@ -146,9 +147,9 @@ func (h *Handler) Handle(ictx iris.Context) {
 
 func (h *Handler) isFileExist(fileName string) (fs afero.Fs, resFileName string, exist bool, err error) {
 	resFileName = fileName
-	exist, err = afero.Exists(h.cfg.SrcFs, fileName)
+	exist, err = afero.Exists(h.cfg.WebFs, fileName)
 	if exist {
-		fs = h.cfg.SrcFs
+		fs = h.cfg.WebFs
 		return
 	}
 	for _, f := range h.cfg.NodeModules {
@@ -273,7 +274,7 @@ func (h *Handler) writeFile(ictx iris.Context, fs afero.Fs, fileName string) err
 //	@param path
 //	@return error
 func (h *Handler) preloadDynamicPages(ctx context.Context, ictx iris.Context, path string) error {
-	srcFs := h.cfg.SrcFs
+	srcFs := h.cfg.WebFs
 	files, _ := afero.ReadDir(srcFs, path)
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".html") {

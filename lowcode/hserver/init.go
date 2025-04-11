@@ -58,7 +58,8 @@ func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName str
 	if webFs != nil {
 		nodeModulesFs := env.Fsm.GetFsByTag("node-modules")
 		cfg := &file_handler.Config{
-			SrcFs:       webFs,
+			ServerFs:    srcFs,
+			WebFs:       webFs,
 			NodeModules: nodeModulesFs,
 			Env:         env,
 		}
