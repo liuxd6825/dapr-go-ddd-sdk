@@ -18,7 +18,7 @@ type Engine struct {
 	webFs       afero.Fs
 	loader      *common.Loader         // Afero 文件加载器
 	extension   string                 // 模板文件扩展名
-	templates   *pongo2.TemplateSet    // Pongo2 模板集合
+	tplSet      *pongo2.TemplateSet    // Pongo2 模板集合
 	funcs       map[string]interface{} // 自定义模板函数
 	templateMap *types.CMap[*pongo2.Template]
 	env         *env.Env
@@ -35,25 +35,26 @@ func (e *Engine) Ext() string {
 // NewEngine 创建一个新的 Afero Pongo2 引擎
 func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string) *Engine {
 	loader := common.NewLoader(webFs)
-	set := pongo2.NewSet("afero", loader)
+	tplSet := pongo2.NewSet("afero", loader)
 	engine := &Engine{
 		serverFs:    serverFs,
 		webFs:       webFs,
 		loader:      loader,
 		extension:   extension,
 		env:         env,
-		templates:   set,
+		tplSet:      tplSet,
 		templateMap: types.NewCMap[*pongo2.Template](),
 		funcs:       make(map[string]interface{}),
 	}
 
-	sheet := NewSheetTemplate(serverFs, webFs)
+	sheet := NewSheetTemplate(tplSet, serverFs, webFs)
 	include := NewInclude(engine, serverFs, webFs)
 	// 在注册时
 	//set.Globals["include"] = engin.includeHTML()
 	//engine.AddFunc("litSSR", litSSR)
 	engine.AddFunc("sheet", sheet.Render)
 	engine.AddFunc("include", include.Render)
+	engine.AddFunc("ifElse", IfElse)
 	return engine
 }
 
@@ -115,7 +116,7 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 
 	if tmpl == nil {
 		// 获取模板
-		tmpl, err = e.templates.FromBytes(fileContent)
+		tmpl, err = e.tplSet.FromBytes(fileContent)
 		if err != nil {
 			return err
 		}
@@ -137,5 +138,5 @@ func (e *Engine) ExecuteWriter(w io.Writer, filename string, layout string, bind
 // AddFunc 添加自定义模板函数
 func (e *Engine) AddFunc(name string, fn interface{}) {
 	e.funcs[name] = fn
-	e.templates.Globals[name] = fn
+	e.tplSet.Globals[name] = fn
 }

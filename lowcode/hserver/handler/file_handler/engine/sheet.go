@@ -9,94 +9,40 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/spf13/afero"
 	"html/template"
-	"strings"
 )
-
-//go:embed "tpl/sheet.tpl.html"
-var _sheetBytes []byte // 嵌入为字节切片
 
 type SheetTemplate struct {
 	tpl      *pongo2.Template
+	tplSet   *pongo2.TemplateSet
 	serverFs afero.Fs
 	webFs    afero.Fs
 }
 
-type Property struct {
-	*jsonschema.Schema
-	meta *schema.MetaExtension
-}
-
-func NewSheetTemplate(serverFs afero.Fs, webFs afero.Fs) *SheetTemplate {
-	tpl, err := pongo2.FromBytes(_sheetBytes)
-	if err != nil {
-		panic("NewSheetTemplate() " + err.Error())
-	}
+func NewSheetTemplate(tplSet *pongo2.TemplateSet, serverFs afero.Fs, webFs afero.Fs) *SheetTemplate {
 	return &SheetTemplate{
-		tpl:      tpl,
+		tplSet:   tplSet,
 		serverFs: serverFs,
 		webFs:    webFs,
 	}
 }
 
 func (t *SheetTemplate) Execute(ctx context.Context, sch *jsonschema.Schema) (string, error) {
-	properties := make([]*Property, 0)
-	for _, item := range sch.GetSortProperties() {
-		prop := Property{
-			Schema: item,
-		}
-		properties = append(properties, &prop)
-	}
 	data := map[string]any{
 		"schema":     sch,
-		"properties": properties,
+		"properties": GetAllProperties(sch),
 	}
 
-	str, err := t.tpl.Execute(data)
+	fsData, err := afero.ReadFile(t.webFs, "/@tpl/sheet.tpl.html")
+	if err != nil {
+		return "", err
+	}
+	tpl, err := t.tplSet.FromBytes(fsData)
+	if err != nil {
+		panic("NewSheetTemplate() " + err.Error())
+	}
+
+	str, err := tpl.Execute(data)
 	return str, err
-}
-
-type SheetOptions struct {
-	Schema     *jsonschema.Schema
-	SchemaFile string
-}
-
-func (p *Property) IsIdField() bool {
-	if strings.HasSuffix(strings.ToLower(p.Name()), "id") {
-		return true
-	}
-	return false
-}
-
-func (p *Property) Meta() *schema.MetaExtension {
-	if p.meta == nil {
-		p.meta = schema.GetMetaExtension(p.Schema)
-	}
-	if p.meta == nil {
-		p.meta = schema.NewMetaExtension()
-	}
-	return p.meta
-}
-
-func (p *Property) Readonly() bool {
-	return p.Meta().DBField.Readonly()
-}
-
-func (p *Property) Type() string {
-	return "text"
-	if p.Types.Contains(jsonschema.JsonType_BooleanType) {
-		return "boolean"
-	} else if p.Types.Contains(jsonschema.JsonType_NumberType) {
-		return "number"
-	} else if p.Types.Contains(jsonschema.JsonType_StringType) {
-		return "string"
-	} else if p.Types.Contains(jsonschema.JsonType_IntegerType) {
-		return "integer"
-	} else if p.Types.Contains(jsonschema.JsonType_DateType) {
-		return "date"
-	} else if p.Types.Contains(jsonschema.JsonType_DateTimeType) {
-		return "datetime"
-	}
-	return ""
 }
 
 func (t *SheetTemplate) Render(htmlFile string, schemaFile string) (template.HTML, error) {

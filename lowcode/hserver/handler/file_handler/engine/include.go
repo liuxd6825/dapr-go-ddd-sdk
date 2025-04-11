@@ -24,7 +24,7 @@ func (e *Include) Render(filename string) template.HTML {
 	if err != nil {
 		return template.HTML(fmt.Sprintf("<div> 错误: 无法读取文件 %s: %v </div>", fileName, err))
 	}
-	tpl, err := e.engine.templates.FromBytes(data)
+	tpl, err := e.engine.tplSet.FromBytes(data)
 	if err != nil {
 		return template.HTML(fmt.Sprintf("<div> 错误: 读取文件渲染时出策 %s: %v </div>", fileName, err))
 	}
