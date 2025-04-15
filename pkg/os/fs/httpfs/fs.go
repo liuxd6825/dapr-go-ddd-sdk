@@ -81,6 +81,11 @@ func (f *Fs) Chmod(name string, mode os.FileMode) error {
 	panic("implement me")
 }
 
+func (f *Fs) Chown(name string, uid, gid int) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (f *Fs) Chtimes(name string, atime time.Time, mtime time.Time) error {
 	//TODO implement me
 	panic("implement me")

@@ -125,6 +125,10 @@ func (s *Fs) Chmod(name string, mode os.FileMode) error {
 	return nil
 }
 
+func (s *Fs) Chown(name string, uid, gid int) error {
+	return nil
+}
+
 func (s *Fs) Chtimes(name string, atime time.Time, mtime time.Time) error {
 	return nil
 }
