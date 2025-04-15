@@ -58,7 +58,7 @@ require (
 
 require (
 	github.com/invopop/jsonschema v0.13.0
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	gorm.io/driver/sqlite v1.5.7
 )
 

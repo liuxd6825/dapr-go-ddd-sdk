@@ -5,7 +5,7 @@ import (
 	_ "github.com/casbin/casbin/v2"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 	mongodbadapter "github.com/casbin/mongodb-adapter/v3"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
@@ -14,14 +14,14 @@ var _enforcer = NewEnforcerEmpty()
 /*  Init modelConfFile : "rbac_model.conf" */
 func Init(dbKey string, modelConfFile string) {
 
-	dbItem := restapp.GetDB(dbKey)
+	dbItem := env.GetEnv().GetDB(dbKey)
 	if dbItem == nil {
 		panic(errors.New("db item not found"))
 	}
 
 	dbType := dbItem.GetDBType()
 	switch dbType {
-	case restapp.DbType_MongoDB:
+	case env.DBType_MongoDB:
 		if db := dbItem.GetMongo(); db != nil {
 			adapter, err := mongodbadapter.NewAdapterByDB(db.Client(), &mongodbadapter.AdapterConfig{
 				DatabaseName:   db.GetDatabase().Name(),
@@ -40,9 +40,9 @@ func Init(dbKey string, modelConfFile string) {
 			panic(errors.New("db type not supported"))
 		}
 		break
-	case restapp.DbType_Postgres, restapp.DbType_MySQL,
-		restapp.DbType_Oracle, restapp.DbType_MsSQL,
-		restapp.DbType_Sqlite:
+	case env.DBType_Postgres, env.DBType_MySQL,
+		env.DBType_Oracle, env.DBType_MsSQL,
+		env.DBType_Sqlite:
 		if db := dbItem.GetGormDB(); db != nil {
 			adapter, err := gormadapter.NewAdapterByDB(db)
 			if err != nil {
