@@ -313,6 +313,10 @@ func (c *daprClient) RollbackEvent(ctx context.Context, req *RollbackRequest) (*
 	return resp, err
 }
 
+func (c *daprClient) ConverseAlpha1(ctx context.Context, request *daprsdkclient.ConversationRequest, options ...daprsdkclient.ConversationRequestOption) (*daprsdkclient.ConversationResponse, error) {
+	return c.grpcClient.ConverseAlpha1(ctx, request, options...)
+}
+
 func (c *daprClient) Client() (Client, error) {
 	return c.grpcClient, nil
 }

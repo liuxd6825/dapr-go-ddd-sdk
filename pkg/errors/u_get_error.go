@@ -65,7 +65,7 @@ func GetRecoverError(err error, rerr any) (resErr error) {
 		case error:
 			{
 				if e, ok := rerr.(error); ok {
-					resErr = e
+					resErr = WithStack(e)
 				}
 			}
 		default:

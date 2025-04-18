@@ -4,7 +4,6 @@ import (
 	context2 "context"
 	"fmt"
 	"github.com/dapr/go-sdk/actor"
-	"github.com/dapr/go-sdk/actor/runtime"
 	"github.com/dapr/go-sdk/service/common"
 	"github.com/iris-contrib/swagger/v12"
 	"github.com/iris-contrib/swagger/v12/swaggerFiles"
@@ -76,34 +75,34 @@ func RegisterOnStartInit(startEvent OnStartEvent) {
 }
 
 func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Service {
-	actorRuntime := runtime.GetActorRuntimeInstanceContext()
-	envConfig := opts.Env
-
-	if opts.Env != nil {
-		actorConfig := actorRuntime.Config()
-		actorConfig.DrainOngingCallTimeout = envConfig.Dapr.Actor.DrainOngingCallTimeout
-		actorConfig.ActorScanInterval = envConfig.Dapr.Actor.ActorScanInterval
-		actorConfig.ActorIdleTimeout = envConfig.Dapr.Actor.ActorIdleTimeout
-		actorConfig.DrainBalancedActors = envConfig.Dapr.Actor.DrainBalancedActors
-	}
-
+	/*
+		if opts.Env != nil {
+			actorRuntime := runtime.GetActorRuntimeInstanceContext()
+			envConfig := opts.Env
+			actorConfig := actorRuntime.Config()
+			actorConfig.DrainOngingCallTimeout = envConfig.Dapr.Actor.DrainOngingCallTimeout
+			actorConfig.ActorScanInterval = envConfig.Dapr.Actor.ActorScanInterval
+			actorConfig.ActorIdleTimeout = envConfig.Dapr.Actor.ActorIdleTimeout
+			actorConfig.DrainBalancedActors = envConfig.Dapr.Actor.DrainBalancedActors
+		}
+	*/
 	return &HttpServer{
-		app:            iris.New(),
-		httpPort:       opts.HttpPort,
-		httpHost:       opts.HttpHost,
-		appId:          opts.AppId,
-		logLevel:       opts.LogLevel,
-		daprDddClient:  daprClient,
-		actorFactories: opts.ActorFactories,
-		subscribes:     opts.Subscribes,
-		controllers:    opts.Controllers,
-		eventTypes:     opts.EventTypes,
-		authToken:      opts.AuthToken,
-		webRootPath:    opts.WebRootPath,
-		env:            opts.Env,
-		onInitEvents:   opts.OnInitEvents,
-		onStartEvents:  opts.OnStartEvents,
-		//swagger:          swagger3.NewSwagger(),
+		app:              iris.New(),
+		httpPort:         opts.HttpPort,
+		httpHost:         opts.HttpHost,
+		appId:            opts.AppId,
+		logLevel:         opts.LogLevel,
+		daprDddClient:    daprClient,
+		actorFactories:   opts.ActorFactories,
+		subscribes:       opts.Subscribes,
+		controllers:      opts.Controllers,
+		eventTypes:       opts.EventTypes,
+		authToken:        opts.AuthToken,
+		webRootPath:      opts.WebRootPath,
+		env:              opts.Env,
+		onInitEvents:     opts.OnInitEvents,
+		onStartEvents:    opts.OnStartEvents,
+		swagger:          swagger3.NewSwagger(),
 		jobEventHandlers: make(map[string]common.JobEventHandler),
 	}
 
@@ -253,6 +252,10 @@ func (s *HttpServer) startSubscribeHandlers() error {
 	if err := ddd.StartSubscribeHandlers(); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *HttpServer) AddTopicEventSubscriber(sub *common.Subscription, subscriber common.TopicEventSubscriber) error {
 	return nil
 }
 
