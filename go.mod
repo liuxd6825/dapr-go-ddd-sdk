@@ -35,7 +35,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.9.1
 	github.com/allegro/bigcache v1.2.1
 	github.com/casbin/casbin/v2 v2.103.0
-	github.com/dapr/durabletask-go v0.6.3
+	github.com/dapr/durabletask-go v0.6.5
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
