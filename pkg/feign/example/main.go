@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/microsvc/feign"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/feign"
 	"time"
 )
 

@@ -2,7 +2,7 @@ package feign_test
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/microsvc/feign"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/feign"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"log"

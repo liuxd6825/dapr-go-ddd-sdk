@@ -2,7 +2,7 @@ package feign
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"net/http"
 	"reflect"
 	"sync"
@@ -39,7 +39,7 @@ func WithBaseURL(url string) BuildOption {
 //	@return BuildOption
 func WithAppIdURL(appId string) BuildOption {
 	return func(opt *buildOptions) {
-		opt.baseUrl = restapp.GetHttpInvoke(appId)
+		opt.baseUrl = env.GetHttpInvoke(appId)
 	}
 }
 
@@ -56,7 +56,7 @@ func WithRequestMiddleware(mw RequestMiddleware) BuildOption {
 	}
 }
 
-func WithDefaultContenType(ct string) BuildOption {
+func WithDefaultContentType(ct string) BuildOption {
 	return func(opt *buildOptions) {
 		opt.contentType = ct
 	}
