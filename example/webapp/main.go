@@ -15,7 +15,7 @@ import (
 func main() {
 	envCfg := restapp.NewEnvConfig("webapp")
 	envCfg.Mysql["mysql"] = &restapp.MySqlConfig{
-		Username: "root",
+		User:     "root",
 		Password: "11111111",
 		Host:     "127.0.0.1",
 		Port:     "3306",
