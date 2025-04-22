@@ -192,8 +192,7 @@ func (s *HttpServer) Start() error {
 	}
 
 	app.ConfigureHost(func(su *host.Supervisor) {
-		// httpServer:=su.Server
-		// println("httpServer", httpServer)
+		s.httpServer = su.Server
 	})
 
 	// 调用初始化

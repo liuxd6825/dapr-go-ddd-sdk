@@ -5,6 +5,8 @@ go 1.23.6
 toolchain go1.23.8
 
 require (
+	github.com/beevik/etree v1.5.0
+	github.com/citilinkru/camunda-client-go/v3 v3.5.0
 	github.com/dapr/components-contrib v1.15.2
 	github.com/dapr/dapr v1.15.4
 	github.com/dapr/go-sdk v1.12.0
