@@ -18,6 +18,12 @@ func NewInclude(engine *Engine, serverFs afero.Fs, webFs afero.Fs) *Include {
 }
 
 func (e *Include) Render(filename string) template.HTML {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println(filename)
+			fmt.Println(err)
+		}
+	}()
 	fileName := fileutils.AbsPath(filename, &fileutils.ReadOptions{RootPath: "", WorkPath: ""})
 	// 获取文件的绝对路径（可选，根据你的需求调整）
 	data, err := afero.ReadFile(e.webFs, fileName)

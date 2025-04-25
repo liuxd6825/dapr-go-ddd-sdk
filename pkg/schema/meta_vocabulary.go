@@ -56,6 +56,12 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (jsonschem
 				err = meta.InitDBTable(vals)
 			}
 			break
+		case "form":
+			vals, ok := value.(map[string]any)
+			if ok {
+				err = meta.InitForm(vals)
+			}
+			break
 		case "column":
 			vals, ok := value.(map[string]any)
 			if ok {

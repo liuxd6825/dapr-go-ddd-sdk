@@ -47,14 +47,30 @@ func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string
 		funcs:       make(map[string]interface{}),
 	}
 
+	schema := NewSchemaTemplate(tplSet, serverFs, webFs)
 	sheet := NewSheetTemplate(tplSet, serverFs, webFs)
+	grid := NewAgGridTemplate(tplSet, serverFs, webFs)
+	form := NewFormTemplate(tplSet, serverFs, webFs)
+	query := NewQueryTemplate(tplSet, serverFs, webFs)
 	include := NewInclude(engine, serverFs, webFs)
 	// 在注册时
 	//set.Globals["include"] = engin.includeHTML()
 	//engine.AddFunc("litSSR", litSSR)
+	engine.AddFunc("schema", schema.Render)
 	engine.AddFunc("sheet", sheet.Render)
+	engine.AddFunc("grid", grid.Render)
+	engine.AddFunc("form", form.Render)
+	engine.AddFunc("query", query.Render)
 	engine.AddFunc("include", include.Render)
 	engine.AddFunc("ifElse", IfElse)
+	engine.AddFunc("toJsonString", ToJsonString)
+	engine.AddFunc("nullQuery", NullQuery)
+	engine.AddFunc("nullForm", NullForm)
+	engine.AddFunc("formValue", FormValue)
+	engine.AddFunc("onlyField", OnlyField)
+	engine.AddFunc("onlyOneField", OnlyOneField)
+	engine.AddFunc("mapValue", MapValue)
+	engine.AddFunc("propValue", Prop)
 	return engine
 }
 
