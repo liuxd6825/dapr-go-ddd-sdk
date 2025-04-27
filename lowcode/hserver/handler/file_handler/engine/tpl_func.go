@@ -1,8 +1,100 @@
 package engine
 
+import (
+	"encoding/json"
+	sch "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
+	"github.com/liuxd6825/jsonschema/v6"
+)
+
 func IfElse(condition bool, trueVal any, falseVal any) any {
 	if condition {
 		return trueVal
 	}
 	return falseVal
+}
+
+func ToJsonString(sch *jsonschema.Schema) string {
+	marshal, err := json.Marshal(sch.GetView())
+	if err != nil {
+		return ""
+	}
+
+	str := string(marshal)
+
+	return str
+}
+
+func NullQuery(query *sch.Query) bool {
+	if query == nil {
+		return true
+	}
+	if len(*query) > 0 {
+		return false
+	}
+	return true
+}
+
+func NullForm(form *sch.Form) bool {
+	if form == nil {
+		return true
+	}
+	if len(*form) > 0 {
+		return false
+	}
+	return true
+}
+
+func FormValue(form *sch.Form, formName string, propName string) any {
+	if form == nil {
+		return nil
+	}
+
+	if formName == "" {
+		if val, ok := (*form)[propName]; ok {
+			return val
+		}
+		return nil
+	}
+
+	formVal, ok := (*form)[formName]
+	if ok {
+		if propName == "" {
+			return formVal
+		} else {
+			return MapValue(formVal.(map[string]any), propName)
+		}
+	}
+	return nil
+}
+
+func MapValue(param map[string]any, propName string) any {
+	if param == nil {
+		return nil
+	}
+	if val, ok := param[propName]; ok {
+		return val
+	}
+	return nil
+}
+
+func OnlyField(param map[string]any) bool {
+	return OnlyOneField(param, "field")
+}
+
+func OnlyOneField(param map[string]any, fieldName string) bool {
+	if param != nil && len(param) == 1 {
+		if _, ok := param[fieldName]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func Prop(field string, props []*Property) *Property {
+	for _, prop := range props {
+		if prop.Name() == field {
+			return prop
+		}
+	}
+	return nil
 }

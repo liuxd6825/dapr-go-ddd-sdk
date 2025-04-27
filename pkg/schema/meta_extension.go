@@ -8,6 +8,7 @@ import (
 type MetaExtension struct {
 	DBField *DBField   `json:"dbField,omitempty"`
 	DBTable *DBTable   `json:"dbTable,omitempty"`
+	Form    *Form      `json:"form,omitempty"`
 	Column  *Column    `json:"column,omitempty"`
 	Query   *Query     `json:"query,omitempty"`
 	Lang    *Lang      `json:"lang,omitempty"`
@@ -25,6 +26,7 @@ func NewMetaExtension() *MetaExtension {
 	return &MetaExtension{
 		DBField: NewDBField(),
 		DBTable: NewDBTable(),
+		Form:    NewForm(),
 		Column:  NewColumn(),
 		Query:   NewQuery(),
 		Lang:    NewLang(),
@@ -46,6 +48,11 @@ func (m *MetaExtension) InitDBField(vals map[string]any) error {
 func (m *MetaExtension) InitDBTable(vals map[string]any) error {
 	m.DBTable = &DBTable{}
 	return m.DBTable.init(vals)
+}
+
+func (m *MetaExtension) InitForm(vals map[string]any) error {
+	m.Form = &Form{}
+	return m.Form.init(vals)
 }
 
 func (m *MetaExtension) InitColumn(vals map[string]any) error {
