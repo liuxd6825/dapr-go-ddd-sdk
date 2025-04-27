@@ -26,10 +26,12 @@ func NewAgGridTemplate(tplSet *pongo2.TemplateSet, serverFs afero.Fs, webFs afer
 	}
 }
 
-func (t *AgGridTemplate) Execute(ctx context.Context, sch *jsonschema.Schema) (string, error) {
+func (t *AgGridTemplate) Execute(ctx context.Context, sch *jsonschema.Schema, gridName string) (string, error) {
 	data := map[string]any{
 		"schema":     sch,
+		"sv":         sch.GetView(),
 		"properties": GetAllProperties(sch),
+		"gridName":   gridName,
 	}
 
 	fsData, err := afero.ReadFile(t.webFs, "/@tpl/grid.tpl.html")
@@ -45,11 +47,14 @@ func (t *AgGridTemplate) Execute(ctx context.Context, sch *jsonschema.Schema) (s
 	return str, err
 }
 
-func (t *AgGridTemplate) Render(htmlFile string, schemaFile string) (template.HTML, error) {
+func (t *AgGridTemplate) Render(gridName string, htmlFile string, schemaFile string) (template.HTML, error) {
 	/*
 		htmlFile, _ := maputils.GetString(opts, "html", "")
 		schemaFile, _ := maputils.GetString(opts, "schema", "")
 	*/
+	if gridName == "" {
+		gridName = "default"
+	}
 	if htmlFile == "" && schemaFile == "" {
 		return template.HTML(""), nil
 	}
@@ -74,7 +79,7 @@ func (t *AgGridTemplate) Render(htmlFile string, schemaFile string) (template.HT
 	if sch == nil {
 		return "", fmt.Errorf("no schema found in %s", schemaFile)
 	}
-	h, err := t.Execute(context.Background(), sch)
+	h, err := t.Execute(context.Background(), sch, gridName)
 	if err != nil {
 		return "", err
 	}

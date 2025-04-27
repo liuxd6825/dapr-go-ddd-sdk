@@ -67,10 +67,12 @@ func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string
 	engine.AddFunc("nullQuery", NullQuery)
 	engine.AddFunc("nullForm", NullForm)
 	engine.AddFunc("formValue", FormValue)
+	engine.AddFunc("nullColumn", NullColumn)
+	engine.AddFunc("columnValue", ColumnValue)
 	engine.AddFunc("onlyField", OnlyField)
 	engine.AddFunc("onlyOneField", OnlyOneField)
 	engine.AddFunc("mapValue", MapValue)
-	engine.AddFunc("propValue", Prop)
+	engine.AddFunc("propValue", PropValue)
 	return engine
 }
 

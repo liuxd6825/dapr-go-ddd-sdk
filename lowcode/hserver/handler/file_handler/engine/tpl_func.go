@@ -67,6 +67,39 @@ func FormValue(form *sch.Form, formName string, propName string) any {
 	return nil
 }
 
+func NullColumn(column *sch.Column) bool {
+	if column == nil {
+		return true
+	}
+	if len(*column) > 0 {
+		return false
+	}
+	return true
+}
+
+func ColumnValue(column *sch.Column, gridName string, propName string) any {
+	if column == nil {
+		return nil
+	}
+
+	if gridName == "" {
+		if val, ok := (*column)[propName]; ok {
+			return val
+		}
+		return nil
+	}
+
+	val, ok := (*column)[gridName]
+	if ok {
+		if propName == "" {
+			return val
+		} else {
+			return MapValue(val.(map[string]any), propName)
+		}
+	}
+	return nil
+}
+
 func MapValue(param map[string]any, propName string) any {
 	if param == nil {
 		return nil
@@ -90,7 +123,7 @@ func OnlyOneField(param map[string]any, fieldName string) bool {
 	return false
 }
 
-func Prop(field string, props []*Property) *Property {
+func PropValue(field string, props []*Property) *Property {
 	for _, prop := range props {
 		if prop.Name() == field {
 			return prop

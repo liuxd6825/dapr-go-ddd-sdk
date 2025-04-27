@@ -117,11 +117,6 @@ func (p *Property) FormCtl() string {
 }
 
 func (p *Property) Type() string {
-	if p.getColumn() != nil {
-		if val, ok := p.getColumn()["dataType"].(string); ok {
-			return val
-		}
-	}
 	if p.Types.Contains(jsonschema.JsonType_BooleanType) {
 		return "boolean"
 	} else if p.Types.Contains(jsonschema.JsonType_NumberType) {
@@ -139,12 +134,6 @@ func (p *Property) Type() string {
 }
 
 func (p *Property) SheetType() string {
-	if p.getColumn() != nil {
-		if val, ok := p.getColumn()["type"].(string); ok {
-			return val
-		}
-	}
-
 	if p.Types.Contains(jsonschema.JsonType_BooleanType) {
 		return "checkbox"
 	} else if p.Types.Contains(jsonschema.JsonType_NumberType) {

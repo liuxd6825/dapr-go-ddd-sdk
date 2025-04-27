@@ -26,10 +26,12 @@ func NewSheetTemplate(tplSet *pongo2.TemplateSet, serverFs afero.Fs, webFs afero
 	}
 }
 
-func (t *SheetTemplate) Execute(ctx context.Context, sch *jsonschema.Schema) (string, error) {
+func (t *SheetTemplate) Execute(ctx context.Context, sch *jsonschema.Schema, sheetName string) (string, error) {
 	data := map[string]any{
 		"schema":     sch,
+		"sv":         sch.GetView(),
 		"properties": GetAllProperties(sch),
+		"sheetName":  sheetName,
 	}
 
 	fsData, err := afero.ReadFile(t.webFs, "/@tpl/sheet.tpl.html")
@@ -45,11 +47,14 @@ func (t *SheetTemplate) Execute(ctx context.Context, sch *jsonschema.Schema) (st
 	return str, err
 }
 
-func (t *SheetTemplate) Render(htmlFile string, schemaFile string) (template.HTML, error) {
+func (t *SheetTemplate) Render(sheetName string, htmlFile string, schemaFile string) (template.HTML, error) {
 	/*
 		htmlFile, _ := maputils.GetString(opts, "html", "")
 		schemaFile, _ := maputils.GetString(opts, "schema", "")
 	*/
+	if sheetName == "" {
+		sheetName = "default"
+	}
 	if htmlFile == "" && schemaFile == "" {
 		return template.HTML(""), nil
 	}
@@ -74,7 +79,7 @@ func (t *SheetTemplate) Render(htmlFile string, schemaFile string) (template.HTM
 	if sch == nil {
 		return "", fmt.Errorf("no schema found in %s", schemaFile)
 	}
-	h, err := t.Execute(context.Background(), sch)
+	h, err := t.Execute(context.Background(), sch, sheetName)
 	if err != nil {
 		return "", err
 	}
