@@ -11,7 +11,8 @@ import (
 )
 
 type Dapr struct {
-	Host                string                     `yaml:"host" json:"host"`
+	Host string `yaml:"host" json:"host"`
+
 	HttpPort            int64                      `yaml:"httpPort" json:"httpPort"`
 	GrpcPort            int64                      `yaml:"grpcPort" json:"grpcPort"`
 	MaxCallRecvMsgSize  int                        `yaml:"maxCallRecvMsgSize" json:"maxCallRecvMsgSize"` //dapr数据包大小，单位M
@@ -23,6 +24,7 @@ type Dapr struct {
 	Start               bool                       `yaml:"start" json:"start"`
 	StartArgs           map[string]any             `yaml:"startArgs" json:"startArgs"`
 	Enable              bool                       `yaml:"enable" json:"enable"`
+	ApiVersion          string                     `yaml:"apiVersion" json:"apiVersion"`
 	client              dapr.DaprClient
 }
 
@@ -61,6 +63,9 @@ func initDapr(e *Env) {
 	if c.Host == "" {
 		var value = "localhost"
 		c.Host = getEnvString("DAPR_HOST", value)
+	}
+	if c.ApiVersion == "" {
+		c.ApiVersion = "v1.0"
 	}
 
 	if e.Dapr.HttpPort < 0 {
@@ -156,6 +161,10 @@ func (c *DaprActor) init() {
 	if c.DrainOngingCallTimeout == "" {
 		c.DrainOngingCallTimeout = "5m"
 	}
+}
+
+func (c *Dapr) GetInvokeService(serviceName string, method string) string {
+	return fmt.Sprintf("http://%s:%d/v1.0/invoke/%s/method/%s", c.Host, c.HttpPort, serviceName, method)
 }
 
 func searchConfigFile(path, configName string, fileName string) (string, bool, error) {

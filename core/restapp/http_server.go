@@ -10,7 +10,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/host"
-	"github.com/kataras/iris/v12/middleware/pprof"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
@@ -171,7 +170,7 @@ func (s *HttpServer) Start() error {
 
 	// 注册基础控制器
 	s.registerDaprBaseHandler()
-	app.Use(pprof.New()) // 注册pprof中间件
+	// app.Use(pprof.New()) // 注册pprof中间件
 
 	// 注册swagger
 	s.registerSwagger()

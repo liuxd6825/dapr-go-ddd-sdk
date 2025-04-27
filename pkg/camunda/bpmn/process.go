@@ -1,4 +1,4 @@
-package camunda
+package bpmn
 
 import (
 	"fmt"

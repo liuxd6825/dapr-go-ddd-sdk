@@ -1,4 +1,4 @@
-package camunda
+package bpmn
 
 import "github.com/beevik/etree"
 
