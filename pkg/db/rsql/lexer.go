@@ -267,7 +267,8 @@ func (t *Lexer) processDate() *Token {
 }
 
 func (t *Lexer) processString() *Token {
-	if t.charAt(t.pos) == '\'' || t.charAt(t.pos) == '"' {
+	char := t.charAt(t.pos)
+	if char == '\'' || char == '"' {
 		quote := t.charAt(t.pos)
 		idx := strings.IndexByte(t.buf[t.pos+1:], quote) + t.pos + 1
 		for idx != -1 && t.charAt(idx-1) == '\\' {
@@ -277,9 +278,10 @@ func (t *Lexer) processString() *Token {
 			panic(fmt.Errorf("unterminated quote %d, %d", t.pos, idx))
 			// t.error('Unterminated quote', t.pos, idx)
 		}
+		val := strings.Join(strings.Split(t.buf[t.pos+1:idx], "\\"+string(quote)), string(quote))
 		token := &Token{
 			Type:  StringToken,
-			Value: strings.Join(strings.Split(t.buf[t.pos+1:idx], "\\"+string(quote)), string(quote)),
+			Value: val,
 			Pos:   t.pos,
 		}
 		t.pos = idx + 1

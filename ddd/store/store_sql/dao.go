@@ -298,12 +298,19 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId string, filterRSQL s
 func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
+		rowsAffected := int64(0)
 		for _, e := range entities {
 			d.eb.SetUpdatedInfo(ctx, e)
+			d.eb.SetTenantId(e, tenantId)
+			id := d.eb.GetId(e)
+			db := d.updateTable(ctx, opts...).Model(d.NewEntity()).Where("tenant_id=? and id=?", tenantId, id).Updates(e)
+			if db.Error != nil {
+				return db.Error
+			}
+			rowsAffected = rowsAffected + db.RowsAffected
 		}
-		db := d.updateTable(ctx, opts...).Model(d.NewEntity()).Save(entities)
-		res.SetRowsAffected(db.RowsAffected)
-		return db.Error
+		res.SetRowsAffected(rowsAffected)
+		return nil
 	}).Catch(func(err error) {
 		res.SetError(err)
 	})

@@ -49,6 +49,9 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (jsonschem
 			vals, ok := value.(map[string]any)
 			if ok {
 				err = meta.InitDBField(vals)
+				if meta.DBField != nil && meta.DBField.Name == "id" {
+					meta.DBField.PrimaryKey = true
+				}
 			}
 		case "dbTable":
 			vals, ok := value.(map[string]any)

@@ -15,7 +15,7 @@ const HumanSchema = `
 		"id": {
 		  "type": ["string"],
 		  "title": "ID",
- 			"order": 1
+          "order": 1
 		},
 		"tenantId": {
 		  "type": ["string"],

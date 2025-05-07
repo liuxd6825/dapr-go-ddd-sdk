@@ -3,12 +3,12 @@ package sql
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
@@ -74,7 +74,7 @@ func Test_Transaction(t *testing.T) {
 	}
 
 	txDb := tx.TxDB{}
-	txDb = append(txDb, tx.TxDBItem{DBKey: "sql", DB: db, DBType: restapp.DBType_Sqlite})
+	txDb = append(txDb, tx.TxDBItem{DBKey: "sql", DB: db, DBType: env.DBType_Sqlite})
 
 	_ = tx.Start(ctx, txDb, func(ctx context.Context, options ...*store.SessionOptions) error {
 		iCount := dao.Create(ctx, human).RowsAffected
@@ -154,10 +154,10 @@ func Test_Dao(t *testing.T) {
 			delRes := dao.DeleteByRSQL(ctx, "name=='0000'")
 			t.Log("DeleteByRSQL count:", delRes.RowsAffected)
 			assert.Equal(t, newCount, delRes.RowsAffected)
-
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
+			panic(err)
 		})
 	})
 

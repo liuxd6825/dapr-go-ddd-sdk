@@ -76,7 +76,7 @@ func initMySql(env *Env) {
 				SkipInitializeWithVersion: true,  // 根据当前 MySQL 版本自动配置
 			}),
 			&gorm.Config{
-				Logger: logger.Default.LogMode(cfg.LogLevel),
+				Logger: logger.Default.LogMode(logger.Info),
 			},
 		)
 		if err != nil {
