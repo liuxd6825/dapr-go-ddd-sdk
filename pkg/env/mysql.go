@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -65,6 +66,7 @@ func initMySql(env *Env) {
 		if cfg.Host == "<no value>" && cfg.Port == "<no value>" {
 			continue
 		}
+		logLevel := getGormLogLevel(env.Log.LogLevel)
 		dsn := cfg.DSN()
 		db, err := gorm.Open(
 			mysql.New(mysql.Config{
@@ -76,7 +78,7 @@ func initMySql(env *Env) {
 				SkipInitializeWithVersion: true,  // 根据当前 MySQL 版本自动配置
 			}),
 			&gorm.Config{
-				Logger: logger.Default.LogMode(logger.Info),
+				Logger: logger.Default.LogMode(logLevel),
 			},
 		)
 		if err != nil {
@@ -92,4 +94,17 @@ func initMySql(env *Env) {
 		env.AddDB(item)
 	}
 
+}
+
+func getGormLogLevel(level logs.Level) logger.LogLevel {
+	switch level {
+	case logs.TraceLevel:
+	case logs.DebugLevel, logs.InfoLevel:
+		return logger.Info
+	case logs.WarnLevel:
+		return logger.Warn
+	default:
+		return logger.Info
+	}
+	return logger.Info
 }
