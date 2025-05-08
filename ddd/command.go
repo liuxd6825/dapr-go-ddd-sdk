@@ -1,7 +1,10 @@
 package ddd
 
-type GetTenant interface {
+type GetTenantId interface {
 	GetTenantId() string
+}
+type SetTenantId interface {
+	SetTenantId(string)
 }
 
 type GetCommandId interface {
@@ -26,7 +29,7 @@ type IsAggregateCreateCommand interface {
 
 type Command interface {
 	GetCommandId
-	GetTenant
+	GetTenantId
 	GetAggregateId
 	GetIsValidOnly
 	Verify

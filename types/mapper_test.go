@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"testing"
 	"time"
 )
@@ -73,19 +74,23 @@ func TestAutoMapper(t *testing.T) {
 }
 
 type DateRequest struct {
-	Date *JSONDate
+	Date *times.JSONDate
+	Time *times.JSONTime
 }
 
 type DateCommand struct {
 	Date time.Time
+	Time time.Time
 }
 
 func Test_Mapper_Date(t *testing.T) {
-	dateValue := JSONDate(time.Now())
+	dateValue := times.JSONDate(time.Now())
+	timeValue := times.JSONTime(time.Now())
 	// dateValue := types.DateString("2019-10-10")
 	// dateValue := time.Now()
 	req := DateRequest{
 		Date: &dateValue,
+		Time: &timeValue,
 	}
 	cmd := DateCommand{}
 	if err := Mapper(&req, &cmd); err != nil {
@@ -94,7 +99,11 @@ func Test_Mapper_Date(t *testing.T) {
 	if cmd.Date.IsZero() {
 		t.Error(errors.New(" date mapper error"))
 	}
+	if cmd.Time.IsZero() {
+		t.Error(errors.New(" time mapper error"))
+	}
 	println(cmd.Date.String())
+	println(cmd.Time.String())
 }
 
 func Test_MaskMapper(t *testing.T) {
@@ -112,7 +121,7 @@ func Test_MaskMapper(t *testing.T) {
 		t.Error(err)
 	}
 	if to.UserName != "" {
-		t.Error(errors.New("to.UserName is not null"))
+		t.Error(errors.New("to.User is not null"))
 	}
 	if to.Id == "" {
 		t.Error(errors.New("to.Id is null"))
@@ -126,12 +135,12 @@ func Test_MaskMapperType(t *testing.T) {
 		UserName: "userName",
 	}
 	to := UserFields{UserName: ""}
-	mask := []string{"UserName"}
+	mask := []string{"User"}
 	if err := MaskMapperType(&from, &to, mask, MaskTypeExclude); err != nil {
 		t.Error(err)
 	}
 	if to.UserName != "" {
-		t.Error(errors.New("to.UserName is not null"))
+		t.Error(errors.New("to.User is not null"))
 	}
 	if to.Id == "" {
 		t.Error(errors.New("to.Id is null"))
@@ -145,13 +154,13 @@ func Test_MaskMapperTypeRemove(t *testing.T) {
 		UserName: "userName",
 	}
 	to := UserFields{UserName: ""}
-	mask := []string{"UserName"}
-	remove := []string{"UserName"}
+	mask := []string{"User"}
+	remove := []string{"User"}
 	if err := MaskMapperRemove(&from, &to, mask, MaskTypeContain, remove); err != nil {
 		t.Error(err)
 	}
 	if to.UserName != "" {
-		t.Error(errors.New("to.UserName is not null"))
+		t.Error(errors.New("to.User is not null"))
 	}
 	if to.Id != "" {
 		t.Error(errors.New("to.Id is not null"))

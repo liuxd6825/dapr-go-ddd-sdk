@@ -22,6 +22,12 @@ type Process interface {
 	OnLessThanOrEquals(name string, value interface{}, rValue Value)
 	OnIn(name string, value interface{}, rValue Value)
 	OnNotIn(name string, value interface{}, rValue Value)
+	OnContains(name string, value interface{}, rValue Value)
+	OnNotContains(name string, value interface{}, rValue Value)
+	OnIsNull(name string, value interface{}, rValue Value)
+	OnNotIsNull(name string, value interface{}, rValue Value)
+	OnStart(name string, value interface{}, rValue Value)
+	OnEnd(name string, value interface{}, rValue Value)
 }
 
 type process struct {
@@ -72,12 +78,30 @@ func (p *process) NotEquals(name string, value interface{}, rValue Value) {
 	p.str = fmt.Sprintf("%s %s=%v", p.str, name, value)
 }
 
+func (p *process) OnContains(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s like (%v)", p.str, name, value)
+}
+
+func (p *process) OnNotContains(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s not like (%v)", p.str, name, value)
+}
+
+func (p *process) OnStart(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s like %v*", p.str, name, value)
+}
+
+func (p *process) OnEnd(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s like *%v", p.str, name, value)
+}
+
 func (p *process) OnAndItem() {
 	p.str = fmt.Sprintf("%s and ", p.str)
 }
+
 func (p *process) OnAndStart() {
 	p.str = fmt.Sprintf("%s(", p.str)
 }
+
 func (p *process) OnAndEnd() {
 	p.str = fmt.Sprintf("%s)", p.str)
 }
@@ -90,6 +114,15 @@ func (p *process) OnOrStart() {
 func (p *process) OnOrEnd() {
 	p.str = fmt.Sprintf("%s)", p.str)
 }
+
+func (p *process) OnIsNull(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s is null", p.str, name)
+}
+
+func (p *process) OnNotIsNull(name string, value interface{}, rValue Value) {
+	p.str = fmt.Sprintf("%s %s is not null", p.str, name)
+}
+
 func (p *process) Print() {
 	fmt.Print(p.str)
 }
@@ -193,6 +226,36 @@ func parseProcess(expr Expression, process Process) error {
 		value := getValue(ex.Comparison.Val)
 		process.OnNotIn(name, value, ex.Comparison.Val)
 		break
+	case ContainsComparison:
+		ex, _ := expr.(ContainsComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnContains(name, value, ex.Comparison.Val)
+	case NotContainsComparison:
+		ex, _ := expr.(NotContainsComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnNotContains(name, value, ex.Comparison.Val)
+	case NotIsNullComparison:
+		ex, _ := expr.(NotIsNullComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnNotIsNull(name, value, ex.Comparison.Val)
+	case IsNullComparison:
+		ex, _ := expr.(IsNullComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnIsNull(name, value, ex.Comparison.Val)
+	case StartComparison:
+		ex, _ := expr.(StartComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnStart(name, value, ex.Comparison.Val)
+	case EndComparison:
+		ex, _ := expr.(EndComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnEnd(name, value, ex.Comparison.Val)
 	}
 	return nil
 }

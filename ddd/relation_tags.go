@@ -45,6 +45,9 @@ func GetRelationByList(list interface{}) ([]Relation, bool, error) {
 
 // GetRelationByStructure 从结构中获得聚合关系
 func GetRelationByStructure(structure interface{}) (Relation, bool, error) {
+	if _, ok := structure.(map[string]any); ok {
+		return nil, false, nil
+	}
 	reflectValue := reflect.ValueOf(structure)
 	reflectType := reflectValue.Type()
 	for reflectType.Kind() == reflect.Slice || reflectType.Kind() == reflect.Ptr {

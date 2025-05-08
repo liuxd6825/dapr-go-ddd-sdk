@@ -21,7 +21,8 @@ func newSingleton[T any](key string, newFun func() T) *item[T] {
 	}
 }
 
-func Get[T any]() (T, error) {
+// Deprecated: use Create instead.
+func Get[T any](new ...func() T) (T, error) {
 	var null T
 	key, err := getKey[T]()
 	if err != nil {
@@ -29,7 +30,12 @@ func Get[T any]() (T, error) {
 	}
 	v, ok := _objects.Get(key)
 	if !ok {
-
+		if new != nil && len(new) > 0 {
+			Set[T](new[0])
+			v, ok = _objects.Get(key)
+		}
+	}
+	if !ok {
 		return null, fmt.Errorf("singleutils.Get[T]() \"%s\" key does not exist", key)
 	}
 	s, _ := v.(*item[T])
@@ -39,6 +45,16 @@ func Get[T any]() (T, error) {
 	return s.instance, nil
 }
 
+// Deprecated: use Create instead.
+func GetSet[T any](new func() T) T {
+	v, err := Get[T](new)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// Deprecated: use Create instead.
 func GetObject[T any]() T {
 	v, err := Get[T]()
 	if err != nil {
@@ -47,6 +63,7 @@ func GetObject[T any]() T {
 	return v
 }
 
+// Deprecated: use Create instead.
 func Set[T any](new func() T) error {
 	key, err := getKey[T]()
 	if err != nil {
@@ -61,6 +78,7 @@ func Set[T any](new func() T) error {
 	return nil
 }
 
+// Deprecated: use Create instead.
 func getKey[T any]() (string, error) {
 	var null T
 	t := reflect.TypeOf(null)

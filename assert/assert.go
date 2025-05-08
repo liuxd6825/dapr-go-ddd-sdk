@@ -4,10 +4,8 @@ import (
 	"strings"
 )
 
-//
 // AssertError
 // @Description:  断言错误
-//
 type AssertError struct {
 	msg string
 }
@@ -24,11 +22,9 @@ func (e *AssertError) Error() string {
 // @Description:  断言上下文对象
 type Context map[string]*Options
 
-//
 // NewContext
 // @Description: 创建断言上下文对象
 // @return Context
-//
 func NewContext() Context {
 	return Context{}
 }

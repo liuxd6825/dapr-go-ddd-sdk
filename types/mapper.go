@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/mitchellh/mapstructure"
@@ -15,9 +16,10 @@ const (
 )
 
 type MaskOptions struct {
-	Mask   []string
-	Remove []string
-	Type   MaskType
+	Mask    []string
+	Remove  []string
+	Type    MaskType
+	TagName string // golang struct field标签名称 默认为map
 }
 
 var option *copier.Option
@@ -26,13 +28,11 @@ func init() {
 	option = getOption()
 }
 
-//
 // Mapper
 // @Description: 进行struct属性复制，支持深度复制
 // @param fromObj 来源
 // @param toObj 目标
 // @return error
-//
 func Mapper(fromObj, toObj interface{}) error {
 	return copier.CopyWithOption(toObj, fromObj, *option)
 }
@@ -40,7 +40,7 @@ func Mapper(fromObj, toObj interface{}) error {
 func MaskMapper(fromObj, toObj interface{}, mask []string) error {
 	options := MaskOptions{
 		Mask: mask,
-		Type: MaskTypeContain,
+		Type: MaskTypeExclude,
 	}
 	return MaskMapperOptions(fromObj, toObj, &options)
 }
@@ -62,14 +62,12 @@ func MaskMapperRemove(fromObj, toObj interface{}, mask []string, maskType MaskTy
 	return MaskMapperOptions(fromObj, toObj, &options)
 }
 
-//
 // MaskMapperOptions
 // @Description: 根据指定进行属性复制，不支持深度复制
 // @param fromObj 来源
 // @param toObj 目标
 // @param mask 要复制属性列表
 // @return error
-//
 func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 	var fromMap map[string]interface{}
 	var err error
@@ -128,6 +126,7 @@ func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 	config := &mapstructure.DecoderConfig{
 		Result:   toObj,
 		Metadata: metadata,
+		TagName:  options.GetTagName(),
 	}
 
 	decoder, err := mapstructure.NewDecoder(config)
@@ -135,6 +134,31 @@ func MaskMapperOptions(fromObj, toObj interface{}, options *MaskOptions) error {
 		return err
 	}
 	return decoder.Decode(fromMap)
+}
+
+func NewMap(fromObj any) (map[string]any, error) {
+	var toObj = make(map[string]any)
+	var metadata *mapstructure.Metadata
+	config := &mapstructure.DecoderConfig{
+		Result:   &toObj,
+		Metadata: metadata,
+		TagName:  "map",
+	}
+
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		return nil, err
+	}
+	err = decoder.Decode(fromObj)
+	return toObj, err
+}
+
+func (o *MaskOptions) GetTagName() string {
+	tagName := "map"
+	if o != nil && len(o.TagName) > 0 {
+		tagName = o.TagName
+	}
+	return tagName
 }
 
 func getOption() *copier.Option {
@@ -146,7 +170,7 @@ func getOption() *copier.Option {
 }
 func getTypeConverters() []copier.TypeConverter {
 	var typeConverters []copier.TypeConverter
-	typeConverters = append(typeConverters, newJsonDateConverter().getTypeConverters()...)
-	typeConverters = append(typeConverters, newJsonTimeConverter().getTypeConverters()...)
+	typeConverters = append(typeConverters, times.NewJsonDateConverter().GetTypeConverters()...)
+	typeConverters = append(typeConverters, times.NewJsonTimeConverter().GetTypeConverters()...)
 	return typeConverters
 }

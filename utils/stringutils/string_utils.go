@@ -2,19 +2,28 @@ package stringutils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/inflection"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
-//
+const LocalDateFormatLine = "2006-01-02"
+const LocalTimeFormatLine = "2006-01-02 15:04:05"
+const LocalMsTimeFormatLine = "2006-01-02 15:04:05.000000"
+
 // Int64ToString
 // @Description:
 // @param v
 // @return string
-//
 func Int64ToString(v int64) string {
 	return strconv.FormatInt(v, 10)
+}
+
+func ToInt64(v string) (int64, error) {
+	return strconv.ParseInt(v, 10, 64)
 }
 
 func IsEmptyStr(v string) bool {
@@ -32,21 +41,58 @@ func ValidEmptyStr(v string, msg string) error {
 }
 
 func AsFieldName(s string) string {
-	res := SnakeString(s)
+	res := strings.Replace(s, " ", "", -1)
+	res = SnakeString(res)
 	res = strings.Replace(res, "._", ".", -1)
+	if strings.HasSuffix(res, "_") {
+		res = res[1:]
+	}
 	return res
+}
+
+func MongoFieldAsJsonName(fieldName string) string {
+	key := fieldName
+	if key == "_id" {
+		key = "id"
+	} else {
+		key = CamelString(key)
+	}
+	if strings.HasPrefix(key, "_") {
+		key = key[1:]
+	}
+	return FirstLower(key)
 }
 
 func Relpace(s string, old string, new string) string {
 	return strings.Replace(s, "._", ".", -1)
 }
 
-//
+// ReplacePlaceholders 使用 map 中的值替换字符串中的占位符
+func ReplacePlaceholders(template string, values map[string]any) string {
+	re := regexp.MustCompile(`\{(\w+)\}`) // 匹配 {key} 格式
+
+	return re.ReplaceAllStringFunc(template, func(placeholder string) string {
+		// 去掉 { 和 } 得到键名
+		key := strings.Trim(placeholder, "{}")
+		if value, exists := values[key]; exists {
+			return fmt.Sprintf("%s", value)
+		}
+		// 如果 map 中没有对应的键，保持原样
+		return placeholder
+	})
+}
+func RelpaceValues(s string, values map[string]any) string {
+	res := s
+	for key, value := range values {
+		strings.ReplaceAll(res, "{"+key+"}", fmt.Sprintf("%s", value))
+	}
+	return res
+}
+
 // FirstUpper
 // @Description: 字符串首字母大写
 // @param s
 // @return string
-//
 func FirstUpper(s string) string {
 	if s == "" {
 		return ""
@@ -58,12 +104,10 @@ func FirstUpper(s string) string {
 	return v
 }
 
-//
 // FirstLower
 // @Description: 字符串首字母小写
 // @param s
 // @return string
-//
 func FirstLower(s string) string {
 	if s == "" {
 		return ""
@@ -71,12 +115,10 @@ func FirstLower(s string) string {
 	return strings.ToLower(s[:1]) + s[1:]
 }
 
-//
 // ToUpper
 // @Description: 大写
 // @param s
 // @return string
-//
 func ToUpper(s string) string {
 	if s == "" {
 		return ""
@@ -84,12 +126,10 @@ func ToUpper(s string) string {
 	return strings.ToUpper(s)
 }
 
-//
 // ToLower
 // @Description: 小写
 // @param s
 // @return string
-//
 func ToLower(s string) string {
 	if s == "" {
 		return ""
@@ -97,12 +137,10 @@ func ToLower(s string) string {
 	return strings.ToLower(s)
 }
 
-//
 // SnakeString
 // @Description: 驼峰转蛇形
 // @param s 要转换的字符串
 // @return string
-//
 func SnakeString(s string) string {
 	data := make([]byte, 0, len(s)*2)
 	j := false
@@ -128,7 +166,6 @@ func SnakeString(s string) string {
 	return res
 }
 
-//
 // EqualFold
 // @Description: 可以检查两个字符串是否相等,同时忽略大小写
 // @param s
@@ -138,12 +175,10 @@ func EqualFold(s, t string) bool {
 	return strings.EqualFold(s, t)
 }
 
-//
 // MidlineString
 // @Description: 驼峰转中线
 // @param s 要转换的字符串
 // @return string
-//
 func MidlineString(s string) string {
 	data := make([]byte, 0, len(s)*2)
 	j := false
@@ -169,12 +204,10 @@ func MidlineString(s string) string {
 	return res
 }
 
-//
 // CamelString 蛇形转驼峰
 // @Description:
 // @param s 要转换的字符串
 // @return string
-//
 func CamelString(s string) string {
 	data := make([]byte, 0, len(s))
 	j := false
@@ -199,22 +232,54 @@ func CamelString(s string) string {
 	return string(data[:])
 }
 
-//
 // Plural
 // @Description: 将单词的单数形式转换为复数形式
 // @param str 单数
 // @return string 复数
-//
 func Plural(str string) string {
 	return inflection.Plural(MidlineString(str))
 }
 
-//
 // Singular
 // @Description: 复数转单数
 // @param str 复数
 // @return string 单数
-//
 func Singular(str string) string {
 	return inflection.Singular(MidlineString(str))
+}
+
+func PStrList(s ...string) *[]string {
+	var res []string
+	for _, item := range s {
+		res = append(res, item)
+	}
+	return &res
+}
+
+func P2Str(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func AnyToString(v any) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	if s, ok := v.(*string); ok {
+		return *s
+	}
+
+	if t, ok := v.(time.Time); ok {
+		return t.Format(LocalMsTimeFormatLine)
+	}
+	if t, ok := v.(*time.Time); ok {
+		return t.Format(LocalMsTimeFormatLine)
+	}
+
+	return fmt.Sprintf("%v", v)
 }

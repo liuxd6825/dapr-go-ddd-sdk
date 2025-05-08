@@ -1,0 +1,8 @@
+{
+  "id": {
+    "in": "path",
+    "desc": "ID",
+    "required": true,
+    "example": "/api/v1.0/human/{id}"
+  }
+}

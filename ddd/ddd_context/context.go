@@ -11,24 +11,28 @@ type ctxServerKey struct {
 }
 
 type ServerContext interface {
-	SetResponseHeader(key string, value string)
-	URLParamDefault(name, def string) string
+	//SetResponseHeader(key string, value string)
+	//URLParamDefault(name, def string) string
 }
 
-func NewContext(parent context.Context, metadata map[string]string, serverCtx ServerContext) context.Context {
+func NewContext(parent context.Context, metadata map[string][]string, serverCtx ServerContext) context.Context {
 	ctx, _ := context.WithCancel(parent)
 	ctx = setMetadata(ctx, metadata)
 	return context.WithValue(ctx, ctxServerKey{}, serverCtx)
 }
 
-func GetMetadataContext(ctx context.Context) *map[string]string {
+func GetMetadataContext(ctx context.Context) map[string][]string {
 	header := ctx.Value(ctxMetadataKey{})
-	mapData, ok := header.(map[string]string)
-	if ok {
-		return &mapData
+	if mapData, ok := header.(map[string][]string); ok {
+		return mapData
 	}
-	mapData = make(map[string]string)
-	return &mapData
+	mapData := make(map[string][]string)
+	if values, ok := header.(map[string]string); ok {
+		for k, v := range values {
+			mapData[k] = []string{v}
+		}
+	}
+	return mapData
 }
 
 func GetServerContext(ctx context.Context) ServerContext {
@@ -40,6 +44,7 @@ func GetServerContext(ctx context.Context) ServerContext {
 	return nil
 }
 
+/*
 func SetResponseHeader(ctx context.Context, name string, value string) {
 	GetServerContext(ctx).SetResponseHeader(name, value)
 }
@@ -51,7 +56,8 @@ func SetMetadataValue(ctx context.Context, name string, value string) {
 		mapData[name] = value
 	}
 }
+*/
 
-func setMetadata(ctx context.Context, metadata map[string]string) context.Context {
+func setMetadata(ctx context.Context, metadata map[string][]string) context.Context {
 	return context.WithValue(ctx, ctxMetadataKey{}, metadata)
 }

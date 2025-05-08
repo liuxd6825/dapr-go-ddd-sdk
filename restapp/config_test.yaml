@@ -1,0 +1,207 @@
+env: test
+envs:
+  dev_lxd:
+    app:
+      id: duxm-master-cmd-service
+      httpPort: 19020
+      rootUrl: /api/v1.0
+      authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
+      rsServer:
+        enable: true
+        fileFsId: "file"
+        httpFsId: "memory"
+        reload: true
+      template:
+        enable: true
+        fsId: "file"
+        apiUrl: "/api/v1.0/template"
+    fs:
+      - id: "gitea"
+        type: gitea
+        url: "http://localhost:3000"
+        user: liuxd
+        password: liuxd
+        email: lxd2711@163.com
+        repo: test
+        branch: master
+      - id: "file"
+        type : local
+        path: "/users/liuxd/test"
+      - id: "memory"
+        type: memory
+      - id: "http"
+        type: http
+        baseUrl: "http://localhost:8080/src"
+    log:
+      outputType: console
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${AppName}.log"
+    dapr:
+      host: localhost
+      httpPort: 19021
+      grpcPort: 19022
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      server:
+        start: true
+        enableMetrics: false
+        logLevel: "info"
+        logFile: "./logs/${AppName}.dapr.log"
+        logOutputType: "console"
+        config: "./config/dapr/${EnvName}/config.yaml"
+        componentsPath: "./config/dapr/${EnvName}/cmd-components"
+        placementHostAddress: 127.0.0.1:50005
+    mongo:
+      default:
+        host: 192.168.65.5:27018,192.168.65.5:27019,192.168.65.5:27020
+        replicaSet: mongors
+        dbname: dev_master_cmd
+        user: master
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+
+
+  dev_team:
+    app:
+      id: duxm-master-cmd-service
+      httpPort: 19020
+      rootUrl: /api/v1.0
+      authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
+    log:
+      outputType: console
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${AppName}.log"
+    dapr:
+      host: localhost
+      httpPort: 19021
+      grpcPort: 19022
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      server:
+        start: true
+        enableMetrics: false
+        logLevel: "info"
+        logOutputType: "console"
+        logFile: "./logs/${AppName}.dapr.log"
+        config: "./config/dapr/${EnvName}/config.yaml"
+        componentsPath: "./config/dapr/${EnvName}/cmd-components"
+        placementHostAddress: "127.0.0.1:50005"
+    mongo:
+      default:
+        host: 192.168.120.96:27018, 192.168.120.96:27019, 192.168.120.96:27020
+        replicaSet: mongors
+        dbname: test_master_cmd
+        user: master
+        pwd: master27018
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+
+
+  test:
+    app:
+      id: duxm-master-cmd-service
+      httpPort: 43001
+      rootUrl: /api/v1.0
+    log:
+      outputType: file
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "/var/opt/services/master/logs/${AppName}.log"
+    dapr:
+      host: localhost
+      httpPort: 43002
+      grpcPort: 43003
+      maxCallRecvMsgSize: 10
+      actor:
+        actorIdleTimeout: 1h
+        actorScanInterval: 30s
+        drainOngoingCallTimeout: 30m
+        drainRebalancedActors: false
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      server:
+        start: true
+        enableMetrics: false
+        logLevel: "info"
+        logOutputType: "file"
+        logFile: "/var/opt/services/master/logs/${AppName}.dapr.log"
+        config: "/var/opt/services/master/config/dapr/${EnvName}/config.yaml"
+        componentsPath: "/var/opt/services/master/config/dapr/${EnvName}/cmd-components"
+        placementHostAddress: 127.0.0.1:50005
+
+    mongo:
+      default:
+        host: 192.168.122.230:27018,192.168.122.230:27019,192.168.122.230:27020
+        replicaSet: mongors
+        dbname: test_master_cmd
+        user: master
+        pwd: master27018
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+
+
+  prod:
+    app:
+      id: duxm-master-cmd-service
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      cpu: 10
+    log:
+      outputType: file
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "/var/opt/services/master/logs/${AppName}.log"
+    dapr:
+      host: localhost
+      httpPort: 43002
+      grpcPort: 43003
+      maxCallRecvMsgSize: 10
+      actor:
+        actorIdleTimeout: 1h
+        actorScanInterval: 30s
+        drainOngoingCallTimeout: 30m
+        drainRebalancedActors: false
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      server:
+        start: true
+        enableMetrics: false
+        config: "/var/opt/services/master/config/dapr/${EnvName}/config.yaml"
+        componentsPath: "/var/opt/services/master/config/dapr/${EnvName}/cmd-components"
+        placementHostAddress: 127.0.0.1:50005
+        logFile: "/var/opt/services/master/logs/${AppName}.dapr.log"
+        logLevel: "info"
+        logOutputType: "file"
+    mongo:
+      default:
+        host: 122.143.11.104:27018, 122.143.11.104:27019, 122.143.11.104:27020
+        replicaSet: mongors
+        dbname: prod_master_cmd
+        user: master
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+

@@ -40,13 +40,11 @@ func (t *Items[T]) NewItem() (T, error) {
 	return item, nil
 }
 
-//
 // AddMapper
 // @Description: 添加
 // @param ctx    上下文
 // @param data   更新数据
 // @return error 错误
-//
 func (t *Items[T]) AddMapper(ctx context.Context, id string, data interface{}) (T, error) {
 	_, ok := t.items[id]
 	if ok {
@@ -63,13 +61,11 @@ func (t *Items[T]) AddMapper(ctx context.Context, id string, data interface{}) (
 	return newItem, err
 }
 
-//
 // AddItem
 // @Description: 添加
 // @param ctx    上下文
 // @param data   更新数据
 // @return error 错误
-//
 func (t *Items[T]) AddItem(ctx context.Context, item T) error {
 	id := item.GetId()
 	_, ok := t.items[id]
@@ -80,14 +76,12 @@ func (t *Items[T]) AddItem(ctx context.Context, item T) error {
 	return nil
 }
 
-//
 // UpdateMapper
 // @Description:     更新
 // @param ctx        上下文
 // @param data       更新数据
 // @param updateMask 更新字段项
 // @return error
-//
 func (t *Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}, updateMask []string) (T, bool, error) {
 	item, ok := t.items[id]
 	if !ok {
@@ -97,13 +91,11 @@ func (t *Items[T]) UpdateMapper(ctx context.Context, id string, data interface{}
 	return item, ok, err
 }
 
-//
 // UpdateItem
 // @Description: 更新
 // @param ctx    上下文
 // @param data   更新数据
 // @return error 错误
-//
 func (t *Items[T]) UpdateItem(ctx context.Context, item T) error {
 	id := item.GetId()
 	_, ok := t.items[id]
@@ -114,38 +106,32 @@ func (t *Items[T]) UpdateItem(ctx context.Context, item T) error {
 	return nil
 }
 
-//
 // Delete
 // @Description: 删除明细
 // @param ctx    上下文
 // @param item   明细对象
 // @return error 错误
-//
 func (t *Items[T]) Delete(ctx context.Context, item T) error {
 	delete(t.items, item.GetId())
 	return nil
 }
 
-//
 // DeleteById
 // @Description: 按Id删除
 // @param ctx    上下文
 // @param id     Id主键
 // @return error 错误
-//
 func (t *Items[T]) DeleteById(ctx context.Context, id string) error {
 	delete(t.items, id)
 	return nil
 }
 
-//
 // DeleteByIds
 // @Description:  按id删除多个
 // @receiver s
 // @param ctx     上下文
 // @param id      Id主键
 // @return error  错误m
-//
 func (t *Items[T]) DeleteByIds(ctx context.Context, ids ...string) error {
 	if len(ids) > 0 {
 		for _, id := range ids {

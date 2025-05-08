@@ -2,6 +2,7 @@ package errors
 
 import (
 	"errors"
+	"fmt"
 )
 
 func GetMessage(e any) (res string, ok bool) {
@@ -19,6 +20,9 @@ func GetMessage(e any) (res string, ok bool) {
 		ok = true
 		err, _ := e.(error)
 		res = err.Error()
+	default:
+		res = fmt.Sprintf("%v", e)
+		ok = true
 	}
 	return res, ok
 }
@@ -42,21 +46,36 @@ func GetError(re any) (err error) {
 	return
 }
 
-func GetRecoverError(re any) (err error) {
-	err = nil
-	if re != nil {
-		switch re.(type) {
+type anyError struct {
+	sourceErr any
+}
+
+func (e *anyError) Error() string {
+	return fmt.Sprintf("%v", e.sourceErr)
+}
+
+func GetRecoverError(err error, rerr any) (resErr error) {
+	if err != nil {
+		return err
+	}
+	if rerr != nil {
+		switch rerr.(type) {
 		case string:
 			{
-				msg, _ := re.(string)
-				err = errors.New(msg)
+				msg, _ := rerr.(string)
+				resErr = errors.New(msg)
 			}
 		case error:
 			{
-				e, _ := re.(error)
-				err = e
+				if e, ok := rerr.(error); ok {
+					resErr = e
+				}
+			}
+		default:
+			{
+				return &anyError{sourceErr: rerr}
 			}
 		}
 	}
-	return
+	return resErr
 }

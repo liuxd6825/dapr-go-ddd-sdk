@@ -1,0 +1,41 @@
+<!-- dynamic-page -->
+<!doctype html>
+<html lang="en">
+
+<head>
+    <link type="text/css" href="index.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="Description"/>
+</head>
+<body data-ui5-compact-size>
+    <div style="width: 100px; height: 200px">
+
+    </div>
+    <ui5e-page id="page">
+        <ui5e-page-header>
+            
+        </ui5e-page-header>
+        <ui5e-part text="基本信息">
+            <ui5e-part text="基本信息" id="base-info" type="form" href="./basic/basic.part.html">
+                <ui5e-page-tools slot="toolbar">
+                </ui5e-page-tools>
+            </ui5e-part>
+            <ui5e-part text="证件信息" id="certificate-info" href="./basic/certificate.part.html"></ui5e-part>
+            <ui5e-part text="联系方式" id="link-info" href="./basic/link.part.html"></ui5e-part>
+            <ui5e-part text="地址信息" id="address-info" href="./basic/address.part.html"></ui5e-part>
+            <ui5e-part text="合同金额" id="contract-amount-info" href="./basic/contract-amount.part.html"></ui5e-part>
+            <ui5e-part text="报案金额" id="reported-info" href="./basic/reported.part.html"></ui5e-part>
+            <ui5e-part text="资产信息" id="capital-info" href="./basic/capital.part.html"></ui5e-part>
+            <ui5e-part text="附件信息" id="attachment-info" href="./basic/attachment.part.html"></ui5e-part>
+            <ui5e-part text="扩展信息" id="ext-info" href="./basic/ext.part.html"></ui5e-part>
+        </ui5e-part>
+        <ui5e-part text="账户关系" id="account-info"></ui5e-part>
+        <ui5e-part text="人员关系" id="person-info"></ui5e-part>
+        <ui5e-part text="公司关系" id="company-info"></ui5e-part>
+        <ui5e-part text="合同关系" id="contract-info"></ui5e-part>
+        <ui5e-part text="产品关系" id="product-info"></ui5e-part>
+        <ui5e-part text="分析记录" id="analysis-record-info"></ui5e-part>
+        <ui5e-part text="关系图" id="relationship-diagram-info"></ui5e-part>
+    </ui5e-page>
+</body>

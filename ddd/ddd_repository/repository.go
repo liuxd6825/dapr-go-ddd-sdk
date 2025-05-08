@@ -6,7 +6,7 @@ package ddd_repository
 	Delete(ctx context.Context, entity ddd.Entity, opts ...*SetOptions) *SetResult[T]
 	DeleteById(ctx context.Context, tenantId string, id string, opts ...*SetOptions) *SetResult[T]
 	DeleteAll(ctx context.Context, tenantId string, opts ...*SetOptions) *SetResult[T]
-	DeleteByMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...*SetOptions) *SetResult[T]
+	DeleteByMap(ctx context.Context, tenantId string, Data map[string]interface{}, opts ...*SetOptions) *SetResult[T]
 	NewFilter(tenantId string, filterMap map[string]interface{}) bson.D
 	FindById(ctx context.Context, tenantId string, id string, opts ...*FindOptions) *FindOneResult[T]
 	FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...*FindOptions) *FindOneResult[T]
@@ -49,7 +49,7 @@ type IRepository[T ddd.Entity] interface {
 	mongo *ddd_mongodb.Repository[T]
 }
 
-func NewRepositoryWithMongo[T ddd.Entity](entityBuilder *EntityBuilder[T], mongodb *ddd_mongodb.MongoDB, collection *mongo.Collection) *Repository[T] {
+func NewRepositoryWithMongo[T ddd.Entity](entityBuilder *EntityManager[T], mongodb *ddd_mongodb.MongoDB, collection *mongo.Collection) *Repository[T] {
 	return &Repository[T]{
 		entityBuilder: entityBuilder,
 		collection:    collection,

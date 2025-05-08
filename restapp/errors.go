@@ -14,6 +14,16 @@ type ConfigError struct {
 	items []ItemError
 }
 
+type EnvTypeError struct {
+	msg string
+}
+
+func NewEnvTypeError(msg string) *EnvTypeError {
+	return &EnvTypeError{
+		msg: msg,
+	}
+}
+
 func (c *ConfigError) Error() string {
 	sb := strings.Builder{}
 	for _, item := range c.items {
@@ -24,16 +34,6 @@ func (c *ConfigError) Error() string {
 
 func (c *ConfigError) ItemCount() int {
 	return len(c.items)
-}
-
-type EnvTypeError struct {
-	msg string
-}
-
-func NewEnvTypeError(msg string) *EnvTypeError {
-	return &EnvTypeError{
-		msg: msg,
-	}
 }
 
 func (e *EnvTypeError) Error() string {

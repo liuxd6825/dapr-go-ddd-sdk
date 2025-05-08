@@ -1,0 +1,29 @@
+{
+  "name": "human",
+  "type": "object",
+  "required": ["id","name"],
+  "description": "人员基本信息",
+  "properties": {
+    "peopleType": {
+      "type": "array",
+      "items": { "type": "string" },
+      "name": "peopleType",
+      "title": "人员类型",
+      "order": 1
+    },
+    "tags": {
+      "name": "tags",
+      "title": "标签",
+      "type": "array",
+      "items": { "type": "string" },
+      "order":2
+    },
+    "remark": {
+      "type": ["string", "null"],
+      "name": "remark",
+      "title": "备注",
+      "order": 3
+    }
+  }
+
+}

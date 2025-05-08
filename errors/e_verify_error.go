@@ -37,7 +37,9 @@ func (v *VerifyError) Count() int {
 func (v *VerifyError) IsHasError() bool {
 	return len(v.Errors) > 0
 }
-
+func (v *VerifyError) HasError() bool {
+	return v.IsHasError()
+}
 func (v *VerifyError) Error() string {
 	b, _ := json.Marshal(v)
 	return string(b)

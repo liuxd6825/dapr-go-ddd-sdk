@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="text/tsx">
+        import {DBPkg,LogPkg,TemplatePkg,SchemaPkg,ContextPkg,FeignPkg,JsonPkg,FsPkg,ParamsTypePkg} from "/definition/types/pkg.d.ts";
+        import {require, Context} from "definition/types/types.d.ts"
+        import {WebService, WebContext, FindPagingQuery, FindByIdQuery} from '/definition/types/web.d.ts';
+        import {Schema} from "definition/types/schema.d.ts";
+        import {Model} from "definition/types/db.d.ts";
+        interface Service extends WebService {
+            dao: Model<any>;
+            schema: Schema;
+        }
+        interface CreateParams {
+            cmd:{
+                commandId:string;
+                data:{
+                    tenantId:string;
+                    id:string;
+                };
+            };
+        }
+        interface UpdateParams {
+            cmd:{
+                commandId:string;
+                data:{
+                    tenantId:string;
+                    id:string;
+                };
+            };
+        }
+        interface DeleteParams {
+            id:string;
+        }
+
+        interface PKG {
+            logs: LogPkg;
+            mongo: DBPkg;
+            neo4j: DBPkg;
+            es: DBPkg;
+            template: TemplatePkg;
+            schema: SchemaPkg;
+            context: ContextPkg;
+            feign: FeignPkg;
+            json: JsonPkg;
+            fs: FsPkg;
+            paramsType: ParamsTypePkg;
+        }
+        const self : Service;
+        const ctx: WebContext;
+        const pkg: PKG;
+    </script>
+    <title>{{ schema.Name }}</title>
+</head>
+<body>
+
+<service name="dictionary" description="{{schema.Description}}" url="/api/v1.0/">
+    <script type="text/tsx">
+        (function(){
+            let ctx = pkg.context.background()
+            let schema = pkg.schema.loadFile("/definition/{{schema.Name}}.json");
+            self.dao = pkg.mongo.newDao("default", "{{schema.Name}}");
+            return self.dao.table(ctx, schema).create(ctx);
+        })()
+    </script>
+
+    <request name="findPaging" url=""  type="get" params="findPaging" description="分页查询">
+        <script type="text/tsx">
+            (function () {
+                return self.dao.findPaging(ctx, ctx.getFindPaging());
+            })()
+        </script>
+    </request>
+
+    <request name="findById" url="/{id}" type="get" description="根据Id查找">
+        <a class="params" href="./params/findById.json"></a>
+        <script type="text/tsx">
+            (function (params: FindByIdQuery) {
+                return self.dao.findById(ctx, params.id).getData();
+            })()
+        </script>
+    </request>
+
+    <request name="create" url="" type="post" description="创建信息">
+        <a class="params" href="./params/save.json"></a>
+        <script type="text/tsx">
+            (function (params: CreateParams) {
+                let data = params.cmd.data;
+                self.dao.create(ctx, data);
+                return data
+            })()
+        </script>
+    </request>
+
+    <request name="update" url="" type="put" description="更新信息">
+        <a class="params" href="./params/save.json"></a>
+        <script type="text/tsx">
+            (function (params: UpdateParams) {
+                let data = params.cmd.data;
+                self.dao.update(ctx, data);
+                return data
+            })()
+        </script>
+    </request>
+
+    <request name="delete" url="{id}" type="delete" params="deleteById" description="删除信息">
+        <a class="params" href="./params/deleteById.json"></a>
+        <script type="text/tsx">
+            (function (params: DeleteParams) {
+                let id = params.id;
+                self.dao.deleteById(ctx, id);
+                return {id: id}
+            })()
+        </script>
+    </request>
+
+</service>
+</body>
+</html>

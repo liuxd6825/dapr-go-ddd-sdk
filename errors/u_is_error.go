@@ -17,12 +17,10 @@ func IsErrorMongoNoDocuments(err error) bool {
 	return false
 }
 
-//
 // IsGrpcConnError
 // @Description: 是否是GRPC连接错误
 // @param err
 // @return bool
-//
 func IsGrpcConnError(err error) bool {
 	if err == nil {
 		return false

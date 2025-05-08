@@ -3,7 +3,8 @@ package applog
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/daprclient"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/logs"
 	"testing"
 	"time"
 )
@@ -115,13 +116,11 @@ func TestLogger_AppLog(t *testing.T) {
 	println(getResp)
 }
 
-//
-//  newLogger
-//  @Description:
-//  @return Logger
-//
-func newLogger() Logger {
-	client, _ := daprclient.NewDaprDddClient("", 9001, 9002)
+// newLogger
+// @Description:
+// @return Logger
+func newLogger() logs.Logger {
+	client, _ := dapr.NewDaprDddClient("", 9001, 9002)
 	logger := NewLogger(client)
 	return logger
 }
