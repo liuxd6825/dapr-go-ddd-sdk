@@ -11,20 +11,40 @@ func NewSchemaError(vError *jsonschema.SchemaValidationError) error {
 	return errors.ErrorOf("schema error: %s", vError.Error())
 }
 
-func NewFieldsError(vError *jsonschema.ValidationError) error {
+func NewFieldsError(sch *jsonschema.Schema, vError *jsonschema.ValidationError) error {
 	err := errors.NewVerifyError()
-	for _, cause := range vError.Causes {
-		field := getErrorField(cause)
-		msg := getErrorMsg(cause)
-		err.AppendField(field, msg)
-	}
+	AddFieldsError(sch, vError, err)
 	return err
+}
+
+func AddFieldsError(sch *jsonschema.Schema, vError *jsonschema.ValidationError, verifyError *errors.VerifyError) {
+	count := len(vError.Causes)
+	if count == 0 {
+		field := getErrorField(vError)
+		title := getErrorTitle(sch, vError)
+		msg := getErrorMsg(vError)
+		verifyError.AppendField(field, msg, title)
+	} else {
+		for _, cause := range vError.Causes {
+			if len(cause.Causes) > 0 {
+				for _, c := range cause.Causes {
+					AddFieldsError(sch, c, verifyError)
+				}
+			} else {
+				field := getErrorField(cause)
+				title := getErrorTitle(sch, cause)
+				msg := getErrorMsg(cause)
+				verifyError.AppendField(field, msg, title)
+			}
+		}
+	}
+
 }
 
 func Error(err error) error {
 	if err != nil {
 		if e, ok := err.(*jsonschema.ValidationError); ok {
-			err = NewFieldsError(e)
+			err = NewFieldsError(nil, e)
 		} else if e, ok := err.(*jsonschema.SchemaValidationError); ok {
 			err = NewSchemaError(e)
 		}
@@ -35,6 +55,14 @@ func Error(err error) error {
 func getErrorField(cause *jsonschema.ValidationError) string {
 	field := strings.Join(cause.InstanceLocation, ".")
 	return field
+}
+
+func getErrorTitle(sch *jsonschema.Schema, cause *jsonschema.ValidationError) string {
+	title := strings.Join(cause.InstanceLocation, ".")
+	if sch != nil {
+		title = sch.GetTitleByLocation(cause.InstanceLocation)
+	}
+	return title
 }
 
 func getErrorMsg(cause *jsonschema.ValidationError) string {
@@ -49,6 +77,10 @@ func getErrorMsg(cause *jsonschema.ValidationError) string {
 		kinds = append(kinds, "必填项:"+missing)
 	case *kind.Type:
 		var kType = errKind.(*kind.Type)
+		if kType.Got == "null" {
+			kinds = append(kinds, "不能为空值")
+			break
+		}
 		missing := strings.Join(kType.Want, ",")
 		if len(missing) > 0 {
 			missing = ",应为" + missing + "。"

@@ -25,8 +25,8 @@ func (v *VerifyError) Appends(errs *VerifyError) {
 	}
 }
 
-func (v *VerifyError) AppendField(fieldName string, msg string) {
-	fieldError := NewFieldError(fieldName, msg)
+func (v *VerifyError) AppendField(fieldName string, msg string, title ...string) {
+	fieldError := NewFieldError(fieldName, msg, title...)
 	v.Errors = append(v.Errors, *fieldError)
 }
 

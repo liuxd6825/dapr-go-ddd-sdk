@@ -26,13 +26,13 @@ func NewConfig(metadata map[string]any) (*Config, error) {
 	vErr := errors.NewVerifyError()
 	vErr.Message = fmt.Sprintf("giteafs.config: %s", cfg.Name)
 	if cfg.Name == "" {
-		vErr.AppendField("id", "missing name")
+		vErr.AppendField("id", "missing name", "ID")
 	}
 	if cfg.Url == "" {
-		vErr.AppendField("url", "missing url")
+		vErr.AppendField("url", "missing url", "Url")
 	}
 	if cfg.User == "" {
-		vErr.AppendField("user", "missing user")
+		vErr.AppendField("user", "missing user", "User")
 	}
 	if cfg.Password == "" {
 		vErr.AppendField("password", "missing password")

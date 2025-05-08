@@ -58,7 +58,7 @@ func DoConvert(sch *jsonschema.Schema, data any) (any, error) {
 func Validate(sch *jsonschema.Schema, data any) error {
 	err := sch.Validate(data)
 	if e, ok := err.(*jsonschema.ValidationError); ok {
-		err = NewFieldsError(e)
+		err = NewFieldsError(sch, e)
 	} else if e, ok := err.(*jsonschema.SchemaValidationError); ok {
 		err = NewSchemaError(e)
 	}
