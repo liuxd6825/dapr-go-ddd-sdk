@@ -160,9 +160,6 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 
 	if sch.MaxLength == nil {
 		maxLength := int(db.Size)
-		if isString {
-			maxLength = int(db.Size) / 2
-		}
 		sch.MaxLength = &maxLength
 	}
 	return err
