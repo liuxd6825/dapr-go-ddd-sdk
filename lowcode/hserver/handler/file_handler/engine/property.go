@@ -53,6 +53,10 @@ func (p *Property) Readonly() bool {
 	return p.Meta().DBField.Readonly()
 }
 
+func (p *Property) Size() int64 {
+	return p.Meta().DBField.Size / 2
+}
+
 func (p *Property) PK() bool {
 	return p.Meta().DBField.PrimaryKey
 }
