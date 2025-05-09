@@ -582,11 +582,20 @@ func (d *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, op
 		if query.GetPageNum() > 0 {
 			qryDb = qryDb.Offset(int(query.GetPageSize() * query.GetPageNum()))
 		}
-
-		if len(query.GetSort()) > 0 {
+		sqlSort := query.GetSort()
+		if len(sqlSort) > 0 {
 			// 将sort格式  name:asc, sex:asc
 			// 转为sql格式  name asc, sex asc格式
-			sort := strings.ReplaceAll(query.GetSort(), ":", " ")
+			items := strings.Split(sqlSort, ",")
+			var sorts []string
+			for _, item := range items {
+				vals := strings.Split(item, ":")
+				if len(vals) > 0 {
+					vals[0] = stringutils.AsFieldName(vals[0])
+				}
+				sorts = append(sorts, strings.Join(vals, " "))
+			}
+			sort := strings.Join(sorts, ",")
 			qryDb = qryDb.Order(sort)
 		}
 
