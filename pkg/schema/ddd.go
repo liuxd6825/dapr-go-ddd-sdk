@@ -1,6 +1,9 @@
 package schema
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
+	"github.com/liuxd6825/jsonschema/v6"
+)
 
 type DDD struct {
 	AggField   string `json:"aggField"`
@@ -12,7 +15,7 @@ func NewDDD() *DDD {
 	return &DDD{}
 }
 
-func (p *DDD) init(values map[string]any) error {
+func (p *DDD) init(ctx *jsonschema.CompilerContext, values map[string]any) error {
 	for k, v := range values {
 		switch k {
 		case "aggField":

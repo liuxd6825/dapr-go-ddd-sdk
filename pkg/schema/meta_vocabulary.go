@@ -42,13 +42,14 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (jsonschem
 		return nil, nil
 	}
 	var err error
+
 	meta := NewMetaExtension()
 	for key, value := range d {
 		switch key {
 		case "dbField":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitDBField(vals)
+				err = meta.InitDBField(ctx, vals)
 				if meta.DBField != nil && meta.DBField.Name == "id" {
 					meta.DBField.PrimaryKey = true
 				}
@@ -56,48 +57,48 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (jsonschem
 		case "dbTable":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitDBTable(vals)
+				err = meta.InitDBTable(ctx, vals)
 			}
 			break
 		case "form":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitForm(vals)
+				err = meta.InitForm(ctx, vals)
 			}
 			break
 		case "column":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitColumn(vals)
+				err = meta.InitColumn(ctx, vals)
 			}
 			break
 		case "query":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitQuery(vals)
+				err = meta.InitQuery(ctx, vals)
 			}
 			break
 		case "lang":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitLang(vals)
+				err = meta.InitLang(ctx, vals)
 			}
 			break
 		case "param":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitParam(vals)
+				err = meta.InitParam(ctx, vals)
 			}
 			break
 		case "ddd":
 			vals, ok := value.(map[string]any)
 			if ok {
-				err = meta.InitDDD(vals)
+				err = meta.InitDDD(ctx, vals)
 			}
 			break
 		case "convert":
 			if vals, ok := value.(map[string]any); ok {
-				err = meta.InitConvert(vals)
+				err = meta.InitConvert(ctx, vals)
 			}
 		}
 

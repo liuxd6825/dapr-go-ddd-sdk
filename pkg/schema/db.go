@@ -1,6 +1,9 @@
 package schema
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/liuxd6825/jsonschema/v6"
+)
 
 type DBSortType string
 
@@ -19,9 +22,9 @@ const (
 )
 
 type DBField struct {
-	NotField   bool        `json:"notField"` // 不是数据库字段
-	Name       string      `json:"name"`     // 字段名称
-	DbType     string      `json:"dbType"`
+	NotField   bool        `json:"notField"`   // 不是数据库字段
+	Name       string      `json:"name"`       // 字段名称
+	DbType     string      `json:"dbType"`     //数据类型
 	Size       int64       `json:"size"`       // 字段大小
 	PrimaryKey bool        `json:"primaryKey"` // 是主健
 	NotNull    bool        `json:"notNull"`    // 不能为空
@@ -53,7 +56,7 @@ func NewDBField() *DBField {
 	}
 }
 
-func (db *DBTable) init(values map[string]any) error {
+func (db *DBTable) init(ctx *jsonschema.CompilerContext, values map[string]any) error {
 	var err error
 	for k, v := range values {
 		switch k {
@@ -76,7 +79,7 @@ func (db *DBField) Readonly() bool {
 	return false
 }
 
-func (db *DBField) init(values map[string]any) error {
+func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) error {
 	db.Updatable = true
 	db.Readable = true
 	db.Creatable = true
@@ -140,5 +143,14 @@ func (db *DBField) init(values map[string]any) error {
 			return err
 		}
 	}
+
+	if db.Size == 0 {
+		db.Size = 10
+		sch := ctx.GetSchema()
+		if sch.Types.Contains(jsonschema.JsonType_StringType) {
+			db.Size = 50
+		}
+	}
+
 	return err
 }

@@ -18,7 +18,7 @@ func NewConvert() *Convert {
 		Options: map[string]any{},
 	}
 }
-func (c *Convert) init(vals map[string]any) error {
+func (c *Convert) init(ctx *jsonschema.CompilerContext, vals map[string]any) error {
 	for k, v := range vals {
 		if k == "name" {
 			c.Name = v.(string)

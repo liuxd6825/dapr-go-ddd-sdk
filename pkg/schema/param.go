@@ -1,5 +1,7 @@
 package schema
 
+import "github.com/liuxd6825/jsonschema/v6"
+
 type HParamType string
 
 const (
@@ -22,7 +24,7 @@ func NewHttpParam() *HttpParam {
 	return &HttpParam{}
 }
 
-func (p *HttpParam) init(values map[string]any) error {
+func (p *HttpParam) init(ctx *jsonschema.CompilerContext, values map[string]any) error {
 	for k, v := range values {
 		switch k {
 		case "name":

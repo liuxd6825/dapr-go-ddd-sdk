@@ -1,8 +1,10 @@
 package schema
 
+import "github.com/liuxd6825/jsonschema/v6"
+
 type Control map[string]any
 
-func (c Control) init(vals map[string]any) error {
+func (c Control) init(ctx *jsonschema.CompilerContext, vals map[string]any) error {
 	for k, v := range vals {
 		c[k] = v
 	}
