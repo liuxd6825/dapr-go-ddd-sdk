@@ -18,14 +18,16 @@ import (
 )
 
 type Dao[T any] struct {
-	options    *Options[T]
-	eb         store.EntityBuilder[T] // 实体构造器
-	db         *gorm.DB
-	dbKey      string
-	entity     T
-	tableName  string
-	dbSchema   *store.DBSchema
-	gormSchema *gormschema.Schema
+	options      *Options[T]
+	eb           store.EntityBuilder[T] // 实体构造器
+	db           *gorm.DB
+	dbKey        string
+	entity       T
+	tableName    string
+	dbSchema     *store.DBSchema
+	gormSchema   *gormschema.Schema
+	createFields []string
+	updateFields []string
 }
 
 const (
@@ -113,20 +115,45 @@ func newDao[T any](cfg *NewConfig) *Dao[T] {
 		}
 	}
 
+	createFields := getCreateFields(gormSch)
+	updateFields := getUpdateFields(gormSch)
+
 	tableName := cfg.TableName
 	if tableName == "" {
 		tableName = cfg.DBSchema.TableName
 	}
 
 	return &Dao[T]{
-		eb:         eb,
-		db:         cfg.Db,
-		dbKey:      cfg.DbKey,
-		entity:     entity,
-		tableName:  cfg.TableName,
-		dbSchema:   cfg.DBSchema,
-		gormSchema: gormSch,
+		eb:           eb,
+		db:           cfg.Db,
+		dbKey:        cfg.DbKey,
+		entity:       entity,
+		tableName:    cfg.TableName,
+		dbSchema:     cfg.DBSchema,
+		gormSchema:   gormSch,
+		createFields: createFields,
+		updateFields: updateFields,
 	}
+}
+
+func getCreateFields(dbSchema *gormschema.Schema) []string {
+	var fields []string
+	for _, field := range dbSchema.Fields {
+		if field.Creatable {
+			fields = append(fields, field.Name)
+		}
+	}
+	return fields
+}
+
+func getUpdateFields(dbSchema *gormschema.Schema) []string {
+	var fields []string
+	for _, field := range dbSchema.Fields {
+		if field.Updatable {
+			fields = append(fields, field.Name)
+		}
+	}
+	return fields
 }
 
 func (d *Dao[T]) getIds(entities []T) []string {
@@ -178,7 +205,7 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) (r
 	res.Error = gp.Try(func() error {
 		db := d.table(ctx)
 		d.eb.SetCreatedInfo(ctx, entity)
-		db = db.Create(entity)
+		db.Select(d.createFields).Create(entity)
 		res.SetRowsAffected(db.RowsAffected)
 		if db.Error != nil {
 			println(db.Error.Error())
@@ -193,7 +220,7 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 	gp.Try(func() error {
 		d.eb.SetCreatedInfo(ctx, data)
 		data[TenantId] = tenantId
-		db := d.table(ctx).Model(data).Create(data)
+		db := d.table(ctx).Select(d.createFields).Model(data).Create(data)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
 	}).Catch(func(err error) {
@@ -219,30 +246,31 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 
 }
 
-func (d *Dao[T]) updateTable(ctx context.Context, opts ...store.Options) *gorm.DB {
+func (d *Dao[T]) GetUpdateDB(ctx context.Context, entity any, opts ...store.Options) *gorm.DB {
+	d.eb.SetUpdatedInfo(ctx, entity)
 	table := d.table(ctx)
 	opt := store.NewOptions(opts...)
 	// 指定更新字段
-	updateFields := opt.GetUpdateFields()
-	if len(updateFields) > 0 {
-		for _, v := range updateFields {
-			table = table.Select(v)
-		}
-	} else {
-		for _, f := range d.gormSchema.Fields {
-			if f.Updatable {
-				updateFields = append(updateFields, f.Name)
-			}
-		}
+	updateFields := d.GetUpdateFields(opts...)
+	if len(updateFields) == 0 {
+		updateFields = d.updateFields
 	}
-
 	table = table.Select(updateFields).Omit(fields.CreatedTime, fields.CreatorId, fields.CreatorName)
-
 	// 指定取消更新的字段
 	cancelFields := opt.GetUpdateCancel()
 	if len(cancelFields) > 0 {
 		for _, name := range cancelFields {
 			table = table.Omit(name)
+		}
+	}
+	// 是否空值更新
+	if !opt.GetNullUpdate() {
+		if e, ok := any(entity).(map[string]any); ok {
+			for k, v := range e {
+				if v == nil {
+					table = table.Omit(k)
+				}
+			}
 		}
 	}
 	return table
@@ -255,19 +283,9 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *s
 		d.eb.SetUpdatedInfo(ctx, entity)
 		id := d.eb.GetId(entity)
 		tenantId := d.eb.GetTenantId(entity)
-		table := d.updateTable(ctx, opt)
+		table := d.GetUpdateDB(ctx, entity, opt)
 
-		// 是否空值更新
-		if !opt.GetNullUpdate() {
-			if e, ok := any(entity).(map[string]any); ok {
-				for k, v := range e {
-					if v == nil {
-						table = table.Omit(k)
-					}
-				}
-			}
-		}
-		db := table.Where("id=? and tenant_id=? ", id, tenantId).Updates(entity)
+		db := table.Select(d.updateFields).Where("id=? and tenant_id=? ", id, tenantId).Updates(entity)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
 	}).Catch(func(err error) {
@@ -275,6 +293,16 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *s
 	})
 
 	return res
+}
+
+func (d *Dao[T]) GetUpdateFields(opts ...store.Options) []string {
+	opt := store.NewOptions(opts...)
+	// 指定更新字段
+	updateFields := opt.GetUpdateFields()
+	if len(updateFields) == 0 {
+		updateFields = d.updateFields
+	}
+	return updateFields
 }
 
 func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId string, filterRSQL string, data T, opts ...store.Options) *store.SetResult[T] {
@@ -286,7 +314,7 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId string, filterRSQL s
 			return err
 		}
 		d.eb.SetUpdatedInfo(ctx, data)
-		db := d.updateTable(ctx, opts...).Where(where).Model(v).Updates(data)
+		db := d.GetUpdateDB(ctx, data, opts...).Where(where).Model(v).Updates(data)
 		res.SetRowsAffected(db.RowsAffected)
 		return db.Error
 	}).Catch(func(err error) {
@@ -303,7 +331,7 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, 
 			d.eb.SetUpdatedInfo(ctx, e)
 			d.eb.SetTenantId(e, tenantId)
 			id := d.eb.GetId(e)
-			db := d.updateTable(ctx, opts...).Model(d.NewEntity()).Where("tenant_id=? and id=?", tenantId, id).Updates(e)
+			db := d.GetUpdateDB(ctx, e, opts...).Model(d.NewEntity()).Where("tenant_id=? and id=?", tenantId, id).Updates(e)
 			if db.Error != nil {
 				return db.Error
 			}
@@ -322,8 +350,9 @@ func (d *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 	var res = store.NewSetResult[T]()
 	gp.Try(func() error {
 		opt := store.NewOptions(opts...)
-		model := d.updateTable(ctx, opt).Model(d.entity)
+
 		for _, e := range entities {
+			model := d.GetUpdateDB(ctx, e, opt).Model(d.entity)
 			id := d.GetId(e)
 			d.eb.SetUpdatedInfo(ctx, e)
 			db := model.Where("id = ?", id).UpdateColumn(strings.Join(mask, ","), e)
@@ -342,8 +371,8 @@ func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 	res := store.NewSetResult[T]()
 	gp.Try(func() error {
 		data[TenantId] = tenantId
-		d.eb.SetUpdatedInfo(ctx, data)
-		db := d.updateTable(ctx, opts...).Model(d.entity).Where("id", id).Updates(data)
+
+		db := d.GetUpdateDB(ctx, data, opts...).Model(d.entity).Where("id", id).Updates(data)
 		res.Error = db.Error
 		res.RowsAffected = db.RowsAffected
 		return res.Error
@@ -358,7 +387,7 @@ func (d *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	gp.Try(func() error {
 		var db *gorm.DB
 		var count int64
-		table := d.updateTable(ctx, opts...)
+		table := d.GetUpdateDB(ctx, data, opts...)
 		res.Error = d.asFilter(filter, func(data map[string]any) error {
 			d.eb.SetUpdatedInfo(ctx, data)
 			db = table.Where(filter).Updates(data)
