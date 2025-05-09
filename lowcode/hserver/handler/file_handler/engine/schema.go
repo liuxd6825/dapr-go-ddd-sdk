@@ -80,6 +80,7 @@ func (t *SchemaTemplate) Render(retValType string, valueVar string, htmlFile str
 		valueVar = strings.ReplaceAll(schemaFile, "/", "_")
 		valueVar = strings.ReplaceAll(valueVar, ".", "_")
 	}
+
 	h, err := t.Execute(context.Background(), sch, retValType, valueVar)
 	if err != nil {
 		return "", err
