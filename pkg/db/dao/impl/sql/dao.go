@@ -82,9 +82,6 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 
 	sqlDao := store_sql.NewDao[T](newDaoCfg)
 
-	//sqlDao.AddMetadata("dbSchema", gormSch)
-	//sqlDao.AddMetadata("schema", cfg.Schema)
-
 	daoBase := impl.NewDaoBase[T](sqlDao, cfg)
 
 	return &Dao[T]{

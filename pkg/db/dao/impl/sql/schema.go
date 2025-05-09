@@ -191,7 +191,7 @@ func getFieldType(dbType gormschema.DataType) reflect.Type {
 	case gormschema.String:
 		return reflect.TypeOf("")
 	case gormschema.Int:
-		return reflect.TypeOf(int(0))
+		return reflect.TypeOf(int64(0))
 	case gormschema.Float:
 		return reflect.TypeOf(float64(0))
 	case gormschema.Time:
