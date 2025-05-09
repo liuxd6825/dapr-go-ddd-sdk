@@ -11,7 +11,7 @@ type VerifyError struct {
 
 func NewVerifyError() *VerifyError {
 	return &VerifyError{
-		Message: "数据认证错误",
+		Message: "数据验证错误",
 		Errors:  make([]FieldError, 0),
 	}
 }

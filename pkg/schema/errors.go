@@ -78,7 +78,7 @@ func getErrorMsg(cause *jsonschema.ValidationError) string {
 	case *kind.Type:
 		var kType = errKind.(*kind.Type)
 		if kType.Got == "null" {
-			kinds = append(kinds, "不能为空值")
+			kinds = append(kinds, "不能为空")
 			break
 		}
 		missing := strings.Join(kType.Want, ",")
@@ -89,9 +89,9 @@ func getErrorMsg(cause *jsonschema.ValidationError) string {
 	case *kind.Enum:
 		kinds = append(kinds, "枚举值错误")
 	case *kind.MinLength:
-		kinds = append(kinds, "长度过短")
+		kinds = append(kinds, "数据过短")
 	case *kind.MaxLength:
-		kinds = append(kinds, "长度过长")
+		kinds = append(kinds, "数据超长")
 	case *kind.Minimum:
 		kinds = append(kinds, "值过小")
 	case *kind.Maximum:
