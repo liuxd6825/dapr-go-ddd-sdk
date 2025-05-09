@@ -144,13 +144,26 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 		}
 	}
 
-	if db.Size == 0 {
-		db.Size = 10
-		sch := ctx.GetSchema()
-		if sch.Types.Contains(jsonschema.JsonType_StringType) {
-			db.Size = 50
-		}
+	sch := ctx.GetSchema()
+	isString := false
+	if sch.Types != nil && sch.Types.Contains(jsonschema.JsonType_StringType) {
+		isString = true
 	}
 
+	if db.Size == 0 {
+		size := int64(10)
+		if isString {
+			size = 50
+		}
+		db.Size = size
+	}
+
+	if sch.MaxLength == nil {
+		maxLength := int(db.Size)
+		if isString {
+			maxLength = int(db.Size) / 2
+		}
+		sch.MaxLength = &maxLength
+	}
 	return err
 }

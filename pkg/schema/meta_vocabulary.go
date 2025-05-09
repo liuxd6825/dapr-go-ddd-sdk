@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/jsonschema/v6"
 	"log"
 	"strings"
@@ -32,79 +35,87 @@ func NewMetaVocabulary() *jsonschema.Vocabulary {
 	}
 }
 
-func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (jsonschema.SchemaExt, error) {
-	v, ok := obj[META_TAG_NAME]
-	if !ok {
-		return nil, nil
+func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (ext jsonschema.SchemaExt, err error) {
+	logCtx := context.Background()
+	sch := ctx.GetSchema()
+	metaType := ""
+	if sch == nil {
+		logs.Errorfmt(logCtx, "jsonschema.metaCompile() {ctx.GetSchema() nil}")
+		return nil, errors.New(" ctx.GetSchema() is nil")
 	}
-	d, ok := v.(map[string]any)
-	if !ok {
-		return nil, nil
-	}
-	var err error
+	location := sch.Location
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New("%s %s metatype=%s", location, r, metaType)
+		}
+	}()
 
+	var metaMap map[string]any
+	v, _ := obj[META_TAG_NAME]
+	if v != nil {
+		metaMap = v.(map[string]any)
+	}
 	meta := NewMetaExtension()
-	for key, value := range d {
-		switch key {
-		case "dbField":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitDBField(ctx, vals)
-				if meta.DBField != nil && meta.DBField.Name == "id" {
-					meta.DBField.PrimaryKey = true
-				}
-			}
-		case "dbTable":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitDBTable(ctx, vals)
-			}
-			break
-		case "form":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitForm(ctx, vals)
-			}
-			break
-		case "column":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitColumn(ctx, vals)
-			}
-			break
-		case "query":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitQuery(ctx, vals)
-			}
-			break
-		case "lang":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitLang(ctx, vals)
-			}
-			break
-		case "param":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitParam(ctx, vals)
-			}
-			break
-		case "ddd":
-			vals, ok := value.(map[string]any)
-			if ok {
-				err = meta.InitDDD(ctx, vals)
-			}
-			break
-		case "convert":
-			if vals, ok := value.(map[string]any); ok {
-				err = meta.InitConvert(ctx, vals)
-			}
-		}
 
-		if err != nil {
-			return nil, err
-		}
+	metaType = "dbField"
+	if err = meta.InitDBField(ctx, metaMap); err != nil {
+		return nil, err
 	}
+
+	metaType = "dbTable"
+	if err = meta.InitDBTable(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "form"
+	if err = meta.InitForm(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "column"
+	if err = meta.InitColumn(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "query"
+	if err = meta.InitQuery(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "lang"
+	if err = meta.InitLang(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "param"
+	if err = meta.InitParam(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "ddd"
+	if err = meta.InitDDD(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
+	metaType = "convert"
+	if err = meta.InitConvert(ctx, metaMap); err != nil {
+		return nil, err
+	}
+
 	return meta, err
+}
+
+func getMapItem(metaMap map[string]any, keyName string) map[string]any {
+	if metaMap == nil {
+		return nil
+	}
+	v, ok := metaMap[keyName]
+	if !ok {
+		return nil
+	}
+	keyVal, ok := v.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return keyVal
 }

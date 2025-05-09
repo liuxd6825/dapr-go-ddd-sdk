@@ -41,48 +41,52 @@ func (m *MetaExtension) TagName() string {
 	return META_TAG_NAME
 }
 
-func (m *MetaExtension) InitDBField(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.DBField = &DBField{}
-	return m.DBField.init(ctx, vals)
+func (m *MetaExtension) InitDBField(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "dbField")
+	err := m.DBField.init(ctx, values)
+	if m.DBField.Name == "id" {
+		m.DBField.PrimaryKey = true
+	}
+	return err
 }
 
-func (m *MetaExtension) InitDBTable(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.DBTable = &DBTable{}
-	return m.DBTable.init(ctx, vals)
+func (m *MetaExtension) InitDBTable(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "dbTable")
+	return m.DBTable.init(ctx, values)
 }
 
-func (m *MetaExtension) InitForm(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.Form = &Form{}
-	return m.Form.init(ctx, vals)
+func (m *MetaExtension) InitForm(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "form")
+	return m.Form.init(ctx, values)
 }
 
-func (m *MetaExtension) InitColumn(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.Column = &Column{}
-	return m.Column.init(ctx, vals)
+func (m *MetaExtension) InitColumn(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "column")
+	return m.Column.init(ctx, values)
 }
 
-func (m *MetaExtension) InitLang(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.Lang = &Lang{}
-	return m.Lang.init(ctx, vals)
+func (m *MetaExtension) InitLang(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "lang")
+	return m.Lang.init(ctx, values)
 }
-func (m *MetaExtension) InitParam(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.Param = &HttpParam{}
-	return m.Param.init(ctx, vals)
-}
-
-func (m *MetaExtension) InitDDD(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.DDD = &DDD{}
-	return m.DDD.init(ctx, vals)
+func (m *MetaExtension) InitParam(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "param")
+	return m.Param.init(ctx, values)
 }
 
-func (m *MetaExtension) InitQuery(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.Query = &Query{}
-	return m.Query.init(ctx, vals)
+func (m *MetaExtension) InitDDD(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "ddd")
+	return m.DDD.init(ctx, values)
 }
 
-func (m *MetaExtension) InitConvert(ctx *jsonschema.CompilerContext, vals map[string]any) error {
-	m.Convert = &Convert{}
-	return m.Convert.init(ctx, vals)
+func (m *MetaExtension) InitQuery(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "query")
+	return m.Query.init(ctx, values)
+}
+
+func (m *MetaExtension) InitConvert(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "convert")
+	return m.Convert.init(ctx, values)
 }
 
 func (m *MetaExtension) Validate(ctx *jsonschema.ValidatorContext, v any) {
