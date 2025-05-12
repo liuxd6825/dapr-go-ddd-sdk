@@ -397,7 +397,9 @@ func (c *nodeCypher[T]) getCreateProperties(ctx context.Context, data any) (stri
 
 	var properties string
 	for _, f := range c.schema.Fields {
-		properties = fmt.Sprintf(`%s%s:$%s,`, properties, f.DBName, f.DBName)
+		if f.Creatable {
+			properties = fmt.Sprintf(`%s%s:$%s,`, properties, f.DBName, f.Name)
+		}
 	}
 
 	if len(properties) > 0 {
@@ -524,24 +526,24 @@ func (c *nodeCypher[T]) getUpdateProperties(ctx context.Context, data any, dataK
 	return c.getUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
 }
 
-func (c *nodeCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, setFields ...string) (string, map[string]any, error) {
+func (c *nodeCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, updateProperties ...string) (string, map[string]any, error) {
 	var properties string
-	isSetFields := len(setFields) > 0
-	var keyFields map[string]string
-	if isSetFields {
-		keyFields = make(map[string]string)
-		for _, k := range setFields {
-			keyFields[strings.ToLower(k)] = k
-		}
-	}
 
-	for k := range mapData {
-		if isSetFields {
-			if _, ok := keyFields[strings.ToLower(k)]; ok {
-				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, k, k)
+	if updateProperties == nil {
+		for _, propName := range updateProperties {
+			field := c.schema.LookedField(propName)
+			if field != nil && field.Updatable {
+				dbName := field.DBName
+				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, dbName, propName)
 			}
-		} else {
-			properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, k, k)
+		}
+	} else {
+		for _, field := range c.schema.Fields {
+			if field.Updatable {
+				dbName := field.DBName
+				propName := field.Name
+				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, dbName, propName)
+			}
 		}
 	}
 

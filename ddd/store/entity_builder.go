@@ -30,6 +30,7 @@ type EntityBuilder[T any] interface {
 	GetAuthUser(ctx context.Context) appctx.AuthUser
 
 	GetConfig() *EntityBuilderConfig
+	GetLabels(e T) []string
 }
 
 type EntityBuilderConfig struct {
@@ -67,6 +68,10 @@ func NewAnyEntityBuilder[T any](schema *DBSchema) EntityBuilder[T] {
 		cfg:    cfg,
 		schema: schema,
 	}
+
+}
+func (b *AnyEntityBuilder[T]) GetLabels(e T) []string {
+	return nil
 }
 
 func (b *AnyEntityBuilder[T]) GetConfig() *EntityBuilderConfig {

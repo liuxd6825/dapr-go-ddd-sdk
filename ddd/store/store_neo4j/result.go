@@ -3,6 +3,7 @@ package store_neo4j
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
@@ -16,12 +17,13 @@ import (
 	"time"
 )
 
-type Neo4jResult struct {
+type Neo4jResult[T any] struct {
 	dataSet map[string][]any
+	eb      NodeEntityBuilder[T]
 }
 
-type KeyResult[T interface{}] struct {
-	result     *Neo4jResult
+type KeyResult[T any] struct {
+	result     *Neo4jResult[T]
 	key        string
 	newEntity  func() T
 	list       []T
@@ -44,7 +46,7 @@ func NewMappingOptions() *MappingOptions {
 	}
 }
 
-func NewNeo4jResult(ctx context.Context, result neo4j.ResultWithContext, keys ...*KeyResult[interface{}]) *Neo4jResult {
+func NewNeo4jResult[T any](ctx context.Context, eb store.EntityBuilder[T], result neo4j.ResultWithContext, keys ...*KeyResult[interface{}]) *Neo4jResult[T] {
 	dataSet := make(map[string][]any)
 	init := false
 
@@ -53,7 +55,7 @@ func NewNeo4jResult(ctx context.Context, result neo4j.ResultWithContext, keys ..
 		if !init {
 			init = true
 			for _, key := range record.Keys {
-				dataSet[key] = make([]interface{}, 0)
+				dataSet[key] = make([]any, 0)
 			}
 		}
 		for _, key := range record.Keys {
@@ -67,26 +69,37 @@ func NewNeo4jResult(ctx context.Context, result neo4j.ResultWithContext, keys ..
 				} else {
 					dataSet[key] = append(list, value)
 				}
-
 			}
 		}
 	}
 
-	return &Neo4jResult{
+	return &Neo4jResult[T]{
 		dataSet: dataSet,
+		eb:      eb,
 	}
 }
 
-func (r *Neo4jResult) Data() map[string][]any {
+func (r *Neo4jResult[T]) setMapEntity(schema *store.DBSchema, neo4jData map[string]any, entity map[string]any) {
+	for _, field := range schema.Fields {
+		if !field.Readable {
+			continue
+		}
+		if val, ok := neo4jData[field.DBName]; ok {
+			entity[field.Name] = val
+		}
+	}
+}
+
+func (r *Neo4jResult[T]) Data() map[string][]any {
 	return r.dataSet
 }
 
-func (r *Neo4jResult) GetData(key string) ([]any, bool) {
+func (r *Neo4jResult[T]) GetData(key string) ([]any, bool) {
 	v, ok := r.dataSet[key]
 	return v, ok
 }
 
-func (r *Neo4jResult) GetList(ctx context.Context, key string, resList any, opts ...*MappingOptions) error {
+func (r *Neo4jResult[T]) GetList(ctx context.Context, key string, resList any, schema *store.DBSchema, opts ...*MappingOptions) error {
 	// 检查 res 是否为 *[]map[string]any 类型
 	resType := reflect.TypeOf(resList)
 	if resType.Kind() != reflect.Ptr || resType.Elem().Kind() != reflect.Slice || resType.Elem().Elem().Kind() != reflect.Map {
@@ -97,26 +110,42 @@ func (r *Neo4jResult) GetList(ctx context.Context, key string, resList any, opts
 	resValue := reflect.ValueOf(resList).Elem()
 
 	// 遍历 Neo4j 结果集
-
 	items, found := r.dataSet[key]
 	if !found {
 		return nil
 	}
+	isMap := r.eb.GetConfig().IsMap
+	if isMap {
+		for _, item := range items {
+			if node, ok := item.(dbtype.Node); ok {
+				mapEntity := map[string]any{}
+				r.setMapEntity(schema, node.Props, mapEntity)
+				m := reflect.ValueOf(mapEntity)
+				resValue.Set(reflect.Append(resValue, m))
 
-	for _, item := range items {
-		if node, ok := item.(dbtype.Node); ok {
-			m := reflect.ValueOf(node.Props)
-			resValue.Set(reflect.Append(resValue, m))
-		} else if rel, ok := item.(neo4j.Relationship); ok {
-			m := reflect.ValueOf(rel.Props)
-			resValue.Set(reflect.Append(resValue, m))
+			} else if rel, ok := item.(neo4j.Relationship); ok {
+				mapEntity := map[string]any{}
+				r.setMapEntity(schema, rel.Props, mapEntity)
+				m := reflect.ValueOf(mapEntity)
+				resValue.Set(reflect.Append(resValue, m))
+			}
+		}
+	} else {
+		for _, item := range items {
+			if node, ok := item.(dbtype.Node); ok {
+				m := reflect.ValueOf(node.Props)
+				resValue.Set(reflect.Append(resValue, m))
+			} else if rel, ok := item.(neo4j.Relationship); ok {
+				m := reflect.ValueOf(rel.Props)
+				resValue.Set(reflect.Append(resValue, m))
+			}
 		}
 	}
 
 	return nil
 }
 
-func (r *Neo4jResult) GetSum(data any) error {
+func (r *Neo4jResult[T]) GetSum(data any) error {
 	if m, ok := data.(map[string]any); ok {
 		for k, list := range r.dataSet {
 			m[k] = list[0]
@@ -139,7 +168,7 @@ func (r *Neo4jResult) GetSum(data any) error {
 // @param entity
 // @return bool
 // @return error
-func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*MappingOptions) (bool, error) {
+func (r *Neo4jResult[T]) GetOne(dataKey string, entity interface{}, schema *store.DBSchema, opts ...*MappingOptions) (bool, error) {
 	options := NewMappingOptions()
 	options.Merge(opts...)
 
@@ -167,11 +196,9 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*Mappin
 	}
 	var err error
 	item := list[0]
-	if m, ok := entity.(map[string]any); ok {
+	if entityMap, ok := entity.(map[string]any); ok {
 		if node, ok := item.(dbtype.Node); ok {
-			for k, v := range node.GetProperties() {
-				m[k] = v
-			}
+			r.setMapEntity(schema, node.GetProperties(), entityMap)
 		}
 	} else {
 		err = reflectutils.MappingStruct(item, entity, func(source reflect.Value, target reflect.Value) error {
@@ -192,7 +219,7 @@ func (r *Neo4jResult) GetOne(dataKey string, entity interface{}, opts ...*Mappin
 // @param  defaultValue 默认值
 // @return int64 total汇总数据量
 // @return error 错误
-func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) {
+func (r *Neo4jResult[T]) GetInteger(key string, defaultValue int64) (int64, error) {
 	var total int64 = 0
 	dataList, ok := r.dataSet[key]
 	if !ok {
@@ -210,7 +237,7 @@ func (r *Neo4jResult) GetInteger(key string, defaultValue int64) (int64, error) 
 	return total, nil
 }
 
-func (r *Neo4jResult) GetRowsAffected() int64 {
+func (r *Neo4jResult[T]) GetRowsAffected() int64 {
 	count, err := r.GetInteger("rows", 0)
 	if err != nil {
 		panic(err)
@@ -218,8 +245,9 @@ func (r *Neo4jResult) GetRowsAffected() int64 {
 	return count
 }
 
-func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
-	var list []interface{}
+/*
+func (r *Neo4jResult[T]) AddEntity(key string, value interface{}) []T {
+	var list []T
 	if v, ok := r.dataSet[key]; ok {
 		list = v
 	} else {
@@ -229,8 +257,9 @@ func (r *Neo4jResult) AddEntity(key string, value interface{}) []interface{} {
 	list = append(list, value)
 	return list
 }
+*/
 
-func (r *Neo4jResult) GetLength(dataKey string) int64 {
+func (r *Neo4jResult[T]) GetLength(dataKey string) int64 {
 	var total int64 = 0
 	dataList, ok := r.dataSet[dataKey]
 	if !ok {
@@ -240,7 +269,7 @@ func (r *Neo4jResult) GetLength(dataKey string) int64 {
 	return total
 }
 
-func (r *Neo4jResult) GetInt(dataKey string) int64 {
+func (r *Neo4jResult[T]) GetInt(dataKey string) int64 {
 	var total int64 = 0
 	dataList, ok := r.dataSet[dataKey]
 	if !ok {
@@ -255,7 +284,7 @@ func (r *Neo4jResult) GetInt(dataKey string) int64 {
 	return total
 }
 
-func (r *Neo4jResult) setEntity(sourceValue reflect.Value, targetValue reflect.Value) error {
+func (r *Neo4jResult[T]) setEntity(sourceValue reflect.Value, targetValue reflect.Value) error {
 	source := sourceValue.Interface()
 	target := targetValue.Interface()
 	switch source.(type) {

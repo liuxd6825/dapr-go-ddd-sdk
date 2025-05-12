@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/daos/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
@@ -20,18 +21,15 @@ import (
 
 func Test_NodeDao(t *testing.T) {
 	humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
-		Database:   driver,
+		DB:         driver,
 		DbKey:      "neo4j",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema.GetJsonSchema()),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema),
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
+		DaoType:    "node",
 	}
 
 	dao := NewDao[map[string]any](daoCfg)

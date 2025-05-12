@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/daos/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
@@ -20,16 +21,11 @@ import (
 func Test_RelDao(t *testing.T) {
 	humanName := randomutils.NameCN()
 
-	relSchema, err := schema.NewSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
+	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
 	relCfg := &idao2.DaoConfig{
-		Database:   driver,
+		DB:         driver,
 		DbKey:      "neo4j",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema.GetJsonSchema()),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema),
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}
@@ -122,17 +118,11 @@ func Test_RelDao(t *testing.T) {
 
 func TestRelDao_Many(t *testing.T) {
 	humanName := randomutils.NameCN()
-
-	relSchema, err := schema.NewSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
+	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
 	relCfg := &idao2.DaoConfig{
-		Database:   driver,
+		DB:         driver,
 		DbKey:      "neo4j",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema.GetJsonSchema()),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema),
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "rel",
@@ -298,16 +288,11 @@ func TestRelDao_Many(t *testing.T) {
 }
 
 func newNodeDao(t *testing.T) idao2.Dao[map[string]any] {
-	nodeSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
-	if err != nil {
-		t.Error(err)
-		return nil
-	}
-
+	nodeSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 	nodeCfg := &idao2.DaoConfig{
-		Database:   driver,
+		DB:         driver,
 		DbKey:      "neo4j",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(nodeSchema.GetJsonSchema()),
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(nodeSchema),
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "node",

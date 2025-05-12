@@ -23,7 +23,7 @@ func (d *Dao[T]) FindById(ctx context.Context, tenantId, id string, opts ...stor
 			return err
 		}
 		entity := d.eb.NewEntity()
-		_, err = result.GetOne(cr.ResultOneKey(), entity)
+		_, err = result.GetOne(cr.ResultOneKey(), entity, d.Schema)
 		res.SetData(entity)
 		return err
 	}).Catch(func(err error) {
@@ -47,7 +47,7 @@ func (d *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, o
 		if err != nil {
 			return err
 		}
-		if err := result.GetList(ctx, cr.ResultOneKey(), &list); err != nil {
+		if err := result.GetList(ctx, cr.ResultOneKey(), &list, d.GetSchema()); err != nil {
 			return err
 		}
 		res.SetData(list)
@@ -68,7 +68,7 @@ func (d *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...store.Opt
 		return store.NewFindListResultError[T](err)
 	}
 	list := d.NewEntityList()
-	if err := result.GetList(ctx, cr.ResultOneKey(), &list); err != nil {
+	if err := result.GetList(ctx, cr.ResultOneKey(), &list, d.GetSchema()); err != nil {
 		return store.NewFindListResultError[T](err)
 	}
 	return store.NewFindListResult[T](list, len(list) > 0, nil)
@@ -137,7 +137,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQ
 		}
 
 		list := d.NewEntityList()
-		if err = result.GetList(ctx, cr.ResultOneKey(), &list); err != nil {
+		if err = result.GetList(ctx, cr.ResultOneKey(), &list, d.GetSchema()); err != nil {
 			return err
 		}
 		res.SetData(list)
@@ -200,7 +200,7 @@ func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId, filter string, opts .
 		}
 
 		list := d.NewEntityList()
-		if err = result.GetList(ctx, cr.ResultOneKey(), &list); err != nil {
+		if err = result.GetList(ctx, cr.ResultOneKey(), &list, d.GetSchema()); err != nil {
 			return err
 		}
 		res.SetData(list)

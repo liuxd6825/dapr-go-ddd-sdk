@@ -102,36 +102,36 @@ func (d *Dao[T]) DoList(ctx context.Context, tenantId string, fun func() *store.
 	return data
 }
 
-func (d *Dao[T]) newSetManyResult(ctx context.Context, result *Neo4jResult, err error) *store.SetResult[T] {
+func (d *Dao[T]) newSetManyResult(ctx context.Context, result *Neo4jResult[T], err error) *store.SetResult[T] {
 	if err != nil {
 		return store.NewSetResultError[T](err)
 	}
 	var data []T
-	if err := result.GetList(ctx, "n", &data); err != nil {
+	if err := result.GetList(ctx, "n", &data, d.Schema); err != nil {
 		store.NewSetResultError[T](err)
 	}
 	return store.NewSetResultEmpty[T]()
 }
 
-func (d *Dao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...store.Options) (*Neo4jResult, error) {
+func (d *Dao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...store.Options) (*Neo4jResult[T], error) {
 	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return nil, err
 	}
 	return d.Run(ctx, cypher, params, true, opts...)
 }
 
-func (d *Dao[T]) Run(ctx context.Context, cypher string, params map[string]any, isWriteMode bool, opts ...store.Options) (*Neo4jResult, error) {
+func (d *Dao[T]) Run(ctx context.Context, cypher string, params map[string]any, isWriteMode bool, opts ...store.Options) (*Neo4jResult[T], error) {
 	sOptionsBuilder := NewSessionOptionsBuilder().SetAccessMode(neo4j.AccessModeRead)
 	if isWriteMode {
 		sOptionsBuilder.SetAccessMode(neo4j.AccessModeWrite)
 	}
 
-	res, err := d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult, error) {
+	res, err := d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult[T], error) {
 		r, err := tx.Run(ctx, cypher, params)
 		if err != nil {
 			return nil, err
 		}
-		return NewNeo4jResult(ctx, r), nil
+		return NewNeo4jResult[T](ctx, d.eb, r), nil
 	}, sOptionsBuilder.Build())
 
 	return res, err
@@ -153,7 +153,7 @@ func (d *Dao[T]) query(ctx context.Context, query string, data map[string]any) (
 	return result, err
 }
 
-func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.ManagedTransaction) (*Neo4jResult, error), opts ...*SessionOptions) (result *Neo4jResult, err error) {
+func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.ManagedTransaction) (*Neo4jResult[T], error), opts ...*SessionOptions) (result *Neo4jResult[T], err error) {
 	if fun == nil {
 		return nil, errors.New("doSession(ctx, fun) fun is nil")
 	}
@@ -195,31 +195,31 @@ func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.ManagedTransac
 	if err != nil {
 		return nil, err
 	}
-	if result, ok := res.(*Neo4jResult); ok {
+	if result, ok := res.(*Neo4jResult[T]); ok {
 		return result, nil
 	}
 	return nil, err
 }
 
-func (d *Dao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult, error) {
-	return d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult, error) {
+func (d *Dao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult[T], error) {
+	return d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult[T], error) {
 		result, err := tx.Run(ctx, cypher, nil)
 		if err != nil {
 			return nil, err
 		}
-		return NewNeo4jResult(ctx, result), err
+		return NewNeo4jResult(ctx, d.eb, result), err
 	})
 }
 
-func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult, error) {
-	var resultData *Neo4jResult
-	_, err := d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult, error) {
+func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult[T], error) {
+	var resultData *Neo4jResult[T]
+	_, err := d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult[T], error) {
 		result, err := tx.Run(ctx, cypher, params)
 		if err != nil {
 			log.Println("wirte to DB with error:", err)
 			return nil, err
 		}
-		resultData = NewNeo4jResult(ctx, result)
+		resultData = NewNeo4jResult(ctx, d.eb, result)
 		return nil, err
 	})
 	return resultData, err
