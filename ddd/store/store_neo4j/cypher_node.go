@@ -529,7 +529,7 @@ func (c *nodeCypher[T]) getUpdateProperties(ctx context.Context, data any, dataK
 func (c *nodeCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, updateProperties ...string) (string, map[string]any, error) {
 	var properties string
 
-	if updateProperties == nil {
+	if updateProperties != nil {
 		for _, propName := range updateProperties {
 			field := c.schema.LookedField(propName)
 			if field != nil && field.Updatable {
