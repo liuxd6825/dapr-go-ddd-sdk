@@ -14,7 +14,8 @@ import (
 
 type nodeCypher[T any] struct {
 	labels string
-	eb     NodeEntityBuilder[T]
+	config *Config[T]
+	eb     store.EntityBuilder[T]
 	schema *store.DBSchema
 }
 
@@ -27,11 +28,12 @@ const (
 // @Description:
 // @param labels Neo4j标签
 // @return nodeCypher
-func NewNodeCypher[T any](eb NodeEntityBuilder[T], schema *store.DBSchema, labels ...string) Cypher[T] {
+func NewNodeCypher[T any](eb NodeEntityBuilder[T], config *Config[T], labels ...string) Cypher[T] {
 	return &nodeCypher[T]{
-		eb:     eb,
+		config: config,
+		eb:     config.EntityBuilder,
+		schema: config.DBSchema,
 		labels: getLabels(labels...),
-		schema: schema,
 	}
 }
 
@@ -137,7 +139,8 @@ func (c *nodeCypher[T]) UpdateMany(ctx context.Context, tenantId string, list []
 		if f.Name == "id" || f.Updatable == false {
 			continue
 		}
-		cyphers.WriteString(fmt.Sprintf("  n.%s = param.%s \n", f.DBName, f.DBName))
+		dbName := c.getFieldName(f)
+		cyphers.WriteString(fmt.Sprintf("  n.%s = param.%s \n", dbName, dbName))
 		if i < count {
 			cyphers.WriteString(",")
 		}
@@ -145,6 +148,10 @@ func (c *nodeCypher[T]) UpdateMany(ctx context.Context, tenantId string, list []
 	cyphers.WriteString("WITH n, 1 AS increment \n")
 	cyphers.WriteString("RETURN sum(increment) AS rows")
 	return NewCypherBuilderResult(cyphers.String(), map[string]any{"params": data}, []string{"rows"}), nil
+}
+
+func (c *nodeCypher[T]) getSchema() *store.DBSchema {
+	return c.config.DBSchema
 }
 
 func (c *nodeCypher[T]) UpdateByRSQL(ctx context.Context, tenantId string, rSQL string, data T, setFields ...string) (CypherResult, error) {
@@ -398,7 +405,9 @@ func (c *nodeCypher[T]) getCreateProperties(ctx context.Context, data any) (stri
 	var properties string
 	for _, f := range c.schema.Fields {
 		if f.Creatable {
-			properties = fmt.Sprintf(`%s%s:$%s,`, properties, f.DBName, f.Name)
+			dbName := c.getFieldName(f)
+			propName := c.getPropertyName(f)
+			properties = fmt.Sprintf(`%s%s:$%s,`, properties, dbName, propName)
 		}
 	}
 
@@ -413,7 +422,7 @@ func (c *nodeCypher[T]) getCreateMatchProperties(ctx context.Context, data any, 
 
 	var properties string
 	for _, f := range c.schema.Fields {
-		dbName := f.DBName
+		dbName := c.getFieldName(f)
 		if f.DataType == store.Time {
 			properties = fmt.Sprintf(`%s%s:dateTime(%s.%s),`, properties, dbName, asName, dbName)
 		} else if f.DataType == store.Date {
@@ -525,6 +534,13 @@ func (c *nodeCypher[T]) getUpdateProperties(ctx context.Context, data any, dataK
 	mapData := c.newUpdateMap(ctx, data)
 	return c.getUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
 }
+func (c *nodeCypher[T]) getFieldName(field *store.Field) string {
+	return field.DBName
+}
+
+func (c *nodeCypher[T]) getPropertyName(field *store.Field) string {
+	return field.Name
+}
 
 func (c *nodeCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, updateProperties ...string) (string, map[string]any, error) {
 	var properties string
@@ -533,15 +549,16 @@ func (c *nodeCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData ma
 		for _, propName := range updateProperties {
 			field := c.schema.LookedField(propName)
 			if field != nil && field.Updatable {
-				dbName := field.DBName
+				dbName := c.getFieldName(field)
+				propName := c.getPropertyName(field)
 				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, dbName, propName)
 			}
 		}
 	} else {
 		for _, field := range c.schema.Fields {
 			if field.Updatable {
-				dbName := field.DBName
-				propName := field.Name
+				dbName := c.getFieldName(field)
+				propName := c.getPropertyName(field)
 				properties = fmt.Sprintf(`%s%s.%s=$%s,`, properties, dataKey, dbName, propName)
 			}
 		}
@@ -562,6 +579,7 @@ func (c *nodeCypher[T]) newUpdateMap(ctx context.Context, data any) map[string]a
 }
 
 func (c *nodeCypher[T]) newCreateMap(ctx context.Context, data any) map[string]any {
+
 	mapData := c.newMap(ctx, data, func(m map[string]any) {
 		c.eb.SetCreatedInfo(ctx, m)
 	})

@@ -17,6 +17,15 @@ func NewContext(parent context.Context, tenantId string, token string, header ma
 	return ctx
 }
 
+func NewContextWidthAuthToken(parent context.Context, tenantId string, authToken *AuthTokenEntity, header map[string][]string) (ctx context.Context) {
+	newCtx := NewTenantContext(parent, tenantId)
+	newCtx = NewHeaderContext(newCtx, header)
+	if ctx1, err1 := NewAuthContextUser(newCtx, authToken); err1 == nil {
+		newCtx = ctx1
+	}
+	return newCtx
+}
+
 func SetContext(parent context.Context, tenantId string, token string, header map[string][]string) (ctx context.Context) {
 	ctx = SetTenantContext(parent, tenantId)
 	ctx = SetHeaderContext(ctx, header)

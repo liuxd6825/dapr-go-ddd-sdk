@@ -46,11 +46,17 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableName ...string) idao2.Dao[T] {
 		labels = tableName
 	}
 	dbSch := cfg.DBSchema
+	config := &store_neo4j.Config[T]{
+		DBSchema: dbSch,
+	}
+
 	var storeImp store.IStore[T]
-	if cfg.DaoType == "node" {
-		storeImp = store_neo4j.NewNodeDao[T](driver, dbSch, labels)
+	if cfg.RefType == "node" {
+		storeImp = store_neo4j.NewNodeDao[T](driver, config, labels)
+	} else if cfg.RefType == "rel" {
+		storeImp = store_neo4j.NewRelationDao[T](driver, config, labels)
 	} else {
-		storeImp = store_neo4j.NewRelationDao[T](driver, dbSch, labels)
+		panic(fmt.Sprintf("NewDao() error : invalid refType %s", cfg.RefType))
 	}
 	daoBase := impl.NewDaoBase[T](storeImp, cfg)
 	return &Dao[T]{
@@ -67,4 +73,8 @@ func (d *Dao[T]) Table() idao2.Table {
 
 func (d *Dao[T]) GetTableName() string {
 	return d.cfg.DBSchema.Name
+}
+
+func (d *Dao[T]) GetConfig() *idao2.DaoConfig {
+	return d.cfg
 }

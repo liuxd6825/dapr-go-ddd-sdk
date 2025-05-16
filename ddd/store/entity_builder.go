@@ -31,6 +31,8 @@ type EntityBuilder[T any] interface {
 
 	GetConfig() *EntityBuilderConfig
 	GetLabels(e T) []string
+
+	GetDBSchema() *DBSchema
 }
 
 type EntityBuilderConfig struct {
@@ -61,7 +63,7 @@ func NewAnyEntityBuilderWidthConfig[T any](cfg *EntityBuilderConfig) EntityBuild
 	}
 }
 
-func NewAnyEntityBuilder[T any](schema *DBSchema) EntityBuilder[T] {
+func NewAnyEntityBuilder[T any](schema *DBSchema) *AnyEntityBuilder[T] {
 	cfg := NewEntityBuilderConfig()
 	cfg.IsMap = reflectutils.IsMap[T]()
 	return &AnyEntityBuilder[T]{
@@ -72,6 +74,18 @@ func NewAnyEntityBuilder[T any](schema *DBSchema) EntityBuilder[T] {
 }
 func (b *AnyEntityBuilder[T]) GetLabels(e T) []string {
 	return nil
+}
+
+func (b *AnyEntityBuilder[T]) GetFieldName(field *Field) string {
+	return field.DBName
+}
+
+func (b *AnyEntityBuilder[T]) GetPropertyName(field *Field) string {
+	return field.Name
+}
+
+func (b *AnyEntityBuilder[T]) GetDBSchema() *DBSchema {
+	return b.schema
 }
 
 func (b *AnyEntityBuilder[T]) GetConfig() *EntityBuilderConfig {

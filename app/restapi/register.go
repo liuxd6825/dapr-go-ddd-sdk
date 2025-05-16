@@ -6,9 +6,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
-func RegisterApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
 	RegisterSchema(app, baseUrl, env, rootPath)
 	RegisterHtml(app, baseUrl, env, rootPath)
+	RegisterCdcToNeo4j(app, "", env, rootPath)
 }
 
 func RegisterSchema(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
@@ -20,6 +21,13 @@ func RegisterSchema(app *iris.Application, baseUrl string, env *env.Env, rootPat
 
 func RegisterHtml(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
 	htmlAPI := NewHtmlAPI(env, "web")
+	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
+		a.Handle(htmlAPI)
+	})
+}
+
+func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+	htmlAPI := NewCdc2Neo4jAPI(env, "")
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(htmlAPI)
 	})

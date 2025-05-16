@@ -3,17 +3,24 @@ package store
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	gormschema "gorm.io/gorm/schema"
 	"reflect"
 )
 
 type DBSchema struct {
-	Name        string
-	TableName   string
-	Fields      []*Field
-	FieldName   map[string]*Field
-	FieldDbName map[string]*Field
-	GormSchema  *gormschema.Schema
+	Name              string
+	TableName         string
+	Fields            []*Field
+	FieldName         map[string]*Field
+	FieldDbName       map[string]*Field
+	GormSchema        *gormschema.Schema
+	relTypeField      *Field
+	relTypeFieldOk    bool
+	relStartIdField   *Field
+	relStartIdFieldOk bool
+	relEndIdField     *Field
+	relEndIdFieldOk   bool
 }
 
 func NewDBSchema() *DBSchema {
@@ -69,10 +76,56 @@ func (sch *DBSchema) LookedField(name string) *Field {
 	return nil
 }
 
-func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[string]any)) (map[string]any, error) {
+func (sch *DBSchema) GetRelTypeField() *Field {
+	if !sch.relTypeFieldOk {
+		for _, field := range sch.Fields {
+			if field.RelType {
+				sch.relTypeField = field
+				break
+			}
+		}
+		sch.relTypeFieldOk = true
+	}
+	return sch.relTypeField
+}
+
+func (sch *DBSchema) GetRelStartIdField() *Field {
+	if !sch.relStartIdFieldOk {
+		for _, field := range sch.Fields {
+			if field.RelStartId {
+				sch.relStartIdField = field
+				break
+			}
+		}
+		sch.relStartIdFieldOk = true
+	}
+	return sch.relStartIdField
+}
+
+func (sch *DBSchema) GetRelEndIdField() *Field {
+	if !sch.relEndIdFieldOk {
+		for _, field := range sch.Fields {
+			if field.RelEndId {
+				sch.relEndIdField = field
+				break
+			}
+		}
+		sch.relEndIdFieldOk = true
+	}
+	return sch.relEndIdField
+}
+
+func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[string]any)) (res map[string]any, err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			println(err.Error())
+		}
+	}()
+
 	sch.initFields()
 
-	res := map[string]any{}
+	res = map[string]any{}
 	for _, opt := range opts {
 		opt(res)
 	}
@@ -85,11 +138,17 @@ func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[strin
 			if field == nil {
 				continue
 			}
-			val, ok := e[field.Name]
-			if field.ValueOf != nil && ok {
-				val, _ = field.ValueOf(ctx, reflect.ValueOf(val))
+			key := field.Name
+			val, ok := e[key]
+
+			if ok {
+				if field.ValueOf != nil && val != nil {
+					//val, _ = field.ValueOf(ctx, reflect.ValueOf(val))
+				}
+			} else {
+				val = nil
 			}
-			res[field.Name] = val
+			res[key] = val
 		}
 	} else {
 		vObj := reflect.ValueOf(obj)
@@ -102,14 +161,15 @@ func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[strin
 		}
 
 		for _, field := range sch.Fields {
-			fv := vObj.FieldByName(field.Name)
+			key := field.Name
+			fv := vObj.FieldByName(key)
 			val := fv.Interface()
 			if fv.Kind() == reflect.Struct {
 				nestedMap, err := sch.NewMap(ctx, val)
 				if err != nil {
 					return nil, err
 				}
-				res[field.Name] = nestedMap
+				res[key] = nestedMap
 			} else if field.ValueOf != nil {
 				v, _ := field.ValueOf(ctx, fv)
 				val = v
@@ -117,7 +177,7 @@ func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[strin
 			if field.ValueOf != nil {
 				val, _ = field.ValueOf(ctx, reflect.ValueOf(val))
 			}
-			res[field.Name] = val
+			res[key] = val
 		}
 	}
 	return res, nil

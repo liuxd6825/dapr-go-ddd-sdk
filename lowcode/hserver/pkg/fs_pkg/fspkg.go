@@ -15,6 +15,6 @@ func NewFsWriteModel() *fspkg.FsWriteModel {
 //	@param cfg
 //	@return *FsPkg
 //	@return error
-func NewFsPkg(cfg env.IEnvConfig, fsName string) (fspkg.IFsPkg, error) {
+func NewFsPkg(cfg *env.Env, fsName string) (fspkg.IFsPkg, error) {
 	return fspkg.NewFsPkg(cfg, fsName)
 }

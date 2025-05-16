@@ -8,6 +8,7 @@ import (
 type Dao[T any] interface {
 	GetSchema() *store.DBSchema
 	GetAggField() string
+	GetConfig() *DaoConfig
 
 	Create(ctx context.Context, entity T, opts ...*CallOptions) *Result
 	CreateMany(ctx context.Context, entity []T, opts ...*CallOptions) *Result

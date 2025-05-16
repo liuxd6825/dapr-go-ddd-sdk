@@ -98,3 +98,7 @@ func (d *Dao[T]) Table() idao.Table {
 func (d *Dao[T]) GetTableName() string {
 	return d.cfg.DBSchema.TableName
 }
+
+func (d *Dao[T]) GetConfig() *idao.DaoConfig {
+	return d.cfg
+}

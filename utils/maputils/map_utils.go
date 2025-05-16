@@ -1,6 +1,7 @@
 package maputils
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -75,6 +76,17 @@ func GetString(m map[string]interface{}, key string, def string) (string, error)
 		return convert.ConvertString(v)
 	}
 	return res, nil
+}
+
+func GetMap(m map[string]interface{}, key string, def map[string]any) (map[string]any, error) {
+	if v, ok := m[key]; ok {
+		if vm, ok := v.(map[string]any); ok {
+			return vm, nil
+		} else {
+			return nil, fmt.Errorf("key %s is not a map", key)
+		}
+	}
+	return def, nil
 }
 
 func GetBool(m map[string]interface{}, key string, def bool) (bool, error) {

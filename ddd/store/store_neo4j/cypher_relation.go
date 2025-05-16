@@ -17,14 +17,14 @@ type relationCypher[T any] struct {
 	matchTypes    string
 	isEmptyLabels bool
 	eb            RelationEntityBuilder[T]
-	schema        *store.DBSchema
+	config        *Config[T]
 }
 
 // NewRelationCypher
 // @Description:
 // @param labels 关系标签，可以为空值；为空：由Relation.GetRelType()决定标签名称
 // @return Cypher
-func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *store.DBSchema, relTypes ...string) Cypher[T] {
+func NewRelationCypher[T any](eb RelationEntityBuilder[T], config *Config[T], relTypes ...string) Cypher[T] {
 	matchTypes := ":" + strings.Join(relTypes, "|")
 
 	rel := &relationCypher[T]{
@@ -32,7 +32,7 @@ func NewRelationCypher[T any](eb RelationEntityBuilder[T], schema *store.DBSchem
 		relTypes:      relTypes,
 		isEmptyLabels: len(relTypes) == 0,
 		eb:            eb,
-		schema:        schema,
+		config:        config,
 	}
 	return rel
 }
@@ -71,7 +71,7 @@ func (c *relationCypher[T]) InsertMany(ctx context.Context, tenantId string, lis
 
 	cyphers := fmt.Sprintf(`UNWIND $updates AS update
 	MATCH (a%s{id: update.startId}), (b%s {id: update.endId}) 
-	CALL apoc.create.relationship(a, update.refType, update.properties, b) 
+	CALL apoc.create.relationship(a, update.relType, update.properties, b) 
 	YIELD rel RETURN COUNT(rel) AS rows;`, tenant, tenant)
 
 	creates := c.newCreateList(ctx, list)
@@ -146,11 +146,14 @@ func (c *relationCypher[T]) MergeMany(ctx context.Context, tenantId string, list
 func (c *relationCypher[T]) newCreateList(ctx context.Context, list []T) []map[string]any {
 	var items []map[string]any
 	for _, item := range list {
+		startId := c.eb.GetStartId(item)
+		endId := c.eb.GetEndId(item)
+		relType := c.eb.GetRelType(item)
 		properties := c.newCreateMap(ctx, item)
 		createItem := map[string]any{
-			"startId":    c.eb.GetStartId(item),
-			"endId":      c.eb.GetEndId(item),
-			"refType":    c.eb.GetRelType(item),
+			"startId":    startId,
+			"endId":      endId,
+			"relType":    relType,
 			"properties": properties,
 		}
 		items = append(items, createItem)
@@ -449,7 +452,7 @@ func (c *relationCypher[T]) newCreateMap(ctx context.Context, data any) map[stri
 }
 
 func (c *relationCypher[T]) newMap(ctx context.Context, data any, opts ...func(map[string]any)) map[string]any {
-	v, err := c.schema.NewMap(ctx, data, opts...)
+	v, err := c.config.DBSchema.NewMap(ctx, data, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -492,7 +495,7 @@ func (c *relationCypher[T]) getCreateMatchProperties(ctx context.Context, data a
 	mapData := c.newCreateMap(ctx, data)
 
 	var properties string
-	for _, f := range c.schema.Fields {
+	for _, f := range c.config.DBSchema.Fields {
 		dbName := f.DBName
 		if f.DataType == dbschema.Time {
 			properties = fmt.Sprintf(`%s%s:dateTime(%s.%s),`, properties, dbName, asName, dbName)
@@ -507,4 +510,8 @@ func (c *relationCypher[T]) getCreateMatchProperties(ctx context.Context, data a
 		properties = properties[:len(properties)-1]
 	}
 	return properties, mapData, nil
+}
+
+func (c *relationCypher[T]) getFieldName(field *store.Field) string {
+	return field.DBName
 }

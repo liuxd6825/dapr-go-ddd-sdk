@@ -40,6 +40,9 @@ func GetTenantId(ctx context.Context) (string, bool) {
 	}
 	val := ctx.Value(tenantCtxKey)
 	if val == nil {
+		if user, ok := GetAuthUser(ctx); ok {
+			return user.GetTenantId(), true
+		}
 		return "", false
 	}
 	tenVal, ok := val.(*tenantValue)

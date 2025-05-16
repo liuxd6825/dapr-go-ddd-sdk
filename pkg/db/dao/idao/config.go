@@ -4,7 +4,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"strings"
 )
+
+type RelType string
+type FieldStyle string
 
 type DaoConfig struct {
 	DbKey              string          `json:"dbKey"`              // 数据库Key
@@ -16,8 +21,29 @@ type DaoConfig struct {
 	DB                 any             `json:"db"`                 // 数据库连接对象
 	IsCancelModified   bool            `json:"isCancelModified"`   // 取消创建者与更新都信息
 	IsCancelSoftDelete bool            `json:"isCancelSoftDelete"` // 取消软删除
-	DaoType            string          `json:"daoType"`            // 节点类型 在neo4j: node, rel
+	RefType            RelType         `json:"RefType"`            // 节点类型 在neo4j: node, rel
+	PropertyIsField    bool            `json:"propertyIsField"`    // 属性名称即字段名称
 	OutboxDao          Dao[*dbevent.Outbox]
+}
+
+const (
+	RelType_None RelType = ""
+	RelType_Node RelType = "node"
+	RelType_Rel  RelType = "rel"
+)
+
+func GetRefType(val string) (RelType, error) {
+	val = strings.ToLower(val)
+	switch val {
+	case "":
+		return RelType_None, nil
+	case "node":
+		return RelType_Node, nil
+	case "rel":
+		return RelType_Rel, nil
+	default:
+		return "", errors.New("invalid DaoType " + val)
+	}
 }
 
 func (c *DaoConfig) Valid() {

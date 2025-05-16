@@ -19,6 +19,7 @@ type Dao[T any] struct {
 	eb     store.EntityBuilder[T]
 	Labels []string
 	Schema *store.DBSchema
+	config *Config[T]
 }
 
 func (d *Dao[T]) NewEntity() T {
@@ -53,34 +54,41 @@ func (d *Dao[T]) GetSchema() *store.DBSchema {
 	return d.Schema
 }
 
-func NewNodeDao[T any](driver neo4j.DriverWithContext, dbSch *store.DBSchema, labels []string, opts ...*Options[T]) store.IStore[T] {
-	eb := NewNodeEntityBuilder[T](dbSch)
-	cypher := NewNodeCypher[T](eb, dbSch, labels...)
-	return NewDao(driver, labels, cypher, eb, dbSch, opts...)
+type Config[T any] struct {
+	DBSchema      *store.DBSchema
+	EntityBuilder store.EntityBuilder[T]
 }
 
-func NewRelationDao[T any](driver neo4j.DriverWithContext, dbSch *store.DBSchema, labels []string, opts ...*Options[T]) store.IStore[T] {
-	eb := NewRelationEntityBuilder[T](dbSch)
-	cypher := NewRelationCypher[T](eb, dbSch, labels...)
-	return NewDao(driver, labels, cypher, eb, dbSch, opts...)
+func NewNodeDao[T any](driver neo4j.DriverWithContext, config *Config[T], labels []string, opts ...*Options[T]) store.IStore[T] {
+	eb := NewNodeEntityBuilder[T](config.DBSchema)
+	config.EntityBuilder = eb
+	cypher := NewNodeCypher[T](eb, config, labels...)
+	return NewDao(driver, labels, cypher, config, opts...)
 }
 
-func NewDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], eb store.EntityBuilder[T], dbSch *store.DBSchema, opts ...*Options[T]) store.IStore[T] {
-	return newDao(driver, labels, cypher, eb, dbSch, opts...)
+func NewRelationDao[T any](driver neo4j.DriverWithContext, config *Config[T], labels []string, opts ...*Options[T]) store.IStore[T] {
+	eb := NewRelationEntityBuilder[T](config.DBSchema)
+	config.EntityBuilder = eb
+	cypher := NewRelationCypher[T](eb, config, labels...)
+	return NewDao(driver, labels, cypher, config, opts...)
 }
 
-func newNodeDao[T any](driver neo4j.DriverWithContext, labels []string, eb NodeEntityBuilder[T], dbSch *store.DBSchema, opts ...*Options[T]) *Dao[T] {
-	cypher := NewNodeCypher(eb, dbSch, labels...)
-	return newDao(driver, labels, cypher, eb, dbSch, opts...)
+func NewDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], config *Config[T], opts ...*Options[T]) store.IStore[T] {
+	return newDao(driver, labels, cypher, config, opts...)
 }
 
-func newDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], eb store.EntityBuilder[T], dbSch *store.DBSchema, opts ...*Options[T]) *Dao[T] {
+func newNodeDao[T any](driver neo4j.DriverWithContext, labels []string, config *Config[T], opts ...*Options[T]) *Dao[T] {
+	cypher := NewNodeCypher(config.EntityBuilder, config, labels...)
+	return newDao(driver, labels, cypher, config, opts...)
+}
+
+func newDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], config *Config[T], opts ...*Options[T]) *Dao[T] {
 	dao := &Dao[T]{
 		Driver: driver,
 		Cypher: cypher,
-		eb:     eb,
+		eb:     config.EntityBuilder,
 		Labels: labels,
-		Schema: dbSch,
+		Schema: config.DBSchema,
 	}
 	return dao
 }

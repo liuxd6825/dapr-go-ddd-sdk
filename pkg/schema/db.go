@@ -35,11 +35,15 @@ type DBField struct {
 	SortType   DBSortType  `json:"sort"`       // 排序类型
 	IndexType  DBIndexType `json:"indexType"`  // 索引类型
 	IndexName  string      `json:"indexName"`  // 索引类型
+	RelStartId bool        `json:"relStartId"` // 是图关系中的开始节点字段
+	RelEndId   bool        `json:"relEndId"`   // 是图关系中的结束节点字段
+	RelType    bool        `json:"relType"`    // 是图关系中的类型字段
 }
 
 type DBTable struct {
-	Name  string `json:"name"`
-	DBKey string `json:"dbKey"`
+	Name       string         `json:"name"`
+	DBKey      string         `json:"dbKey"`
+	Properties map[string]any `json:"properties"`
 }
 
 func NewDBTable() *DBTable {
@@ -53,6 +57,9 @@ func NewDBField() *DBField {
 		Updatable:  true,
 		NotNull:    false,
 		PrimaryKey: false,
+		RelStartId: false, // 是图关系中的开始节点字段
+		RelEndId:   false, // 是图关系中的结束节点字段
+		RelType:    false, // 是图关系中的类型字段
 	}
 }
 
@@ -64,6 +71,13 @@ func (db *DBTable) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 			db.Name = v.(string)
 		case "dbKey":
 			db.DBKey = v.(string)
+		case "properties":
+			{
+				prop, ok := v.(map[string]any)
+				if ok {
+					db.Properties = prop
+				}
+			}
 		}
 	}
 	return err
@@ -86,7 +100,9 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 	db.PrimaryKey = false
 	db.NotNull = false
 	db.Unique = false
-
+	if relType, ok := values["relType"]; ok {
+		println("relType:", relType)
+	}
 	var err error
 	for key, value := range values {
 		switch key {
@@ -137,6 +153,19 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 		case "indexType":
 			if val, ok := value.(string); ok {
 				db.IndexType = DBIndexType(val)
+			}
+
+		case "relStartId":
+			if val, ok := value.(bool); ok {
+				db.RelStartId = val
+			}
+		case "relEndId":
+			if val, ok := value.(bool); ok {
+				db.RelEndId = val
+			}
+		case "relType":
+			if val, ok := value.(bool); ok {
+				db.RelType = val
 			}
 		}
 		if err != nil {

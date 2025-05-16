@@ -18,23 +18,23 @@ type RelationEntityBuilder[T any] interface {
 }
 
 type nodeEntityBuilder[T any] struct {
-	store.EntityBuilder[T]
+	*store.AnyEntityBuilder[T]
 }
 type relationEntityBuilder[T any] struct {
-	store.EntityBuilder[T]
+	*store.AnyEntityBuilder[T]
 }
 
 func NewRelationEntityBuilder[T any](sch *store.DBSchema) RelationEntityBuilder[T] {
 	base := store.NewAnyEntityBuilder[T](sch)
 	return &relationEntityBuilder[T]{
-		EntityBuilder: base,
+		AnyEntityBuilder: base,
 	}
 }
 
 func NewNodeEntityBuilder[T any](sch *store.DBSchema) NodeEntityBuilder[T] {
 	base := store.NewAnyEntityBuilder[T](sch)
 	return &nodeEntityBuilder[T]{
-		EntityBuilder: base,
+		AnyEntityBuilder: base,
 	}
 }
 
@@ -43,25 +43,53 @@ func (r *nodeEntityBuilder[T]) GetLabels(entity T) []string {
 }
 
 func (r *relationEntityBuilder[T]) GetStartId(entity T) string {
-	return reflectutils.GetFieldString(entity, "startId")
+	field := r.GetDBSchema().GetRelStartIdField()
+	if field != nil {
+		propName := r.GetPropertyName(field)
+		return reflectutils.GetFieldString(entity, propName)
+	}
+	return ""
 }
 
 func (r *relationEntityBuilder[T]) SetStartId(entity T, val string) {
-	reflectutils.SetFieldString(entity, "startId", val)
+	field := r.GetDBSchema().GetRelStartIdField()
+	if field != nil {
+		propName := r.GetPropertyName(field)
+		reflectutils.SetFieldString(entity, propName, val)
+	}
 }
 
 func (r *relationEntityBuilder[T]) GetEndId(entity T) string {
-	return reflectutils.GetFieldString(entity, "endId")
+	field := r.GetDBSchema().GetRelEndIdField()
+	if field != nil {
+		propName := r.GetPropertyName(field)
+		return reflectutils.GetFieldString(entity, propName)
+	}
+	return ""
 }
 
 func (r *relationEntityBuilder[T]) SetEndId(entity T, val string) {
-	reflectutils.SetFieldString(entity, "endId", val)
+	field := r.GetDBSchema().GetRelEndIdField()
+	if field != nil {
+		propName := r.GetPropertyName(field)
+		reflectutils.SetFieldString(entity, propName, val)
+	}
 }
 
 func (r *relationEntityBuilder[T]) GetRelType(entity T) string {
-	return reflectutils.GetFieldString(entity, "relType")
+	field := r.GetDBSchema().GetRelTypeField()
+	if field != nil {
+		propName := r.GetPropertyName(field)
+		return reflectutils.GetFieldString(entity, propName)
+	}
+	return ""
 }
 
 func (r *relationEntityBuilder[T]) SetRelType(entity T, val string) {
-	reflectutils.SetFieldString(entity, "relType", val)
+	field := r.GetDBSchema().GetRelTypeField()
+	if field != nil {
+		propName := r.GetPropertyName(field)
+		reflectutils.SetFieldString(entity, propName, val)
+	}
+	return
 }

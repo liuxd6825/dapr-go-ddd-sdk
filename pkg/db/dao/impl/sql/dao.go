@@ -98,6 +98,10 @@ func (d *Dao[T]) Table() idao.Table {
 	return newTable(d.db, d.tableName, d.dao.NewEntity(), d.cfg.DBSchema, d.gormSch)
 }
 
+func (d *Dao[T]) GetConfig() *idao.DaoConfig {
+	return d.cfg
+}
+
 func init() {
 	gorm.GetGoToDbValue = func(db *gorm.DB, field *gormschema.Field, value any) (any, bool) {
 		// liuxd lxd

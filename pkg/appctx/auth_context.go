@@ -8,21 +8,6 @@ import (
 type authKey struct {
 }
 
-type AuthUser interface {
-	GetId() string
-	GetName() string
-	GetPhone() string
-
-	GetAccount() string
-	GetRegDate() string
-	GetWork() string
-	GetStatus() string
-	GetUserType() string
-
-	GetTenantId() string
-	GetTenantName() string
-}
-
 var (
 	NotFundErr      = errors.New("AuthContext not found")
 	ContextIsNilErr = errors.New("context is null")
@@ -37,6 +22,10 @@ func NewAuthContext(ctx context.Context, token string) (context.Context, error) 
 	return context.WithValue(ctx, authCtxKey, tk), nil
 }
 
+func NewAuthContextUser(ctx context.Context, tk *AuthTokenEntity) (context.Context, error) {
+	return context.WithValue(ctx, authCtxKey, tk), nil
+}
+
 func SetAuthContext(ctx context.Context, token string) (context.Context, error) {
 	newToken, err := getAuthToken(token)
 	if err != nil {
@@ -44,7 +33,7 @@ func SetAuthContext(ctx context.Context, token string) (context.Context, error) 
 	}
 	val := ctx.Value(authCtxKey)
 	if val != nil {
-		if oldToken, ok := val.(*authToken); ok {
+		if oldToken, ok := val.(AuthToken); ok {
 			oldToken.Copy(newToken)
 			return ctx, nil
 		}
