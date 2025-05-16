@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -166,44 +165,45 @@ func (s *Neo4jService) addDao(sch *jsonschema.Schema) {
 	if _, ok := s.nodeDaoMap.Get(tableName); ok {
 		return
 	}
-
-	neo4jMap, err := maputils.GetMap(meta.DBTable.Properties, "neo4j", nil)
+	if tableName == "company" {
+		println("company")
+	}
+	cfg, err := maputils.GetMap(meta.Attributes, "neo4j", nil)
 	if err != nil {
 		panic(err)
 	}
-	if neo4jMap == nil {
+	if cfg == nil {
 		return
 	}
 
-	dataTypeVal, _ := maputils.GetString(neo4jMap, "type", "")
-	if dataTypeVal == "" {
+	graphTypes, _ := maputils.GetStrings(cfg, "type", nil)
+	if len(graphTypes) == 0 {
 		return
 	}
-	relType, err := idao.GetRefType(dataTypeVal)
-	if err != nil {
-		panic(fmt.Sprintf("neo4j data type %s not exist node or rel", dataTypeVal))
+
+	if isNode := idao.IsGraphTypeNode(graphTypes); isNode {
+		labels, _ := maputils.GetStrings(cfg, "labels", []string{tableName})
+		nodeCfg := &idao.DaoConfig{
+			DbKey:       "neo4j",
+			IsPubEvent:  false,
+			Env:         env.GetEnv(),
+			GraphType:   idao.GraphType_Node,
+			GraphLabels: labels,
+			DBSchema:    dbschema.NewDBSchemaWithJsonSchema(sch),
+		}
+
+		nodeDao := neo4j.NewDao[map[string]any](nodeCfg)
+		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
 
-	nodeCfg := &idao.DaoConfig{
-		DbKey:      "neo4j",
-		IsPubEvent: false,
-		Env:        env.GetEnv(),
-		RefType:    idao.RelType_Node,
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(sch),
-	}
-
-	nodeDao := neo4j.NewDao[map[string]any](nodeCfg)
-	s.nodeDaoMap.Add(tableName, nodeDao)
-
-	if relType == idao.RelType_Rel {
+	if isRel := idao.IsGraphTypeRel(graphTypes); isRel {
 		relCfg := &idao.DaoConfig{
 			DbKey:      "neo4j",
 			IsPubEvent: false,
 			Env:        env.GetEnv(),
-			RefType:    idao.RelType_Rel,
+			GraphType:  idao.GraphType_Rel,
 			DBSchema:   dbschema.NewDBSchemaWithJsonSchema(sch),
 		}
-
 		relDao := neo4j.NewDao[map[string]any](relCfg)
 		s.relDaoMap.Add(tableName, relDao)
 	}

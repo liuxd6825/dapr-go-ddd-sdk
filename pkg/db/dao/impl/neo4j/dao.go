@@ -17,7 +17,7 @@ type Dao[T any] struct {
 	driver neo4j.DriverWithContext
 }
 
-func NewDao[T any](cfg *idao2.DaoConfig, tableName ...string) idao2.Dao[T] {
+func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 	cfg.Valid()
 	var driver neo4j.DriverWithContext
 	//eb := ddd.NewMapEntityBuilder[map[string]any]()
@@ -41,22 +41,18 @@ func NewDao[T any](cfg *idao2.DaoConfig, tableName ...string) idao2.Dao[T] {
 		}
 	}
 
-	labels := []string{cfg.DBSchema.Name}
-	if len(tableName) > 0 {
-		labels = tableName
-	}
 	dbSch := cfg.DBSchema
 	config := &store_neo4j.Config[T]{
 		DBSchema: dbSch,
 	}
 
 	var storeImp store.IStore[T]
-	if cfg.RefType == "node" {
-		storeImp = store_neo4j.NewNodeDao[T](driver, config, labels)
-	} else if cfg.RefType == "rel" {
-		storeImp = store_neo4j.NewRelationDao[T](driver, config, labels)
+	if cfg.GraphType == "node" {
+		storeImp = store_neo4j.NewNodeDao[T](driver, config, cfg.GraphLabels)
+	} else if cfg.GraphType == "rel" {
+		storeImp = store_neo4j.NewRelationDao[T](driver, config, cfg.GraphLabels)
 	} else {
-		panic(fmt.Sprintf("NewDao() error : invalid refType %s", cfg.RefType))
+		panic(fmt.Sprintf("NewDao() error : invalid refType %s", cfg.GraphType))
 	}
 	daoBase := impl.NewDaoBase[T](storeImp, cfg)
 	return &Dao[T]{

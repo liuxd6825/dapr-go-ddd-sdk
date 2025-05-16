@@ -6,16 +6,17 @@ import (
 )
 
 type MetaExtension struct {
-	DBField *DBField           `json:"dbField,omitempty"`
-	DBTable *DBTable           `json:"dbTable,omitempty"`
-	Form    *Form              `json:"form,omitempty"`
-	Column  *Column            `json:"column,omitempty"`
-	Query   *Query             `json:"query,omitempty"`
-	Lang    *Lang              `json:"lang,omitempty"`
-	Param   *HttpParam         `json:"param,omitempty"`
-	Convert *Convert           `json:"convert,omitempty"` // 数据转换器的名称
-	DDD     *DDD               `json:"ddd,omitempty"`
-	sch     *jsonschema.Schema `json:"-"`
+	DBField    *DBField           `json:"dbField,omitempty"`
+	DBTable    *DBTable           `json:"dbTable,omitempty"`
+	Form       *Form              `json:"form,omitempty"`
+	Column     *Column            `json:"column,omitempty"`
+	Query      *Query             `json:"query,omitempty"`
+	Lang       *Lang              `json:"lang,omitempty"`
+	Param      *HttpParam         `json:"param,omitempty"`
+	Convert    *Convert           `json:"convert,omitempty"` // 数据转换器的名称
+	DDD        *DDD               `json:"ddd,omitempty"`
+	Attributes map[string]any     `json:"attributes,omitempty"`
+	sch        *jsonschema.Schema `json:"-"`
 }
 
 //go:embed schema.json
@@ -25,15 +26,16 @@ const META_TAG_NAME = "meta"
 
 func NewMetaExtension() *MetaExtension {
 	return &MetaExtension{
-		DBField: NewDBField(),
-		DBTable: NewDBTable(),
-		Form:    NewForm(),
-		Column:  NewColumn(),
-		Query:   NewQuery(),
-		Lang:    NewLang(),
-		Param:   NewHttpParam(),
-		Convert: NewConvert(),
-		DDD:     NewDDD(),
+		DBField:    NewDBField(),
+		DBTable:    NewDBTable(),
+		Form:       NewForm(),
+		Column:     NewColumn(),
+		Query:      NewQuery(),
+		Lang:       NewLang(),
+		Param:      NewHttpParam(),
+		Convert:    NewConvert(),
+		DDD:        NewDDD(),
+		Attributes: make(map[string]any),
 	}
 }
 
@@ -87,6 +89,14 @@ func (m *MetaExtension) InitQuery(ctx *jsonschema.CompilerContext, meta map[stri
 func (m *MetaExtension) InitConvert(ctx *jsonschema.CompilerContext, meta map[string]any) error {
 	values := getMapItem(meta, "convert")
 	return m.Convert.init(ctx, values)
+}
+
+func (m *MetaExtension) InitAttributes(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	val := getMapItem(meta, "attributes")
+	if val != nil {
+		m.Attributes = val
+	}
+	return nil
 }
 
 func (m *MetaExtension) Validate(ctx *jsonschema.ValidatorContext, v any) {

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type RelType string
+type GraphType string
 type FieldStyle string
 
 type DaoConfig struct {
@@ -21,29 +21,47 @@ type DaoConfig struct {
 	DB                 any             `json:"db"`                 // 数据库连接对象
 	IsCancelModified   bool            `json:"isCancelModified"`   // 取消创建者与更新都信息
 	IsCancelSoftDelete bool            `json:"isCancelSoftDelete"` // 取消软删除
-	RefType            RelType         `json:"RefType"`            // 节点类型 在neo4j: node, rel
-	PropertyIsField    bool            `json:"propertyIsField"`    // 属性名称即字段名称
+	GraphType          GraphType       `json:"graphType"`          // 节点类型 在neo4j: node, rel
+	GraphLabels        []string        `json:"graphLabels"`
 	OutboxDao          Dao[*dbevent.Outbox]
 }
 
 const (
-	RelType_None RelType = ""
-	RelType_Node RelType = "node"
-	RelType_Rel  RelType = "rel"
+	GraphType_None GraphType = ""
+	GraphType_Node GraphType = "node"
+	GraphType_Rel  GraphType = "rel"
 )
 
-func GetRefType(val string) (RelType, error) {
+func GetRelType(val string) (GraphType, error) {
 	val = strings.ToLower(val)
 	switch val {
 	case "":
-		return RelType_None, nil
+		return GraphType_None, nil
 	case "node":
-		return RelType_Node, nil
+		return GraphType_Node, nil
 	case "rel":
-		return RelType_Rel, nil
+		return GraphType_Rel, nil
 	default:
 		return "", errors.New("invalid DaoType " + val)
 	}
+}
+
+func IsGraphTypeRel(val []string) bool {
+	for _, v := range val {
+		if v == string(GraphType_Rel) {
+			return true
+		}
+	}
+	return false
+}
+
+func IsGraphTypeNode(val []string) bool {
+	for _, v := range val {
+		if v == string(GraphType_Rel) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *DaoConfig) Valid() {

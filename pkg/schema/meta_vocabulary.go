@@ -57,48 +57,45 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (ext jsons
 	}
 	meta := NewMetaExtension()
 
-	metaType = "dbField"
 	if err = meta.InitDBField(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "dbTable"
 	if err = meta.InitDBTable(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "form"
 	if err = meta.InitForm(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "column"
 	if err = meta.InitColumn(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "query"
 	if err = meta.InitQuery(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "lang"
 	if err = meta.InitLang(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "param"
 	if err = meta.InitParam(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "ddd"
 	if err = meta.InitDDD(ctx, metaMap); err != nil {
 		return nil, err
 	}
 
-	metaType = "convert"
 	if err = meta.InitConvert(ctx, metaMap); err != nil {
+		return nil, err
+	}
+	if meta.DBTable.Name == "company" {
+		println("company")
+	}
+	if err = meta.InitAttributes(ctx, metaMap); err != nil {
 		return nil, err
 	}
 

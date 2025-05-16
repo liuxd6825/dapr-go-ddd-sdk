@@ -78,6 +78,19 @@ func GetString(m map[string]interface{}, key string, def string) (string, error)
 	return res, nil
 }
 
+func GetStrings(m map[string]interface{}, key string, def []string) ([]string, error) {
+	var resList []string
+	if v, ok := m[key]; ok {
+		if vList, ok := v.([]any); ok {
+			for _, v := range vList {
+				resList = append(resList, fmt.Sprintf("%s", v))
+			}
+			return resList, nil
+		}
+	}
+	return def, nil
+}
+
 func GetMap(m map[string]interface{}, key string, def map[string]any) (map[string]any, error) {
 	if v, ok := m[key]; ok {
 		if vm, ok := v.(map[string]any); ok {
