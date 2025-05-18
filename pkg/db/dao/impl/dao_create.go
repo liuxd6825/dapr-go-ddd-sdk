@@ -38,3 +38,10 @@ func (d *DaoBase[T]) CreateMany(ctx context.Context, list []T, opts ...*idao.Cal
 	}
 	return idao.NewResult(res)
 }
+
+func (d *DaoBase[T]) CreateUpdate(ctx context.Context, entity T, opts ...*idao.CallOptions) *idao.Result {
+	tenantId := d.GetTenantId(ctx)
+	d.store.SetTenantId(entity, tenantId)
+	res := d.store.InsertOrUpdate(ctx, entity, idao.NewRepositoryOptions(opts)...)
+	return idao.NewResult(res)
+}

@@ -12,7 +12,7 @@ type GraphType string
 type FieldStyle string
 
 type DaoConfig struct {
-	DbKey              string          `json:"dbKey"`              // 数据库Key
+	DBKey              string          `json:"dbKey"`              // 数据库Key
 	IsPubEvent         bool            `json:"isPubEvent"`         // 是否发布消息
 	AggField           string          `json:"aggField"`           // 聚合根字段
 	AggType            string          `json:"aggType"`            // 聚合根类型
@@ -46,18 +46,9 @@ func GetRelType(val string) (GraphType, error) {
 	}
 }
 
-func IsGraphTypeRel(val []string) bool {
+func IsGraphType(val []string, graphType GraphType) bool {
 	for _, v := range val {
-		if v == string(GraphType_Rel) {
-			return true
-		}
-	}
-	return false
-}
-
-func IsGraphTypeNode(val []string) bool {
-	for _, v := range val {
-		if v == string(GraphType_Rel) {
+		if v == string(graphType) {
 			return true
 		}
 	}
@@ -65,8 +56,8 @@ func IsGraphTypeNode(val []string) bool {
 }
 
 func (c *DaoConfig) Valid() {
-	if c.DbKey == "" {
-		panic("DaoConfig empty DbKey")
+	if c.DBKey == "" {
+		panic("DaoConfig empty DBKey")
 	}
 	if c.Env == nil {
 		panic("DaoConfig empty Env")
@@ -76,8 +67,8 @@ func (c *DaoConfig) Valid() {
 	}
 }
 
-func (c *DaoConfig) GetDbKey() string {
-	return c.DbKey
+func (c *DaoConfig) GetDBKey() string {
+	return c.DBKey
 }
 
 func (c *DaoConfig) GetIsPubEvent() bool {

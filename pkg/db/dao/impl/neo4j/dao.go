@@ -28,16 +28,20 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 			panic("database config error neo4j.DriverWithContext")
 		}
 	}
+	envInst := cfg.Env
+	if envInst == nil {
+		envInst = env.GetEnv()
+	}
 
 	if driver == nil {
-		item := env.GetDB(cfg.DbKey)
+		item := envInst.GetDB(cfg.DBKey)
 		if item == nil {
-			panic(fmt.Sprintf("dbKey %s not found", cfg.DbKey))
+			panic(fmt.Sprintf("dbKey %s not found", cfg.DBKey))
 		}
 		if val, ok := item.GetDB().(neo4j.DriverWithContext); ok {
 			driver = val
 		} else {
-			panic(fmt.Sprintf("dbKey %s is not neo4j.DriverWithContext", cfg.DbKey))
+			panic(fmt.Sprintf("dbKey %s is not neo4j.DriverWithContext", cfg.DBKey))
 		}
 	}
 
@@ -51,8 +55,8 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 		storeImp = store_neo4j.NewNodeDao[T](driver, config, cfg.GraphLabels)
 	} else if cfg.GraphType == "rel" {
 		storeImp = store_neo4j.NewRelationDao[T](driver, config, cfg.GraphLabels)
-	} else {
-		panic(fmt.Sprintf("NewDao() error : invalid refType %s", cfg.GraphType))
+	} else if cfg.GraphType != "" {
+		panic(fmt.Sprintf("NewDao() error : invalid graphType %s", cfg.GraphType))
 	}
 	daoBase := impl.NewDaoBase[T](storeImp, cfg)
 	return &Dao[T]{

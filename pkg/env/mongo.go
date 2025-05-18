@@ -44,7 +44,7 @@ func (m *Mongo) IsEmpty() bool {
 	return false
 }
 
-func initMongo(env *Env) {
+func InitDBMongo(env *Env) {
 	if env.Mongo == nil {
 		env.Mongo = map[string]*Mongo{}
 		return

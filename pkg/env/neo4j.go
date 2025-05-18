@@ -24,7 +24,7 @@ func NewNeo4j() *Neo4j {
 var _neo4js = make(map[string]neo4j.DriverWithContext)
 var _neo4jDefault neo4j.DriverWithContext
 
-func initNeo4j(env *Env) {
+func InitDBNeo4j(env *Env) {
 	if env.Neo4j == nil {
 		env.Neo4j = map[string]*Neo4j{}
 		return

@@ -49,7 +49,7 @@ func NewDaoBase[T any](store store.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
 	return &DaoBase[T]{
 		store:       store,
 		cfg:         cfg,
-		dbKey:       cfg.DbKey,
+		dbKey:       cfg.DBKey,
 		tableName:   tableName,
 		appId:       cfg.GetEnv().App.AppId,
 		isPubEvent:  cfg.GetIsPubEvent(),

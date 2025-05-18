@@ -40,6 +40,12 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 		field.ValueOf = f.ValueOf
 		field.Creatable = f.Creatable
 		field.Updatable = f.Updatable
+
+		field.RelType = f.RelType
+		field.RelEndId = f.RelEndId
+		field.RelStartId = f.RelStartId
+		field.NodeLabel = f.NodeLabel
+
 		dbSch.AddField(field)
 	}
 	dbSch.SetTableName(tableName)

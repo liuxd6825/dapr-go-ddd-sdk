@@ -80,12 +80,15 @@ func (env *Env) Init() {
 	}
 	initLog(env)
 	initApp(env)
-	initMongo(env)
+
+	InitDBMongo(env)
+	InitDBMySql(env)
+	InitDBNeo4j(env)
+
 	initMinio(env)
-	initMySql(env)
-	initNeo4j(env)
 	initDapr(env)
 	initResources(env)
+
 }
 
 func (env *Env) NewFsManager(fs []map[string]any) *fsm.Manager {
@@ -110,6 +113,27 @@ func (env *Env) AddDB(dbItem DBItem) {
 		panic(errors.New("db \"%s\" already exists", dbKey))
 	}
 	env.dbs[dbKey] = dbItem
+}
+
+func (env *Env) AddNeo4j(dbCfg *Neo4j) {
+	if dbCfg == nil {
+		panic(errors.New("dbCfg is nil"))
+	}
+	env.Neo4j[dbCfg.DbKey] = dbCfg
+}
+
+func (env *Env) AddMongo(dbCfg *Mongo) {
+	if dbCfg == nil {
+		panic(errors.New("dbCfg is nil"))
+	}
+	env.Mongo[dbCfg.DbKey] = dbCfg
+}
+
+func (env *Env) AddMySql(dbCfg *MySql) {
+	if dbCfg == nil {
+		panic(errors.New("dbCfg is nil"))
+	}
+	env.Mysql[dbCfg.DbKey] = dbCfg
 }
 
 func (env *Env) CloseDB(ctx context.Context) error {

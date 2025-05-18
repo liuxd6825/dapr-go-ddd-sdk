@@ -46,6 +46,7 @@ type Field struct {
 	RelStartId             bool // 是图关系中的开始节点字段
 	RelEndId               bool // 是图关系中的结束节点字段
 	RelType                bool // 是图关系中的类型字段
+	NodeLabel              bool // 是图节点的标签
 	AutoCreateTime         gormschema.TimeType
 	AutoUpdateTime         gormschema.TimeType
 	ReflectValueOf         func(context.Context, reflect.Value) reflect.Value

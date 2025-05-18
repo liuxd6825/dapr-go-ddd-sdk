@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"encoding/json"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -38,6 +38,8 @@ type DBField struct {
 	RelStartId bool        `json:"relStartId"` // 是图关系中的开始节点字段
 	RelEndId   bool        `json:"relEndId"`   // 是图关系中的结束节点字段
 	RelType    bool        `json:"relType"`    // 是图关系中的类型字段
+	NodeLabel  bool        `json:"nodeLabel"`  // 是图节点的标签
+
 }
 
 type DBTable struct {
@@ -60,6 +62,7 @@ func NewDBField() *DBField {
 		RelStartId: false, // 是图关系中的开始节点字段
 		RelEndId:   false, // 是图关系中的结束节点字段
 		RelType:    false, // 是图关系中的类型字段
+		NodeLabel:  false,
 	}
 }
 
@@ -107,67 +110,72 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 	for key, value := range values {
 		switch key {
 		case "notField":
-			if notField, ok := value.(bool); ok {
-				db.NotField = notField
+			if val, err := convert.ConvertBool(value); err != nil {
+				db.NotField = val
 			}
 		case "primaryKey":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.PrimaryKey = val
 			}
 		case "creatable":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.Creatable = val
 			}
 		case "size":
-			if val, ok := value.(json.Number); ok {
-				db.Size, err = val.Int64()
+			if val, err := convert.ConvertInt(value); err != nil {
+				db.Size = val
 			}
 		case "name":
-			if val, ok := value.(string); ok {
+			if val, err := convert.ConvertString(value); err != nil {
 				db.Name = val
 			}
 		case "notNull":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.NotNull = val
 			}
 		case "unique":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.Unique = val
 			}
 		case "updatable":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.Updatable = val
 			}
 		case "readable":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.Readable = val
 			}
 		case "sortType":
-			if val, ok := value.(string); ok {
+			if val, err := convert.ConvertString(value); err != nil {
 				db.SortType = DBSortType(val)
 			}
 		case "indexName":
-			if val, ok := value.(string); ok {
+			if val, err := convert.ConvertString(value); err != nil {
 				db.IndexName = val
 			}
 		case "indexType":
-			if val, ok := value.(string); ok {
+			if val, err := convert.ConvertString(value); err != nil {
 				db.IndexType = DBIndexType(val)
 			}
 
 		case "relStartId":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.RelStartId = val
 			}
 		case "relEndId":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.RelEndId = val
 			}
 		case "relType":
-			if val, ok := value.(bool); ok {
+			if val, err := convert.ConvertBool(value); err != nil {
 				db.RelType = val
 			}
+		case "nodeLabel":
+			if val, err := convert.ConvertBool(value); err != nil {
+				db.NodeLabel = val
+			}
 		}
+
 		if err != nil {
 			return err
 		}

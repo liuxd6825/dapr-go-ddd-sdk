@@ -11,17 +11,19 @@ import (
 	"time"
 )
 
-func NewDBSchemaWithJsonSchemaBytes(fileName string, jsonBytes []byte) *store.DBSchema {
+type DBSchema = store.DBSchema
+
+func NewDBSchemaWithJsonSchemaBytes(fileName string, jsonBytes []byte) *DBSchema {
 	jsSchema := schema.NewJsonSchemaWithBytes(fileName, jsonBytes)
 	return NewDBSchemaWithJsonSchema(jsSchema)
 }
 
-func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *store.DBSchema {
+func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
 	jsSchema := schema.NewJsonSchemaWithJson(fileName, jsonText)
 	return NewDBSchemaWithJsonSchema(jsSchema)
 }
 
-func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *store.DBSchema {
+func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 	s := store.NewDBSchema()
 	s.TableName = schema.GetTableName(sch)
 	s.Name = sch.Name()
@@ -56,6 +58,7 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *store.DBSchema {
 			field.RelType = schField.RelType
 			field.RelStartId = schField.RelStartId
 			field.RelEndId = schField.RelEndId
+			field.NodeLabel = schField.NodeLabel
 		}
 		initField(field)
 		s.Fields = append(s.Fields, field)

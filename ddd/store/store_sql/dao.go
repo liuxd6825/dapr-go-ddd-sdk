@@ -229,6 +229,10 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 	return res
 }
 
+func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...store.Options) (setResult *store.SetResult[T]) {
+	return nil
+}
+
 func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {

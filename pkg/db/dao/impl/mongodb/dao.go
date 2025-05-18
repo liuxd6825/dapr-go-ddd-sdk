@@ -48,9 +48,9 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	if v, ok := cfg.DB.(store_mongodb.IMongoDB); ok {
 		mongoDb = v
 	} else {
-		item := env.GetDB(cfg.DbKey)
+		item := env.GetDB(cfg.DBKey)
 		if item == nil {
-			panic(errors.New(" %s database not found", cfg.DbKey))
+			panic(errors.New(" %s database not found", cfg.DBKey))
 		}
 		mongoDb = item.GetMongo()
 	}

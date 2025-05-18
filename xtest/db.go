@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
@@ -100,4 +101,18 @@ func NewSqlite() *gorm.DB {
 		panic(err)
 	}
 	return db
+}
+
+func NewNeo4j() neo4j.DriverWithContext {
+	ctx := context.Background()
+	uri := fmt.Sprintf("bolt://%v:%v", "127.0.0.1", 7687)
+	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth("neo4j", "12345678", ""))
+	if err != nil {
+		panic(err)
+	}
+	err = driver.VerifyConnectivity(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("连接neo4j失败, error:%s。%s  ", uri, err.Error()))
+	}
+	return driver
 }

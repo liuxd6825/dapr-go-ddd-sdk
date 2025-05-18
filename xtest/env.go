@@ -17,6 +17,25 @@ func NewEnvConfig() *env.Env {
 	return res
 }
 
+func NewEnvConfig_Neo4j() *env.Env {
+	res := env.NewEnv()
+	res.App.AppId = "test"
+	res.App.AppName = "app"
+	res.App.HttpHost = "localhost"
+	res.App.HttpPort = 0
+
+	res.AddNeo4j(&env.Neo4j{
+		DbKey:    "neo4j",
+		Host:     "localhost",
+		Port:     "7687",
+		Database: "",
+		UserName: "neo4j",
+		Password: "12345678",
+	})
+	res.Init()
+	return res
+}
+
 func (e EnvConfig) GetAppId() string {
 	return "test"
 }

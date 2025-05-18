@@ -162,21 +162,26 @@ func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[strin
 
 		for _, field := range sch.Fields {
 			key := field.Name
+			println("field:", key)
 			fv := vObj.FieldByName(key)
-			val := fv.Interface()
+			var val any
+			if fv.IsValid() {
+				val = fv.Interface()
+			}
 			if fv.Kind() == reflect.Struct {
 				nestedMap, err := sch.NewMap(ctx, val)
 				if err != nil {
 					return nil, err
 				}
 				res[key] = nestedMap
-			} else if field.ValueOf != nil {
+			}
+			/*else if field.ValueOf != nil {
 				v, _ := field.ValueOf(ctx, fv)
 				val = v
 			}
 			if field.ValueOf != nil {
 				val, _ = field.ValueOf(ctx, reflect.ValueOf(val))
-			}
+			}*/
 			res[key] = val
 		}
 	}

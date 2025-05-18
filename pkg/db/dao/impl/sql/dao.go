@@ -38,7 +38,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	}
 
 	if db == nil {
-		item := env.GetDB(cfg.DbKey)
+		item := env.GetDB(cfg.DBKey)
 		if item == nil {
 			panic("db item not found")
 		}
@@ -73,7 +73,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	}
 
 	newDaoCfg := &store_sql.NewConfig{
-		DbKey:      cfg.DbKey,
+		DbKey:      cfg.DBKey,
 		Db:         db,
 		TableName:  tableName,
 		DBSchema:   cfg.DBSchema,

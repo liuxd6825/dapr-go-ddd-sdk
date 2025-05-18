@@ -12,6 +12,7 @@ type Dao[T any] interface {
 
 	Create(ctx context.Context, entity T, opts ...*CallOptions) *Result
 	CreateMany(ctx context.Context, entity []T, opts ...*CallOptions) *Result
+	CreateUpdate(ctx context.Context, entity T, opts ...*CallOptions) *Result
 
 	Update(ctx context.Context, entity T, opts ...*CallOptions) *Result
 	UpdateMap(ctx context.Context, id string, entity map[string]any, opts ...*CallOptions) *Result

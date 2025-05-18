@@ -10,6 +10,7 @@ import (
 )
 
 type MySql struct {
+	DbKey        string          ``
 	User         string          `yaml:"user" json:"username"`             // MySQL 用户名
 	Password     string          `yaml:"pwd" json:"password"`              // MySQL 密码
 	Host         string          `yaml:"host" json:"host"`                 // MySQL 主机地址
@@ -56,7 +57,7 @@ func (cfg *MySql) params(val string) string {
 	return val
 }
 
-func initMySql(env *Env) {
+func InitDBMySql(env *Env) {
 	if env.Mysql == nil {
 		env.Mysql = map[string]*MySql{}
 		return
