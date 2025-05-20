@@ -11,8 +11,8 @@ import (
 func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) (res *store.SetResult[T]) {
 	res = store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		tenantId := d.eb.GetTenantId(entity)
-		d.eb.SetCreatedInfo(ctx, entity)
+		tenantId := d.config.EntityBuilder.GetTenantId(entity)
+		d.config.EntityBuilder.SetCreatedInfo(ctx, entity)
 		cr, err := d.Cypher.Insert(ctx, tenantId, entity)
 		if err != nil {
 			return err
@@ -32,8 +32,8 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, list []T, opts
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		for _, ent := range list {
-			d.eb.SetTenantId(ent, tenantId)
-			d.eb.SetCreatedInfo(ctx, ent)
+			d.config.EntityBuilder.SetTenantId(ent, tenantId)
+			d.config.EntityBuilder.SetCreatedInfo(ctx, ent)
 		}
 		cr, err := d.Cypher.InsertMany(ctx, tenantId, list)
 		if err != nil {
@@ -53,15 +53,15 @@ func (d *Dao[T]) InsertMany(ctx context.Context, tenantId string, list []T, opts
 	return res
 }
 
-func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...store.Options) (setResult *store.SetResult[T]) {
-	res := store.NewSetResultEmpty[T]()
+func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...store.Options) (res *store.SetResult[T]) {
+	res = store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		cr, err := d.Cypher.InsertOrUpdate(ctx, entity)
 		if err != nil {
 			return err
 		}
 
-		tenantId := d.eb.GetTenantId(entity)
+		tenantId := d.config.EntityBuilder.GetTenantId(entity)
 		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
@@ -80,6 +80,26 @@ func (d *Dao[T]) InsertOrUpdateMany(ctx context.Context, entities []T, opts ...s
 		}
 	}
 	return store.NewSetResultEmpty[T]()
+}
+
+func (d *Dao[T]) Merge(ctx context.Context, entity T, fields map[string]string, opts ...store.Options) (res *store.SetResult[T]) {
+	res = store.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		cr, err := d.Cypher.Merge(ctx, entity, fields)
+		if err != nil {
+			return err
+		}
+
+		tenantId := d.config.EntityBuilder.GetTenantId(entity)
+		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		if nRes != nil {
+			res.SetRowsAffected(nRes.GetRowsAffected())
+		}
+		return err
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
 }
 
 func (d *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...store.Options) (setResult *store.SetResult[T]) {
@@ -117,11 +137,11 @@ func (d *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 }
 
 func (d *Dao[T]) getInsertMap(ctx context.Context, entity T) map[string]any {
-	res, err := d.Schema.NewMap(context.Background(), entity)
+	res, err := d.config.DBSchema.NewMap(context.Background(), entity)
 	if err != nil {
 		panic(err)
 	}
-	d.eb.SetCreatedInfo(ctx, res)
+	d.config.EntityBuilder.SetCreatedInfo(ctx, res)
 	return res
 }
 

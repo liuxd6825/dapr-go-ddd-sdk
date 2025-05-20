@@ -23,9 +23,9 @@ type IStore[T any] interface {
 	Insert(ctx context.Context, entity T, opts ...Options) *SetResult[T]
 	//InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...Options) (res *SetResult[T])
 	InsertMany(ctx context.Context, tenantId string, entities []T, opts ...Options) *SetResult[T]
-
 	InsertOrUpdate(ctx context.Context, entity T, opts ...Options) (setResult *SetResult[T])
 
+	Merge(ctx context.Context, entity T, fields map[string]string, opts ...Options) (setResult *SetResult[T])
 	// 更新
 
 	Update(ctx context.Context, entity T, opts ...Options) *SetResult[T]

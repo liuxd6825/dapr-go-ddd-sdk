@@ -79,7 +79,7 @@ func NewNeo4jResult[T any](ctx context.Context, eb store.EntityBuilder[T], resul
 	}
 }
 
-func (r *Neo4jResult[T]) setMapEntity(schema *store.DBSchema, neo4jData map[string]any, entity map[string]any) {
+func (r *Neo4jResult[T]) SetMapEntity(schema *store.DBSchema, neo4jData map[string]any, entity map[string]any) {
 	for _, field := range schema.Fields {
 		if !field.Readable {
 			continue
@@ -102,8 +102,9 @@ func (r *Neo4jResult[T]) GetData(key string) ([]any, bool) {
 func (r *Neo4jResult[T]) GetList(ctx context.Context, key string, resList any, schema *store.DBSchema, opts ...*MappingOptions) error {
 	// 检查 res 是否为 *[]map[string]any 类型
 	resType := reflect.TypeOf(resList)
+	println(resType.Kind().String())
 	if resType.Kind() != reflect.Ptr || resType.Elem().Kind() != reflect.Slice || resType.Elem().Elem().Kind() != reflect.Map {
-		return errors.New("res must be a pointer to a slice of map[string]any")
+		return errors.New("resList must be a pointer to a slice of map[string]any")
 	}
 
 	// 解引用 res
@@ -119,13 +120,13 @@ func (r *Neo4jResult[T]) GetList(ctx context.Context, key string, resList any, s
 		for _, item := range items {
 			if node, ok := item.(dbtype.Node); ok {
 				mapEntity := map[string]any{}
-				r.setMapEntity(schema, node.Props, mapEntity)
+				r.SetMapEntity(schema, node.Props, mapEntity)
 				m := reflect.ValueOf(mapEntity)
 				resValue.Set(reflect.Append(resValue, m))
 
 			} else if rel, ok := item.(neo4j.Relationship); ok {
 				mapEntity := map[string]any{}
-				r.setMapEntity(schema, rel.Props, mapEntity)
+				r.SetMapEntity(schema, rel.Props, mapEntity)
 				m := reflect.ValueOf(mapEntity)
 				resValue.Set(reflect.Append(resValue, m))
 			}
@@ -143,6 +144,32 @@ func (r *Neo4jResult[T]) GetList(ctx context.Context, key string, resList any, s
 	}
 
 	return nil
+}
+
+func (r *Neo4jResult[T]) GetAnyList(key string) []any {
+	var resList []any
+	items, found := r.dataSet[key]
+	if !found {
+		return nil
+	}
+	for _, item := range items {
+		resList = append(resList, item)
+	}
+	return resList
+}
+
+func (r *Neo4jResult[T]) GetIntList(key string) []int64 {
+	var resList []int64
+	items, found := r.dataSet[key]
+	if !found {
+		return nil
+	}
+	for _, item := range items {
+		if iVal, ok := item.(int64); ok {
+			resList = append(resList, iVal)
+		}
+	}
+	return resList
 }
 
 func (r *Neo4jResult[T]) GetSum(data any) error {
@@ -198,7 +225,7 @@ func (r *Neo4jResult[T]) GetOne(dataKey string, entity interface{}, schema *stor
 	item := list[0]
 	if entityMap, ok := entity.(map[string]any); ok {
 		if node, ok := item.(dbtype.Node); ok {
-			r.setMapEntity(schema, node.GetProperties(), entityMap)
+			r.SetMapEntity(schema, node.GetProperties(), entityMap)
 		}
 	} else {
 		err = reflectutils.MappingStruct(item, entity, func(source reflect.Value, target reflect.Value) error {

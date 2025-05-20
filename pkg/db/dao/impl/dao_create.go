@@ -45,3 +45,10 @@ func (d *DaoBase[T]) CreateUpdate(ctx context.Context, entity T, opts ...*idao.C
 	res := d.store.InsertOrUpdate(ctx, entity, idao.NewRepositoryOptions(opts)...)
 	return idao.NewResult(res)
 }
+
+func (d *DaoBase[T]) Merge(ctx context.Context, entity T, fields map[string]string, opts ...*idao.CallOptions) *idao.Result {
+	tenantId := d.GetTenantId(ctx)
+	d.store.SetTenantId(entity, tenantId)
+	res := d.store.Merge(ctx, entity, fields, idao.NewRepositoryOptions(opts)...)
+	return idao.NewResult(res)
+}

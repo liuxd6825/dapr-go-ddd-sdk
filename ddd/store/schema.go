@@ -14,6 +14,7 @@ type DBSchema struct {
 	Fields            []*Field
 	FieldName         map[string]*Field
 	FieldDbName       map[string]*Field
+	Labels            []string
 	GormSchema        *gormschema.Schema
 	relTypeField      *Field
 	relTypeFieldOk    bool
@@ -21,6 +22,8 @@ type DBSchema struct {
 	relStartIdFieldOk bool
 	relEndIdField     *Field
 	relEndIdFieldOk   bool
+	labelFields       []*Field
+	labelFieldsOK     bool
 }
 
 func NewDBSchema() *DBSchema {
@@ -74,6 +77,20 @@ func (sch *DBSchema) LookedField(name string) *Field {
 		return f
 	}
 	return nil
+}
+
+func (sch *DBSchema) GetNodeLabelFields() []*Field {
+	if !sch.labelFieldsOK {
+		var labelFields []*Field
+		for _, field := range sch.Fields {
+			if field.NodeLabel {
+				labelFields = append(labelFields, field)
+			}
+		}
+		sch.labelFields = labelFields
+		sch.labelFieldsOK = true
+	}
+	return sch.labelFields
 }
 
 func (sch *DBSchema) GetRelTypeField() *Field {

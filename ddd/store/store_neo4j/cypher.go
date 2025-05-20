@@ -18,6 +18,8 @@ type Cypher[T any] interface {
 	UpdateLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error)
 	UpdateLabelByFilter(ctx context.Context, tenantId string, rSQL string, labels ...string) (CypherResult, error)
 
+	Merge(ctx context.Context, data T, fields map[string]string) (CypherResult, error)
+
 	DeleteById(ctx context.Context, tenantId string, id string) (CypherResult, error)
 	DeleteByIds(ctx context.Context, tenantId string, ids []string) (CypherResult, error)
 	DeleteAll(ctx context.Context, tenantId string) (CypherResult, error)
@@ -39,4 +41,7 @@ type Cypher[T any] interface {
 	Count(ctx context.Context, tenantId, filter string) (CypherResult, error)
 
 	Sum(ctx context.Context, tenantId, filter string, valueCols []*store.ValueCol) (CypherResult, error)
+
+	GetLabels(ctx context.Context, entity T, labels ...string) string
+	GetUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error)
 }

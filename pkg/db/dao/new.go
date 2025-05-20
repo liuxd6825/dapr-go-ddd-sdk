@@ -63,11 +63,11 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	}
 
 	// dao缓存 取得daoKey
-	className := reflectutils.GetClassName[T]()
+	/*className := reflectutils.GetClassName[T]()
 	daoKey := getDaoKey(dbKey, tableName, className)
 	if v, ok := cache.Get(daoKey); v != nil && ok {
 		return v.(idao.Dao[T])
-	}
+	}*/
 
 	// 是struct类型
 	if newCfg.DBSchema == nil && reflectutils.IsStruct[T]() {
@@ -131,7 +131,7 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 			panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
 		}
 	}
-	cache.Add(daoKey, any(dao))
+	//cache.Add(daoKey, any(dao))
 	return dao
 }
 

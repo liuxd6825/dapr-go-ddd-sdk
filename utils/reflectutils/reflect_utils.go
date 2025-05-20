@@ -209,7 +209,33 @@ func IsMap[T any]() bool {
 	}
 	return false
 }
+func IsNotEmpty[T any](v T) bool {
+	return !IsEmpty[T](v)
+}
+func IsEmpty[T any](v T) bool {
+	// 获取值的反射对象
+	val := reflect.ValueOf(v)
 
+	// 检查值是否有效
+	if !val.IsValid() {
+		return true
+	}
+
+	// 检查零值（空切片、空字符串、nil指针等）
+	switch val.Kind() {
+	case reflect.String:
+		return val.String() == ""
+	case reflect.Slice, reflect.Array:
+		return val.Len() == 0
+	case reflect.Map:
+		return val.Len() == 0
+	case reflect.Ptr:
+		return val.IsNil()
+	default:
+		// 对于其他类型，通常认为零值即为空
+		return reflect.DeepEqual(v, reflect.Zero(val.Type()).Interface())
+	}
+}
 func IsStruct[T any]() bool {
 	var null T
 	t := reflect.TypeOf(null)

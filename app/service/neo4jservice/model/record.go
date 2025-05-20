@@ -1,0 +1,66 @@
+package model
+
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"strings"
+	"time"
+)
+
+type Record struct {
+	DB           string         `json:"db"`     // 数据库
+	Table        string         `json:"table"`  // 数据表
+	Before       map[string]any `json:"before"` // 之前数据
+	After        map[string]any `json:"after"`  // 之后数据
+	OpType       string         `json:"opType"` // 操作状态 "r" for read/backfill, "c" for create, "u" for update, "d" for delete
+	CdcTimestamp time.Time      `json:"cdcTimestamp"`
+}
+
+// IsMaster 是主数据
+func (r *Record) IsMaster() bool {
+	return !strings.Contains(r.Table, "_")
+}
+
+// IsRelation 是关系数据
+func (r *Record) IsRelation() bool {
+	return strings.Contains(r.Table, "_")
+}
+
+// IsRename 是否数据更新
+func (r *Record) IsRename() bool {
+	if r.OpType == "u" {
+		newName, _ := maputils.GetString(r.After, "relationType", "")
+		oldName, _ := maputils.GetString(r.Before, "relationType", "")
+		if newName != oldName {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *Record) AfterMap() map[string]any {
+	return r.newMap(r.After)
+}
+
+func (r *Record) BeforeMap() map[string]any {
+	return r.newMap(r.Before)
+}
+
+func (r *Record) AfterName() string {
+	val, _ := maputils.GetString(r.After, "name", "")
+	return val
+}
+
+func (r *Record) BeforeName() string {
+	val, _ := maputils.GetString(r.Before, "name", "")
+	return val
+}
+
+func (r *Record) newMap(vals map[string]any) map[string]any {
+	mapData := make(map[string]any)
+	for key, value := range vals {
+		propName := stringutils.FirstLowerCamelString(key)
+		mapData[propName] = value
+	}
+	return mapData
+}

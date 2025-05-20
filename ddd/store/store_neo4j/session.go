@@ -86,8 +86,9 @@ func (r *Neo4jSession) UseTransaction(ctx context.Context, dbFunc store.SessionF
 	return err
 }
 
-func (o *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) {
+func (o *SessionOptions) SetAccessMode(accessMode neo4j.AccessMode) *SessionOptions {
 	o.AccessMode = &accessMode
+	return o
 }
 
 func NewSessionOptions(opts ...*SessionOptions) *SessionOptions {

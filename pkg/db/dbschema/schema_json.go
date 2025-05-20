@@ -59,6 +59,7 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 			field.RelStartId = schField.RelStartId
 			field.RelEndId = schField.RelEndId
 			field.NodeLabel = schField.NodeLabel
+			field.NodeLabelFormat = schField.NodeLabelFormat
 		}
 		initField(field)
 		s.Fields = append(s.Fields, field)

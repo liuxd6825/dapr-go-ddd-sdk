@@ -16,79 +16,84 @@ import (
 type Dao[T any] struct {
 	Driver neo4j.DriverWithContext
 	Cypher Cypher[T]
-	eb     store.EntityBuilder[T]
-	Labels []string
-	Schema *store.DBSchema
 	config *Config[T]
 }
 
 func (d *Dao[T]) NewEntity() T {
-	return d.eb.NewEntity()
+	return d.config.EntityBuilder.NewEntity()
 }
 
 func (d *Dao[T]) NewEntityList() []T {
-	return d.eb.NewEntityList()
+	return d.config.EntityBuilder.NewEntityList()
 }
 
 func (d *Dao[T]) GetTenantId(entity T) string {
-	return d.eb.GetTenantId(entity)
+	return d.config.EntityBuilder.GetTenantId(entity)
 }
 
 func (d *Dao[T]) SetTenantId(entity T, tenantId string) {
-	d.eb.SetTenantId(entity, tenantId)
+	d.config.EntityBuilder.SetTenantId(entity, tenantId)
 }
 
 func (d *Dao[T]) GetId(entity T) string {
-	return d.eb.GetId(entity)
+	return d.config.EntityBuilder.GetId(entity)
 }
 
 func (d *Dao[T]) SetId(entity T, id string) {
-	d.eb.SetId(entity, id)
+	d.config.EntityBuilder.SetId(entity, id)
 }
 
 func (d *Dao[T]) GetAggId(entity T) string {
-	return d.eb.GetAggId(entity)
+	return d.config.EntityBuilder.GetAggId(entity)
 }
 
 func (d *Dao[T]) GetSchema() *store.DBSchema {
-	return d.Schema
+	return d.config.DBSchema
 }
 
 type Config[T any] struct {
 	DBSchema      *store.DBSchema
 	EntityBuilder store.EntityBuilder[T]
+	Labels        []string
 }
 
-func NewNodeDao[T any](driver neo4j.DriverWithContext, config *Config[T], labels []string, opts ...*Options[T]) store.IStore[T] {
+func NewNodeDao[T any](driver neo4j.DriverWithContext, config *Config[T], opts ...*Options[T]) store.IStore[T] {
 	eb := NewNodeEntityBuilder[T](config.DBSchema)
 	config.EntityBuilder = eb
-	cypher := NewNodeCypher[T](eb, config, labels...)
-	return NewDao(driver, labels, cypher, config, opts...)
+	cypher := NewNodeCypher[T](config)
+	return NewDao(driver, cypher, config, opts...)
 }
 
-func NewRelationDao[T any](driver neo4j.DriverWithContext, config *Config[T], labels []string, opts ...*Options[T]) store.IStore[T] {
+func NewRelationDao[T any](driver neo4j.DriverWithContext, config *Config[T], opts ...*Options[T]) store.IStore[T] {
 	eb := NewRelationEntityBuilder[T](config.DBSchema)
 	config.EntityBuilder = eb
-	cypher := NewRelationCypher[T](eb, config, labels...)
-	return NewDao(driver, labels, cypher, config, opts...)
+	cypher := NewRelationCypher[T](eb, config, config.Labels...)
+	return NewDao(driver, cypher, config, opts...)
 }
 
-func NewDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], config *Config[T], opts ...*Options[T]) store.IStore[T] {
-	return newDao(driver, labels, cypher, config, opts...)
+func NewDao[T any](driver neo4j.DriverWithContext, cypher Cypher[T], config *Config[T], opts ...*Options[T]) store.IStore[T] {
+	return newDao(driver, cypher, config, opts...)
 }
 
-func newNodeDao[T any](driver neo4j.DriverWithContext, labels []string, config *Config[T], opts ...*Options[T]) *Dao[T] {
-	cypher := NewNodeCypher(config.EntityBuilder, config, labels...)
-	return newDao(driver, labels, cypher, config, opts...)
+func newNodeDao[T any](driver neo4j.DriverWithContext, config *Config[T], opts ...*Options[T]) *Dao[T] {
+	if config == nil {
+		panic("config must not be nil ")
+	}
+	if config.Labels == nil {
+		panic("config labels must not be nil " + config.DBSchema.TableName)
+	}
+	cypher := NewNodeCypher(config)
+	return newDao(driver, cypher, config, opts...)
 }
 
-func newDao[T any](driver neo4j.DriverWithContext, labels []string, cypher Cypher[T], config *Config[T], opts ...*Options[T]) *Dao[T] {
+func newDao[T any](driver neo4j.DriverWithContext, cypher Cypher[T], config *Config[T], opts ...*Options[T]) *Dao[T] {
+	if config == nil {
+		panic("config must not be nil ")
+	}
 	dao := &Dao[T]{
 		Driver: driver,
 		Cypher: cypher,
-		eb:     config.EntityBuilder,
-		Labels: labels,
-		Schema: config.DBSchema,
+		config: config,
 	}
 	return dao
 }
@@ -115,7 +120,7 @@ func (d *Dao[T]) newSetManyResult(ctx context.Context, result *Neo4jResult[T], e
 		return store.NewSetResultError[T](err)
 	}
 	var data []T
-	if err := result.GetList(ctx, "n", &data, d.Schema); err != nil {
+	if err := result.GetList(ctx, "n", &data, d.config.DBSchema); err != nil {
 		store.NewSetResultError[T](err)
 	}
 	return store.NewSetResultEmpty[T]()
@@ -139,7 +144,7 @@ func (d *Dao[T]) Run(ctx context.Context, cypher string, params map[string]any, 
 		if err != nil {
 			return nil, err
 		}
-		return NewNeo4jResult[T](ctx, d.eb, r), nil
+		return NewNeo4jResult[T](ctx, d.config.EntityBuilder, r), nil
 	}, sOptionsBuilder.Build())
 
 	return res, err
@@ -154,6 +159,14 @@ func (d *Dao[T]) CreateIndex(ctx context.Context, index, label, property string)
 		_ = idxSession.Close(ctx)
 	}()
 	return err
+}
+
+func (d *Dao[T]) GetLabels(ctx context.Context, entity T, labels ...string) string {
+	return d.Cypher.GetLabels(ctx, entity, labels...)
+}
+
+func (d *Dao[T]) GetEntityLabels(ctx context.Context, entity T, labels ...string) string {
+	return d.Cypher.GetLabels(ctx, entity, labels...)
 }
 
 func (d *Dao[T]) query(ctx context.Context, query string, data map[string]any) (any, error) {
@@ -209,14 +222,15 @@ func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.ManagedTransac
 	return nil, err
 }
 
-func (d *Dao[T]) Write(ctx context.Context, cypher string) (*Neo4jResult[T], error) {
+func (d *Dao[T]) Write(ctx context.Context, cypher string, params map[string]any) (*Neo4jResult[T], error) {
+	opt := NewSessionOptions().SetAccessMode(neo4j.AccessModeWrite)
 	return d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult[T], error) {
-		result, err := tx.Run(ctx, cypher, nil)
+		result, err := tx.Run(ctx, cypher, params)
 		if err != nil {
 			return nil, err
 		}
-		return NewNeo4jResult(ctx, d.eb, result), err
-	})
+		return NewNeo4jResult(ctx, d.config.EntityBuilder, result), err
+	}, opt)
 }
 
 func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]interface{}) (*Neo4jResult[T], error) {
@@ -227,13 +241,13 @@ func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]int
 			log.Println("wirte to DB with error:", err)
 			return nil, err
 		}
-		resultData = NewNeo4jResult(ctx, d.eb, result)
+		resultData = NewNeo4jResult(ctx, d.config.EntityBuilder, result)
 		return nil, err
 	})
 	return resultData, err
 }
 
-func getLabels(labels ...string) string {
+func GetLabels(labels ...string) string {
 	var s string
 	for _, l := range labels {
 		if len(l) > 0 {
@@ -243,7 +257,7 @@ func getLabels(labels ...string) string {
 	return strings.ToLower(s)
 }
 
-func getNeo4jWhere(tenantId string, dataKey string, filter string) (string, error) {
+func GetNeo4jWhere(tenantId string, dataKey string, filter string) (string, error) {
 	process := rsql_neo4j.NewProcess(tenantId, dataKey)
 	if err := rsql.ParseProcess(filter, process); err != nil {
 		return "", err

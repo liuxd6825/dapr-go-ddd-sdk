@@ -280,6 +280,10 @@ func (d *Dao[T]) GetUpdateDB(ctx context.Context, entity any, opts ...store.Opti
 	return table
 }
 
+func (r *Dao[T]) Merge(ctx context.Context, entity T, fields map[string]string, opts ...store.Options) (setResult *store.SetResult[T]) {
+	panic("implement me")
+}
+
 func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResult[T]()
 	_ = gp.Try(func() error {

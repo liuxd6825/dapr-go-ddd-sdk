@@ -91,6 +91,10 @@ func (d *DaoBase[T]) GetSchema() *store.DBSchema {
 	return d.cfg.DBSchema
 }
 
+func (d *DaoBase[T]) GetStore() store.IStore[T] {
+	return d.store
+}
+
 func (d *DaoBase[T]) GetAggId(entity T, opts *idao.CallOptions) (string, error) {
 	aggId := d.store.GetAggId(entity)
 	return aggId, nil

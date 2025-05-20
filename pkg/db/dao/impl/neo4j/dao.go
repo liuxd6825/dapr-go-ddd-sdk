@@ -48,13 +48,17 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 	dbSch := cfg.DBSchema
 	config := &store_neo4j.Config[T]{
 		DBSchema: dbSch,
+		Labels:   cfg.GraphLabels,
+	}
+	if config.Labels == nil && cfg.GraphType == idao2.GraphType_Node {
+		panic(fmt.Sprintf("neo4j dao %s config.Labels is be must nil", dbSch.TableName))
 	}
 
 	var storeImp store.IStore[T]
 	if cfg.GraphType == "node" {
-		storeImp = store_neo4j.NewNodeDao[T](driver, config, cfg.GraphLabels)
+		storeImp = store_neo4j.NewNodeDao[T](driver, config)
 	} else if cfg.GraphType == "rel" {
-		storeImp = store_neo4j.NewRelationDao[T](driver, config, cfg.GraphLabels)
+		storeImp = store_neo4j.NewRelationDao[T](driver, config)
 	} else if cfg.GraphType != "" {
 		panic(fmt.Sprintf("NewDao() error : invalid graphType %s", cfg.GraphType))
 	}

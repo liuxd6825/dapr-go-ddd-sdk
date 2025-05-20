@@ -14,6 +14,8 @@ type Dao[T any] interface {
 	CreateMany(ctx context.Context, entity []T, opts ...*CallOptions) *Result
 	CreateUpdate(ctx context.Context, entity T, opts ...*CallOptions) *Result
 
+	Merge(ctx context.Context, entity T, fields map[string]string, opts ...*CallOptions) *Result
+
 	Update(ctx context.Context, entity T, opts ...*CallOptions) *Result
 	UpdateMap(ctx context.Context, id string, entity map[string]any, opts ...*CallOptions) *Result
 	UpdateMany(ctx context.Context, entities []T, opts ...*CallOptions) *Result
@@ -41,6 +43,8 @@ type Dao[T any] interface {
 
 	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64
 	Table() Table
+
+	GetStore() store.IStore[T]
 	//GetFilterMap(tenantId string, rSql string) map[string]any
 }
 

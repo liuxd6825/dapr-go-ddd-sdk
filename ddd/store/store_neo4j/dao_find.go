@@ -22,8 +22,8 @@ func (d *Dao[T]) FindById(ctx context.Context, tenantId, id string, opts ...stor
 		if err != nil {
 			return err
 		}
-		entity := d.eb.NewEntity()
-		_, err = result.GetOne(cr.ResultOneKey(), entity, d.Schema)
+		entity := d.config.EntityBuilder.NewEntity()
+		_, err = result.GetOne(cr.ResultOneKey(), entity, d.config.DBSchema)
 		res.SetData(entity)
 		return err
 	}).Catch(func(err error) {
