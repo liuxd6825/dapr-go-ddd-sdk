@@ -484,6 +484,12 @@ func (f *findPagingQueryBuilder) SetMapToQuery(m map[string]any) FindPagingQuery
 		panic(err)
 	}
 
+	if isTotalRows, err := maputils.GetBool(m, "isTotalRows", false); err == nil {
+		f.SetIsTotalRows(isTotalRows)
+	} else {
+		panic(err)
+	}
+
 	if v, err := maputils.GetString(m, "mustFilter", ""); err == nil {
 		f.SetMustFilter(v)
 	} else {
