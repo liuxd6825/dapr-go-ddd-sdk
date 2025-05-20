@@ -304,7 +304,7 @@ func getTotalPage(totalRows int64, pageSize int64) int64 {
 	}
 	rows := totalRows
 	totalPage := rows / pageSize
-	if rows%pageSize > 1 {
+	if rows%pageSize >= 1 {
 		totalPage++
 	}
 	return totalPage
