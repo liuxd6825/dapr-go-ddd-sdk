@@ -103,6 +103,15 @@ func (p *Property) getForm() schema.Form {
 	return nil
 }
 
+func (p *Property) Required(requireds []string) bool {
+	for _, required := range requireds {
+		if p.Name() == required {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Property) FormCtl() string {
 	if p.Types.Contains(jsonschema.JsonType_BooleanType) {
 		return "ui5-select"
@@ -149,7 +158,7 @@ func (p *Property) SheetType() string {
 	} else if p.Types.Contains(jsonschema.JsonType_DateType) {
 		return "date"
 	} else if p.Types.Contains(jsonschema.JsonType_DateTimeType) {
-		return "date"
+		return "datetime"
 	} else {
 		return "text"
 	}
