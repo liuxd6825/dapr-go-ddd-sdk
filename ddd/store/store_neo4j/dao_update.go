@@ -7,11 +7,11 @@ import (
 )
 
 func (d *Dao[T]) getUpdateMap(ctx context.Context, entity T) map[string]any {
-	res, err := d.Schema.NewMap(context.Background(), entity)
+	res, err := d.config.DBSchema.NewMap(context.Background(), entity)
 	if err != nil {
 		panic(err)
 	}
-	d.eb.SetUpdatedInfo(ctx, res)
+	d.config.EntityBuilder.SetUpdatedInfo(ctx, res)
 	return res
 }
 
@@ -76,8 +76,8 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, list []T, opts
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		for _, ent := range list {
-			d.eb.SetTenantId(ent, tenantId)
-			d.eb.SetUpdatedInfo(ctx, ent)
+			d.config.EntityBuilder.SetTenantId(ent, tenantId)
+			d.config.EntityBuilder.SetUpdatedInfo(ctx, ent)
 		}
 		cr, err := d.Cypher.UpdateMany(ctx, tenantId, list)
 		if err != nil {

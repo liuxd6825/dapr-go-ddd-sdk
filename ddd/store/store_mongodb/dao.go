@@ -494,6 +494,10 @@ func (r *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, 
 
 }
 
+func (r *Dao[T]) Merge(ctx context.Context, entity T, fields map[string]string, opts ...store.Options) (setResult *store.SetResult[T]) {
+	panic("implement me")
+}
+
 func (r *Dao[T]) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...store.Options) (*store.BulkWriteResult, error) {
 	if len(models) == 0 {
 		return &store.BulkWriteResult{}, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_neo4j"
@@ -26,7 +27,6 @@ type relationCypher[T any] struct {
 // @return Cypher
 func NewRelationCypher[T any](eb RelationEntityBuilder[T], config *Config[T], relTypes ...string) Cypher[T] {
 	matchTypes := ":" + strings.Join(relTypes, "|")
-
 	rel := &relationCypher[T]{
 		matchTypes:    matchTypes,
 		relTypes:      relTypes,
@@ -35,6 +35,16 @@ func NewRelationCypher[T any](eb RelationEntityBuilder[T], config *Config[T], re
 		config:        config,
 	}
 	return rel
+}
+
+func (c *relationCypher[T]) GetLabels(ctx context.Context, data T, labels ...string) string {
+	tenantId, _ := appctx.GetTenantId(ctx)
+	var list []string
+	list = c.eb.GetLabels(data)
+	list = append(list, labels...)
+	list = append(list, "tenant_"+tenantId)
+	tags := GetLabels(list...)
+	return tags
 }
 
 func (c *relationCypher[T]) Insert(ctx context.Context, tenantId string, data T) (CypherResult, error) {
@@ -124,6 +134,31 @@ func (c *relationCypher[T]) UpdateMany(ctx context.Context, tenantId string, lis
 	return NewCypherBuilderResult(cypher, map[string]any{"updates": updates}, nil), nil
 }
 
+func (c *relationCypher[T]) Merge(ctx context.Context, data T, fields map[string]string) (CypherResult, error) {
+	props, dataMap, err := c.getSetFields(ctx, "r", data)
+	if err != nil {
+		return nil, err
+	}
+	filter := ""
+	for k, v := range fields {
+		filter += fmt.Sprintf("%s='%v',", k, v)
+	}
+	if len(filter) > 0 {
+		filter = filter[:len(filter)-1]
+	}
+
+	tenantId := c.eb.GetTenantId(data)
+	tenant := c.tenant(tenantId)
+
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("MATCH (s%s{id:'%v'}), (e%s{id:'%v'}) ", tenant, c.eb.GetStartId(data), tenant, c.eb.GetEndId(data)))
+	sb.WriteString(fmt.Sprintf("MERGE (s)-[r%s{%s}]->(e) ", c.matchTypes, filter))
+	sb.WriteString(fmt.Sprintf("ON CREATE SET %s ", props))
+	sb.WriteString(fmt.Sprintf("ON MATCH  SET %s ", props))
+	logs.Debug(ctx, logs.Fields{"cypher": func() any { return sb.String() }})
+	return NewCypherBuilderResult(sb.String(), dataMap, nil), nil
+}
+
 func (c *relationCypher[T]) MergeMany(ctx context.Context, tenantId string, list []T) (CypherResult, error) {
 	/*
 		UNWIND $updates AS update
@@ -177,7 +212,7 @@ func (c *relationCypher[T]) newUpdateList(ctx context.Context, list []T) []map[s
 }
 
 func (c *relationCypher[T]) UpdateLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error) {
-	where, err := getNeo4jWhere(tenantId, "n", filter)
+	where, err := GetNeo4jWhere(tenantId, "n", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +266,7 @@ func (c *relationCypher[T]) DeleteAll(ctx context.Context, tenantId string) (Cyp
 }
 
 func (c *relationCypher[T]) DeleteByRSQL(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
-	where, err := getNeo4jWhere(tenantId, "r", filter)
+	where, err := GetNeo4jWhere(tenantId, "r", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +322,7 @@ func (c *relationCypher[T]) Sum(ctx context.Context, tenantId, rSQL string, valu
 	sb.WriteString(match)
 
 	// 取得where条件
-	where, err := getNeo4jWhere(tenantId, "r", rSQL)
+	where, err := GetNeo4jWhere(tenantId, "r", rSQL)
 	if err != nil {
 		return nil, err
 	}
@@ -324,7 +359,7 @@ func (c *relationCypher[T]) FindAll(ctx context.Context, tenantId string) (Cyphe
 }
 
 func (c *relationCypher[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery) (CypherResult, error) {
-	where, err := getNeo4jWhere(qry.GetTenantId(), "r", qry.GetFilter())
+	where, err := GetNeo4jWhere(qry.GetTenantId(), "r", qry.GetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -346,7 +381,7 @@ func (c *relationCypher[T]) FindPaging(ctx context.Context, qry store.FindPaging
 }
 
 func (c *relationCypher[T]) FindByRSQL(ctx context.Context, tenantId string, filter string) (CypherResult, error) {
-	where, err := getNeo4jWhere(tenantId, "r", filter)
+	where, err := GetNeo4jWhere(tenantId, "r", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +392,7 @@ func (c *relationCypher[T]) FindByRSQL(ctx context.Context, tenantId string, fil
 }
 
 func (c *relationCypher[T]) Count(ctx context.Context, tenantId, filter string) (CypherResult, error) {
-	where, err := getNeo4jWhere(tenantId, "r", filter)
+	where, err := GetNeo4jWhere(tenantId, "r", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +404,7 @@ func (c *relationCypher[T]) Count(ctx context.Context, tenantId, filter string) 
 }
 
 func (c *relationCypher[T]) GetRSQL(ctx context.Context, tenantId, filter string) (CypherResult, error) {
-	where, err := getNeo4jWhere(tenantId, "r", filter)
+	where, err := GetNeo4jWhere(tenantId, "r", filter)
 	if err != nil {
 		return nil, err
 	}
@@ -411,7 +446,7 @@ func getSqlInStr(ids []string) string {
 	return strIds
 }
 
-func (c *relationCypher[T]) getUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, setFields ...string) (string, map[string]any, error) {
+func (c *relationCypher[T]) GetUpdatePropertiesByMap(ctx context.Context, mapData map[string]any, dataKey string, setFields ...string) (string, map[string]any, error) {
 	var properties string
 	isSetFields := len(setFields) > 0
 	var keyFields map[string]string
@@ -459,11 +494,11 @@ func (c *relationCypher[T]) newMap(ctx context.Context, data any, opts ...func(m
 	return v
 }
 
-func (c *relationCypher[T]) getUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error) {
+func (c *relationCypher[T]) GetUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error) {
 	mapData := c.newMap(ctx, data, func(m map[string]any) {
 		c.eb.SetUpdatedInfo(ctx, m)
 	})
-	return c.getUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
+	return c.GetUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
 }
 
 func (c *relationCypher[T]) getCreateProperties(ctx context.Context, data interface{}) (string, map[string]any, error) {

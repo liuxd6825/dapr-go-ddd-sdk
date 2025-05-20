@@ -1,6 +1,7 @@
 package store_neo4j
 
 import (
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 )
@@ -39,7 +40,19 @@ func NewNodeEntityBuilder[T any](sch *store.DBSchema) NodeEntityBuilder[T] {
 }
 
 func (r *nodeEntityBuilder[T]) GetLabels(entity T) []string {
-	return reflectutils.GetFieldStrings(entity, "labels")
+	var labels []string
+	fields := r.GetDBSchema().GetNodeLabelFields()
+	for _, field := range fields {
+		if field != nil && field.NodeLabel {
+			label := reflectutils.GetFieldString(entity, field.Name)
+			if field.NodeLabelFormat != "" {
+				labels = append(labels, fmt.Sprintf(field.NodeLabelFormat, label))
+			} else {
+				labels = append(labels, label)
+			}
+		}
+	}
+	return labels
 }
 
 func (r *relationEntityBuilder[T]) GetStartId(entity T) string {

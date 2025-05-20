@@ -44,6 +44,7 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 		field.RelType = f.RelType
 		field.RelEndId = f.RelEndId
 		field.RelStartId = f.RelStartId
+		field.NodeLabelFormat = f.NodeLabelFormat
 		field.NodeLabel = f.NodeLabel
 
 		dbSch.AddField(field)
