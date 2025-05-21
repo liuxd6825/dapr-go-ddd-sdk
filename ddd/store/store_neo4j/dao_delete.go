@@ -12,7 +12,7 @@ func (d *Dao[T]) DeleteLabelById(ctx context.Context, tenantId string, id string
 	if err != nil || cr == nil {
 		return err
 	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params())
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (d *Dao[T]) DeleteLabelByFilter(ctx context.Context, tenantId string, filte
 	if err != nil || cr == nil {
 		return err
 	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params())
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opt
 		if err != nil {
 			return err
 		}
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}
@@ -56,7 +56,7 @@ func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string,
 		if err != nil {
 			return err
 		}
-		_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		return err
 	}).Catch(func(err error) {
 		res.SetError(err)
@@ -71,7 +71,7 @@ func (d *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...store.O
 		if err != nil {
 			return err
 		}
-		_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		return err
 	}).Catch(func(err error) {
 		res.SetError(err)
@@ -84,7 +84,7 @@ func (d *Dao[T]) DeleteByFilter(ctx context.Context, tenantId string, filter str
 	if err != nil {
 		return err
 	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+	_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 	return err
 }
 
@@ -101,7 +101,7 @@ func (d *Dao[T]) DeleteByTenantId(ctx context.Context, tenantId string, opts ...
 	if err != nil {
 		return err
 	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+	_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 	return err
 }
 
@@ -119,7 +119,7 @@ func (d *Dao[T]) DeleteByRSQL(ctx context.Context, tenantId, rSQL string, opts .
 			return err
 		}
 		cypher := cr.Cypher()
-		nRes, err := d.doSet(ctx, tenantId, cypher, cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cypher, cr.Params(), opts...)
 		if err == nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}

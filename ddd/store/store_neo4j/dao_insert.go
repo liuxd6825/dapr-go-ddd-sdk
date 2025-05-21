@@ -17,7 +17,7 @@ func (d *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) (r
 		if err != nil {
 			return err
 		}
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}
@@ -62,7 +62,7 @@ func (d *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...store.Opt
 		}
 
 		tenantId := d.config.EntityBuilder.GetTenantId(entity)
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}
@@ -91,7 +91,7 @@ func (d *Dao[T]) Merge(ctx context.Context, entity T, fields map[string]string, 
 		}
 
 		tenantId := d.config.EntityBuilder.GetTenantId(entity)
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}

@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
@@ -17,6 +18,7 @@ type Cdc2Neo4jAPI struct {
 
 func NewCdc2Neo4jAPI(env *env.Env, rootPath string) *Cdc2Neo4jAPI {
 	ser := neo4jservice.NewNeo4jService()
+	ser.Init()
 	return &Cdc2Neo4jAPI{
 		env:      env,
 		rootPath: rootPath,
@@ -36,6 +38,7 @@ func (s *Cdc2Neo4jAPI) DataChange(ctx iris.Context) {
 		if err := ctx.ReadJSON(&record); err != nil {
 			return err
 		}
+		logs.InfoMsg(ctx, "record ", "opType=", record.OpType, "table=", record.Table)
 
 		// 根据操作类型处理数据
 		switch record.OpType {

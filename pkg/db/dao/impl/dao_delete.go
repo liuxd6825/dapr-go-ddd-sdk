@@ -7,6 +7,9 @@ import (
 
 func (d *DaoBase[T]) Delete(ctx context.Context, entity T, opts ...*idao2.CallOptions) *idao2.Result {
 	id := d.store.GetId(entity)
+	if id == "" {
+		panic("GetId() return is nil")
+	}
 	return d.DeleteById(ctx, id, opts...)
 }
 

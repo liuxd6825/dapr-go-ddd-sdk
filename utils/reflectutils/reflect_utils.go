@@ -334,6 +334,7 @@ func GetFieldString(data any, fieldName string) string {
 		return fmt.Sprintf("%v", v)
 	}
 
+	fieldName = stringutils.FirstUpper(fieldName)
 	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)

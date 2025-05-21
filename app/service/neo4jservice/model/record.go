@@ -29,9 +29,21 @@ func (r *Record) IsRelation() bool {
 // IsRename 是否数据更新
 func (r *Record) IsRename() bool {
 	if r.OpType == "u" {
-		newName, _ := maputils.GetString(r.After, "relationType", "")
-		oldName, _ := maputils.GetString(r.Before, "relationType", "")
+		newName, _ := maputils.GetString(r.After, "name", "")
+		oldName, _ := maputils.GetString(r.Before, "name", "")
 		if newName != oldName {
+			return true
+		}
+	}
+	return false
+}
+
+// IsChangedRelType 是否数据更新
+func (r *Record) IsChangedRelType() bool {
+	if r.OpType == "u" {
+		newType, _ := maputils.GetString(r.After, "relation_type", "")
+		oldType, _ := maputils.GetString(r.Before, "relation_type", "")
+		if newType != oldType {
 			return true
 		}
 	}
@@ -63,4 +75,14 @@ func (r *Record) newMap(vals map[string]any) map[string]any {
 		mapData[propName] = value
 	}
 	return mapData
+}
+
+func (r *Record) SetAfterValue(key string, val any) *Record {
+	r.After[key] = val
+	return r
+}
+
+func (r *Record) SetBeforeValue(key string, val any) *Record {
+	r.Before[key] = val
+	return r
 }

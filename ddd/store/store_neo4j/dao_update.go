@@ -31,7 +31,7 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, rSQL string, entity
 		if err != nil {
 			return err
 		}
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}
@@ -61,7 +61,7 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *s
 			return err
 		}
 
-		nRes, err := d.doSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params(), opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}
@@ -85,7 +85,7 @@ func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, list []T, opts
 		}
 		cypher := cr.Cypher()
 		params := cr.Params()
-		nRes, err := d.doSet(ctx, tenantId, cypher, params, opts...)
+		nRes, err := d.DoSet(ctx, tenantId, cypher, params, opts...)
 		if nRes != nil {
 			res.SetRowsAffected(nRes.GetRowsAffected())
 		}
@@ -104,7 +104,7 @@ func (d *Dao[T]) UpdateLabelById(ctx context.Context, tenantId string, id string
 	if err != nil {
 		return err
 	}
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params())
 	return err
 }
 
@@ -117,7 +117,7 @@ func (d *Dao[T]) UpdateLabelByFilter(ctx context.Context, tenantId string, filte
 		return nil
 	}
 
-	_, err = d.doSet(ctx, tenantId, cr.Cypher(), cr.Params())
+	_, err = d.DoSet(ctx, tenantId, cr.Cypher(), cr.Params())
 	if err != nil {
 		return err
 	}

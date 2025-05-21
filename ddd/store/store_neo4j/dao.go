@@ -126,7 +126,7 @@ func (d *Dao[T]) newSetManyResult(ctx context.Context, result *Neo4jResult[T], e
 	return store.NewSetResultEmpty[T]()
 }
 
-func (d *Dao[T]) doSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...store.Options) (*Neo4jResult[T], error) {
+func (d *Dao[T]) DoSet(ctx context.Context, tenantId string, cypher string, params map[string]interface{}, opts ...store.Options) (*Neo4jResult[T], error) {
 	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return nil, err
 	}

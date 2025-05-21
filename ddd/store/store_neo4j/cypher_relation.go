@@ -501,7 +501,7 @@ func (c *relationCypher[T]) GetUpdateProperties(ctx context.Context, data any, d
 	return c.GetUpdatePropertiesByMap(ctx, mapData, dataKey, setFields...)
 }
 
-func (c *relationCypher[T]) getCreateProperties(ctx context.Context, data interface{}) (string, map[string]any, error) {
+func (c *relationCypher[T]) GetCreateProperties(ctx context.Context, data interface{}) (string, map[string]any, error) {
 	mapData := c.newMap(ctx, data, func(m map[string]any) {
 		c.eb.SetCreatedInfo(ctx, data)
 	})
@@ -526,7 +526,7 @@ func (c *relationCypher[T]) getCreateProperties(ctx context.Context, data interf
 	return res, mapData, nil
 }
 
-func (c *relationCypher[T]) getCreateMatchProperties(ctx context.Context, data any, asName string) (string, map[string]any, error) {
+func (c *relationCypher[T]) GetCreateMatchProperties(ctx context.Context, data any, asName string) (string, map[string]any, error) {
 	mapData := c.newCreateMap(ctx, data)
 
 	var properties string

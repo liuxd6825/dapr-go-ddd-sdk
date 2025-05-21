@@ -42,7 +42,7 @@ func (c *nodeCypher[T]) NewCypher() Cypher[T] {
 }
 
 func (c *nodeCypher[T]) Insert(ctx context.Context, tenantId string, data T) (CypherResult, error) {
-	props, dataMap, err := c.getCreateProperties(ctx, data)
+	props, dataMap, err := c.GetCreateProperties(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (c *nodeCypher[T]) InsertMany(ctx context.Context, tenantId string, list []
 
 	item := vList.Index(0).Interface()
 	node := any(item).(T)
-	props, _, err := c.getCreateMatchProperties(ctx, node, "row")
+	props, _, err := c.GetCreateMatchProperties(ctx, node, "row")
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +429,7 @@ func (c *nodeCypher[T]) getLabels(labels ...string) string {
 	return strings.ToLower(s)
 }
 
-func (c *nodeCypher[T]) getCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
+func (c *nodeCypher[T]) GetCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {
 	mapData := c.NewCreateMap(ctx, data)
 
 	var properties string
@@ -447,7 +447,7 @@ func (c *nodeCypher[T]) getCreateProperties(ctx context.Context, data any) (stri
 	return properties, mapData, nil
 }
 
-func (c *nodeCypher[T]) getCreateMatchProperties(ctx context.Context, data any, asName string) (string, map[string]any, error) {
+func (c *nodeCypher[T]) GetCreateMatchProperties(ctx context.Context, data any, asName string) (string, map[string]any, error) {
 	mapData := c.NewCreateMap(ctx, data)
 
 	var properties string

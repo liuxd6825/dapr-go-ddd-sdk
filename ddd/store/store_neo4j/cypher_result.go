@@ -2,6 +2,7 @@ package store_neo4j
 
 type CypherResult interface {
 	Cypher() string
+	SetCypher(val string)
 	GetCountCypher() string
 	Params() map[string]any
 	ResultKeys() []string
@@ -40,6 +41,10 @@ func NewCypherBuilderResult(cypher string, params map[string]any, resultKey []st
 
 func (c *cypherBuilderResult) Cypher() string {
 	return c.cypher
+}
+
+func (c *cypherBuilderResult) SetCypher(val string) {
+	c.cypher = val
 }
 
 func (c *cypherBuilderResult) GetCountCypher() string {

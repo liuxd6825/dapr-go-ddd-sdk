@@ -44,4 +44,5 @@ type Cypher[T any] interface {
 
 	GetLabels(ctx context.Context, entity T, labels ...string) string
 	GetUpdateProperties(ctx context.Context, data any, dataKey string, setFields ...string) (string, map[string]any, error)
+	GetCreateProperties(ctx context.Context, data interface{}) (string, map[string]any, error)
 }
