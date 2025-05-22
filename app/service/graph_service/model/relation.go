@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 )
 
-type BusRelation struct {
+type Relation struct {
 	Id        string `json:"id" gorm:"column:id"`
 	CaseId    string `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%"`
 	RelType   string `json:"relType" gorm:"column:rel_type;relType:true"`
@@ -16,7 +16,7 @@ type BusRelation struct {
 	TableName string `json:"tableName" gorm:"column:table_name"`
 }
 
-func NewBusRelation(dbSch *dbschema.DBSchema, data map[string]any) *BusRelation {
+func NewRelation(dbSch *dbschema.DBSchema, data map[string]any) *Relation {
 	if dbSch == nil {
 		panic(errors.New("dbSch is nil"))
 	}
@@ -26,7 +26,7 @@ func NewBusRelation(dbSch *dbschema.DBSchema, data map[string]any) *BusRelation 
 	relStartId, _ := getRelStartId(dbSch, data)
 	relEndId, _ := getRelEndId(dbSch, data)
 	relType, _ := getRelType(dbSch, data)
-	return &BusRelation{
+	return &Relation{
 		Id:        id,
 		CaseId:    caseId,
 		TenantId:  tenantId,

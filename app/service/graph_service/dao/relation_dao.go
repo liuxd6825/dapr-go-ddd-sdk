@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -15,12 +15,12 @@ import (
 )
 
 type BusRelationDao struct {
-	idao.Dao[*model.BusRelation]
-	nodeDao *BusNodeDao
+	idao.Dao[*model.Relation]
+	nodeDao *NodeDao
 	*Base
 }
 
-func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *BusNodeDao) *BusRelationDao {
+func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *NodeDao) *BusRelationDao {
 	relCfg := &dao.NewConfig{
 		DBKey:              "neo4j",
 		IsPubEvent:         dao.IsFalse(),
@@ -28,7 +28,7 @@ func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *BusNodeDao) *BusRelationD
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,
 	}
-	relDao := dao.NewDao[*model.BusRelation](relCfg)
+	relDao := dao.NewDao[*model.Relation](relCfg)
 	return &BusRelationDao{
 		Dao:     relDao,
 		nodeDao: nodeDao,
@@ -36,11 +36,11 @@ func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *BusNodeDao) *BusRelationD
 	}
 }
 
-func (d *BusRelationDao) CreateSameName(ctx context.Context, node *model.BusNode) {
+func (d *BusRelationDao) CreateSameName(ctx context.Context, node *model.Node) {
 
 }
 
-func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model.BusRelation {
+func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model.Relation {
 	nodes := d.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", name))
 	if len(nodes) == 0 {
 		return nil
@@ -49,10 +49,10 @@ func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model.Bus
 }
 
 // UpdateRecord 根据关系数据创建图节点与关系
-func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model.Record) *model.BusNode {
+func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model.Record) *model.Node {
 	after := record.AfterMap()
-	node := model.NewBusNode(d.DBSchema.TableName, after)
-	rel := model.NewBusRelation(d.DBSchema, after)
+	node := model.NewNode(d.DBSchema.TableName, after)
+	rel := model.NewRelation(d.DBSchema, after)
 	nodeName, _ := maputils.GetString(record.BeforeMap(), "name", "")
 	nodeStore := d.nodeDao.GetStore()
 	relStore := d.GetStore()
@@ -99,7 +99,7 @@ func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model.Record)
 	storeDao := d.GetStore()
 	after := record.AfterMap()
 
-	rel := model.NewBusRelation(d.DBSchema, after)
+	rel := model.NewRelation(d.DBSchema, after)
 	name, _ := maputils.GetString(after, "name", "")
 	labels := fmt.Sprintf(":case_%s:tentant_%s:master", rel.CaseId, rel.TenantId)
 
@@ -126,9 +126,9 @@ func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model.Record)
 	}
 }
 
-func (d *BusRelationDao) GetStore() *store_neo4j.Dao[*model.BusRelation] {
+func (d *BusRelationDao) GetStore() *store_neo4j.Dao[*model.Relation] {
 	iStore := d.Dao.GetStore().(any)
-	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.BusRelation])
+	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Relation])
 	if !ok {
 		panic("neo4j store does not implement neo4j.Dao")
 	}

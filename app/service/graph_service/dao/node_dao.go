@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -16,8 +16,8 @@ import (
 	"strings"
 )
 
-type BusNodeDao struct {
-	idao.Dao[*model.BusNode]
+type NodeDao struct {
+	idao.Dao[*model.Node]
 	*Base
 	labels []string
 }
@@ -26,7 +26,7 @@ type IStore[T any] interface {
 	GetStore() store.IStore[T]
 }
 
-func NewBusNodeDao(labels []string, dbSch *store.DBSchema) *BusNodeDao {
+func NewNodeDao(labels []string, dbSch *store.DBSchema) *NodeDao {
 	nodeCfg := &dao.NewConfig{
 		DBKey:              "neo4j",
 		IsPubEvent:         dao.IsFalse(),
@@ -35,15 +35,15 @@ func NewBusNodeDao(labels []string, dbSch *store.DBSchema) *BusNodeDao {
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,
 	}
-	newDao := dao.NewDao[*model.BusNode](nodeCfg)
-	return &BusNodeDao{
+	newDao := dao.NewDao[*model.Node](nodeCfg)
+	return &NodeDao{
 		Dao:    newDao,
 		labels: labels,
 		Base:   &Base{DBSchema: dbSch},
 	}
 }
 
-func (d *BusNodeDao) Create(ctx context.Context, node *model.BusNode) {
+func (d *NodeDao) CreateMain(ctx context.Context, node *model.Node) {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 	props, dataMap, err := c.GetCreateProperties(ctx, node)
@@ -65,7 +65,7 @@ func (d *BusNodeDao) Create(ctx context.Context, node *model.BusNode) {
 }
 
 // CreateRelNode 根据关系数据创建
-func (d *BusNodeDao) CreateRelNode(ctx context.Context, rel *model.BusRelation, relNode *model.BusNode) *model.BusNode {
+func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model.Relation, relNode *model.Node) *model.Node {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 	nLabels := storeDao.GetLabels(ctx, relNode)
@@ -111,7 +111,7 @@ func (d *BusNodeDao) CreateRelNode(ctx context.Context, rel *model.BusRelation, 
 	return nil
 }
 
-func (d *BusNodeDao) Update(ctx context.Context, node *model.BusNode) {
+func (d *NodeDao) UpdateMain(ctx context.Context, node *model.Node) {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 
@@ -133,35 +133,8 @@ func (d *BusNodeDao) Update(ctx context.Context, node *model.BusNode) {
 	}
 }
 
-func (d *BusNodeDao) CreateByName(ctx context.Context, node *model.BusNode, name string) {
-	storeDao := d.GetStore()
-	c := storeDao.Cypher
-	props, dataMap, err := c.GetUpdateProperties(ctx, node, "n")
-	if err != nil {
-		panic(err)
-	}
-
-	nodeLabels := c.GetLabels(ctx, node)
-
-	//id := storeDao.GetId(node)
-	cypher := fmt.Sprintf("MERGE (n%s{name:'%v'}) ON CREATE SET %v ON MATCH SET %v RETURN count(n) as rows ", nodeLabels, name, props, props)
-	logs.Debug(ctx, logs.Fields{"cypher": cypher})
-	_, err = storeDao.Write(ctx, cypher, dataMap)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (d *BusNodeDao) FindByName(ctx context.Context, name string) *model.BusNode {
-	nodes := d.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", name))
-	if len(nodes) == 0 {
-		return nil
-	}
-	return nodes[0]
-}
-
 // UpdateRelNode 根据关系数据创建图节点与关系
-func (d *BusNodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
+func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
 	// 是否改名
 	isRename := record.IsRename()
 	isChangedRelType := record.IsChangedRelType()
@@ -170,8 +143,8 @@ func (d *BusNodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
 	}
 	before := record.BeforeMap()
 	after := record.AfterMap()
-	node := model.NewBusNode(d.DBSchema.TableName, after)
-	rel := model.NewBusRelation(d.DBSchema, after)
+	node := model.NewNode(d.DBSchema.TableName, after)
+	rel := model.NewRelation(d.DBSchema, after)
 	oldName, _ := maputils.GetString(before, "name", "")
 
 	nodeStore := d.GetStore()
@@ -225,29 +198,18 @@ func (d *BusNodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
 	return
 }
 
-func (d *BusNodeDao) DeleteRelNode(ctx context.Context, record *model.Record) {
+func (d *NodeDao) DeleteMain(ctx context.Context, record *model.Record) {
 	nodeStore := d.GetStore()
 	after := record.AfterMap()
 
-	rel := model.NewBusRelation(d.DBSchema, after)
-	name, _ := maputils.GetString(after, "name", "")
-	labels := fmt.Sprintf(":case_%s:tentant_%s:master", rel.CaseId, rel.TenantId)
+	node := model.NewNode(record.Table, after)
+	labels := d.getLabels(node.CaseId, node.TenantId)
 
-	cypher := fmt.Sprintf(`MATCH (n%s)-[r:%s]->(m%s)
-WHERE r.id = $id AND (n.name = $name OR m.name = $name)
-WITH n, m, r, 
-     CASE 
-         WHEN n.name = $name THEN n
-         WHEN m.name = $name THEN m
-     END AS nodeToDelete
-MATCH (nodeToDelete)-[rel]->()  
-WITH nodeToDelete, r, COUNT(rel) AS relCount
-WHERE relCount = 1  
-DELETE nodeToDelete, r`, labels, rel.RelType, labels)
+	cypher := fmt.Sprintf(`
+	MATCH (n%s{id:$id})-[r]->(m%s) DETACH DELETE n,r,m  `, labels, labels)
 
 	params := map[string]any{
-		"name": name,
-		"id":   rel.Id,
+		"id": node.Id,
 	}
 
 	_, err := nodeStore.Write(ctx, cypher, params)
@@ -256,33 +218,31 @@ DELETE nodeToDelete, r`, labels, rel.RelType, labels)
 	}
 }
 
-func (d *BusNodeDao) FindNodeAndRelationsByName(ctx context.Context, name string, labels ...string) *model.BusNode {
-	storeDao := d.GetStore()
-	nodeLabel := storeDao.GetLabels(ctx, nil, labels...)
+func (d *NodeDao) DeleteRelNode(ctx context.Context, record *model.Record) {
+	nodeStore := d.GetStore()
+	after := record.AfterMap()
 
-	cypher := fmt.Sprintf("MATCH (n%s{name:'%s'}) OPTIONAL MATCH (n)-[r]->() RETURN n, count(r) AS rel_count", nodeLabel, name)
-	result, err := storeDao.Query(ctx, cypher, nil)
+	rel := model.NewRelation(d.DBSchema, after)
+	labels := d.getLabels(rel.CaseId, rel.TenantId)
+
+	cypher := fmt.Sprintf(`
+	MATCH (n%s)-[r{id:'%s'}]->(m%s) DETACH DELETE r,m`, labels, rel.Id, labels)
+
+	_, err := nodeStore.Write(ctx, cypher, nil)
 	if err != nil {
 		panic(err)
 	}
-	dbSch := d.Dao.GetSchema()
-	var n []map[string]any
-	err = result.GetList(ctx, "n", &n, dbSch)
-	if err != nil {
-		panic(err)
-	}
-
-	//relCount := result.GetIntList("rel_count")
-	for _, vMap := range n {
-		node := d.NewNode(vMap)
-		//node.RelCount = relCount[i]
-		return node
-	}
-
-	return nil
 }
 
-func (d *BusNodeDao) ClearAll(ctx context.Context) {
+func (d *NodeDao) getLabels(caseId, tenantId string, label ...string) string {
+	labels := fmt.Sprintf(":case_%s:tenant_%s:master", caseId, tenantId)
+	for _, l := range label {
+		labels += fmt.Sprintf(":%s", l)
+	}
+	return labels
+}
+
+func (d *NodeDao) ClearAll(ctx context.Context) {
 	nodeStore := d.GetStore()
 	cypher := fmt.Sprintf(`MATCH (n) DETACH DELETE n`)
 	params := map[string]any{}
@@ -292,8 +252,8 @@ func (d *BusNodeDao) ClearAll(ctx context.Context) {
 	}
 }
 
-func (d *BusNodeDao) NewNode(data map[string]any) *model.BusNode {
-	node := &model.BusNode{
+func (d *NodeDao) NewNode(data map[string]any) *model.Node {
+	node := &model.Node{
 		Id:     d.GetString(data, "id"),
 		CaseId: d.GetString(data, "case_id"),
 		Name:   d.GetString(data, "name"),
@@ -304,24 +264,24 @@ func (d *BusNodeDao) NewNode(data map[string]any) *model.BusNode {
 	return node
 }
 
-func (d *BusNodeDao) GetString(vMap map[string]any, dbName string) string {
+func (d *NodeDao) GetString(vMap map[string]any, dbName string) string {
 	val, _ := maputils.GetString(vMap, dbName, "")
 	return val
 }
 
-func (d *BusNodeDao) GetInt64(vMap map[string]any, dbName string) int64 {
+func (d *NodeDao) GetInt64(vMap map[string]any, dbName string) int64 {
 	val, _ := maputils.GetInt64(vMap, dbName, -1)
 	return val
 }
 
-func (d *BusNodeDao) getDriver() neo4j.DriverWithContext {
+func (d *NodeDao) getDriver() neo4j.DriverWithContext {
 	driver := d.Dao.GetConfig().DB.(neo4j.DriverWithContext)
 	return driver
 }
 
-func (d *BusNodeDao) GetStore() *store_neo4j.Dao[*model.BusNode] {
+func (d *NodeDao) GetStore() *store_neo4j.Dao[*model.Node] {
 	iStore := d.Dao.GetStore().(any)
-	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.BusNode])
+	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Node])
 	if !ok {
 		panic("neo4j store does not implement neo4j.Dao")
 	}

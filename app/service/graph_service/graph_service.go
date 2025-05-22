@@ -1,9 +1,9 @@
-package neo4jservice
+package graph_service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -17,20 +17,20 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
-type Neo4jService struct {
-	nodeDaoMap *types.CMap[*dao.BusNodeDao]
+type GraphService struct {
+	nodeDaoMap *types.CMap[*dao.NodeDao]
 	relDaoMap  *types.CMap[*dao.BusRelationDao]
 }
 
-func NewNeo4jService() *Neo4jService {
-	ser := &Neo4jService{
-		nodeDaoMap: types.NewCMap[*dao.BusNodeDao](),
+func NewGraphService() *GraphService {
+	ser := &GraphService{
+		nodeDaoMap: types.NewCMap[*dao.NodeDao](),
 		relDaoMap:  types.NewCMap[*dao.BusRelationDao](),
 	}
 	return ser
 }
 
-func (s *Neo4jService) Create(record *model.Record) {
+func (s *GraphService) Create(record *model.Record) {
 	ctx := s.newCtx(record)
 	gp.Try(func() error {
 		tableName := record.Table
@@ -40,16 +40,16 @@ func (s *Neo4jService) Create(record *model.Record) {
 		}
 
 		afterData := record.AfterMap()
-		node := model.NewBusNode(tableName, afterData)
+		node := model.NewNode(tableName, afterData)
 		if record.IsMaster() {
-			nodeDao.Create(ctx, node)
+			nodeDao.CreateMain(ctx, node)
 		} else if record.IsRelation() {
 			// 是关系数据
 			relDao := s.getRelDao(record)
 			if relDao == nil {
 				return nil
 			}
-			rel := model.NewBusRelation(relDao.DBSchema, afterData)
+			rel := model.NewRelation(relDao.DBSchema, afterData)
 			nodeDao.CreateRelNode(ctx, rel, node)
 		}
 		return nil
@@ -58,24 +58,24 @@ func (s *Neo4jService) Create(record *model.Record) {
 	})
 }
 
-func (s *Neo4jService) Update(record *model.Record) {
+func (s *GraphService) Update(record *model.Record) {
 	nodeDao := s.getNodeDao(record.Table)
 	if nodeDao == nil {
 		return
 	}
 	ctx := s.newCtx(record)
 	afterMap := record.AfterMap()
-	afterNode := model.NewBusNode(record.Table, afterMap)
+	afterNode := model.NewNode(record.Table, afterMap)
 	if record.IsMaster() {
 		// 是主数据表
-		nodeDao.Update(ctx, afterNode)
+		nodeDao.UpdateMain(ctx, afterNode)
 	} else {
 		// 更新关系与节点
 		nodeDao.UpdateRelNode(ctx, record)
 	}
 }
 
-func (s *Neo4jService) Delete(record *model.Record) {
+func (s *GraphService) Delete(record *model.Record) {
 	tableName := record.Table
 	nodeDao := s.getNodeDao(tableName)
 	if nodeDao == nil {
@@ -83,14 +83,13 @@ func (s *Neo4jService) Delete(record *model.Record) {
 	}
 	ctx := s.newCtx(record)
 	if record.IsMaster() {
-		node := model.NewBusNode(tableName, record.AfterMap())
-		nodeDao.Delete(ctx, node)
+		nodeDao.DeleteMain(ctx, record)
 	} else {
 		nodeDao.DeleteRelNode(ctx, record)
 	}
 }
 
-func (s *Neo4jService) Init() {
+func (s *GraphService) Init() {
 	srcFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "src")
 	if err != nil {
 		panic("src fs not exist")
@@ -115,7 +114,7 @@ func (s *Neo4jService) Init() {
 	}
 }
 
-func (s *Neo4jService) newCtx(record *model.Record) context.Context {
+func (s *GraphService) newCtx(record *model.Record) context.Context {
 	parent := context.Background()
 	tenantId, _ := maputils.GetString(record.After, "tenant_id", "")
 	userName, _ := maputils.GetString(record.After, "updater_name", "")
@@ -129,7 +128,7 @@ func (s *Neo4jService) newCtx(record *model.Record) context.Context {
 	return ctx
 }
 
-func (s *Neo4jService) getNodeDao(tableName string) *dao.BusNodeDao {
+func (s *GraphService) getNodeDao(tableName string) *dao.NodeDao {
 	get, ok := s.nodeDaoMap.Get(tableName)
 	if !ok {
 		return nil
@@ -137,7 +136,7 @@ func (s *Neo4jService) getNodeDao(tableName string) *dao.BusNodeDao {
 	return get
 }
 
-func (s *Neo4jService) getRelDao(record *model.Record) *dao.BusRelationDao {
+func (s *GraphService) getRelDao(record *model.Record) *dao.BusRelationDao {
 	get, ok := s.relDaoMap.Get(record.Table)
 	if !ok {
 		return nil
@@ -145,7 +144,7 @@ func (s *Neo4jService) getRelDao(record *model.Record) *dao.BusRelationDao {
 	return get
 }
 
-func (s *Neo4jService) AddDao(sch *jsonschema.Schema) {
+func (s *GraphService) AddDao(sch *jsonschema.Schema) {
 	meta := schema.GetMetaExtension(sch)
 	tableName := meta.DBTable.Name
 
@@ -172,11 +171,11 @@ func (s *Neo4jService) AddDao(sch *jsonschema.Schema) {
 	nodeLabelFields := dbSch.GetNodeLabelFields()
 	println("relStartField", relStartField, "relEndField", relEndField, "relTypeField", relTypeField, "nodeLabelFields", nodeLabelFields)
 
-	var nodeDao *dao.BusNodeDao
+	var nodeDao *dao.NodeDao
 	if isNode := idao.IsGraphType(graphTypes, idao.GraphType_Node); isNode {
 		labels, _ := maputils.GetStrings(cfg, "labels", []string{tableName})
 		labels = append(labels, "master")
-		nodeDao = dao.NewBusNodeDao(labels, dbSch)
+		nodeDao = dao.NewNodeDao(labels, dbSch)
 		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
 
@@ -186,22 +185,11 @@ func (s *Neo4jService) AddDao(sch *jsonschema.Schema) {
 	}
 }
 
-func (s *Neo4jService) ClearAll(ctx context.Context) {
-	var nodeDao *dao.BusNodeDao
+func (s *GraphService) clearAll(ctx context.Context) {
+	var nodeDao *dao.NodeDao
 	for _, d := range s.nodeDaoMap.Items() {
 		nodeDao = d
 		break
 	}
 	nodeDao.ClearAll(ctx)
-}
-
-func newEntity(dbSch *dbschema.DBSchema, src map[string]any) map[string]any {
-	target := map[string]any{}
-	for _, field := range dbSch.Fields {
-		v, ok := src[field.DBName]
-		if ok {
-			target[field.Name] = v
-		}
-	}
-	return target
 }

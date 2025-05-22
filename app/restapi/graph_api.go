@@ -3,8 +3,8 @@ package restapi
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -13,11 +13,11 @@ import (
 type Cdc2Neo4jAPI struct {
 	env      *env.Env
 	rootPath string
-	service  *neo4jservice.Neo4jService
+	service  *graph_service.GraphService
 }
 
 func NewCdc2Neo4jAPI(env *env.Env, rootPath string) *Cdc2Neo4jAPI {
-	ser := neo4jservice.NewNeo4jService()
+	ser := graph_service.NewGraphService()
 	ser.Init()
 	return &Cdc2Neo4jAPI{
 		env:      env,

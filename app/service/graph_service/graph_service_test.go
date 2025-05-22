@@ -1,8 +1,8 @@
-package neo4jservice
+package graph_service
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/neo4jservice/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
@@ -14,28 +14,14 @@ var records = &Records{}
 const tenantId = "test"
 const caseId = "1001"
 
-func Test_FindNodeAndRelationsByName(t *testing.T) {
-	ctx := xtest.NewContext()
-	env.SetEnv(xtest.NewEnvConfig_Neo4j())
-	nodeDao := dao.NewBusNodeDao([]string{"company_test"}, nil)
-	nodeDao.GetConfig().Env = xtest.NewEnvConfig_Neo4j()
-
-	gp.Try(func() error {
-		nodeDao.FindNodeAndRelationsByName(ctx, "张公公", "company_test")
-		return nil
-	}).Catch(func(err error) {
-		t.Error(err)
-	})
-}
-
 func Test_DeleteById(t *testing.T) {
 	ctx := xtest.NewContext()
 	env.SetEnv(xtest.NewEnvConfig_Neo4j())
-	nodeDao := dao.NewBusNodeDao([]string{"company_test"}, nil)
+	nodeDao := dao.NewNodeDao([]string{"company_test"}, nil)
 	nodeDao.GetConfig().Env = xtest.NewEnvConfig_Neo4j()
 
 	gp.Try(func() error {
-		node := &model.BusNode{
+		node := &model.Node{
 			Id:       "XELWOSgMxzRASZBTGKDcSlHVGS",
 			CaseId:   caseId,
 			Name:     "星辰科技有限公司",
@@ -55,7 +41,7 @@ func Test_Case1(t *testing.T) {
 
 		ctx := xtest.NewContext()
 		service := newService()
-		service.ClearAll(ctx)
+		service.clearAll(ctx)
 
 		// 创建节点
 		a := records.GetCreateCompany("a", "a")
@@ -92,7 +78,7 @@ func Test_Case1(t *testing.T) {
 
 }
 
-func newService() *Neo4jService {
+func newService() *GraphService {
 	env.SetEnv(xtest.NewEnvConfig_Neo4j())
 	companySch := xtest.GetCompanySchema()
 	companyCompanySch := xtest.GetCompanyCompanySchema()
