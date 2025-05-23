@@ -68,21 +68,20 @@ func (d *NodeDao) CreateMain(ctx context.Context, node *model.Node) {
 func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model.Relation, relNode *model.Node) *model.Node {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
-	nLabels := storeDao.GetLabels(ctx, relNode)
 	relType := rel.RelType
-
+	nLabels := storeDao.GetLabels(ctx, relNode)
+	mLabels := d.getLabels(rel.CaseId, rel.TenantId)
 	nProps, data, err := c.GetCreateProperties(ctx, relNode)
 	if err != nil {
 		panic(err)
 	}
 
 	cypher := fmt.Sprintf(`
-	CREATE (newNode%s{%s})  
-	WITH newNode
-	MATCH (mNode%s{id:$relStartId})
-	CREATE (mNode)-[r:%s]->(newNode) 
-	SET r.id=$relId, r.relType=$relType, r.case_id=$caseId, r.tenant_id=$tenantId;
-`, nLabels, nProps, nLabels, relType)
+	CREATE (n%s{%s})   WITH n
+	MATCH (m%s{id:$relStartId}) WITH m, n
+	CREATE (m)-[r:%s]->(n) 
+	SET r.id=$relId, r.relType=$relType, r.case_id=$caseId, r.tenant_id=$tenantId
+    `, nLabels, nProps, mLabels, relType)
 
 	data["relId"] = rel.Id
 	data["relType"] = rel.RelType
