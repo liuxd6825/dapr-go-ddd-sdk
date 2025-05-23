@@ -1,8 +1,8 @@
-package graph_service
+package graph
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
@@ -78,7 +78,7 @@ func Test_Case1(t *testing.T) {
 
 }
 
-func newService() *GraphService {
+func newService() *CdcService {
 	env.SetEnv(xtest.NewEnvConfig_Neo4j())
 	companySch := xtest.GetCompanySchema()
 	companyCompanySch := xtest.GetCompanyCompanySchema()

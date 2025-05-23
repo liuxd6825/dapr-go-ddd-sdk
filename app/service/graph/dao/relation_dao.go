@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"

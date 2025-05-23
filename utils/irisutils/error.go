@@ -8,3 +8,8 @@ func SetError(ctx iris.Context, err error) {
 		ctx.SetErr(err)
 	}
 }
+
+func SetData(ctx iris.Context, data any) error {
+	ctx.StatusCode(iris.StatusOK)
+	return ctx.JSON(data)
+}

@@ -1,9 +1,9 @@
-package graph_service
+package graph
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -17,20 +17,20 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
-type GraphService struct {
+type CdcService struct {
 	nodeDaoMap *types.CMap[*dao.NodeDao]
 	relDaoMap  *types.CMap[*dao.BusRelationDao]
 }
 
-func NewGraphService() *GraphService {
-	ser := &GraphService{
+func NewCdcService() *CdcService {
+	ser := &CdcService{
 		nodeDaoMap: types.NewCMap[*dao.NodeDao](),
 		relDaoMap:  types.NewCMap[*dao.BusRelationDao](),
 	}
 	return ser
 }
 
-func (s *GraphService) Create(record *model.Record) {
+func (s *CdcService) Create(record *model.Record) {
 	ctx := s.newCtx(record)
 	gp.Try(func() error {
 		tableName := record.Table
@@ -58,7 +58,7 @@ func (s *GraphService) Create(record *model.Record) {
 	})
 }
 
-func (s *GraphService) Update(record *model.Record) {
+func (s *CdcService) Update(record *model.Record) {
 	nodeDao := s.getNodeDao(record.Table)
 	if nodeDao == nil {
 		return
@@ -75,7 +75,7 @@ func (s *GraphService) Update(record *model.Record) {
 	}
 }
 
-func (s *GraphService) Delete(record *model.Record) {
+func (s *CdcService) Delete(record *model.Record) {
 	tableName := record.Table
 	nodeDao := s.getNodeDao(tableName)
 	if nodeDao == nil {
@@ -89,7 +89,7 @@ func (s *GraphService) Delete(record *model.Record) {
 	}
 }
 
-func (s *GraphService) Init() {
+func (s *CdcService) Init() *CdcService {
 	srcFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "src")
 	if err != nil {
 		panic("src fs not exist")
@@ -112,9 +112,10 @@ func (s *GraphService) Init() {
 		}
 		s.AddDao(sch)
 	}
+	return s
 }
 
-func (s *GraphService) newCtx(record *model.Record) context.Context {
+func (s *CdcService) newCtx(record *model.Record) context.Context {
 	parent := context.Background()
 	tenantId, _ := maputils.GetString(record.After, "tenant_id", "")
 	userName, _ := maputils.GetString(record.After, "updater_name", "")
@@ -128,7 +129,7 @@ func (s *GraphService) newCtx(record *model.Record) context.Context {
 	return ctx
 }
 
-func (s *GraphService) getNodeDao(tableName string) *dao.NodeDao {
+func (s *CdcService) getNodeDao(tableName string) *dao.NodeDao {
 	get, ok := s.nodeDaoMap.Get(tableName)
 	if !ok {
 		return nil
@@ -136,7 +137,7 @@ func (s *GraphService) getNodeDao(tableName string) *dao.NodeDao {
 	return get
 }
 
-func (s *GraphService) getRelDao(record *model.Record) *dao.BusRelationDao {
+func (s *CdcService) getRelDao(record *model.Record) *dao.BusRelationDao {
 	get, ok := s.relDaoMap.Get(record.Table)
 	if !ok {
 		return nil
@@ -144,7 +145,7 @@ func (s *GraphService) getRelDao(record *model.Record) *dao.BusRelationDao {
 	return get
 }
 
-func (s *GraphService) AddDao(sch *jsonschema.Schema) {
+func (s *CdcService) AddDao(sch *jsonschema.Schema) {
 	meta := schema.GetMetaExtension(sch)
 	tableName := meta.DBTable.Name
 
@@ -185,7 +186,7 @@ func (s *GraphService) AddDao(sch *jsonschema.Schema) {
 	}
 }
 
-func (s *GraphService) clearAll(ctx context.Context) {
+func (s *CdcService) clearAll(ctx context.Context) {
 	var nodeDao *dao.NodeDao
 	for _, d := range s.nodeDaoMap.Items() {
 		nodeDao = d

@@ -3,34 +3,38 @@ package restapi
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph_service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/irisutils"
 )
 
-type Cdc2Neo4jAPI struct {
-	env      *env.Env
-	rootPath string
-	service  *graph_service.GraphService
+type GraphAPI struct {
+	env          *env.Env
+	rootPath     string
+	cdcService   *graph.CdcService
+	queryService *graph.QueryService
 }
 
-func NewCdc2Neo4jAPI(env *env.Env, rootPath string) *Cdc2Neo4jAPI {
-	ser := graph_service.NewGraphService()
-	ser.Init()
-	return &Cdc2Neo4jAPI{
-		env:      env,
-		rootPath: rootPath,
-		service:  ser,
+func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
+	cdcService := graph.NewCdcService().Init()
+	queryService := graph.NewQueryService()
+	return &GraphAPI{
+		env:          env,
+		rootPath:     rootPath,
+		cdcService:   cdcService,
+		queryService: queryService,
 	}
 }
 
-func (s *Cdc2Neo4jAPI) BeforeActivation(b mvc.BeforeActivation) {
+func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle("POST", "/cdc-mysql", "DataChange")
+	b.Handle("POST", "/graph", "Query")
 }
 
-func (s *Cdc2Neo4jAPI) DataChange(ctx iris.Context) {
+func (s *GraphAPI) DataChange(ctx iris.Context) {
 	gp.Try(func() error {
 		var record model.Record
 
@@ -43,17 +47,28 @@ func (s *Cdc2Neo4jAPI) DataChange(ctx iris.Context) {
 		// 根据操作类型处理数据
 		switch record.OpType {
 		case "c":
-			s.service.Create(&record)
+			s.cdcService.Create(&record)
 		case "u":
-			s.service.Update(&record)
+			s.cdcService.Update(&record)
 		case "d":
-			s.service.Delete(&record)
+			s.cdcService.Delete(&record)
 		}
 		ctx.StatusCode(iris.StatusOK)
 		return nil
 	}).Catch(func(e error) {
-		ctx.StatusCode(iris.StatusInternalServerError)
-		ctx.JSON(iris.Map{"error": e.Error()})
+		irisutils.SetError(ctx, e)
 	})
 
+}
+
+func (s *GraphAPI) Query(ctx iris.Context) {
+	gp.Try(func() error {
+		data, err := s.queryService.FindById(ctx, "1001", "", "")
+		if err != nil {
+			return err
+		}
+		return irisutils.SetData(ctx, data)
+	}).Catch(func(e error) {
+		irisutils.SetError(ctx, e)
+	})
 }
