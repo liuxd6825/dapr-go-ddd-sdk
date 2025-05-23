@@ -88,7 +88,13 @@ func ConvertFloat(value any) (float64, error) {
 }
 
 func ConvertBool(value any) (bool, error) {
-	return convertor.ToBool(fmt.Sprintf("%v", value))
+	var val any
+	if value == nil || value == "" {
+		val = "false"
+	} else {
+		val = value
+	}
+	return convertor.ToBool(fmt.Sprintf("%v", val))
 }
 
 func ConvertDateTime(value any) (time.Time, error) {
