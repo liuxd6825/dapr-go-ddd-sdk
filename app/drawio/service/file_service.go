@@ -33,13 +33,24 @@ func (s *FileService) Save(fileName string, content []byte) error {
 		return errors.New("file name is empty")
 	}
 	if filepath.Ext(fileName) == "" {
-		fileName += ".xml"
+		fileName += ".drawio"
 	}
 	pathName := filepath.Dir(fileName)
 	exists := s.drawFs.Exists(pathName)
-	if !exists {
+	if !exists && pathName != "." {
 		s.drawFs.Mkdir(pathName, os.ModePerm)
 	}
 	s.drawFs.WriteFile(fileName, content)
 	return nil
+}
+
+func (s *FileService) Read(fileName string) (content []byte, err error) {
+	if fileName == "" {
+		return nil, errors.New("file name is empty")
+	}
+	if filepath.Ext(fileName) == "" {
+		fileName += ".drawio"
+	}
+	content = s.drawFs.ReadFile(fileName)
+	return content, err
 }

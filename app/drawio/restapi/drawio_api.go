@@ -28,7 +28,22 @@ func NewDrawIoAPI(env *env.Env) *DrawIoAPI {
 }
 
 func (s *DrawIoAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle("POST", "/draw-io/file/save", "SaveFile")
+	b.Handle("POST", "/drawio/file/save", "SaveFile")
+	b.Handle("GET", "/drawio/file/read", "ReadFile")
+}
+
+func (s *DrawIoAPI) ReadFile(ctx iris.Context) {
+	gp.Try(func() error {
+		fileName := ctx.URLParamDefault("file", "")
+		content, err := s.service.Read(fileName)
+		if err == nil {
+			_, err = ctx.Write(content)
+			ctx.StatusCode(iris.StatusOK)
+		}
+		return err
+	}).Catch(func(err error) {
+		irisutils.SetError(ctx, err)
+	})
 }
 
 func (s *DrawIoAPI) SaveFile(ctx iris.Context) {
