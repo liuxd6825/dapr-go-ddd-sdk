@@ -7,13 +7,24 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 type FileService struct {
 	drawFs fspkg.IFsPkg
 }
 
+var _fileService *FileService
+var _fileServiceOnce sync.Once
+
 func NewFileService() *FileService {
+	_fileServiceOnce.Do(func() {
+		_fileService = newFileService()
+	})
+	return _fileService
+}
+
+func newFileService() *FileService {
 	fileService := &FileService{}
 	fileService.Init()
 	return fileService
@@ -28,7 +39,7 @@ func (s *FileService) Init() *FileService {
 	return s
 }
 
-func (s *FileService) Save(fileName string, content []byte) error {
+func (s *FileService) Save(fileName string, content string) error {
 	if fileName == "" {
 		return errors.New("file name is empty")
 	}

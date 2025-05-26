@@ -1,9 +1,12 @@
 package main
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/drawio/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/master/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
 var (
@@ -19,6 +22,12 @@ func main() {
 		BuildTime: BuildTime,
 		GitHead:   GitHead,
 		Actors:    nil,
+		OnHServerInitEvent: func(server element.Server) error {
+			drawio := types.NewCMap[any]()
+			drawio.Add("fileService", service.NewFileService())
+			server.Pkg().Add("drawio", drawio)
+			return nil
+		},
 		OnInitEvent: func(server *restapp.HttpServer) error {
 			return nil
 		},

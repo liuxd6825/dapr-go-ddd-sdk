@@ -7,16 +7,17 @@ import (
 )
 
 type AppStartOptions struct {
-	Version      string                              // 版本号
-	BuildTime    string                              // Build时间
-	GitHead      string                              // Git地址
-	AppTitle     string                              // 应用名称
-	Controllers  func() []restapp2.Controller        // HTTP控制器
-	Subs         func() []restapp2.RegisterSubscribe // dapr消息订阅
-	Events       func() []restapp2.RegisterEventType // ddd事件订阅
-	Actors       func() []actor.FactoryContext       // dapr.actor
-	OnInitEvent  restapp2.OnInitEvent
-	OnStartEvent restapp2.OnStartEvent
+	Version            string                              // 版本号
+	BuildTime          string                              // Build时间
+	GitHead            string                              // Git地址
+	AppTitle           string                              // 应用名称
+	Controllers        func() []restapp2.Controller        // HTTP控制器
+	Subs               func() []restapp2.RegisterSubscribe // dapr消息订阅
+	Events             func() []restapp2.RegisterEventType // ddd事件订阅
+	Actors             func() []actor.FactoryContext       // dapr.actor
+	OnInitEvent        restapp2.OnInitEvent
+	OnStartEvent       restapp2.OnStartEvent
+	OnHServerInitEvent hserver.InitOptions
 }
 
 // StartApp
@@ -35,7 +36,7 @@ func StartApp(opts *AppStartOptions) {
 			if serverEnv.Enable {
 				srcName := serverEnv.SrcName
 				webName := serverEnv.WebName
-				return hserver.InitHServer(server, flag.MainFile, srcName, webName, server.EnvConfig(), serverEnv.WatchRestart)
+				return hserver.InitHServer(server, flag.MainFile, srcName, webName, server.EnvConfig(), serverEnv.WatchRestart, opts.OnHServerInitEvent)
 			}
 			return nil
 		})

@@ -3,6 +3,7 @@ package hserver
 import (
 	"fmt"
 	restapp2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -10,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
+
+type InitOptions func(server element.Server) error
 
 // InitHServer
 //
@@ -19,7 +22,7 @@ import (
 //	@param webFsName
 //	@param httpServer
 //	@return error
-func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName string, webFsName string, env *env.Env, autoRestart bool) (err error) {
+func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName string, webFsName string, env *env.Env, autoRestart bool, options ...InitOptions) (err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 		if err != nil {
@@ -48,6 +51,11 @@ func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName str
 	server, err := fact.NewServer(httpServer, fileName, srcFs, fact, env)
 	if err != nil {
 		return err
+	}
+	for _, option := range options {
+		if err := option(server); err != nil {
+			return err
+		}
 	}
 	vData := map[string]any{
 		"server": server,

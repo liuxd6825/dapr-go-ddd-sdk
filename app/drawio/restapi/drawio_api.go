@@ -3,6 +3,7 @@ package restapi
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/drawio/restapi/request"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/drawio/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -10,20 +11,18 @@ import (
 )
 
 type DrawIoAPI struct {
-	env     *env.Env
-	service *service.FileService
-}
-
-type DrawIoAPISaveFileRequest struct {
-	XML  string         `json:"xml"`
-	Diff map[string]any `json:"diff"`
+	env          *env.Env
+	fileService  *service.FileService
+	graphService *service.GraphService
 }
 
 func NewDrawIoAPI(env *env.Env) *DrawIoAPI {
-	service := service.NewFileService()
+	fileService := service.NewFileService()
+	graphService := service.NewGraphService()
 	return &DrawIoAPI{
-		env:     env,
-		service: service,
+		env:          env,
+		fileService:  fileService,
+		graphService: graphService,
 	}
 }
 
@@ -35,7 +34,7 @@ func (s *DrawIoAPI) BeforeActivation(b mvc.BeforeActivation) {
 func (s *DrawIoAPI) ReadFile(ctx iris.Context) {
 	gp.Try(func() error {
 		fileName := ctx.URLParamDefault("file", "")
-		content, err := s.service.Read(fileName)
+		content, err := s.fileService.Read(fileName)
 		if err == nil {
 			_, err = ctx.Write(content)
 			ctx.StatusCode(iris.StatusOK)
@@ -48,14 +47,19 @@ func (s *DrawIoAPI) ReadFile(ctx iris.Context) {
 
 func (s *DrawIoAPI) SaveFile(ctx iris.Context) {
 	gp.Try(func() error {
-		var request DrawIoAPISaveFileRequest
-		err := ctx.ReadJSON(&request)
+		var saveRequest request.SaveFileRequest
+		err := ctx.ReadJSON(&saveRequest)
 		if err != nil {
 			return err
 		}
 
 		fileName := ctx.URLParamDefault("file", "")
-		return s.service.Save(fileName, []byte(request.XML))
+		err = s.fileService.Save(fileName, saveRequest.XML)
+		if err != nil {
+			return err
+		}
+
+		return s.graphService.Save(ctx, &saveRequest)
 	}).Catch(func(err error) {
 		irisutils.SetError(ctx, err)
 	})

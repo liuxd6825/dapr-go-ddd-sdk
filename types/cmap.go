@@ -10,6 +10,10 @@ type CMap[T any] struct {
 	data cmap.ConcurrentMap
 }
 
+func init() {
+	cmap.SHARD_COUNT = 5
+}
+
 func NewCMap[T any]() *CMap[T] {
 	return &CMap[T]{
 		data: cmap.New(),
