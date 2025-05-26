@@ -2,8 +2,8 @@ package graph
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
+	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/dao"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -18,19 +18,19 @@ import (
 )
 
 type CdcService struct {
-	nodeDaoMap *types.CMap[*dao.NodeDao]
-	relDaoMap  *types.CMap[*dao.BusRelationDao]
+	nodeDaoMap *types.CMap[*dao2.NodeDao]
+	relDaoMap  *types.CMap[*dao2.BusRelationDao]
 }
 
 func NewCdcService() *CdcService {
 	ser := &CdcService{
-		nodeDaoMap: types.NewCMap[*dao.NodeDao](),
-		relDaoMap:  types.NewCMap[*dao.BusRelationDao](),
+		nodeDaoMap: types.NewCMap[*dao2.NodeDao](),
+		relDaoMap:  types.NewCMap[*dao2.BusRelationDao](),
 	}
 	return ser
 }
 
-func (s *CdcService) Create(record *model.Record) {
+func (s *CdcService) Create(record *model2.Record) {
 	ctx := s.newCtx(record)
 	gp.Try(func() error {
 		tableName := record.Table
@@ -40,7 +40,7 @@ func (s *CdcService) Create(record *model.Record) {
 		}
 
 		afterData := record.AfterMap()
-		node := model.NewNode(tableName, afterData)
+		node := model2.NewNode(tableName, afterData)
 		if record.IsMaster() {
 			nodeDao.CreateMain(ctx, node)
 		} else if record.IsRelation() {
@@ -49,7 +49,7 @@ func (s *CdcService) Create(record *model.Record) {
 			if relDao == nil {
 				return nil
 			}
-			rel := model.NewRelation(relDao.DBSchema, afterData)
+			rel := model2.NewRelation(relDao.DBSchema, afterData)
 			nodeDao.CreateRelNode(ctx, rel, node)
 		}
 		return nil
@@ -58,14 +58,14 @@ func (s *CdcService) Create(record *model.Record) {
 	})
 }
 
-func (s *CdcService) Update(record *model.Record) {
+func (s *CdcService) Update(record *model2.Record) {
 	nodeDao := s.getNodeDao(record.Table)
 	if nodeDao == nil {
 		return
 	}
 	ctx := s.newCtx(record)
 	afterMap := record.AfterMap()
-	afterNode := model.NewNode(record.Table, afterMap)
+	afterNode := model2.NewNode(record.Table, afterMap)
 	if record.IsMaster() {
 		// 是主数据表
 		nodeDao.UpdateMain(ctx, afterNode)
@@ -75,7 +75,7 @@ func (s *CdcService) Update(record *model.Record) {
 	}
 }
 
-func (s *CdcService) Delete(record *model.Record) {
+func (s *CdcService) Delete(record *model2.Record) {
 	tableName := record.Table
 	nodeDao := s.getNodeDao(tableName)
 	if nodeDao == nil {
@@ -115,7 +115,7 @@ func (s *CdcService) Init() *CdcService {
 	return s
 }
 
-func (s *CdcService) newCtx(record *model.Record) context.Context {
+func (s *CdcService) newCtx(record *model2.Record) context.Context {
 	parent := context.Background()
 	tenantId, _ := maputils.GetString(record.After, "tenant_id", "")
 	userName, _ := maputils.GetString(record.After, "updater_name", "")
@@ -129,7 +129,7 @@ func (s *CdcService) newCtx(record *model.Record) context.Context {
 	return ctx
 }
 
-func (s *CdcService) getNodeDao(tableName string) *dao.NodeDao {
+func (s *CdcService) getNodeDao(tableName string) *dao2.NodeDao {
 	get, ok := s.nodeDaoMap.Get(tableName)
 	if !ok {
 		return nil
@@ -137,7 +137,7 @@ func (s *CdcService) getNodeDao(tableName string) *dao.NodeDao {
 	return get
 }
 
-func (s *CdcService) getRelDao(record *model.Record) *dao.BusRelationDao {
+func (s *CdcService) getRelDao(record *model2.Record) *dao2.BusRelationDao {
 	get, ok := s.relDaoMap.Get(record.Table)
 	if !ok {
 		return nil
@@ -172,22 +172,22 @@ func (s *CdcService) AddDao(sch *jsonschema.Schema) {
 	nodeLabelFields := dbSch.GetNodeLabelFields()
 	println("relStartField", relStartField, "relEndField", relEndField, "relTypeField", relTypeField, "nodeLabelFields", nodeLabelFields)
 
-	var nodeDao *dao.NodeDao
+	var nodeDao *dao2.NodeDao
 	if isNode := idao.IsGraphType(graphTypes, idao.GraphType_Node); isNode {
 		labels, _ := maputils.GetStrings(cfg, "labels", []string{tableName})
 		labels = append(labels, "master")
-		nodeDao = dao.NewNodeDao(labels, dbSch)
+		nodeDao = dao2.NewNodeDao(labels, dbSch)
 		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
 
 	if isRel := idao.IsGraphType(graphTypes, idao.GraphType_Rel); isRel {
-		relDao := dao.NewBusRelationDao(dbSch, nodeDao)
+		relDao := dao2.NewBusRelationDao(dbSch, nodeDao)
 		s.relDaoMap.Add(tableName, relDao)
 	}
 }
 
 func (s *CdcService) clearAll(ctx context.Context) {
-	var nodeDao *dao.NodeDao
+	var nodeDao *dao2.NodeDao
 	for _, d := range s.nodeDaoMap.Items() {
 		nodeDao = d
 		break

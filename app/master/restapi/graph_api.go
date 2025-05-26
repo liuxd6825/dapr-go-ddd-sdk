@@ -3,8 +3,8 @@ package restapi
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
+	graph2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -14,13 +14,13 @@ import (
 type GraphAPI struct {
 	env          *env.Env
 	rootPath     string
-	cdcService   *graph.CdcService
-	queryService *graph.QueryService
+	cdcService   *graph2.CdcService
+	queryService *graph2.QueryService
 }
 
 func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
-	cdcService := graph.NewCdcService().Init()
-	queryService := graph.NewQueryService()
+	cdcService := graph2.NewCdcService().Init()
+	queryService := graph2.NewQueryService()
 	return &GraphAPI{
 		env:          env,
 		rootPath:     rootPath,

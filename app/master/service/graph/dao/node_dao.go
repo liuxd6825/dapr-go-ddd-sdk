@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -17,7 +17,7 @@ import (
 )
 
 type NodeDao struct {
-	idao.Dao[*model.Node]
+	idao.Dao[*model2.Node]
 	*Base
 	labels []string
 }
@@ -35,7 +35,7 @@ func NewNodeDao(labels []string, dbSch *store.DBSchema) *NodeDao {
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,
 	}
-	newDao := dao.NewDao[*model.Node](nodeCfg)
+	newDao := dao.NewDao[*model2.Node](nodeCfg)
 	return &NodeDao{
 		Dao:    newDao,
 		labels: labels,
@@ -43,7 +43,7 @@ func NewNodeDao(labels []string, dbSch *store.DBSchema) *NodeDao {
 	}
 }
 
-func (d *NodeDao) CreateMain(ctx context.Context, node *model.Node) {
+func (d *NodeDao) CreateMain(ctx context.Context, node *model2.Node) {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 	props, dataMap, err := c.GetCreateProperties(ctx, node)
@@ -65,7 +65,7 @@ func (d *NodeDao) CreateMain(ctx context.Context, node *model.Node) {
 }
 
 // CreateRelNode 根据关系数据创建
-func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model.Relation, relNode *model.Node) *model.Node {
+func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model2.Relation, relNode *model2.Node) *model2.Node {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 	relType := rel.RelType
@@ -110,7 +110,7 @@ func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model.Relation, relNod
 	return nil
 }
 
-func (d *NodeDao) UpdateMain(ctx context.Context, node *model.Node) {
+func (d *NodeDao) UpdateMain(ctx context.Context, node *model2.Node) {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 
@@ -133,7 +133,7 @@ func (d *NodeDao) UpdateMain(ctx context.Context, node *model.Node) {
 }
 
 // UpdateRelNode 根据关系数据创建图节点与关系
-func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
+func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 	// 是否改名
 	isRename := record.IsRename()
 	isChangedRelType := record.IsChangedRelType()
@@ -142,8 +142,8 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
 	}
 	before := record.BeforeMap()
 	after := record.AfterMap()
-	node := model.NewNode(d.DBSchema.TableName, after)
-	rel := model.NewRelation(d.DBSchema, after)
+	node := model2.NewNode(d.DBSchema.TableName, after)
+	rel := model2.NewRelation(d.DBSchema, after)
 	oldName, _ := maputils.GetString(before, "name", "")
 
 	nodeStore := d.GetStore()
@@ -197,11 +197,11 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model.Record) {
 	return
 }
 
-func (d *NodeDao) DeleteMain(ctx context.Context, record *model.Record) {
+func (d *NodeDao) DeleteMain(ctx context.Context, record *model2.Record) {
 	nodeStore := d.GetStore()
 	after := record.AfterMap()
 
-	node := model.NewNode(record.Table, after)
+	node := model2.NewNode(record.Table, after)
 	labels := d.getLabels(node.CaseId, node.TenantId)
 
 	cypher := fmt.Sprintf(`
@@ -217,11 +217,11 @@ func (d *NodeDao) DeleteMain(ctx context.Context, record *model.Record) {
 	}
 }
 
-func (d *NodeDao) DeleteRelNode(ctx context.Context, record *model.Record) {
+func (d *NodeDao) DeleteRelNode(ctx context.Context, record *model2.Record) {
 	nodeStore := d.GetStore()
 	after := record.AfterMap()
 
-	rel := model.NewRelation(d.DBSchema, after)
+	rel := model2.NewRelation(d.DBSchema, after)
 	labels := d.getLabels(rel.CaseId, rel.TenantId)
 
 	cypher := fmt.Sprintf(`
@@ -251,8 +251,8 @@ func (d *NodeDao) ClearAll(ctx context.Context) {
 	}
 }
 
-func (d *NodeDao) NewNode(data map[string]any) *model.Node {
-	node := &model.Node{
+func (d *NodeDao) NewNode(data map[string]any) *model2.Node {
+	node := &model2.Node{
 		Id:     d.GetString(data, "id"),
 		CaseId: d.GetString(data, "case_id"),
 		Name:   d.GetString(data, "name"),
@@ -278,9 +278,9 @@ func (d *NodeDao) getDriver() neo4j.DriverWithContext {
 	return driver
 }
 
-func (d *NodeDao) GetStore() *store_neo4j.Dao[*model.Node] {
+func (d *NodeDao) GetStore() *store_neo4j.Dao[*model2.Node] {
 	iStore := d.Dao.GetStore().(any)
-	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Node])
+	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model2.Node])
 	if !ok {
 		panic("neo4j store does not implement neo4j.Dao")
 	}

@@ -14,7 +14,7 @@ var (
 
 func main() {
 	appcmd.StartApp(&appcmd.AppStartOptions{
-		AppTitle:  "Web服务器",
+		AppTitle:  "drawio服务器",
 		Version:   Version,
 		BuildTime: BuildTime,
 		GitHead:   GitHead,
@@ -23,7 +23,7 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
-			restapi.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
+			restapi.RegisterDrawIo(server.App(), "/api/v1", server.EnvConfig(), "")
 			return nil
 		},
 	})

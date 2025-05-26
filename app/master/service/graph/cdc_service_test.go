@@ -1,8 +1,8 @@
 package graph
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/dao"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
@@ -21,7 +21,7 @@ func Test_DeleteById(t *testing.T) {
 	nodeDao.GetConfig().Env = xtest.NewEnvConfig_Neo4j()
 
 	gp.Try(func() error {
-		node := &model.Node{
+		node := &model2.Node{
 			Id:       "XELWOSgMxzRASZBTGKDcSlHVGS",
 			CaseId:   caseId,
 			Name:     "星辰科技有限公司",
@@ -91,8 +91,8 @@ func newService() *CdcService {
 type Records struct {
 }
 
-func (r *Records) GetCreateCompany(id string, name string) *model.Record {
-	record := &model.Record{
+func (r *Records) GetCreateCompany(id string, name string) *model2.Record {
+	record := &model2.Record{
 		OpType: "c",
 		DB:     "master",
 		Table:  "company",
@@ -106,8 +106,8 @@ func (r *Records) GetCreateCompany(id string, name string) *model.Record {
 	return record
 }
 
-func (r *Records) GetUpdateCompany(id, newName, oldName string) *model.Record {
-	record := &model.Record{
+func (r *Records) GetUpdateCompany(id, newName, oldName string) *model2.Record {
+	record := &model2.Record{
 		OpType: "u",
 		DB:     "master",
 		Table:  "company",
@@ -127,8 +127,8 @@ func (r *Records) GetUpdateCompany(id, newName, oldName string) *model.Record {
 	return record
 }
 
-func (r *Records) GetCreateCompanyCompany(id, startId, relType, name string) *model.Record {
-	record := &model.Record{
+func (r *Records) GetCreateCompanyCompany(id, startId, relType, name string) *model2.Record {
+	record := &model2.Record{
 		OpType: "c",
 		DB:     "master",
 		Table:  "company_company",
@@ -144,8 +144,8 @@ func (r *Records) GetCreateCompanyCompany(id, startId, relType, name string) *mo
 	return record
 }
 
-func (r *Records) GetUpdateCompanyCompany(id, startId, newRelType, oldRelType, newName, oldName string) *model.Record {
-	record := &model.Record{
+func (r *Records) GetUpdateCompanyCompany(id, startId, newRelType, oldRelType, newName, oldName string) *model2.Record {
+	record := &model2.Record{
 		OpType: "u",
 		DB:     "master",
 		Table:  "company_company",

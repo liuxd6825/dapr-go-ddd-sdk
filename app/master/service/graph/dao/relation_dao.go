@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/service/graph/model"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -15,7 +15,7 @@ import (
 )
 
 type BusRelationDao struct {
-	idao.Dao[*model.Relation]
+	idao.Dao[*model2.Relation]
 	nodeDao *NodeDao
 	*Base
 }
@@ -28,7 +28,7 @@ func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *NodeDao) *BusRelationDao 
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,
 	}
-	relDao := dao.NewDao[*model.Relation](relCfg)
+	relDao := dao.NewDao[*model2.Relation](relCfg)
 	return &BusRelationDao{
 		Dao:     relDao,
 		nodeDao: nodeDao,
@@ -36,11 +36,11 @@ func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *NodeDao) *BusRelationDao 
 	}
 }
 
-func (d *BusRelationDao) CreateSameName(ctx context.Context, node *model.Node) {
+func (d *BusRelationDao) CreateSameName(ctx context.Context, node *model2.Node) {
 
 }
 
-func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model.Relation {
+func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model2.Relation {
 	nodes := d.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", name))
 	if len(nodes) == 0 {
 		return nil
@@ -49,10 +49,10 @@ func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model.Rel
 }
 
 // UpdateRecord 根据关系数据创建图节点与关系
-func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model.Record) *model.Node {
+func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model2.Record) *model2.Node {
 	after := record.AfterMap()
-	node := model.NewNode(d.DBSchema.TableName, after)
-	rel := model.NewRelation(d.DBSchema, after)
+	node := model2.NewNode(d.DBSchema.TableName, after)
+	rel := model2.NewRelation(d.DBSchema, after)
 	nodeName, _ := maputils.GetString(record.BeforeMap(), "name", "")
 	nodeStore := d.nodeDao.GetStore()
 	relStore := d.GetStore()
@@ -95,11 +95,11 @@ func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model.Record)
 	return nil
 }
 
-func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model.Record) {
+func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model2.Record) {
 	storeDao := d.GetStore()
 	after := record.AfterMap()
 
-	rel := model.NewRelation(d.DBSchema, after)
+	rel := model2.NewRelation(d.DBSchema, after)
 	name, _ := maputils.GetString(after, "name", "")
 	labels := fmt.Sprintf(":case_%s:tentant_%s:master", rel.CaseId, rel.TenantId)
 
@@ -126,9 +126,9 @@ func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model.Record)
 	}
 }
 
-func (d *BusRelationDao) GetStore() *store_neo4j.Dao[*model.Relation] {
+func (d *BusRelationDao) GetStore() *store_neo4j.Dao[*model2.Relation] {
 	iStore := d.Dao.GetStore().(any)
-	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Relation])
+	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model2.Relation])
 	if !ok {
 		panic("neo4j store does not implement neo4j.Dao")
 	}

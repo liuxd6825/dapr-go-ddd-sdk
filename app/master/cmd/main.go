@@ -14,7 +14,7 @@ var (
 
 func main() {
 	appcmd.StartApp(&appcmd.AppStartOptions{
-		AppTitle:  "Web服务器",
+		AppTitle:  "master服务器",
 		Version:   Version,
 		BuildTime: BuildTime,
 		GitHead:   GitHead,
