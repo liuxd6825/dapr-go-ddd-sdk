@@ -3,10 +3,23 @@ package appctx
 import (
 	"context"
 	"fmt"
+	"github.com/kataras/iris/v12"
 	"strings"
 )
 
 const Authorization = "Authorization"
+
+func NewWebContext(parent context.Context, ictx iris.Context) (ctx context.Context) {
+	header := ictx.Request().Header
+	token := ictx.Request().Header.Get("authorization")
+	ctx = parent
+	if ctx1, err1 := NewAuthContext(ctx, getAuthorization(token, header)); err1 == nil {
+		ctx = ctx1
+	}
+	ctx = NewHeaderContext(ctx, ictx.Request().Header)
+	//ctx = NewTenantContext(ctx, "test")
+	return ctx
+}
 
 func NewContext(parent context.Context, tenantId string, token string, header map[string][]string) (ctx context.Context) {
 	ctx = NewTenantContext(parent, tenantId)

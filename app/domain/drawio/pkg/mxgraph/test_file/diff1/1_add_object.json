@@ -1,0 +1,37 @@
+{
+  "u": {
+    "6hLHKwI1_4bKL1ndOLRe": {
+      "cells": {
+        "i": [
+          {
+            "id": "kkcGR8n074Od3FpKltgG-2",
+            "vertex": 1,
+            "parent": "1",
+            "style": "ellipse;whiteSpace=wrap;html=1;aspect=fixed;",
+            "geometry": "<mxGeometry x=\"90\" y=\"280\" width=\"80\" height=\"80\"/>",
+            "xmlValue": "<object label=\"人员\" cellType=\"人员\"/>"
+          },
+          {
+            "id": "kkcGR8n074Od3FpKltgG-3",
+            "vertex": 1,
+            "parent": "1",
+            "previous": "kkcGR8n074Od3FpKltgG-2",
+            "style": "rounded=0;whiteSpace=wrap;html=1;",
+            "geometry": "<mxGeometry x=\"320\" y=\"290\" width=\"120\" height=\"60\"/>",
+            "xmlValue": "<object label=\"公司\" cellType=\"公司\"/>"
+          },
+          {
+            "id": "kkcGR8n074Od3FpKltgG-4",
+            "edge": 1,
+            "parent": "1",
+            "previous": "kkcGR8n074Od3FpKltgG-3",
+            "target": "kkcGR8n074Od3FpKltgG-3",
+            "style": "endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;",
+            "geometry": "<mxGeometry width=\"50\" height=\"50\" relative=\"1\"><mxPoint x=\"170\" y=\"320\" as=\"sourcePoint\"/><mxPoint x=\"220\" y=\"270\" as=\"targetPoint\"/></mxGeometry>",
+            "value": ""
+          }
+        ]
+      }
+    }
+  }
+}

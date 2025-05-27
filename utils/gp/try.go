@@ -1,13 +1,18 @@
 package gp
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+import (
+	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+)
 
 // const string with rethrow message
 const gotry_rethrow = "----> Founded an Exception!!!\n"
 
 // GoTry object
 type GoTry struct {
+	Ctx     context.Context
 	catch   func(error)
+	catch2  func(ctx context.Context, err error)
 	finally func()
 	Error   error
 }
@@ -23,7 +28,7 @@ func Throw(e error) {
 
 // Try this function
 func Try(funcToTry func() error) (o *GoTry) {
-	o = &GoTry{nil, nil, nil}
+	o = &GoTry{Ctx: nil, catch: nil, finally: nil, Error: nil}
 	// catch throw in try
 	defer func() {
 		if o.Error == nil {
