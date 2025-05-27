@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	_ "embed"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -43,23 +44,11 @@ func (s *FileService) Init() *FileService {
 	return s
 }
 
-func (s *FileService) New(fileName string) error {
-	if fileName == "" {
-		return errors.New("file name is empty")
-	}
-	if filepath.Ext(fileName) == "" {
-		fileName += ".drawio"
-	}
-	pathName := filepath.Dir(fileName)
-	exists := s.drawFs.Exists(pathName)
-	if !exists && pathName != "." {
-		s.drawFs.Mkdir(pathName, os.ModePerm)
-	}
-	s.drawFs.WriteFile(fileName, _newContent)
-	return nil
+func (s *FileService) Create(ctx context.Context, fileName string) error {
+	return s.Save(ctx, fileName, _newContent)
 }
 
-func (s *FileService) Save(fileName string, content string) error {
+func (s *FileService) Save(ctx context.Context, fileName string, content string) error {
 	if fileName == "" {
 		return errors.New("file name is empty")
 	}
@@ -75,7 +64,7 @@ func (s *FileService) Save(fileName string, content string) error {
 	return nil
 }
 
-func (s *FileService) Read(fileName string) (content []byte, err error) {
+func (s *FileService) Read(ctx context.Context, fileName string) (content []byte, err error) {
 	if fileName == "" {
 		return nil, errors.New("file name is empty")
 	}
