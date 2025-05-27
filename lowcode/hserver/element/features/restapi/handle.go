@@ -135,7 +135,7 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 	metaSch := schema.GetMetaExtension(sch)
 	if metaSch != nil {
 		if metaSch.Param != nil && metaSch.Param.Type == schema.HParamType_Body {
-			res := wctx.ReadObject(sch)
+			res := wctx.ReadMap(sch)
 			return res
 		}
 	}
@@ -164,7 +164,7 @@ func (s *ApiHandle) GetParams(wctx element.WebContext) any {
 		case schema.HParamTypee_Header:
 			val = ictx.GetHeader(paramName)
 		case schema.HParamType_Body:
-			val = wctx.ReadObject(prop)
+			val = wctx.ReadMap(prop)
 		case schema.HParamTypee_FormValue:
 			val = wctx.FormValue(paramName, required)
 		case schema.HParamType_FormObject:

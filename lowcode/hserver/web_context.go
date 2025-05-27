@@ -135,13 +135,13 @@ func (c *WebContext) ReadBytes() []byte {
 	return bytes
 }
 
-// ReadObject
+// ReadMap
 //
 //	@Description: 从body中读取对象
 //	@receiver c
 //	@param schema 有空：进行验证;  nil:不验证
 //	@return map[string]any
-func (c *WebContext) ReadObject(sch *jsonschema.Schema) map[string]any {
+func (c *WebContext) ReadMap(sch *jsonschema.Schema) map[string]any {
 	var err error
 
 	bytes := c.ReadBytes()
@@ -167,6 +167,28 @@ func (c *WebContext) ReadObject(sch *jsonschema.Schema) map[string]any {
 		panic(err)
 	}
 	return object
+}
+
+func (c *WebContext) ReadObject(bytes []byte, sch *jsonschema.Schema, data any) any {
+	var err error
+
+	val, err := jsonutils.UnmarshalTime(bytes, &jsonutils.UnmarshalTimeOptions{
+		TimeFields: sch.GetTimeFields(),
+		ParseTime:  parseTime,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	schema.ApplyDefaults(sch, val)
+
+	if sch != nil {
+		err = schema.Validate(sch, data)
+	}
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 // Valid
@@ -421,6 +443,10 @@ func (c *WebContext) GetFindPaging() *store.FindPagingQueryRequest {
 	v, _ := c.RestAssembler.AsFindPagingRequest(c.ictx)
 	v.TenantId = c.GetTenantId()
 	return v
+}
+
+func (c *WebContext) SetHeader(key string, value string) {
+	c.ictx.Header(key, value)
 }
 
 var parseTime = func(val string, key any) (timeVal any, err error) {

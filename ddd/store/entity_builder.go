@@ -156,7 +156,8 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 		return
 	}
 	authUser := b.GetAuthUser(ctx)
-	timeNow := time.Now().UTC()
+	timeVal := time.Now().UTC()
+	timeNow := &timeVal
 
 	b.setField(entity, fields.CreatedTime, timeNow)
 	b.setField(entity, fields.CreatorName, authUser.GetName())

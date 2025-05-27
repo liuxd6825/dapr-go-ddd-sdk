@@ -33,8 +33,8 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
-			master.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
-			drawio.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
+			master.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+			drawio.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
 			return nil
 		},
 	})

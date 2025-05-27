@@ -152,7 +152,8 @@ func (s *HttpServer) Start() error {
 
 	// 使用自定义的 JSON 编码器替换 Iris 默认的 JSON 编码器
 	app.Configure(iris.WithOptimizations)
-
+	// 设置全局默认字符集为UTF-8
+	app.Configure(iris.WithCharset("UTF-8"))
 	/*
 		if err := s.addRenderHandler(app); err != nil {
 			return err

@@ -48,3 +48,27 @@ func GetTenantId(ctx context.Context) (string, bool) {
 	tenVal, ok := val.(*tenantValue)
 	return tenVal.tenantId, ok
 }
+
+// GetTenantId2
+//
+//	@Description: 根据上下文取得租户ID
+//	@param ctx
+//	@return string
+//	@return bool
+func GetTenantId2(ctx context.Context) string {
+	if ctx == nil {
+		panic("nil context")
+	}
+	val := ctx.Value(tenantCtxKey)
+	if val == nil {
+		if user, ok := GetAuthUser(ctx); ok {
+			return user.GetTenantId()
+		}
+		panic("token error in context")
+	}
+	tenVal, ok := val.(*tenantValue)
+	if !ok {
+		panic("wrong type")
+	}
+	return tenVal.tenantId
+}

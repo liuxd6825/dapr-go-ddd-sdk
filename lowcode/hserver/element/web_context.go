@@ -20,7 +20,7 @@ type WebContext interface {
 	ReadJson(data ...any) any
 	ReadString() string
 	ReadBytes() []byte
-	ReadObject(sch *jsonschema.Schema) map[string]any
+	ReadMap(sch *jsonschema.Schema) map[string]any
 
 	GetId() string
 	GetCaseId() string
