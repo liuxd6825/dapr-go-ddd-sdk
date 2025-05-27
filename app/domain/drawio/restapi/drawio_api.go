@@ -34,7 +34,8 @@ func (s *DrawIoAPI) BeforeActivation(b mvc.BeforeActivation) {
 func (s *DrawIoAPI) ReadFile(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		fileName := ictx.URLParamDefault("file", "")
-		content, err := s.fileService.Read(fileName)
+		caseId := ictx.URLParamDefault("case-id", "")
+		content, err := s.fileService.Read(ctx, caseId, fileName)
 		if err == nil {
 			_, err = ictx.Write(content)
 		}
@@ -49,9 +50,9 @@ func (s *DrawIoAPI) SaveFile(ictx iris.Context) {
 		if err != nil {
 			return err
 		}
-
 		fileName := ictx.URLParamDefault("file", "")
-		err = s.fileService.Save(fileName, saveRequest.XML)
+		caseId := ictx.URLParamDefault("case-id", "")
+		err = s.fileService.Save(ctx, caseId, fileName, saveRequest.XML)
 		if err != nil {
 			return err
 		}

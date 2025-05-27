@@ -3,7 +3,9 @@ package service
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
@@ -44,17 +46,19 @@ func (s *FileService) Init() *FileService {
 	return s
 }
 
-func (s *FileService) Create(ctx context.Context, fileName string) error {
-	return s.Save(ctx, fileName, _newContent)
+func (s *FileService) Create(ctx context.Context, caseId, fileName string) error {
+	return s.Save(ctx, caseId, fileName, _newContent)
 }
 
-func (s *FileService) Save(ctx context.Context, fileName string, content string) error {
+func (s *FileService) Save(ctx context.Context, caseId, fileName string, content string) error {
 	if fileName == "" {
 		return errors.New("file name is empty")
 	}
 	if filepath.Ext(fileName) == "" {
 		fileName += ".drawio"
 	}
+	tenantId, _ := appctx.GetTenantId(ctx)
+	fileName = fmt.Sprintf("/%s/%s/%s", tenantId, caseId, fileName)
 	pathName := filepath.Dir(fileName)
 	exists := s.drawFs.Exists(pathName)
 	if !exists && pathName != "." {
@@ -64,13 +68,15 @@ func (s *FileService) Save(ctx context.Context, fileName string, content string)
 	return nil
 }
 
-func (s *FileService) Read(ctx context.Context, fileName string) (content []byte, err error) {
+func (s *FileService) Read(ctx context.Context, caseId string, fileName string) (content []byte, err error) {
 	if fileName == "" {
 		return nil, errors.New("file name is empty")
 	}
 	if filepath.Ext(fileName) == "" {
 		fileName += ".drawio"
 	}
+	tenantId, _ := appctx.GetTenantId(ctx)
+	fileName = fmt.Sprintf("/%s/%s/%s", tenantId, caseId, fileName)
 	content = s.drawFs.ReadFile(fileName)
 	return content, err
 }
