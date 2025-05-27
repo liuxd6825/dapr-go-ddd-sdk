@@ -41,9 +41,8 @@ func (s *GraphService) Save(ctx context.Context, saveRequest *request.SaveFileRe
 	return nil
 }
 
-func (s *GraphService) GetSaveNodes(drawioFile *mxgraph.DrawioFile, fileDiff *mxgraph.FileDiff) (*model.Batch[*model.Node], *model.Batch[*model.Relation]) {
-	nodeBatch := model.NewBatch[*model.Node]()
-	relBatch := model.NewBatch[*model.Relation]()
+func (s *GraphService) GetSaveNodes(drawioFile *mxgraph.DrawioFile, fileDiff *mxgraph.FileDiff) *model.SaveBatch {
+	saveBatch := model.NewSaveBatch()
 	for _, update := range fileDiff.U {
 		cells := update.Cells
 		if cells != nil {
@@ -57,23 +56,19 @@ func (s *GraphService) GetSaveNodes(drawioFile *mxgraph.DrawioFile, fileDiff *mx
 			nItems := cells.I
 			for _, cell := range nItems {
 				if cell.IsNode() {
-					nodeBatch.Update()
 				} else if cell.IsEdge() {
-
 				}
 			}
 
 			// 更新内容
 			uItems := cells.U
-			for _, cell := range uItems {
+			for id, cell := range uItems {
+				cell.Id = id
 				if cell.IsNode() {
-
 				} else if cell.IsEdge() {
-
 				}
 			}
-
 		}
 	}
-	return nodeBatch, relBatch
+	return saveBatch
 }

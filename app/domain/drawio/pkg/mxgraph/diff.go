@@ -16,7 +16,7 @@ type BaseCell struct {
 
 type Cell struct {
 	Geometry *string `json:"geometry"`
-	Id       *string `json:"id"`
+	Id       string  `json:"id"`
 	Parent   *string `json:"parent"`
 	Previous *string `json:"previous"`
 	Style    *string `json:"style"`

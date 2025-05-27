@@ -1,6 +1,7 @@
 package service
 
 import (
+	_ "embed"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -13,6 +14,9 @@ import (
 type FileService struct {
 	drawFs fspkg.IFsPkg
 }
+
+//go:embed resource/new.drawio
+var _newContent string
 
 var _fileService *FileService
 var _fileServiceOnce sync.Once
@@ -37,6 +41,22 @@ func (s *FileService) Init() *FileService {
 	}
 	s.drawFs = drawFs
 	return s
+}
+
+func (s *FileService) New(fileName string) error {
+	if fileName == "" {
+		return errors.New("file name is empty")
+	}
+	if filepath.Ext(fileName) == "" {
+		fileName += ".drawio"
+	}
+	pathName := filepath.Dir(fileName)
+	exists := s.drawFs.Exists(pathName)
+	if !exists && pathName != "." {
+		s.drawFs.Mkdir(pathName, os.ModePerm)
+	}
+	s.drawFs.WriteFile(fileName, _newContent)
+	return nil
 }
 
 func (s *FileService) Save(fileName string, content string) error {

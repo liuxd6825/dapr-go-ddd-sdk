@@ -1,9 +1,21 @@
 package model
 
+type SaveBatch struct {
+	Nodes     *Batch[*Node]
+	Relations *Batch[*Relation]
+}
+
 type Batch[T any] struct {
 	Updates []T
 	Removes []T
 	Inserts []T
+}
+
+func NewSaveBatch() *SaveBatch {
+	return &SaveBatch{
+		Nodes:     NewBatch[*Node](),
+		Relations: NewBatch[*Relation](),
+	}
 }
 
 func NewBatch[T any]() *Batch[T] {
