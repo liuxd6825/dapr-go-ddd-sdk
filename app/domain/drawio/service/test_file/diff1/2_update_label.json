@@ -1,0 +1,27 @@
+{
+  "u": {
+    "6hLHKwI1_4bKL1ndOLRe": {
+      "cells": {
+        "u": {
+          "kkcGR8n074Od3FpKltgG-2": {
+            "xmlValue": "<object label=\"张三\" cellType=\"人员\"/>"
+          },
+          "kkcGR8n074Od3FpKltgG-3": {
+            "xmlValue": "<object label=\"XX分公司\" cellType=\"公司\"/>"
+          }
+        },
+        "i": [
+          {
+            "id": "kkcGR8n074Od3FpKltgG-5",
+            "vertex": 1,
+            "connectable": 0,
+            "parent": "kkcGR8n074Od3FpKltgG-4",
+            "style": "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];",
+            "geometry": "<mxGeometry x=\"0.2667\" relative=\"1\"><mxPoint as=\"offset\"/></mxGeometry>",
+            "value": "总经理"
+          }
+        ]
+      }
+    }
+  }
+}
