@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"net/url"
 )
 
 type DrawAPI struct {
@@ -144,7 +145,7 @@ func (s *DrawAPI) ReadFile(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		draw := s.getDrawById(ctx, ictx.Params().GetString("id"))
 		ictx.Header("Case_Id", draw.CaseId)
-		ictx.Header("Title", draw.Name)
+		ictx.Header("Title", url.QueryEscape(draw.Name))
 		content, err := s.fileService.Read(ctx, draw.CaseId, draw.FileName)
 		if err == nil {
 			_, err = ictx.Write(content)
