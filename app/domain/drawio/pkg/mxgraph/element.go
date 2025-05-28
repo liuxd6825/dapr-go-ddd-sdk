@@ -12,6 +12,19 @@ type Element interface {
 	GetXMLName() xml.Name
 }
 
+type ElementType string
+
+const (
+	ElementType_None       ElementType = ""
+	ElementType_MxCell     ElementType = "mxCell"
+	ElementType_Object     ElementType = "object"
+	ElementType_UserObject ElementType = "UserObject"
+)
+
+func (e ElementType) String() string {
+	return string(e)
+}
+
 type DrawioFile struct {
 	XMLName  xml.Name   `xml:"mxfile"`
 	Diagrams []*Diagram `xml:"diagram"`
@@ -39,6 +52,7 @@ type GraphModel struct {
 type MxCell struct {
 	XMLName     xml.Name `xml:"mxCell"`
 	Id          string   `xml:"id,attr"`
+	Value       string   `xml:"value,attr"`
 	Edge        string   `xml:"edge,attr"`
 	Style       string   `xml:"style,attr"`
 	Parent      string   `xml:"parent,attr"`
@@ -78,7 +92,7 @@ func NewDrawioFile(content string) (*DrawioFile, error) {
 	return newDrawioFile(reader)
 }
 
-func (d *DrawioFile) GetElement(id string) Element {
+func (d *DrawioFile) init() {
 	if d.elements == nil {
 		d.elements = make(map[string]Element)
 		for _, diagrams := range d.Diagrams {
@@ -93,7 +107,48 @@ func (d *DrawioFile) GetElement(id string) Element {
 			}
 		}
 	}
+}
+
+func (d *DrawioFile) GetElement(id string) Element {
+	d.init()
 	return d.elements[id]
+}
+
+func (d *DrawioFile) GetMxCellByParent(parent string) []*MxCell {
+	d.init()
+	var items []*MxCell
+	for _, el := range d.elements {
+		if cell, ok := el.(*MxCell); ok {
+			if cell.Parent == parent {
+				items = append(items, cell)
+			}
+		}
+	}
+	return items
+}
+
+func (d *DrawioFile) GetUserObject(id string) *UserObject {
+	el := d.GetElement(id)
+	if el == nil {
+		return nil
+	}
+	return AsUserObject(el)
+}
+
+func (d *DrawioFile) GetObject(id string) *Object {
+	el := d.GetElement(id)
+	if el == nil {
+		return nil
+	}
+	return AsObject(el)
+}
+
+func (d *DrawioFile) GetMxCell(id string) *MxCell {
+	el := d.GetElement(id)
+	if el == nil {
+		return nil
+	}
+	return AsMxCell(el)
 }
 
 func (u *UserObject) GetId() string {
@@ -108,6 +163,10 @@ func (u *MxCell) GetId() string {
 	return u.Id
 }
 
+func (u *MxCell) IsEdge() bool {
+	return u.Edge == "1"
+}
+
 func (u *MxCell) GetXMLName() xml.Name {
 	return u.XMLName
 }
@@ -118,4 +177,25 @@ func (u *Object) GetId() string {
 
 func (u *Object) GetXMLName() xml.Name {
 	return u.XMLName
+}
+
+func AsUserObject(el Element) *UserObject {
+	if obj, ok := el.(*UserObject); ok {
+		return obj
+	}
+	return nil
+}
+
+func AsObject(el Element) *Object {
+	if obj, ok := el.(*Object); ok {
+		return obj
+	}
+	return nil
+}
+
+func AsMxCell(el Element) *MxCell {
+	if obj, ok := el.(*MxCell); ok {
+		return obj
+	}
+	return nil
 }

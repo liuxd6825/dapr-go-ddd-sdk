@@ -5,10 +5,14 @@ type SaveBatch struct {
 	Relations *Batch[*Relation]
 }
 
-type Batch[T any] struct {
-	Updates []T
-	Removes []T
-	Inserts []T
+type Batch[T Item] struct {
+	Updates map[string]T
+	Removes map[string]T
+	Creates map[string]T
+}
+
+type Item interface {
+	GetId() string
 }
 
 func NewSaveBatch() *SaveBatch {
@@ -18,22 +22,28 @@ func NewSaveBatch() *SaveBatch {
 	}
 }
 
-func NewBatch[T any]() *Batch[T] {
+func NewBatch[T Item]() *Batch[T] {
 	return &Batch[T]{
-		Updates: make([]T, 0),
-		Removes: make([]T, 0),
-		Inserts: make([]T, 0),
+		Updates: make(map[string]T, 0),
+		Removes: make(map[string]T, 0),
+		Creates: make(map[string]T, 0),
 	}
 }
 
-func (b *Batch[T]) Update(updates ...T) {
-	b.Updates = append(b.Updates, updates...)
+func (b *Batch[T]) AddUpdate(updates ...T) {
+	for _, update := range updates {
+		b.Updates[update.GetId()] = update
+	}
 }
 
-func (b *Batch[T]) Remove(remove ...T) {
-	b.Removes = append(b.Removes, remove...)
+func (b *Batch[T]) AddRemove(remove ...T) {
+	for _, item := range remove {
+		b.Removes[item.GetId()] = item
+	}
 }
 
-func (b *Batch[T]) Insert(insert ...T) {
-	b.Inserts = append(b.Inserts, insert...)
+func (b *Batch[T]) AddCreate(insert ...T) {
+	for _, item := range insert {
+		b.Creates[item.GetId()] = item
+	}
 }

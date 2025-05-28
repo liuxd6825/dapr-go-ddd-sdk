@@ -2,19 +2,34 @@ package mxgraph
 
 import (
 	"encoding/json"
+	"github.com/antchfx/xmlquery"
 	"strings"
 )
 
 type BaseCell struct {
-	Id      string  `json:"id"`
-	Edge    *int    `json:"edge"`   //是否为关系
-	Source  *string `json:"source"` // 关系来源
-	Target  *string `json:"target"` // 关系目录
-	style   map[string]string
-	element Element
+	Id     string  `json:"id"`
+	Edge   *int    `json:"edge"`   //是否为关系
+	Source *string `json:"source"` // 关系来源
+	Target *string `json:"target"` // 关系目录
+	style  map[string]string
 }
 
-type Cell struct {
+type Extend struct {
+	Type     string   `json:"type"`
+	Label    string   `json:"label"`
+	Labels   []*Label `json:"labels"`
+	ParentId string   `json:"parentId"`
+	SourceId string   `json:"sourceId"`
+	TargetId string   `json:"targetId"`
+	OldValue string   `json:"oldValue"`
+}
+
+type Label struct {
+	Id    string `json:"id"`
+	Value string `json:"value"`
+}
+
+type DiffCell struct {
 	Geometry *string `json:"geometry"`
 	Id       string  `json:"id"`
 	Parent   *string `json:"parent"`
@@ -26,20 +41,30 @@ type Cell struct {
 	Edge     *int    `json:"edge"`   //是否为关系
 	Source   *string `json:"source"` // 关系来源
 	Target   *string `json:"target"` // 关系目录
-	style    map[string]string
-	element  Element
+	Extend   Extend  `json:"extend"`
+	State    DiffState
+	newXml   *xmlquery.Node
+	oldXml   *xmlquery.Node
 }
 
-type Cells struct {
-	I []*Cell          `json:"i"`
-	R []string         `json:"r"`
-	U map[string]*Cell `json:"u"`
+type DiffState int
+
+const (
+	DiffState_Remove DiffState = 0
+	DiffState_Insert DiffState = 1
+	DiffState_Update DiffState = 2
+)
+
+type DiffCells struct {
+	I []*DiffCell          `json:"i"`
+	R []*DiffCell          `json:"r"`
+	U map[string]*DiffCell `json:"u"`
 }
 
 type UpdatePage struct {
-	Name          *string `json:"name"`
-	PageProperty2 *string `json:"page_property2"`
-	Cells         *Cells  `json:"cells"`
+	Name          *string    `json:"name"`
+	PageProperty2 *string    `json:"page_property2"`
+	Cells         *DiffCells `json:"cells"`
 }
 
 type InsertPage struct {
@@ -63,91 +88,105 @@ func NewFileDiff(jsonText string) *FileDiff {
 	return &fileDiff
 }
 
-func (c *Cell) GetElement() Element {
-	return c.element
-}
-
-func (c *Cell) IsNode() bool {
-	if c.Edge != nil {
-		if c.Style != nil {
-			style := c.GetStyle()
-			if style != nil {
-			}
+func (c *DiffCell) GetNodeName() string {
+	if c.Extend.OldValue != "" {
+		oldXml := c.GetOldXml()
+		if oldXml != nil && oldXml.Data == "object" {
+			return oldXml.SelectAttr("label")
+		}
+	} else if c.XmlValue != nil {
+		newXml := c.GetNewXml()
+		if newXml != nil && newXml.Data == "object" {
+			return newXml.SelectAttr("label")
 		}
 	}
-	return false
+	return ""
 }
 
-func (c *Cell) IsEdge() bool {
-	if c.Edge != nil {
-		if c.Style != nil {
-			style := c.GetStyle()
-			if style != nil {
-			}
+func (c *DiffCell) GetNodeLabels() []string {
+	var labels []string
+
+	if c.Extend.OldValue != "" {
+		oldXml := c.GetOldXml()
+		if oldXml != nil && oldXml.Type == xmlquery.ElementNode {
+			return labels
 		}
+	} else if c.XmlValue != nil {
+		newXml := c.GetNewXml()
+		return []string{c.GetObjectLabel(newXml)}
 	}
-	return true
+	return labels
 }
 
-func (c *Cell) IsMxCellElement() bool {
-	if c.XmlValue == nil {
-		return false
+func (c *DiffCell) GetObjectLabel(xml *xmlquery.Node) string {
+	if xml != nil && xml.Data == "object" {
+		return xml.SelectAttr("label")
 	}
-	value := *c.XmlValue
-	return strings.HasPrefix(value, "<mxCell ")
+	return ""
 }
 
-func (c *Cell) IsUserObjectElement() bool {
-	if c.XmlValue == nil {
-		return false
+func (c *DiffCell) GetObjectCellType(xml *xmlquery.Node) string {
+	if xml != nil && xml.Data == "object" {
+		return xml.SelectAttr("cellType")
 	}
-	value := *c.XmlValue
-	return strings.HasPrefix(value, "<UserObject ")
+	return ""
 }
 
-func (c *Cell) IsObjectElement() bool {
-	if c.XmlValue == nil {
-		return false
+func (c *DiffCell) GetNewXml() *xmlquery.Node {
+	if c.XmlValue == nil || *c.XmlValue == "" {
+		return nil
 	}
-	value := *c.XmlValue
-	return strings.HasPrefix(value, "<object ")
+	if c.newXml != nil {
+		return c.newXml
+	}
+	newXml, err := xmlquery.Parse(strings.NewReader(*c.XmlValue))
+	if err != nil {
+		panic(err)
+	}
+	c.newXml = newXml.LastChild
+	return c.newXml
 }
 
-func (c *Cell) IsEdgeLabel() bool {
-	style := c.GetStyle()
-	if _, ok := style["edgeLabel"]; ok {
-		return true
+func (c *DiffCell) GetOldXml() *xmlquery.Node {
+	if c.Extend.OldValue == "" {
+		return nil
 	}
-	return false
+	if c.oldXml != nil {
+		return c.oldXml
+	}
+	oldXml, err := xmlquery.Parse(strings.NewReader(c.Extend.OldValue))
+	if err != nil {
+		panic(err)
+	}
+	c.oldXml = oldXml
+	return c.oldXml
 }
 
-func (c *Cell) GetStyle() map[string]string {
-	if c.style != nil {
-		return c.style
+func (c *DiffCell) GetTagType() string {
+	xml := c.Extend.OldValue
+	i := strings.Index(xml, " ")
+	if i < 2 {
+		return ""
 	}
+	return xml[1 : i-1]
+}
 
-	styleMap := make(map[string]string)
-	if c.Style != nil {
-		// 使用分号分隔每个键值对
-		pairs := strings.Split(*c.Style, ";")
-		for _, pair := range pairs {
-			// 跳过空字符串
-			if pair == "" {
-				continue
-			}
+func (c *DiffCell) GetRelType() string {
+	return c.Extend.Label
+}
 
-			// 使用等号分隔键和值
-			kv := strings.SplitN(pair, "=", 2)
-			if len(kv) == 2 {
-				// 存储键值对
-				styleMap[kv[0]] = kv[1]
-			} else {
-				// 如果没有值，则将值设置为空字符串
-				styleMap[kv[0]] = ""
-			}
-		}
-	}
+func (c *DiffCell) GetTargetId() string {
+	return c.Extend.TargetId
+}
 
-	c.style = styleMap
-	return c.style
+func (c *DiffCell) GetSourceId() string {
+	return c.Extend.SourceId
+}
+
+func (c *DiffCell) IsEdge() bool {
+	return c.Extend.Type == "edge" || c.Extend.Type == "edgeLabel"
+}
+
+func (c *DiffCell) IsNode() bool {
+	return c.Extend.Type == "node"
 }

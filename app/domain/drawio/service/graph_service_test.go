@@ -28,6 +28,20 @@ func Test_Diff3(t *testing.T) {
 	}
 
 	graphService := NewGraphService()
-	saveBatch := graphService.GetSaveNodes(drawFile, diff)
+	saveBatch := graphService.GetSaveBatch("1001", diff)
+	t.Log(saveBatch)
+}
+
+//go:embed test_file/diff1/1_add_object.json
+var addObjectJson string
+
+func Test_AddObject(t *testing.T) {
+	diff := mxgraph.NewFileDiff(addObjectJson)
+	if diff == nil {
+		t.Fatal("diff is nil")
+	}
+
+	graphService := NewGraphService()
+	saveBatch := graphService.GetSaveBatch("1001", diff)
 	t.Log(saveBatch)
 }

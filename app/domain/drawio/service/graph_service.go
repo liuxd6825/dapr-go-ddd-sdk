@@ -27,48 +27,147 @@ func newGraphService() *GraphService {
 	return graphService
 }
 
-func (s *GraphService) Save(ctx context.Context, saveRequest *request.SaveFileRequest) error {
+func (s *GraphService) Save(ctx context.Context, caseId string, saveRequest *request.SaveFileRequest) error {
 	if saveRequest == nil {
 		return errors.New("diff name is empty")
 	}
 
-	drawioFile, err := mxgraph.NewDrawioFile(saveRequest.XML)
-	if err != nil {
-		return err
-	}
+	saveBatch := s.GetSaveBatch(caseId, saveRequest.Diff)
+	if saveBatch == nil {
 
-	s.GetSaveNodes(drawioFile, saveRequest.Diff)
+	}
 	return nil
 }
 
-func (s *GraphService) GetSaveNodes(drawioFile *mxgraph.DrawioFile, fileDiff *mxgraph.FileDiff) *model.SaveBatch {
+func (s *GraphService) GetSaveBatch(caseId string, fileDiff *mxgraph.FileDiff) *model.SaveBatch {
 	saveBatch := model.NewSaveBatch()
 	for _, update := range fileDiff.U {
 		cells := update.Cells
 		if cells != nil {
 			// 删除内容
-			rItems := cells.R
-			for _, cellId := range rItems {
-				println(cellId)
+			for _, cell := range cells.R {
+				cell.State = mxgraph.DiffState_Remove
+				if cell.IsNode() {
+					s.addRemoveNode(saveBatch, caseId, cell)
+				} else if cell.IsEdge() {
+					s.addRemoveRelation(saveBatch, caseId, cell)
+				}
 			}
 
 			// 新建内容
-			nItems := cells.I
-			for _, cell := range nItems {
+			for _, cell := range cells.I {
+				cell.State = mxgraph.DiffState_Insert
 				if cell.IsNode() {
+					s.addCreateNode(saveBatch, caseId, cell)
 				} else if cell.IsEdge() {
+					s.addCreateRelation(saveBatch, caseId, cell)
 				}
 			}
 
 			// 更新内容
-			uItems := cells.U
-			for id, cell := range uItems {
+			for id, cell := range cells.U {
 				cell.Id = id
+				cell.State = mxgraph.DiffState_Update
 				if cell.IsNode() {
+					s.addUpdateNode(saveBatch, caseId, cell)
 				} else if cell.IsEdge() {
+					s.addUpdateRelation(saveBatch, caseId, cell)
 				}
 			}
 		}
 	}
 	return saveBatch
+}
+
+func (s *GraphService) addCreateNode(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
+	if !cell.IsNode() {
+		return
+	}
+	node := newNode(caseId, cell)
+	saveBatch.Nodes.AddCreate(node)
+}
+
+func (s *GraphService) addCreateRelation(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
+	if !cell.IsEdge() {
+		return
+	}
+	items := newRelation(caseId, cell)
+	for _, rel := range items {
+		if rel.StartId != "" && rel.EndId != "" && rel.RelType != "" {
+			saveBatch.Relations.AddCreate(rel)
+		}
+	}
+}
+
+func (s *GraphService) addUpdateNode(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
+	if !cell.IsNode() {
+		return
+	}
+	node := newNode(caseId, cell)
+	saveBatch.Nodes.AddUpdate(node)
+}
+
+func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
+	if !cell.IsEdge() {
+		return
+	}
+	items := newRelation(caseId, cell)
+	for _, rel := range items {
+		if rel.StartId != "" && rel.EndId != "" && rel.RelType != "" {
+			saveBatch.Relations.AddUpdate(rel)
+		} else {
+			saveBatch.Relations.AddRemove(rel)
+		}
+	}
+}
+
+func (s *GraphService) addRemoveNode(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
+	if !cell.IsNode() {
+		return
+	}
+	node := newNode(caseId, cell)
+	saveBatch.Nodes.AddRemove(node)
+}
+
+func (s *GraphService) addRemoveRelation(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
+	if !cell.IsEdge() {
+		return
+	}
+	items := newRelation(caseId, cell)
+	for _, rel := range items {
+		saveBatch.Relations.AddRemove(rel)
+	}
+}
+
+func newNode(caseId string, cell *mxgraph.DiffCell) *model.Node {
+	node := model.NewNode()
+	node.Id = cell.Id
+	node.CaseId = caseId
+	node.Name = cell.GetNodeName()
+	node.Labels = cell.GetNodeLabels()
+	return node
+}
+
+func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
+	var items []*model.Relation
+	if cell.Extend.Type == "edgeLabel" {
+		rel := model.NewRelation()
+		rel.Id = cell.Extend.ParentId + "-" + cell.Id
+		rel.CaseId = caseId
+		rel.RelType = cell.GetRelType()
+		rel.StartId = cell.GetSourceId()
+		rel.EndId = cell.GetTargetId()
+		items = append(items, rel)
+	} else if cell.Extend.Type == "edge" {
+		for _, label := range cell.Extend.Labels {
+			rel := model.NewRelation()
+			rel.Id = cell.Id + "-" + label.Id
+			rel.CaseId = caseId
+			rel.RelType = label.Value
+			rel.StartId = cell.Extend.SourceId
+			rel.EndId = cell.Extend.TargetId
+			items = append(items, rel)
+		}
+	}
+	return items
 }

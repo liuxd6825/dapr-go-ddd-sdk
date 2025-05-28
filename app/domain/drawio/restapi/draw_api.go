@@ -156,7 +156,11 @@ func (s *DrawAPI) ReadFile(ictx iris.Context) {
 
 func (s *DrawAPI) SaveFile(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		draw := s.getDrawById(ctx, ictx.Params().GetString("id"))
+		id := ictx.Params().GetString("id")
+		draw := s.getDrawById(ctx, id)
+		if draw == nil {
+			return errors.ErrorOf("没有找到分析图: %s", id)
+		}
 		var saveRequest request.SaveFileRequest
 		err := ictx.ReadJSON(&saveRequest)
 		if err != nil {
@@ -166,7 +170,7 @@ func (s *DrawAPI) SaveFile(ictx iris.Context) {
 		if err != nil {
 			return err
 		}
-		return s.graphService.Save(ctx, &saveRequest)
+		return s.graphService.Save(ctx, draw.CaseId, &saveRequest)
 	})
 }
 
