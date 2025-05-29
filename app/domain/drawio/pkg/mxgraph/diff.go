@@ -204,10 +204,16 @@ func (c *DiffCell) GetRelType() string {
 }
 
 func (c *DiffCell) GetTargetId() string {
+	if c.Target != nil {
+		return *c.Target
+	}
 	return c.Extend.TargetId
 }
 
 func (c *DiffCell) GetSourceId() string {
+	if c.Source != nil {
+		return *c.Source
+	}
 	return c.Extend.SourceId
 }
 

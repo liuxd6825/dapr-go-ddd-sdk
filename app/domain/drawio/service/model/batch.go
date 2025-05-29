@@ -31,8 +31,8 @@ func NewItemBatch[T Item]() *ItemBatch[T] {
 }
 
 func (b *ItemBatch[T]) AddUpdate(updates ...T) {
-	for _, update := range updates {
-		b.Updates[update.GetId()] = update
+	for _, item := range updates {
+		b.Updates[item.GetId()] = item
 	}
 }
 

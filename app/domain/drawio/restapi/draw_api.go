@@ -170,7 +170,7 @@ func (s *DrawAPI) SaveFile(ictx iris.Context) {
 		if err != nil {
 			return err
 		}
-		return s.graphService.Save(ctx, draw.CaseId, &saveRequest)
+		return s.graphService.Save(ctx, draw.CaseId, draw.Id, &saveRequest)
 	})
 }
 

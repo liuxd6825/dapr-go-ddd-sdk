@@ -111,7 +111,7 @@ func (d *NodeDao) nodesRemove(ctx context.Context, tenantId string, batch *model
 		nodeIds = append(nodeIds, fmt.Sprintf("'%s'", item.Id))
 	}
 	if len(nodeIds) > 0 {
-		cypher.WriteString(fmt.Sprintf("\nMATCH (draw_%s) WHERE r.id IN [%s] DELETE r", drawId, strings.Join(nodeIds, ",")))
+		cypher.WriteString(fmt.Sprintf("\nMATCH (n:draw_%s) WHERE n.id IN [%s] DETACH DELETE n", drawId, strings.Join(nodeIds, ",")))
 	}
 	if cypher.Len() > 0 {
 		d.write(ctx, cypher.String())

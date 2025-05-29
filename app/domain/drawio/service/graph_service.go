@@ -4,12 +4,14 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/restapi/request"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"sync"
 )
 
 type GraphService struct {
+	nodeDao *dao.NodeDao
 }
 
 var _graphService *GraphService
@@ -23,18 +25,21 @@ func NewGraphService() *GraphService {
 }
 
 func newGraphService() *GraphService {
-	graphService := &GraphService{}
+	graphService := &GraphService{
+		nodeDao: dao.NewNodeDao(),
+	}
+
 	return graphService
 }
 
-func (s *GraphService) Save(ctx context.Context, caseId string, saveRequest *request.SaveFileRequest) error {
+func (s *GraphService) Save(ctx context.Context, caseId string, drawId string, saveRequest *request.SaveFileRequest) error {
 	if saveRequest == nil {
 		return errors.New("diff name is empty")
 	}
 
 	saveBatch := s.GetSaveBatch(caseId, saveRequest.Diff)
-	if saveBatch == nil {
-
+	if saveBatch != nil {
+		s.nodeDao.BatchSave(ctx, saveBatch, drawId)
 	}
 	return nil
 }
@@ -104,8 +109,13 @@ func (s *GraphService) addUpdateNode(saveBatch *model.SaveBatch, caseId string, 
 	if !cell.IsNode() {
 		return
 	}
+	// 没有变化 退出
+	if cell.XmlValue == nil {
+		return
+	}
 	node := newNode(caseId, cell)
 	saveBatch.Nodes.AddUpdate(node)
+
 }
 
 func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId string, cell *mxgraph.DiffCell) {
@@ -132,11 +142,13 @@ func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId stri
 		}
 
 	} else if cell.Extend.Type == "edge" {
+		if cell.Source == nil && cell.Target == nil {
+			return
+		}
 		for _, label := range cell.Extend.Labels {
-
 			// 是关系类型修改，删除旧关系
 			remove := model.NewRelation()
-			remove.Id = cell.Extend.ParentId + "-" + cell.Id
+			remove.Id = cell.Id + "-" + label.Id
 			saveBatch.Relations.AddRemove(remove)
 
 			// 创建新关系
@@ -144,9 +156,9 @@ func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId stri
 			rel.Id = cell.Id + "-" + label.Id
 			rel.CaseId = caseId
 			rel.RelType = label.Value
-			rel.StartId = cell.Extend.SourceId
-			rel.EndId = cell.Extend.TargetId
-			saveBatch.Relations.AddCreate(remove)
+			rel.StartId = cell.GetSourceId()
+			rel.EndId = cell.GetTargetId()
+			saveBatch.Relations.AddCreate(rel)
 		}
 	}
 }
