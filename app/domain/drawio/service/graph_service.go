@@ -11,7 +11,7 @@ import (
 )
 
 type GraphService struct {
-	nodeDao *dao.NodeDao
+	graphDao *dao.GraphDao
 }
 
 var _graphService *GraphService
@@ -26,7 +26,7 @@ func NewGraphService() *GraphService {
 
 func newGraphService() *GraphService {
 	graphService := &GraphService{
-		nodeDao: dao.NewNodeDao(),
+		graphDao: dao.NewGraphDao(),
 	}
 
 	return graphService
@@ -39,7 +39,7 @@ func (s *GraphService) Save(ctx context.Context, caseId string, drawId string, s
 
 	saveBatch := s.GetSaveBatch(caseId, saveRequest.Diff)
 	if saveBatch != nil {
-		s.nodeDao.BatchSave(ctx, saveBatch, drawId)
+		s.graphDao.BatchSave(ctx, saveBatch, drawId)
 	}
 	return nil
 }

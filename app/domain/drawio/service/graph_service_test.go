@@ -46,7 +46,7 @@ func Test_AddObject(t *testing.T) {
 		saveBatch := graphService.GetSaveBatch("1001", diff)
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewNodeDao()
+		nodeDao := dao.NewGraphDao()
 		nodeDao.BatchSave(ctx, saveBatch, "D001")
 		return nil
 	}).Catch(func(e error) {
@@ -69,7 +69,7 @@ func Test_UpdateLabel(t *testing.T) {
 		graphService := NewGraphService()
 		saveBatch := graphService.GetSaveBatch("1001", diff)
 		t.Log(saveBatch)
-		nodeDao := dao.NewNodeDao()
+		nodeDao := dao.NewGraphDao()
 		nodeDao.BatchSave(ctx, saveBatch, "D001")
 		return nil
 	}).Catch(func(e error) {
@@ -94,7 +94,7 @@ func Test_AllJson(t *testing.T) {
 		saveBatch := graphService.GetSaveBatch("1001", diff)
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewNodeDao()
+		nodeDao := dao.NewGraphDao()
 		nodeDao.BatchSave(ctx, saveBatch, "D001")
 		return nil
 	}).Catch(func(e error) {

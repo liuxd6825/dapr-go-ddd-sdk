@@ -94,6 +94,10 @@ func (r *Neo4jResult[T]) Data() map[string][]any {
 	return r.dataSet
 }
 
+func (r *Neo4jResult[T]) GetDataSet() map[string][]any {
+	return r.dataSet
+}
+
 func (r *Neo4jResult[T]) GetData(key string) ([]any, bool) {
 	v, ok := r.dataSet[key]
 	return v, ok

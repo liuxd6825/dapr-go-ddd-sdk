@@ -12,11 +12,12 @@ import (
 	"strings"
 )
 
-type NodeDao struct {
+type GraphDao struct {
 	idao.Dao[*model.Node]
+	store *store_neo4j.Dao[*model.Node]
 }
 
-func NewNodeDao() *NodeDao {
+func NewGraphDao() *GraphDao {
 	nodeCfg := &dao.NewConfig{
 		DBKey:              "neo4j",
 		IsPubEvent:         dao.IsFalse(),
@@ -26,12 +27,35 @@ func NewNodeDao() *NodeDao {
 		IsCancelSoftDelete: true,
 	}
 	newDao := dao.NewDao[*model.Node](nodeCfg)
-	return &NodeDao{
+	return &GraphDao{
 		Dao: newDao,
 	}
 }
 
-func (d *NodeDao) relationsRemoves(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
+func (d *GraphDao) BatchSave(ctx context.Context, batch *model.SaveBatch, drawId string) {
+	tenantId := appctx.GetTenantId2(ctx)
+
+	// 删除关系
+	d.relationsRemoves(ctx, tenantId, batch, drawId)
+
+	// 创建节点
+	d.nodesCreates(ctx, tenantId, batch, drawId)
+
+	// 更新节点
+	d.nodesUpdates(ctx, tenantId, batch, drawId)
+
+	// 删除节点
+	d.nodesRemove(ctx, tenantId, batch, drawId)
+
+	// 创建关系
+	d.relationsCreate(ctx, tenantId, batch, drawId)
+
+	// 更新关系
+	d.relationsUpdate(ctx, tenantId, batch, drawId)
+
+}
+
+func (d *GraphDao) relationsRemoves(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 删除关系
 	relIds := make([]string, 0)
 	for _, item := range batch.Relations.Removes {
@@ -43,7 +67,7 @@ func (d *NodeDao) relationsRemoves(ctx context.Context, tenantId string, batch *
 	}
 }
 
-func (d *NodeDao) nodesCreates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
+func (d *GraphDao) nodesCreates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
 	cypher := strings.Builder{}
 	i := 0
@@ -60,7 +84,7 @@ func (d *NodeDao) nodesCreates(ctx context.Context, tenantId string, batch *mode
 	}
 }
 
-func (d *NodeDao) nodesUpdates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
+func (d *GraphDao) nodesUpdates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
 	cypher := strings.Builder{}
 	/*
@@ -94,7 +118,7 @@ func (d *NodeDao) nodesUpdates(ctx context.Context, tenantId string, batch *mode
 
 }
 
-func (d *NodeDao) write(ctx context.Context, cypher string) {
+func (d *GraphDao) write(ctx context.Context, cypher string) {
 	store := d.GetStore()
 	_, err := store.Write(ctx, cypher, nil)
 	if err != nil {
@@ -103,7 +127,7 @@ func (d *NodeDao) write(ctx context.Context, cypher string) {
 	}
 }
 
-func (d *NodeDao) nodesRemove(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
+func (d *GraphDao) nodesRemove(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
 	cypher := strings.Builder{}
 	nodeIds := make([]string, 0)
@@ -118,7 +142,7 @@ func (d *NodeDao) nodesRemove(ctx context.Context, tenantId string, batch *model
 	}
 }
 
-func (d *NodeDao) relationsCreate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
+func (d *GraphDao) relationsCreate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
 	cypher := strings.Builder{}
 	i := 0
@@ -140,7 +164,7 @@ func (d *NodeDao) relationsCreate(ctx context.Context, tenantId string, batch *m
 	}
 }
 
-func (d *NodeDao) relationsUpdate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
+func (d *GraphDao) relationsUpdate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 更新关系
 	cypher := strings.Builder{}
 	i := 0
@@ -154,42 +178,23 @@ func (d *NodeDao) relationsUpdate(ctx context.Context, tenantId string, batch *m
 		d.write(ctx, cypher.String())
 	}
 }
-func (d *NodeDao) BatchSave(ctx context.Context, batch *model.SaveBatch, drawId string) {
-	tenantId := appctx.GetTenantId2(ctx)
 
-	// 删除关系
-	d.relationsRemoves(ctx, tenantId, batch, drawId)
-
-	// 创建节点
-	d.nodesCreates(ctx, tenantId, batch, drawId)
-
-	// 更新节点
-	d.nodesUpdates(ctx, tenantId, batch, drawId)
-
-	// 删除节点
-	d.nodesRemove(ctx, tenantId, batch, drawId)
-
-	// 创建关系
-	d.relationsCreate(ctx, tenantId, batch, drawId)
-
-	// 更新关系
-	d.relationsUpdate(ctx, tenantId, batch, drawId)
-
-}
-
-func (d *NodeDao) getItemLabels(tenantId string, item *model.Node, drawId string) string {
+func (d *GraphDao) getItemLabels(tenantId string, item *model.Node, drawId string) string {
 	return fmt.Sprintf(":%s:tenant_%s:case_%s:draw_%s:draw", item.Label, tenantId, item.CaseId, drawId)
 }
 
-func (d *NodeDao) getDrawLabels(drawId string) string {
+func (d *GraphDao) getDrawLabels(drawId string) string {
 	return fmt.Sprintf(":draw_%s:draw", drawId)
 }
 
-func (d *NodeDao) GetStore() *store_neo4j.Dao[*model.Node] {
-	iStore := d.Dao.GetStore().(any)
-	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Node])
-	if !ok {
-		panic("neo4j store does not implement neo4j.Dao")
+func (d *GraphDao) GetStore() *store_neo4j.Dao[*model.Node] {
+	if d.store == nil {
+		iStore := d.Dao.GetStore().(any)
+		nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Node])
+		if !ok {
+			panic("neo4j store does not implement neo4j.Dao")
+		}
+		d.store = nodeStoreDao
 	}
-	return nodeStoreDao
+	return d.store
 }
