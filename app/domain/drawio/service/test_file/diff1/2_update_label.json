@@ -1,26 +1,33 @@
 {
   "u": {
-    "6hLHKwI1_4bKL1ndOLRe": {
+    "yWyUjwoLREVWfdWcvl1f": {
       "cells": {
         "u": {
-          "kkcGR8n074Od3FpKltgG-2": {
-            "xmlValue": "<object label=\"张三\" cellType=\"人员\"/>"
+          "_JAtuelj7QZR3-mwoWm9-4": {
+            "value": "同学2",
+            "extend": {
+              "oldValue": "同学",
+              "type": "edgeLabel",
+              "parentId": "_JAtuelj7QZR3-mwoWm9-3",
+              "sourceId": "_JAtuelj7QZR3-mwoWm9-1",
+              "targetId": "_JAtuelj7QZR3-mwoWm9-2"
+            }
           },
-          "kkcGR8n074Od3FpKltgG-3": {
-            "xmlValue": "<object label=\"XX分公司\" cellType=\"公司\"/>"
+          "_JAtuelj7QZR3-mwoWm9-1": {
+            "xmlValue": "<object label=\"张三2\" cellType=\"人员\"/>",
+            "extend": {
+              "oldValue": "<object label=\"张三\" cellType=\"人员\"/>",
+              "type": "node"
+            }
+          },
+          "_JAtuelj7QZR3-mwoWm9-2": {
+            "xmlValue": "<object label=\"李四2\" cellType=\"人员\"/>",
+            "extend": {
+              "oldValue": "<object label=\"李四\" cellType=\"人员\"/>",
+              "type": "node"
+            }
           }
-        },
-        "i": [
-          {
-            "id": "kkcGR8n074Od3FpKltgG-5",
-            "vertex": 1,
-            "connectable": 0,
-            "parent": "kkcGR8n074Od3FpKltgG-4",
-            "style": "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];",
-            "geometry": "<mxGeometry x=\"0.2667\" relative=\"1\"><mxPoint as=\"offset\"/></mxGeometry>",
-            "value": "总经理"
-          }
-        ]
+        }
       }
     }
   }

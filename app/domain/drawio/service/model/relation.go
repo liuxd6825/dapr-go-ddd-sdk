@@ -2,7 +2,9 @@ package model
 
 type Relation struct {
 	Id      string `json:"id"`
+	Name    string `json:"name"`
 	CaseId  string `json:"caseId"`
+	DrawId  string `json:"drawId"`
 	RelType string `json:"relType"`
 	StartId string `json:"startId"`
 	EndId   string `json:"endId"`

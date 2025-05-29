@@ -74,6 +74,7 @@ func (s *GraphService) GetSaveBatch(caseId string, fileDiff *mxgraph.FileDiff) *
 					s.addUpdateRelation(saveBatch, caseId, cell)
 				}
 			}
+
 		}
 	}
 	return saveBatch
@@ -111,12 +112,41 @@ func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId stri
 	if !cell.IsEdge() {
 		return
 	}
-	items := newRelation(caseId, cell)
-	for _, rel := range items {
-		if rel.StartId != "" && rel.EndId != "" && rel.RelType != "" {
-			saveBatch.Relations.AddUpdate(rel)
-		} else {
-			saveBatch.Relations.AddRemove(rel)
+
+	if cell.Extend.Type == "edgeLabel" {
+		if cell.Value != nil && *cell.Value != cell.Extend.OldValue {
+			// 是关系类型修改，删除旧关系
+			remove := model.NewRelation()
+			remove.Id = cell.Extend.ParentId + "-" + cell.Id
+			remove.CaseId = caseId
+			saveBatch.Relations.AddRemove(remove)
+			// 创建新关系
+			create := model.NewRelation()
+			create.Id = cell.Extend.ParentId + "-" + cell.Id
+			create.CaseId = caseId
+			create.RelType = cell.GetRelType()
+			create.StartId = cell.GetSourceId()
+			create.EndId = cell.GetTargetId()
+			create.Name = *cell.Value
+			saveBatch.Relations.AddCreate(create)
+		}
+
+	} else if cell.Extend.Type == "edge" {
+		for _, label := range cell.Extend.Labels {
+
+			// 是关系类型修改，删除旧关系
+			remove := model.NewRelation()
+			remove.Id = cell.Extend.ParentId + "-" + cell.Id
+			saveBatch.Relations.AddRemove(remove)
+
+			// 创建新关系
+			rel := model.NewRelation()
+			rel.Id = cell.Id + "-" + label.Id
+			rel.CaseId = caseId
+			rel.RelType = label.Value
+			rel.StartId = cell.Extend.SourceId
+			rel.EndId = cell.Extend.TargetId
+			saveBatch.Relations.AddCreate(remove)
 		}
 	}
 }
@@ -144,13 +174,21 @@ func newNode(caseId string, cell *mxgraph.DiffCell) *model.Node {
 	node.Id = cell.Id
 	node.CaseId = caseId
 	node.Name = cell.GetNodeName()
-	node.Labels = cell.GetNodeLabels()
+	node.Label = cell.GetNodeLabel()
 	return node
 }
 
 func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
 	var items []*model.Relation
 	if cell.Extend.Type == "edgeLabel" {
+		if cell.Value != nil && *cell.Value != cell.Extend.OldValue {
+			// 是关系类型修改，删除旧关系
+			rel := model.NewRelation()
+			rel.Id = cell.Extend.ParentId + "-" + cell.Id
+			rel.CaseId = caseId
+			items = append(items, rel)
+		}
+
 		rel := model.NewRelation()
 		rel.Id = cell.Extend.ParentId + "-" + cell.Id
 		rel.CaseId = caseId
@@ -158,6 +196,7 @@ func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
 		rel.StartId = cell.GetSourceId()
 		rel.EndId = cell.GetTargetId()
 		items = append(items, rel)
+
 	} else if cell.Extend.Type == "edge" {
 		for _, label := range cell.Extend.Labels {
 			rel := model.NewRelation()

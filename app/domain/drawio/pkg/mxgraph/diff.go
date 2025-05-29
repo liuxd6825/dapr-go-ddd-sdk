@@ -15,13 +15,13 @@ type BaseCell struct {
 }
 
 type Extend struct {
-	Type     string   `json:"type"`
-	Label    string   `json:"label"`
-	Labels   []*Label `json:"labels"`
-	ParentId string   `json:"parentId"`
-	SourceId string   `json:"sourceId"`
-	TargetId string   `json:"targetId"`
-	OldValue string   `json:"oldValue"`
+	Type        string   `json:"type"`
+	Labels      []*Label `json:"labels"`
+	ParentId    string   `json:"parentId"`
+	SourceId    string   `json:"sourceId"`
+	TargetId    string   `json:"targetId"`
+	OldValue    string   `json:"oldValue"`
+	OldXmlValue string   `json:"oldXmlValue"`
 }
 
 type Label struct {
@@ -88,34 +88,44 @@ func NewFileDiff(jsonText string) *FileDiff {
 	return &fileDiff
 }
 
-func (c *DiffCell) GetNodeName() string {
-	if c.Extend.OldValue != "" {
-		oldXml := c.GetOldXml()
-		if oldXml != nil && oldXml.Data == "object" {
-			return oldXml.SelectAttr("label")
-		}
-	} else if c.XmlValue != nil {
-		newXml := c.GetNewXml()
-		if newXml != nil && newXml.Data == "object" {
-			return newXml.SelectAttr("label")
+func (c *DiffCell) GetNodeName() (name string) {
+	switch c.State {
+	case DiffState_Remove:
+		xml := c.GetOldXml()
+		name = c.GetObjectLabel(xml)
+	case DiffState_Insert:
+		xml := c.GetNewXml()
+		name = c.GetObjectLabel(xml)
+	case DiffState_Update:
+		if c.XmlValue != nil {
+			newXml := c.GetNewXml()
+			name = c.GetObjectLabel(newXml)
+		} else if c.Extend.OldValue != "" {
+			oldXml := c.GetOldXml()
+			name = c.GetObjectLabel(oldXml)
 		}
 	}
-	return ""
+	return name
 }
 
-func (c *DiffCell) GetNodeLabels() []string {
-	var labels []string
-
-	if c.Extend.OldValue != "" {
-		oldXml := c.GetOldXml()
-		if oldXml != nil && oldXml.Type == xmlquery.ElementNode {
-			return labels
+func (c *DiffCell) GetNodeLabel() (label string) {
+	switch c.State {
+	case DiffState_Remove:
+		xml := c.GetOldXml()
+		label = c.GetObjectCellType(xml)
+	case DiffState_Insert:
+		xml := c.GetNewXml()
+		label = c.GetObjectCellType(xml)
+	case DiffState_Update:
+		if c.XmlValue != nil {
+			newXml := c.GetNewXml()
+			label = c.GetObjectCellType(newXml)
+		} else if c.Extend.OldValue != "" {
+			oldXml := c.GetOldXml()
+			label = c.GetObjectCellType(oldXml)
 		}
-	} else if c.XmlValue != nil {
-		newXml := c.GetNewXml()
-		return []string{c.GetObjectLabel(newXml)}
 	}
-	return labels
+	return label
 }
 
 func (c *DiffCell) GetObjectLabel(xml *xmlquery.Node) string {
@@ -126,8 +136,23 @@ func (c *DiffCell) GetObjectLabel(xml *xmlquery.Node) string {
 }
 
 func (c *DiffCell) GetObjectCellType(xml *xmlquery.Node) string {
+	cellType := ""
 	if xml != nil && xml.Data == "object" {
-		return xml.SelectAttr("cellType")
+		cellType = xml.SelectAttr("cellType")
+	}
+	switch cellType {
+	case "人员":
+		return "human"
+	case "公司":
+		return "company"
+	case "银行":
+		return "bank"
+	case "合同":
+		return "contract"
+	case "账号":
+		return "account"
+	case "产品":
+		return "product"
 	}
 	return ""
 }
@@ -154,7 +179,7 @@ func (c *DiffCell) GetOldXml() *xmlquery.Node {
 	if c.oldXml != nil {
 		return c.oldXml
 	}
-	oldXml, err := xmlquery.Parse(strings.NewReader(c.Extend.OldValue))
+	oldXml, err := xmlquery.Parse(strings.NewReader(c.Extend.OldXmlValue))
 	if err != nil {
 		panic(err)
 	}
@@ -163,7 +188,7 @@ func (c *DiffCell) GetOldXml() *xmlquery.Node {
 }
 
 func (c *DiffCell) GetTagType() string {
-	xml := c.Extend.OldValue
+	xml := c.Extend.OldXmlValue
 	i := strings.Index(xml, " ")
 	if i < 2 {
 		return ""
@@ -172,7 +197,10 @@ func (c *DiffCell) GetTagType() string {
 }
 
 func (c *DiffCell) GetRelType() string {
-	return c.Extend.Label
+	if c.Value != nil {
+		return *c.Value
+	}
+	return c.Extend.OldValue
 }
 
 func (c *DiffCell) GetTargetId() string {
