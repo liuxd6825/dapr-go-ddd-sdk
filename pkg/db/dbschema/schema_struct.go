@@ -13,6 +13,20 @@ import (
 	"time"
 )
 
+func NewDBSchema(name string, tableName string) *store.DBSchema {
+	var err error = nil
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			panic(fmt.Errorf("tableName:%s; %s", tableName, err.Error()))
+		}
+	}()
+	dbSch := store.NewDBSchema()
+	dbSch.SetTableName(tableName)
+	dbSch.SetName(name)
+	return dbSch
+}
+
 func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSchema {
 	var err error = nil
 	defer func() {

@@ -259,7 +259,7 @@ func (r *Neo4jResult[T]) NewGraphNodes(list []any) []*graph.Node {
 			node := &graph.Node{
 				Nid:   stringutils.Int64ToString(n.Id),
 				Id:    id,
-				Name:  name,
+				Label: name,
 				Tags:  tags,
 				Props: prop,
 			}

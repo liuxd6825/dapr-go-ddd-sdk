@@ -5,8 +5,8 @@ import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 type NodeMap map[string]*Node
 type EdgeMap map[string]*Edge
 
-// Result Vis数据
-type Result struct {
+// ResultMap Vis数据
+type ResultMap struct {
 	Nodes     map[string]NodeMap `json:"nodes"`
 	Edges     map[string]EdgeMap `json:"edges"`
 	Header    map[string]any     `json:"header"`
@@ -16,22 +16,22 @@ type Result struct {
 	Total     *int64             `json:"total"`
 }
 
-func NewResult() *Result {
-	return &Result{
+func NewResultMap() *ResultMap {
+	return &ResultMap{
 		Header: nil,
 		Nodes:  map[string]NodeMap{},
 		Edges:  map[string]EdgeMap{},
 	}
 }
 
-type ResultWithGraphViewOption struct {
+type ResultMapWithGraphViewOption struct {
 	Merge  *bool //是否对数据进行合并去重处理
-	OnNode func(result *Result, n *Node)
-	OnEdge func(result *Result, e *Edge)
+	OnNode func(result *ResultMap, n *Node)
+	OnEdge func(result *ResultMap, e *Edge)
 }
 
-func NewResultWithGraphViewOption(opts ...*ResultWithGraphViewOption) *ResultWithGraphViewOption {
-	opt := &ResultWithGraphViewOption{}
+func NewResultWithGraphViewOption(opts ...*ResultMapWithGraphViewOption) *ResultMapWithGraphViewOption {
+	opt := &ResultMapWithGraphViewOption{}
 	for _, o := range opts {
 		if o != nil {
 			if o.Merge != nil {
@@ -48,8 +48,8 @@ func NewResultWithGraphViewOption(opts ...*ResultWithGraphViewOption) *ResultWit
 	return opt
 }
 
-func NewResultWithGraphView(graphView *graph.GraphView, opts ...*ResultWithGraphViewOption) *Result {
-	result := &Result{
+func NewResultMapWithGraphView(graphView *graph.GraphView, opts ...*ResultMapWithGraphViewOption) *ResultMap {
+	r := &ResultMap{
 		Header: nil,
 		Nodes:  map[string]NodeMap{},
 		Edges:  map[string]EdgeMap{},
@@ -57,51 +57,51 @@ func NewResultWithGraphView(graphView *graph.GraphView, opts ...*ResultWithGraph
 	opt := NewResultWithGraphViewOption(opts...)
 	if opt.Merge != nil && *opt.Merge {
 		nodeMap := NodeMap{}
-		result.Nodes["n"] = nodeMap
+		r.Nodes["n"] = nodeMap
 		for _, graphNodes := range graphView.Nodes {
-			addNodeMap(result, graphNodes, nodeMap, opt)
+			r.addNodeMap(graphNodes, nodeMap, opt)
 		}
 		edgeMap := EdgeMap{}
-		result.Edges["r"] = edgeMap
+		r.Edges["r"] = edgeMap
 		for _, graphEdges := range graphView.Edges {
-			addEdgeMap(result, graphEdges, edgeMap, opt)
+			r.addEdgeMap(graphEdges, edgeMap, opt)
 		}
-		return result
+		return r
 	}
 
 	for dataKey, graphNodes := range graphView.Nodes {
 		nodeMap := NodeMap{}
-		result.Nodes[dataKey] = nodeMap
-		addNodeMap(result, graphNodes, nodeMap, opt)
+		r.Nodes[dataKey] = nodeMap
+		r.addNodeMap(graphNodes, nodeMap, opt)
 	}
 	for dataKey, graphEdges := range graphView.Edges {
 		edgeMap := EdgeMap{}
-		result.Edges[dataKey] = edgeMap
-		addEdgeMap(result, graphEdges, edgeMap, opt)
+		r.Edges[dataKey] = edgeMap
+		r.addEdgeMap(graphEdges, edgeMap, opt)
 	}
-	return result
+	return r
 }
 
-func addNodeMap(result *Result, graphNodes graph.Nodes, nodeMap NodeMap, opt *ResultWithGraphViewOption) {
+func (r *ResultMap) addNodeMap(graphNodes graph.Nodes, nodeMap NodeMap, opt *ResultMapWithGraphViewOption) {
 	for key, graphNode := range graphNodes {
 		n := &Node{
 			Node: *graphNode,
 		}
 		nodeMap[key] = n
 		if opt.OnNode != nil {
-			opt.OnNode(result, n)
+			opt.OnNode(r, n)
 		}
 	}
 }
 
-func addEdgeMap(result *Result, graphEdges graph.Edges, edgeMap EdgeMap, opt *ResultWithGraphViewOption) {
+func (r *ResultMap) addEdgeMap(graphEdges graph.Edges, edgeMap EdgeMap, opt *ResultMapWithGraphViewOption) {
 	for key, graphEdge := range graphEdges {
 		e := &Edge{
 			Edge: *graphEdge,
 		}
 		edgeMap[key] = e
 		if opt.OnEdge != nil {
-			opt.OnEdge(result, e)
+			opt.OnEdge(r, e)
 		}
 	}
 }
