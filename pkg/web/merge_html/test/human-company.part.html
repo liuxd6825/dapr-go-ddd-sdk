@@ -1,0 +1,45 @@
+<ui5e-sheet id="human-company-data" filters header-menu column-sorting column-resize column-freeze column-move row-resize init-load-data
+    auto-add-row save-type="auto" auto-column-width="last" height="100%" xd-root xd-html>
+    <x-request x-prop="queryRequest" method="get" url="/api/v1.0/human/${$data.id}/human-company"></x-request>
+    <x-request x-prop="submitRequest" method="post" url="/api/v1.0/human-company:submitBatch"
+        data="$self.cmdData"></x-request>
+    <x-request x-prop="createRequest" method="post" url="/api/v1.0/human-company:createBatch"
+        data="$self.cmdData"></x-request>
+    <x-request x-prop="editRequest" method="put" url="/api/v1.0/human-company:updateBatch"
+        data="$self.cmdData"></x-request>
+    <x-request x-prop="deleteRequest" method="delete" url="/api/v1.0/human-company/${$self.cmdData.data.id}"
+        data="$self.cmdData"></x-request>
+    <script x-func="createModel">
+        return {
+            id: $xutil.newId(),
+            tenantId: null,
+            caseId: $data.caseId,
+            humanId: $data.id,
+            relationType: null,
+            name: null,
+            legalPerson: null,
+            phone: null,
+            identNum: null,
+            addr: null,
+            remark: null,
+        }
+    </script>
+    <ui5e-sheet-column name="id" title="主键" type="text" pk hide></ui5e-sheet-column>
+    <ui5e-sheet-column name="tenantId" title="租户" type="text" hide></ui5e-sheet-column>
+    <ui5e-sheet-column name="caseId" title="项目" type="text" hide></ui5e-sheet-column>
+    <ui5e-sheet-column name="humanId" title="人员" type="text" hide></ui5e-sheet-column>
+    <ui5e-sheet-column name="relationType" title="关系类型" type="text"></ui5e-sheet-column>
+    <ui5e-sheet-column name="name" title="公司名称" type="text"></ui5e-sheet-column>
+    <ui5e-sheet-column name="legalPerson" title="法人" type="text"></ui5e-sheet-column>
+    <ui5e-sheet-column name="phone" title="预留电话" type="text"></ui5e-sheet-column>
+    <ui5e-sheet-column name="addr" title="注册地址" type="text"></ui5e-sheet-column>
+    <ui5e-sheet-column name="identNum" title="纳税人识别号" type="text"></ui5e-sheet-column>
+    <ui5e-sheet-column name="remark" title="备注" type="text"></ui5e-sheet-column>
+    <script x-func="saveSubmitData" type="text/typescript">
+        $self.saveData(()=>{
+            $refs.page.submitResult.success++;
+        }, ()=>{
+            $refs.page.submitResult.error++;
+        });
+    </script>
+</ui5e-sheet>

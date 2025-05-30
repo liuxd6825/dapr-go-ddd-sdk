@@ -1,0 +1,55 @@
+@startuml
+title Golang + Lit SSR混合渲染时序图
+
+participant 浏览器 as Browser
+participant "Golang/Iris服务" as GoService
+participant "Node.js Lit SSR微服务" as NodeSSR
+participant Redis as Cache
+participant 数据库 as DB
+
+activate Browser
+Browser -> GoService: HTTP GET /dashboard
+activate GoService
+
+GoService --> GoService: 路由判断页面类型
+alt 简单页面（无复杂组件）
+    GoService -> DB: 查询基础数据
+    activate DB
+    DB --> GoService: 返回数据
+    deactivate DB
+
+    GoService -> GoService: 使用html/template渲染
+    GoService --> Browser: 返回纯HTML
+else 复杂页面（含Lit组件）
+    GoService -> NodeSSR: RPC调用SSR服务\n(component=user-profile, props)
+    activate NodeSSR
+
+    NodeSSR -> Cache: 检查渲染缓存[component+props]
+    activate Cache
+    alt 缓存命中
+        Cache --> NodeSSR: 返回缓存的HTML片段
+    else 缓存未命中
+        NodeSSR -> DB: 获取组件依赖数据
+        activate DB
+        DB --> NodeSSR: 返回组件数据
+        deactivate DB
+
+        NodeSSR -> NodeSSR: 执行Lit SSR渲染
+        NodeSSR -> Cache: 存储渲染结果\n(缓存5分钟)
+        NodeSSR --> NodeSSR: 生成带hydration标记的HTML
+    end
+    deactivate Cache
+
+    NodeSSR --> GoService: 返回SSR结果HTML
+    deactivate NodeSSR
+
+    GoService -> GoService: 注入动态数据到HTML
+    GoService --> Browser: 返回完整HTML\n(含<script>window.__DATA__)
+end
+
+deactivate GoService
+
+Browser -> Browser: 执行Lit hydration\n连接事件/恢复状态
+deactivate Browser
+
+@enduml

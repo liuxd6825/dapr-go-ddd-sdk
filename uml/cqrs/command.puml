@@ -1,0 +1,39 @@
+@startuml CQRS-Command-Side-Outbox-CDC-Sequence
+
+actor User as "用户"
+participant "API网关" as API
+participant "命令服务\n(Command Service)" as CommandService
+participant "数据库\n(写模型)" as WriteDB
+participant "Outbox表" as Outbox
+participant "消息发布者" as CDC
+participant "消息队列\n(Kafka)" as Kafka
+participant "读服务\n(Query Service)" as QueryService
+participant "读数据库\n(读模型)" as ReadDB
+
+== 命令处理阶段 ==
+User -> API: 提交创建订单请求
+API -> CommandService: CreateOrderCommand(cmd)
+group 数据库事务 [原子性保障]
+    CommandService -> WriteDB: BEGIN TRANSACTION
+    CommandService -> WriteDB: INSERT INTO orders (...)
+    CommandService -> Outbox: INSERT INTO outbox\n(event_id, event_type, payload)
+    CommandService -> WriteDB: COMMIT
+end
+CommandService -> API: 返回成功
+API -> User: 操作成功
+
+== 事件发布阶段 ==
+CDC -> Outbox: 读取变更
+Outbox --> CDC: 捕获新事件\n(OrderCreated)
+group 事件路由 [可靠性投递]
+    CDC -> CDC: 转换事件格式\n(应用EventRouter)
+    CDC -> Kafka: PUBLISH\n(topic: "OrderCreated", payload)
+end
+Kafka -> QueryService: 订阅事件\n(OrderCreated)
+QueryService -> ReadDB: UPSERT order_summary\n(更新读模型)
+ReadDB --> QueryService: 确认更新
+
+== 可选确认步骤 ==
+QueryService -> Kafka: COMMIT_OFFSET\n(标记事件已处理)
+
+@enduml

@@ -1,0 +1,62 @@
+<ui5e-form id="human-suspect-amount-data" xd-root="" xd-html="工具栏" x-ref="humanSuspectAmount" method="post" url="/api/v1.0/human-suspect-amount:submit" layout="S1 M2 L3 XL3" label-span="S12 M12 L12 XL12">
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">非法吸资金额:</ui5-label>
+        <ui5-input name="unlawfulAmount" type="number" show-clear-icon>
+        </ui5-input>
+    </ui5e-form-item>
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">报案资金总额:</ui5-label>
+        <ui5-input name="reportAmount" type="number" show-clear-icon>
+        </ui5-input>
+    </ui5e-form-item>
+    <ui5e-form-item>
+        <ui5-label slot="labelContent">返还资金总额:</ui5-label>
+        <ui5-input name="returnAmount" type="number" show-clear-icon>
+        </ui5-input>
+    </ui5e-form-item>
+    <script x-func="saveSubmitData" x-args="autoSave" type="text/typescript">
+        let isAutoSave = arguments[arguments.length - 1] === true;
+        $self.submit({
+            data:(data)=>{
+                data.id = $data.id;
+                data.caseId = $data.caseId;
+                data.humanId = $data.id;
+                let res = {
+                    commandId:$xutil.newId(),
+                    data:data,
+                }
+                return res;
+            },
+            ok: (data) => {
+                if(!isAutoSave) {
+                    $refs.page.submitResult.success++;
+                } else {
+                    $xutil.message("success", "保存成功", undefined, 3000);
+                }
+            },
+            error: (err) => {
+                if(!isAutoSave) {
+                    $refs.page.submitResult.error++;
+                } else {
+                    $xutil.message("fail", "保存失败", undefined, 90000000000000000);
+                }
+            }
+        })
+    </script>
+    <script x-func="initForm" type="text/typescript">
+        $xutil.hGet({
+            url:'/api/v1.0/human-suspect-amount/' + $data.id
+        }).then(response => {
+            if (response.ok) {
+                response.text().then(s => {
+                    let res = JSON.parse(s || '{}');
+                    if(res) {
+                        $refs.humanSuspectAmount.setValue(res);
+                    }
+                });
+            }
+        }).catch(err => {
+            console.log('hGet is error, ', err)
+        });
+    </script>
+</ui5e-form>

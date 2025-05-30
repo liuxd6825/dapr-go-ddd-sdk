@@ -1,0 +1,117 @@
+<ui5e-form id="human-info-data" xd-root="" xd-html="工具栏" x-ref="humanInfo" url="/api/v1.0/human" layout="S1 M2 L3 XL4" label-span="S12 M12 L12 XL12">
+    <ui5e-form-item>
+        <ui5-label slot="labelContent" show-colon="" required="">姓名</ui5-label>
+        <ui5-input name="name" style="width: 100%;">
+            <ui5e-valid data-type="string" method="required"></ui5e-valid>
+        </ui5-input>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">曾用姓名</ui5-label>
+        <ui5-input name="formerName" style="width: 100%;"></ui5-input>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">年龄</ui5-label>
+        <ui5-input type="Number" name="age" style="width: 100%;"></ui5-input>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">出生日期</ui5-label>
+        <ui5-date-picker name="birthday" format-pattern="yyyy-MM-dd" style="width: 100%;" show-clear-icon="true">
+        </ui5-date-picker>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">人员类型</ui5-label>
+        <ui5-multi-combobox name="personType" x-ref="personType" style="width:100%;" show-select-all="" show-clear-icon="true">
+            <template x-data="$request.get(`/api/v1.0/dict-type/HumanManage/dictionary`)">
+                {% for item in data %}
+                <ui5-mcb-item value="{{item.code}}" text="{{item.title}}"></ui5-mcb-item>
+                {% endfor %}
+            </template>
+        </ui5-multi-combobox>
+        <!-- <ui5-multi-combobox name="personType" x-ref="personType" style="width:100%;" show-select-all=""
+            show-clear-icon="true">
+            <ui5-mcb-item value="reporter" text="报案人"></ui5-mcb-item>
+            <ui5-mcb-item value="suspect" text="嫌疑人"></ui5-mcb-item>
+            <ui5-mcb-item value="victim" text="受害人"></ui5-mcb-item>
+            <ui5-mcb-item value="third" text="第三人"></ui5-mcb-item>
+        </ui5-multi-combobox> -->
+    </ui5e-form-item><ui5e-form-item column-span="">
+        <ui5-label show-colon="" slot="labelContent">性别</ui5-label>
+        <ui5-select name="gender" x-ref="gender" show-clear-icon="true" style="width:100%;">
+            <ui5-option value=""></ui5-option>
+            <ui5-option value="man">男</ui5-option>
+            <ui5-option value="women">女</ui5-option>
+        </ui5-select>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">毕业院校</ui5-label>
+        <ui5-input name="school" style="width: 100%;"></ui5-input>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">学历</ui5-label>
+        <ui5-select name="education" x-ref="education" show-clear-icon="true" style="width:100%;">
+            <ui5-option value=""></ui5-option>
+            <ui5-option value="a">中专</ui5-option>
+            <ui5-option value="b">大专</ui5-option>
+            <ui5-option value="c">本科</ui5-option>
+            <ui5-option value="d">硕士</ui5-option>
+            <ui5-option value="e">博士</ui5-option>
+            <ui5-option value="f">博士后</ui5-option>
+        </ui5-select>
+    </ui5e-form-item><ui5e-form-item>
+        <ui5-label show-colon="" slot="labelContent">标签</ui5-label>
+        <ui5e-dropdown-grid name="tags" id="tags" row-model-type="serverSide" pagination="" row-selection="multiple" text-field="name" id-field="id" style="width: 100%;">
+            <x-request x-prop="queryRequest" method="get" url="/api/v1.0/human"></x-request>
+            <ui5e-grid-column name="id" title="id" pk="true" data-type="string"></ui5e-grid-column>
+            <ui5e-grid-column name="name" title="name" data-type="string"></ui5e-grid-column>
+            <ui5e-grid-column name="age" title="age" data-type="number"></ui5e-grid-column>
+            <ui5e-grid-column name="birth" title="birth" data-type="date"></ui5e-grid-column>
+            <ui5e-grid-column name="addr" title="addr" data-type="string"></ui5e-grid-column>
+        </ui5e-dropdown-grid>
+    </ui5e-form-item><ui5e-form-item column-span="2">
+        <ui5-label show-colon="" slot="labelContent">备注</ui5-label>
+        <ui5-textarea name="remark" x-event="input" show-clear-icon="">
+        </ui5-textarea>
+    </ui5e-form-item>
+    <script x-func="saveSubmitData" x-args="autoSave" type="text/typescript">
+        let isAutoSave = arguments[arguments.length - 1] === true;
+        $self.submit({
+            method: $data.billMode == "edit" ? "put" : "post",
+            data:(data)=>{
+                data.id=$data.id;
+                data.caseId = $data.caseId;
+                let res = {
+                    commandId:$xutil.newId(),
+                    data:data,
+                }
+                return res;
+            },
+            ok: (data) => {
+                if($data.billMode == "new") {
+                    $data.billMode = "edit";
+                }
+                if(!isAutoSave) {
+                    $refs.page.submitResult.success++;
+                } else {
+                    $xutil.message("success", "保存成功", undefined, 3000);
+                }
+            },
+            error: (err) => {
+                if(!isAutoSave) {
+                    $refs.page.submitResult.error++;
+                } else {
+                    $xutil.message("fail", "保存失败", undefined, 90000000000000000);
+                }
+            }
+        })
+    </script>
+    <script x-func="initForm" type="text/typescript">
+        $xutil.hGet({
+            url:'/api/v1.0/human/' + $data.id
+        }).then(response => {
+            if (response.ok) {
+                response.text().then(s => {
+                    let res = JSON.parse(s || '{}');
+                    if(res) {
+                        $refs.humanInfo.setValue(res);
+                    }
+                });
+            }
+        }).catch(err => {
+            console.log('hGet is error, ', err)
+        });
+    </script>
+</ui5e-form>
