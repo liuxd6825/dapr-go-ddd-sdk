@@ -3,7 +3,7 @@ package graph
 type Node struct {
 	Nid   string            `json:"nid,omitempty"`
 	Id    string            `json:"id,omitempty"`
-	Label string            `json:"name,omitempty"`
+	Label string            `json:"label,omitempty"`
 	Tags  map[string]string `json:"tags,omitempty"`
 	Props map[string]any    `json:"props,omitempty"`
 }
