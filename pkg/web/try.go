@@ -3,7 +3,7 @@ package web
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
@@ -48,7 +48,7 @@ func Try(ictx iris.Context, funcToTry func(ctx context.Context) error) (h *Handl
 
 func newHandler(ictx iris.Context) *Handler {
 	ctx := context.Background()
-	ctx = appctx.NewWebContext(ctx, ictx)
+	ctx, _ = restapp.NewTestContext(context.Background())
 	goTry := &Handler{ictx: ictx, ctx: ctx, catch: nil, finally: nil, error: nil}
 	return goTry
 }

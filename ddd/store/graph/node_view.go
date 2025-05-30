@@ -1,11 +1,11 @@
 package graph
 
 type Node struct {
-	Nid   string         `json:"nid,omitempty"`
-	Id    string         `json:"id,omitempty"`
-	Name  string         `json:"name,omitempty"`
-	Tags  []string       `json:"tags,omitempty"`
-	Props map[string]any `json:"props,omitempty"`
+	Nid   string            `json:"nid,omitempty"`
+	Id    string            `json:"id,omitempty"`
+	Name  string            `json:"name,omitempty"`
+	Tags  map[string]string `json:"tags,omitempty"`
+	Props map[string]any    `json:"props,omitempty"`
 }
 
 func (n *Node) GetId() string {
@@ -20,7 +20,7 @@ func (n *Node) GetName() string {
 	return n.Name
 }
 
-func (n *Node) GetTags() []string {
+func (n *Node) GetTags() map[string]string {
 	return n.Tags
 }
 

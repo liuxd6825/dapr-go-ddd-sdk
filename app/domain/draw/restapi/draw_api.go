@@ -35,7 +35,6 @@ func NewDrawIoAPI(env *env.Env, rootPath string) *DrawAPI {
 }
 
 func (s *DrawAPI) BeforeActivation(b mvc.BeforeActivation) {
-
 	b.Handle(iris.MethodPost, "/draw", "Create")
 	b.Handle(iris.MethodPut, "/draw", "Update")
 	b.Handle(iris.MethodDelete, "/draw:deleteBatch", "DeleteByIds")
@@ -46,7 +45,6 @@ func (s *DrawAPI) BeforeActivation(b mvc.BeforeActivation) {
 
 	b.Handle(iris.MethodPost, "/draw/{id}/file", "SaveFile")
 	b.Handle(iris.MethodGet, "/draw/{id}/file", "ReadFile")
-
 }
 
 func (s *DrawAPI) Create(ictx iris.Context) {

@@ -252,11 +252,15 @@ func (r *Neo4jResult[T]) NewGraphNodes(list []any) []*graph.Node {
 			prop := n.GetProperties()
 			id, _ := maputils.GetString(prop, "id", "")
 			name, _ := maputils.GetString(prop, "name", "")
+			tags := map[string]string{}
+			for _, v := range n.Labels {
+				tags[v] = ""
+			}
 			node := &graph.Node{
 				Nid:   stringutils.Int64ToString(n.Id),
 				Id:    id,
 				Name:  name,
-				Tags:  n.Labels,
+				Tags:  tags,
 				Props: prop,
 			}
 			resList = append(resList, node)

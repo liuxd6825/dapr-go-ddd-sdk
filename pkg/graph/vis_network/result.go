@@ -9,7 +9,7 @@ type EdgeMap map[string]*Edge
 type Result struct {
 	Nodes     map[string]NodeMap `json:"nodes"`
 	Edges     map[string]EdgeMap `json:"edges"`
-	Heads     map[string]any     `json:"heads"`
+	Header    map[string]any     `json:"header"`
 	PageTotal *int64             `json:"pageTotal"`
 	PageSize  *int64             `json:"pageSize"`
 	PageNum   *int64             `json:"pageNum"`
@@ -18,17 +18,17 @@ type Result struct {
 
 func NewResult() *Result {
 	return &Result{
-		Heads: nil,
-		Nodes: map[string]NodeMap{},
-		Edges: map[string]EdgeMap{},
+		Header: nil,
+		Nodes:  map[string]NodeMap{},
+		Edges:  map[string]EdgeMap{},
 	}
 }
 
 func NewResultWithGraphView(graphView *graph.GraphView) *Result {
 	result := &Result{
-		Heads: nil,
-		Nodes: map[string]NodeMap{},
-		Edges: map[string]EdgeMap{},
+		Header: nil,
+		Nodes:  map[string]NodeMap{},
+		Edges:  map[string]EdgeMap{},
 	}
 	for dataKey, graphNodes := range graphView.Nodes {
 		nodes := NodeMap{}
