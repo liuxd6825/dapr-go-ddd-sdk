@@ -69,6 +69,7 @@ func (r *ResultList) addNodeList(graphNodes graph.Nodes, nodeList NodeList, opt 
 		n := &Node{
 			Node: *graphNode,
 		}
+		r.nodeMap[key] = n
 		nodeList = append(nodeList, n)
 		if opt.OnNode != nil {
 			opt.OnNode(r, n)
@@ -79,7 +80,7 @@ func (r *ResultList) addNodeList(graphNodes graph.Nodes, nodeList NodeList, opt 
 
 func (r *ResultList) addEdgeList(graphEdges graph.Edges, edgeList EdgeList, opt *ResultListWithGraphViewOption) EdgeList {
 	for key, graphEdge := range graphEdges {
-		if _, ok := r.nodeMap[key]; ok {
+		if _, ok := r.edgeMap[key]; ok {
 			continue
 		}
 		e := &Edge{
