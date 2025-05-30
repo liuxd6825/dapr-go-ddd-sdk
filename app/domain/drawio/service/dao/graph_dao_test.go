@@ -12,8 +12,8 @@ func Test_FindGraphByDrawId(t *testing.T) {
 		ctx := xtest.NewContext()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		dao := NewGraphDao()
-		nodes, rels := dao.FindGraphByDrawId(ctx, "XSj4nnZikcd02N3ntBVeSKugYX")
-		t.Log(nodes, rels)
+		graph := dao.FindGraphByDrawId(ctx, "XSj4nnZikcd02N3ntBVeSKugYX")
+		t.Log(graph)
 		return nil
 	}).Catch(func(e error) {
 		t.Error(e)

@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/graph/vis_network"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 )
 
@@ -29,8 +30,9 @@ func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
 func (s *GraphAPI) FindById(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		id := ictx.Params().Get("id")
-		s.graphService.FindById(ctx, id)
-		return nil
+		graphView := s.graphService.FindById(ctx, id)
+		result := vis_network.NewResultWithGraphView(graphView)
+		return web.SetData(ictx, result)
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})

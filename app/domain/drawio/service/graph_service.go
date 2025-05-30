@@ -210,6 +210,22 @@ func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
 		items = append(items, rel)
 
 	} else if cell.Extend.Type == "edge" {
+		if cell.Value != nil && cell.Extend.OldValue != *cell.Value {
+			// 是关系类型修改，删除旧关系
+			remove := model.NewRelation()
+			remove.Id = cell.Id
+			remove.CaseId = caseId
+			items = append(items, remove)
+
+			rel := model.NewRelation()
+			rel.Id = cell.Id
+			rel.CaseId = caseId
+			rel.RelType = *cell.Value
+			rel.StartId = cell.Extend.SourceId
+			rel.EndId = cell.Extend.TargetId
+			items = append(items, rel)
+		}
+
 		for _, label := range cell.Extend.Labels {
 			rel := model.NewRelation()
 			rel.Id = cell.Id + "-" + label.Id

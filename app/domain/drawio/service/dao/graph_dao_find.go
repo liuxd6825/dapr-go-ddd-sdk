@@ -4,32 +4,20 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 )
 
-func (d *GraphDao) FindGraphByDrawId(ctx context.Context, drawId string) (map[string]*model.NodeView, map[string]*model.RelationView) {
+func (d *GraphDao) FindGraphByDrawId(ctx context.Context, drawId string) *graph.GraphView {
 	tenantId := appctx.GetTenantId2(ctx)
 	cypher := fmt.Sprintf("MATCH (n:tenant_%s:draw_%s) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, drawId)
 	res, err := d.GetStore().Query(ctx, cypher, nil)
 	if err != nil {
 		panic(err)
 	}
-
-	nodes := map[string]*model.NodeView{}
-	if list, ok := res.GetData("n"); ok {
-		d.AddNodeList(nodes, list)
-	}
-	if list, ok := res.GetData("m"); ok {
-		d.AddNodeList(nodes, list)
-	}
-
-	rels := map[string]*model.RelationView{}
-	if list, ok := res.GetData("r"); ok {
-		d.AddRelationList(rels, list)
-	}
-	return nodes, rels
+	return res.NewGraphView()
 }
 
 func (d *GraphDao) AddNodeList(target map[string]*model.NodeView, source []any) {

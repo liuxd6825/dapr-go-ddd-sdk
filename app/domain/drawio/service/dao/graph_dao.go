@@ -85,35 +85,12 @@ func (d *GraphDao) nodesCreates(ctx context.Context, tenantId string, batch *mod
 }
 
 func (d *GraphDao) nodesUpdates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
-	// 创建节点
-	cypher := strings.Builder{}
 	/*
-		MATCH (n:human:tenant_test:case_1001:draw_D001:draw)
-		WHERE n.id IN ['_JAtuelj7QZR3-mwoWm9-1', '_JAtuelj7QZR3-mwoWm9-2']
-		SET n.name = CASE
-		    WHEN n.id = '_JAtuelj7QZR3-mwoWm9-1' THEN '张三2'
-		    WHEN n.id = '_JAtuelj7QZR3-mwoWm9-2' THEN '李四2'
-		    ELSE n.name
-		END
+		MATCH (n:human:tenant_test:case_1001:draw_D001:draw) WHERE n.id='' SET n.name='', n.startId='', n.endId=‘’
 	*/
-	i := 0
-
-	ids := make([]string, 0)
-	names := strings.Builder{}
 	for _, item := range batch.Nodes.Updates {
-		i++
-		ids = append(ids, fmt.Sprintf("'%s'", item.Id))
-		names.WriteString(fmt.Sprintf("\n WHEN n.id='%s' THEN '%s'", item.Id, item.Name))
-	}
-	if i > 0 {
-		cypher.WriteString(fmt.Sprintf("\nMATCH (n%s)", d.getDrawLabels(drawId)))
-		cypher.WriteString(fmt.Sprintf("\nWHERE n.id IN [%s]", strings.Join(ids, ",")))
-		cypher.WriteString("\nSET n.name = CASE")
-		cypher.WriteString(names.String())
-		cypher.WriteString("ELSE n.name END")
-		if cypher.Len() > 0 {
-			d.write(ctx, cypher.String())
-		}
+		update := fmt.Sprintf("MATCH (n%s{id:'%s'}) SET n.name='%s'", d.getDrawLabels(drawId), item.Id, item.Name)
+		d.write(ctx, update)
 	}
 
 }
@@ -144,7 +121,6 @@ func (d *GraphDao) nodesRemove(ctx context.Context, tenantId string, batch *mode
 
 func (d *GraphDao) relationsCreate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
-	cypher := strings.Builder{}
 	i := 0
 	for _, item := range batch.Relations.Creates {
 		i++
@@ -152,35 +128,29 @@ func (d *GraphDao) relationsCreate(ctx context.Context, tenantId string, batch *
 		b := fmt.Sprintf("b%d", i)
 		r := fmt.Sprintf("r%d", i)
 		create := fmt.Sprintf(
-			"\nMATCH ($a:draw_%s{id:'%s'}),($b:draw_%s{id:'%s'}) WITH $a,$b MERGE ($a)-[$r:%s{id:'%s'}]->($b) ON MATCH SET $r.name = '%s' ON CREATE SET $r.id='%s',$r.name='%s' ",
-			drawId, item.StartId, drawId, item.EndId, item.RelType, item.Id, item.Name, item.Id, item.Name)
+			"\nMATCH ($a:draw_%s{id:'%s'}),($b:draw_%s{id:'%s'}) WITH $a,$b MERGE ($a)-[$r:%s{id:'%s'}]->($b) \n ON MATCH SET $r.name='%s',$r.startId='%s',$r.endId='%s' \n ON CREATE SET $r.id='%s',$r.name='%s',$r.startId='%s',$r.endId='%s' ",
+			drawId, item.StartId, drawId, item.EndId, item.RelType, item.Id, item.Name, item.StartId, item.EndId, item.Id, item.Name, item.StartId, item.EndId)
 		create = strings.Replace(create, "$a", a, -1)
 		create = strings.Replace(create, "$b", b, -1)
 		create = strings.Replace(create, "$r", r, -1)
-		cypher.WriteString(create)
+		d.write(ctx, create)
 	}
-	if cypher.Len() > 0 {
-		d.write(ctx, cypher.String())
-	}
+
 }
 
 func (d *GraphDao) relationsUpdate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 更新关系
-	cypher := strings.Builder{}
-	i := 0
 	for _, item := range batch.Relations.Updates {
-		r := fmt.Sprintf("r%d", i)
-		set := fmt.Sprintf("MATCH (:draw_%s{id:'%s'})-[$r:%s{id:'%s'}]->(:draw_%s{id:'%s'}) WHERE $r.id='%s' SET $r.Name='%s' \n", drawId, item.StartId, item.RelType, item.Id, drawId, item.EndId, item.Id, item.Name)
-		set = strings.Replace(set, "$r", r, -1)
-		cypher.WriteString(set)
-	}
-	if cypher.Len() > 0 {
-		d.write(ctx, cypher.String())
+		set := fmt.Sprintf("MATCH (:draw_%s{id:'%s'})-[$r:%s{id:'%s'}]->(:draw_%s{id:'%s'}) WHERE $r.id='%s' SET $r.name='%s',r.startId='%s',r.endId='%s' \n", drawId, item.StartId, item.RelType, item.Id, drawId, item.EndId, item.Id, item.Name, item.StartId, item.EndId)
+		d.write(ctx, set)
 	}
 }
 
 func (d *GraphDao) getItemLabels(tenantId string, item *model.Node, drawId string) string {
-	return fmt.Sprintf(":%s:tenant_%s:case_%s:draw_%s:draw", item.Label, tenantId, item.CaseId, drawId)
+	if item.Label != "" {
+		return fmt.Sprintf(":%s:tenant_%s:case_%s:draw_%s:draw", item.Label, tenantId, item.CaseId, drawId)
+	}
+	return fmt.Sprintf(":tenant_%s:case_%s:draw_%s:draw", tenantId, item.CaseId, drawId)
 }
 
 func (d *GraphDao) getDrawLabels(drawId string) string {

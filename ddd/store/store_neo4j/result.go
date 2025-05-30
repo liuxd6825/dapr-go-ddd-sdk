@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
@@ -241,6 +243,76 @@ func (r *Neo4jResult[T]) GetOne(dataKey string, entity interface{}, schema *stor
 		return false, err
 	}
 	return true, nil
+}
+
+func (r *Neo4jResult[T]) NewGraphNodes(list []any) []*graph.Node {
+	var resList []*graph.Node
+	for _, i := range list {
+		if n, ok := i.(dbtype.Node); ok {
+			prop := n.GetProperties()
+			id, _ := maputils.GetString(prop, "id", "")
+			name, _ := maputils.GetString(prop, "name", "")
+			node := &graph.Node{
+				Nid:   stringutils.Int64ToString(n.Id),
+				Id:    id,
+				Name:  name,
+				Tags:  n.Labels,
+				Props: prop,
+			}
+			resList = append(resList, node)
+		}
+	}
+	return resList
+}
+
+func (r *Neo4jResult[T]) NewGraphEdges(list []any) []*graph.Edge {
+	var resList []*graph.Edge
+	for _, i := range list {
+		if n, ok := i.(dbtype.Relationship); ok {
+			prop := n.GetProperties()
+			id, _ := maputils.GetString(prop, "id", "")
+			startId, _ := maputils.GetString(prop, "startId", "")
+			endId, _ := maputils.GetString(prop, "endId", "")
+			node := &graph.Edge{
+				Nid:   stringutils.Int64ToString(n.Id),
+				Id:    id,
+				Label: n.Type,
+				From:  startId,
+				To:    endId,
+				Props: prop,
+			}
+			resList = append(resList, node)
+		}
+	}
+	return resList
+}
+
+func (r *Neo4jResult[T]) NewGraphView() *graph.GraphView {
+	graphView := graph.NewGraphView()
+	for k, data := range r.dataSet {
+		switch r.getType(data) {
+		case "node":
+			nodes := r.NewGraphNodes(data)
+			graphView.AddNodes(k, nodes)
+		case "rel":
+			edges := r.NewGraphEdges(data)
+			graphView.AddEdges(k, edges)
+		}
+	}
+	return graphView
+}
+
+func (r *Neo4jResult[T]) getType(list []any) string {
+	if len(list) == 0 {
+		return ""
+	}
+	item := list[0]
+	if _, ok := item.(dbtype.Node); ok {
+		return "node"
+	} else if _, ok := item.(dbtype.Relationship); ok {
+		return "rel"
+	}
+	return ""
 }
 
 // GetInteger
