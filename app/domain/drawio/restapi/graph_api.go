@@ -24,12 +24,12 @@ func NewGraphAPI(env *env.Env, rootPath string) *DrawAPI {
 }
 
 func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodGet, "/draw/graph/{id}", "FindByDrawId")
+	b.Handle(iris.MethodGet, "/draw/graph/{draw-id}", "FindByDrawId")
 }
 
 func (s *GraphAPI) FindByDrawId(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		id := ictx.Params().Get("id")
+		id := ictx.Params().Get("draw-id")
 		graphView := s.graphService.FindById(ctx, id)
 		result := vis_network.NewResultWithGraphView(graphView)
 		return web.SetData(ictx, result)
