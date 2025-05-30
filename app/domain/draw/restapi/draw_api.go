@@ -4,11 +4,11 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/restapi/request"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi/request"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -44,8 +44,8 @@ func (s *DrawAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/draw/{id}", "FindById")
 	b.Handle(iris.MethodGet, "/draw", "FindPaging")
 
-	b.Handle(iris.MethodPost, "/draw:file/{id}", "SaveFile")
-	b.Handle(iris.MethodGet, "/draw:file/{id}", "ReadFile")
+	b.Handle(iris.MethodPost, "/draw/{id}/file", "SaveFile")
+	b.Handle(iris.MethodGet, "/draw/{id}/file", "ReadFile")
 
 }
 

@@ -2,8 +2,8 @@ package service
 
 import (
 	_ "embed"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/pkg/mxgraph"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"

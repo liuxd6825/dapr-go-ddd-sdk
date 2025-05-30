@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
+	graphapi "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
+	masterapi "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
@@ -32,7 +33,8 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
-			restapi.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
+			masterapi.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
+			graphapi.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
 			return nil
 		},
 	})

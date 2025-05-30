@@ -1,8 +1,8 @@
 package main
 
 import (
-	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service"
+	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"

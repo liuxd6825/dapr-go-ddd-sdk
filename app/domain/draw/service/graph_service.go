@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/pkg/mxgraph"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/restapi/request"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi/request"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"sync"
 )

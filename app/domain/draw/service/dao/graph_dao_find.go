@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"

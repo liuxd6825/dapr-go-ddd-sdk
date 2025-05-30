@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 )
 
 type DrawService struct {

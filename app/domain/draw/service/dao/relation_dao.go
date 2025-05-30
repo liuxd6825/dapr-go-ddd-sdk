@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/drawio/service/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
