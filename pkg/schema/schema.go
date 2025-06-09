@@ -5,6 +5,8 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
+type Schema jsonschema.Schema
+
 func NewCompiler() *jsonschema.Compiler {
 	compiler := jsonschema.NewCompiler()
 	initCompiler(compiler)

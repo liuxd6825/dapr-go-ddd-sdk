@@ -7,6 +7,7 @@ import (
 
 const HumanSchema = `
 	{
+      "title": "人员主数据",
 	  "name": "human",
 	  "type": "object",
 	  "required": ["id","name"],
@@ -121,6 +122,7 @@ const HumanSchema = `
 
 const HumanRelSchema = `
 	{
+      "title": "人员关系信息",
 	  "name": "humanRel",
 	  "type": "object",
 	  "required": ["id","name"],
