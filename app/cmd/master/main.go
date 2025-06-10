@@ -3,6 +3,7 @@ package main
 import (
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
+	graph "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/restapi"
 	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
@@ -35,6 +36,7 @@ func main() {
 		OnStartEvent: func(server *restapp.HttpServer) error {
 			master.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
 			drawio.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+			graph.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
 			return nil
 		},
 	})
