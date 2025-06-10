@@ -326,7 +326,7 @@ func Join(val []string, front, suffix, sep string) string {
 	sb := strings.Builder{}
 	count := len(val)
 	for i, v := range val {
-		sb.WriteString(fmt.Sprintf("%s%s%s", v, front, suffix))
+		sb.WriteString(fmt.Sprintf("%s%s%s", front, v, suffix))
 		if i < count-1 {
 			sb.WriteString(sep)
 		}

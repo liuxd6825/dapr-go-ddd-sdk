@@ -27,8 +27,10 @@ func RegisterHtml(app *iris.Application, baseUrl string, env *env.Env, rootPath 
 }
 
 func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	htmlAPI := NewGraphAPI(env, "")
+	graphAPI := NewGraphAPI(env, rootPath)
+	cdcAPI := NewCdcAPI(env, "")
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
-		a.Handle(htmlAPI)
+		a.Handle(graphAPI)
+		a.Handle(cdcAPI)
 	})
 }

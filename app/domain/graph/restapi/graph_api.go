@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 	"strings"
 )
@@ -25,13 +26,16 @@ func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
 }
 
 func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodGet, "/case/{caseId}/graph?name={name}", "FindByName")
+	b.Handle(iris.MethodGet, "/case/{caseId}/graph", "FindByName")
 }
 
 func (s *GraphAPI) FindByName(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		caseId := ictx.Params().Get("caseId")
-		nameStr := ictx.Params().Get("name")
+		nameStr := ictx.URLParamDefault("name", "")
+		if nameStr == "" {
+			return errors.New("name is required")
+		}
 		names := strings.Split(nameStr, ",")
 		graphView := s.graphService.FindInCaseByNames(ctx, caseId, names)
 		result := response.NewResultList(graphView)

@@ -24,7 +24,7 @@ func (d *GraphDao) FindGraphByDrawId(ctx context.Context, caseId, drawId string)
 func (d *GraphDao) FindInCaseByNames(ctx context.Context, caseId string, names []string) *graph.GraphView {
 	tenantId := appctx.GetTenantId2(ctx)
 	nameVal := stringutils.Join(names, "'", "'", ",")
-	cypher := fmt.Sprintf("MATCH (n:tenant_%s:case_%s) where name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId, nameVal)
+	cypher := fmt.Sprintf("MATCH (n:tenant_%s:case_%s) where n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId, nameVal)
 	res, err := d.GetStore().Query(ctx, cypher, nil)
 	if err != nil {
 		panic(err)
