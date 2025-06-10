@@ -21,9 +21,9 @@ func NewRagService() *RagService {
 	}
 }
 
-func (s *RagService) Query(ctx context.Context, query my_rag.QueryParam) (string, error) {
+func (s *RagService) Query(ctx context.Context, query my_rag.QueryParam, streams ...func(txt string)) (string, error) {
 	query.TenantId, _ = appctx.GetTenantId(ctx)
-	return s.graphRag.Query(ctx, query)
+	return s.graphRag.Query(ctx, query, streams...)
 }
 
 func newGraphRag() *my_rag.GraphRag {

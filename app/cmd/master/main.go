@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	graph "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/restapi"
 	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
+	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
@@ -37,6 +38,7 @@ func main() {
 			master.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
 			drawio.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
 			graph.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+			rag.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
 			return nil
 		},
 	})

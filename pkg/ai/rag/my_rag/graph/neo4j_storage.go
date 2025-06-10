@@ -36,10 +36,12 @@ func NewNeo4jGraphStorage() *Neo4jGraphStorage {
 func (d *Neo4jGraphStorage) GetKnowledge(ctx context.Context, tenantId string, caseId string, keys []string, maxDeep int) ([]string, error) {
 	contents := []string{}
 	graphView := d.FindNodes(ctx, tenantId, caseId, keys, maxDeep)
+	nodeMap := make(map[string]*graph.Node)
 	for _, nodes := range graphView.Nodes {
 		for _, node := range nodes {
+			nodeMap[node.Nid] = node
 			desc, err := maputils.GetString(node.GetProps(), "description", "")
-			if err == nil {
+			if desc != "" && err == nil {
 				contents = append(contents, desc)
 			}
 		}
@@ -47,7 +49,20 @@ func (d *Neo4jGraphStorage) GetKnowledge(ctx context.Context, tenantId string, c
 	for _, edges := range graphView.Edges {
 		for _, edge := range edges {
 			desc, err := maputils.GetString(edge.GetProps(), "description", "")
-			if err == nil {
+			if err != nil {
+				continue
+			}
+			toNode := nodeMap[edge.NTo]
+			fromNode := nodeMap[edge.NFrom]
+			if toNode != nil && fromNode != nil {
+				toName, _ := maputils.GetString(toNode.Props, "name", "")
+				fromName, _ := maputils.GetString(fromNode.Props, "name", "")
+				relType, _ := maputils.GetString(edge.GetProps(), "relType", "")
+				if toName != "" && fromName != "" && relType != "" {
+					contents = append(contents, fmt.Sprintf("%s%s%s", toName, relType, fromName))
+				}
+			}
+			if desc != "" {
 				contents = append(contents, desc)
 			}
 		}

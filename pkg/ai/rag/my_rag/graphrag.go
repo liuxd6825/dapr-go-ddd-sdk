@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/vector"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"log"
 	"strings"
 	"sync"
@@ -23,7 +24,7 @@ type GraphRag struct {
 	graphStore graph.Storage
 }
 
-const MaxRetrieveContexts = 3 // 最大检索上下文数量
+const MaxRetrieveContexts = 5 // 最大检索上下文数量
 
 func NewGraphRag(llm llm.LLM, embedder embedding.Embedder, vector vector.VectorStorage, graphStore graph.Storage) *GraphRag {
 	return &GraphRag{
@@ -126,6 +127,7 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 	if err != nil {
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
+	logs.Info(ctx, logs.Fields{"keys": nodeKeys})
 	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep)
 	if err != nil {
 		return &GoResult{Err: errors.New("取图知识时出错：%s", err.Error())}
@@ -158,7 +160,10 @@ type QueryParam struct {
 	MaxDeep      int      `json:"maxDeep"`
 }
 
-func (g *GraphRag) Query(ctx context.Context, query QueryParam) (string, error) {
+func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(txt string)) (string, error) {
+	if query.MaxDeep <= 0 {
+		query.MaxDeep = MaxRetrieveContexts
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -166,6 +171,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam) (string, error) 
 	// 使用结构体通道传递结果和错误
 	resultCh := make(chan *GoResult, 2)
 
+	logs.Info(ctx, logs.Fields{"query": query.Query})
 	// 协程1：取图关系中知识
 	go func() {
 		defer wg.Done()
@@ -192,6 +198,8 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam) (string, error) 
 		contexts = append(contexts, res.Data...)
 	}
 
+	logs.Info(ctx, logs.Fields{"contexts": contexts})
+
 	prompt := buildRAGPrompt(query.Query, contexts)
 	msgList := []*schema.Message{
 		{Role: schema.User, Content: prompt},
@@ -201,6 +209,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam) (string, error) 
 			Role:    schema.System,
 			Content: query.SystemPrompt,
 		})
+		logs.Info(ctx, logs.Fields{"systemPrompt": query.SystemPrompt})
 	}
 
 	resp, err := g.llm.Stream(ctx, msgList)
@@ -208,7 +217,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam) (string, error) 
 		return "", fmt.Errorf("大模型问题分析时出错: %w", err)
 	}
 
-	sb, err := Reader(resp)
+	sb, err := Reader(resp, streams...)
 	if err != nil {
 		return "", fmt.Errorf("读取返回结果时出错: %w", err)
 	}

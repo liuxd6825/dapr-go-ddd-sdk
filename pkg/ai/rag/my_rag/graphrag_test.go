@@ -41,7 +41,13 @@ func Test_GraphRag_Query(t *testing.T) {
 	gp.Try(func() error {
 		ctx := context.Background()
 		rag := newGraphRag(ctx, false)
-		res, err := rag.Query(ctx, "test", "1001", "孙悟空有关的公司都会什么", "", nil, 5)
+		query := QueryParam{
+			TenantId:     "test",
+			CaseId:       "1001",
+			Query:        "谁与孙悟空的公司有关系",
+			SystemPrompt: "详细回答相关人与公司的关司与技能",
+		}
+		res, err := rag.Query(ctx, query)
 		if err == nil {
 			t.Log(res)
 		}

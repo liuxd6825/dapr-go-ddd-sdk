@@ -2,6 +2,8 @@ package graph
 
 type Edge struct {
 	Nid   string         `json:"nid,omitempty"`
+	NFrom string         `json:"nfrom,omitempty"`
+	NTo   string         `json:"nto,omitempty"`
 	Id    string         `json:"id"`
 	Label string         `json:"label"`
 	From  string         `json:"from,omitempty"`

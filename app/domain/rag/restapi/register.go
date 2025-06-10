@@ -7,12 +7,12 @@ import (
 )
 
 func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	RegisterGraphApi(app, baseUrl, env, rootPath)
+	RegisterRagApi(app, baseUrl, env, rootPath)
 }
 
-func RegisterGraphApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	graphApi := NewGraphAPI(env, rootPath)
+func RegisterRagApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+	ragApi := NewRagAPI(env, rootPath)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
-		a.Handle(graphApi)
+		a.Handle(ragApi)
 	})
 }

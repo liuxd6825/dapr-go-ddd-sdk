@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func Reader(reader *schema.StreamReader[*schema.Message]) (*strings.Builder, error) {
+func Reader(reader *schema.StreamReader[*schema.Message], streams ...func(txt string)) (*strings.Builder, error) {
 	content := &strings.Builder{}
 	defer reader.Close()
 	for {
@@ -19,6 +19,10 @@ func Reader(reader *schema.StreamReader[*schema.Message]) (*strings.Builder, err
 		if err != nil {
 			// 错误处理
 			return nil, err
+		}
+		if len(streams) > 0 {
+			stream := streams[len(streams)-1]
+			stream(chunk.Content)
 		}
 		// 响应片段处理
 		content.WriteString(chunk.Content)

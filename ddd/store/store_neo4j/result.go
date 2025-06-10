@@ -284,6 +284,8 @@ func (r *Neo4jResult[T]) NewGraphEdges(list []any) []*graph.Edge {
 				From:  startId,
 				To:    endId,
 				Props: prop,
+				NFrom: fmt.Sprintf("%v", n.StartId),
+				NTo:   fmt.Sprintf("%v", n.EndId),
 			}
 			resList = append(resList, node)
 		}
