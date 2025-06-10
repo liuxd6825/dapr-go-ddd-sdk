@@ -5,6 +5,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 )
 
-func (s *GraphService) FindById(ctx context.Context, drawId string) *graph.GraphView {
-	return s.graphDao.FindGraphByDrawId(ctx, drawId)
+func (s *GraphService) FindById(ctx context.Context, caseId string, drawId string) *graph.GraphView {
+	return s.graphDao.FindGraphByDrawId(ctx, caseId, drawId)
+}
+
+func (s *GraphService) FindInCaseByNames(ctx context.Context, caseId string, names []string) *graph.GraphView {
+	return s.graphDao.FindInCaseByNames(ctx, caseId, names)
 }

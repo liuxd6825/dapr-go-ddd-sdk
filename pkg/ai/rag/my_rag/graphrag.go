@@ -6,26 +6,31 @@ import (
 	"github.com/cloudwego/eino/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/vector"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"log"
 	"strings"
+	"sync"
 	"time"
 )
 
 type GraphRag struct {
-	llm      llm.LLM
-	embedder embedding.Embedder
-	vector   vector.VectorStorage
+	llm        llm.LLM
+	embedder   embedding.Embedder
+	vector     vector.VectorStorage
+	graphStore graph.Storage
 }
 
 const MaxRetrieveContexts = 3 // 最大检索上下文数量
 
-func NewGraphRag(llm llm.LLM, embedder embedding.Embedder, vector vector.VectorStorage) *GraphRag {
+func NewGraphRag(llm llm.LLM, embedder embedding.Embedder, vector vector.VectorStorage, graphStore graph.Storage) *GraphRag {
 	return &GraphRag{
-		llm:      llm,
-		embedder: embedder,
-		vector:   vector,
+		llm:        llm,
+		embedder:   embedder,
+		vector:     vector,
+		graphStore: graphStore,
 	}
 }
 
@@ -111,32 +116,120 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document)
 	return documentIDs, chunkCount, errors
 }
 
-func (g *GraphRag) Query(ctx context.Context, query string, context []string) (string, error) {
-	queryEmded, err := g.embedder.EmbedTexts(ctx, []string{query})
-	if err != nil {
-		return "", err
-	}
+type GoResult struct {
+	Data []string
+	Err  error
+}
 
-	contexts, err := g.vector.Search(ctx, queryEmded[0], MaxRetrieveContexts)
+func (g *GraphRag) getGraphContext(ctx context.Context, tenantId string, caseId string, query string, context []string, maxDeep int) *GoResult {
+	nodeKeys, err := g.getKeys(ctx, query)
 	if err != nil {
-		return "", err
+		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
+	}
+	graphContext, err := g.graphStore.GetKnowledge(ctx, tenantId, caseId, nodeKeys, maxDeep)
+	if err != nil {
+		return &GoResult{Err: errors.New("取图知识时出错：%s", err.Error())}
+	}
+	return &GoResult{
+		Data: graphContext,
+	}
+}
+
+func (g *GraphRag) getDocumentContext(ctx context.Context, tenantId string, caseId string, query string, context []string, maxDeep int) *GoResult {
+	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query})
+	if err != nil {
+		return &GoResult{Err: errors.New("将查询内容转为向量数据时出错：%s", err.Error())}
+	}
+	contexts, err := g.vector.Search(ctx, queryEmbed[0], MaxRetrieveContexts)
+	if err != nil {
+		return &GoResult{Err: errors.New("查找向量数据时出错：%s", err.Error())}
+	}
+	return &GoResult{
+		Data: contexts,
+	}
+}
+
+func (g *GraphRag) Query(ctx context.Context, tenantId string, caseId string, query string, systemPrompt string, context []string, maxDeep int) (string, error) {
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// 使用结构体通道传递结果和错误
+	resultCh := make(chan *GoResult, 2)
+
+	// 协程1：取图关系中知识
+	go func() {
+		defer wg.Done()
+		resultCh <- g.getGraphContext(ctx, tenantId, caseId, query, context, maxDeep)
+	}()
+
+	// 协程2：取向量数据库中的知道
+	go func() {
+		defer wg.Done()
+		resultCh <- g.getDocumentContext(ctx, tenantId, caseId, query, context, maxDeep)
+	}()
+
+	// 等待协程完成并关闭通道
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	var contexts []string
+	for res := range resultCh {
+		if res.Err != nil {
+			return "", fmt.Errorf("协程执行失败: %w", res.Err)
+		}
+		contexts = append(contexts, res.Data...)
 	}
 
 	prompt := buildRAGPrompt(query, append(context, contexts...))
-
-	resp, err := g.llm.Stream(ctx, []*schema.Message{
+	msgList := []*schema.Message{
 		{Role: schema.User, Content: prompt},
-	})
+	}
+	if systemPrompt != "" {
+		msgList = append(msgList, &schema.Message{
+			Role:    schema.System,
+			Content: systemPrompt,
+		})
+	}
+
+	resp, err := g.llm.Stream(ctx, msgList)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate response: %w", err)
+		return "", fmt.Errorf("大模型问题分析时出错: %w", err)
 	}
 
 	sb, err := Reader(resp)
 	if err != nil {
-		return "", fmt.Errorf("no response from LLM")
+		return "", fmt.Errorf("读取返回结果时出错: %w", err)
 	}
 
 	return sb.String(), nil
+}
+
+// getKeys 取得关键字
+func (g *GraphRag) getKeys(ctx context.Context, query string) ([]string, error) {
+	msgList := []*schema.Message{
+		{Role: schema.User, Content: fmt.Sprintf("### 指令：提取以下文本中的实体并用逗号分隔\n### 文本：{%s}", query)},
+		{Role: schema.System, Content: `
+			从文本中提取所有人名、地名和组织名，用英文逗号分隔各实体，不要包含其他符号或说明。\n
+			按以下格式输出：实体1,实体2,实体3
+			示例：张三,李四,北京,上海
+		`},
+	}
+	resp, err := g.llm.Stream(ctx, msgList)
+	sb, err := Reader(resp)
+	if err != nil {
+		return nil, fmt.Errorf("no response from LLM")
+	}
+	str := sb.String()
+	if index := strings.Index(str, "</think>"); index != -1 {
+		str = str[index+8:]
+		str = strings.Replace(str, " ", "", -1)
+		str = strings.Replace(str, "\n", "", -1)
+	}
+	list := strings.Split(str, ",")
+	return list, nil
 }
 
 func buildRAGPrompt(query string, context []string) string {

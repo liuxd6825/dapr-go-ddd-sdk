@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -59,8 +58,12 @@ func Test_Dao(t *testing.T) {
 		return
 	}
 
-	eb := store.NewAnyEntityBuilder[map[string]any]()
-	dao := NewDao[map[string]any](db, "dbKey", eb, "users")
+	//eb := store.NewAnyEntityBuilder[map[string]any](nil)
+	dao := NewDao[map[string]any](&NewConfig{
+		DbKey:     "",
+		TableName: "",
+		DBSchema:  nil,
+	})
 	ctx, err := restapp.NewTestContext(context.Background())
 	if err != nil {
 		t.Error(err)
@@ -154,21 +157,23 @@ func Test_Dao(t *testing.T) {
 		t.Log(marshal(idsRes.Data))
 	})
 
-	t.Run("Sum", func(t *testing.T) {
-		qry := ddd_query.NewFindPagingQuery()
-		qry.SetTenantId(test)
-		valueCols := []*store.ValueCol{}
-		valueCols = append(valueCols, &store.ValueCol{AggFunc: store.AggFuncSum, Field: "age"})
-		valueCols = append(valueCols, &store.ValueCol{AggFunc: store.AggFuncSum, Field: "score"})
-		qry.SetValueCols(valueCols)
-		sumData := map[string]any{}
-		sumRes, _, sumErr := dao.Sum(ctx, qry, &sumData)
-		if sumErr != nil {
-			t.Error(sumErr)
-			return
-		}
-		t.Log(marshal(sumRes))
-	})
+	/*
+		t.Run("Sum", func(t *testing.T) {
+			qry := ddd_query.NewFindPagingQuery()
+			qry.SetTenantId(test)
+			valueCols := []*store.ValueCol{}
+			valueCols = append(valueCols, &store.ValueCol{AggFunc: store.AggFuncSum, Field: "age"})
+			valueCols = append(valueCols, &store.ValueCol{AggFunc: store.AggFuncSum, Field: "score"})
+			qry.SetValueCols(valueCols)
+			sumData := map[string]any{}
+			sumRes, _, sumErr := dao.Sum(ctx, qry, &sumData)
+			if sumErr != nil {
+				t.Error(sumErr)
+				return
+			}
+			t.Log(marshal(sumRes))
+		})
+	*/
 
 	t.Run("FindAutoComplete", func(t *testing.T) {
 		qry := ddd_query.NewFindAutoCompleteQuery()

@@ -3,13 +3,16 @@ package my_rag
 import (
 	"context"
 	_ "embed"
-	"github.com/cloudwego/eino-ext/components/model/ollama"
+	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/graph"
 	llm2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/vector"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
 )
 
@@ -35,10 +38,10 @@ func Test_GraphRag_IngestDocuments(t *testing.T) {
 }
 
 func Test_GraphRag_Query(t *testing.T) {
-	ctx := context.Background()
-	rag := newGraphRag(ctx, false)
 	gp.Try(func() error {
-		res, err := rag.Query(ctx, "孙悟空是谁", []string{})
+		ctx := context.Background()
+		rag := newGraphRag(ctx, false)
+		res, err := rag.Query(ctx, "test", "1001", "孙悟空都住过哪里", "", nil, 5)
 		if err == nil {
 			t.Log(res)
 		}
@@ -49,10 +52,13 @@ func Test_GraphRag_Query(t *testing.T) {
 }
 
 func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
-	llm, err := llm2.NewOllama(ctx, ollama.ChatModelConfig{
-		BaseURL: "http://localhost:11434",
-		Model:   "modelscope.cn/Qwen/Qwen3-14B-GGUF:latest", // 使用的模型版本
+	env.SetEnv(xtest.NewEnvConfig_Neo4j())
+	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
+		BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+		Model:   "deepseek-r1-distill-llama-70b", // 使用的模型版本
+		APIKey:  "sk-4a999651298047efaaf38aea633ba636",
 	})
+
 	if err != nil {
 		panic(err)
 	}
@@ -60,6 +66,7 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 		BaseURL:        "http://localhost:11434",
 		EmbeddingModel: "bge-m3:latest",
 	})
+
 	if err != nil {
 		panic(err)
 	}
@@ -81,5 +88,7 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	if err = vectorStorage.Init(ctx); err != nil {
 		panic(err)
 	}
-	return NewGraphRag(llm, embedder, vectorStorage)
+
+	graphStorage := graph.NewNeo4jGraphStorage()
+	return NewGraphRag(llm, embedder, vectorStorage, graphStorage)
 }

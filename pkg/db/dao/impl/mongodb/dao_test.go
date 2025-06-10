@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository/ddd_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/daos/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
@@ -31,19 +32,15 @@ type Human struct {
 var DB_NAME = "test"
 
 func Test_Dao(t *testing.T) {
-	database := ddd_mongodb.NenMongoDBWithClient(DB_NAME, client)
+	database := mongodb.NenMongoDBWithClient(DB_NAME, client)
 
 	humanName := randomutils.NameCN()
-	humanSchema, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
-		Database:   database,
-		DbKey:      "sql",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema.GetJsonSchema()),
+		DB:         database,
+		DBKey:      "sql",
+		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema),
 		Env:        xtest.NewEnvConfig(),
 		IsPubEvent: false,
 	}

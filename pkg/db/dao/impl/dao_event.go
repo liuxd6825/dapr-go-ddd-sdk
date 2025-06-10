@@ -12,6 +12,7 @@ import (
 )
 
 func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, entity T, opts ...*idao.CallOptions) {
+	return
 	if !d.isPubEvent {
 		return
 	}

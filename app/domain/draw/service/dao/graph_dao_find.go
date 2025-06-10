@@ -7,12 +7,24 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 )
 
-func (d *GraphDao) FindGraphByDrawId(ctx context.Context, drawId string) *graph.GraphView {
+func (d *GraphDao) FindGraphByDrawId(ctx context.Context, caseId, drawId string) *graph.GraphView {
 	tenantId := appctx.GetTenantId2(ctx)
 	cypher := fmt.Sprintf("MATCH (n:tenant_%s:draw_%s) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, drawId)
+	res, err := d.GetStore().Query(ctx, cypher, nil)
+	if err != nil {
+		panic(err)
+	}
+	return res.NewGraphView()
+}
+
+func (d *GraphDao) FindInCaseByNames(ctx context.Context, caseId string, names []string) *graph.GraphView {
+	tenantId := appctx.GetTenantId2(ctx)
+	nameVal := stringutils.Join(names, "'", "'", ",")
+	cypher := fmt.Sprintf("MATCH (n:tenant_%s:case_%s) where name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId, nameVal)
 	res, err := d.GetStore().Query(ctx, cypher, nil)
 	if err != nil {
 		panic(err)

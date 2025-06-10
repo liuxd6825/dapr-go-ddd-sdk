@@ -1,7 +1,7 @@
 package ddd_service
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 )
 
 type Options = store.Options

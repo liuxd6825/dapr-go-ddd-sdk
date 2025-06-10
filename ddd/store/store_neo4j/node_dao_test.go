@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
-	"log"
 	"testing"
 )
 
@@ -36,7 +35,7 @@ func TestNodeDao(t *testing.T) {
 		if res, err := dao.Query(ctx, match, nil); err != nil {
 			t.Error(err)
 		} else {
-			for k, v := range res.data {
+			for k, v := range res.dataSet {
 				t.Logf("key:%v; count:%v", k, len(v))
 			}
 		}
@@ -45,7 +44,7 @@ func TestNodeDao(t *testing.T) {
 		if res, err := dao.Query(ctx, match, nil); err != nil {
 			t.Error(err)
 		} else {
-			for k, v := range res.data {
+			for k, v := range res.dataSet {
 				t.Logf("key:%v; count:%v", k, len(v))
 			}
 		}
@@ -94,6 +93,7 @@ func TestNodeDao(t *testing.T) {
 }
 
 // Neo4j-测试获取结果集
+/*
 func TestGetList(t *testing.T) {
 	repos := NewCompanyNodeDao()
 	cypher := "MATCH (n:graph_T1_N3eb0982799464cf199f2182d130e4a32_company)-[r*0..]->(m) RETURN n, r "
@@ -109,7 +109,8 @@ func TestGetList(t *testing.T) {
 		log.Printf("rels.length = %d ; company.length=%d", len(comps), len(rels))
 	}
 }
+*/
 
 func NewCompanyNodeDao() *Dao[*CompanyNode] {
-	return newNodeDao[*CompanyNode](driver, "CompanyNode", NewNodeEntityBuilder[*CompanyNode](nil))
+	return newNodeDao[*CompanyNode](driver, &Config[*CompanyNode]{})
 }

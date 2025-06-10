@@ -27,7 +27,11 @@ func TestNodeCypher_InsertOrUpdate(t *testing.T) {
 	}
 
 	eb := NewNodeEntityBuilder[*TNode](nil)
-	nodeCypher := NewNodeCypher(eb, "test")
+	nodeCypher := NewNodeCypher(&Config[*TNode]{
+		EntityBuilder: eb,
+		DBSchema:      nil,
+		Labels:        make([]string, 0),
+	})
 	cr, err := nodeCypher.InsertOrUpdate(ctx, node)
 	if err != nil {
 		t.Error(err)

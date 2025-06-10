@@ -1,11 +1,11 @@
 package store_sql
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	dbschema "gorm.io/gorm/schema"
+	gormschema "gorm.io/gorm/schema"
 	"testing"
 )
 
@@ -15,7 +15,7 @@ func Test_CreateTable(t *testing.T) {
 		t.Fatalf("数据库连接失败: %v", err)
 		return
 	}
-	err = db.Migrator().CreateTable(&Human{})
+	err = db.Migrator().CreateTable(&xtest.Human{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -29,17 +29,13 @@ func Test_Schema(t *testing.T) {
 		return
 	}
 
-	dest, err := schema.NewSchemaWithJson("human.json", xtest.HumanSchema)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	//	dest := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
-	var dbSchema *dbschema.Schema
+	var dbSchema *gormschema.Schema
 	t.Run("NewDBSchema", func(t *testing.T) {
-		dschema := dbschema.NewSchema()
+		dschema := dbschema.NewDBSchema("human", "human")
 		dschema.Name = "table"
-		v, err := NewGormSchema(dest.GetSchema())
+		v, err := NewGormSchema(dschema)
 		if err != nil {
 			t.Error(err)
 		}

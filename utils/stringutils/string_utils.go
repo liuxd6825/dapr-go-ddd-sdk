@@ -320,3 +320,16 @@ func AnyToString(v any) string {
 
 	return fmt.Sprintf("%v", v)
 }
+
+// Join val要连接的字符串，
+func Join(val []string, front, suffix, sep string) string {
+	sb := strings.Builder{}
+	count := len(val)
+	for i, v := range val {
+		sb.WriteString(fmt.Sprintf("%s%s%s", v, front, suffix))
+		if i < count-1 {
+			sb.WriteString(sep)
+		}
+	}
+	return sb.String()
+}

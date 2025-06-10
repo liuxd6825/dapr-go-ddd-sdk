@@ -3,7 +3,7 @@ package store_neo4j
 import (
 	"context"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_repository"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"testing"
 )
 
@@ -76,7 +76,6 @@ func TestRelationDao(t *testing.T) {
 	})
 }
 
-func NewCompanyRelationDao() store.Dao[*CompanyRelation] {
-	eb := NewRelationEntityBuilder[*CompanyRelation](nil)
-	return NewRelationDao[*CompanyRelation](driver, "C", eb)
+func NewCompanyRelationDao() store.IStore[*CompanyRelation] {
+	return NewRelationDao[*CompanyRelation](driver, &Config[*CompanyRelation]{})
 }
