@@ -128,7 +128,7 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
 	logs.Info(ctx, logs.Fields{"keys": nodeKeys})
-	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep)
+	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep, query.Limit)
 	if err != nil {
 		return &GoResult{Err: errors.New("取图知识时出错：%s", err.Error())}
 	}
@@ -158,6 +158,7 @@ type QueryParam struct {
 	SystemPrompt string   `json:"systemPrompt"`
 	Context      []string `json:"context"`
 	MaxDeep      int      `json:"maxDeep"`
+	Limit        int      `json:"limit"`
 }
 
 func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(txt string)) (string, error) {

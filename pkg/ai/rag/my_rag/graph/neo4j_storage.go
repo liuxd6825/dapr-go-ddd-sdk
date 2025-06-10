@@ -33,9 +33,9 @@ func NewNeo4jGraphStorage() *Neo4jGraphStorage {
 	}
 }
 
-func (d *Neo4jGraphStorage) GetKnowledge(ctx context.Context, tenantId string, caseId string, keys []string, maxDeep int) ([]string, error) {
+func (d *Neo4jGraphStorage) GetKnowledge(ctx context.Context, tenantId string, caseId string, keys []string, maxDeep int, limit int) ([]string, error) {
 	contents := []string{}
-	graphView := d.FindNodes(ctx, tenantId, caseId, keys, maxDeep)
+	graphView := d.FindNodes(ctx, tenantId, caseId, keys, maxDeep, limit)
 	nodeMap := make(map[string]*graph.Node)
 	for _, nodes := range graphView.Nodes {
 		for _, node := range nodes {
@@ -74,9 +74,12 @@ func (d *Neo4jGraphStorage) GetKnowledge(ctx context.Context, tenantId string, c
 /*
 	MATCH p=(n)-[*..5]-(m) 	WHERE n.name IN ['名称1', '名称2'] RETURN p
 */
-func (d *Neo4jGraphStorage) FindNodes(ctx context.Context, tenantId string, caseId string, names []string, maxDeep int) *graph.GraphView {
+func (d *Neo4jGraphStorage) FindNodes(ctx context.Context, tenantId string, caseId string, names []string, maxDeep int, limit int) *graph.GraphView {
 	namesStr := getNames(names)
-	cypher := fmt.Sprintf("MATCH p=(n:tenant_%s:master:case_%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId, maxDeep, namesStr)
+	if limit <= 0 {
+		limit = 1000
+	}
+	cypher := fmt.Sprintf("MATCH p=(n:tenant_%s:master:case_%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT %d", tenantId, caseId, maxDeep, namesStr, limit)
 	logs.InfoMsg(ctx, cypher)
 	res, err := d.GetStore().Query(ctx, cypher, nil)
 	if err != nil {
