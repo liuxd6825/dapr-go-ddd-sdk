@@ -41,7 +41,7 @@ func Test_GraphRag_Query(t *testing.T) {
 	gp.Try(func() error {
 		ctx := context.Background()
 		rag := newGraphRag(ctx, false)
-		res, err := rag.Query(ctx, "test", "1001", "孙悟空都住过哪里", "", nil, 5)
+		res, err := rag.Query(ctx, "test", "1001", "孙悟空有关的公司都会什么", "", nil, 5)
 		if err == nil {
 			t.Log(res)
 		}

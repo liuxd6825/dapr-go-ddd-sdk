@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 )
 
@@ -61,6 +62,7 @@ func (d *Neo4jGraphStorage) GetKnowledge(ctx context.Context, tenantId string, c
 func (d *Neo4jGraphStorage) FindNodes(ctx context.Context, tenantId string, caseId string, names []string, maxDeep int) *graph.GraphView {
 	namesStr := getNames(names)
 	cypher := fmt.Sprintf("MATCH p=(n:tenant_%s:master:case_%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId, maxDeep, namesStr)
+	logs.InfoMsg(ctx, cypher)
 	res, err := d.GetStore().Query(ctx, cypher, nil)
 	if err != nil {
 		panic(err)

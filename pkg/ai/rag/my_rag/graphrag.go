@@ -121,12 +121,12 @@ type GoResult struct {
 	Err  error
 }
 
-func (g *GraphRag) getGraphContext(ctx context.Context, tenantId string, caseId string, query string, context []string, maxDeep int) *GoResult {
-	nodeKeys, err := g.getKeys(ctx, query)
+func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoResult {
+	nodeKeys, err := g.getKeys(ctx, query.Query)
 	if err != nil {
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
-	graphContext, err := g.graphStore.GetKnowledge(ctx, tenantId, caseId, nodeKeys, maxDeep)
+	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep)
 	if err != nil {
 		return &GoResult{Err: errors.New("取图知识时出错：%s", err.Error())}
 	}
@@ -135,8 +135,8 @@ func (g *GraphRag) getGraphContext(ctx context.Context, tenantId string, caseId 
 	}
 }
 
-func (g *GraphRag) getDocumentContext(ctx context.Context, tenantId string, caseId string, query string, context []string, maxDeep int) *GoResult {
-	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query})
+func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *GoResult {
+	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query.Query})
 	if err != nil {
 		return &GoResult{Err: errors.New("将查询内容转为向量数据时出错：%s", err.Error())}
 	}
@@ -149,7 +149,16 @@ func (g *GraphRag) getDocumentContext(ctx context.Context, tenantId string, case
 	}
 }
 
-func (g *GraphRag) Query(ctx context.Context, tenantId string, caseId string, query string, systemPrompt string, context []string, maxDeep int) (string, error) {
+type QueryParam struct {
+	TenantId     string   `json:"tenantId"`
+	CaseId       string   `json:"caseId"`
+	Query        string   `json:"query"`
+	SystemPrompt string   `json:"systemPrompt"`
+	Context      []string `json:"context"`
+	MaxDeep      int      `json:"maxDeep"`
+}
+
+func (g *GraphRag) Query(ctx context.Context, query QueryParam) (string, error) {
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -160,13 +169,13 @@ func (g *GraphRag) Query(ctx context.Context, tenantId string, caseId string, qu
 	// 协程1：取图关系中知识
 	go func() {
 		defer wg.Done()
-		resultCh <- g.getGraphContext(ctx, tenantId, caseId, query, context, maxDeep)
+		resultCh <- g.getGraphContext(ctx, &query)
 	}()
 
 	// 协程2：取向量数据库中的知道
 	go func() {
 		defer wg.Done()
-		resultCh <- g.getDocumentContext(ctx, tenantId, caseId, query, context, maxDeep)
+		resultCh <- g.getDocumentContext(ctx, &query)
 	}()
 
 	// 等待协程完成并关闭通道
@@ -175,7 +184,7 @@ func (g *GraphRag) Query(ctx context.Context, tenantId string, caseId string, qu
 		close(resultCh)
 	}()
 
-	var contexts []string
+	contexts := query.Context
 	for res := range resultCh {
 		if res.Err != nil {
 			return "", fmt.Errorf("协程执行失败: %w", res.Err)
@@ -183,14 +192,14 @@ func (g *GraphRag) Query(ctx context.Context, tenantId string, caseId string, qu
 		contexts = append(contexts, res.Data...)
 	}
 
-	prompt := buildRAGPrompt(query, append(context, contexts...))
+	prompt := buildRAGPrompt(query.Query, contexts)
 	msgList := []*schema.Message{
 		{Role: schema.User, Content: prompt},
 	}
-	if systemPrompt != "" {
+	if query.SystemPrompt != "" {
 		msgList = append(msgList, &schema.Message{
 			Role:    schema.System,
-			Content: systemPrompt,
+			Content: query.SystemPrompt,
 		})
 	}
 
