@@ -31,6 +31,8 @@ type Mongo struct {
 	ServerSelectionTimeout string  `yaml:"serverSelectionTimeout" json:"serverSelectionTimeout"` // 时间长度
 	SocketTimeout          string  `yaml:"socketTimeout" json:"socketTimeout"`                   // 时间长度
 	EventPublish           bool    `yaml:"eventPublish" json:"eventPublish"`                     // 是否发送领域事件
+	AutoSource             string  `yaml:"autoSource" json:"autoSource"`                         // 认证源
+	AuthMechanism          string  `yaml:"authMechanism" json:"authMechanism"`                   // 认证方式
 }
 
 func NewMongo() *Mongo {
@@ -103,6 +105,8 @@ func NewStoreMongoConfig(c *Mongo) *mongodb.Config {
 		MaxConnIdleTime:        maxConnIdleTime,
 		ServerSelectionTimeout: serverSelectionTimeout,
 		SocketTimeout:          socketTimeout,
+		AuthMechanism:          c.AuthMechanism,
+		AuthSource:             c.AutoSource,
 	}
 	return config
 }

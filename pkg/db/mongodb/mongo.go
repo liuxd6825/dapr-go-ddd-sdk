@@ -49,6 +49,8 @@ type Config struct {
 	ConnectTimeout         time.Duration //控制客户端向MongoDB实例发出连接请求的最长时间.
 	SocketTimeout          time.Duration //控制客户端在接收响应之前可以逗留在服务器上的时间，单位是毫秒.
 	Direct                 *bool
+	AuthSource             string `json:"authSource"`
+	AuthMechanism          string `json:"authMechanism"`
 }
 
 type ObjectId string
@@ -274,6 +276,19 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 		opts.SetMaxConnIdleTime(config.MaxConnIdleTime)
 	}
 	opts.Direct = config.Direct
+
+	authSource := "admin"
+	if config.AuthSource != "" {
+		authSource = config.AuthSource
+	}
+
+	authMechanism := "SCRAM-SHA-256"
+	if config.AuthMechanism != "" {
+		authMechanism = config.AuthMechanism
+	}
+
+	opts.Auth.AuthSource = authSource
+	opts.Auth.AuthMechanism = authMechanism
 
 	/*
 		// 解决mongo不是本地时区的问题
