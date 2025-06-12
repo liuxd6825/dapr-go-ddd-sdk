@@ -1,7 +1,7 @@
 package dbschema
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/jsonschema_ext"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"testing"
 	"time"
 )

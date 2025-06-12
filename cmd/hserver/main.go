@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/master/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 )
