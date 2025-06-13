@@ -123,12 +123,12 @@ type GoResult struct {
 }
 
 func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoResult {
-	nodeKeys, err := g.getKeys(ctx, query.Query)
+	nodeKeys, err := g.getKeys(ctx, query.UserPrompt)
 	if err != nil {
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
 	logs.Info(ctx, logs.Fields{"keys": nodeKeys})
-	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep, query.Limit)
+	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep, query.TopK)
 	if err != nil {
 		return &GoResult{Err: errors.New("取图知识时出错：%s", err.Error())}
 	}
@@ -138,7 +138,7 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 }
 
 func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *GoResult {
-	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query.Query})
+	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query.UserPrompt})
 	if err != nil {
 		return &GoResult{Err: errors.New("将查询内容转为向量数据时出错：%s", err.Error())}
 	}
@@ -149,16 +149,6 @@ func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *G
 	return &GoResult{
 		Data: contexts,
 	}
-}
-
-type QueryParam struct {
-	TenantId     string   `json:"tenantId"`
-	CaseId       string   `json:"caseId"`
-	Query        string   `json:"query"`
-	SystemPrompt string   `json:"systemPrompt"`
-	Context      []string `json:"context"`
-	MaxDeep      int      `json:"maxDeep"`
-	Limit        int      `json:"limit"`
 }
 
 func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(txt string)) (string, error) {
@@ -172,7 +162,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 	// 使用结构体通道传递结果和错误
 	resultCh := make(chan *GoResult, 2)
 
-	logs.Info(ctx, logs.Fields{"query": query.Query})
+	logs.Info(ctx, logs.Fields{"query": query.UserPrompt})
 	// 协程1：取图关系中知识
 	go func() {
 		defer wg.Done()
@@ -191,7 +181,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 		close(resultCh)
 	}()
 
-	contexts := query.Context
+	contexts := []string{query.UserPrompt}
 	for res := range resultCh {
 		if res.Err != nil {
 			return "", fmt.Errorf("协程执行失败: %w", res.Err)
@@ -201,19 +191,18 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 
 	logs.Info(ctx, logs.Fields{"contexts": contexts})
 
-	prompt := buildRAGPrompt(query.Query, contexts)
-	msgList := []*schema.Message{
+	prompt := buildRAGPrompt(query.UserPrompt, contexts)
+	messages := []*schema.Message{
 		{Role: schema.User, Content: prompt},
 	}
-	if query.SystemPrompt != "" {
-		msgList = append(msgList, &schema.Message{
-			Role:    schema.System,
-			Content: query.SystemPrompt,
+	for _, item := range query.ConversationHistory {
+		messages = append(messages, &schema.Message{
+			Role:    schema.RoleType(item.Role),
+			Content: item.Content,
 		})
-		logs.Info(ctx, logs.Fields{"systemPrompt": query.SystemPrompt})
 	}
 
-	resp, err := g.llm.Stream(ctx, msgList)
+	resp, err := g.llm.Stream(ctx, messages)
 	if err != nil {
 		return "", fmt.Errorf("大模型问题分析时出错: %w", err)
 	}

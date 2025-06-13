@@ -7,7 +7,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 )
 
@@ -35,24 +34,17 @@ func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
 }
 
 func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodPost, "/case/{caseId}/rag", "Query")
+	b.Handle(iris.MethodPost, "/rag/query", "Query")
 }
 
 func (s *RagAPI) Query(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		caseId := ictx.Params().Get("caseId")
-		queryVal := ictx.URLParamDefault("query", "")
-		if queryVal == "" {
-			return errors.New("query is required")
-		}
-		deepVal := ictx.URLParamIntDefault("deep", 5)
-		q := my_rag.QueryParam{
-			CaseId:  caseId,
-			Query:   queryVal,
-			MaxDeep: deepVal,
+		var query my_rag.QueryParam
+		if err := ictx.JSON(&query); err != nil {
+			return err
 		}
 		ictx.Header("Content-Type", "text/event-stream")
-		_, err := s.ragService.Query(ctx, q, func(txt string) {
+		_, err := s.ragService.Query(ctx, query, func(txt string) {
 			ictx.Writef(txt)
 			ictx.ResponseWriter().Flush()
 		})

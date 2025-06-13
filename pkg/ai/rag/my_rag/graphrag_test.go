@@ -42,10 +42,10 @@ func Test_GraphRag_Query(t *testing.T) {
 		ctx := context.Background()
 		rag := newGraphRag(ctx, false)
 		query := QueryParam{
-			TenantId:     "test",
-			CaseId:       "1001",
-			Query:        "谁与孙悟空的公司有关系",
-			SystemPrompt: "详细回答相关人与公司的关司与技能",
+			TenantId:            "test",
+			CaseId:              "1001",
+			UserPrompt:          "谁与孙悟空的公司有关系",
+			ConversationHistory: []*Content{{Role: "system", Content: "详细回答相关人与公司的关司与技能"}},
 		}
 		res, err := rag.Query(ctx, query)
 		if err == nil {
