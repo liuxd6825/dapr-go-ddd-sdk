@@ -16,6 +16,16 @@ type RagAPI struct {
 	ragService *service.RagService
 }
 
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+type QueryRequest struct {
+	Model       string    `json:"model"`
+	Messages    []Message `json:"messages"`
+	Temperature *float32  `json:"temperature"`
+}
+
 func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
 	ragService := service.NewRagService()
 	return &RagAPI{
@@ -25,7 +35,7 @@ func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
 }
 
 func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodGet, "/case/{caseId}/rag", "Query")
+	b.Handle(iris.MethodPost, "/case/{caseId}/rag", "Query")
 }
 
 func (s *RagAPI) Query(ictx iris.Context) {
