@@ -1,6 +1,7 @@
 package errors
 
 import (
+	"errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"strings"
 )
@@ -31,4 +32,8 @@ func IsGrpcConnError(err error) bool {
 	}
 
 	return false
+}
+
+func Is(err, target error) bool {
+	return errors.Is(err, target)
 }

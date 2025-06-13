@@ -123,7 +123,7 @@ type GoResult struct {
 }
 
 func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoResult {
-	nodeKeys, err := g.getKeys(ctx, query.UserPrompt)
+	nodeKeys, err := g.getKeys(ctx, query.Query)
 	if err != nil {
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
@@ -138,7 +138,7 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 }
 
 func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *GoResult {
-	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query.UserPrompt})
+	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query.Query})
 	if err != nil {
 		return &GoResult{Err: errors.New("将查询内容转为向量数据时出错：%s", err.Error())}
 	}
@@ -152,6 +152,9 @@ func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *G
 }
 
 func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(txt string)) (string, error) {
+	if query.Query == "" {
+		return "", errors.New("query is empty")
+	}
 	if query.MaxDeep <= 0 {
 		query.MaxDeep = MaxRetrieveContexts
 	}
@@ -162,7 +165,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 	// 使用结构体通道传递结果和错误
 	resultCh := make(chan *GoResult, 2)
 
-	logs.Info(ctx, logs.Fields{"query": query.UserPrompt})
+	logs.Info(ctx, logs.Fields{"query": query.Query})
 	// 协程1：取图关系中知识
 	go func() {
 		defer wg.Done()
@@ -181,7 +184,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 		close(resultCh)
 	}()
 
-	contexts := []string{query.UserPrompt}
+	contexts := []string{query.Query}
 	for res := range resultCh {
 		if res.Err != nil {
 			return "", fmt.Errorf("协程执行失败: %w", res.Err)
@@ -191,7 +194,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 
 	logs.Info(ctx, logs.Fields{"contexts": contexts})
 
-	prompt := buildRAGPrompt(query.UserPrompt, contexts)
+	prompt := buildRAGPrompt(query.Query, contexts)
 	messages := []*schema.Message{
 		{Role: schema.User, Content: prompt},
 	}

@@ -14,6 +14,7 @@ type Content struct {
 type QueryParam struct {
 	TenantId string `json:"tenantId"`
 	CaseId   string `json:"caseId"`
+	Query    string `json:"query"`
 	MaxDeep  int    `json:"maxDeep"`
 	// Mode specifies the retrieval mode:
 	// - "local": Focuses on context-dependent information.

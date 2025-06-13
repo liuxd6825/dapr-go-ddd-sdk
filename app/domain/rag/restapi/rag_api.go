@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 )
 
@@ -42,6 +43,16 @@ func (s *RagAPI) Query(ictx iris.Context) {
 		var query *my_rag.QueryParam
 		if err := ictx.ReadJSON(&query); err != nil {
 			return err
+		}
+		verr := errors.NewVerifyError()
+		if query.Query == "" {
+			verr.AppendField("query", "不能为空", "查询内容")
+		}
+		if query.CaseId == "" {
+			verr.AppendField("caseId", "不能为空", "项目ID")
+		}
+		if verr.HasError() {
+			return verr
 		}
 		ictx.Header("Content-Type", "text/event-stream")
 		_, err := s.ragService.Query(ctx, *query, func(txt string) {
