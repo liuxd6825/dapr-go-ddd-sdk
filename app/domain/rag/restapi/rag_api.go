@@ -57,16 +57,16 @@ func (s *RagAPI) Query(ictx iris.Context) {
 			return verr
 		}
 
-		level := logs.GetLevel()
+		isPrint := logs.GetLevel() >= logs.InfoLevel
 		ictx.Header("Content-Type", "text/event-stream")
 		_, err := s.ragService.Query(ctx, *query, func(txt string) {
-			ictx.Writef(txt)
-			if level >= logs.InfoLevel {
+			_, _ = ictx.Writef(txt)
+			if isPrint {
 				fmt.Print(txt)
 			}
 			ictx.ResponseWriter().Flush()
 		})
-		if level >= logs.InfoLevel {
+		if isPrint {
 			fmt.Print("\n")
 		}
 		return err
