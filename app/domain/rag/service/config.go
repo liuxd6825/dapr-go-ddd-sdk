@@ -9,7 +9,7 @@ type RagConfig struct {
 }
 
 type LLMConfig struct {
-	Modal   string `json:"modal"`
+	Model   string `json:"model"`
 	APIKey  string `json:"apiKey"`
 	BaseUrl string `json:"baseUrl"`
 }

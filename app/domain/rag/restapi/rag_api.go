@@ -39,12 +39,12 @@ func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
 
 func (s *RagAPI) Query(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var query my_rag.QueryParam
-		if err := ictx.JSON(&query); err != nil {
+		var query *my_rag.QueryParam
+		if err := ictx.ReadJSON(&query); err != nil {
 			return err
 		}
 		ictx.Header("Content-Type", "text/event-stream")
-		_, err := s.ragService.Query(ctx, query, func(txt string) {
+		_, err := s.ragService.Query(ctx, *query, func(txt string) {
 			ictx.Writef(txt)
 			ictx.ResponseWriter().Flush()
 		})

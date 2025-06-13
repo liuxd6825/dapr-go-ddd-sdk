@@ -42,7 +42,7 @@ func newGraphRag() *my_rag.GraphRag {
 
 	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
 		BaseURL: ragCfg.LLM.BaseUrl,
-		Model:   ragCfg.LLM.Modal, // 使用的模型版本
+		Model:   ragCfg.LLM.Model, // 使用的模型版本
 		APIKey:  ragCfg.LLM.APIKey,
 	})
 

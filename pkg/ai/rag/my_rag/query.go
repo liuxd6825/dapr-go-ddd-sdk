@@ -66,7 +66,7 @@ type QueryParam struct {
 	// ModelFunc optional override for the LLM model function to use for this specific query.
 	// If provided, this will be used instead of the global model function.
 	// This allows using different models for different query modes.
-	ModelFunc func(...interface{}) interface{}
+	//ModelFunc func(...interface{}) interface{}
 
 	// UserPrompt user-provided prompt for the query.
 	// If provided, this will be use instead of the default value from prompt template.
@@ -95,8 +95,8 @@ func NewQueryParam() *QueryParam {
 		ConversationHistory:      []*Content{},
 		HistoryTurns:             3,
 		IDs:                      nil,
-		ModelFunc:                nil,
-		UserPrompt:               "",
+		//ModelFunc:                nil,
+		UserPrompt: "",
 	}
 }
 
