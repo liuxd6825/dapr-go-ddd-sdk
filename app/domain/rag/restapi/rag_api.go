@@ -46,15 +46,15 @@ func (s *RagAPI) Query(ictx iris.Context) {
 		if err := ictx.ReadJSON(&query); err != nil {
 			return err
 		}
-		verr := errors.NewVerifyError()
+		vErr := errors.NewVerifyError()
 		if query.Query == "" {
-			verr.AppendField("query", "不能为空", "查询内容")
+			vErr.AppendField("query", "不能为空", "查询内容")
 		}
 		if query.CaseId == "" {
-			verr.AppendField("caseId", "不能为空", "项目ID")
+			vErr.AppendField("caseId", "不能为空", "项目ID")
 		}
-		if verr.HasError() {
-			return verr
+		if vErr.HasError() {
+			return vErr
 		}
 
 		isPrint := logs.GetLevel() >= logs.InfoLevel
