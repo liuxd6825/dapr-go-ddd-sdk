@@ -66,6 +66,9 @@ func (s *RagAPI) Query(ictx iris.Context) {
 			}
 			ictx.ResponseWriter().Flush()
 		})
+		if level >= logs.InfoLevel {
+			fmt.Print("\n")
+		}
 		return err
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
