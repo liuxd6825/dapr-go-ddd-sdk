@@ -2,12 +2,14 @@ package restapi
 
 import (
 	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 )
 
@@ -54,9 +56,14 @@ func (s *RagAPI) Query(ictx iris.Context) {
 		if verr.HasError() {
 			return verr
 		}
+
+		level := logs.GetLevel()
 		ictx.Header("Content-Type", "text/event-stream")
 		_, err := s.ragService.Query(ctx, *query, func(txt string) {
 			ictx.Writef(txt)
+			if level >= logs.InfoLevel {
+				fmt.Print(txt)
+			}
 			ictx.ResponseWriter().Flush()
 		})
 		return err
