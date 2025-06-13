@@ -9,9 +9,8 @@ func SetError(ctx iris.Context, err error) {
 	if err != nil {
 		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.SetErr(err)
-		if errors.Is(err, &errors.VerifyError{}) {
-			verr := err.(*errors.VerifyError)
-			_ = ctx.JSON(verr)
+		if vErr, ok := err.(*errors.VerifyError); ok {
+			_ = ctx.JSON(vErr)
 		}
 	}
 }
