@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -34,6 +35,13 @@ func (s *ChatAPI) Create(ictx iris.Context) {
 		var cmd *command.ChatCreateCommand
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
+		}
+		vErr := errors.NewVerifyError()
+		if cmd.Data.CaseId == "" {
+			vErr.AppendField("caseId", "不能为空", "案件ID")
+		}
+		if vErr.HasError() {
+			return vErr
 		}
 		s.chatService.Create(ctx, &cmd.Data)
 		return nil

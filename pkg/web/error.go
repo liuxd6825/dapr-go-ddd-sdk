@@ -7,11 +7,11 @@ import (
 
 func SetError(ctx iris.Context, err error) {
 	if err != nil {
-		ctx.StatusCode(iris.StatusInternalServerError)
 		ctx.SetErr(err)
-		var vErr *errors.VerifyError
-		if errors.As(err, &vErr) {
-			_ = ctx.JSON(vErr)
+		if _, ok := err.(*errors.VerifyError); ok {
+			ctx.StatusCode(iris.StatusBadRequest)
+		} else {
+			ctx.StatusCode(iris.StatusInternalServerError)
 		}
 	}
 }
