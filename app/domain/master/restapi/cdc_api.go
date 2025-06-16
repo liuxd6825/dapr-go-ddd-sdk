@@ -28,7 +28,7 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 }
 
 func (s *CdcAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodPost, "/cdc-mysql", "DataChange")
+	b.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
 }
 
 func (s *CdcAPI) DataChange(ctx iris.Context) {
