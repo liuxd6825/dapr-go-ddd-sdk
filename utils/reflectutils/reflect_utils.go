@@ -414,9 +414,10 @@ func GetField(data any, fieldName string) any {
 	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
 	fieldValue := refVal.FieldByName(fieldName)
-	if !fieldValue.CanSet() {
-		panic("SetField cannot set")
-	}
+	/*
+		if !fieldValue.CanSet() {
+			panic("SetField cannot set")
+		}*/
 	return fieldValue.Interface()
 }
 

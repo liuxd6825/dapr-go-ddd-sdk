@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 )
 
 type Config struct {
@@ -146,6 +147,10 @@ func (env *Env) CloseDB(ctx context.Context) error {
 func (env *Env) GetDB(dbKey string) DBItem {
 	item := env.dbs[dbKey]
 	return item
+}
+
+func (env *Env) GetField(key string) any {
+	return reflectutils.GetField(env, key)
 }
 
 func GetDB(dbKey string) DBItem {
