@@ -62,23 +62,7 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		dbKey = db.GetDBKey()
 	}
 
-	if strings.HasPrefix(dbKey, "${") && strings.HasSuffix(dbKey, "}") {
-		dbKey = dbKey[2 : len(dbKey)-1]
-		gp.Try(func() error {
-			list := strings.Split(dbKey, ".")
-			if len(list) > 2 && list[0] == "app" && list[1] == "meta" {
-				val := envInst.App.Meta[list[2]]
-				dbKey = val.(string)
-			} else {
-				panic("invalid db key")
-			}
-			return nil
-		}).Catch(func(e error) {
-			panic(fmt.Sprintf("dbKey must start with ${%s}", dbKey))
-		})
-
-	}
-	newCfg.DBKey = dbKey
+	dbKey = GetDbKey(envInst, dbKey)
 
 	if tableName == "" && newCfg.DBSchema != nil {
 		tableName = newCfg.DBSchema.TableName
@@ -111,6 +95,8 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	item := getDBItem(envInst, dbKey)
 	if item == nil && newCfg.DB != nil {
 		newCfg.DB = newCfg.DB
+	} else if item == nil {
+		panic(fmt.Sprintf("No dbKey exists  %s  ", dbKey))
 	}
 
 	isPubEvent := false
@@ -121,7 +107,7 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 	}
 
 	daoCfg := &idao.DaoConfig{
-		DBKey:              newCfg.DBKey,
+		DBKey:              dbKey,
 		DB:                 newCfg.DB,
 		IsPubEvent:         isPubEvent,
 		AggField:           newCfg.AggField,
@@ -159,6 +145,25 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		cache.Add(daoKey, any(dao))
 	}
 	return dao
+}
+
+func GetDbKey(envInst *env.Env, dbKey string) string {
+	if strings.HasPrefix(dbKey, "${") && strings.HasSuffix(dbKey, "}") {
+		dbKey = dbKey[2 : len(dbKey)-1]
+		gp.Try(func() error {
+			list := strings.Split(dbKey, ".")
+			if len(list) > 2 && list[0] == "app" && list[1] == "meta" {
+				val := envInst.App.Meta[list[2]]
+				dbKey = val.(string)
+			} else {
+				panic("invalid db key")
+			}
+			return nil
+		}).Catch(func(e error) {
+			panic(fmt.Sprintf("dbKey must start with ${%s}", dbKey))
+		})
+	}
+	return dbKey
 }
 
 func getDaoKey(dbKey, tableName string, className string) string {

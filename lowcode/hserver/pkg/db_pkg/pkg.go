@@ -40,7 +40,7 @@ func (p *Pkg) NewRSQLBuilder() *rsql.Builder {
 func (p *Pkg) NewDao(schFile string) idao.Dao[map[string]any] {
 	sch := p.schemaPkg.LoadFile(schFile, "")
 	aggField, aggType, tableName, isPubEvent, dbKey := p.getInfos(sch)
-	daoKey := p.getKey(dbKey, tableName)
+	daoKey := p.GetKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); ok {
 		return v
 	}
@@ -73,14 +73,19 @@ func (p *Pkg) NewDaoWithCfg(cfg *NewDaoConfig) idao.Dao[map[string]any] {
 }
 
 func (p *Pkg) GetDao(dbKey string, tableName string) idao.Dao[map[string]any] {
-	daoKey := p.getKey(dbKey, tableName)
+	daoKey := p.GetKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); ok {
 		return v
 	}
 	return nil
 }
 
-func (p *Pkg) getKey(dbKey string, tableName string) string {
+func (p *Pkg) GetKey(dbKey string, tableName string) string {
+	if dbKey == "" {
+		dbKey = "default"
+	} else {
+		dbKey = dao.GetDbKey(p.server.GetEnvCfg(), dbKey)
+	}
 	return fmt.Sprintf("%s.%s", dbKey, tableName)
 }
 
