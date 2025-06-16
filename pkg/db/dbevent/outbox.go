@@ -14,7 +14,7 @@ type Outbox struct {
 	CommandId   string              `gorm:"command_id" json:"commandId,omitempty"`              // 命令ID
 	AggId       string              `gorm:"agg_id" json:"aggId,omitempty"`                      // 聚合ID
 	AggType     string              `gorm:"agg_type" json:"aggType,omitempty"`                  // 聚合类型
-	CreatedTime time.Time           `gorm:"index:,sort:desc,created_time" json:"createdTime"`   // 发生事件
+	CreatedTime *time.Time          `gorm:"index:,sort:desc,created_time" json:"createdTime"`   // 发生事件
 	Data        any                 `gorm:"type:json;serializer:json" json:"data,omitempty"`    // 事件数据
 	Metadata    map[string][]string `gorm:"type:json;serializer:json" json:"context,omitempty"` // 上下文数据
 }
