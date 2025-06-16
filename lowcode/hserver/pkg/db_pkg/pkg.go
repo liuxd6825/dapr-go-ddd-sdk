@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
@@ -82,7 +83,7 @@ func (p *Pkg) GetDao(dbKey string, tableName string) idao.Dao[map[string]any] {
 
 func (p *Pkg) GetKey(dbKey string, tableName string) string {
 	if dbKey == "" {
-		dbKey = "default"
+		dbKey = env.DefaultDBKey
 	} else {
 		dbKey = dao.GetDbKey(p.server.GetEnvCfg(), dbKey)
 	}

@@ -33,7 +33,7 @@ func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, 
 			CommandId:   event.CommandId,
 			AggId:       event.AggId,
 			AggType:     event.AggType,
-			CreatedTime: event.CreatedTime,
+			CreatedTime: &event.CreatedTime,
 			Data:        event.Data,
 			Metadata:    metadata,
 		}

@@ -148,6 +148,9 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 }
 
 func GetDbKey(envInst *env.Env, dbKey string) string {
+	if dbKey == "" {
+		return env.DefaultDBKey
+	}
 	if strings.HasPrefix(dbKey, "${") && strings.HasSuffix(dbKey, "}") {
 		dbKey = dbKey[2 : len(dbKey)-1]
 		gp.Try(func() error {

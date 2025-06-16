@@ -36,6 +36,8 @@ type dbItem struct {
 
 type DBType string
 
+const DefaultDBKey string = "default"
+
 const (
 	DBType_Postgres DBType = "postgres"
 	DBType_MySQL    DBType = "mysql"

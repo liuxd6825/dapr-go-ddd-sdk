@@ -8,11 +8,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 )
 
-type ChatDao[T interface{ *model.Chat }] struct {
+type ChatDao struct {
 	idao.Dao[*model.Chat]
 }
 
-func NewChatDao(dbKey string) idao.Dao[*model.Chat] {
+func NewChatDao(dbKey string) *ChatDao {
 	tableName := "rag_chat"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Chat{}, tableName)
 	newCfg := &dao.NewConfig{
@@ -22,7 +22,7 @@ func NewChatDao(dbKey string) idao.Dao[*model.Chat] {
 		DBSchema:   dbSch,
 	}
 	baseDao := dao.NewDao[*model.Chat](newCfg)
-	daoVal := &ChatDao[*model.Chat]{Dao: baseDao}
+	daoVal := &ChatDao{Dao: baseDao}
 	daoVal.Table().AutoMigrate(context.Background())
 	return daoVal
 }

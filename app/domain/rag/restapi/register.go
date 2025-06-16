@@ -8,11 +8,27 @@ import (
 
 func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
 	RegisterRagApi(app, baseUrl, env, rootPath)
+	RegisterChatApi(app, baseUrl, env, rootPath)
+	RegisterMessageApi(app, baseUrl, env, rootPath)
 }
 
 func RegisterRagApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
 	ragApi := NewRagAPI(env, rootPath)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(ragApi)
+	})
+}
+
+func RegisterMessageApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+	api := NewMessageAPI(env, rootPath)
+	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
+		a.Handle(api)
+	})
+}
+
+func RegisterChatApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+	api := NewChatAPI(env, rootPath)
+	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
+		a.Handle(api)
 	})
 }
