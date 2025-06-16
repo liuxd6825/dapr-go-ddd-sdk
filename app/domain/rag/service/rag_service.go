@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/graph"
@@ -35,7 +36,7 @@ func newGraphRag() *my_rag.GraphRag {
 		panic("rag not found in env.app")
 	}
 
-	ragCfg, err := ReadRagConfig(ragMeta)
+	ragCfg, err := config.ReadRagConfig(ragMeta)
 	if err != nil {
 		panic("read RagConfig error" + err.Error())
 	}
