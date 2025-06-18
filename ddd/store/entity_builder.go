@@ -156,14 +156,13 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 		return
 	}
 	authUser := b.GetAuthUser(ctx)
-	timeVal := time.Now().UTC()
-	timeNow := &timeVal
+	timeNow := time.Now().UTC()
 
-	b.setField(entity, fields.CreatedTime, timeNow)
+	b.setField(entity, fields.CreatedTime, &timeNow)
 	b.setField(entity, fields.CreatorName, authUser.GetName())
 	b.setField(entity, fields.CreatorId, authUser.GetId())
 
-	b.setField(entity, fields.UpdatedTime, timeNow)
+	b.setField(entity, fields.UpdatedTime, &timeNow)
 	b.setField(entity, fields.UpdaterName, authUser.GetName())
 	b.setField(entity, fields.UpdaterId, authUser.GetId())
 
@@ -180,7 +179,7 @@ func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 	authUser := b.GetAuthUser(ctx)
 	timeNow := time.Now().UTC()
 
-	b.setField(entity, fields.UpdatedTime, timeNow)
+	b.setField(entity, fields.UpdatedTime, &timeNow)
 	b.setField(entity, fields.UpdaterName, authUser.GetName())
 	b.setField(entity, fields.UpdaterId, authUser.GetId())
 }
