@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 )
@@ -26,6 +27,7 @@ func NewMessageAPI(env *env.Env, rootPath string) *MessageAPI {
 func (s *MessageAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/rag/message", "Create")
 	b.Handle(iris.MethodPut, "/rag/message", "Update")
+	b.Handle(iris.MethodGet, "/rag/{chatId}/messages", "GetByChatId")
 }
 
 func (s *MessageAPI) Create(ictx iris.Context) {
@@ -49,6 +51,22 @@ func (s *MessageAPI) Update(ictx iris.Context) {
 		}
 		s.msgService.Update(ctx, &cmd.Data)
 		return nil
+	}).Catch(func(ctx context.Context, err error) {
+		web.SetError(ictx, err)
+	})
+}
+
+func (s *MessageAPI) GetByChatId(ictx iris.Context) {
+	web.Try(ictx, func(ctx context.Context) error {
+		chatId := ictx.Params().GetString("chatId")
+		qry := store.NewFindPagingQueryRequest()
+		qry.PageNum = 0
+		qry.PageSize = 99999999999999
+		qry.Filter = "chat_id=='" + chatId + "'"
+		qry.Sort = "order_num:asc"
+		qry.IsTotalRows = true
+		res := s.msgService.FindPaging(ctx, qry)
+		return web.SetData(ictx, res)
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})
