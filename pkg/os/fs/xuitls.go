@@ -4,6 +4,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/spf13/afero"
 	"io/fs"
+	"os"
 )
 
 // IsDir
@@ -61,14 +62,14 @@ func Create(afs afero.Fs, filename string, opts ...*fsopts.Options) (afero.File,
 //	@return error
 func ReadFile(afs afero.Fs, filename string, opts ...*fsopts.Options) ([]byte, error) {
 	fileName := fsopts.GetAbsPath(filename, opts...)
-	context, err := afero.ReadFile(afs, fileName)
+	data, err := afero.ReadFile(afs, fileName)
 	if err != nil {
 		return nil, err
 	}
 	if decode, ok := afs.(Decode); ok {
-		context, err = decode.Decode(context)
+		data, err = decode.Decode(data)
 	}
-	return context, err
+	return data, err
 }
 
 // WriteFile
@@ -90,6 +91,34 @@ func WriteFile(afs afero.Fs, filename string, bytes []byte, fileMode fs.FileMode
 	}
 	err = afero.WriteFile(afs, fileName, bytes, fileMode)
 	return err
+}
+
+func Open(afs afero.Fs, filename string, flag int, perm os.FileMode, opts ...*fsopts.Options) (afero.File, error) {
+	fileName := fsopts.GetAbsPath(filename, opts...)
+	file, err := afs.OpenFile(fileName, flag, perm)
+	return file, err
+}
+
+func WriteAt(afs afero.Fs, fsFile afero.File, off int64, bytes []byte, opts ...*fsopts.Options) (int, error) {
+	var err error
+	if encode, ok := afs.(Decode); ok {
+		bytes, err = encode.Encode(bytes)
+		if err != nil {
+			return -1, err
+		}
+	}
+	return fsFile.WriteAt(bytes, off)
+}
+
+func ReadAt(afs afero.Fs, fsFile afero.File, off int64, data []byte, opts ...*fsopts.Options) (int, error) {
+	count, err := fsFile.ReadAt(data, off)
+	if err != nil {
+		return -1, err
+	}
+	if decode, ok := afs.(Decode); ok {
+		data, err = decode.Decode(data)
+	}
+	return count, err
 }
 
 func MkdirAll(afs afero.Fs, path string, fileMode fs.FileMode, opts ...*fsopts.Options) error {

@@ -42,6 +42,27 @@ func NewFile(fs afero.Fs, fsFile afero.File) *File {
 	return &File{fs: fs, File: fsFile}
 }
 
+// SizeTitle 格式化文件大小为易读格式
+func (f File) SizeTitle() string {
+	const (
+		KB = 1 << 10
+		MB = 1 << 20
+		GB = 1 << 30
+	)
+	fileInfo, _ := f.File.Stat()
+	size := fileInfo.Size()
+	switch {
+	case size >= GB:
+		return fmt.Sprintf("%.2f GB", float64(size)/GB)
+	case size >= MB:
+		return fmt.Sprintf("%.2f MB", float64(size)/MB)
+	case size >= KB:
+		return fmt.Sprintf("%.2f KB", float64(size)/KB)
+	default:
+		return fmt.Sprintf("%d B", size)
+	}
+}
+
 func NewManager() *Manager {
 	fsMap := cmap.New()
 	return &Manager{fsMap: fsMap}
