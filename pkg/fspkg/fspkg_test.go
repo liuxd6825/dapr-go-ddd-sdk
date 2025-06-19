@@ -92,5 +92,5 @@ func TestFs_WriteAt(t *testing.T) {
 }
 
 func newEnv() *env.Env {
-	return xtest.NewEnvConfig_Fs("file", "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/fspkg/test-file")
+	return xtest.NewEnvConfig_Fs("file", "./test-file")
 }
