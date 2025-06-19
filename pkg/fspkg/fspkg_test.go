@@ -88,7 +88,7 @@ func TestFs_WriteAt(t *testing.T) {
 		t.Log(string(buf))
 		off += bufSize
 	}
-
+	readFile.Close()
 }
 
 func newEnv() *env.Env {
