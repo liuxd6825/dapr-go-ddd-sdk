@@ -30,6 +30,9 @@ type IFsPkg interface {
 	ReadPath(path string, opts ...*fsopts.Options) []*FileInfo
 	ReadAllPath(path string, opts ...*fsopts.Options) []*FileInfo
 	SortFileInfos(files []*FileInfo)
+	Open(filename string, opts ...*fsopts.Options) (*fsm.File, error)
+	WriteAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error)
+	ReadAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error)
 }
 
 // FsPkg
@@ -165,6 +168,18 @@ func (m *FsPkg) WriteFile(filename string, data any, opts ...*fsopts.Options) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func (m *FsPkg) Open(filename string, flag int, perm os.FileMode, opts ...*fsopts.Options) (*fsm.File, error) {
+	return m.base.Open(filename, flag, perm, opts...)
+}
+
+func (m *FsPkg) WriteAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error) {
+	return m.base.WriteAt(file, data, office, opts...)
+}
+
+func (m *FsPkg) ReadAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error) {
+	return m.base.ReadAt(file, data, office, opts...)
 }
 
 // RemoveFile

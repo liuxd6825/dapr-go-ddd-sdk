@@ -33,6 +33,15 @@ const (
 	WriteModelSelfWriteOtherRead WriteModel = 0644 // 当前用户读写，其他用户只读
 )
 
+type File struct {
+	fs afero.Fs
+	afero.File
+}
+
+func NewFile(fs afero.Fs, fsFile afero.File) *File {
+	return &File{fs: fs, File: fsFile}
+}
+
 func NewManager() *Manager {
 	fsMap := cmap.New()
 	return &Manager{fsMap: fsMap}
@@ -217,6 +226,35 @@ func (m *Manager) WriteFile(filename string, bytes []byte, writeModel WriteModel
 		afs = opt.Fs
 	}
 	return fs2.WriteFile(afs, fileName, bytes, fs.FileMode(writeModel), opt)
+}
+
+func (m *Manager) Open(filename string, flag int, perm os.FileMode, opts ...*fsopts.Options) (*File, error) {
+	opt := fsopts.NewOptions(opts...)
+	afs, fName, err := m.parse(filename)
+	if err != nil {
+		return nil, err
+	}
+	fsFile, err := fs2.Open(afs, fName, flag, perm, opt)
+	if err != nil {
+		return nil, err
+	}
+	return NewFile(afs, fsFile), nil
+}
+
+func (m *Manager) WriteAt(fsFile *File, data []byte, off int64, opts ...*fsopts.Options) (int, error) {
+	opt := fsopts.NewOptions(opts...)
+	if fsFile == nil {
+		return -1, errors.New("fsFile==nil")
+	}
+	return fs2.WriteAt(fsFile.fs, fsFile, off, data, opt)
+}
+
+func (m *Manager) ReadAt(fsFile *File, data []byte, off int64, opts ...*fsopts.Options) (int, error) {
+	opt := fsopts.NewOptions(opts...)
+	if fsFile == nil {
+		return -1, errors.New("fsFile==nil")
+	}
+	return fs2.ReadAt(fsFile.fs, fsFile, off, data, opt)
 }
 
 // RemoveFile

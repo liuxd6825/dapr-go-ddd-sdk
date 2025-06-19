@@ -90,6 +90,7 @@ func (env *Env) Init() {
 	initDapr(env)
 	initResources(env)
 
+	env.Fsm = env.NewFsManager(env.Fs)
 }
 
 func (env *Env) NewFsManager(fs []map[string]any) *fsm.Manager {

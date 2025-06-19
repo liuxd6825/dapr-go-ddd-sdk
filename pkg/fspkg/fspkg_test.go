@@ -1,41 +1,71 @@
 package fspkg
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/test"
-	fstest "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/test"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"os"
 	"testing"
 )
 
 func TestFs_LoadFile(t *testing.T) {
-	fsm, err := fstest.NewFsManager("")
+	env := newEnv()
+	fsPkg, err := NewFsPkg(env, "file")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
-	fsPkg, err := NewFsPkg(test.NewEnvConfig(fsm, ""), "")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-
-	fileInfos := fsPkg.ReadAllDir("/testfile")
+	fileInfos := fsPkg.ReadAllPath("/testfile")
 	for _, fileInfo := range fileInfos {
 		t.Log(fileInfo)
 	}
 }
 
 func TestFs_RemoveFile(t *testing.T) {
-	fsm, err := fstest.NewFsManager("")
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-	env := test.NewEnvConfig(fsm, "")
-	fsPkg, err := NewFsPkg(env, "")
+	env := newEnv()
+	fsPkg, err := NewFsPkg(env, "file")
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 	fsPkg.RemoveFile("/testfile/master/xremove.txt")
+}
+
+func TestFs_WriteAt(t *testing.T) {
+	env := newEnv()
+	fsPkg, err := NewFsPkg(env, "file")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	fsPkg.Create("001.txt")
+	writeFile, err := fsPkg.Open("/001.txt", os.O_WRONLY, 0644)
+
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	for i := 0; i < 10; i++ {
+		str := fmt.Sprintf("<%d>", i)
+		if _, err := fsPkg.WriteAt(writeFile, []byte(str), int64(i*3)); err != nil {
+			t.Fatal(err)
+			return
+		}
+	}
+	writeFile.Close()
+
+	readFile, err := fsPkg.Open("/001.txt", os.O_RDONLY, 0644)
+	data := make([]byte, 10)
+	count, err := fsPkg.ReadAt(readFile, data, 0)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	t.Log(count, string(data))
+}
+
+func newEnv() *env.Env {
+	return xtest.NewEnvConfig_Fs("file", "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/fspkg/test-file")
 }

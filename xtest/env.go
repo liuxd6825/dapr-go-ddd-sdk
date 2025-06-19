@@ -36,6 +36,23 @@ func NewEnvConfig_Neo4j() *env.Env {
 	return res
 }
 
+func NewEnvConfig_Fs(name, path string) *env.Env {
+	res := env.NewEnv()
+	res.App.AppId = "test"
+	res.App.AppName = "app"
+	res.App.HttpHost = "localhost"
+	res.App.HttpPort = 0
+	res.Fs = []map[string]any{
+		{
+			"name": name,
+			"type": "local",
+			"path": path,
+		},
+	}
+	res.Init()
+	return res
+}
+
 func (e EnvConfig) GetAppId() string {
 	return "test"
 }
