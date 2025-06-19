@@ -56,14 +56,39 @@ func TestFs_WriteAt(t *testing.T) {
 	writeFile.Close()
 
 	readFile, err := fsPkg.Open("/001.txt", os.O_RDONLY, 0644)
-	data := make([]byte, 10)
-	count, err := fsPkg.ReadAt(readFile, data, 0)
 	if err != nil {
 		t.Fatal(err)
 		return
 	}
 
-	t.Log(count, string(data))
+	fileInfo, err := readFile.Stat()
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	fileSize := fileInfo.Size()
+	bufSize := int64(8)
+	off := int64(0)
+	for {
+		fileSize = fileSize - bufSize
+		if fileSize <= 0 {
+			bufSize = int64(bufSize + fileSize)
+		}
+		if bufSize <= 0 {
+			break
+		}
+
+		buf := make([]byte, bufSize)
+		_, err := fsPkg.ReadAt(readFile, buf, off)
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+		t.Log(string(buf))
+		off += bufSize
+	}
+
 }
 
 func newEnv() *env.Env {
