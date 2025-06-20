@@ -1,0 +1,760 @@
+package storage
+
+import (
+	"context"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+	"strings"
+	"time"
+
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j/db"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
+)
+
+// Neo4jGraphStorage provides a Neo4j graph database implementation of storage interfaces.
+// It handles database connections and operations for storing and retrieving graph entities
+// and relationships.
+type Neo4jGraphStorage struct {
+	Client neo4j.DriverWithContext
+	dao    idao.Dao[map[string]any]
+	store  *store_neo4j.Dao[map[string]any]
+}
+
+// NewNeo4jGraphStorage creates a new Neo4j client connection with the provided connection parameters.
+// It returns an initialized Neo4J struct and any error encountered during connection setup.
+// The returned Neo4J instance must be closed with Close() when no longer needed to free up resources.
+func NewNeo4jGraphStorage(dbKey string) *Neo4jGraphStorage {
+	nodeCfg := &dao.NewConfig{
+		DBKey:              dbKey,
+		IsPubEvent:         dao.IsFalse(),
+		GraphType:          idao.GraphType_Node,
+		GraphLabels:        []string{"master"},
+		IsCancelModified:   true,
+		IsCancelSoftDelete: true,
+		DBSchema:           dbschema.NewDBSchema("graph", "graph"),
+	}
+	newDao := dao.NewDao[map[string]any](nodeCfg)
+	dbItem := env.GetEnv().GetDB(dbKey)
+	if dbItem == nil {
+		panic(fmt.Errorf("dbKey is nil"))
+	}
+
+	return &Neo4jGraphStorage{
+		Client: dbItem.GetNeo4j(),
+		dao:    newDao,
+	}
+
+}
+
+func (n *Neo4jGraphStorage) CreateTenant(ctx context.Context, tenantId string) error {
+	return nil
+}
+
+func (n *Neo4jGraphStorage) CreateCase(ctx context.Context, tenantId, caseId string) error {
+	return nil
+}
+
+func (n *Neo4jGraphStorage) DeleteTenant(ctx context.Context, tenantId string) error {
+	labels := fmt.Sprintf(":tenant_%s", tenantId)
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			query := fmt.Sprintf("MATCH (n%s) DETACH DELETE n", labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+			return queryRes.Record(), nil
+		})
+	})
+	return err
+}
+
+func (n *Neo4jGraphStorage) DeleteCase(ctx context.Context, tenantId, caseId string) error {
+	labels := fmt.Sprintf(":tenant_%s:case_%s", tenantId, caseId)
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			query := fmt.Sprintf("MATCH (n%s) DETACH DELETE n", labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+			return queryRes.Record(), nil
+		})
+	})
+	return err
+}
+
+func (n *Neo4jGraphStorage) DeleteDoc(ctx context.Context, tenantId, caseId, docId string) error {
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s", tenantId, caseId, docId)
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			query := fmt.Sprintf("MATCH (n%s) DETACH DELETE n", labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+			return queryRes.Record(), nil
+		})
+	})
+	return err
+}
+
+func (n *Neo4jGraphStorage) LoadTenant(ctx context.Context, tenantId, caseId string) error {
+	return nil
+}
+
+func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryParam, opts Options) ([]string, error) {
+	contents := []string{}
+	graphView := n.FindNodes(ctx, query, opts)
+	nodeMap := make(map[string]*graph.Node)
+	for _, nodes := range graphView.Nodes {
+		for _, node := range nodes {
+			nodeMap[node.Nid] = node
+			desc, err := maputils.GetString(node.GetProps(), "description", "")
+			if desc != "" && err == nil {
+				contents = append(contents, desc)
+			}
+		}
+	}
+	for _, edges := range graphView.Edges {
+		for _, edge := range edges {
+			desc, err := maputils.GetString(edge.GetProps(), "description", "")
+			if err != nil {
+				continue
+			}
+			toNode := nodeMap[edge.NTo]
+			fromNode := nodeMap[edge.NFrom]
+			if toNode != nil && fromNode != nil {
+				toName, _ := maputils.GetString(toNode.Props, "name", "")
+				fromName, _ := maputils.GetString(fromNode.Props, "name", "")
+				relType, _ := maputils.GetString(edge.GetProps(), "relType", "")
+				if toName != "" && fromName != "" && relType != "" {
+					contents = append(contents, fmt.Sprintf("%s%s%s", toName, relType, fromName))
+				}
+			}
+			if desc != "" {
+				contents = append(contents, desc)
+			}
+		}
+	}
+	return contents, nil
+}
+
+func (n *Neo4jGraphStorage) getNames(values []string) string {
+	val := ""
+	count := len(values)
+	sb := strings.Builder{}
+	for i, value := range values {
+		sb.WriteString("\"" + value + "\"")
+		if i < count-1 {
+			sb.WriteString(",")
+		}
+	}
+	return val
+}
+
+// FindNodes
+/*
+	MATCH p=(n)-[*..5]-(m) 	WHERE n.name IN ['名称1', '名称2'] RETURN p
+*/
+func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam, opts Options) *graph.GraphView {
+	namesStr := n.getNames(query.Keys)
+	limit := query.Limit
+	if limit <= 0 {
+		limit = 1000
+	}
+	maxDeep := query.MaxDeep
+	if maxDeep <= 0 {
+		maxDeep = 5
+	}
+
+	labels := n.getLabels(opts)
+	cypher := fmt.Sprintf("MATCH p=(n%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT %d", labels, query.MaxDeep, namesStr, limit)
+	logs.InfoMsg(ctx, cypher)
+	res, err := n.GetStore().Query(ctx, cypher, nil)
+	if err != nil {
+		panic(err)
+	}
+	return res.NewGraphView()
+}
+
+func (n *Neo4jGraphStorage) GetStore() *store_neo4j.Dao[map[string]any] {
+	if n.store == nil {
+		iStore := n.dao.GetStore().(any)
+		nodeStoreDao, ok := iStore.(*store_neo4j.Dao[map[string]any])
+		if !ok {
+			panic("neo4j store does not implement neo4j.Dao")
+		}
+		n.store = nodeStoreDao
+	}
+	return n.store
+}
+
+// GraphEntity retrieves a graph entity by name from the Neo4j database.
+// It returns the found entity or an error if the entity doesn't exist or if the query fails.
+func (n *Neo4jGraphStorage) GraphEntity(ctx context.Context, name string, opts Options) (*GraphEntity, error) {
+	labels := n.getDocLabels(opts)
+	res, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			query := fmt.Sprintf("MATCH (n%s {name:$name}) RETURN n", labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{
+				"name": name,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+			return queryRes.Record(), nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	record, ok := res.(*db.Record)
+	if !ok {
+		return nil, fmt.Errorf("invalid result type, got %T, want *db.Record", res)
+	}
+	if record == nil {
+		return nil, nil
+	}
+	nNode, ok := record.Get("n")
+	if !ok {
+		return nil, nil
+	}
+	node, ok := nNode.(dbtype.Node)
+	if !ok {
+		return nil, fmt.Errorf("invalid n type, got %T, want dbtype.Node", n)
+	}
+
+	return graphEntityFromNode(node), nil
+}
+
+func (n *Neo4jGraphStorage) getLabels(opts Options) string {
+	switch opts.NodeLabel {
+	case NodeLabel_Master:
+		return fmt.Sprintf(":tenant_%s:case_%s:master", opts.TenantId, opts.CaseId)
+	case NodeLabel_Draw:
+		return fmt.Sprintf(":tenant_%s:case_%s:draw", opts.TenantId, opts.CaseId)
+	case NodeLabel_Doc, "":
+		return fmt.Sprintf(":tenant_%s:case_%s:doc", opts.TenantId, opts.CaseId)
+	case NodeLabel_All:
+		return fmt.Sprintf(":tenant_%s:case_%s", opts.TenantId, opts.CaseId)
+	default:
+		panic(fmt.Sprintf("invalid label type, got %s, want %s,%s,%s,%s", opts.NodeLabel, NodeLabel_Master, NodeLabel_Draw, NodeLabel_Doc, NodeLabel_All))
+	}
+}
+
+func (n *Neo4jGraphStorage) getDocLabels(opts Options) string {
+	return fmt.Sprintf(":tenant_%s:case_%s:doc_%s:doc", opts.TenantId, opts.CaseId, opts.DocId)
+}
+
+// GraphRelationship retrieves a relationship between two entities from the Neo4j database.
+// It returns the found relationship or an error if the relationship doesn't exist or if the query fails.
+func (n *Neo4jGraphStorage) GraphRelationship(ctx context.Context, sourceEntity, targetEntity string, opts Options) (*GraphRelationship, error) {
+	res, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			labels := n.getLabels(opts)
+			query := fmt.Sprintf(`
+MATCH (start%s{name: $source_entity_id})-[r]-(end%s{name: $target_entity_id})
+RETURN properties(r) as edge_properties
+`, labels, labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{
+				"source_entity_id": sourceEntity,
+				"target_entity_id": targetEntity,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+
+			return queryRes.Record(), nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	record, ok := res.(*db.Record)
+	if !ok {
+		return nil, fmt.Errorf("invalid result type, got %T, want *db.Record", res)
+	}
+	if record == nil {
+		return nil, nil
+	}
+	edgeProps, ok := record.Get("edge_properties")
+	if !ok {
+		return nil, fmt.Errorf("expected edge_properties key is not found")
+	}
+	props, ok := edgeProps.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid edge_properties type, got %T, want map[string]any", edgeProps)
+	}
+
+	return graphRelationshipFromEdge(sourceEntity, targetEntity, props), nil
+}
+
+// GraphUpsertEntity creates or updates an entity in the Neo4j graph database.
+// It returns an error if the database operation fails.
+func (n *Neo4jGraphStorage) GraphUpsertEntity(ctx context.Context, entity *GraphEntity, opts Options) error {
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			labels := n.getDocLabels(opts)
+			return tx.Run(
+				ctx,
+				fmt.Sprintf(`
+MERGE (n%s {name: $properties.name})
+SET n += $properties
+SET n:%s`, labels, "`"+entity.Type+"`"),
+				map[string]any{
+					"properties": map[string]any{
+						"name":        entity.Name,
+						"type":        entity.Type,
+						"description": entity.Descriptions,
+						"source_ids":  entity.SourceIDs,
+						"created_at":  entity.CreatedAt.Format(time.RFC3339),
+					},
+				},
+			)
+		})
+	})
+
+	return err
+}
+
+// GraphUpsertRelationship creates or updates a relationship between two entities in the Neo4j graph database.
+// It returns an error if the database operation fails.
+func (n *Neo4jGraphStorage) GraphUpsertRelationship(ctx context.Context, relationship *GraphRelationship, opts Options) error {
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			keywords := strings.Join(relationship.Keywords, GraphFieldSeparator)
+			labels := n.getLabels(opts)
+			return tx.Run(
+				ctx,
+				fmt.Sprintf(`
+MATCH (source%s {name: $source})
+WITH source
+MATCH (target%s {name: $target})
+MERGE (source)-[r:DIRECTED]-(target)
+SET r += $properties
+`, labels, labels),
+				map[string]any{
+					"source": relationship.Source,
+					"target": relationship.Target,
+					"properties": map[string]any{
+						"weight":      relationship.Weight,
+						"description": relationship.Descriptions,
+						"keywords":    keywords,
+						"source_ids":  relationship.SourceIDs,
+						"created_at":  relationship.CreatedAt.Format(time.RFC3339),
+					},
+				},
+			)
+		})
+	})
+
+	return err
+}
+
+// GraphEntities retrieves multiple graph entities by their names from the Neo4j database.
+// It returns a map of entity names to GraphEntity objects, or an error if the query fails.
+func (n *Neo4jGraphStorage) GraphEntities(ctx context.Context, names []string, opts Options) (map[string]*GraphEntity, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+	labels := n.getDocLabels(opts)
+	res, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			query := fmt.Sprintf(`
+MATCH (n%s) 
+WHERE n.name IN $entityIDs 
+RETURN n, n.name as entity_id`, labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{
+				"entityIDs": names,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+
+			result := make(map[string]dbtype.Node)
+			for record, err := range queryRes.Records(ctx) {
+				if err != nil {
+					return nil, fmt.Errorf("failed to get result: %w", err)
+				}
+
+				node, ok := record.Get("n")
+				if !ok {
+					continue
+				}
+
+				entityID, ok := record.Get("name")
+				if !ok {
+					continue
+				}
+
+				entityIDStr, ok := entityID.(string)
+				if !ok {
+					continue
+				}
+
+				dbNode, ok := node.(dbtype.Node)
+				if !ok {
+					continue
+				}
+
+				result[entityIDStr] = dbNode
+			}
+
+			return result, nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	nodeMap, ok := res.(map[string]dbtype.Node)
+	if !ok {
+		return nil, fmt.Errorf("invalid result type, got %T, want map[string]dbtype.Node", res)
+	}
+
+	entities := make(map[string]*GraphEntity)
+	for name, node := range nodeMap {
+		entities[name] = graphEntityFromNode(node)
+	}
+
+	return entities, nil
+}
+
+// GraphRelationships retrieves multiple relationships between entity pairs from the Neo4j database.
+// It returns a map where the key is "sourceEntity-targetEntity" and the value is the GraphRelationship.
+func (n *Neo4jGraphStorage) GraphRelationships(ctx context.Context, pairs [][2]string, opts Options) (map[string]*GraphRelationship, error) {
+	if len(pairs) == 0 {
+		return map[string]*GraphRelationship{}, nil
+	}
+
+	// Prepare parameters for the query
+	sources := make([]string, len(pairs))
+	targets := make([]string, len(pairs))
+	for i, pair := range pairs {
+		sources[i] = pair[0]
+		targets[i] = pair[1]
+	}
+
+	res, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			labels := n.getDocLabels(opts)
+			query := fmt.Sprintf(`
+UNWIND $pairs AS pair
+MATCH (start%s {name: pair[0]})-[r]-(end%s{name: pair[1]})
+RETURN pair[0] as source, pair[1] as target, properties(r) as edge_properties
+			`, labels, labels)
+
+			// Convert pairs to a format suitable for the query
+			pairsParam := make([][]string, len(pairs))
+			for i, pair := range pairs {
+				pairsParam[i] = []string{pair[0], pair[1]}
+			}
+
+			queryRes, err := tx.Run(ctx, query, map[string]any{
+				"pairs": pairsParam,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+
+			result := make(map[string]map[string]any)
+			for record, err := range queryRes.Records(ctx) {
+				if err != nil {
+					return nil, fmt.Errorf("failed to get result: %w", err)
+				}
+
+				source, sourceOK := record.Get("source")
+				target, targetOK := record.Get("target")
+				edgeProps, propsOK := record.Get("edge_properties")
+
+				if !sourceOK || !targetOK || !propsOK {
+					continue
+				}
+
+				sourceStr, sourceOK := source.(string)
+				targetStr, targetOK := target.(string)
+				props, propsOK := edgeProps.(map[string]any)
+
+				if !sourceOK || !targetOK || !propsOK {
+					continue
+				}
+
+				key := fmt.Sprintf("%s-%s", sourceStr, targetStr)
+				result[key] = props
+			}
+
+			return result, nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	propsMap, ok := res.(map[string]map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("invalid result type, got %T, want map[string]map[string]any", res)
+	}
+
+	relationships := make(map[string]*GraphRelationship)
+	for key, props := range propsMap {
+		parts := strings.Split(key, "-")
+		if len(parts) != 2 {
+			continue
+		}
+
+		rel := graphRelationshipFromEdge(parts[0], parts[1], props)
+		relationships[key] = rel
+	}
+
+	return relationships, nil
+}
+
+// GraphCountEntitiesRelationships counts the number of relationships for multiple entities.
+// It returns a map of entity names to their relationship counts.
+func (n *Neo4jGraphStorage) GraphCountEntitiesRelationships(ctx context.Context, names []string, opts Options) (map[string]int, error) {
+	if len(names) == 0 {
+		return map[string]int{}, nil
+	}
+
+	res, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			labels := n.getDocLabels(opts)
+			query := fmt.Sprintf(`
+MATCH (n%s)
+WHERE n.name IN $entity_ids
+OPTIONAL MATCH (n)-[r]-()
+RETURN n.name AS entity_id, COUNT(r) AS degree
+            `, labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{
+				"entity_ids": names,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+
+			result := make(map[string]int64)
+			for record, err := range queryRes.Records(ctx) {
+				if err != nil {
+					return nil, fmt.Errorf("failed to get result: %w", err)
+				}
+
+				entityID, idOK := record.Get("entity_id")
+				degree, degreeOK := record.Get("degree")
+
+				if !idOK || !degreeOK {
+					continue
+				}
+
+				entityIDStr, idOK := entityID.(string)
+				degreeCnt, degreeOK := degree.(int64)
+
+				if !idOK || !degreeOK {
+					continue
+				}
+
+				result[entityIDStr] = degreeCnt
+			}
+
+			return result, nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	countMap, ok := res.(map[string]int64)
+	if !ok {
+		return nil, fmt.Errorf("invalid result type, got %T, want map[string]int64", res)
+	}
+
+	// Convert int64 to int
+	counts := make(map[string]int)
+	for name, count := range countMap {
+		counts[name] = int(count)
+	}
+
+	return counts, nil
+}
+
+// GraphRelatedEntities retrieves all entities related to multiple input entities.
+// It returns a map of entity names to slices of related GraphEntity objects.
+func (n *Neo4jGraphStorage) GraphRelatedEntities(ctx context.Context, names []string, opts Options) (map[string][]*GraphEntity, error) {
+	if len(names) == 0 {
+		return map[string][]*GraphEntity{}, nil
+	}
+
+	res, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			labels := n.getDocLabels(opts)
+			query := fmt.Sprintf(`
+MATCH (n%s)
+WHERE n.name IN $entity_ids
+OPTIONAL MATCH (n)-[r]-(connected%s)
+WHERE connected.entity_id IS NOT NULL
+RETURN n.name as source_id, collect(connected) as connected_nodes
+            `, labels, labels)
+			queryRes, err := tx.Run(ctx, query, map[string]any{
+				"entity_ids": names,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to run query: %w", err)
+			}
+
+			result := make(map[string][]dbtype.Node)
+			for record, err := range queryRes.Records(ctx) {
+				if err != nil {
+					return nil, fmt.Errorf("failed to get result: %w", err)
+				}
+
+				sourceID, sourceOK := record.Get("source_id")
+				connectedNodes, connectedOK := record.Get("connected_nodes")
+
+				if !sourceOK || !connectedOK {
+					continue
+				}
+
+				sourceIDStr, sourceOK := sourceID.(string)
+				nodes, connectedOK := connectedNodes.([]any)
+
+				if !sourceOK || !connectedOK {
+					continue
+				}
+
+				nodeList := make([]dbtype.Node, 0, len(nodes))
+				for _, node := range nodes {
+					if dbNode, ok := node.(dbtype.Node); ok {
+						nodeList = append(nodeList, dbNode)
+					}
+				}
+
+				result[sourceIDStr] = nodeList
+			}
+
+			return result, nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	nodesMap, ok := res.(map[string][]dbtype.Node)
+	if !ok {
+		return nil, fmt.Errorf("invalid result type, got %T, want map[string][]dbtype.Node", res)
+	}
+
+	relatedEntities := make(map[string][]*GraphEntity, len(nodesMap))
+	for name, nodes := range nodesMap {
+		entities := make([]*GraphEntity, 0, len(nodes))
+		for _, node := range nodes {
+			entities = append(entities, graphEntityFromNode(node))
+		}
+		relatedEntities[name] = entities
+	}
+
+	return relatedEntities, nil
+}
+
+// Close terminates the connection to the Neo4j database.
+// It returns any error encountered during the closing operation.
+func (n *Neo4jGraphStorage) Close(ctx context.Context) error {
+	return n.Client.Close(ctx)
+}
+
+func (n *Neo4jGraphStorage) session(sessFunc func(context.Context, neo4j.SessionWithContext) (any, error)) (any, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	sess := n.Client.NewSession(ctx, neo4j.SessionConfig{})
+	defer func() {
+		closeCtx, closeCancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer closeCancel()
+		_ = sess.Close(closeCtx)
+	}()
+
+	trxCtx, trxCancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer trxCancel()
+
+	return sessFunc(trxCtx, sess)
+}
+
+func graphEntityFromNode(node dbtype.Node) *GraphEntity {
+	name, ok := node.Props["name"].(string)
+	if !ok {
+		name = ""
+	}
+	typ, ok := node.Props["type"].(string)
+	if !ok {
+		typ = ""
+	}
+	desc, ok := node.Props["description"].(string)
+	if !ok {
+		desc = ""
+	}
+	sourceIDs, ok := node.Props["source_ids"].(string)
+	if !ok {
+		sourceIDs = ""
+	}
+	createdAtStr, ok := node.Props["created_at"].(string)
+	if !ok {
+		createdAtStr = time.Now().Format(time.RFC3339)
+	}
+	createdAt, err := time.Parse(time.RFC3339, createdAtStr)
+	if err != nil {
+		createdAt = time.Now()
+	}
+
+	return &GraphEntity{
+		Name:         name,
+		Type:         typ,
+		Descriptions: desc,
+		SourceIDs:    sourceIDs,
+		CreatedAt:    createdAt,
+	}
+}
+
+func graphRelationshipFromEdge(source, target string, props map[string]any) *GraphRelationship {
+	weight, ok := props["weight"].(float64)
+	if !ok {
+		weight = 1.0
+	}
+	description, ok := props["description"].(string)
+	if !ok {
+		description = ""
+	}
+	keywords, ok := props["keywords"].(string)
+	if !ok {
+		keywords = ""
+	}
+	arrKeywords := strings.Split(keywords, GraphFieldSeparator)
+	sourceIDs, ok := props["source_ids"].(string)
+	if !ok {
+		sourceIDs = ""
+	}
+	createdAtStr, ok := props["created_at"].(string)
+	if !ok {
+		createdAtStr = time.Now().Format(time.RFC3339)
+	}
+	createdAt, err := time.Parse(time.RFC3339, createdAtStr)
+	if err != nil {
+		createdAt = time.Now()
+	}
+
+	return &GraphRelationship{
+		Source:       source,
+		Target:       target,
+		Weight:       weight,
+		Descriptions: description,
+		Keywords:     arrKeywords,
+		SourceIDs:    sourceIDs,
+		CreatedAt:    createdAt,
+	}
+}

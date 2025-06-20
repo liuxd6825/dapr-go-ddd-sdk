@@ -16,12 +16,12 @@ type LLM = model.BaseChatModel
 		Model:   "text2cypher-gemma-2-9b-it-finetuned-2024v1", // 使用的模型版本
 	}
 */
-func NewOpenAI(ctx context.Context, cfg openai.ChatModelConfig) (cm model.ToolCallingChatModel, err error) {
-	cm, err = openai.NewChatModel(ctx, &cfg)
+func NewOpenAI(ctx context.Context, cfg openai.ChatModelConfig) (cm model.ToolCallingChatModel) {
+	cm, err := openai.NewChatModel(ctx, &cfg)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return cm, nil
+	return cm
 }
 
 // NewOllama component initialization function of node 'ChatModel2' in graph 'graphAgent'

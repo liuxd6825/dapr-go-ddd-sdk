@@ -1,0 +1,17 @@
+storage:
+  dbPath: /Users/lxd/Program/mongodb-8.0.8/rs2/data/db
+systemLog:
+  destination: file
+  path: /Users/lxd/Program/mongodb-8.0.8/rs2/logs/mongod.log
+  logAppend: true
+net:
+  bindIp: 127.0.0.1
+  port: 27019
+replication:
+  replSetName: rs0
+processManagement:
+  fork: true
+security:
+  authorization: enabled
+  keyFile: /Users/lxd/Program/mongodb-8.0.8/rs0/keyfile
+

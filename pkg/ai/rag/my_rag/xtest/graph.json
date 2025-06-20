@@ -1,0 +1,121 @@
+{
+  "entities": [
+    {
+      "entity_name": "唐僧",
+      "entity_type": "人员",
+      "entity_description": "大唐高僧，三藏法师，带领三个徒弟前往西天取经，性格坚定，遵守佛门戒律。"
+    },
+    {
+      "entity_name": "悟空",
+      "entity_type": "人员",
+      "entity_description": "唐僧的徒弟，拥有神通广大，金箍棒是其主要武器，机智勇敢，多次救助师父。"
+    },
+    {
+      "entity_name": "八戒",
+      "entity_type": "人员",
+      "entity_description": "唐僧的徒弟，性格好吃懒做，但在关键时刻也会尽力帮助师父，使用九齿钉耙。"
+    },
+    {
+      "entity_name": "沙僧",
+      "entity_type": "人员",
+      "entity_description": "唐僧的徒弟，使用降魔杖，负责照顾白马和行李，忠诚可靠。"
+    },
+    {
+      "entity_name": "女王",
+      "entity_type": "人员",
+      "entity_description": "西良女国的统治者，试图招募唐僧为王，心机深沉，为了达到目的不择手段。"
+    },
+    {
+      "entity_name": "太师",
+      "entity_type": "人员",
+      "entity_description": "西良女国的高级官员，负责执行女王的命令，多次出现在馆驿与唐僧交涉。"
+    },
+    {
+      "entity_name": "船家",
+      "entity_type": "人员",
+      "entity_description": "在小溪边停船，帮助师徒四人渡过溪水，提供了初步的帮助。"
+    },
+    {
+      "entity_name": "道士",
+      "entity_type": "人员",
+      "entity_description": "守护落胎泉的道士，拒绝提供泉水，与牛魔王和红孩儿有渊源。"
+    },
+    {
+      "entity_name": "红孩儿",
+      "entity_type": "人员",
+      "entity_description": "牛魔王的侄儿，在观音菩萨身边做善财童子，被悟空帮助修成正果。"
+    },
+    {
+      "entity_name": "牛魔王",
+      "entity_type": "人员",
+      "entity_description": "红孩儿的叔叔，与悟空有过节，通过道士表达怨恨。"
+    },
+    {
+      "entity_name": "观音菩萨",
+      "entity_type": "人员",
+      "entity_description": "佛教中的重要菩萨，多次帮助唐僧师徒，具有神奇的能力和智慧。"
+    },
+    {
+      "entity_name": "昴日星官",
+      "entity_type": "人员",
+      "entity_description": "东天门光明宫的星官，现形为巨公鸡，帮助悟空和八戒击败蝎子精。"
+    },
+    {
+      "entity_name": "蝎子精",
+      "entity_type": "人员",
+      "entity_description": "女妖，居住在琵琶洞，试图强迫唐僧成亲，使用毒钩和钢叉作战。"
+    }
+  ],
+  "relationships": [
+    {
+      "source_entity": "唐僧",
+      "target_entity": "悟空",
+      "relationship_description": "师徒关系，悟空多次救助唐僧脱离困境，关系紧密。",
+      "relationship_keywords": ["师徒", "救援"],
+      "relationship_strength": 10
+    },
+    {
+      "source_entity": "悟空",
+      "target_entity": "八戒",
+      "relationship_description": "同为唐僧的徒弟，共同经历许多冒险，关系亲密。",
+      "relationship_keywords": ["徒弟", "合作"],
+      "relationship_strength": 9
+    },
+    {
+      "source_entity": "女王",
+      "target_entity": "唐僧",
+      "relationship_description": "女王试图招募唐僧为夫，关系复杂，带有冲突。",
+      "relationship_keywords": ["联姻", "冲突"],
+      "relationship_strength": 8
+    },
+    {
+      "source_entity": "道士",
+      "target_entity": "牛魔王",
+      "relationship_description": "道士是牛魔王的弟弟，表达了对悟空的怨恨。",
+      "relationship_keywords": ["家族", "怨恨"],
+      "relationship_strength": 6
+    },
+    {
+      "source_entity": "观音菩萨",
+      "target_entity": "唐僧",
+      "relationship_description": "观音菩萨多次帮助唐僧脱离困境，关系亲密。",
+      "relationship_keywords": ["救援", "佛门"],
+      "relationship_strength": 9
+    },
+    {
+      "source_entity": "昴日星官",
+      "target_entity": "悟空",
+      "relationship_description": "昴日星官帮助悟空击败蝎子精，关系合作。",
+      "relationship_keywords": ["合作", "救援"],
+      "relationship_strength": 8
+    },
+    {
+      "source_entity": "蝎子精",
+      "target_entity": "唐僧",
+      "relationship_description": "蝎子精试图强迫唐僧成亲，关系敌对。",
+      "relationship_keywords": ["敌对", "绑架"],
+      "relationship_strength": 7
+    }
+  ],
+  "keywords": ["取经", "女儿国", "妖怪", "救援", "定身法", "联姻", "佛门", "神话"]
+}

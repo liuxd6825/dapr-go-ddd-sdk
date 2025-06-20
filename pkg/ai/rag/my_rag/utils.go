@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/cloudwego/eino/schema"
 	"io"
+	"slices"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -75,4 +77,70 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen]
+}
+
+func newMessages(messages []string) []*schema.Message {
+	list := make([]*schema.Message, len(messages))
+	for i, message := range messages {
+		list[i] = &schema.Message{
+			Role:    "user",
+			Content: message,
+		}
+	}
+	return list
+}
+
+func CleanContent(content string) string {
+	// Removes spaces and null characters.
+	str := strings.TrimSpace(content)
+	return strings.ReplaceAll(str, "\x00", "")
+}
+
+func PromptTemplate(name, templ string, data any) (string, error) {
+	buf := strings.Builder{}
+	tmpl := template.New(name).Funcs(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
+	})
+	tmpl = template.Must(tmpl.Parse(templ))
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+func AppendIfUnique(slice []string, item string) []string {
+	if slices.Contains(slice, item) {
+		return slice
+	}
+	return append(slice, item)
+}
+
+func MostFrequentItem(list []string) string {
+	// Create a map to store counts
+	counts := make(map[string]int)
+
+	// Count occurrences of each string
+	for _, item := range list {
+		counts[item]++
+	}
+
+	// Find the item with highest count
+	maxCount := 0
+	var mostFreqItem string
+
+	for item, count := range counts {
+		if count > maxCount {
+			maxCount = count
+			mostFreqItem = item
+		}
+	}
+
+	return mostFreqItem
+}
+
+func ThreeBacktick(caption string) string {
+	return "```" + caption
 }

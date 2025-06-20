@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/cloudwego/eino/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/vector"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/sirupsen/logrus"
 	"log"
 	"strings"
 	"sync"
@@ -18,32 +17,28 @@ import (
 )
 
 type GraphRag struct {
-	llm        llm.LLM
-	embedder   embedding.Embedder
-	vector     vector.VectorStorage
-	graphStore graph.Storage
+	LLM    llm.LLM
+	store  storage.Storage
+	logger *logrus.Logger
+	config storage.Config
 }
 
 const MaxRetrieveContexts = 5 // 最大检索上下文数量
 
-func NewGraphRag(llm llm.LLM, embedder embedding.Embedder, vector vector.VectorStorage, graphStore graph.Storage) *GraphRag {
+func NewGraphRag(llm llm.LLM, store storage.Storage, config storage.Config, logger *logrus.Logger) *GraphRag {
 	return &GraphRag{
-		llm:        llm,
-		embedder:   embedder,
-		vector:     vector,
-		graphStore: graphStore,
+		LLM:    llm,
+		store:  store,
+		logger: logger,
+		config: config,
 	}
 }
 
 // IngestDocuments 将文档摄取到 Milvus
-func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document) ([]string, int, []string) {
+func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document, opts storage.Options) ([]string, int, []string) {
 	const (
-		chunkSize  = 512 // 每个文本块的最大词数
-		overlap    = 50  // 块之间的重叠词数
-		batchSize  = 100 // 批量处理大小
-		maxRetries = 3   // 最大重试次数
+		batchSize = 100 // 批量处理大小
 	)
-
 	var (
 		documentIDs []string
 		chunkCount  int
@@ -55,17 +50,27 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document)
 		// 生成文档ID（如果未提供）
 		docId := doc.Id
 		if docId == "" {
-			docId = GenerateDocumentID(doc.Source)
+			docId = GenerateDocumentID(doc.FileName)
 		}
 		documentIDs = append(documentIDs, docId)
 
 		// 分块处理文本
-		chunks := ChunkText(doc.Text, chunkSize, overlap)
+		chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+		if err != nil {
+			errors = append(errors, err.Error())
+			continue
+		}
 		if len(chunks) == 0 {
 			errors = append(errors, fmt.Sprintf("文档 %s 没有有效内容", docId))
 			continue
 		}
 
+		if err := storage.InsertDocument(ctx, doc, g.config, g.store, g.LLM, g.logger); err != nil {
+			errors = append(errors, fmt.Sprintf("导入文档 %s 时出错%s", docId, err.Error()))
+			continue
+		}
+
+		fileName := truncateString(doc.FileName, 256)
 		// 批量处理文本块
 		for i := 0; i < len(chunks); i += batchSize {
 			end := i + batchSize
@@ -74,26 +79,24 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document)
 			}
 			batch := chunks[i:end]
 
-			// 向量化文本块
-			vectors, err := g.embedder.EmbedTexts(ctx, batch)
-			if err != nil {
-				errors = append(errors, fmt.Sprintf("文档 %s 块 %d-%d 向量化失败: %v", docId, i, end, err))
-				continue
+			var strList []string
+			for _, source := range batch {
+				strList = append(strList, source.Content)
 			}
 
-			source := truncateString(doc.Source, 256)
-			insertData := vector.InsertData{
+			insertData := storage.InsertDocData{
+				ChunkId:  i,
 				TenantId: doc.TenantId,
 				CaseId:   doc.CaseId,
-				Source:   source,
+				FileName: fileName,
 				DocId:    doc.Id,
-				Batch:    batch,
-				Vectors:  vectors,
+				Content:  strList,
 			}
+
+			maxRetries := g.config.GetMaxRetries()
 			// 插入数据到 Milvus（带重试）
 			for attempt := 1; attempt <= maxRetries; attempt++ {
-				err := g.vector.Insert(ctx, insertData)
-
+				err := g.store.VectorInsertDoc(ctx, insertData, opts)
 				if err == nil {
 					chunkCount += len(batch)
 					break
@@ -110,7 +113,7 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document)
 	}
 
 	// 刷新数据确保可搜索
-	if err := g.vector.Flush(ctx); err != nil {
+	if err := g.store.VectorFlush(ctx, opts); err != nil {
 		errors = append(errors, fmt.Sprintf("刷新失败: %v", err))
 	}
 
@@ -128,7 +131,16 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
 	logs.Info(ctx, logs.Fields{"keys": nodeKeys})
-	graphContext, err := g.graphStore.GetKnowledge(ctx, query.TenantId, query.CaseId, nodeKeys, query.MaxDeep, query.TopK)
+	qry := storage.GraphQueryParam{
+		Keys:    nodeKeys,
+		MaxDeep: query.MaxDeep,
+		Limit:   query.TopK,
+	}
+	opt := storage.Options{
+		TenantId: query.TenantId,
+		CaseId:   query.CaseId,
+	}
+	graphContext, err := g.store.GraphQuery(ctx, qry, opt)
 	if err != nil {
 		return &GoResult{Err: errors.New("取图知识时出错：%s", err.Error())}
 	}
@@ -138,17 +150,48 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 }
 
 func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *GoResult {
-	queryEmbed, err := g.embedder.EmbedTexts(ctx, []string{query.Query})
+	opts := storage.Options{
+		TenantId: query.TenantId,
+		CaseId:   query.CaseId,
+	}
+
+	queryEmbed, err := g.store.EmbedTexts(ctx, []string{query.Query})
 	if err != nil {
 		return &GoResult{Err: errors.New("将查询内容转为向量数据时出错：%s", err.Error())}
 	}
-	contexts, err := g.vector.Search(ctx, queryEmbed[0], MaxRetrieveContexts)
+
+	contexts, err := g.store.VectorSearchDoc(ctx, queryEmbed[0], query.TopK, opts)
 	if err != nil {
 		return &GoResult{Err: errors.New("查找向量数据时出错：%s", err.Error())}
 	}
+
 	return &GoResult{
 		Data: contexts,
 	}
+}
+
+func (g *GraphRag) CreateTenant(ctx context.Context, tenantId string) error {
+	return g.store.CreateTenant(ctx, tenantId)
+}
+
+func (g *GraphRag) CreateCase(ctx context.Context, tenantId, caseId string) error {
+	return g.store.CreateCase(ctx, tenantId, caseId)
+}
+
+func (g *GraphRag) DeleteTenant(ctx context.Context, tenantId string) error {
+	return g.store.DeleteTenant(ctx, tenantId)
+}
+
+func (g *GraphRag) DeleteCase(ctx context.Context, tenantId, caseId string) error {
+	return g.store.DeleteCase(ctx, tenantId, caseId)
+}
+
+func (g *GraphRag) DeleteDoc(ctx context.Context, tenantId, caseId, docId string) error {
+	return g.store.DeleteDoc(ctx, tenantId, caseId, docId)
+}
+
+func (g *GraphRag) LoadTenant(ctx context.Context, tenantId string) error {
+	return g.store.LoadTenant(ctx, tenantId)
 }
 
 func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(txt string)) (string, error) {
@@ -205,7 +248,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 		})
 	}
 
-	resp, err := g.llm.Stream(ctx, messages)
+	resp, err := g.LLM.Stream(ctx, messages)
 	if err != nil {
 		return "", fmt.Errorf("大模型问题分析时出错: %w", err)
 	}
@@ -228,7 +271,7 @@ func (g *GraphRag) getKeys(ctx context.Context, query string) ([]string, error) 
 			示例：张三,李四,北京,上海
 		`},
 	}
-	resp, err := g.llm.Stream(ctx, msgList)
+	resp, err := g.LLM.Stream(ctx, msgList)
 	sb, err := Reader(resp)
 	if err != nil {
 		return nil, fmt.Errorf("no response from LLM")

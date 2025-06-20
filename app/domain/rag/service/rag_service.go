@@ -6,11 +6,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/graph"
-	llm2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/vector"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/sirupsen/logrus"
 )
 
 type RagService struct {
@@ -21,6 +21,15 @@ func NewRagService() *RagService {
 	return &RagService{
 		graphRag: newGraphRag(),
 	}
+}
+func (s *RagService) CreateTenant(ctx context.Context) error {
+	tenantId, _ := appctx.GetTenantId(ctx)
+	return s.graphRag.CreateTenant(ctx, tenantId)
+}
+
+func (s *RagService) CreateCase(ctx context.Context, caseId string) error {
+	tenantId, _ := appctx.GetTenantId(ctx)
+	return s.graphRag.CreateCase(ctx, tenantId, caseId)
 }
 
 func (s *RagService) Query(ctx context.Context, query my_rag.QueryParam, streams ...func(txt string)) (string, error) {
@@ -41,38 +50,28 @@ func newGraphRag() *my_rag.GraphRag {
 		panic("read RagConfig error" + err.Error())
 	}
 
-	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
+	llm := llm.NewOpenAI(ctx, openai.ChatModelConfig{
 		BaseURL: ragCfg.LLM.BaseUrl,
 		Model:   ragCfg.LLM.Model, // 使用的模型版本
 		APIKey:  ragCfg.LLM.APIKey,
 	})
 
-	if err != nil {
-		panic(err)
-	}
-	embedder, err := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
+	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
 		BaseURL:        ragCfg.Embedder.BaseURL,
 		EmbeddingModel: ragCfg.Embedder.Model,
 		ApiKey:         ragCfg.Embedder.ApiKey,
 	})
 
-	if err != nil {
-		panic(err)
-	}
-	vectorStorage, err := vector.NewMilvusVector(vector.MilvusConfig{
+	vectorStorage := storage.NewMilvusVector(storage.MilvusConfig{
 		Addr:           ragCfg.Vector.Addr,
 		CollectionName: ragCfg.Vector.CollectionName,
 		Dim:            ragCfg.Vector.Dim,
 	})
 
-	if err != nil {
-		panic(err)
-	}
+	graphStorage := storage.NewNeo4jGraphStorage("neo4j")
+	kv := storage.NewRedisKeyValueStorage()
 
-	if err = vectorStorage.Init(ctx); err != nil {
-		panic(err)
-	}
-
-	graphStorage := graph.NewNeo4jGraphStorage()
-	return my_rag.NewGraphRag(llm, embedder, vectorStorage, graphStorage)
+	docHandler := my_rag.NewDocumentHandler()
+	store := storage.NewStorage(graphStorage, vectorStorage, kv, embedder)
+	return my_rag.NewGraphRag(llm, store, docHandler, logrus.New())
 }

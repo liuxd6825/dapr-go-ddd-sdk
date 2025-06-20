@@ -18,20 +18,20 @@ type OllamaEmbedder struct {
 	embedder embeddings.Embedder
 }
 
-func NewOllamaEmbedder(cfg OllamaConfig) (*OllamaEmbedder, error) {
+func NewOllamaEmbedder(cfg OllamaConfig) *OllamaEmbedder {
 	llm, err := ollama.New(
 		ollama.WithServerURL(cfg.BaseURL),
 		ollama.WithModel(cfg.EmbeddingModel),
 		ollama.WithRunnerVocabOnly(true),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create LLM: %w", err)
+		panic(fmt.Errorf("failed to create LLM: %w", err))
 	}
 	e, err := embeddings.NewEmbedder(llm)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create embedder: %w", err)
+		panic(fmt.Errorf("failed to create embedder: %w", err))
 	}
-	return &OllamaEmbedder{embedder: e}, nil
+	return &OllamaEmbedder{embedder: e}
 }
 
 func (e *OllamaEmbedder) EmbedTexts(ctx context.Context, texts []string) ([][]float32, error) {

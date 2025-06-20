@@ -38,6 +38,35 @@ func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
 
 func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/rag/query", "Query")
+	b.Handle(iris.MethodPost, "/rag/create-tenant", "CreateTenant")
+	b.Handle(iris.MethodPost, "/rag/create-case", "CreateCase")
+}
+
+// CreateTenant 加载租户知识库数据
+func (s *RagAPI) CreateTenant(ictx iris.Context) {
+	web.Try(ictx, func(ctx context.Context) error {
+		return s.ragService.CreateTenant(ctx)
+	}).Catch(func(ctx context.Context, err error) {
+		web.SetError(ictx, err)
+	})
+}
+
+// CreateCase 加载租户知识库数据
+func (s *RagAPI) CreateCase(ictx iris.Context) {
+	web.Try(ictx, func(ctx context.Context) error {
+		caseId := ictx.URLParam("caseId")
+		vErr := errors.NewVerifyError()
+		if caseId == "" {
+			vErr.AppendField("caseId", "不能为空", "案件ID")
+		}
+		if vErr.HasError() {
+			return vErr
+		}
+
+		return s.ragService.CreateCase(ctx, caseId)
+	}).Catch(func(ctx context.Context, err error) {
+		web.SetError(ictx, err)
+	})
 }
 
 func (s *RagAPI) Query(ictx iris.Context) {
