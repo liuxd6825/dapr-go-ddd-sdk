@@ -103,6 +103,8 @@ type GraphStorage interface {
 	// Used to expand the context during queries.
 	GraphRelatedEntities(ctx context.Context, names []string, opts Options) (map[string][]*GraphEntity, error)
 
+	GraphSaveDocEntities(ctx context.Context, tenantId, caseId, docId string, entries []*GraphEntity) error
+
 	GraphQuery(ctx context.Context, param GraphQueryParam, opts Options) ([]string, error)
 }
 

@@ -113,14 +113,21 @@ func ExtractEntities(
 
 			logger.Info("Done call LLM", "entities", len(entities), "relationships", len(relationships))
 
-			// Process each entity group by name
-			for name, unmergedEntities := range entities {
-				if err := MergeGraphEntities(ctx, doc, name, source.GenID(doc.Id), extractPromptData.Language,
-					unmergedEntities, summariesMaxToken, storage, llm, logger); err != nil {
-					return fmt.Errorf("failed to process graph entity: %w", err)
-				}
+			if err != nil {
+				return fmt.Errorf("failed to merge entities with LLM: %w", err)
 			}
 
+			newEntities := []*GraphEntity{}
+			// Process each entity group by name
+			for name, unmergedEntities := range entities {
+				newEntity, err := mergeGraphEntities(ctx, name, doc, &source, extractPromptData.Language, unmergedEntities, summariesMaxToken, llm, logger)
+				if err == nil {
+					newEntities = append(newEntities, newEntity)
+				}
+			}
+			if err := storage.GraphSaveDocEntities(ctx, doc.TenantId, doc.CaseId, doc.Id, newEntities); err != nil {
+				return err
+			}
 			// Process each relationship group by source-target pair
 			for key, unmergedRelationships := range relationships {
 				if err := MergeGraphRelationships(ctx, doc, key, source.GenID(doc.Id), extractPromptData.Language,
@@ -351,46 +358,25 @@ func DedupeLLMResult(
 
 func mergeGraphEntities(
 	ctx context.Context,
+	name string,
 	doc *entity.Document,
-	name string, sourceID, language string,
-	entities []*GraphEntity,
+	source *Source,
+	language string,
+	unmergedEntities []*GraphEntity,
 	summariesMaxToken int,
-	storage Storage,
 	llm llm.LLM,
 	logger *logrus.Logger,
-) error {
+) (*GraphEntity, error) {
 	// Collect data from existing entity (if found) to merge with new data
 	existingTypes := make([]string, 0)
 	existingSourceIDs := make([]string, 0)
 	existingDescriptions := make([]string, 0)
-	opts := Options{
-		TenantId: doc.TenantId,
-		CaseId:   doc.CaseId,
-		DocId:    doc.Id,
-	}
-	existingEntity, err := storage.GraphEntity(ctx, name, opts)
-	if err != nil {
-		if !errors.Is(err, ErrEntityNotFound) {
-			return fmt.Errorf("failed to get entity: %w", err)
-		}
-		// If entity not found, continue with empty existing data
-	} else if existingEntity != nil {
-		// Extract and parse data from existing entity
-		existingTypes = append(existingTypes, existingEntity.Type)
-
-		arrDescriptions := strings.Split(existingEntity.Descriptions, GraphFieldSeparator)
-		existingDescriptions = append(existingDescriptions, arrDescriptions...)
-
-		arrSourceIDs := strings.Split(existingEntity.SourceIDs, GraphFieldSeparator)
-		existingSourceIDs = append(existingSourceIDs, arrSourceIDs...)
-	}
-
 	// Merge data from new entities
-	for _, entity := range entities {
+	for _, entity := range unmergedEntities {
 		existingTypes = append(existingTypes, entity.Type)
 		existingDescriptions = AppendIfUnique(existingDescriptions, entity.Descriptions)
 	}
-	existingSourceIDs = AppendIfUnique(existingSourceIDs, sourceID)
+	existingSourceIDs = AppendIfUnique(existingSourceIDs, source.Id)
 
 	// Choose the most frequent entity type from all type mentions
 	entityType := MostFrequentItem(existingTypes)
@@ -399,10 +385,14 @@ func mergeGraphEntities(
 	// Summarize descriptions if they exceed token limit
 	description, err := DescriptionsSummary(name, language, summariesMaxToken, existingDescriptions, llm)
 	if err != nil {
-		return fmt.Errorf("failed to summarize descriptions: %w", err)
+		return nil, fmt.Errorf("failed to summarize descriptions: %w", err)
 	}
 
 	ent := &GraphEntity{
+		Id:           name,
+		TenantId:     doc.TenantId,
+		CaseId:       doc.CaseId,
+		DocId:        doc.Id,
 		Name:         name,
 		Type:         entityType,
 		Descriptions: description,
@@ -412,23 +402,24 @@ func mergeGraphEntities(
 
 	logger.Debug("Upserting graph entity", "entity", ent)
 
-	// Update both graph and vector storage for entity
-	if err := storage.GraphUpsertEntity(ctx, ent, opts); err != nil {
-		return fmt.Errorf("failed to upsert graph entity in graph storage: %w", err)
-	}
-	vectorUpsertEntity := &VectorUpsertEntity{
-		Name:     ent.Name,
-		TenantId: doc.TenantId,
-		CaseId:   doc.CaseId,
-		FileName: doc.FileName,
-		DocId:    doc.Id,
-		Content:  []string{ent.Name + ":" + ent.Descriptions},
-	}
-	if err := storage.VectorUpsertEntity(ctx, vectorUpsertEntity); err != nil {
-		return fmt.Errorf("failed to upsert entity in vector storage: %w", err)
-	}
-
-	return nil
+	/*
+		// Update both graph and vector storage for entity
+		if err := storage.GraphUpsertEntity(ctx, ent, opts); err != nil {
+			return nil, fmt.Errorf("failed to upsert graph entity in graph storage: %w", err)
+		}
+		vectorUpsertEntity := &VectorUpsertEntity{
+			Name:     ent.Name,
+			TenantId: doc.TenantId,
+			CaseId:   doc.CaseId,
+			FileName: doc.FileName,
+			DocId:    doc.Id,
+			Content:  []string{ent.Name + ":" + ent.Descriptions},
+		}
+		if err := storage.VectorUpsertEntity(ctx, vectorUpsertEntity); err != nil {
+			return nil, fmt.Errorf("failed to upsert entity in vector storage: %w", err)
+		}
+	*/
+	return ent, nil
 }
 
 func MergeGraphEntities(

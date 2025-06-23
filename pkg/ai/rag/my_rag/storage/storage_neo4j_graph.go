@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -109,6 +110,156 @@ func (n *Neo4jGraphStorage) DeleteDoc(ctx context.Context, tenantId, caseId, doc
 
 func (n *Neo4jGraphStorage) LoadTenant(ctx context.Context, tenantId, caseId string) error {
 	return nil
+}
+
+func (n *Neo4jGraphStorage) GraphSaveDoc(ctx context.Context, tenantId, caseId, docId string, entries []*GraphEntity, relationships []*GraphRelationship) error {
+	err := n.GraphSaveDocEntities(ctx, tenantId, caseId, docId, entries)
+	if err != nil {
+		return err
+	}
+	return n.GraphSaveDocRelationships(ctx, tenantId, caseId, docId, relationships)
+}
+
+func (n *Neo4jGraphStorage) GraphSaveDocEntities(ctx context.Context, tenantId, caseId, docId string, entries []*GraphEntity) error {
+	labelGroup := n.getGroupEntity(ctx, entries)
+	// 并发处理不同标签组
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(labelGroup))
+
+	for label, list := range labelGroup {
+		err := n.graphSaveDocEntities(ctx, tenantId, caseId, docId, label, list)
+		if err != nil {
+			errChan <- err
+		}
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	// 收集所有错误
+	var errors []string
+	for err := range errChan {
+		errors = append(errors, err.Error())
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("batch processing errors:\n%s", strings.Join(errors, "\n"))
+	}
+
+	return nil
+}
+
+func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, tenantId, caseId, docId, label string, entries []*GraphEntity) error {
+
+	// 2. 准备批量数据（实际可从JSON/CSV加载）
+	batchData := []map[string]any{}
+	for _, entry := range entries {
+		batchData = append(batchData, map[string]any{
+			"id":          entry.Id,
+			"name":        entry.Name,
+			"case_id":     entry.CaseId,
+			"doc_id":      entry.DocId,
+			"description": entry.Descriptions,
+			"source_ids":  entry.SourceIDs,
+			"type":        entry.Type,
+		})
+	}
+
+	// 3. 构建APOC执行参数
+	params := map[string]interface{}{
+		"batch": batchData,
+	}
+
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:%s", tenantId, caseId, docId, label)
+
+	cypher := fmt.Sprintf(`
+	UNWIND $batch AS row
+	MERGE (n%s{name:row.name})
+		ON CREATE
+		  SET n = row, n.created_at = datetime()
+		ON MATCH
+		  SET n.description =  n.description + "\n" +  row.description
+    `, labels)
+
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			result, err := tx.Run(ctx, cypher, params)
+			if err != nil {
+				return nil, fmt.Errorf("failed to run write: %w", err)
+			}
+			err = result.Err()
+			if err != nil {
+				return nil, fmt.Errorf("failed to run write: %w", err)
+			}
+			return nil, nil
+		})
+	})
+	return err
+
+}
+
+func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, tenantId, caseId, docId string, relationships []*GraphRelationship) error {
+	// 2. 准备批量数据（实际可从JSON/CSV加载）
+	batchData := []map[string]any{}
+	for _, rel := range relationships {
+		batchData = append(batchData, map[string]any{
+			"id":          rel.Id,
+			"target":      rel.Target,
+			"source":      rel.Source,
+			"case_id":     rel.CaseId,
+			"doc_id":      rel.DocId,
+			"description": rel.Descriptions,
+			"source_ids":  rel.SourceIDs,
+			"keywords":    rel.Keywords,
+		})
+	}
+
+	// 3. 构建APOC执行参数
+	params := map[string]interface{}{
+		"batch": batchData,
+	}
+
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s", tenantId, caseId, docId)
+
+	cypher := fmt.Sprintf(`
+	UNWIND $batch AS row
+	MATCH (n%s{id:row.source}),(m%s{id:row.target})
+	MERGE (n)-[r:DIRECTED]->(m)
+		ON CREATE
+		  SET r = row, r.created_at = datetime()
+		ON MATCH
+		  SET r.description =  r.description + "\n" +  row.description
+    `, labels, labels)
+
+	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
+		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+			result, err := tx.Run(ctx, cypher, params)
+			if err != nil {
+				return nil, fmt.Errorf("failed to run write: %w", err)
+			}
+			err = result.Err()
+			if err != nil {
+				return nil, fmt.Errorf("failed to run write: %w", err)
+			}
+			return nil, nil
+		})
+	})
+	return err
+
+}
+
+func (n *Neo4jGraphStorage) getGroupEntity(ctx context.Context, entries []*GraphEntity) map[string][]*GraphEntity {
+	res := make(map[string][]*GraphEntity)
+	for _, entry := range entries {
+		if list, ok := res[entry.Type]; !ok {
+			var list []*GraphEntity
+			list = append(list, entry)
+			res[entry.Type] = list
+		} else {
+			res[entry.Type] = append(list, entry)
+		}
+	}
+	return res
 }
 
 func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryParam, opts Options) ([]string, error) {
