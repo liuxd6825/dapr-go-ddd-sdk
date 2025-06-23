@@ -22,7 +22,7 @@ func NewConfigDefault(gleanCount int) *Config {
 	config := &Config{
 		ChunkSize:               512, // 每个文本块的最大词数
 		Overlap:                 50,  // 块之间的重叠词数
-		ConcurrencyCount:        2,   // 批量处理大小
+		ConcurrencyCount:        2,   // 并行批量处理数
 		MaxRetries:              3,   // 最大重试次数
 		BackoffDuration:         60 * time.Second,
 		MaxSummariesTokenLength: 1000,

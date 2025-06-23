@@ -16,12 +16,9 @@ type LLM = model.BaseChatModel
 		Model:   "text2cypher-gemma-2-9b-it-finetuned-2024v1", // 使用的模型版本
 	}
 */
-func NewOpenAI(ctx context.Context, cfg openai.ChatModelConfig) (cm model.ToolCallingChatModel) {
-	cm, err := openai.NewChatModel(ctx, &cfg)
-	if err != nil {
-		panic(err)
-	}
-	return cm
+func NewOpenAI(ctx context.Context, cfg openai.ChatModelConfig) (cm model.ToolCallingChatModel, err error) {
+	cm, err = openai.NewChatModel(ctx, &cfg)
+	return cm, err
 }
 
 // NewOllama component initialization function of node 'ChatModel2' in graph 'graphAgent'
@@ -33,8 +30,5 @@ func NewOpenAI(ctx context.Context, cfg openai.ChatModelConfig) (cm model.ToolCa
 */
 func NewOllama(ctx context.Context, cfg ollama.ChatModelConfig) (cm model.ToolCallingChatModel, err error) {
 	cm, err = ollama.NewChatModel(ctx, &cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cm, nil
+	return cm, err
 }

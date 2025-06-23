@@ -10,10 +10,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/sirupsen/logrus"
-	"log"
 	"strings"
 	"sync"
-	"time"
 )
 
 type GraphRag struct {
@@ -47,31 +45,49 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document,
 
 	// 处理所有文档
 	for _, doc := range docs {
-		// 生成文档ID（如果未提供）
-		docId := doc.Id
-		if docId == "" {
-			docId = GenerateDocumentID(doc.FileName)
-		}
-		documentIDs = append(documentIDs, docId)
-
-		// 分块处理文本
-		chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+		documentIDs = append(documentIDs, doc.Id)
+		chunkCountVal, err := g.IngestDocument(ctx, doc, batchSize, opts)
 		if err != nil {
 			errors = append(errors, err.Error())
-			continue
+			if err := g.DeleteDoc(ctx, doc.TenantId, doc.CaseId, doc.Id); err != nil {
+				errors = append(errors, err.Error())
+			}
 		}
-		if len(chunks) == 0 {
-			errors = append(errors, fmt.Sprintf("文档 %s 没有有效内容", docId))
-			continue
-		}
+		chunkCount += chunkCountVal
+	}
 
-		if err := storage.InsertDocument(ctx, doc, g.config, g.store, g.LLM, g.logger); err != nil {
-			errors = append(errors, fmt.Sprintf("导入文档 %s 时出错%s", docId, err.Error()))
-			continue
-		}
+	// 刷新数据确保可搜索
+	if err := g.store.VectorFlush(ctx, opts); err != nil {
+		errors = append(errors, fmt.Sprintf("刷新失败: %v", err))
+	}
 
+	return documentIDs, chunkCount, errors
+}
+
+func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document, batchSize int, opts storage.Options) (chunkCount int, err error) {
+	// 生成文档ID（如果未提供）
+	docId := doc.Id
+	if docId == "" {
+		docId = GenerateDocumentID(doc.FileName)
+	}
+	// documentIDs = append(documentIDs, docId)
+
+	// 分块处理文本
+	chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+	if err != nil {
+		return chunkCount, err
+	}
+
+	if len(chunks) == 0 {
+		return chunkCount, errors.New("文档 %s 没有有效内容", doc.FileName)
+	}
+
+	if err := storage.InsertDocument(ctx, doc, g.config, g.store, g.LLM, g.logger); err != nil {
+		return chunkCount, errors.New("导入文档 %s 时出错%s", doc.FileName, err.Error())
+	}
+
+	/*
 		fileName := truncateString(doc.FileName, 256)
-		// 批量处理文本块
 		for i := 0; i < len(chunks); i += batchSize {
 			end := i + batchSize
 			if end > len(chunks) {
@@ -103,21 +119,15 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document,
 				}
 
 				if attempt == maxRetries {
-					errors = append(errors, fmt.Sprintf("文档 %s 块 %d-%d 插入失败: %v", docId, i, end, err))
+					return chunkCount, errors.New("文档 %s 块 %d-%d 插入失败: %v", doc.FileName, i, end, err)
 				} else {
 					log.Printf("插入失败（尝试 %d/%d），重试中...: %v", attempt, maxRetries, err)
 					time.Sleep(time.Duration(attempt) * time.Second)
 				}
 			}
 		}
-	}
-
-	// 刷新数据确保可搜索
-	if err := g.store.VectorFlush(ctx, opts); err != nil {
-		errors = append(errors, fmt.Sprintf("刷新失败: %v", err))
-	}
-
-	return documentIDs, chunkCount, errors
+	*/
+	return chunkCount, nil
 }
 
 type GoResult struct {
@@ -137,8 +147,9 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 		Limit:   query.TopK,
 	}
 	opt := storage.Options{
-		TenantId: query.TenantId,
-		CaseId:   query.CaseId,
+		TenantId:  query.TenantId,
+		CaseId:    query.CaseId,
+		NodeLabel: storage.NodeLabel_All,
 	}
 	graphContext, err := g.store.GraphQuery(ctx, qry, opt)
 	if err != nil {
@@ -194,7 +205,7 @@ func (g *GraphRag) LoadTenant(ctx context.Context, tenantId string) error {
 	return g.store.LoadTenant(ctx, tenantId)
 }
 
-func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(txt string)) (string, error) {
+func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func(txt string)) (string, error) {
 	if query.Query == "" {
 		return "", errors.New("query is empty")
 	}
@@ -212,13 +223,13 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 	// 协程1：取图关系中知识
 	go func() {
 		defer wg.Done()
-		resultCh <- g.getGraphContext(ctx, &query)
+		resultCh <- g.getGraphContext(ctx, query)
 	}()
 
 	// 协程2：取向量数据库中的知道
 	go func() {
 		defer wg.Done()
-		resultCh <- g.getDocumentContext(ctx, &query)
+		resultCh <- g.getDocumentContext(ctx, query)
 	}()
 
 	// 等待协程完成并关闭通道
@@ -227,7 +238,7 @@ func (g *GraphRag) Query(ctx context.Context, query QueryParam, streams ...func(
 		close(resultCh)
 	}()
 
-	contexts := []string{query.Query}
+	var contexts []string
 	for res := range resultCh {
 		if res.Err != nil {
 			return "", fmt.Errorf("协程执行失败: %w", res.Err)

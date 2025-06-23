@@ -78,6 +78,14 @@ func GetString(m map[string]interface{}, key string, def string) (string, error)
 	return res, nil
 }
 
+func GetStringErr(m map[string]interface{}, key string, def string) string {
+	res, err := GetString(m, key, def)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
 func GetStrings(m map[string]interface{}, key string, def []string) ([]string, error) {
 	var resList []string
 	if v, ok := m[key]; ok {

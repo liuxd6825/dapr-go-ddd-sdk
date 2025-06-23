@@ -3,14 +3,13 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"time"
@@ -27,12 +26,13 @@ type Neo4jGraphStorage struct {
 	Client neo4j.DriverWithContext
 	dao    idao.Dao[map[string]any]
 	store  *store_neo4j.Dao[map[string]any]
+	logger *logrus.Logger
 }
 
 // NewNeo4jGraphStorage creates a new Neo4j client connection with the provided connection parameters.
 // It returns an initialized Neo4J struct and any error encountered during connection setup.
 // The returned Neo4J instance must be closed with Close() when no longer needed to free up resources.
-func NewNeo4jGraphStorage(dbKey string) *Neo4jGraphStorage {
+func NewNeo4jGraphStorage(dbKey string, logger *logrus.Logger) *Neo4jGraphStorage {
 	nodeCfg := &dao.NewConfig{
 		DBKey:              dbKey,
 		IsPubEvent:         dao.IsFalse(),
@@ -51,6 +51,7 @@ func NewNeo4jGraphStorage(dbKey string) *Neo4jGraphStorage {
 	return &Neo4jGraphStorage{
 		Client: dbItem.GetNeo4j(),
 		dao:    newDao,
+		logger: logger,
 	}
 
 }
@@ -224,11 +225,12 @@ func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, tenan
 	cypher := fmt.Sprintf(`
 	UNWIND $batch AS row
 	MATCH (n%s{id:row.source}),(m%s{id:row.target})
-	MERGE (n)-[r:DIRECTED]->(m)
+	MERGE (n)-[r:DIRECTED{id:row.id}]->(m)
 		ON CREATE
 		  SET r = row, r.created_at = datetime()
 		ON MATCH
 		  SET r.description =  r.description + "\n" +  row.description
+              
     `, labels, labels)
 
 	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
@@ -264,43 +266,20 @@ func (n *Neo4jGraphStorage) getGroupEntity(ctx context.Context, entries []*Graph
 
 func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryParam, opts Options) ([]string, error) {
 	contents := []string{}
-	graphView := n.FindNodes(ctx, query, opts)
-	nodeMap := make(map[string]*graph.Node)
-	for _, nodes := range graphView.Nodes {
-		for _, node := range nodes {
-			nodeMap[node.Nid] = node
-			desc, err := maputils.GetString(node.GetProps(), "description", "")
-			if desc != "" && err == nil {
-				contents = append(contents, desc)
-			}
-		}
+	nodes, rels, err := n.FindNodes(ctx, query, opts)
+	if err != nil {
+		return nil, err
 	}
-	for _, edges := range graphView.Edges {
-		for _, edge := range edges {
-			desc, err := maputils.GetString(edge.GetProps(), "description", "")
-			if err != nil {
-				continue
-			}
-			toNode := nodeMap[edge.NTo]
-			fromNode := nodeMap[edge.NFrom]
-			if toNode != nil && fromNode != nil {
-				toName, _ := maputils.GetString(toNode.Props, "name", "")
-				fromName, _ := maputils.GetString(fromNode.Props, "name", "")
-				relType, _ := maputils.GetString(edge.GetProps(), "relType", "")
-				if toName != "" && fromName != "" && relType != "" {
-					contents = append(contents, fmt.Sprintf("%s%s%s", toName, relType, fromName))
-				}
-			}
-			if desc != "" {
-				contents = append(contents, desc)
-			}
-		}
+	for _, node := range nodes {
+		contents = append(contents, node.Descriptions)
+	}
+	for _, edge := range rels {
+		contents = append(contents, fmt.Sprintf("%s与%s之间存在关系是:%s, %s", edge.Source, edge.Target, edge.Keywords, edge.Descriptions))
 	}
 	return contents, nil
 }
 
 func (n *Neo4jGraphStorage) getNames(values []string) string {
-	val := ""
 	count := len(values)
 	sb := strings.Builder{}
 	for i, value := range values {
@@ -309,14 +288,14 @@ func (n *Neo4jGraphStorage) getNames(values []string) string {
 			sb.WriteString(",")
 		}
 	}
-	return val
+	return sb.String()
 }
 
 // FindNodes
 /*
 	MATCH p=(n)-[*..5]-(m) 	WHERE n.name IN ['名称1', '名称2'] RETURN p
 */
-func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam, opts Options) *graph.GraphView {
+func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam, opts Options) (nodes map[string]*GraphEntity, rels map[string]*GraphRelationship, err error) {
 	namesStr := n.getNames(query.Keys)
 	limit := query.Limit
 	if limit <= 0 {
@@ -326,15 +305,106 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 	if maxDeep <= 0 {
 		maxDeep = 5
 	}
-
 	labels := n.getLabels(opts)
-	cypher := fmt.Sprintf("MATCH p=(n%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT %d", labels, query.MaxDeep, namesStr, limit)
-	logs.InfoMsg(ctx, cypher)
-	res, err := n.GetStore().Query(ctx, cypher, nil)
-	if err != nil {
-		panic(err)
+	cypher := fmt.Sprintf("MATCH p=(n%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN p LIMIT %d", labels, query.MaxDeep, namesStr, limit)
+	n.logger.Info(cypher)
+
+	session := n.Client.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	nodes = make(map[string]*GraphEntity)
+	rels = make(map[string]*GraphRelationship)
+
+	err = n.executeQuery(ctx, session, cypher, nil, func(result neo4j.ResultWithContext) error {
+		for result.Next(ctx) {
+			record := result.Record()
+			for _, key := range record.Keys {
+				if v, ok := record.Get(key); ok {
+					switch v.(type) {
+					case dbtype.Path:
+						if path, ok := v.(dbtype.Path); ok {
+							for _, n := range path.Nodes {
+								node := newGraphEntity(n)
+								nodes[node.Name] = node
+							}
+							for _, r := range path.Relationships {
+								rel := newGraphRelationship(r)
+								rels[rel.Id] = rel
+							}
+						}
+						break
+					}
+				}
+			}
+		}
+		return result.Err()
+	})
+	return
+}
+
+func newGraphEntity(node neo4j.Node) *GraphEntity {
+	name := maputils.GetStringErr(node.Props, "name", "")
+	typeName := maputils.GetStringErr(node.Props, "type", "")
+	caseId := maputils.GetStringErr(node.Props, "case_id", "")
+	docId := maputils.GetStringErr(node.Props, "doc_id", "")
+	descriptions := maputils.GetStringErr(node.Props, "description", "")
+	sourceIDs := maputils.GetStringErr(node.Props, "source_ids", "")
+	return &GraphEntity{
+		Name:         name,
+		Type:         typeName,
+		CaseId:       caseId,
+		DocId:        docId,
+		Descriptions: descriptions,
+		SourceIDs:    sourceIDs,
 	}
-	return res.NewGraphView()
+}
+
+func newGraphRelationship(rel neo4j.Relationship) *GraphRelationship {
+	id := maputils.GetStringErr(rel.Props, "id", "")
+	source := maputils.GetStringErr(rel.Props, "source", "")
+	target := maputils.GetStringErr(rel.Props, "target", "")
+	caseId := maputils.GetStringErr(rel.Props, "case_id", "")
+	docId := maputils.GetStringErr(rel.Props, "doc_id", "")
+	descriptions := maputils.GetStringErr(rel.Props, "description", "")
+	sourceIDs := maputils.GetStringErr(rel.Props, "source_ids", "")
+	keywords := maputils.GetStringErr(rel.Props, "keywords", "")
+	fmt.Println(keywords)
+	return &GraphRelationship{
+		Id:           id,
+		Source:       source,
+		Target:       target,
+		CaseId:       caseId,
+		DocId:        docId,
+		Descriptions: descriptions,
+		SourceIDs:    sourceIDs,
+	}
+}
+
+func (n *Neo4jGraphStorage) executeQuery(ctx context.Context, session neo4j.SessionWithContext, cypher string, params map[string]any, data func(withContext neo4j.ResultWithContext) error) error {
+	_, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+		result, err := tx.Run(ctx, cypher, params)
+		if err != nil {
+			return nil, err
+		}
+		return result, data(result)
+	})
+	return err
+}
+
+func (n *Neo4jGraphStorage) getNode(ctx context.Context, res any, getNode func(node *neo4j.Node), keys ...string) {
+	for _, key := range keys {
+		if result, ok := res.(neo4j.ResultWithContext); ok {
+			if result.Next(ctx) {
+				record := result.Record()
+				if record == nil {
+					continue
+				}
+				if data, ok := record.Get(key); ok {
+					fmt.Println(data)
+				}
+			}
+		}
+	}
 }
 
 func (n *Neo4jGraphStorage) GetStore() *store_neo4j.Dao[map[string]any] {

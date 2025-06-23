@@ -176,7 +176,7 @@ func (m *MilvusVector) VectorSearchDoc(ctx context.Context, vector []float32, to
 
 	// 设置过滤条件
 	// 使用 expression 来构造查询条件
-	expr := fmt.Sprintf("case_id='%s'", opts.CaseId)
+	expr := fmt.Sprintf("case_id=='%s'", opts.CaseId)
 
 	searchOpts := milvusclient.NewSearchOption(entCollName, topK, []entity.Vector{entity.FloatVector(vector)}).WithFilter(expr)
 	results, err := m.client.Search(ctx, searchOpts)

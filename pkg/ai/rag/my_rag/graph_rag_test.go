@@ -79,7 +79,6 @@ func Test_GraphRag_LoadTenant(t *testing.T) {
 }
 
 func Test_GraphRag_IngestDocuments(t *testing.T) {
-
 	fileName := "/xtest_file/xyjTxt.txt"
 	doc := &entity.Document{
 		Id:       docId,
@@ -105,12 +104,11 @@ func Test_GraphRag_Query(t *testing.T) {
 	gp.Try(func() error {
 		ctx := context.Background()
 		rag := newGraphRag(ctx, false)
-		query := QueryParam{
-			TenantId:            tenantId,
-			CaseId:              caseId,
-			UserPrompt:          "谁与孙悟空的公司有关系",
-			ConversationHistory: []*Content{{Role: "system", Content: "详细回答相关人与公司的关司与技能"}},
-		}
+		query := NewQueryParam()
+		query.TenantId = tenantId
+		query.CaseId = caseId
+		query.Query = "悟空，唐僧，女王之间发生了什么？"
+		//query.ConversationHistory = []*Content{{Role: "system", Content: "详细回答相关人与公司的关司与技能"}},
 
 		res, err := rag.Query(ctx, query)
 		if err == nil {
@@ -124,11 +122,22 @@ func Test_GraphRag_Query(t *testing.T) {
 
 func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	env.SetEnv(xtest.NewEnvConfig_Neo4j())
-	llm := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
+
+	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
 		BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
 		Model:   "deepseek-r1-distill-llama-70b", // 使用的模型版本
 		APIKey:  "sk-4a999651298047efaaf38aea633ba636",
 	})
+
+	/*
+		llm, err := llm2.NewOllama(ctx, ollama.ChatModelConfig{
+			BaseURL: "http://localhost:11434",
+			Model:   "modelscope.cn/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF:latest",
+		})*/
+
+	if err != nil {
+		panic(err)
+	}
 
 	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
 		BaseURL:        "http://localhost:11434",
@@ -140,11 +149,12 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 		CollectionName: "tenant",
 		Dim:            1024,
 	})
-
+	logger := logrus.New()
 	keyValue := storage.NewRedisKeyValueStorage()
 
-	graph := storage.NewNeo4jGraphStorage("neo4j")
+	graph := storage.NewNeo4jGraphStorage("neo4j", logger)
 	config := NewConfigDefault(3)
+	config.ConcurrencyCount = 5
 	store := storage.NewStorage(graph, vector, keyValue, embedder)
-	return NewGraphRag(llm, store, config, logrus.New())
+	return NewGraphRag(llm, store, config, logger)
 }

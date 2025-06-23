@@ -93,17 +93,18 @@ func ExtractEntities(
 		return orderedSources[i].OrderIndex < orderedSources[j].OrderIndex
 	})
 
-	logger.Info("Extracting entities", "count", len(orderedSources))
+	logger.Info("Extracting entities ", " count ", len(orderedSources))
 
 	eg := new(errgroup.Group)
 	// Semaphore to limit concurrent LLM calls
 	sem := make(chan struct{}, llmConcurrencyCount)
-	for i, source := range orderedSources {
+	for _, source := range orderedSources {
 		eg.Go(func() error {
 			// Acquire semaphore before making LLM call
 			sem <- struct{}{}
 			defer func() { <-sem }()
-
+			orderIndex := source.OrderIndex
+			logger.Info("call LLM extract orderIndex:", orderIndex)
 			// Extract entities and relationships for this source chunk
 			entities, relationships, err := LlmExtractEntities(ctx, doc, source.Content,
 				extractPromptData, llmMaxRetries, llmMaxGleanCount, backoffDuration, llm, logger)
@@ -111,7 +112,7 @@ func ExtractEntities(
 				return fmt.Errorf("failed to extract entities with LLM: %w", err)
 			}
 
-			logger.Info("Done call LLM", "entities", len(entities), "relationships", len(relationships))
+			logger.Info("Done call LLM orderIndex:", orderIndex, " entities:", len(entities), " relationships:", len(relationships))
 
 			if err != nil {
 				return fmt.Errorf("failed to merge entities with LLM: %w", err)
@@ -125,18 +126,23 @@ func ExtractEntities(
 					newEntities = append(newEntities, newEntity)
 				}
 			}
-			if err := storage.GraphSaveDocEntities(ctx, doc.TenantId, doc.CaseId, doc.Id, newEntities); err != nil {
-				return err
-			}
+
+			newRelationships := []*GraphRelationship{}
 			// Process each relationship group by source-target pair
 			for key, unmergedRelationships := range relationships {
-				if err := MergeGraphRelationships(ctx, doc, key, source.GenID(doc.Id), extractPromptData.Language,
+				if rel, err := MergeGraphRelationships(ctx, doc, key, source.GenID(doc.Id), extractPromptData.Language,
 					unmergedRelationships, summariesMaxToken, storage, llm, logger); err != nil {
 					return fmt.Errorf("failed to process graph relationship: %w", err)
+				} else if rel != nil {
+					newRelationships = append(newRelationships, rel)
 				}
 			}
 
-			logger.Info("Processed source", "index", i+1)
+			if err := storage.GraphSaveDoc(ctx, doc.TenantId, doc.CaseId, doc.Id, newEntities, newRelationships); err != nil {
+				return err
+			}
+
+			logger.Info("Processed source ", "orderIndex:", orderIndex)
 
 			return nil
 		})
@@ -211,13 +217,13 @@ func LlmExtractEntities(
 		if err != nil {
 			nErr := fmt.Errorf("failed to parse llm result: %w", err)
 			retry++
-			logger.Warn("Retry parse result", "retry", retry, "error", nErr)
+			logger.Warn("Retry parse result ", "retry ", retry, "error ", nErr)
 			continue
 		}
 		results.Entities = append(results.Entities, sourceParsed.Entities...)
 		results.Relationships = append(results.Relationships, sourceParsed.Relationships...)
 
-		initGraph(doc, results.Entities, results.Relationships)
+		initGraphData(doc, results.Entities, results.Relationships)
 
 		histories = append(histories, sourceResult.Content)
 
@@ -249,9 +255,10 @@ func LlmExtractEntities(
 				logger.Warn("Retry parse result", "retry", retry, "error", nErr)
 				continue
 			}
+
 			results.Entities = append(results.Entities, gleanParsed.Entities...)
 			results.Relationships = append(results.Relationships, gleanParsed.Relationships...)
-			initGraph(doc, results.Entities, results.Relationships)
+			initGraphData(doc, results.Entities, results.Relationships)
 			gleanCount++
 
 			// Ask LLM if we should continue gleaning more entities
@@ -279,34 +286,44 @@ func LlmExtractEntities(
 
 		// Organize entities by name and relationships by source-target pair
 		entities, relationships := DedupeLLMResult(ctx, results.Entities, results.Relationships, data.EntityTypes)
+
+		if logger.IsLevelEnabled(logrus.DebugLevel) {
+			for _, entity := range results.Entities {
+				logger.Debug("实体", entity.Name)
+			}
+
+			for _, rel := range results.Relationships {
+				logger.Debug(fmt.Errorf("关系：%s - %s", rel.Target, rel.Source))
+			}
+		}
+
 		return entities, relationships, nil
 	}
 }
 
-func initGraph(doc *entity.Document, entities []*GraphEntity, relationships []*GraphRelationship) {
+func initGraphData(doc *entity.Document, entities []*GraphEntity, relationships []*GraphRelationship) {
 	for _, ent := range entities {
 		ent.TenantId = doc.TenantId
 		ent.DocId = doc.Id
 		ent.CaseId = doc.CaseId
 		ent.Id = ent.Name
 	}
-
 	for _, rel := range relationships {
 		rel.TenantId = doc.TenantId
 		rel.DocId = doc.Id
 		rel.CaseId = doc.CaseId
+		rel.Id = fmt.Sprintf("%s-%s-%s", doc.Id, rel.Target, rel.Source)
 	}
 }
 
 func GetJsonString(message *schema.Message) string {
 	str := message.Content
-	if strings.HasPrefix(str, "```json") {
-		str = str[7:]
-		if strings.HasSuffix(str, "```") {
-			str = str[:len(str)-3]
-		}
+	start := strings.Index(message.Content, "```json")
+	if start == -1 {
+		return str
 	}
-	return str
+	end := strings.LastIndex(message.Content, "```")
+	return str[start+7 : end]
 }
 
 // DedupeLLMResult 删除重复数据
@@ -513,7 +530,7 @@ func MergeGraphRelationships(
 	storage Storage,
 	llm llm.LLM,
 	logger *logrus.Logger,
-) error {
+) (*GraphRelationship, error) {
 	// Track existing relationship properties to merge with new data
 	existingWeight := 0.0
 	existingDescriptions := make([]string, 0)
@@ -529,7 +546,7 @@ func MergeGraphRelationships(
 	existingRelationship, err := storage.GraphRelationship(ctx, sourceEntity, targetEntity, opts)
 	if err != nil {
 		if !errors.Is(err, ErrRelationshipNotFound) {
-			return fmt.Errorf("failed to get relationship: %w", err)
+			return nil, fmt.Errorf("failed to get relationship: %w", err)
 		}
 		// If relationship not found, continue with empty existing data
 	} else if existingRelationship != nil {
@@ -559,7 +576,7 @@ func MergeGraphRelationships(
 	// Summarize all descriptions if they exceed token limit
 	description, err := DescriptionsSummary(key, language, summariesMaxToken, existingDescriptions, llm)
 	if err != nil {
-		return fmt.Errorf("failed to summarize descriptions: %w", err)
+		return nil, fmt.Errorf("failed to summarize descriptions: %w", err)
 	}
 	sourceIDs := strings.Join(existingSourceIDs, GraphFieldSeparator)
 
@@ -568,7 +585,7 @@ func MergeGraphRelationships(
 	_, err = storage.GraphEntity(ctx, sourceEntity, opts)
 	if err != nil {
 		if !errors.Is(err, ErrEntityNotFound) {
-			return fmt.Errorf("failed to get source entity with name %s: %w", sourceEntity, err)
+			return nil, fmt.Errorf("failed to get source entity with name %s: %w", sourceEntity, err)
 		}
 		logger.Debug("Entity not found, upserting", "entity", sourceEntity)
 
@@ -580,7 +597,7 @@ func MergeGraphRelationships(
 			SourceIDs:    sourceID,
 			CreatedAt:    time.Now(),
 		}, opts); err != nil {
-			return fmt.Errorf("failed to upsert source node with name %s: %w", sourceEntity, err)
+			return nil, fmt.Errorf("failed to upsert source node with name %s: %w", sourceEntity, err)
 		}
 	}
 
@@ -589,7 +606,7 @@ func MergeGraphRelationships(
 	_, err = storage.GraphEntity(ctx, targetEntity, opts)
 	if err != nil {
 		if !errors.Is(err, ErrEntityNotFound) {
-			return fmt.Errorf("failed to get target entity with name %s: %w", targetEntity, err)
+			return nil, fmt.Errorf("failed to get target entity with name %s: %w", targetEntity, err)
 		}
 		logger.Debug("Entity not found, upserting", "entity", targetEntity)
 		if err := storage.GraphUpsertEntity(ctx, &GraphEntity{
@@ -599,12 +616,18 @@ func MergeGraphRelationships(
 			SourceIDs:    sourceID,
 			CreatedAt:    time.Now(),
 		}, opts); err != nil {
-			return fmt.Errorf("failed to upsert target node with name %s: %w", targetEntity, err)
+			return nil, fmt.Errorf("failed to upsert target node with name %s: %w", targetEntity, err)
 		}
 	}
 
+	// Create a combined content string for vector storage
+	// This enables semantic search over relationships
+	keywords := strings.Join(existingKeywords, GraphFieldSeparator)
+	content := keywords + sourceEntity + targetEntity + description
+	id := fmt.Sprintf("doc_%s_%s_%s", opts.DocId, sourceEntity, targetEntity)
 	// Create final relationship with merged data
 	rel := &GraphRelationship{
+		Id:       id,
 		TenantId: opts.TenantId,
 		CaseId:   opts.CaseId,
 		DocId:    opts.DocId,
@@ -612,35 +635,34 @@ func MergeGraphRelationships(
 		Source:       sourceEntity,
 		Target:       targetEntity,
 		Weight:       existingWeight,
-		Descriptions: description,
+		Descriptions: content,
 		Keywords:     existingKeywords,
 		SourceIDs:    sourceIDs,
 		CreatedAt:    time.Now(),
 	}
 
-	// Update both graph and vector storage for the relationship
-	if err := storage.GraphUpsertRelationship(ctx, rel, opts); err != nil {
-		return fmt.Errorf("failed to upsert graph relationship: %w", err)
-	}
+	/*
+		// Update both graph and vector storage for the relationship
+		if err := storage.GraphUpsertRelationship(ctx, rel, opts); err != nil {
+			return nil,  fmt.Errorf("failed to upsert graph relationship: %w", err)
+		}
+	*/
+	/*
+		vRel := &VectorUpsertRelationship{
+			TenantId: opts.TenantId,
+			CaseId:   opts.CaseId,
+			DocId:    opts.DocId,
+			Source:   sourceEntity,
+			Target:   targetEntity,
+			Content:  []string{content},
+			FileName: doc.FileName,
+		}
 
-	// Create a combined content string for vector storage
-	// This enables semantic search over relationships
-	keywords := strings.Join(rel.Keywords, GraphFieldSeparator)
-	content := keywords + rel.Source + rel.Target + rel.Descriptions
-	vRel := &VectorUpsertRelationship{
-		TenantId: opts.TenantId,
-		CaseId:   opts.CaseId,
-		DocId:    opts.DocId,
-		Source:   sourceEntity,
-		Target:   targetEntity,
-		Content:  []string{content},
-		FileName: doc.FileName,
-	}
-	if err := storage.VectorUpsertRelationship(ctx, vRel); err != nil {
-		return fmt.Errorf("failed to upsert relationship vector: %w", err)
-	}
-
-	return nil
+			if err := storage.VectorUpsertRelationship(ctx, vRel); err != nil {
+				return fmt.Errorf("failed to upsert relationship vector: %w", err)
+			}
+	*/
+	return rel, nil
 }
 
 func newOptionsWithDoc(doc *entity.Document) Options {
