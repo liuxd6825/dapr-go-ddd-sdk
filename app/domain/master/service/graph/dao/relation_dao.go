@@ -61,28 +61,28 @@ func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model2.Record
 	relNodeLabel := nodeStore.GetLabels(ctx, node)
 
 	cypher := fmt.Sprintf(`
-	MERGE (n%s{id: $startId})   
+	MERGE (n%s{id: $source})   
 		ON CREATE SET n.id=$id, n.name=$name
 	WITH n
 		MERGE (m%s {name: $relNodeName})   
-		ON CREATE SET m.tenant_id=$tenantId,m.name=$relNodeName
+		ON CREATE SET m.tenant_id=$tenantId,m.name=$relNodeName, m.description=$description
 	MERGE (n)-[r:%s{id:$relId}]->(m)
-		ON CREATE SET r.id=$relId,r.tenant_id=$tenantId,r.case_id=$caseId,r.rel_type=$relType
+		ON CREATE SET r.id=$relId,r.tenant_id=$tenantId,r.case_id=$caseId,r.rel_type=$relType, m.description=$description
 	RETURN n, m;`, startNodeLabel, relNodeLabel, rel.RelType)
 	params := map[string]interface{}{
-		"tenantId": tenantId,
-		"id":       node.Id,
-		"name":     node.Name,
-		"caseId":   node.CaseId,
-
+		"tenantId":     tenantId,
+		"id":           node.Id,
+		"name":         node.Name,
+		"caseId":       node.CaseId,
 		"relId":        rel.Id,
 		"relType":      rel.RelType,
-		"relTable":     rel.TableName,
-		"startId":      rel.StartId,
+		"relTable":     rel.SourceIds,
+		"source":       rel.Source,
 		"oldNodeName":  nodeName,
 		"relNodeId":    node.Id,
 		"relNodeName":  node.Name,
-		"relNodeTable": node.Table,
+		"relNodeTable": node.SourceIds,
+		"description":  rel.Description,
 	}
 	_, err := relStore.Write(ctx, cypher, params)
 	if err != nil {

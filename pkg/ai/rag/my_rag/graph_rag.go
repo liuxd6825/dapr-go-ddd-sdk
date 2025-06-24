@@ -12,59 +12,60 @@ import (
 	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
+	"time"
 )
 
 type GraphRag struct {
-	LLM    llm.LLM
-	store  storage.Storage
-	logger *logrus.Logger
-	config storage.Config
+	LLM       llm.LLM
+	store     storage.Storage
+	logger    *logrus.Logger
+	config    storage.Config
+	docHandle *storage.DocHandle
 }
 
 const MaxRetrieveContexts = 5 // 最大检索上下文数量
 
+type GoResult struct {
+	Data []string
+	Err  error
+}
+
 func NewGraphRag(llm llm.LLM, store storage.Storage, config storage.Config, logger *logrus.Logger) *GraphRag {
+	docHandle := storage.NewDocHandle(config, store, llm, logger)
 	return &GraphRag{
-		LLM:    llm,
-		store:  store,
-		logger: logger,
-		config: config,
+		LLM:       llm,
+		store:     store,
+		logger:    logger,
+		config:    config,
+		docHandle: docHandle,
 	}
 }
 
 // IngestDocuments 将文档摄取到 Milvus
-func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document, opts storage.Options) ([]string, int, []string) {
-	const (
-		batchSize = 100 // 批量处理大小
-	)
-	var (
-		documentIDs []string
-		chunkCount  int
-		errors      []string
-	)
-
+func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document) (documentIDs []string, chunkCount int, errorList []error) {
 	// 处理所有文档
 	for _, doc := range docs {
 		documentIDs = append(documentIDs, doc.Id)
-		chunkCountVal, err := g.IngestDocument(ctx, doc, batchSize, opts)
+		chunkCountVal, err := g.IngestDocument(ctx, doc)
 		if err != nil {
-			errors = append(errors, err.Error())
-			if err := g.DeleteDoc(ctx, doc.TenantId, doc.CaseId, doc.Id); err != nil {
-				errors = append(errors, err.Error())
+			errorList = append(errorList, err)
+			if err1 := g.DeleteDoc(ctx, doc.TenantId, doc.CaseId, doc.Id); err1 != nil {
+				errorList = append(errorList, err1)
 			}
 		}
 		chunkCount += chunkCountVal
 	}
 
 	// 刷新数据确保可搜索
-	if err := g.store.VectorFlush(ctx, opts); err != nil {
+	/*if err := g.store.VectorFlush(ctx, opts); err != nil {
 		errors = append(errors, fmt.Sprintf("刷新失败: %v", err))
-	}
+	} */
 
-	return documentIDs, chunkCount, errors
+	return documentIDs, chunkCount, errorList
 }
 
-func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document, batchSize int, opts storage.Options) (chunkCount int, err error) {
+// IngestDocument
+func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (chunkCount int, err error) {
 	// 生成文档ID（如果未提供）
 	docId := doc.Id
 	if docId == "" {
@@ -72,77 +73,83 @@ func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document, bat
 	}
 	// documentIDs = append(documentIDs, docId)
 
-	// 分块处理文本
-	chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
-	if err != nil {
-		return chunkCount, err
+	if err := g.docHandle.SaveGraph(ctx, doc); err != nil {
+		return 0, errors.New("导入文档 %s 时出错%s", doc.FileName, err.Error())
 	}
 
-	if len(chunks) == 0 {
-		return chunkCount, errors.New("文档 %s 没有有效内容", doc.FileName)
+	if chunkCount, err = g.SaveVector(ctx, doc); err != nil {
+		return 0, err
 	}
 
-	if err := storage.InsertDocument(ctx, doc, g.config, g.store, g.LLM, g.logger); err != nil {
-		return chunkCount, errors.New("导入文档 %s 时出错%s", doc.FileName, err.Error())
-	}
-
-	/*
-		fileName := truncateString(doc.FileName, 256)
-		for i := 0; i < len(chunks); i += batchSize {
-			end := i + batchSize
-			if end > len(chunks) {
-				end = len(chunks)
-			}
-			batch := chunks[i:end]
-
-			var strList []string
-			for _, source := range batch {
-				strList = append(strList, source.Content)
-			}
-
-			insertData := storage.InsertDocData{
-				ChunkId:  i,
-				TenantId: doc.TenantId,
-				CaseId:   doc.CaseId,
-				FileName: fileName,
-				DocId:    doc.Id,
-				Content:  strList,
-			}
-
-			maxRetries := g.config.GetMaxRetries()
-			// 插入数据到 Milvus（带重试）
-			for attempt := 1; attempt <= maxRetries; attempt++ {
-				err := g.store.VectorInsertDoc(ctx, insertData, opts)
-				if err == nil {
-					chunkCount += len(batch)
-					break
-				}
-
-				if attempt == maxRetries {
-					return chunkCount, errors.New("文档 %s 块 %d-%d 插入失败: %v", doc.FileName, i, end, err)
-				} else {
-					log.Printf("插入失败（尝试 %d/%d），重试中...: %v", attempt, maxRetries, err)
-					time.Sleep(time.Duration(attempt) * time.Second)
-				}
-			}
-		}
-	*/
 	return chunkCount, nil
 }
 
-type GoResult struct {
-	Data []string
-	Err  error
+func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkCount int, err error) {
+	// 分块处理文本
+	chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+	if err != nil {
+		return 0, err
+	}
+	chunkCount = len(chunks)
+	if chunkCount == 0 {
+		return chunkCount, errors.New("文档 %s 没有有效内容", doc.FileName)
+	}
+	logger := g.logger
+	batchSize := g.config.GetBatchSize()
+	fileName := truncateString(doc.FileName, 256)
+	for i := 0; i < chunkCount; i += batchSize {
+		end := i + batchSize
+		if end > chunkCount {
+			end = chunkCount
+		}
+		batch := chunks[i:end]
+
+		var strList []string
+		for _, source := range batch {
+			strList = append(strList, source.Content)
+		}
+
+		insertData := storage.InsertDocData{
+			ChunkId:  i,
+			TenantId: doc.TenantId,
+			CaseId:   doc.CaseId,
+			FileName: fileName,
+			DocId:    doc.Id,
+			Content:  strList,
+		}
+
+		maxRetries := g.config.GetMaxRetries()
+		opts := storage.Options{
+			TenantId: doc.TenantId,
+			CaseId:   doc.CaseId,
+		}
+		// 插入数据到 Milvus（带重试）
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			err = g.store.VectorInsertDoc(ctx, insertData, opts)
+			if err == nil {
+				chunkCount += len(batch)
+				break
+			}
+
+			if attempt == maxRetries {
+				return chunkCount, errors.New("文档 %s 块 %d-%d 插入失败: %v", doc.FileName, i, end, err)
+			} else {
+				logger.Printf("插入失败（尝试 %d/%d），重试中...: %v", attempt, maxRetries, err)
+				time.Sleep(time.Duration(attempt) * time.Second)
+			}
+		}
+	}
+	return
 }
 
 func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoResult {
-	nodeKeys, err := g.getKeys(ctx, query.Query)
+	nodeKeywords, err := g.getKeywords(ctx, query.Query)
 	if err != nil {
 		return &GoResult{Err: errors.New("获取查询关键字时出错：%s", err.Error())}
 	}
-	logs.Info(ctx, logs.Fields{"keys": nodeKeys})
+	logs.Info(ctx, logs.Fields{"node keywords": nodeKeywords})
 	qry := storage.GraphQueryParam{
-		Keys:    nodeKeys,
+		Keys:    nodeKeywords,
 		MaxDeep: query.MaxDeep,
 		Limit:   query.TopK,
 	}
@@ -219,7 +226,9 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 	// 使用结构体通道传递结果和错误
 	resultCh := make(chan *GoResult, 2)
 
-	logs.Info(ctx, logs.Fields{"query": query.Query})
+	logger := g.logger
+	logger.Info("query", query.Query)
+
 	// 协程1：取图关系中知识
 	go func() {
 		defer wg.Done()
@@ -246,7 +255,7 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 		contexts = append(contexts, res.Data...)
 	}
 
-	logs.Info(ctx, logs.Fields{"contexts": contexts})
+	logger.Info("contexts", contexts)
 
 	prompt := buildRAGPrompt(query.Query, contexts)
 	messages := []*schema.Message{
@@ -273,11 +282,11 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 }
 
 // getKeys 取得关键字
-func (g *GraphRag) getKeys(ctx context.Context, query string) ([]string, error) {
+func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, error) {
 	msgList := []*schema.Message{
 		{Role: schema.User, Content: fmt.Sprintf("### 指令：提取以下文本中的实体并用逗号分隔\n### 文本：{%s}", query)},
 		{Role: schema.System, Content: `
-			从文本中提取所有人名、地名和组织名，用英文逗号分隔各实体，不要包含其他符号或说明。\n
+			从文本中提取所有实体名称，用英文逗号分隔各实体，不要包含其他符号或说明。\n
 			按以下格式输出：实体1,实体2,实体3
 			示例：张三,李四,北京,上海
 		`},

@@ -95,7 +95,7 @@ func (s *RagAPI) Query(ictx iris.Context) {
 			}
 			ictx.ResponseWriter().Flush()
 		})
-		if isPrint {
+		if err == nil && isPrint {
 			fmt.Print("\n")
 		}
 		return err

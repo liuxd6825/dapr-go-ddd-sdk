@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -17,20 +18,25 @@ var (
 func Test_FindNodes(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
+		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
-		dao := NewNeo4jGraphStorage("neo4j")
+		dao := NewNeo4jGraphStorage("neo4j", logger)
 
 		names := []string{"张三"}
 		query := GraphQueryParam{
 			Keys: names,
 		}
-		graph := dao.FindNodes(ctx, query, Options{
+		nodes, edges, err := dao.FindNodes(ctx, query, Options{
 			TenantId:  "test",
 			CaseId:    "1001",
 			NodeLabel: "all",
 		})
+		if err != nil {
+			return err
+		}
 
-		t.Log(graph)
+		t.Log(nodes)
+		t.Log(edges)
 
 		return nil
 	}).Catch(func(e error) {
@@ -41,8 +47,9 @@ func Test_FindNodes(t *testing.T) {
 func Test_DeleteDoc(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
+		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
-		dao := NewNeo4jGraphStorage("neo4j")
+		dao := NewNeo4jGraphStorage("neo4j", logger)
 		graph := dao.DeleteDoc(ctx, tenantId, caseId, "aa")
 		t.Log(graph)
 		return nil
@@ -54,8 +61,9 @@ func Test_DeleteDoc(t *testing.T) {
 func Test_GraphEntity(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
+		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
-		dao := NewNeo4jGraphStorage("neo4j")
+		dao := NewNeo4jGraphStorage("neo4j", logger)
 		entity, err := dao.GraphEntity(ctx, "孙悟空", Options{
 			TenantId:  tenantId,
 			CaseId:    caseId,
@@ -73,8 +81,9 @@ func Test_GraphEntity(t *testing.T) {
 func Test_GraphRelationship(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
+		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
-		dao := NewNeo4jGraphStorage("neo4j")
+		dao := NewNeo4jGraphStorage("neo4j", logger)
 		entity, err := dao.GraphRelationship(ctx, "孙悟空", "唐僧", Options{
 			TenantId:  tenantId,
 			CaseId:    caseId,
@@ -92,8 +101,9 @@ func Test_GraphRelationship(t *testing.T) {
 func Test_graphSaveDocEntities(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
+		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
-		store := NewNeo4jGraphStorage("neo4j")
+		store := NewNeo4jGraphStorage("neo4j", logger)
 		var entities []*GraphEntity
 		var rels []*GraphRelationship
 

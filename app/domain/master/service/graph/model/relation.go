@@ -7,14 +7,16 @@ import (
 )
 
 type Relation struct {
-	Id          string `json:"id" gorm:"column:id"`
-	CaseId      string `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%"`
-	RelType     string `json:"relType" gorm:"column:rel_type;relType:true"`
-	StartId     string `json:"startId" gorm:"column:start_id;relStartId:true"`
-	EndId       string `json:"endId" gorm:"column:end_id;relEndId:true"`
-	TenantId    string `json:"tenantId" gorm:"column:tenant_id;nodeLabel:true;nodeLabelFormat:tenant_%"`
-	TableName   string `json:"tableName" gorm:"column:table_name"`
-	Description string `json:"description" gorm:"column:description"`
+	Id          string   `json:"id" gorm:"column:id"`
+	CaseId      string   `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%"`
+	TenantId    string   `json:"tenantId" gorm:"column:tenant_id;nodeLabel:true;nodeLabelFormat:tenant_%"`
+	Source      string   `json:"source" gorm:"column:source;relStartId:true"`
+	Target      string   `json:"target" gorm:"column:target;relEndId:true"`
+	SourceIds   string   `json:"sourceIds" gorm:"column:source_ids"`
+	SourceType  string   `json:"sourceType" gorm:"column:source_type"`
+	RelType     string   `json:"relType" gorm:"column:rel_type;relType:true"`
+	Keywords    []string `json:"keywords" gorm:"column:keywords;type:text;serializer:json"`
+	Description string   `json:"description" gorm:"column:description"`
 }
 
 func NewRelation(dbSch *dbschema.DBSchema, data map[string]any) *Relation {
@@ -31,10 +33,12 @@ func NewRelation(dbSch *dbschema.DBSchema, data map[string]any) *Relation {
 		Id:          id,
 		CaseId:      caseId,
 		TenantId:    tenantId,
+		Keywords:    []string{relType},
 		RelType:     relType,
-		StartId:     relStartId,
-		EndId:       relEndId,
-		TableName:   dbSch.TableName,
+		Source:      relStartId,
+		Target:      relEndId,
+		SourceIds:   dbSch.TableName,
+		SourceType:  "master",
 		Description: description(data),
 	}
 }

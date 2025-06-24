@@ -68,7 +68,7 @@ func (d *NodeDao) CreateMain(ctx context.Context, node *model2.Node) {
 func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model2.Relation, relNode *model2.Node) *model2.Node {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
-	relType := rel.RelType
+	relType := rel.Keywords
 	nLabels := storeDao.GetLabels(ctx, relNode)
 	mLabels := d.getLabels(rel.CaseId, rel.TenantId)
 	nProps, data, err := c.GetCreateProperties(ctx, relNode)
@@ -78,17 +78,18 @@ func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model2.Relation, relNo
 
 	cypher := fmt.Sprintf(`
 	CREATE (n%s{%s})   WITH n
-	MATCH (m%s{id:$relStartId}) WITH m, n
+	MATCH (m%s{id:$id}) WITH m, n
 	CREATE (m)-[r:%s]->(n) 
-	SET r.id=$relId, r.relType=$relType, r.case_id=$caseId, r.tenant_id=$tenantId
+	SET r.id=$id, r.keywords=$keywords, r.case_id=$caseId, r.tenant_id=$tenantId, r.description=$description
     `, nLabels, nProps, mLabels, relType)
 
-	data["relId"] = rel.Id
-	data["relType"] = rel.RelType
-	data["relStartId"] = rel.StartId
-	data["relEndId"] = rel.EndId
-	data["tenantId"] = rel.TenantId
-	data["caseId"] = rel.CaseId
+	data["id"] = rel.Id
+	data["source"] = rel.Source
+	data["target"] = rel.Target
+	data["tenant_id"] = rel.TenantId
+	data["case_id"] = rel.CaseId
+	data["keywords"] = rel.Keywords
+	data["description"] = rel.Description
 	_, err = storeDao.Write(ctx, cypher, data)
 
 	if err != nil {
@@ -98,7 +99,7 @@ func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model2.Relation, relNo
 	cypher2 := fmt.Sprintf(`
 	MERGE (nName%s:same{name: $Name})      
 	WITH nName         
-	MATCH (n%s{id: $relId})          
+	MATCH (n%s{id: $id})          
 	CREATE (n)-[r:same]->(nName) ;
 	`, nLabels, nLabels)
 
@@ -157,13 +158,13 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 		"caseId":   node.CaseId,
 
 		"relId":        rel.Id,
-		"relType":      rel.RelType,
-		"relTable":     rel.TableName,
-		"startId":      rel.StartId,
+		"relType":      rel.Keywords,
+		"relTable":     rel.SourceIds,
+		"startId":      rel.Source,
 		"oldNodeName":  oldName,
 		"relNodeId":    node.Id,
 		"relNodeName":  node.Name,
-		"relNodeTable": node.Table,
+		"relNodeTable": node.SourceIds,
 	}
 
 	sb := strings.Builder{}
@@ -171,7 +172,7 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 		sb.WriteString(fmt.Sprintf(`
 			MATCH (n1%s)-[r1{id:$id}]->(m1%s) DELETE r1  WITH n1,m1
 			CREATE (n1)-[r2:%s{id:$id}]->(m1) 
-			`, relNodeLabel, relNodeLabel, rel.RelType,
+			`, relNodeLabel, relNodeLabel, rel.Keywords,
 		))
 	}
 	if isRename {
@@ -200,17 +201,12 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 func (d *NodeDao) DeleteMain(ctx context.Context, record *model2.Record) {
 	nodeStore := d.GetStore()
 	after := record.AfterMap()
-
 	node := model2.NewNode(record.Table, after)
 	labels := d.getLabels(node.CaseId, node.TenantId)
-
-	cypher := fmt.Sprintf(`
-	MATCH (n%s{id:$id})-[r]->(m%s) DETACH DELETE n,r,m  `, labels, labels)
-
+	cypher := fmt.Sprintf(`MATCH (n%s{id:$id})-[r]->(m%s) DETACH DELETE n,r,m  `, labels, labels)
 	params := map[string]any{
 		"id": node.Id,
 	}
-
 	_, err := nodeStore.Write(ctx, cypher, params)
 	if err != nil {
 		panic(err)
@@ -223,10 +219,7 @@ func (d *NodeDao) DeleteRelNode(ctx context.Context, record *model2.Record) {
 
 	rel := model2.NewRelation(d.DBSchema, after)
 	labels := d.getLabels(rel.CaseId, rel.TenantId)
-
-	cypher := fmt.Sprintf(`
-	MATCH (n%s)-[r{id:'%s'}]->(m%s) DETACH DELETE r,m`, labels, rel.Id, labels)
-
+	cypher := fmt.Sprintf(`MATCH (n%s)-[r{id:'%s'}]->(m%s) DETACH DELETE r,m`, labels, rel.Id, labels)
 	_, err := nodeStore.Write(ctx, cypher, nil)
 	if err != nil {
 		panic(err)
@@ -253,12 +246,13 @@ func (d *NodeDao) ClearAll(ctx context.Context) {
 
 func (d *NodeDao) NewNode(data map[string]any) *model2.Node {
 	node := &model2.Node{
-		Id:     d.GetString(data, "id"),
-		CaseId: d.GetString(data, "case_id"),
-		Name:   d.GetString(data, "name"),
-		//RelCount: d.GetInt64(data, "rel_count"),
-		TenantId: d.GetString(data, "tenant_id"),
-		Table:    d.GetString(data, "table"),
+		Id:          d.GetString(data, "id"),
+		Name:        d.GetString(data, "name"),
+		CaseId:      d.GetString(data, "case_id"),
+		TenantId:    d.GetString(data, "tenant_id"),
+		SourceIds:   d.GetString(data, "source_ids"),
+		Type:        d.GetString(data, "type"),
+		Description: d.GetString(data, "description"),
 	}
 	return node
 }

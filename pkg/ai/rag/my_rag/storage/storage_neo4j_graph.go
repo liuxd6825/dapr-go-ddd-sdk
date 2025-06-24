@@ -3,13 +3,12 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"time"
@@ -23,16 +22,15 @@ import (
 // It handles database connections and operations for storing and retrieving graph entities
 // and relationships.
 type Neo4jGraphStorage struct {
-	Client neo4j.DriverWithContext
+	client neo4j.DriverWithContext
 	dao    idao.Dao[map[string]any]
-	store  *store_neo4j.Dao[map[string]any]
-	logger *logrus.Logger
+	logger logs.Logger
 }
 
 // NewNeo4jGraphStorage creates a new Neo4j client connection with the provided connection parameters.
 // It returns an initialized Neo4J struct and any error encountered during connection setup.
 // The returned Neo4J instance must be closed with Close() when no longer needed to free up resources.
-func NewNeo4jGraphStorage(dbKey string, logger *logrus.Logger) *Neo4jGraphStorage {
+func NewNeo4jGraphStorage(dbKey string, logger logs.Logger) *Neo4jGraphStorage {
 	nodeCfg := &dao.NewConfig{
 		DBKey:              dbKey,
 		IsPubEvent:         dao.IsFalse(),
@@ -49,11 +47,10 @@ func NewNeo4jGraphStorage(dbKey string, logger *logrus.Logger) *Neo4jGraphStorag
 	}
 
 	return &Neo4jGraphStorage{
-		Client: dbItem.GetNeo4j(),
+		client: dbItem.GetNeo4j(),
 		dao:    newDao,
 		logger: logger,
 	}
-
 }
 
 func (n *Neo4jGraphStorage) CreateTenant(ctx context.Context, tenantId string) error {
@@ -160,8 +157,10 @@ func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, tenantId, 
 			"name":        entry.Name,
 			"case_id":     entry.CaseId,
 			"doc_id":      entry.DocId,
+			"tenant_id":   entry.TenantId,
 			"description": entry.Descriptions,
 			"source_ids":  entry.SourceIDs,
+			"source_type": "doc",
 			"type":        entry.Type,
 		})
 	}
@@ -208,9 +207,11 @@ func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, tenan
 			"target":      rel.Target,
 			"source":      rel.Source,
 			"case_id":     rel.CaseId,
+			"tenant_id":   rel.TenantId,
 			"doc_id":      rel.DocId,
 			"description": rel.Descriptions,
 			"source_ids":  rel.SourceIDs,
+			"source_type": "doc",
 			"keywords":    rel.Keywords,
 		})
 	}
@@ -274,7 +275,7 @@ func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryPara
 		contents = append(contents, node.Descriptions)
 	}
 	for _, edge := range rels {
-		contents = append(contents, fmt.Sprintf("%s与%s之间存在关系是:%s, %s", edge.Source, edge.Target, edge.Keywords, edge.Descriptions))
+		contents = append(contents, fmt.Sprintf("%s与%s之间存在关系是:%s, %s", edge.Source, edge.Target, strings.Join(edge.Keywords, ","), edge.Descriptions))
 	}
 	return contents, nil
 }
@@ -309,7 +310,7 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 	cypher := fmt.Sprintf("MATCH p=(n%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN p LIMIT %d", labels, query.MaxDeep, namesStr, limit)
 	n.logger.Info(cypher)
 
-	session := n.Client.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	session := n.client.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
 
 	nodes = make(map[string]*GraphEntity)
@@ -367,8 +368,7 @@ func newGraphRelationship(rel neo4j.Relationship) *GraphRelationship {
 	docId := maputils.GetStringErr(rel.Props, "doc_id", "")
 	descriptions := maputils.GetStringErr(rel.Props, "description", "")
 	sourceIDs := maputils.GetStringErr(rel.Props, "source_ids", "")
-	keywords := maputils.GetStringErr(rel.Props, "keywords", "")
-	fmt.Println(keywords)
+	keywords := maputils.GetStringsErr(rel.Props, "keywords", nil)
 	return &GraphRelationship{
 		Id:           id,
 		Source:       source,
@@ -377,6 +377,7 @@ func newGraphRelationship(rel neo4j.Relationship) *GraphRelationship {
 		DocId:        docId,
 		Descriptions: descriptions,
 		SourceIDs:    sourceIDs,
+		Keywords:     keywords,
 	}
 }
 
@@ -405,18 +406,6 @@ func (n *Neo4jGraphStorage) getNode(ctx context.Context, res any, getNode func(n
 			}
 		}
 	}
-}
-
-func (n *Neo4jGraphStorage) GetStore() *store_neo4j.Dao[map[string]any] {
-	if n.store == nil {
-		iStore := n.dao.GetStore().(any)
-		nodeStoreDao, ok := iStore.(*store_neo4j.Dao[map[string]any])
-		if !ok {
-			panic("neo4j store does not implement neo4j.Dao")
-		}
-		n.store = nodeStoreDao
-	}
-	return n.store
 }
 
 // GraphEntity retrieves a graph entity by name from the Neo4j database.
@@ -887,14 +876,14 @@ RETURN n.name as source_id, collect(connected) as connected_nodes
 // Close terminates the connection to the Neo4j database.
 // It returns any error encountered during the closing operation.
 func (n *Neo4jGraphStorage) Close(ctx context.Context) error {
-	return n.Client.Close(ctx)
+	return n.client.Close(ctx)
 }
 
 func (n *Neo4jGraphStorage) session(sessFunc func(context.Context, neo4j.SessionWithContext) (any, error)) (any, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
-	sess := n.Client.NewSession(ctx, neo4j.SessionConfig{})
+	sess := n.client.NewSession(ctx, neo4j.SessionConfig{})
 	defer func() {
 		closeCtx, closeCancel := context.WithTimeout(context.Background(), time.Second*30)
 		defer closeCancel()

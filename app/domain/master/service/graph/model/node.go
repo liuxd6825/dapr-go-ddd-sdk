@@ -7,11 +7,12 @@ import (
 
 type Node struct {
 	Id          string `json:"id" gorm:"column:id"`
-	CaseId      string `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%s"`
 	Name        string `json:"name" gorm:"column:name"`
+	CaseId      string `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%s"`
 	TenantId    string `json:"tenantId" gorm:"column:tenant_id;nodeLabel:true;nodeLabelFormat:tenant_%s"`
-	Table       string `json:"table" gorm:"column:table"`
+	SourceIds   string `json:"sourceIds" gorm:"column:source_ids"`
 	Description string `json:"description" gorm:"column:description"`
+	Type        string `json:"type" gorm:"column:type"`
 }
 
 func NewNode(tableName string, data map[string]any) *Node {
@@ -25,7 +26,8 @@ func NewNode(tableName string, data map[string]any) *Node {
 		Name:        name,
 		CaseId:      caseId,
 		TenantId:    tenantId,
-		Table:       tableName,
+		SourceIds:   tableName,
+		Type:        tableName,
 		Description: desc,
 	}
 }

@@ -3,10 +3,13 @@ package web
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 func SetError(ctx iris.Context, err error) {
 	if err != nil {
+		req := ctx.Request()
+		logs.Error(ctx, logs.Fields{"method": req.Method, "uri": req.RequestURI, "error": err.Error()})
 		ctx.SetErr(err)
 		if _, ok := err.(*errors.VerifyError); ok {
 			ctx.StatusCode(iris.StatusBadRequest)

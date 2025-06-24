@@ -9,8 +9,7 @@ type EntityExtractionPromptData struct {
 	EntityTypes []string
 	Language    string
 	Examples    []EntityExtractionPromptExample
-
-	Input string
+	Input       string
 }
 
 // EntityExtractionPromptExample provides sample inputs and outputs

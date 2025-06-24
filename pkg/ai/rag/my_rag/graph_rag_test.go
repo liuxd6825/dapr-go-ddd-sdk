@@ -90,10 +90,7 @@ func Test_GraphRag_IngestDocuments(t *testing.T) {
 	ctx := context.Background()
 	rag := newGraphRag(ctx, true)
 	gp.Try(func() error {
-		rag.IngestDocuments(ctx, []*entity.Document{doc}, storage.Options{
-			TenantId: tenantId,
-			CaseId:   caseId,
-		})
+		rag.IngestDocuments(ctx, []*entity.Document{doc})
 		return nil
 	}).Catch(func(e error) {
 		t.Error(e)
@@ -145,7 +142,7 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	})
 
 	vector := storage.NewMilvusVector(embedder, storage.MilvusConfig{
-		Addr:           "127.0.0.1:19530",
+		Addr:           "192.168.120.224:19530",
 		CollectionName: "tenant",
 		Dim:            1024,
 	})
@@ -153,8 +150,7 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	keyValue := storage.NewRedisKeyValueStorage()
 
 	graph := storage.NewNeo4jGraphStorage("neo4j", logger)
-	config := NewConfigDefault(3)
-	config.ConcurrencyCount = 5
+	config := storage.NewRagConfig()
 	store := storage.NewStorage(graph, vector, keyValue, embedder)
 	return NewGraphRag(llm, store, config, logger)
 }

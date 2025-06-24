@@ -99,6 +99,14 @@ func GetStrings(m map[string]interface{}, key string, def []string) ([]string, e
 	return def, nil
 }
 
+func GetStringsErr(m map[string]interface{}, key string, def []string) []string {
+	res, err := GetStrings(m, key, def)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
 func GetMap(m map[string]interface{}, key string, def map[string]any) (map[string]any, error) {
 	if v, ok := m[key]; ok {
 		if vm, ok := v.(map[string]any); ok {
