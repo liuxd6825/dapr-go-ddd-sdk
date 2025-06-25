@@ -49,18 +49,9 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document)
 		chunkCountVal, err := g.IngestDocument(ctx, doc)
 		if err != nil {
 			errorList = append(errorList, err)
-			if err1 := g.DeleteDoc(ctx, doc.TenantId, doc.CaseId, doc.Id); err1 != nil {
-				errorList = append(errorList, err1)
-			}
 		}
 		chunkCount += chunkCountVal
 	}
-
-	// 刷新数据确保可搜索
-	/*if err := g.store.VectorFlush(ctx, opts); err != nil {
-		errors = append(errors, fmt.Sprintf("刷新失败: %v", err))
-	} */
-
 	return documentIDs, chunkCount, errorList
 }
 
@@ -71,17 +62,17 @@ func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (ch
 	if docId == "" {
 		docId = GenerateDocumentID(doc.FileName)
 	}
-	// documentIDs = append(documentIDs, docId)
-
-	if err := g.docHandle.SaveGraph(ctx, doc); err != nil {
-		return 0, errors.New("导入文档 %s 时出错%s", doc.FileName, err.Error())
+	if err = g.docHandle.SaveGraph(ctx, doc); err != nil {
+		err = errors.New("导入文档%s生成图数据时出错, %s。", doc.FileName, err.Error())
+	} else if chunkCount, err = g.SaveVector(ctx, doc); err != nil {
+		err = errors.New("导入文档%s生成向量数据时出错, %s。", doc.FileName, err.Error())
 	}
-
-	if chunkCount, err = g.SaveVector(ctx, doc); err != nil {
-		return 0, err
+	if err != nil {
+		if delErr := g.DeleteDoc(ctx, doc.TenantId, doc.CaseId, doc.Id); delErr != nil {
+			err = errors.New("%s 撤销文件%s时失败:%s", err.Error(), doc.Id, delErr.Error())
+		}
 	}
-
-	return chunkCount, nil
+	return chunkCount, err
 }
 
 func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkCount int, err error) {
@@ -142,6 +133,7 @@ func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkC
 	return
 }
 
+// getGraphContext 取得图数据上下文
 func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoResult {
 	nodeKeywords, err := g.getKeywords(ctx, query.Query)
 	if err != nil {
@@ -167,7 +159,8 @@ func (g *GraphRag) getGraphContext(ctx context.Context, query *QueryParam) *GoRe
 	}
 }
 
-func (g *GraphRag) getDocumentContext(ctx context.Context, query *QueryParam) *GoResult {
+// getVectorContext 取得向量数据上下文
+func (g *GraphRag) getVectorContext(ctx context.Context, query *QueryParam) *GoResult {
 	opts := storage.Options{
 		TenantId: query.TenantId,
 		CaseId:   query.CaseId,
@@ -238,7 +231,7 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 	// 协程2：取向量数据库中的知道
 	go func() {
 		defer wg.Done()
-		resultCh <- g.getDocumentContext(ctx, query)
+		resultCh <- g.getVectorContext(ctx, query)
 	}()
 
 	// 等待协程完成并关闭通道

@@ -4,10 +4,8 @@ import (
 	"context"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -23,11 +21,13 @@ type RagService struct {
 
 var ragService *RagService
 var ragServiceOnce sync.Once
+var graphRag *my_rag.GraphRag
+var graphRagOnce sync.Once
 
 func NewRagService() *RagService {
 	ragServiceOnce.Do(func() {
 		ragService = &RagService{
-			graphRag: newGraphRag(),
+			graphRag: NewGraphRag(),
 		}
 	})
 	return ragService
@@ -43,28 +43,16 @@ func (s *RagService) CreateCase(ctx context.Context, caseId string) error {
 	return s.graphRag.CreateCase(ctx, tenantId, caseId)
 }
 
-func (s *RagService) IngestDocuments(ctx context.Context, document []*model.Document, streams ...func(txt string)) []error {
-	var docList []*entity.Document
-	for _, item := range document {
-		doc := &entity.Document{
-			Id:       item.Id,
-			FileName: item.FileName,
-			TenantId: item.TenantId,
-			CaseId:   item.CaseId,
-		}
-		docList = append(docList, doc)
-	}
-	_, _, errs := s.graphRag.IngestDocuments(ctx, docList)
-	return errs
-}
-
-func (s *RagService) DeleteDocument(ctx context.Context, tenantId, caseId, docId string) error {
-	return s.graphRag.DeleteDoc(ctx, tenantId, caseId, docId)
-}
-
 func (s *RagService) Query(ctx context.Context, query my_rag.QueryParam, streams ...func(txt string)) (string, error) {
 	query.TenantId, _ = appctx.GetTenantId(ctx)
 	return s.graphRag.Query(ctx, &query, streams...)
+}
+
+func NewGraphRag() *my_rag.GraphRag {
+	graphRagOnce.Do(func() {
+		graphRag = newGraphRag()
+	})
+	return graphRag
 }
 
 func newGraphRag() *my_rag.GraphRag {

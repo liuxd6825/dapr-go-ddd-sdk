@@ -22,6 +22,8 @@ type MaskOptions struct {
 	TagName string // golang struct field标签名称 默认为map
 }
 
+type CopyOption = copier.Option
+
 var option *copier.Option
 
 func init() {
@@ -35,6 +37,15 @@ func init() {
 // @return error
 func Mapper(fromObj, toObj interface{}) error {
 	return copier.CopyWithOption(toObj, fromObj, *option)
+}
+
+func Copy(fromObj, toObj interface{}, opts ...CopyOption) error {
+	count := len(opts)
+	if count == 0 {
+		return copier.Copy(toObj, fromObj)
+	}
+	opt := opts[len(opts)-1]
+	return copier.CopyWithOption(toObj, fromObj, opt)
 }
 
 func MaskMapper(fromObj, toObj interface{}, mask []string) error {
