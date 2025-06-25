@@ -1,12 +1,12 @@
-package extract
+package doc_extract
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/extract/docx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/extract/pdf"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/extract/ppt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/extract/txt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/extract/xlsx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/docx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/pdf"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/ppt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/txt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/xlsx"
 	"github.com/spf13/afero"
 	"path"
 	"strings"
@@ -57,4 +57,10 @@ func (e *Extract) Extract(fs afero.Fs, filename string) (string, error) {
 		return reader.ReadFile(fs, filename)
 	}
 	return "", fmt.Errorf("unsupported file type: %s", extName)
+}
+
+func (e *Extract) IsSupport(filename string) bool {
+	extName := strings.ToLower(path.Ext(filename))
+	_, ok := e.readers[extName]
+	return ok
 }

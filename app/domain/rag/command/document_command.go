@@ -14,9 +14,19 @@ type DocumentUpdateCommand struct {
 	Data      DocumentData `json:"data"`
 }
 
+type DocumentDeleteCommand struct {
+	CommandId string             `json:"commandId"`
+	Data      DocumentDeleteData `json:"data"`
+}
+
 type DocumentScanCommand struct {
 	CommandId string       `json:"commandId"`
 	Data      DocumentData `json:"data"`
+}
+
+type DocumentDeleteData struct {
+	CaseId string `json:"caseId"`
+	Id     string `json:"id"`
 }
 
 type DocumentData struct {

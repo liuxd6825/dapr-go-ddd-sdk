@@ -5,7 +5,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
@@ -42,24 +41,10 @@ func (s *DocumentAPI) Create(ictx iris.Context) {
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		document := newDocument(&cmd.Data)
-		return s.docService.Create(ctx, document)
+		return s.docService.Create(ctx, cmd)
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})
-}
-
-func newDocument(cmdData *command.DocumentData) *model.Document {
-	return &model.Document{
-		FileId:     cmdData.FileId,
-		FileName:   cmdData.FileName,
-		State:      cmdData.State,
-		ChunkCount: cmdData.ChunkCount,
-		DoneChunk:  cmdData.DoneChunk,
-		StartTime:  cmdData.StartTime,
-		EndTime:    cmdData.EndTime,
-		Message:    cmdData.Message,
-	}
 }
 
 func (s *DocumentAPI) Update(ictx iris.Context) {

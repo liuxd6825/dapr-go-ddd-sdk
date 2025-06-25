@@ -1,4 +1,4 @@
-package extract
+package doc_extract
 
 import (
 	"github.com/spf13/afero"
@@ -41,14 +41,13 @@ func TestExtract_xlsx(t *testing.T) {
 
 func TestExtract_pdf(t *testing.T) {
 	e := NewExtract()
-	fileName := "./test_file/4.pdf"
+	fileName := "./test_file/5.pdf"
 	if outTxt, err := e.Extract(newFs(fileName), fileName); err != nil {
 		t.Error(err)
 		return
 	} else {
 		t.Log(outTxt)
 	}
-
 }
 
 func newFs(filename string) afero.Fs {

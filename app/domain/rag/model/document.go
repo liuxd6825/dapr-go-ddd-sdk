@@ -6,6 +6,7 @@ import (
 
 type Document struct {
 	Base       `bson:",inline"`
+	FsKey      string     `json:"fsKey" gorm:"fs_key"   bson:"fs_key" `
 	FileId     string     `json:"fileId"  gorm:"file_id" bson:"file_id"`
 	FileName   string     `json:"fileName,omitempty" gorm:"file_name;size:200" bson:"file_name"` // 内容
 	State      int        `json:"state,omitempty" gorm:"state"  bson:"state"`                    // 状态
