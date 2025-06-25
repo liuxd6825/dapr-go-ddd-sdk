@@ -135,8 +135,12 @@ func (s *DocumentService) Ingests(ctx context.Context, document []*model.Documen
 }
 
 func (s *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
-	doc := newDocument(&cmd.Data)
-	return s.create(ctx, doc)
+	doc := newDocumentWithCreateCommand(ctx, cmd)
+	err := s.create(ctx, doc)
+	if err == nil {
+		s.scan(ctx, doc.TenantId, doc.CaseId)
+	}
+	return err
 }
 
 // Create 创建文档
@@ -227,6 +231,20 @@ func (s *DocumentService) unlockScan(ctx context.Context, tenantId, caseId strin
 		return false, err
 	}
 	return true, err
+}
+
+func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCreateCommand) *model.Document {
+	doc := &model.Document{
+		FileId:   cmd.Data.FileId,
+		FileName: cmd.Data.FileName,
+		Path:     cmd.Data.Path,
+		State:    0,
+		Message:  "创建",
+	}
+	tenantId, _ := appctx.GetTenantId(ctx)
+	doc.CaseId = cmd.Data.CaseId
+	doc.TenantId = tenantId
+	return doc
 }
 
 func newDocument(cmdData *command.DocumentData) *model.Document {

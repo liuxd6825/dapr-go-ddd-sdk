@@ -5,8 +5,8 @@ import (
 )
 
 type DocumentCreateCommand struct {
-	CommandId string       `json:"commandId"`
-	Data      DocumentData `json:"data"`
+	CommandId string             `json:"commandId"`
+	Data      DocumentCreateData `json:"data"`
 }
 
 type DocumentUpdateCommand struct {
@@ -27,6 +27,14 @@ type DocumentScanCommand struct {
 type DocumentDeleteData struct {
 	CaseId string `json:"caseId"`
 	Id     string `json:"id"`
+}
+
+type DocumentCreateData struct {
+	CaseId   string `json:"caseId"`
+	FsKey    string `json:"fsKey"`    // 文件fs key
+	Path     string `json:"path"`     // 文件目录
+	FileId   string `json:"fileId"`   // 文件ID
+	FileName string `json:"fileName"` // 内容
 }
 
 type DocumentData struct {
