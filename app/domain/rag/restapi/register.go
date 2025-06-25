@@ -10,6 +10,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPat
 	RegisterRagApi(app, baseUrl, env, rootPath)
 	RegisterChatApi(app, baseUrl, env, rootPath)
 	RegisterMessageApi(app, baseUrl, env, rootPath)
+	RegisterDocumentApi(app, baseUrl, env, rootPath)
 }
 
 func RegisterRagApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
@@ -28,6 +29,13 @@ func RegisterMessageApi(app *iris.Application, baseUrl string, env *env.Env, roo
 
 func RegisterChatApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
 	api := NewChatAPI(env, rootPath)
+	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
+		a.Handle(api)
+	})
+}
+
+func RegisterDocumentApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+	api := NewDocumentAPI(env, rootPath)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(api)
 	})
