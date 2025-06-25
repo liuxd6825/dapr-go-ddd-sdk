@@ -18,7 +18,7 @@ type DocEventType string
 
 type DocEvent func(ctx context.Context, doc *entity.Document, eventType DocEventType, eventData interface{}) error
 
-type DocOptions struct {
+type DocEvents struct {
 	OnStartInsert func(ctx context.Context, doc *entity.Document)
 	OnDoneInsert  func(ctx context.Context, doc *entity.Document, err error)
 	OnChunkCount  func(ctx context.Context, doc *entity.Document, chunkCount int)
@@ -32,22 +32,22 @@ type DocHandle struct {
 	storage Storage
 	llm     llm.LLM
 	logger  *logrus.Logger
-	opts    *DocOptions
+	events  *DocEvents
 }
 
-func NewDocHandle(config Config, storage Storage, llm llm.LLM, logger *logrus.Logger, options ...func(opts *DocOptions)) *DocHandle {
-	opts := &DocOptions{}
-	for _, option := range options {
-		option(opts)
-	}
+func NewDocHandle(config Config, storage Storage, llm llm.LLM, logger *logrus.Logger) *DocHandle {
 
 	return &DocHandle{
 		config:  config,
 		storage: storage,
 		llm:     llm,
 		logger:  logger,
-		opts:    opts,
+		events:  &DocEvents{},
 	}
+}
+
+func (d *DocHandle) SetOnEvents(setEvents func(e *DocEvents)) {
+	setEvents(d.events)
 }
 
 // SaveGraph processes a document and stores it in the provided storage.
@@ -55,14 +55,14 @@ func NewDocHandle(config Config, storage Storage, llm llm.LLM, logger *logrus.Lo
 // document handler, and stores the results in the appropriate storage.
 // It returns an error if any step in the process fails.
 func (d *DocHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err error) {
-	if d.opts.OnStartInsert != nil {
-		d.opts.OnStartInsert(ctx, doc)
+	if d.events.OnStartInsert != nil {
+		d.events.OnStartInsert(ctx, doc)
 	}
 
-	if d.opts.OnDoneInsert != nil {
+	if d.events.OnDoneInsert != nil {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
-			d.opts.OnDoneInsert(ctx, doc, err)
+			d.events.OnDoneInsert(ctx, doc, err)
 		}()
 	}
 
@@ -92,8 +92,8 @@ func (d *DocHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err er
 	}
 	logger.Info("Upserting sources", "count", len(chunks))
 
-	if d.opts.OnChunkCount != nil {
-		d.opts.OnChunkCount(ctx, doc, len(chunks))
+	if d.events.OnChunkCount != nil {
+		d.events.OnChunkCount(ctx, doc, len(chunks))
 	}
 
 	if err := d.storage.KVUpsertSources(ctx, chunksWithID); err != nil {
@@ -139,9 +139,9 @@ func (d *DocHandle) ExtractEntities(
 			var err error
 			logger := d.logger
 			defer func() {
-				if d.opts.OnDoneExtractEntities != nil {
+				if d.events.OnDoneExtractEntities != nil {
 					err = errors.GetRecoverError(err, recover())
-					d.opts.OnDoneExtractEntities(ctx, doc, &source, err)
+					d.events.OnDoneExtractEntities(ctx, doc, &source, err)
 				}
 				<-sem
 			}()

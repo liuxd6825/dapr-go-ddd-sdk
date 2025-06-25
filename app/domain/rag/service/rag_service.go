@@ -94,6 +94,7 @@ func newGraphRag() *my_rag.GraphRag {
 	kv := storage.NewRedisKeyValueStorage()
 
 	ragConfig := storage.NewRagConfig(func(cfg *storage.RagConfig) {
+
 	})
 	store := storage.NewStorage(graphStorage, vectorStorage, kv, embedder)
 	return my_rag.NewGraphRag(llm, store, ragConfig, logrus.New())

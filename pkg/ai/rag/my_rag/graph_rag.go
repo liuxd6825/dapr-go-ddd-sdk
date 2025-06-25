@@ -41,6 +41,14 @@ func NewGraphRag(llm llm.LLM, store storage.Storage, config storage.Config, logg
 	}
 }
 
+func (g *GraphRag) SetOnEvent() {
+
+}
+
+func (g *GraphRag) SetOnEvents(setEvents func(e *storage.DocEvents)) {
+	g.docHandle.SetOnEvents(setEvents)
+}
+
 // IngestDocuments 将文档摄取到 Milvus
 func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document) (documentIDs []string, chunkCount int, errorList []error) {
 	// 处理所有文档

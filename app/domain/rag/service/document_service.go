@@ -12,12 +12,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"sync"
 )
 
@@ -37,8 +39,37 @@ func NewDocumentService() *DocumentService {
 			graphRag:   NewGraphRag(),
 			docExtract: doc_extract.NewExtract(),
 		}
+		documentService.graphRag.SetOnEvents(documentService.initOnEvents)
 	})
 	return documentService
+}
+
+func (s *DocumentService) initOnEvents(e *storage.DocEvents) {
+	e.OnStartInsert = s.OnStartInsert
+
+}
+
+func (s *DocumentService) OnStartInsert(ctx context.Context, ragDoc *entity.Document) {
+	_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, 1, "导入中...")
+}
+
+func (s *DocumentService) OnDoneInsert(ctx context.Context, ragDoc *entity.Document, err error) {
+	if err == nil {
+		_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, 100, "导入成功")
+	} else {
+		_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, -1, err.Error())
+	}
+}
+
+func (s *DocumentService) OnChunkCount(ctx context.Context, ragDoc *entity.Document, chunkCount int) {
+
+}
+
+func (s *DocumentService) OnStartExtractEntities(ctx context.Context, ragDoc *entity.Document, source *storage.Source) {
+}
+
+func (s *DocumentService) OnDoneExtractEntities(ctx context.Context, ragDoc *entity.Document, source *storage.Source, err error) {
+
 }
 
 func (s *DocumentService) Scan(ctx context.Context, tenantId, caseId string) {
@@ -73,29 +104,29 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 			// 处理所有文档
 			list := findResult.Data
 			env := env.GetEnv()
-			for _, item := range list {
-				fs, ok := env.Fsm.GetFs(item.FsKey)
+			for _, doc := range list {
+				fs, ok := env.Fsm.GetFs(doc.FsKey)
 				if !ok {
-					msg := fmt.Sprintf("fskey=%s not found", item.FsKey)
-					_ = s.setError(ctx, *item, msg)
+					msg := fmt.Sprintf("fskey=%s not found", doc.FsKey)
+					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
-				text, err := s.docExtract.Extract(fs, item.FileName)
+				text, err := s.docExtract.Extract(fs, doc.FileName)
 				if err != nil {
-					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", item.FsKey, item.FileName, err.Error())
-					_ = s.setError(ctx, *item, msg)
+					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
+					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
-				doc := &entity.Document{
-					Id:       item.Id,
+				ragDoc := &entity.Document{
+					Id:       doc.Id,
 					Text:     text,
-					FileName: item.FileName,
-					TenantId: item.TenantId,
-					CaseId:   item.CaseId,
+					FileName: doc.FileName,
+					TenantId: doc.TenantId,
+					CaseId:   doc.CaseId,
 				}
-				_, err = s.graphRag.IngestDocument(ctx, doc)
+				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
 					return err
 				}
@@ -109,12 +140,16 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 	})
 }
 
-func (s *DocumentService) setError(ctx context.Context, item model.Document, msg string) error {
-	item.State = -1
+func (s *DocumentService) updateState(ctx context.Context, tenantId string, caseId, id string, state int, msg string) error {
+	doc := &model.Document{}
+	doc.Id = id
+	doc.TenantId = tenantId
+	doc.CaseId = caseId
+	doc.State = state
+	doc.Message = msg
 	callOptions := idao.NewCallOptions()
-	callOptions.SetUpdateFields([]string{"state"})
-	item.Message = msg
-	_ = s.dao.Update(ctx, &item, callOptions)
+	callOptions.SetUpdateFields([]string{"state", "message"})
+	_ = s.dao.Update(ctx, doc, callOptions)
 	return nil
 }
 
@@ -241,7 +276,8 @@ func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCrea
 		State:    0,
 		Message:  "创建",
 	}
-	tenantId, _ := appctx.GetTenantId(ctx)
+	tenantId := appctx.GetTenantId2(ctx)
+	doc.Id = idutils.NewId()
 	doc.CaseId = cmd.Data.CaseId
 	doc.TenantId = tenantId
 	return doc
