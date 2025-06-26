@@ -12,9 +12,9 @@ type DrawDao struct {
 	idao.Dao[*model.Draw]
 }
 
-func NewDrawDao() *DrawDao {
+func NewDrawDao(dbKey string) *DrawDao {
 	d := dao.NewDao[*model.Draw](&dao.NewConfig{
-		DBKey:    "mysql",
+		DBKey:    dbKey,
 		DBSchema: dbschema.NewDBSchemaWithStruct("draw", &model.Draw{}, "draw"),
 		Env:      env.GetEnv(),
 		IsCache:  true,

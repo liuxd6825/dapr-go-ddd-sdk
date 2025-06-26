@@ -26,7 +26,7 @@ func NewGraphService() *GraphService {
 
 func newGraphService() *GraphService {
 	graphService := &GraphService{
-		graphDao: dao.NewGraphDao(),
+		graphDao: dao.NewGraphDao(Neo4jDBKey),
 	}
 
 	return graphService

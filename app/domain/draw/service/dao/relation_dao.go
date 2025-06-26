@@ -11,9 +11,9 @@ type RelationDao struct {
 	idao.Dao[*model.Relation]
 }
 
-func NewRelationDao() *RelationDao {
+func NewRelationDao(neo4jDBKey string) *RelationDao {
 	relCfg := &dao.NewConfig{
-		DBKey:              "neo4j",
+		DBKey:              neo4jDBKey,
 		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Rel,
 		IsCancelModified:   true,

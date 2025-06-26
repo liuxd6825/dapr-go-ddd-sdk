@@ -17,9 +17,9 @@ type GraphDao struct {
 	store *store_neo4j.Dao[*model.Node]
 }
 
-func NewGraphDao() *GraphDao {
+func NewGraphDao(neo4jDBKey string) *GraphDao {
 	nodeCfg := &dao.NewConfig{
-		DBKey:              "neo4j",
+		DBKey:              neo4jDBKey,
 		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        []string{"draw"},

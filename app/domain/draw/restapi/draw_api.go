@@ -30,7 +30,7 @@ func NewDrawIoAPI(env *env.Env, rootPath string) *DrawAPI {
 		env:          env,
 		fileService:  fileService,
 		graphService: graphService,
-		drawDao:      dao.NewDrawDao(),
+		drawDao:      dao.NewDrawDao(service.DBKey),
 	}
 }
 
