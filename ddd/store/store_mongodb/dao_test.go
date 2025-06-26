@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -20,16 +22,51 @@ import (
 const DB_NAME = "test"
 const TENANT_ID = "test"
 
+func newHumanDao() store.IStore[*Human] {
+	humanDbSch := dbschema.NewDBSchemaWithStruct("human", &Human{}, "human")
+	humanDao := NewDao[*Human](humanDbSch, func(ctx context.Context) (IMongoDB, *mongo.Collection) {
+		return mongodb.NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "record")
+	})
+	return humanDao
+}
+
+func newRecordDao() store.IStore[*Record] {
+	recordDbSch := dbschema.NewDBSchemaWithStruct("record", &Record{}, "record")
+	recordDao := NewDao[*Record](recordDbSch, func(ctx context.Context) (IMongoDB, *mongo.Collection) {
+		return mongodb.NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "record")
+	})
+	return recordDao
+}
+
+func TestMapper_InsertUpdate(t *testing.T) {
+	ctx := xtest.NewContext()
+	humanDao := newHumanDao()
+	id := randomutils.NewId()
+	human := &Human{
+		Id:       id,
+		Name:     "TEST-A",
+		TenantId: TENANT_ID,
+	}
+	humanDao.Insert(ctx, human)
+
+	human.Name = "TEST-B"
+	opts := store.NewOptions()
+	opts.SetUpdateFields([]string{"name"})
+	humanDao.Update(ctx, human, opts)
+
+	result := humanDao.FindById(ctx, TENANT_ID, id)
+	if result.GetError() != nil {
+		t.Fatal(result.GetError().Error())
+	}
+
+	assert.Equal(t, human.Name, "TEST-B")
+
+}
 func TestMapper_Search(t *testing.T) {
-	ctx := context.Background()
+	ctx := xtest.NewContext()
 
-	humanDao := NewDao[*Human](nil, func(ctx context.Context) (IMongoDB, *mongo.Collection) {
-		return mongodb.NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "record")
-	})
-
-	recordDao := NewDao[*Record](nil, func(ctx context.Context) (IMongoDB, *mongo.Collection) {
-		return mongodb.NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "record")
-	})
+	humanDao := newHumanDao()
+	recordDao := newRecordDao()
 
 	humanName := "张三"
 	t.Run("Inserts", func(t *testing.T) {
@@ -255,10 +292,15 @@ var client *mongo.Client
 
 func init() {
 	// 设置MongoDB连接URL
-	clientOptions := options.Client().ApplyURI("mongodb://192.168.65.5:27018,192.168.65.5:27019,192.168.65.5:27020/?retryWrites=false&replicaSet=mongors&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
-
+	opts := options.Client().ApplyURI("mongodb://127.0.0.1:27017,127.0.0.1:27018,127.0.0.1:27019/?retryWrites=false&replicaSet=rs0&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
+	opts.Auth = &options.Credential{
+		AuthMechanism: "SCRAM-SHA-256",
+		AuthSource:    "admin",
+		Username:      "super_admin",
+		Password:      "123456",
+	}
 	// 连接到MongoDB
-	clientVal, err := mongo.Connect(context.TODO(), clientOptions)
+	clientVal, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
 		log.Fatal(err)
 	}

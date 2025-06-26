@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	ConstIdField       = "_id"
+	ConstIdField       = "id"
 	ConstTenantIdField = "tenant_id"
 	TenantIdField      = "tenant_id"
 )
@@ -423,7 +423,13 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...store.Options
 		uopt := getUpdateOptions(opts...)
 		setData := bson.M{"$set": data}
 		sCtx := r.getSessionCtx(ctx)
-		mRes, err := r.getCollection(ctx).UpdateByID(sCtx, r.GetId(entity), setData, uopt)
+		id := r.GetId(entity)
+		tenantId := r.GetTenantId(entity)
+		filter := bson.M{
+			"id":        id,
+			"tenant_id": tenantId,
+		}
+		mRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter, setData, uopt)
 		if err != nil {
 			return err
 		}
@@ -621,7 +627,7 @@ func (r *Dao[T]) getMap(m map[string]any) map[string]any {
 }
 
 func (r *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...store.Options) *store.SetResult[T] {
-	filter := bson.M{"tenant_id": tenantId, "_id": id}
+	filter := bson.M{"tenant_id": tenantId, "id": id}
 	m := r.getMap(data)
 	r.eb.SetUpdatedInfo(ctx, data)
 	res := r.UpdateMapAndGetCount(ctx, tenantId, filter, m, opts...)
@@ -637,7 +643,7 @@ func (r *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id s
 	if err := assert2.NotEmpty(id, assert2.NewOptions("id is empty")); err != nil {
 		return null, err
 	}
-	filter := bson.M{"tenant_id": tenantId, "_id": id}
+	filter := bson.M{"tenant_id": tenantId, "id": id}
 	udpate := r.getMap(data)
 	sCtx := r.getSessionCtx(ctx)
 	_, err := r.getCollection(ctx).UpdateOne(sCtx, filter, udpate)
@@ -1350,7 +1356,7 @@ func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 		case "desc":
 			orderVal = -1
 		default:
-			oerr = errors.New("order " + order + " is error")
+			oerr = errors.New("order %s is error", order)
 		}
 		if oerr != nil {
 			return nil, oerr
