@@ -51,14 +51,15 @@ func (s *DocumentAPI) UploadChunk(ictx iris.Context) {
 		chunkIndex := ictx.FormValue("chunkIndex")
 		chunkSize := ictx.FormValue("chunkSize")
 		objectName := ictx.FormValue("objectName")
+		folderPath := ictx.FormValue("folderPath")
 		if err != nil {
 			return err
 		}
 
-		has := s.fsService.Exists(objectName)
+		has := s.fsService.Exists(folderPath + "/" + objectName)
 
 		if chunkIndex == "0" && !has {
-			s.fsService.Create(objectName)
+			s.fsService.Create(folderPath + "/" + objectName)
 		}
 
 		data, err := io.ReadAll(chunk)
@@ -66,7 +67,7 @@ func (s *DocumentAPI) UploadChunk(ictx iris.Context) {
 			return err
 		}
 
-		err = s.fsService.WriteAt(objectName, data, chunkIndex, chunkSize)
+		err = s.fsService.WriteAt(folderPath+"/"+objectName, data, chunkIndex, chunkSize)
 		if err != nil {
 			return err
 		}

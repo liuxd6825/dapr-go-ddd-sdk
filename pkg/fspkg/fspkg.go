@@ -34,6 +34,7 @@ type IFsPkg interface {
 	WriteAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error)
 	ReadAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error)
 	Open(filename string, flag int, perm os.FileMode, opts ...*fsopts.Options) (*fsm.File, error)
+	MkdirAll(path string, perm os.FileMode, opts ...*fsopts.Options)
 }
 
 // FsPkg
@@ -221,6 +222,14 @@ func (m *FsPkg) RemoveAll(name string, opts ...*fsopts.Options) {
 func (m *FsPkg) Mkdir(name string, perm os.FileMode, opts ...*fsopts.Options) {
 	name = getFileName(name)
 	err := m.base.Mkdir(name, perm)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (m *FsPkg) MkdirAll(path string, perm os.FileMode, opts ...*fsopts.Options) {
+	path = getFileName(path)
+	err := m.base.MkdirAll(path, perm)
 	if err != nil {
 		panic(err)
 	}
