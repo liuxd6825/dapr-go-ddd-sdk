@@ -57,11 +57,11 @@ func (s *DocumentAPI) Delete(ictx iris.Context) {
 
 func (s *DocumentAPI) Scan(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.DocumentScanData
+		var cmd *command.DocumentScanCommand
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		s.docService.Scan(ctx, cmd.TenantId, cmd.CaseId)
+		s.docService.Scan(ctx, cmd)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)

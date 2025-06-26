@@ -45,15 +45,15 @@ func NewDocumentService() *DocumentService {
 }
 
 func (s *DocumentService) initOnEvents(e *storage.DocEvents) {
-	e.OnStartInsert = s.OnStartInsert
-
+	e.OnStartInsert = s.onStartInsert
+	e.OnDoneInsert = s.onDoneInsert
 }
 
-func (s *DocumentService) OnStartInsert(ctx context.Context, ragDoc *entity.Document) {
+func (s *DocumentService) onStartInsert(ctx context.Context, ragDoc *entity.Document) {
 	_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, 1, "导入中...")
 }
 
-func (s *DocumentService) OnDoneInsert(ctx context.Context, ragDoc *entity.Document, err error) {
+func (s *DocumentService) onDoneInsert(ctx context.Context, ragDoc *entity.Document, err error) {
 	if err == nil {
 		_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, 100, "导入成功")
 	} else {
@@ -61,26 +61,27 @@ func (s *DocumentService) OnDoneInsert(ctx context.Context, ragDoc *entity.Docum
 	}
 }
 
-func (s *DocumentService) OnChunkCount(ctx context.Context, ragDoc *entity.Document, chunkCount int) {
+func (s *DocumentService) onChunkCount(ctx context.Context, ragDoc *entity.Document, chunkCount int) {
 
 }
 
-func (s *DocumentService) OnStartExtractEntities(ctx context.Context, ragDoc *entity.Document, source *storage.Source) {
+func (s *DocumentService) onStartExtractEntities(ctx context.Context, ragDoc *entity.Document, source *storage.Source) {
 }
 
-func (s *DocumentService) OnDoneExtractEntities(ctx context.Context, ragDoc *entity.Document, source *storage.Source, err error) {
+func (s *DocumentService) onDoneExtractEntities(ctx context.Context, ragDoc *entity.Document, source *storage.Source, err error) {
 
 }
 
-func (s *DocumentService) Scan(ctx context.Context, tenantId, caseId string) {
+func (s *DocumentService) Scan(ctx context.Context, cmd *command.DocumentScanCommand) {
 	go func() {
-		s.scan(ctx, tenantId, caseId)
+		s.scan(ctx, cmd.Data.TenantId, cmd.Data.CaseId)
 	}()
 }
 
 func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 	isLockScan := false
 	gp.Try(func() error {
+		_, _ = s.unlockScan(ctx, tenantId, caseId)
 		isLockVal, err := s.lockScan(ctx, tenantId, caseId)
 		if err != nil {
 			return err
@@ -92,12 +93,14 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 
 		for {
 			findQuery := &store.FindPagingQueryRequest{
-				TenantId: tenantId,
-				Filter:   fmt.Sprintf(`tenant_id=="%s" and case_id=="%s" and state==0`, tenantId, caseId),
-				PageNum:  1,
+				Filter:   fmt.Sprintf("case_id=='%s' and state==0", caseId),
+				PageNum:  0,
 				PageSize: 1,
 			}
 			findResult := s.dao.FindPaging(ctx, findQuery)
+			if findResult.Error != nil {
+				return findResult.Error
+			}
 			if len(findResult.Data) == 0 {
 				break
 			}
@@ -112,7 +115,7 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
-				text, err := s.docExtract.Extract(fs, doc.FileName)
+				text, err := s.docExtract.Extract(fs, doc.Path+doc.FileName)
 				if err != nil {
 					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
 					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
@@ -133,6 +136,8 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 			}
 		}
 		return nil
+	}).Catch(func(err error) {
+		logs.Errorfmt(ctx, "rag scan err:%s", err.Error())
 	}).Finally(func() {
 		if isLockScan {
 			_, _ = s.unlockScan(ctx, tenantId, caseId)
@@ -241,11 +246,15 @@ func (s *DocumentService) lockScan(ctx context.Context, tenantId, caseId string)
 	storeName := "lock-store"
 	lockOwner := "rag"
 	resourceId := fmt.Sprintf("scan-%s-%s", tenantId, caseId)
-	cli := dapr.GetDaprClient()
+	dapr := env.GetEnv().Dapr
+	if dapr == nil {
+		panic("dapr is nil")
+	}
+	cli := dapr.GetClient()
 	resp, err := cli.TryLockAlpha1(ctx, storeName, &client.LockRequest{
 		LockOwner:       lockOwner,
 		ResourceID:      resourceId,
-		ExpiryInSeconds: 60,
+		ExpiryInSeconds: 60 * 10,
 	})
 	if err != nil {
 		panic(err)
@@ -270,6 +279,7 @@ func (s *DocumentService) unlockScan(ctx context.Context, tenantId, caseId strin
 
 func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCreateCommand) *model.Document {
 	doc := &model.Document{
+		FsKey:    cmd.Data.FsKey,
 		FileId:   cmd.Data.FileId,
 		FileName: cmd.Data.FileName,
 		Path:     cmd.Data.Path,

@@ -20,17 +20,17 @@ type RagConfig struct {
 
 func NewRagConfig(opts ...func(cfg *RagConfig)) *RagConfig {
 	config := &RagConfig{
-		ChunkSize:               512, // 每个文本块的最大词数
-		Overlap:                 50,  // 块之间的重叠词数
-		ConcurrencyCount:        3,   // 并行批量处理数
-		MaxRetries:              3,   // 最大重试次数
+		ChunkSize:               1024, // 每个文本块的最大词数
+		Overlap:                 50,   // 块之间的重叠词数
+		ConcurrencyCount:        5,    // 并行批量处理数
+		MaxRetries:              3,    // 最大重试次数
 		BackoffDuration:         60 * time.Second,
 		MaxSummariesTokenLength: 1000,
-		GleanCount:              2,
-		BatchSize:               100,
+		GleanCount:              3,
+		BatchSize:               1,
 		EntityExtractionPromptData: &EntityExtractionPromptData{
-			Goal:        "Extract entities",
-			EntityTypes: []string{"人员", "公司", "产品", "金融机构", "合同", "事件", "其他"},
+			Goal:        "提取实体与之间的关系",
+			EntityTypes: []string{"人员", "公司", "产品", "机构", "合同", "交易", "案件", "组织", "纠纷", "文件"},
 			Language:    "中文",
 		},
 	}
@@ -72,11 +72,7 @@ func (d *RagConfig) getChunksDocument(tenantId, caseId, docId string, content st
 
 // GetEntityExtractionPromptData 实体提取提示数据
 func (d *RagConfig) GetEntityExtractionPromptData() EntityExtractionPromptData {
-	return EntityExtractionPromptData{
-		Goal:        "Extract entities",
-		EntityTypes: []string{"人员", "公司", "产品", "金融机构", "合同", "事件", "其他"},
-		Language:    "中文",
-	}
+	return *d.EntityExtractionPromptData
 }
 
 // GetMaxRetries 最大尝试数

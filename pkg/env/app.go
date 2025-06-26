@@ -60,9 +60,7 @@ func NewLog() *Log {
 }
 
 func NewDapr() *Dapr {
-	return &Dapr{
-		Enable: false,
-	}
+	return &Dapr{}
 }
 
 func NewApp() *App {

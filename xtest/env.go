@@ -17,7 +17,13 @@ func NewEnvConfig() *env.Env {
 	return res
 }
 
-func NewEnvConfig_Neo4j() *env.Env {
+func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
+	addr := "localhost"
+	for _, ip := range ipAddr {
+		if ip != "" {
+			addr = ip
+		}
+	}
 	res := env.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
@@ -26,7 +32,7 @@ func NewEnvConfig_Neo4j() *env.Env {
 
 	res.AddNeo4j(&env.Neo4j{
 		DbKey:    "neo4j",
-		Host:     "localhost",
+		Host:     addr,
 		Port:     "7687",
 		Database: "",
 		UserName: "neo4j",

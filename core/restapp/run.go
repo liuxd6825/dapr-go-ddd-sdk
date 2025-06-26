@@ -138,7 +138,7 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 		return nil, err
 	}
 	env := env.GetEnv()
-	daprClient := dapr.GetDaprClient()
+	daprClient := env.Dapr.GetClient()
 	runCfg := &runConfig{
 		AppId:      envConfig.App.AppId,
 		HttpHost:   envConfig.App.HttpHost,

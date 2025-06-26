@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/milvus-io/milvus/client/v2/index"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/milvus-io/milvus/client/v2/entity"
@@ -144,50 +145,27 @@ func (m *MilvusVector) VectorFlush(ctx context.Context, opts Options) error {
 	return nil
 }
 
-func (m *MilvusVector) VectorInsertDoc(ctx context.Context, data InsertDocData, opts Options) error {
-	docCollName := m.getDocCollName(opts.TenantId)
-	id := m.getId(opts.TenantId, opts.CaseId, data.DocId)
-	id = fmt.Sprintf("%s_%d", id, data.ChunkId)
-	// 向量化文本块
-	vector, err := m.embedderStore.EmbedTexts(ctx, data.Content)
-	if err != nil {
-		return err
-	}
-	insertOpts := milvusclient.NewColumnBasedInsertOption(docCollName).
-		WithVarcharColumn("id", []string{id}).
-		WithVarcharColumn("content", data.Content).
-		WithVarcharColumn("case_id", []string{opts.CaseId}).
-		WithVarcharColumn("doc_id", []string{data.DocId}).
-		WithVarcharColumn("file_name", []string{data.FileName}).
-		WithFloatVectorColumn("vector", m.cfg.Dim, vector)
-	_, err = m.client.Insert(ctx, insertOpts)
-	if err != nil {
-		println(err)
-	}
-	return err
-}
-
 func (m *MilvusVector) VectorSearchDoc(ctx context.Context, vector []float32, topK int, opts Options) ([]string, error) {
 	if err := m.LoadTenant(ctx, opts.TenantId); err != nil {
 		return nil, err
 	}
 	//sp, _ := entity.NewIndexHNSWSearchParam(200) // 搜索参数
-	entCollName := m.getEntityCollName(opts.TenantId)
+	docCollName := m.getDocCollName(opts.TenantId)
 
 	// 设置过滤条件
 	// 使用 expression 来构造查询条件
 	expr := fmt.Sprintf("case_id=='%s'", opts.CaseId)
 
-	searchOpts := milvusclient.NewSearchOption(entCollName, topK, []entity.Vector{entity.FloatVector(vector)}).WithFilter(expr)
+	searchOpts := milvusclient.NewSearchOption(docCollName, topK, []entity.Vector{entity.FloatVector(vector)}).WithFilter(expr)
 	results, err := m.client.Search(ctx, searchOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search Milvus: %w", err)
 	}
 
-	texts := make([]string, 0, topK)
+	texts := []string{}
 	for _, result := range results {
 		for _, field := range result.Fields {
-			if field.Name() == "context" {
+			if field.Name() == "content" {
 				for i := 0; i < field.Len(); i++ {
 					text, _ := field.GetAsString(i)
 					texts = append(texts, text)
@@ -439,9 +417,43 @@ func (m *MilvusVector) createEntitiesCollection(ctx context.Context, tenantId st
 		return fmt.Errorf("failed to create collection: %w", err)
 	}
 
-	m.createIndexVector(ctx, collName, "vector")
-	m.createIndexVarChar(ctx, collName, "case_id")
-	m.createIndexVarChar(ctx, collName, "doc_id")
+	_ = m.createIndexVector(ctx, collName, "vector")
+	_ = m.createIndexVarChar(ctx, collName, "case_id")
+	_ = m.createIndexVarChar(ctx, collName, "doc_id")
+	return err
+}
+
+func (m *MilvusVector) VectorInsertDoc(ctx context.Context, data InsertDocData, options Options) error {
+	sb := strings.Builder{}
+	for _, c := range data.Content {
+		sb.WriteString(c)
+	}
+
+	if sb.Len() > 60000 {
+		return fmt.Errorf("max length exceeded 60000")
+	}
+	content := []string{sb.String()}
+
+	docCollName := m.getDocCollName(data.TenantId)
+	id := m.getId(data.TenantId, data.CaseId, data.DocId)
+	id = fmt.Sprintf("%s_%d", id, data.ChunkId)
+	// 向量化文本块
+	vector, err := m.embedderStore.EmbedTexts(ctx, content)
+	if err != nil {
+		return err
+	}
+
+	insertOpts := milvusclient.NewColumnBasedInsertOption(docCollName).
+		WithVarcharColumn("id", []string{id}).
+		WithFloatVectorColumn("vector", m.cfg.Dim, vector).
+		WithVarcharColumn("content", content).
+		WithVarcharColumn("doc_id", []string{data.DocId}).
+		WithVarcharColumn("case_id", []string{data.CaseId}).
+		WithVarcharColumn("file_name", []string{data.FileName})
+	_, err = m.client.Insert(ctx, insertOpts)
+	if err != nil {
+		println(err)
+	}
 	return err
 }
 
@@ -457,7 +469,7 @@ func (m *MilvusVector) createDocCollection(ctx context.Context, tenantId string)
 			WithDataType(entity.FieldTypeVarChar).
 			WithIsPrimaryKey(true).
 			WithIsAutoID(false).
-			WithMaxLength(256)).
+			WithMaxLength(1000)).
 		WithField(entity.NewField().
 			WithName("vector").
 			WithDataType(entity.FieldTypeFloatVector).
@@ -469,15 +481,15 @@ func (m *MilvusVector) createDocCollection(ctx context.Context, tenantId string)
 		WithField(entity.NewField().
 			WithName("doc_id").
 			WithDataType(entity.FieldTypeVarChar).
-			WithMaxLength(256)).
+			WithMaxLength(1000)).
 		WithField(entity.NewField().
 			WithName("case_id").
 			WithDataType(entity.FieldTypeVarChar).
-			WithMaxLength(256)).
+			WithMaxLength(1000)).
 		WithField(entity.NewField().
 			WithName("file_name").
 			WithDataType(entity.FieldTypeVarChar).
-			WithMaxLength(256))
+			WithMaxLength(1000))
 
 	createOpts := milvusclient.NewCreateCollectionOption(collName, schema)
 	err := m.client.CreateCollection(ctx, createOpts)
@@ -485,9 +497,9 @@ func (m *MilvusVector) createDocCollection(ctx context.Context, tenantId string)
 		return fmt.Errorf("failed to create collection: %w", err)
 	}
 
-	m.createIndexVector(ctx, collName, "vector")
-	m.createIndexVarChar(ctx, collName, "case_id")
-	m.createIndexVarChar(ctx, collName, "doc_id")
+	_ = m.createIndexVector(ctx, collName, "vector")
+	_ = m.createIndexVarChar(ctx, collName, "case_id")
+	_ = m.createIndexVarChar(ctx, collName, "doc_id")
 	return err
 }
 
@@ -539,9 +551,9 @@ func (m *MilvusVector) createRelationshipsCollection(ctx context.Context, tenant
 		return fmt.Errorf("failed to create collection: %w", err)
 	}
 
-	m.createIndexVector(ctx, relCollName, "vector")
-	m.createIndexVarChar(ctx, relCollName, "case_id")
-	m.createIndexVarChar(ctx, relCollName, "doc_id")
+	_ = m.createIndexVector(ctx, relCollName, "vector")
+	_ = m.createIndexVarChar(ctx, relCollName, "case_id")
+	_ = m.createIndexVarChar(ctx, relCollName, "doc_id")
 	return err
 }
 

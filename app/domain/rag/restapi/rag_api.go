@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -54,16 +55,19 @@ func (s *RagAPI) CreateTenant(ictx iris.Context) {
 // CreateCase 加载租户知识库数据
 func (s *RagAPI) CreateCase(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		caseId := ictx.URLParam("caseId")
+		var cmd *command.RagCreateCaseCommand
+		err := ictx.ReadJSON(&cmd)
+		if err != nil {
+			return err
+		}
 		vErr := errors.NewVerifyError()
-		if caseId == "" {
+		if cmd.Data.CaseId == "" {
 			vErr.AppendField("caseId", "不能为空", "案件ID")
 		}
 		if vErr.HasError() {
 			return vErr
 		}
-
-		return s.ragService.CreateCase(ctx, caseId)
+		return s.ragService.CreateCase(ctx, cmd.Data.CaseId)
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})

@@ -27,7 +27,7 @@ type DocEvents struct {
 	OnDoneExtractEntities  func(ctx context.Context, doc *entity.Document, source *Source, err error)
 }
 
-type DocHandle struct {
+type GraphHandle struct {
 	config  Config
 	storage Storage
 	llm     llm.LLM
@@ -35,9 +35,9 @@ type DocHandle struct {
 	events  *DocEvents
 }
 
-func NewDocHandle(config Config, storage Storage, llm llm.LLM, logger *logrus.Logger) *DocHandle {
+func NewGraphHandle(config Config, storage Storage, llm llm.LLM, logger *logrus.Logger) *GraphHandle {
 
-	return &DocHandle{
+	return &GraphHandle{
 		config:  config,
 		storage: storage,
 		llm:     llm,
@@ -46,7 +46,7 @@ func NewDocHandle(config Config, storage Storage, llm llm.LLM, logger *logrus.Lo
 	}
 }
 
-func (d *DocHandle) SetOnEvents(setEvents func(e *DocEvents)) {
+func (d *GraphHandle) SetOnEvents(setEvents func(e *DocEvents)) {
 	setEvents(d.events)
 }
 
@@ -54,7 +54,7 @@ func (d *DocHandle) SetOnEvents(setEvents func(e *DocEvents)) {
 // It chunks the document content, extracts entities and relationships using the provided
 // document handler, and stores the results in the appropriate storage.
 // It returns an error if any step in the process fails.
-func (d *DocHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err error) {
+func (d *GraphHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err error) {
 	if d.events.OnStartInsert != nil {
 		d.events.OnStartInsert(ctx, doc)
 	}
@@ -114,7 +114,7 @@ func (d *DocHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err er
 	return nil
 }
 
-func (d *DocHandle) ExtractEntities(
+func (d *GraphHandle) ExtractEntities(
 	ctx context.Context,
 	doc *entity.Document,
 	sources []Source,
@@ -126,7 +126,7 @@ func (d *DocHandle) ExtractEntities(
 		return orderedSources[i].OrderIndex < orderedSources[j].OrderIndex
 	})
 
-	d.logger.Info("Extracting entities ", " count ", len(orderedSources))
+	d.logger.Info("extracting source ", " count ", len(orderedSources))
 	extractPromptData := d.config.GetEntityExtractionPromptData()
 
 	eg := new(errgroup.Group)
@@ -198,7 +198,7 @@ func (d *DocHandle) ExtractEntities(
 }
 
 // LlmExtractEntities 导入实体与关系
-func (d *DocHandle) llmExtractEntities(
+func (d *GraphHandle) llmExtractEntities(
 	ctx context.Context,
 	doc *entity.Document,
 	content string,
@@ -341,7 +341,7 @@ func (d *DocHandle) llmExtractEntities(
 	}
 }
 
-func (d *DocHandle) mergeGraphEntities(
+func (d *GraphHandle) mergeGraphEntities(
 	ctx context.Context,
 	name string,
 	doc *entity.Document,
@@ -408,7 +408,7 @@ func (d *DocHandle) mergeGraphEntities(
 	return ent, nil
 }
 
-func (d *DocHandle) mergeGraphRelationships(
+func (d *GraphHandle) mergeGraphRelationships(
 	ctx context.Context,
 	doc *entity.Document,
 	key, sourceID, language string,
@@ -551,7 +551,7 @@ func (d *DocHandle) mergeGraphRelationships(
 	return rel, nil
 }
 
-func (d *DocHandle) descriptionsSummary(name, language string, maxToken int, descriptions []string) (string, error) {
+func (d *GraphHandle) descriptionsSummary(name, language string, maxToken int, descriptions []string) (string, error) {
 	// Join all descriptions with separator
 	joinedDescriptions := strings.Join(descriptions, GraphFieldSeparator)
 

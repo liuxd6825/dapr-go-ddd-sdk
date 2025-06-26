@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	llm2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
@@ -12,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"testing"
 )
 
@@ -23,7 +25,7 @@ var graphTxt string
 
 const tenantId = "test"
 const caseId = "1001"
-const docId = "doc1001"
+const docId = "doctest1001"
 
 func Test_GraphRag_CreateTenant(t *testing.T) {
 	ctx := context.Background()
@@ -79,11 +81,19 @@ func Test_GraphRag_LoadTenant(t *testing.T) {
 }
 
 func Test_GraphRag_IngestDocuments(t *testing.T) {
-	fileName := "/xtest_file/xyjTxt.txt"
+	extract := doc_extract.NewExtract()
+	fs := afero.NewOsFs()
+	fileName := "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/xtest/天眼查-刘建新.pdf"
+	txt, err := extract.Extract(fs, fileName)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	doc := &entity.Document{
 		Id:       docId,
-		FileName: fileName,
-		Text:     xyjTxt,
+		FileName: "x.txt",
+		Text:     txt,
 		TenantId: tenantId,
 		CaseId:   caseId,
 	}
@@ -118,7 +128,7 @@ func Test_GraphRag_Query(t *testing.T) {
 }
 
 func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
-	env.SetEnv(xtest.NewEnvConfig_Neo4j())
+	env.SetEnv(xtest.NewEnvConfig_Neo4j("192.168.120.224"))
 
 	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
 		BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
@@ -137,7 +147,7 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	}
 
 	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
-		BaseURL:        "http://localhost:11434",
+		BaseURL:        "http://192.168.120.224:11434",
 		EmbeddingModel: "bge-m3:latest",
 	})
 

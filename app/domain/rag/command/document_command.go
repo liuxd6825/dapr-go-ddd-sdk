@@ -20,8 +20,8 @@ type DocumentDeleteCommand struct {
 }
 
 type DocumentScanCommand struct {
-	CommandId string       `json:"commandId"`
-	Data      DocumentData `json:"data"`
+	CommandId string           `json:"commandId"`
+	Data      DocumentScanData `json:"data"`
 }
 
 type DocumentDeleteData struct {

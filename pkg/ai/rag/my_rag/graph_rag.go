@@ -20,7 +20,7 @@ type GraphRag struct {
 	store     storage.Storage
 	logger    *logrus.Logger
 	config    storage.Config
-	docHandle *storage.DocHandle
+	docHandle *storage.GraphHandle
 }
 
 const MaxRetrieveContexts = 5 // 最大检索上下文数量
@@ -31,7 +31,7 @@ type GoResult struct {
 }
 
 func NewGraphRag(llm llm.LLM, store storage.Storage, config storage.Config, logger *logrus.Logger) *GraphRag {
-	docHandle := storage.NewDocHandle(config, store, llm, logger)
+	docHandle := storage.NewGraphHandle(config, store, llm, logger)
 	return &GraphRag{
 		LLM:       llm,
 		store:     store,
@@ -70,11 +70,23 @@ func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (ch
 	if docId == "" {
 		docId = GenerateDocumentID(doc.FileName)
 	}
-	if err = g.docHandle.SaveGraph(ctx, doc); err != nil {
-		err = errors.New("导入文档%s生成图数据时出错, %s。", doc.FileName, err.Error())
-	} else if chunkCount, err = g.SaveVector(ctx, doc); err != nil {
-		err = errors.New("导入文档%s生成向量数据时出错, %s。", doc.FileName, err.Error())
+
+	// 分块处理文本
+	chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+	if err != nil {
+		return 0, err
 	}
+	chunkCount = len(chunks)
+	if chunkCount == 0 {
+		return chunkCount, errors.New("文档 %s 没有有效内容", doc.FileName)
+	}
+
+	if chunkCount, err = g.SaveVector(ctx, doc); err != nil {
+		err = errors.New("导入文档%s生成向量数据时出错, %s。", doc.FileName, err.Error())
+	} else if err = g.docHandle.SaveGraph(ctx, doc); err != nil {
+		err = errors.New("导入文档%s生成图数据时出错, %s。", doc.FileName, err.Error())
+	}
+
 	if err != nil {
 		if delErr := g.DeleteDoc(ctx, doc.TenantId, doc.CaseId, doc.Id); delErr != nil {
 			err = errors.New("%s 撤销文件%s时失败:%s", err.Error(), doc.Id, delErr.Error())
@@ -95,7 +107,7 @@ func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkC
 	}
 	logger := g.logger
 	batchSize := g.config.GetBatchSize()
-	fileName := truncateString(doc.FileName, 256)
+	fileName := truncateString(doc.FileName, 1000)
 	for i := 0; i < chunkCount; i += batchSize {
 		end := i + batchSize
 		if end > chunkCount {
@@ -126,12 +138,11 @@ func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkC
 		for attempt := 1; attempt <= maxRetries; attempt++ {
 			err = g.store.VectorInsertDoc(ctx, insertData, opts)
 			if err == nil {
-				chunkCount += len(batch)
 				break
 			}
 
 			if attempt == maxRetries {
-				return chunkCount, errors.New("文档 %s 块 %d-%d 插入失败: %v", doc.FileName, i, end, err)
+				return 0, errors.New("文档 %s 块 %d-%d 插入失败: %v", doc.FileName, i, end, err)
 			} else {
 				logger.Printf("插入失败（尝试 %d/%d），重试中...: %v", attempt, maxRetries, err)
 				time.Sleep(time.Duration(attempt) * time.Second)

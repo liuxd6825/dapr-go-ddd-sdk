@@ -105,7 +105,7 @@ var client *mongo.Client
 
 func init() {
 	// 设置MongoDB连接URL
-	clientOptions := options.Client().ApplyURI("mongodb://192.168.65.5:27018,192.168.65.5:27019,192.168.65.5:27020/?retryWrites=false&replicaSet=mongors&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
+	clientOptions := options.Client().ApplyURI("mongodb://192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020/?retryWrites=false&replicaSet=mongors&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
 
 	// 连接到MongoDB
 	clientVal, err := mongo.Connect(context.TODO(), clientOptions)
