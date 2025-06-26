@@ -50,8 +50,12 @@ func (s *FsService) Create(fileName string) afero.File {
 	return s.docFs.Create(fileName)
 }
 
+func (s *FsService) MkdirAll(path string) {
+	s.docFs.MkdirAll(path, 0666)
+}
+
 func (s *FsService) WriteAt(fileName string, data []byte, chunkIndex string, chunkSize string) error {
-	writeFile, err := s.docFs.Open("/"+fileName, os.O_WRONLY, 0666)
+	writeFile, err := s.docFs.Open(fileName, os.O_WRONLY, 0666)
 	if err != nil {
 		return err
 	}

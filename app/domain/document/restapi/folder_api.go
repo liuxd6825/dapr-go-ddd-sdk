@@ -19,15 +19,18 @@ type FolderAPI struct {
 	env           *env.Env
 	folderService *service.FolderService
 	docService    *service.DocumentService
+	fsService     *service.FsService
 }
 
 func NewFolderAPI(env *env.Env, rootPath string) *FolderAPI {
 	folderService := service.NewFolderService()
 	docService := service.NewDocumentService()
+	fsService := service.NewFsService()
 	return &FolderAPI{
 		env:           env,
 		folderService: folderService,
 		docService:    docService,
+		fsService:     fsService,
 	}
 }
 
@@ -64,9 +67,14 @@ func (s *FolderAPI) CreateRoot(ictx iris.Context) {
 		}
 
 		cmd.Data.Id = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
+		cmd.Data.RootId = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
+		cmd.Data.RootPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
+		cmd.Data.FolderPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
 		cmd.Data.Name = "根目录"
 
 		s.folderService.Create(ctx, &cmd.Data)
+
+		s.fsService.MkdirAll(cmd.Data.FolderPath)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
@@ -95,6 +103,7 @@ func (s *FolderAPI) Create(ictx iris.Context) {
 		}
 
 		s.folderService.Create(ctx, &cmd.Data)
+		s.fsService.MkdirAll(cmd.Data.FolderPath)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
