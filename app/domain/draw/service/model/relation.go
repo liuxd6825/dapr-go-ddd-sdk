@@ -1,14 +1,14 @@
 package model
 
 type Relation struct {
-	NId     string `json:"nid"`
-	Id      string `json:"id"`
-	Name    string `json:"name"`
-	CaseId  string `json:"caseId"`
-	DrawId  string `json:"drawId"`
-	RelType string `json:"relType"`
-	StartId string `json:"startId"`
-	EndId   string `json:"endId"`
+	NId     string `json:"nid" bson:"nid"`
+	Id      string `json:"id" bson:"id"`
+	Name    string `json:"name" bson:"name"`
+	CaseId  string `json:"caseId" bson:"case_id"`
+	DrawId  string `json:"drawId" bson:"draw_id"`
+	RelType string `json:"relType" bson:"rel_type"`
+	StartId string `json:"startId" bson:"start_id"`
+	EndId   string `json:"endId" bson:"end_id"`
 }
 
 func NewRelation() *Relation {

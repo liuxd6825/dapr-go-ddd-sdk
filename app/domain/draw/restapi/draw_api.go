@@ -135,7 +135,7 @@ func (s *DrawAPI) FindById(ictx iris.Context) {
 		if draw != nil {
 			return web.SetData(ictx, draw)
 		}
-		return errors.ErrorOf("delete 0 by id: %s", id)
+		return nil
 	})
 }
 

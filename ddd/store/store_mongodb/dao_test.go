@@ -25,7 +25,7 @@ const TENANT_ID = "test"
 func newHumanDao() store.IStore[*Human] {
 	humanDbSch := dbschema.NewDBSchemaWithStruct("human", &Human{}, "human")
 	humanDao := NewDao[*Human](humanDbSch, func(ctx context.Context) (IMongoDB, *mongo.Collection) {
-		return mongodb.NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "record")
+		return mongodb.NenMongoDBWithClient(DB_NAME, client), getCollection(DB_NAME, "human")
 	})
 	return humanDao
 }
@@ -62,6 +62,14 @@ func TestMapper_InsertUpdate(t *testing.T) {
 	assert.Equal(t, human.Name, "TEST-B")
 
 }
+
+func TestMapper_FindById(t *testing.T) {
+	ctx := xtest.NewContext()
+	humanDao := newHumanDao()
+	result := humanDao.FindById(ctx, TENANT_ID, "SKCZO381BFONRJRUTD8T7M30XYISP9")
+	assert.NotNil(t, result.Data)
+}
+
 func TestMapper_Search(t *testing.T) {
 	ctx := xtest.NewContext()
 
@@ -187,7 +195,7 @@ func logObject(t *testing.T, label string, obj any) {
 }
 
 type Index struct {
-	Id        string `bson:"_id" `
+	Id        string `bson:"id" `
 	TenantId  string
 	Name      string `bson:"name" index:"" `
 	Asc       int64  `bson:"asc" index:" asc"`
@@ -213,7 +221,7 @@ func (u *Index) SetId(v string) {
 }
 
 type Human struct {
-	Id       string `bson:"_id" `
+	Id       string `bson:"id" `
 	Name     string `bson:"name" index:"" `
 	TenantId string `bson:"tenant_id" index:"" `
 }

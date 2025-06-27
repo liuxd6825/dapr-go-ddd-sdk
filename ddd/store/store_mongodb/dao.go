@@ -619,10 +619,11 @@ func (r *Dao[T]) getUpdateData(data any, opts ...store.Options) any {
 
 func (r *Dao[T]) getMap(m map[string]any) map[string]any {
 	m = maputils.MapToSnakeKey(m)
-	if idVal, ok := m["id"]; ok {
-		m["_id"] = idVal
-		delete(m, "id")
-	}
+	/*
+		if idVal, ok := m["id"]; ok {
+			m["_id"] = idVal
+			delete(m, "id")
+		}*/
 	return m
 }
 
