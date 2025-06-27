@@ -1,9 +1,11 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/json"
 	sch "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/jsonschema/v6"
+	"strings"
 )
 
 func IfElse(condition bool, trueVal any, falseVal any) any {
@@ -14,14 +16,14 @@ func IfElse(condition bool, trueVal any, falseVal any) any {
 }
 
 func ToJsonString(sch *jsonschema.Schema) string {
-	marshal, err := json.Marshal(sch.GetView())
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(true) // 禁用HTML转义
+	err := encoder.Encode(sch.GetView())
 	if err != nil {
-		return ""
+		panic(err)
 	}
-
-	str := string(marshal)
-
-	return str
+	return strings.ReplaceAll(buf.String(), "${", "&#36;{")
 }
 
 func NullQuery(query *sch.Query) bool {
