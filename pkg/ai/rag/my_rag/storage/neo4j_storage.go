@@ -275,7 +275,11 @@ func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryPara
 		contents = append(contents, node.Descriptions)
 	}
 	for _, edge := range rels {
-		contents = append(contents, fmt.Sprintf("%s与%s之间存在关系是:%s, %s", edge.Source, edge.Target, strings.Join(edge.Keywords, ","), edge.Descriptions))
+		source, ok1 := nodes[edge.Source]
+		target, ok2 := nodes[edge.Target]
+		if ok1 && ok2 {
+			contents = append(contents, fmt.Sprintf("%s与%s之间存在关系是:%s, %s", source.Name, target.Name, strings.Join(edge.Keywords, ","), edge.Descriptions))
+		}
 	}
 	return contents, nil
 }
@@ -326,7 +330,7 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 						if path, ok := v.(dbtype.Path); ok {
 							for _, n := range path.Nodes {
 								node := newGraphEntity(n)
-								nodes[node.Name] = node
+								nodes[node.Id] = node
 							}
 							for _, r := range path.Relationships {
 								rel := newGraphRelationship(r)
@@ -344,6 +348,7 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 }
 
 func newGraphEntity(node neo4j.Node) *GraphEntity {
+	id := maputils.GetStringErr(node.Props, "id", "")
 	name := maputils.GetStringErr(node.Props, "name", "")
 	typeName := maputils.GetStringErr(node.Props, "type", "")
 	caseId := maputils.GetStringErr(node.Props, "case_id", "")
@@ -351,6 +356,7 @@ func newGraphEntity(node neo4j.Node) *GraphEntity {
 	descriptions := maputils.GetStringErr(node.Props, "description", "")
 	sourceIDs := maputils.GetStringErr(node.Props, "source_ids", "")
 	return &GraphEntity{
+		Id:           id,
 		Name:         name,
 		Type:         typeName,
 		CaseId:       caseId,
@@ -368,6 +374,9 @@ func newGraphRelationship(rel neo4j.Relationship) *GraphRelationship {
 	docId := maputils.GetStringErr(rel.Props, "doc_id", "")
 	descriptions := maputils.GetStringErr(rel.Props, "description", "")
 	sourceIDs := maputils.GetStringErr(rel.Props, "source_ids", "")
+	if id == "uUMkiqE2VKvkLNik2b96-10-uUMkiqE2VKvkLNik2b96-11" {
+		println(id)
+	}
 	keywords := maputils.GetStringsErr(rel.Props, "keywords", nil)
 	return &GraphRelationship{
 		Id:           id,

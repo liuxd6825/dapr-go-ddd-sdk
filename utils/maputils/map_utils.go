@@ -94,6 +94,8 @@ func GetStrings(m map[string]interface{}, key string, def []string) ([]string, e
 				resList = append(resList, fmt.Sprintf("%s", v))
 			}
 			return resList, nil
+		} else if str, ok := v.(string); ok {
+			return []string{str}, nil
 		}
 	}
 	return def, nil
