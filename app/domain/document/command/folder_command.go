@@ -16,3 +16,8 @@ type FolderDeleteCommand struct {
 	CommandId string       `json:"commandId"`
 	Data      model.Folder `json:"data"`
 }
+
+type FolderRenameCommand struct {
+	CommandId string             `json:"commandId"`
+	Data      model.RenameFolder `json:"data"`
+}

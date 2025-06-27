@@ -50,6 +50,10 @@ func (s *FsService) Create(fileName string) afero.File {
 	return s.docFs.Create(fileName)
 }
 
+func (s *FsService) Rename(oldName, newName string) error {
+	return s.docFs.Rename(oldName, newName)
+}
+
 func (s *FsService) MkdirAll(path string) {
 	s.docFs.MkdirAll(path, 0666)
 }

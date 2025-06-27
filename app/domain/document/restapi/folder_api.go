@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 
@@ -102,6 +103,10 @@ func (s *FolderAPI) Create(ictx iris.Context) {
 			return vErr
 		}
 
+		if s.fsService.Exists(cmd.Data.FolderPath) {
+			return errors.New("目录已存在")
+		}
+
 		s.folderService.Create(ctx, &cmd.Data)
 		s.fsService.MkdirAll(cmd.Data.FolderPath)
 		return nil
@@ -112,13 +117,25 @@ func (s *FolderAPI) Create(ictx iris.Context) {
 
 func (s *FolderAPI) Rename(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.FolderUpdateCommand
+		var cmd *command.FolderRenameCommand
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
 		opts := idao.NewCallOptions()
 		opts.SetUpdateFields([]string{"name", "updatedTime", "updaterId", "updaterName"})
-		s.folderService.Update(ctx, &cmd.Data, opts)
+
+		folder := model.Folder{}
+		folder.Id = cmd.Data.Id
+		folder.Name = cmd.Data.Name
+		folder.FolderPath = cmd.Data.FolderPath
+
+		s.folderService.Update(ctx, &folder, opts)
+
+		err := s.fsService.Rename(cmd.Data.OldName, cmd.Data.FolderPath)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
