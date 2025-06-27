@@ -73,6 +73,7 @@ require (
 	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250612061754-5a3deb091dc5
 	github.com/cloudwego/eino-ext/components/tool/browseruse v0.0.0-20250610035057-2c4e7c8488a5
 	github.com/cloudwego/eino-ext/components/tool/mcp v0.0.3
+	github.com/extrame/xls v0.0.1
 	github.com/invopop/jsonschema v0.13.0
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2
@@ -107,6 +108,7 @@ require (
 	github.com/dapr/kit v0.15.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
+	github.com/extrame/ole2 v0.0.0-20160812065207-d69429661ad7 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/getkin/kin-openapi v0.118.0 // indirect

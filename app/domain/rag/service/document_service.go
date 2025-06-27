@@ -37,7 +37,7 @@ func NewDocumentService() *DocumentService {
 		documentService = &DocumentService{
 			dao:        dao.NewDocumentDao(DBKey),
 			graphRag:   NewGraphRag(),
-			docExtract: doc_extract.NewExtract(),
+			docExtract: doc_extract.NewExtract(logs.GetLogger2()),
 		}
 		documentService.graphRag.SetOnEvents(documentService.initOnEvents)
 	})

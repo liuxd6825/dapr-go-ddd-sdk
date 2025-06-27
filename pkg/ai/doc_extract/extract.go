@@ -6,7 +6,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/pdf"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/ppt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/txt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/xls"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/xlsx"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"path"
 	"strings"
@@ -20,13 +22,14 @@ type Extract struct {
 	readers map[string]Reader
 }
 
-func NewExtract() *Extract {
+func NewExtract(logger *logrus.Logger) *Extract {
 	e := &Extract{
 		readers: make(map[string]Reader),
 	}
 	txtReader := txt.NewReader()
 	docxReader := docx.NewReader()
 	xlsxReader := xlsx.NewReader()
+	xlsReader := xls.NewReader(logger)
 	pdfReader := pdf.NewReader()
 	pptReader := ppt.NewReader()
 	e.AddExt(".txt", txtReader)
@@ -41,6 +44,7 @@ func NewExtract() *Extract {
 	e.AddExt(".xlsx", xlsxReader)
 	e.AddExt(".ppt", pptReader)
 	e.AddExt(".pdf", pdfReader)
+	e.AddExt(".xls", xlsReader)
 
 	return e
 }

@@ -2,6 +2,7 @@ package mxgraph
 
 import (
 	"encoding/json"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/xmlquery"
 	"strings"
 )
@@ -45,6 +46,7 @@ type DiffCell struct {
 	State    DiffState
 	newXml   *xmlquery.Node
 	oldXml   *xmlquery.Node
+	name     *string
 }
 
 type DiffState int
@@ -88,7 +90,11 @@ func NewFileDiff(jsonText string) *FileDiff {
 	return &fileDiff
 }
 
-func (c *DiffCell) GetNodeName() (name string) {
+func (c *DiffCell) GetNodeName() string {
+	if c.name != nil {
+		return *c.name
+	}
+	name := ""
 	switch c.State {
 	case DiffState_Remove:
 		xml := c.GetOldXml()
@@ -105,7 +111,42 @@ func (c *DiffCell) GetNodeName() (name string) {
 			name = c.GetObjectLabel(oldXml)
 		}
 	}
+	if strings.HasPrefix(name, "<") {
+		reader := strings.NewReader(name)
+		doc, err := goquery.NewDocumentFromReader(reader)
+		if err != nil {
+			panic(err)
+		}
+		if first := doc.First(); first != nil {
+			name = first.Text()
+		}
+	}
+	name = GetCellText(name)
+	c.name = &name
 	return name
+}
+
+func GetCellText(text string) string {
+	if !strings.HasPrefix(text, "<") {
+		reader := strings.NewReader(text)
+		doc, err := goquery.NewDocumentFromReader(reader)
+		if err != nil {
+			panic(err)
+		}
+		if first := doc.First(); first != nil {
+			text = first.Text()
+		}
+	}
+
+	text = ReplaceAll(text, "&nbsp;", " ", "&", "*", ":", "WHERE", "]", "[", "{", "}", "(", ")", "|", " ")
+	return text
+}
+
+func ReplaceAll(text string, val ...string) string {
+	for _, v := range val {
+		text = strings.ReplaceAll(text, v, "")
+	}
+	return text
 }
 
 func (c *DiffCell) GetNodeLabel() (label string) {
@@ -196,11 +237,14 @@ func (c *DiffCell) GetTagType() string {
 	return xml[1 : i-1]
 }
 
-func (c *DiffCell) GetRelType() string {
+func (c *DiffCell) GetRelType() (relType string) {
 	if c.Value != nil {
-		return *c.Value
+		relType = *c.Value
+	} else {
+		relType = c.Extend.OldValue
 	}
-	return c.Extend.OldValue
+	relType = GetCellText(relType)
+	return relType
 }
 
 func (c *DiffCell) GetTargetId() string {

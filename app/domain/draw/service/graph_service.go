@@ -99,7 +99,7 @@ func (s *GraphService) addCreateRelation(saveBatch *model.SaveBatch, caseId stri
 	}
 	items := newRelation(caseId, cell)
 	for _, rel := range items {
-		if rel.StartId != "" && rel.EndId != "" && rel.RelType != "" {
+		if rel.Source != "" && rel.Target != "" && rel.RelType != "" {
 			saveBatch.Relations.AddCreate(rel)
 		}
 	}
@@ -135,8 +135,8 @@ func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId stri
 			create.Id = cell.Extend.ParentId + "-" + cell.Id
 			create.CaseId = caseId
 			create.RelType = cell.GetRelType()
-			create.StartId = cell.GetSourceId()
-			create.EndId = cell.GetTargetId()
+			create.Source = cell.GetSourceId()
+			create.Target = cell.GetTargetId()
 			create.Name = *cell.Value
 			saveBatch.Relations.AddCreate(create)
 		}
@@ -156,8 +156,8 @@ func (s *GraphService) addUpdateRelation(saveBatch *model.SaveBatch, caseId stri
 			rel.Id = cell.Id + "-" + label.Id
 			rel.CaseId = caseId
 			rel.RelType = label.Value
-			rel.StartId = cell.GetSourceId()
-			rel.EndId = cell.GetTargetId()
+			rel.Source = cell.GetSourceId()
+			rel.Target = cell.GetTargetId()
 			saveBatch.Relations.AddCreate(rel)
 		}
 	}
@@ -186,7 +186,10 @@ func newNode(caseId string, cell *mxgraph.DiffCell) *model.Node {
 	node.Id = cell.Id
 	node.CaseId = caseId
 	node.Name = cell.GetNodeName()
-	node.Label = cell.GetNodeLabel()
+	node.Type = cell.GetNodeLabel()
+	node.SourceType = "draw"
+	node.SourceIds = cell.Id
+	node.Description = ""
 	return node
 }
 
@@ -205,8 +208,9 @@ func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
 		rel.Id = cell.Extend.ParentId + "-" + cell.Id
 		rel.CaseId = caseId
 		rel.RelType = cell.GetRelType()
-		rel.StartId = cell.GetSourceId()
-		rel.EndId = cell.GetTargetId()
+		rel.Source = cell.GetSourceId()
+		rel.Target = cell.GetTargetId()
+		rel.Keywords = []string{rel.RelType}
 		items = append(items, rel)
 
 	} else if cell.Extend.Type == "edge" {
@@ -221,8 +225,8 @@ func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
 			rel.Id = cell.Id
 			rel.CaseId = caseId
 			rel.RelType = *cell.Value
-			rel.StartId = cell.Extend.SourceId
-			rel.EndId = cell.Extend.TargetId
+			rel.Source = cell.Extend.SourceId
+			rel.Target = cell.Extend.TargetId
 			items = append(items, rel)
 		}
 
@@ -231,8 +235,8 @@ func newRelation(caseId string, cell *mxgraph.DiffCell) []*model.Relation {
 			rel.Id = cell.Id + "-" + label.Id
 			rel.CaseId = caseId
 			rel.RelType = label.Value
-			rel.StartId = cell.Extend.SourceId
-			rel.EndId = cell.Extend.TargetId
+			rel.Source = cell.Extend.SourceId
+			rel.Target = cell.Extend.TargetId
 			items = append(items, rel)
 		}
 	}

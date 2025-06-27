@@ -298,7 +298,7 @@ func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, err
 	msgList := []*schema.Message{
 		{Role: schema.User, Content: fmt.Sprintf("### 指令：提取以下文本中的实体并用逗号分隔\n### 文本：{%s}", query)},
 		{Role: schema.System, Content: `
-			从文本中提取所有实体名称，用英文逗号分隔各实体，不要包含其他符号或说明。\n
+			从文本中提取所有实体名称，当文本中有以[]或【】包括的文字，视为一个实体。输出结构用英文逗号分隔各实体，不要包含其他符号或说明。\n
 			按以下格式输出：实体1,实体2,实体3
 			示例：张三,李四,北京,上海
 		`},
@@ -315,6 +315,7 @@ func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, err
 		str = strings.Replace(str, "\n", "", -1)
 	}
 	list := strings.Split(str, ",")
+	g.logger.Info("keywords", list)
 	return list, nil
 }
 

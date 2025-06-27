@@ -1,6 +1,8 @@
 package model
 
 type SaveBatch struct {
+	DrawId    string `json:"drawId"`
+	DrawName  string `json:"drawName"`
 	Nodes     *ItemBatch[*Node]
 	Relations *ItemBatch[*Relation]
 }

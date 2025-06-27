@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"strings"
 )
 
@@ -69,33 +70,40 @@ func (d *GraphDao) relationsRemoves(ctx context.Context, tenantId string, batch 
 
 func (d *GraphDao) nodesCreates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
-	cypher := strings.Builder{}
-	i := 0
 	for _, item := range batch.Nodes.Creates {
-		i++
-		n := fmt.Sprintf("n%d", i)
-		create := fmt.Sprintf("MERGE ($n%s {id:'%s'})  ON CREATE SET $n.name = '%s' ON MATCH SET $n.id='%s', $n.name='%s' \n",
-			d.getItemLabels(tenantId, item, drawId), item.Id, item.Name, item.Id, item.Name)
-		create = strings.Replace(create, "$n", n, -1)
-		cypher.WriteString(create)
-	}
-	if cypher.Len() > 0 {
-		d.write(ctx, cypher.String())
+		create := "MERGE ($<n>$<label>{id:$<id>}) ON CREATE SET $<n>.name=$<name> ON MATCH SET $<n>.id=$<id>,$<n>.name=$<name>,$<n>.description=$<desc>; \n"
+		fb := stringutils.NewFmtBuilder()
+		fb.String("n", fmt.Sprintf("n%d", 1))
+		fb.String("caseId", item.CaseId)
+		fb.String("drawId", drawId)
+		fb.String("label", d.getItemLabels(tenantId, item, drawId))
+		fb.Varchar("id", item.Id)
+		fb.Varchar("name", item.Name)
+		fb.Varchar("desc", item.Description)
+		fb.Varchar("type", item.Type)
+		d.write(ctx, fb.Format(create))
 	}
 }
 
 func (d *GraphDao) nodesUpdates(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	/*
-		MATCH (n:human:tenant_test:case_1001:draw_D001:draw) WHERE n.id='' SET n.name='', n.startId='', n.endId=‘’
+		MATCH (n:human:tenant_test:case_1001:draw_D001:draw) WHERE n.id='' SET n.name='', n.source='', n.target=‘’
 	*/
 	for _, item := range batch.Nodes.Updates {
-		update := fmt.Sprintf("MATCH (n%s{id:'%s'}) SET n.name='%s'", d.getDrawLabels(drawId), item.Id, item.Name)
-		d.write(ctx, update)
+		update := "MATCH ($<n>$<labels>{id:$<id>}) SET $<n>.name=$<name>,$<n>.description=$<desc> \n"
+		fb := stringutils.NewFmtBuilder()
+		fb.String("n", "n")
+		fb.String("labels", d.getDrawLabels(drawId))
+		fb.Varchar("id", item.Id)
+		fb.Varchar("name", item.Name)
+		fb.Varchar("desc", item.Description)
+		d.write(ctx, fb.Format(update))
 	}
 
 }
 
 func (d *GraphDao) write(ctx context.Context, cypher string) {
+	logs.Info(ctx, logs.Fields{"cypher": cypher})
 	store := d.GetStore()
 	_, err := store.Write(ctx, cypher, nil)
 	if err != nil {
@@ -112,7 +120,11 @@ func (d *GraphDao) nodesRemove(ctx context.Context, tenantId string, batch *mode
 		nodeIds = append(nodeIds, fmt.Sprintf("'%s'", item.Id))
 	}
 	if len(nodeIds) > 0 {
-		cypher.WriteString(fmt.Sprintf("\nMATCH (n:draw_%s) WHERE n.id IN [%s] DETACH DELETE n", drawId, strings.Join(nodeIds, ",")))
+		cypherStr := " MATCH (n:draw_$<drawId>) WHERE n.id IN [$<nodeIds>] DETACH DELETE n  \n"
+		fb := stringutils.NewFmtBuilder()
+		fb.String("drawId", drawId)
+		fb.StringsJoin("nodeIds", nodeIds, ",")
+		cypher.WriteString(fb.Format(cypherStr))
 	}
 	if cypher.Len() > 0 {
 		d.write(ctx, cypher.String())
@@ -121,34 +133,59 @@ func (d *GraphDao) nodesRemove(ctx context.Context, tenantId string, batch *mode
 
 func (d *GraphDao) relationsCreate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 创建节点
-	i := 0
 	for _, item := range batch.Relations.Creates {
-		i++
-		a := fmt.Sprintf("a%d", i)
-		b := fmt.Sprintf("b%d", i)
-		r := fmt.Sprintf("r%d", i)
-		create := fmt.Sprintf(
-			"\nMATCH ($a:draw_%s{id:'%s'}),($b:draw_%s{id:'%s'}) WITH $a,$b MERGE ($a)-[$r:%s{id:'%s'}]->($b) \n ON MATCH SET $r.name='%s',$r.startId='%s',$r.endId='%s' \n ON CREATE SET $r.id='%s',$r.name='%s',$r.startId='%s',$r.endId='%s' ",
-			drawId, item.StartId, drawId, item.EndId, item.RelType, item.Id, item.Name, item.StartId, item.EndId, item.Id, item.Name, item.StartId, item.EndId)
-		create = strings.Replace(create, "$a", a, -1)
-		create = strings.Replace(create, "$b", b, -1)
-		create = strings.Replace(create, "$r", r, -1)
-		d.write(ctx, create)
-	}
+		create := `
+		MATCH ($<a>:draw_$<drawId>{id:$<source>}),($<b>:draw_$<drawId>{id:$<target>})
+		WITH $<a>,$<b> MERGE ($<a>)-[$<r>:$<relType>{id:$<id>}]->($<b>) 
+		ON MATCH  SET $<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<r>.description+$<desc>,$<r>.keywords=$<keywords>
+		ON CREATE SET $<r>.id=$<id>,$<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<desc>,$<r>.keywords=$<keywords>
+`
+		fb := stringutils.NewFmtBuilder()
+		fb.String("a", "a")
+		fb.String("b", "b")
+		fb.String("r", "r")
+		fb.String("caseId", item.CaseId)
+		fb.String("drawId", drawId)
+		fb.String("relType", item.RelType)
 
+		fb.Varchar("id", item.Id)
+		fb.Varchar("source", item.Source)
+		fb.Varchar("target", item.Target)
+		fb.Varchar("name", item.Name)
+		fb.Varchar("desc", item.Description)
+		fb.Varchar("keywords", item.RelType)
+
+		d.write(ctx, fb.Format(create))
+	}
 }
 
 func (d *GraphDao) relationsUpdate(ctx context.Context, tenantId string, batch *model.SaveBatch, drawId string) {
 	// 更新关系
 	for _, item := range batch.Relations.Updates {
-		set := fmt.Sprintf("MATCH (:draw_%s{id:'%s'})-[$r:%s{id:'%s'}]->(:draw_%s{id:'%s'}) WHERE $r.id='%s' SET $r.name='%s',r.startId='%s',r.endId='%s' \n", drawId, item.StartId, item.RelType, item.Id, drawId, item.EndId, item.Id, item.Name, item.StartId, item.EndId)
-		d.write(ctx, set)
+		set := `
+		MATCH (:draw_$<drawId>{id:$<source>})-[$<r>:$<relType>{id:$<id>}]->(:draw_$<drawId>{id:$<target>}) 
+		WHERE $<r>.id=$<id> 
+		SET $<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<desc>,$<r>.keywords=$<keywords>,$<r>.source_type='draw' 
+`
+		fb := stringutils.NewFmtBuilder()
+		fb.String("r", "r")
+		fb.String("caseId", item.CaseId)
+		fb.String("drawId", drawId)
+		fb.Varchar("id", item.Id)
+		fb.Varchar("source", item.Source)
+		fb.Varchar("target", item.Target)
+		fb.Varchar("relType", item.RelType)
+		fb.Varchar("name", item.Name)
+		fb.Varchar("desc", item.Description)
+		fb.Varchar("keywords", item.RelType)
+		fb.Varchar("source_ids", batch.DrawName)
+		d.write(ctx, fb.Format(set))
 	}
 }
 
 func (d *GraphDao) getItemLabels(tenantId string, item *model.Node, drawId string) string {
-	if item.Label != "" {
-		return fmt.Sprintf(":%s:tenant_%s:case_%s:draw_%s:draw", item.Label, tenantId, item.CaseId, drawId)
+	if item.Type != "" {
+		return fmt.Sprintf(":%s:tenant_%s:case_%s:draw_%s:draw", item.Type, tenantId, item.CaseId, drawId)
 	}
 	return fmt.Sprintf(":tenant_%s:case_%s:draw_%s:draw", tenantId, item.CaseId, drawId)
 }

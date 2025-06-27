@@ -170,3 +170,7 @@ func NewContext(parentCtx context.Context) context.Context {
 func GetLogger() Logger {
 	return logger
 }
+
+func GetLogger2() *logrus.Logger {
+	return logger
+}
