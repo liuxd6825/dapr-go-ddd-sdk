@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	"io"
 
@@ -122,13 +123,30 @@ func (s *DocumentAPI) Create(ictx iris.Context) {
 
 func (s *DocumentAPI) Rename(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.DocumentUpdateCommand
+		var cmd *command.DocumentRenameCommand
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
 		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"title"})
-		s.documentService.Update(ctx, &cmd.Data, opts)
+		opts.SetUpdateFields([]string{"name", "objectName", "updatedTime", "updaterId", "updaterName"})
+
+		docModel := model.Document{}
+		docModel.Id = cmd.Data.Id
+		docModel.Name = cmd.Data.Name
+		docModel.ObjectName = cmd.Data.ObjectName
+		s.documentService.Update(ctx, &docModel, opts)
+
+		fileMode := model.File{}
+		fileMode.Id = cmd.Data.FileId
+		fileMode.Name = cmd.Data.Name
+		fileMode.ObjectName = cmd.Data.ObjectName
+		s.fileService.Update(ctx, &fileMode, opts)
+
+		err := s.fsService.Rename(cmd.Data.FolderPath+"/"+cmd.Data.OldName, cmd.Data.FolderPath+"/"+cmd.Data.ObjectName)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)

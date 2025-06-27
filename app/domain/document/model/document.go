@@ -22,3 +22,12 @@ type Document struct {
 	TagColor      string `gorm:"tag_color" json:"tagColor,omitempty" bson:"tag_color"`                //标签颜色  逗号分隔
 	FsKey         string `gorm:"fs_key" json:"fsKey,omitempty" bson:"fs_key"`
 }
+
+type RenameDocument struct {
+	Base       `bson:",inline"`
+	FileId     string `gorm:"file_id" json:"fileId,omitempty" bson:"file_id"`
+	Name       string `gorm:"name" json:"name,omitempty" bson:"name"`
+	ObjectName string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"`
+	OldName    string `gorm:"old_name" json:"oldName,omitempty" bson:"old_name"`
+	FolderPath string `gorm:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`
+}

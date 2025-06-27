@@ -9,3 +9,10 @@ type Folder struct {
 	Name       string `gorm:"name" json:"name,omitempty" bson:"name"`                     //目录名称
 	Color      string `gorm:"color" json:"color,omitempty" bson:"color"`                  //目录颜色
 }
+
+type RenameFolder struct {
+	Base       `bson:",inline"`
+	Name       string `bson:"name" json:"name,omitempty" bson:"name"`
+	OldName    string `bson:"old_name" json:"old_name,omitempty" bson:"old_name"`
+	FolderPath string `bson:"folder_path" json:"folder_path,omitempty" bson:"folder_path"`
+}
