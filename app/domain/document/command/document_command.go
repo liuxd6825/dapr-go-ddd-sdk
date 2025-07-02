@@ -13,11 +13,16 @@ type DocumentUpdateCommand struct {
 }
 
 type DocumentDeleteCommand struct {
-	CommandId string         `json:"commandId"`
-	Data      model.Document `json:"data"`
+	CommandId string               `json:"commandId"`
+	Data      model.DeleteDocument `json:"data"`
 }
 
 type DocumentRenameCommand struct {
 	CommandId string               `json:"commandId"`
 	Data      model.RenameDocument `json:"data"`
+}
+
+type DocumentMoveCommand struct {
+	CommandId string             `json:"commandId"`
+	Data      model.MoveDocument `json:"data"`
 }

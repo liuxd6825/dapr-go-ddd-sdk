@@ -21,3 +21,8 @@ type FolderRenameCommand struct {
 	CommandId string             `json:"commandId"`
 	Data      model.RenameFolder `json:"data"`
 }
+
+type FolderMoveCommand struct {
+	CommandId string           `json:"commandId"`
+	Data      model.MoveFolder `json:"data"`
+}

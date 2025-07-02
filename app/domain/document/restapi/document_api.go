@@ -3,11 +3,13 @@ package restapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"io"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -42,6 +44,7 @@ func (s *DocumentAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/doc/document", "Create")
 	b.Handle(iris.MethodPut, "/doc/document", "Update")
 	b.Handle(iris.MethodPut, "/doc/document:rename", "Rename")
+	b.Handle(iris.MethodPut, "/doc/document:move", "Move")
 	b.Handle(iris.MethodDelete, "/doc/document", "Delete")
 	b.Handle(iris.MethodGet, "/doc/document", "FindPaging")
 }
@@ -109,13 +112,16 @@ func (s *DocumentAPI) Download(ictx iris.Context) {
 
 func (s *DocumentAPI) Create(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.DocumentCreateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
-		s.documentService.Create(ctx, &cmd.Data)
-		return nil
+		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			var cmd *command.DocumentCreateCommand
+			if err := ictx.ReadJSON(&cmd); err != nil {
+				return err
+			}
+			s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
+			s.documentService.Create(ctx, &cmd.Data)
+			return nil
+		})
+		return err
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})
@@ -123,31 +129,68 @@ func (s *DocumentAPI) Create(ictx iris.Context) {
 
 func (s *DocumentAPI) Rename(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.DocumentRenameCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"name", "objectName", "updatedTime", "updaterId", "updaterName"})
+		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			var cmd *command.DocumentRenameCommand
+			if err := ictx.ReadJSON(&cmd); err != nil {
+				return err
+			}
+			opts := idao.NewCallOptions()
+			opts.SetUpdateFields([]string{"name", "objectName", "updatedTime", "updaterId", "updaterName"})
 
-		docModel := model.Document{}
-		docModel.Id = cmd.Data.Id
-		docModel.Name = cmd.Data.Name
-		docModel.ObjectName = cmd.Data.ObjectName
-		s.documentService.Update(ctx, &docModel, opts)
+			docModel := model.Document{}
+			docModel.Id = cmd.Data.Id
+			docModel.Name = cmd.Data.Name
+			docModel.ObjectName = cmd.Data.ObjectName
+			s.documentService.Update(ctx, &docModel, opts)
 
-		fileMode := model.File{}
-		fileMode.Id = cmd.Data.FileId
-		fileMode.Name = cmd.Data.Name
-		fileMode.ObjectName = cmd.Data.ObjectName
-		s.fileService.Update(ctx, &fileMode, opts)
+			fileMode := model.File{}
+			fileMode.Id = cmd.Data.FileId
+			fileMode.Name = cmd.Data.Name
+			fileMode.ObjectName = cmd.Data.ObjectName
+			s.fileService.Update(ctx, &fileMode, opts)
 
-		err := s.fsService.Rename(cmd.Data.FolderPath+"/"+cmd.Data.OldName, cmd.Data.FolderPath+"/"+cmd.Data.ObjectName)
-		if err != nil {
-			return err
-		}
+			err := s.fsService.Rename(cmd.Data.FolderPath+"/"+cmd.Data.OldName, cmd.Data.FolderPath+"/"+cmd.Data.ObjectName)
+			if err != nil {
+				return err
+			}
 
-		return nil
+			return nil
+		})
+		return err
+	}).Catch(func(ctx context.Context, err error) {
+		web.SetError(ictx, err)
+	})
+}
+
+func (s *DocumentAPI) Move(ictx iris.Context) {
+	web.Try(ictx, func(ctx context.Context) error {
+		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			var cmd *command.DocumentMoveCommand
+			if err := ictx.ReadJSON(&cmd); err != nil {
+				return err
+			}
+
+			files := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
+			for _, file := range files {
+				file.FolderId = cmd.Data.FolderId
+			}
+			if len(files) > 0 {
+				s.fileService.UpdateMany(ctx, files)
+			}
+
+			doc := model.Document{}
+			doc.Id = cmd.Data.Id
+			doc.FolderId = cmd.Data.FolderId
+			s.documentService.Update(ctx, &doc)
+
+			//处理文件移动 非主版本文件也需要移动
+			//for _, file := range files {
+			//
+			//}
+
+			return nil
+		})
+		return err
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})
@@ -155,12 +198,24 @@ func (s *DocumentAPI) Rename(ictx iris.Context) {
 
 func (s *DocumentAPI) Update(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.DocumentUpdateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.documentService.Update(ctx, &cmd.Data)
-		return nil
+		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			var cmd *command.DocumentUpdateCommand
+			if err := ictx.ReadJSON(&cmd); err != nil {
+				return err
+			}
+			files := s.fileService.FindByRSQL(ctx, "document_id=='"+cmd.Data.Id+"'")
+			for _, file := range files {
+				file.IsMain = false
+			}
+			if len(files) > 0 {
+				s.fileService.UpdateMany(ctx, files)
+			}
+
+			s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
+			s.documentService.Update(ctx, &cmd.Data)
+			return nil
+		})
+		return err
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})
@@ -168,12 +223,18 @@ func (s *DocumentAPI) Update(ictx iris.Context) {
 
 func (s *DocumentAPI) Delete(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.DocumentDeleteCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.documentService.DeleteById(ctx, cmd.Data.Id)
-		return nil
+		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			var cmd *command.DocumentDeleteCommand
+			if err := ictx.ReadJSON(&cmd); err != nil {
+				return err
+			}
+			s.documentService.DeleteById(ctx, cmd.Data.Id)
+			s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
+
+			s.fsService.RemoveFile(fmt.Sprintf("/%s/%s", cmd.Data.FolderPath, cmd.Data.ObjectName))
+			return nil
+		})
+		return err
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)
 	})
