@@ -395,13 +395,18 @@ func SetField(data any, fieldName string, val any) bool {
 
 	refVal := ValueElemOf(data)
 	// 根据字段名称获取字段的反射值
-	fieldValue := refVal.FieldByName(fieldName)
-	if fieldValue.IsValid() {
-		if !fieldValue.CanSet() {
+	field := refVal.FieldByName(fieldName)
+	if field.IsValid() {
+		if !field.CanSet() {
 			return false
 		}
-		fieldValue.Set(reflect.ValueOf(val))
-		return true
+		// 根据字段类型设置nil
+		switch field.Kind() {
+		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
+			field.Set(reflect.Zero(field.Type()))
+		default:
+			field.Set(reflect.ValueOf(val))
+		}
 	}
 	return true
 }

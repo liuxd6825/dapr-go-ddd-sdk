@@ -2,6 +2,7 @@ package store_mongodb
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -493,10 +494,21 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 			eMap[field.Name] = data[field.DBName]
 		}
 	} else {
-		for _, field := range r.schema.Fields {
-			val := reflectutils.GetField(entity, field.Name)
-			data[field.DBName] = val
-		}
+		var errFieldName string
+		gp.Try(func() error {
+			for _, field := range r.schema.Fields {
+				errFieldName = field.Name
+				val := data[field.DBName]
+				if val != nil {
+					reflectutils.SetField(entity, field.Name, val)
+				}
+
+			}
+			return nil
+		}).Catch(func(err error) {
+			panic(fmt.Sprintf("转换db值到属性%s时出错：%s", errFieldName, err.Error()))
+		})
+
 	}
 	return entity
 }
