@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"strings"
@@ -8,12 +9,13 @@ import (
 )
 
 type Record struct {
-	DB           string         `json:"db"`     // 数据库
-	Table        string         `json:"table"`  // 数据表
-	Before       map[string]any `json:"before"` // 之前数据
-	After        map[string]any `json:"after"`  // 之后数据
-	OpType       string         `json:"opType"` // 操作状态 "r" for read/backfill, "c" for create, "u" for update, "d" for delete
-	CdcTimestamp time.Time      `json:"cdcTimestamp"`
+	DB           string             `json:"db"`     // 数据库
+	Table        string             `json:"table"`  // 数据表
+	Before       map[string]any     `json:"before"` // 之前数据
+	After        map[string]any     `json:"after"`  // 之后数据
+	OpType       string             `json:"opType"` // 操作状态 "r" for read/backfill, "c" for create, "u" for update, "d" for delete
+	CdcTimestamp time.Time          `json:"cdcTimestamp"`
+	DBSchema     *dbschema.DBSchema `json:"-"`
 }
 
 // IsMaster 是主数据
@@ -50,12 +52,24 @@ func (r *Record) IsChangedRelType() bool {
 	return false
 }
 
+// IsChangedBusFields 是否更新业务字段
+func (r *Record) IsChangedBusFields() bool {
+	if r.OpType == "u" {
+		for k, _ := range r.After {
+			if k != "relation_type" && k != "name" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (r *Record) AfterMap() map[string]any {
-	return r.newMap(r.After)
+	return r.After
 }
 
 func (r *Record) BeforeMap() map[string]any {
-	return r.newMap(r.Before)
+	return r.Before
 }
 
 func (r *Record) AfterName() string {

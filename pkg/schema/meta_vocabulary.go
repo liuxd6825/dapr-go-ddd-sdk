@@ -92,9 +92,6 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (ext jsons
 	if err = meta.InitConvert(ctx, metaMap); err != nil {
 		return nil, err
 	}
-	if meta.DBTable.Name == "company" {
-		println("company")
-	}
 	if err = meta.InitAttributes(ctx, metaMap); err != nil {
 		return nil, err
 	}

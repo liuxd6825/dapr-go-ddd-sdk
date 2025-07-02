@@ -207,9 +207,8 @@ func (m *MongoDB) ExistCollection(ctx context.Context, name any) (bool, error) {
 	return false, err
 }
 
-func (m *MongoDB) CreateCollection(collectionName string) error {
-	ops := &options.CreateCollectionOptions{}
-	return m.database.CreateCollection(context.Background(), collectionName, ops)
+func (m *MongoDB) CreateCollection(collectionName string, ops ...*options.CreateCollectionOptions) error {
+	return m.database.CreateCollection(context.Background(), collectionName, ops...)
 }
 
 func (m *MongoDB) Client() *mongo.Client {

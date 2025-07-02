@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -23,6 +22,5 @@ func NewDocumentDao(dbKey string) *DocumentDao {
 	}
 	baseDao := dao.NewDao[*model.Document](newCfg)
 	daoVal := &DocumentDao{Dao: baseDao}
-	daoVal.Table().AutoMigrate(context.Background())
 	return daoVal
 }

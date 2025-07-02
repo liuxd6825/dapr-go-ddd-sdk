@@ -10,3 +10,7 @@ type Base struct {
 	CreatorName string     `json:"creatorName" gorm:"column:creator_name"`
 	CreatorId   string     `json:"creatorId" gorm:"column:creator_id"`
 }
+
+const (
+	SourceType = "master"
+)

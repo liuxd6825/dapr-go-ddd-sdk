@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/graph/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 )
@@ -17,18 +18,20 @@ type Relation struct {
 	RelType     string   `json:"relType" gorm:"column:rel_type;relType:true"`
 	Keywords    []string `json:"keywords" gorm:"column:keywords;type:text;serializer:json"`
 	Description string   `json:"description" gorm:"column:description"`
+	Table       string   `json:"table" gorm:"column:table"`
 }
 
-func NewRelation(dbSch *dbschema.DBSchema, data map[string]any) *Relation {
-	if dbSch == nil {
+func NewRelation(data map[string]any, dbSchema *dbschema.DBSchema) *Relation {
+	if dbSchema == nil {
 		panic(errors.New("dbSch is nil"))
 	}
-	tenantId, _ := maputils.GetString(data, "tenantId", "")
-	caseId, _ := maputils.GetString(data, "caseId", "")
+	tenantId, _ := maputils.GetString(data, "tenant_id", "")
+	caseId, _ := maputils.GetString(data, "case_id", "")
 	id, _ := maputils.GetString(data, "id", "")
-	relStartId, _ := getRelStartId(dbSch, data)
-	relEndId, _ := getRelEndId(dbSch, data)
-	relType, _ := getRelType(dbSch, data)
+	relStartId, _ := getRelStartId(dbSchema, data)
+	relEndId, _ := getRelEndId(dbSchema, data)
+	relType, _ := getRelType(dbSchema, data)
+	desc := utils.GetDescription(data, dbSchema)
 	return &Relation{
 		Id:          id,
 		CaseId:      caseId,
@@ -37,9 +40,10 @@ func NewRelation(dbSch *dbschema.DBSchema, data map[string]any) *Relation {
 		RelType:     relType,
 		Source:      relStartId,
 		Target:      relEndId,
-		SourceIds:   dbSch.TableName,
-		SourceType:  "master",
-		Description: description(data),
+		SourceIds:   id,
+		Table:       dbSchema.TableName,
+		SourceType:  SourceType,
+		Description: desc,
 	}
 }
 
@@ -48,7 +52,7 @@ func getRelStartId(dbSch *dbschema.DBSchema, data map[string]any) (string, error
 	if field == nil {
 		return "", errors.New("start id not found")
 	}
-	val, err := maputils.GetString(data, field.Name, "")
+	val, err := maputils.GetString(data, field.DBName, "")
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +64,7 @@ func getRelEndId(dbSch *dbschema.DBSchema, data map[string]any) (string, error) 
 	if field == nil {
 		return "", errors.New("start id not found")
 	}
-	val, err := maputils.GetString(data, field.Name, "")
+	val, err := maputils.GetString(data, field.DBName, "")
 	if err != nil {
 		return "", err
 	}
@@ -72,7 +76,7 @@ func getRelType(dbSch *dbschema.DBSchema, data map[string]any) (string, error) {
 	if field == nil {
 		return "", errors.New("start id not found")
 	}
-	val, err := maputils.GetString(data, field.Name, "")
+	val, err := maputils.GetString(data, field.DBName, "")
 	if err != nil {
 		return "", err
 	}

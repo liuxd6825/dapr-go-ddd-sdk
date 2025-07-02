@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"net/http"
 )
 
 type CdcAPI struct {
@@ -29,17 +30,29 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 
 func (s *CdcAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
+	b.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
+}
+
+func (s *CdcAPI) DaprOptions(ctx iris.Context) {
+	ctx.StatusCode(http.StatusOK)
+	return
 }
 
 func (s *CdcAPI) DataChange(ctx iris.Context) {
 	gp.Try(func() error {
+		ctx.StatusCode(iris.StatusOK)
 		var record model.Record
-
 		// 反序列化请求体到结构体
 		if err := ctx.ReadJSON(&record); err != nil {
 			return err
 		}
-		logs.InfoMsg(ctx, "record ", "opType=", record.OpType, "table=", record.Table)
+		logs.InfoMsg(ctx, "record", " opType=", record.OpType, " table=", record.Table)
+
+		dbSch := s.cdcService.GetDBSchema(record.Table)
+		if dbSch == nil {
+			return nil
+		}
+		record.DBSchema = dbSch
 
 		// 根据操作类型处理数据
 		switch record.OpType {
@@ -50,7 +63,7 @@ func (s *CdcAPI) DataChange(ctx iris.Context) {
 		case "d":
 			s.cdcService.Delete(&record)
 		}
-		ctx.StatusCode(iris.StatusOK)
+
 		return nil
 	}).Catch(func(e error) {
 		web.SetError(ctx, e)

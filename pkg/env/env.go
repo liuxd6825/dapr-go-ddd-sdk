@@ -7,7 +7,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"strings"
 )
 
 type Config struct {
@@ -154,7 +156,25 @@ func (env *Env) GetField(key string) any {
 	return reflectutils.GetField(env, key)
 }
 
+func (env *Env) GetDBKeyValue(dbKey string) string {
+	if strings.HasPrefix(dbKey, "$") {
+		dbKey = dbKey[1:len(dbKey)]
+		gp.Try(func() error {
+			if keyVal, ok := env.App.Meta[dbKey]; ok {
+				dbKey = keyVal.(string)
+			} else {
+				panic("invalid db key")
+			}
+			return nil
+		}).Catch(func(e error) {
+			panic(fmt.Sprintf("dbKey must start with $%s", dbKey))
+		})
+	}
+	return dbKey
+}
+
 func GetDB(dbKey string) DBItem {
+	dbKey = _env.GetDBKeyValue(dbKey)
 	return _env.GetDB(dbKey)
 }
 

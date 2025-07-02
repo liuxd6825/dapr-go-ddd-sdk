@@ -11,10 +11,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"strings"
 )
 
 type NewConfig struct {
@@ -120,9 +118,10 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		IsCancelSoftDelete: newCfg.IsCancelSoftDelete,
 	}
 
-	if isPubEvent {
+	/*if isPubEvent {
 		daoCfg.OutboxDao = NewOutboxDao(newCfg.DBKey)
-	}
+	}*/
+
 	var dao idao.Dao[T]
 
 	if item != nil {
@@ -151,22 +150,7 @@ func GetDbKey(envInst *env.Env, dbKey string) string {
 	if dbKey == "" {
 		return env.DefaultDBKey
 	}
-	if strings.HasPrefix(dbKey, "${") && strings.HasSuffix(dbKey, "}") {
-		dbKey = dbKey[2 : len(dbKey)-1]
-		gp.Try(func() error {
-			list := strings.Split(dbKey, ".")
-			if len(list) > 2 && list[0] == "app" && list[1] == "meta" {
-				val := envInst.App.Meta[list[2]]
-				dbKey = val.(string)
-			} else {
-				panic("invalid db key")
-			}
-			return nil
-		}).Catch(func(e error) {
-			panic(fmt.Sprintf("dbKey must start with ${%s}", dbKey))
-		})
-	}
-	return dbKey
+	return envInst.GetDBKeyValue(dbKey)
 }
 
 func getDaoKey(dbKey, tableName string, className string) string {

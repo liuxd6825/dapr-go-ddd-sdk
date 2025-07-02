@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/jsonschema/v6"
 	gormschema "gorm.io/gorm/schema"
 	"reflect"
 )
@@ -11,11 +12,13 @@ import (
 type DBSchema struct {
 	Name              string
 	TableName         string
+	Title             string
 	Fields            []*Field
 	FieldName         map[string]*Field
 	FieldDbName       map[string]*Field
 	Labels            []string
 	GormSchema        *gormschema.Schema
+	JsonSchema        *jsonschema.Schema
 	relTypeField      *Field
 	relTypeFieldOk    bool
 	relStartIdField   *Field
@@ -179,7 +182,6 @@ func (sch *DBSchema) NewMap(ctx context.Context, obj any, opts ...func(map[strin
 
 		for _, field := range sch.Fields {
 			key := field.Name
-			println("field:", key)
 			fv := vObj.FieldByName(key)
 			var val any
 			if fv.IsValid() {

@@ -227,7 +227,7 @@ func (d *Dao[T]) Write(ctx context.Context, cypher string, params map[string]any
 	return d.doSession(ctx, func(tx neo4j.ManagedTransaction) (*Neo4jResult[T], error) {
 		result, err := tx.Run(ctx, cypher, params)
 		if err != nil {
-			return nil, err
+			return nil, errors.ErrorOf("%s error:%s", cypher, err.Error())
 		}
 		return NewNeo4jResult(ctx, d.config.EntityBuilder, result), err
 	}, opt)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
@@ -10,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
@@ -36,12 +38,15 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
-			master.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-			drawio.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-			graph.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-			rag.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-			doc.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-			return nil
+			err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "all"}, func() error {
+				master.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+				drawio.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+				graph.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+				rag.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+				doc.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+				return nil
+			})
+			return err
 		},
 	})
 }

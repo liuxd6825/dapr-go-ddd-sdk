@@ -28,8 +28,6 @@ func TestNodeDao(t *testing.T) {
 	company.CaseId = "caseId001"
 	company.GraphId = "graphId001"
 
-	println("id:" + company.Id)
-
 	t.Run("graph", func(t *testing.T) {
 		match := "match  ()-[r:`分公司`|`母公司`]->() return r"
 		if res, err := dao.Query(ctx, match, nil); err != nil {

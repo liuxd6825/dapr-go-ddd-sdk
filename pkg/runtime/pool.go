@@ -20,7 +20,7 @@ type RunOptions = func(vm *goja.Runtime) error
 // NewPool 创建一个带大小限制的 Runtime 池
 func NewPool(userPool bool, reader fs.Reader, pkg *types.CMap[any]) *Pool {
 	r := &Pool{
-		userPool: userPool,
+		userPool: true,
 		reader:   reader,
 		pkg:      pkg,
 	}

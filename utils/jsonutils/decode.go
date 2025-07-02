@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,7 @@ type UnmarshalTimeOptions struct {
 
 func UnmarshalTime(data []byte, opts ...*UnmarshalTimeOptions) (any, error) {
 	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.UseNumber()
 	var opt *UnmarshalTimeOptions
 	if len(opts) > 0 {
 		opt = opts[0]
@@ -61,6 +63,9 @@ func parseObject(decoder *json.Decoder, opts *UnmarshalTimeOptions) (map[string]
 		if !ok {
 			return nil, fmt.Errorf("expected string for key, got %T", t)
 		}
+		if key == "age" {
+			println(key)
+		}
 
 		// 获取子字段的 TimeFields 配置
 		var subFields map[string]any
@@ -99,7 +104,13 @@ func parseObject(decoder *json.Decoder, opts *UnmarshalTimeOptions) (map[string]
 				}
 			}
 		}
-
+		if n, ok := value.(json.Number); ok {
+			if strings.Contains(n.String(), ".") {
+				value, _ = n.Float64()
+			} else {
+				value, _ = n.Int64()
+			}
+		}
 		obj[key] = value
 	}
 

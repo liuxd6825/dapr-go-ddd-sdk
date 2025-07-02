@@ -5,7 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 )
 
-const DBKey string = "${app.meta.db}"
+const DBKey string = "$db"
 
 type FolderService struct {
 	*dao.FolderDao

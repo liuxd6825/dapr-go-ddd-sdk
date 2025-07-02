@@ -14,13 +14,23 @@ var (
 	ByteReflectType    = reflect.TypeOf(uint8(0))
 )
 
+type OrderType string
+
+const (
+	OrderType_None = ""
+	OrderType_Asc  = "asc"
+	OrderType_Desc = "desc"
+)
+
 type Field struct {
+	Title                  string            // 标题
 	Name                   string            // 属性名
 	DBName                 string            // 数据库字段名
 	DataType               DataType          // 数据类型
 	PrimaryKey             bool              // 是主键
 	NotNull                bool              // 不能为空
 	Unique                 bool              // 唯一键值
+	OrderType              OrderType         // 排序类型
 	Comment                string            // 字段说明
 	Size                   int               // 字段大小
 	Creatable              bool              // 是否可创建

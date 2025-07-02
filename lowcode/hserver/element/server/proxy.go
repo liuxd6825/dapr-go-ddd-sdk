@@ -1,7 +1,14 @@
 package server
 
 import (
+	"bytes"
+	"context"
 	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
+	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type Proxy struct {
@@ -26,6 +33,8 @@ func (s *Proxy) init() {
 	s.funcs["workPath"] = s.vm.ToValue(s.server.FsOpts().WorkPath)
 	s.funcs["logs"] = s.vm.ToValue(s.server.Logs)
 	s.funcs["app"] = s.vm.ToValue(s.server.App)
+	s.funcs["autoMigrateAll"] = s.vm.ToValue(s.AutoMigrateAll)
+	s.funcs["autoMigrateTable"] = s.vm.ToValue(s.AutoMigrateTable)
 }
 
 // Get 方法：获取键对应的值
@@ -65,4 +74,78 @@ func (s *Proxy) Keys() []string {
 
 func (s *Proxy) InitVM(vm *goja.Runtime) error {
 	return s.server.InitVM(vm)
+}
+
+func (s *Proxy) AutoMigrateAll(path string) error {
+	server := s.server
+	ctx := context.Background()
+	files := server.fsPkg.ReadAllPath(path)
+	for _, file := range files {
+		if file.IsDir {
+			err := s.AutoMigrateAll(file.Path + "/" + file.Name)
+			if err != nil {
+				return err
+			}
+		} else {
+			s.AutoMigrateTable(ctx, file.Path+"/"+file.Name)
+		}
+	}
+	return nil
+}
+
+func (s *Proxy) AutoMigrateTable(ctx context.Context, schFile string) {
+	sch := s.LoadSchemaFile(schFile, "")
+	aggField, aggType, tableName, isPubEvent, dbKey := s.getSchemaDBInfos(sch)
+	dbSch := dbschema.NewDBSchemaWithJsonSchema(sch)
+	newCfg := &dao.NewConfig{
+		DBKey:      dbKey,
+		AggField:   aggField,
+		AggType:    aggType,
+		TableName:  tableName,
+		IsPubEvent: &isPubEvent,
+		DBSchema:   dbSch,
+	}
+	vDao := dao.NewDao[map[string]any](newCfg)
+	vDao.Table().AutoMigrate(ctx)
+}
+
+func (s *Proxy) LoadSchemaFile(fileUrl string, workPath string) *jsonschema.Schema {
+	server := s.server
+	data := server.FsPkg().ReadFile(fileUrl, &fsopts.Options{WorkPath: workPath})
+	if len(data) == 0 {
+		return nil
+	}
+
+	reader, err := jsonschema.UnmarshalJSON(bytes.NewReader(data))
+	if err != nil {
+		panic(err)
+	}
+	schemaFile := fileUrl
+	compiler := schema.NewCompiler()
+	compiler.UseLoader(server.SchemaLoader())
+
+	if err := compiler.AddResource(schemaFile, reader); err != nil {
+		panic(err)
+	}
+	sch, err := compiler.Compile(schemaFile)
+	if err != nil {
+		panic(err)
+	}
+	return sch
+}
+
+func (s *Proxy) getSchemaDBInfos(sch *jsonschema.Schema) (aggField string, aggType string, tableName string, isPubEvent bool, dbKey string) {
+	meta := schema.GetMetaExtension(sch)
+	tableName = sch.Name()
+	isPubEvent = false
+	if meta != nil && meta.DBTable != nil {
+		tableName = meta.DBTable.Name
+		dbKey = meta.DBTable.DBKey
+	}
+	if meta != nil && meta.DDD != nil {
+		aggField = meta.DDD.AggField
+		aggType = meta.DDD.AggType
+		isPubEvent = meta.DDD.IsPubEvent
+	}
+	return
 }

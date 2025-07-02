@@ -453,9 +453,9 @@ func (c *nodeCypher[T]) GetCreateMatchProperties(ctx context.Context, data any, 
 	var properties string
 	for _, f := range c.schema.Fields {
 		dbName := c.getFieldName(f)
-		if f.DataType == store.Time {
+		if f.DataType == store.DataType_Time {
 			properties = fmt.Sprintf(`%s%s:dateTime(%s.%s),`, properties, dbName, asName, dbName)
-		} else if f.DataType == store.Date {
+		} else if f.DataType == store.DataType_Date {
 			properties = fmt.Sprintf(`%s%s:date(%s.%s),`, properties, dbName, asName, dbName)
 		} else {
 			properties = fmt.Sprintf(`%s%s:%s.%s,`, properties, dbName, asName, dbName)

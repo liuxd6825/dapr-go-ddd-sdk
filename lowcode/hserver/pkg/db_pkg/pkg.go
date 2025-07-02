@@ -78,6 +78,7 @@ func (p *Pkg) GetDao(dbKey string, tableName string) idao.Dao[map[string]any] {
 	if v, ok := p.daoMap.Get(daoKey); ok {
 		return v
 	}
+	panic("not found dao " + daoKey)
 	return nil
 }
 

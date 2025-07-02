@@ -54,6 +54,7 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 		field.ValueOf = f.ValueOf
 		field.Creatable = f.Creatable
 		field.Updatable = f.Updatable
+		field.PrimaryKey = f.PrimaryKey
 
 		field.RelType = f.RelType
 		field.RelEndId = f.RelEndId
@@ -67,6 +68,46 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 	dbSch.SetName(name)
 	dbSch.GormSchema = gSch
 	return dbSch
+}
+
+func NewGormSchema(dbSch *store.DBSchema) *gormschema.Schema {
+	var err error = nil
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+		if err != nil {
+			panic(fmt.Errorf("tableName:%s; %s", dbSch.TableName, err.Error()))
+		}
+	}()
+	if dbSch == nil {
+		panic("NewGormSchema() dbSch=nil")
+	}
+	gSch := gormschema.NewSchemaEmpty()
+	for _, f := range dbSch.Fields {
+		field := gormschema.NewField()
+		field.Name = f.Name
+		field.DBName = f.DBName
+		field.StructField = f.StructField
+		field.IndirectFieldType = f.IndirectFieldType
+		field.Serializer = f.Serializer
+		field.FieldType = f.FieldType
+		field.Tag = f.Tag
+		field.FieldType = f.FieldType
+		field.DataType = f.DataType
+		field.ValueOf = f.ValueOf
+		field.Creatable = f.Creatable
+		field.Updatable = f.Updatable
+
+		field.RelType = f.RelType
+		field.RelEndId = f.RelEndId
+		field.RelStartId = f.RelStartId
+		field.NodeLabelFormat = f.NodeLabelFormat
+		field.NodeLabel = f.NodeLabel
+
+		gSch.AddField(field)
+	}
+	gSch.Table = dbSch.TableName
+	gSch.Name = dbSch.Name
+	return gSch
 }
 
 func getFieldsByValue(refVal reflect.Value) []*store.Field {

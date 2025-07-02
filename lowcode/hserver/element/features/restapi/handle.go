@@ -69,7 +69,6 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 			logs.Errorfmt(ctx, "", "%s error:%s", ictx.Request().RequestURI, err.Error())
 		}
 	}()
-	logs.Infof(ctx, nil, "request %s %s", ictx.Request().Method, ictx.Request().RequestURI)
 
 	ctx, err = restapp.NewContext(ictx)
 	if err != nil {
@@ -77,6 +76,7 @@ func (s *ApiHandle) handle(ictx iris.Context) {
 	}
 	wctx := s.server.Factory().NewWebContext(ctx, ictx)
 	params := s.GetParams(wctx)
+	logs.Info(ctx, nil, logs.Fields{"method": ictx.Request().Method, "uri": ictx.Request().RequestURI, "params": params})
 	s.run(wctx.Ctx(), wctx, params)
 }
 

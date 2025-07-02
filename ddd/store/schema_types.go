@@ -19,14 +19,14 @@ const (
 
 // GORM fields types
 const (
-	Bool   DataType = "bool"
-	Int    DataType = "int"
-	Uint   DataType = "uint"
-	Float  DataType = "float"
-	String DataType = "string"
-	Date   DataType = "date"
-	Time   DataType = "time"
-	Bytes  DataType = "bytes"
-	Object DataType = "object"
-	Array  DataType = "array"
+	DataType_Bool   = gormschema.Bool
+	DataType_Int    = gormschema.Int
+	DataType_Uint   = gormschema.Uint
+	DataType_Float  = gormschema.Float
+	DataType_String = gormschema.String
+	DataType_Date   = gormschema.Date
+	DataType_Time   = gormschema.Time
+	DataType_Bytes  = gormschema.Bytes
+	DataType_Json   = gormschema.Json
+	DataType_Array  = gormschema.Array
 )

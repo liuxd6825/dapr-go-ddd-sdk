@@ -25,10 +25,11 @@ func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
 
 func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 	s := store.NewDBSchema()
+	s.JsonSchema = sch
 	s.TableName = schema.GetTableName(sch)
 	s.Name = sch.Name()
+	s.Title = sch.Title
 	props := sch.GetAllProperties()
-
 	for _, prop := range props {
 		schField := schema.GetField(prop)
 		if schField != nil && schField.NotField {
@@ -36,6 +37,7 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 		}
 		dataType := getDataType(prop)
 		field := &store.Field{
+			Title:                 prop.Title,
 			Name:                  prop.Name(),
 			DBName:                AsFieldName(prop.Name()),
 			DataType:              dataType,

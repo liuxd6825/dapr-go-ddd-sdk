@@ -51,8 +51,8 @@ func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model2.Re
 // UpdateRecord 根据关系数据创建图节点与关系
 func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model2.Record) *model2.Node {
 	after := record.AfterMap()
-	node := model2.NewNode(d.DBSchema.TableName, after)
-	rel := model2.NewRelation(d.DBSchema, after)
+	node := model2.NewNode(after, record.DBSchema)
+	rel := model2.NewRelation(after, record.DBSchema)
 	nodeName, _ := maputils.GetString(record.BeforeMap(), "name", "")
 	nodeStore := d.nodeDao.GetStore()
 	relStore := d.GetStore()
@@ -99,7 +99,7 @@ func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model2.Record
 	storeDao := d.GetStore()
 	after := record.AfterMap()
 
-	rel := model2.NewRelation(d.DBSchema, after)
+	rel := model2.NewRelation(after, d.DBSchema)
 	name, _ := maputils.GetString(after, "name", "")
 	labels := fmt.Sprintf(":case_%s:tentant_%s:master", rel.CaseId, rel.TenantId)
 

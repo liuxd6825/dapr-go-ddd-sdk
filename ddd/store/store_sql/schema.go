@@ -85,25 +85,25 @@ func getDataType(field *store.Field) gormschema.DataType {
 	}
 
 	switch field.DataType {
-	case store.Date:
+	case store.DataType_Date:
 		return gormschema.Date
-	case store.Time:
+	case store.DataType_Time:
 		return gormschema.Time
-	case store.String:
+	case store.DataType_String:
 		return gormschema.String
-	case store.Int:
+	case store.DataType_Int:
 		return gormschema.Int
-	case store.Float:
+	case store.DataType_Float:
 		return gormschema.Float
-	case store.Bool:
+	case store.DataType_Bool:
 		return gormschema.Bool
-	case store.Bytes:
+	case store.DataType_Bytes:
 		return gormschema.Bytes
-	case store.Array:
+	case store.DataType_Array:
 		return gormschema.Json
-	case store.Object:
+	case store.DataType_Json:
 		return gormschema.Json
-	case store.Uint:
+	case store.DataType_Uint:
 		return gormschema.Uint
 	}
 	return gormschema.String

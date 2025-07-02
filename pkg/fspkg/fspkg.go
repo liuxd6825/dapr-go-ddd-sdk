@@ -33,6 +33,7 @@ type IFsPkg interface {
 
 	WriteAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error)
 	ReadAt(file *fsm.File, data []byte, office int64, opts ...*fsopts.Options) (int, error)
+	//Open flag = os.O_RDONLY 只读 ； os.O_WRONLY只写;  perm= 0666
 	Open(filename string, flag int, perm os.FileMode, opts ...*fsopts.Options) (*fsm.File, error)
 	MkdirAll(path string, perm os.FileMode, opts ...*fsopts.Options)
 }

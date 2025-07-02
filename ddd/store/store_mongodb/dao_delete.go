@@ -60,6 +60,7 @@ func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...store.O
 	data := map[string]interface{}{}
 	return r.DeleteByMap(ctx, tenantId, data)
 }
+
 func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...store.Options) *store.SetResult[T] {
 	return r.deleteByAny(ctx, tenantId, filterMap, opts...)
 }
@@ -120,7 +121,7 @@ func (r *Dao[T]) deleteByFilter(ctx context.Context, tenantId string, filter *rs
 			if err := cursor.Decode(&result); err != nil {
 				return err
 			}
-			idsToDelete = append(idsToDelete, result["id"])
+			idsToDelete = append(idsToDelete, result[ConstIdField])
 		}
 
 		if err := cursor.Err(); err != nil {

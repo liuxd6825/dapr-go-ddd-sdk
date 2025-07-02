@@ -103,9 +103,6 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 	db.PrimaryKey = false
 	db.NotNull = false
 	db.Unique = false
-	if relType, ok := values["relType"]; ok {
-		println("relType:", relType)
-	}
 	var err error
 	for key, value := range values {
 		switch key {

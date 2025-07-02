@@ -10,8 +10,8 @@ type DrawService struct {
 	drawDao *dao.DrawDao
 }
 
-const DBKey string = "${app.meta.drawDb}"
-const Neo4jDBKey string = "${app.meta.neo4jDb}"
+const DBKey string = "$drawDb"
+const Neo4jDBKey string = "$neo4jDb"
 
 func NewDrawService() *DrawService {
 	return &DrawService{

@@ -227,13 +227,16 @@ func (s *Func) Run(ctx context.Context, opts ...RunOptions) (res any, err error)
 			return vm.Set("ctx", ctx)
 		})
 		data, err = s.runtime.Run("\n"+s.runCode, opts...)
-		return err
+		if err != nil {
+			msg := fmt.Sprintf("\n%s\n run error:%v in %s %s", s.runCode, err, s.config.FuncName, s.config.SrcFileName)
+			return errors.New(msg)
+		}
+		return nil
 	})
 
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("run error:%v in %s %s", err, s.config.FuncName, s.config.SrcFileName))
+		return nil, err
 	}
-	//r.logger.Printf("run %s return %v in %s", r.config.FuncName, data, r.config.SrcFileName)
 	return data, err
 }
 

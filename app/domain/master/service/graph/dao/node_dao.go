@@ -7,13 +7,13 @@ import (
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"strings"
 )
 
 type NodeDao struct {
@@ -50,15 +50,18 @@ func (d *NodeDao) CreateMain(ctx context.Context, node *model2.Node) {
 	if err != nil {
 		panic(err)
 	}
-	tenantId := node.TenantId
 	labels := c.GetLabels(ctx, node)
-	cypher := fmt.Sprintf(`
-	CREATE (n%s{%s}) WITH n 
-	MERGE (m%s:same {name: $Name}) WITH n,m
-	MERGE (n)-[:same]->(m)
-	`, labels, props, labels)
+	fmtStr := `
+	CREATE (n$<labels>{$<props>}) WITH n 
+	MERGE (m$<labels>:same {id:$<name>,name:$<name>}) WITH n,m
+	MERGE (n)-[:same]->(m)`
 
-	_, err = storeDao.DoSet(ctx, tenantId, cypher, dataMap)
+	fb := stringutils.NewFmtBuilder()
+	fb.String("labels", labels)
+	fb.String("props", props)
+	fb.Varchar("name", node.Name)
+
+	err = d.write(ctx, fmtStr, fb, dataMap)
 	if err != nil {
 		panic(err)
 	}
@@ -68,7 +71,7 @@ func (d *NodeDao) CreateMain(ctx context.Context, node *model2.Node) {
 func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model2.Relation, relNode *model2.Node) *model2.Node {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
-	relType := rel.Keywords
+	relType := rel.RelType
 	nLabels := storeDao.GetLabels(ctx, relNode)
 	mLabels := d.getLabels(rel.CaseId, rel.TenantId)
 	nProps, data, err := c.GetCreateProperties(ctx, relNode)
@@ -76,34 +79,48 @@ func (d *NodeDao) CreateRelNode(ctx context.Context, rel *model2.Relation, relNo
 		panic(err)
 	}
 
-	cypher := fmt.Sprintf(`
-	CREATE (n%s{%s})   WITH n
-	MATCH (m%s{id:$id}) WITH m, n
-	CREATE (m)-[r:%s]->(n) 
-	SET r.id=$id, r.keywords=$keywords, r.case_id=$caseId, r.tenant_id=$tenantId, r.description=$description
-    `, nLabels, nProps, mLabels, relType)
+	fmtStr := `
+	CREATE (n$<nLabels>{$<props>}) WITH n
+	MATCH (m$<mLabels>{id:$<source>}) WITH m, n
+	CREATE (m)-[r:$<relType>]->(n) 
+	SET r.id=$<id>,r.keywords=$<keywords>,r.case_id=$<caseId>,r.tenant_id=$<tenantId>, 
+		r.description=$<description>,r.source=$<source>,r.target=$<target>, 
+		r.source_ids=$<id>,r.source_type=$<sourceType>,r.table=$<table>
+    `
 
-	data["id"] = rel.Id
-	data["source"] = rel.Source
-	data["target"] = rel.Target
-	data["tenant_id"] = rel.TenantId
-	data["case_id"] = rel.CaseId
-	data["keywords"] = rel.Keywords
-	data["description"] = rel.Description
-	_, err = storeDao.Write(ctx, cypher, data)
+	fb := stringutils.NewFmtBuilder()
+	fb.String("nLabels", nLabels)
+	fb.String("props", nProps)
+	fb.String("mLabels", mLabels)
+	fb.String("relType", relType)
+	fb.Varchar("id", rel.Id)
+	fb.Varchar("source", rel.Source)
+	fb.Varchar("target", rel.Target)
+	fb.Varchar("tenantId", rel.TenantId)
+	fb.Varchar("caseId", rel.CaseId)
+	fb.Varchar("keywords", rel.Keywords)
+	fb.Varchar("description", "")
+	fb.Varchar("sourceType", rel.SourceType)
+	fb.Varchar("table", rel.Table)
+
+	_, err = storeDao.Write(ctx, fb.Format(fmtStr), data)
 
 	if err != nil {
 		panic(err)
 	}
 
-	cypher2 := fmt.Sprintf(`
-	MERGE (nName%s:same{name: $Name})      
-	WITH nName         
-	MATCH (n%s{id: $id})          
-	CREATE (n)-[r:same]->(nName) ;
-	`, nLabels, nLabels)
+	fmtStr2 := `
+	MERGE (nName$<labels>:same{name: $<name>}) WITH nName         
+	MATCH (n$<labels>{id: $<id>})          
+	CREATE (n)-[r:same]->(nName);
+	`
 
-	_, err = storeDao.Write(ctx, cypher2, data)
+	fb2 := stringutils.NewFmtBuilder()
+	fb2.String("labels", nLabels)
+	fb2.Varchar("id", relNode.Id)
+	fb2.Varchar("name", relNode.Name)
+
+	_, err = storeDao.Write(ctx, fb2.Format(fmtStr2), data)
 
 	if err != nil {
 		panic(err)
@@ -121,11 +138,18 @@ func (d *NodeDao) UpdateMain(ctx context.Context, node *model2.Node) {
 	}
 
 	labels := c.GetLabels(ctx, node)
-	cypher := fmt.Sprintf(`
-	MATCH (n%s) WHERE n.id=$Id SET %s WITH n 
-	MERGE (n)-[:same]->(m%s:same{name:$Name}) WITH n
-	MATCH (n)-[r:same]->(b) WHERE b.name <> $Name DELETE r
-`, labels, props, labels)
+	const fmtStr = `
+		MATCH (n$<labels>) WHERE n.id=$<id> SET $<props> WITH n 
+		MERGE (n)-[:same]->(m$<labels>:same{name:$<name>}) WITH n
+		MATCH (n)-[r:same]->(b) WHERE b.name<>$<name> DELETE r
+	`
+	fb := stringutils.NewFmtBuilder()
+	fb.Varchar("name", node.Name)
+	fb.Varchar("id", node.Id)
+	fb.String("labels", labels)
+	fb.String("props", props)
+
+	cypher := fb.Format(fmtStr)
 
 	_, err = storeDao.Write(ctx, cypher, dataMap)
 	if err != nil {
@@ -138,72 +162,97 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 	// 是否改名
 	isRename := record.IsRename()
 	isChangedRelType := record.IsChangedRelType()
-	if !isRename && !isChangedRelType {
-		return
-	}
-	before := record.BeforeMap()
+
+	//before := record.BeforeMap()
 	after := record.AfterMap()
-	node := model2.NewNode(d.DBSchema.TableName, after)
-	rel := model2.NewRelation(d.DBSchema, after)
-	oldName, _ := maputils.GetString(before, "name", "")
 
-	nodeStore := d.GetStore()
-	tenantId, _ := appctx.GetTenantId(ctx)
-	relNodeLabel := nodeStore.GetLabels(ctx, node)
+	node := model2.NewNode(after, record.DBSchema)
+	rel := model2.NewRelation(after, record.DBSchema)
+	//oldName, _ := maputils.GetString(before, "name", "")
 
-	params := map[string]interface{}{
-		"tenantId": tenantId,
-		"id":       node.Id,
-		"name":     node.Name,
-		"caseId":   node.CaseId,
+	//tenantId, _ := appctx.GetTenantId(ctx)
+	labels := fmt.Sprintf(`:master:case_%s:tenant_%s`, node.CaseId, node.TenantId)
 
-		"relId":        rel.Id,
-		"relType":      rel.Keywords,
-		"relTable":     rel.SourceIds,
-		"startId":      rel.Source,
-		"oldNodeName":  oldName,
-		"relNodeId":    node.Id,
-		"relNodeName":  node.Name,
-		"relNodeTable": node.SourceIds,
-	}
-
-	sb := strings.Builder{}
 	if isChangedRelType {
-		sb.WriteString(fmt.Sprintf(`
-			MATCH (n1%s)-[r1{id:$id}]->(m1%s) DELETE r1  WITH n1,m1
-			CREATE (n1)-[r2:%s{id:$id}]->(m1) 
-			`, relNodeLabel, relNodeLabel, rel.Keywords,
-		))
-	}
-	if isRename {
-		sb.WriteString(fmt.Sprintf(`
-		MATCH (n%s{id:$id}) SET n.name=$name WITH n
-		MERGE (m%s:same{name:$name}) WITH n, m
-		MERGE (n)-[r:same]->(m) WITH n
-		MATCH (n)-[rd:same]->(md) WHERE md.name<>$name DELETE rd
-		`, relNodeLabel, relNodeLabel))
+		fmtStr := `
+			MATCH (n1$<labels>)-[r1{id:$<id>}]->(m1$<labels>) DELETE r1  WITH n1,m1
+			CREATE (n1)-[r2:$<relType>{
+				id:$<id>,case_id:$<caseId>,tenant_id:$<tenantId>,source:$<source>,table:$<table>,
+				target:$<target>,source_ids:$<id>,source_type:$<sourceType>,keywords:$<keywords>,description:$<description>
+			}]->(m1) 
+		`
+		fb := stringutils.NewFmtBuilder()
+		fb.String("labels", labels)
+		fb.String("relType", rel.RelType)
+		fb.Varchar("id", node.Id)
+
+		fb.Varchar("tenantId", rel.TenantId)
+		fb.Varchar("caseId", rel.CaseId)
+		fb.Varchar("sourceType", rel.SourceType)
+		fb.Varchar("source", rel.Source)
+		fb.Varchar("target", rel.Target)
+		fb.Varchar("keywords", rel.Keywords)
+		fb.Varchar("description", "")
+		fb.Varchar("table", rel.Table)
+
+		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
+			panic(err)
+		}
 	}
 
-	_, err := nodeStore.Write(ctx, sb.String(), params)
-	if err != nil {
-		logs.Error(ctx, logs.Fields{"err": err, "cypher": sb.String(), "params": func() any {
-			p, _ := json.Marshal(params)
-			return string(p)
-		}})
-		panic(err)
-	} else {
-		logs.InfoMsg(ctx, sb.String())
+	if isRename {
+		fmtStr := `
+		MATCH (n$<labels>{id:$<id>}) SET n.name=$<name> WITH n
+		MERGE (m$<labels>:same{name:$<name>}) WITH n, m
+		MERGE (n)-[r:same]->(m) WITH n
+		MATCH (n)-[rd:same]->(md) WHERE md.name<>$<name> DELETE rd`
+
+		fb := stringutils.NewFmtBuilder()
+		fb.String("labels", labels)
+		fb.Varchar("name", node.Name)
+		fb.Varchar("id", node.Id)
+		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
+			panic(err)
+		}
+	}
+
+	if record.IsChangedBusFields() {
+		fmtStr := `MATCH (n$<labels>{id:$<id>}) SET n.description=$<description>`
+		fb := stringutils.NewFmtBuilder()
+		fb.String("labels", labels)
+		fb.Varchar("id", node.Id)
+		fb.Varchar("description", node.Description)
+		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
+			panic(err)
+		}
 	}
 
 	return
+
 }
 
-func (d *NodeDao) DeleteMain(ctx context.Context, record *model2.Record) {
+func (d *NodeDao) write(ctx context.Context, fmtStr string, fb *stringutils.FmtBuilder, params map[string]any) error {
 	nodeStore := d.GetStore()
-	after := record.AfterMap()
-	node := model2.NewNode(record.Table, after)
+	cypher := fb.Format(fmtStr)
+	_, err := nodeStore.Write(ctx, cypher, params)
+	if err != nil {
+		logs.Error(ctx, logs.Fields{"err": err, "cypher": cypher, "params": func() any {
+			p, _ := json.Marshal(params)
+			return string(p)
+		}})
+
+	} else {
+		logs.InfoMsg(ctx, cypher)
+	}
+	return err
+}
+
+func (d *NodeDao) DeleteMain(ctx context.Context, record *model2.Record, dbSch *dbschema.DBSchema) {
+	nodeStore := d.GetStore()
+	before := record.BeforeMap()
+	node := model2.NewNode(before, record.DBSchema)
 	labels := d.getLabels(node.CaseId, node.TenantId)
-	cypher := fmt.Sprintf(`MATCH (n%s{id:$id})-[r]->(m%s) DETACH DELETE n,r,m  `, labels, labels)
+	cypher := fmt.Sprintf(`MATCH (n%s{id:$id})-[r]->(m) DETACH DELETE n,r`, labels)
 	params := map[string]any{
 		"id": node.Id,
 	}
@@ -214,13 +263,17 @@ func (d *NodeDao) DeleteMain(ctx context.Context, record *model2.Record) {
 }
 
 func (d *NodeDao) DeleteRelNode(ctx context.Context, record *model2.Record) {
-	nodeStore := d.GetStore()
-	after := record.AfterMap()
-
-	rel := model2.NewRelation(d.DBSchema, after)
+	before := record.BeforeMap()
+	rel := model2.NewRelation(before, record.DBSchema)
 	labels := d.getLabels(rel.CaseId, rel.TenantId)
-	cypher := fmt.Sprintf(`MATCH (n%s)-[r{id:'%s'}]->(m%s) DETACH DELETE r,m`, labels, rel.Id, labels)
-	_, err := nodeStore.Write(ctx, cypher, nil)
+
+	fmtStr := `MATCH (n$<labels>{id:$<id>}) DETACH DELETE n`
+
+	fb := stringutils.NewFmtBuilder()
+	fb.String("labels", labels)
+	fb.Varchar("id", rel.Id)
+
+	err := d.write(ctx, fmtStr, fb, nil)
 	if err != nil {
 		panic(err)
 	}
