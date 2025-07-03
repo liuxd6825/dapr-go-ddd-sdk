@@ -5,7 +5,6 @@ type File struct {
 	RootId        string `gorm:"root_id" json:"rootId,omitempty" bson:"root_id"`                      //根目录Id    tenant_id_bus_id_entity_id形式拼接
 	RootPath      string `gorm:"root_path" json:"rootPath,omitempty" bson:"root_path"`                //物理根目录
 	FolderId      string `gorm:"folder_id" json:"folderId,omitempty" bson:"folder_id"`                //目录Id
-	FolderPath    string `gorm:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`          //物理目录
 	DocumentId    string `gorm:"document_id" json:"documentId,omitempty" bson:"document_id"`          //文档Id
 	Name          string `gorm:"name" json:"name,omitempty" bson:"name"`                              //文档名称
 	ObjectName    string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"`          //实际存储的文件名称

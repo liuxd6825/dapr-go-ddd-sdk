@@ -13,6 +13,14 @@ type Folder struct {
 type RenameFolder struct {
 	Base       `bson:",inline"`
 	Name       string `bson:"name" json:"name,omitempty" bson:"name"`
-	OldName    string `bson:"old_name" json:"old_name,omitempty" bson:"old_name"`
-	FolderPath string `bson:"folder_path" json:"folder_path,omitempty" bson:"folder_path"`
+	OldName    string `bson:"old_name" json:"oldName,omitempty" bson:"old_name"`
+	FolderPath string `bson:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`
+}
+
+type MoveFolder struct {
+	Base       `bson:",inline"`
+	Name       string `bson:"name" json:"name,omitempty" bson:"name"`
+	ParentId   string `bson:"parent_id" json:"parentId,omitempty" bson:"parent_id"`
+	SourcePath string `gorm:"source_path" json:"sourcePath,omitempty" bson:"source_path"`
+	TargetPath string `gorm:"target_path" json:"targetPath,omitempty" bson:"target_path"`
 }

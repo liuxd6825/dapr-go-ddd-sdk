@@ -58,6 +58,13 @@ func (s *FsService) MkdirAll(path string) {
 	s.docFs.MkdirAll(path, 0666)
 }
 
+func (s *FsService) RemoveFile(filename string) {
+	s.docFs.RemoveFile(filename)
+}
+func (s *FsService) RemoveAll(name string) {
+	s.docFs.RemoveAll(name)
+}
+
 func (s *FsService) WriteAt(fileName string, data []byte, chunkIndex string, chunkSize string) error {
 	writeFile, err := s.docFs.Open(fileName, os.O_WRONLY, 0666)
 	if err != nil {
