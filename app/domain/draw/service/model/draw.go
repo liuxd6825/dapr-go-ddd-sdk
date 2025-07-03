@@ -21,7 +21,7 @@ type Base struct {
 
 type Draw struct {
 	Base     `bson:",inline"`
-	Status   string `json:"status" gorm:"-"`
+	Status   string `json:"status" gorm:"status"`
 	Name     string `json:"name" gorm:"name"`
-	FileName string `json:"fileName" json:"file_name"`
+	FileName string `json:"fileName" gorm:"file_name"`
 }

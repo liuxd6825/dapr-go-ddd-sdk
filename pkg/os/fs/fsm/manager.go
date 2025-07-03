@@ -216,6 +216,42 @@ func (m *Manager) CreateFile(filename string, opts ...*fsopts.Options) (afero.Fi
 	return fs2.Create(afs, fileName, opt)
 }
 
+func (m *Manager) MoveDir(aSrcDir, aDestDir string) error {
+	fs, srcDir, err := m.parse(aSrcDir)
+	if err != nil {
+		return err
+	}
+	_, destDir, err := m.parse(aDestDir)
+	if err != nil {
+		return err
+	}
+	// 创建目标目录
+	err = m.MkdirAll(destDir, 0755)
+	if err != nil {
+		return err
+	}
+
+	// 获取源目录内容
+	files, err := afero.ReadDir(fs, srcDir)
+	if err != nil {
+		return err
+	}
+
+	// 移动目录内容
+	for _, file := range files {
+		srcPath := srcDir + "/" + file.Name()
+		destPath := destDir + "/" + file.Name()
+
+		err = fs.Rename(srcPath, destPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	// 删除空源目录
+	return fs.Remove(srcDir)
+}
+
 func (m *Manager) ReadFile(filename string, opts ...*fsopts.Options) ([]byte, error) {
 	opt := fsopts.NewOptions(opts...)
 	afs, fileName, err := m.parse(filename)

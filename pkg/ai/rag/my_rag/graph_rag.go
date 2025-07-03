@@ -63,7 +63,17 @@ func (g *GraphRag) IngestDocuments(ctx context.Context, docs []*entity.Document)
 	return documentIDs, chunkCount, errorList
 }
 
-// IngestDocument
+type IngestMode string
+
+const (
+	IngestMode_All    IngestMode = "all"
+	IngestMode_Vector IngestMode = "vector"
+	IngestMode_Graph  IngestMode = "graph"
+)
+
+var IngestModeOptions = IngestMode_Graph
+
+// IngestDocument 提取文本
 func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (chunkCount int, err error) {
 	// 生成文档ID（如果未提供）
 	docId := doc.Id
@@ -72,7 +82,7 @@ func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (ch
 	}
 
 	// 分块处理文本
-	chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+	chunks, err := g.config.GetChunksDocument(doc)
 	if err != nil {
 		return 0, err
 	}
@@ -95,9 +105,17 @@ func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (ch
 	return chunkCount, err
 }
 
+func (g *GraphRag) SaveGraph(ctx context.Context, doc *entity.Document) (err error) {
+	err = g.docHandle.SaveGraph(ctx, doc)
+	if err != nil {
+		err = errors.New("导入文档%s生成图数据时出错, %s。", doc.FileName, err.Error())
+	}
+	return err
+}
+
 func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkCount int, err error) {
 	// 分块处理文本
-	chunks, err := g.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, doc.Text)
+	chunks, err := g.config.GetChunksDocument(doc)
 	if err != nil {
 		return 0, err
 	}

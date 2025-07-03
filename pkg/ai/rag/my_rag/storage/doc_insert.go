@@ -30,10 +30,10 @@ const GraphFieldSeparator = "<SEP>"
 // document handler, and stores the results in the appropriate storage.
 // It returns an error if any step in the process fails.
 func InsertDocument(ctx context.Context, doc *entity.Document, config Config, storage Storage, llm llm.LLM, log *logrus.Logger) error {
-	content := CleanContent(doc.Text)
+	doc.Text = CleanContent(doc.Text)
 	logger := log.WithFields(logrus.Fields{"package": "my_rag.storage", "function": "Insert"})
 
-	chunks, err := config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, content)
+	chunks, err := config.GetChunksDocument(doc)
 	if err != nil {
 		return fmt.Errorf("failed to chunk string: %w", err)
 	}

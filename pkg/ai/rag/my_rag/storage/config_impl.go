@@ -1,7 +1,10 @@
 package storage
 
 import (
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/tmc/langchaingo/textsplitter"
+	"strings"
 	"time"
 )
 
@@ -14,7 +17,7 @@ type RagConfig struct {
 	GleanCount                 int           // 调用LLM进行补偿次数
 	ConcurrencyCount           int           //
 	EntityExtractionPromptData *EntityExtractionPromptData
-	ChunksDocument             func(tenantId, caseId, docId string, content string) ([]Source, error)
+	ChunksDocument             func(doc *entity.Document) ([]Source, error)
 	BatchSize                  int
 }
 
@@ -30,7 +33,7 @@ func NewRagConfig(opts ...func(cfg *RagConfig)) *RagConfig {
 		BatchSize:               1,
 		EntityExtractionPromptData: &EntityExtractionPromptData{
 			Goal:        "提取实体与之间的关系",
-			EntityTypes: []string{"人员", "公司", "产品", "机构", "合同", "交易", "案件", "组织", "纠纷", "文件"},
+			EntityTypes: []string{"人员", "公司", "产品", "机构", "合同", "交易", "案件"},
 			Language:    "中文",
 		},
 	}
@@ -47,24 +50,25 @@ func (d *RagConfig) GetBatchSize() int {
 	return d.BatchSize
 }
 
-func (d *RagConfig) GetChunksDocument(tenantId, caseId, docId string, content string) ([]Source, error) {
-	return d.ChunksDocument(tenantId, caseId, docId, content)
+func (d *RagConfig) GetChunksDocument(doc *entity.Document) ([]Source, error) {
+	return d.ChunksDocument(doc)
 }
 
-func (d *RagConfig) getChunksDocument(tenantId, caseId, docId string, content string) ([]Source, error) {
-	list, err := LangChainGoSplitText(content, d.ChunkSize, d.Overlap)
+func (d *RagConfig) getChunksDocument(doc *entity.Document) ([]Source, error) {
+	list, err := LangChainGoSplitText(doc.Text, d.ChunkSize, d.Overlap)
 	if err != nil {
 		return nil, err
 	}
 	res := make([]Source, 0)
-	for i, s := range list {
+	for i, text := range list {
+		text = fmt.Sprintf("#文件名:%s\n##内容%d\n%s", doc.FileName, i+1, text)
 		res = append(res, Source{
-			TenantId:   tenantId,
-			CaseId:     caseId,
-			DocId:      docId,
-			Content:    s,
+			TenantId:   doc.TenantId,
+			CaseId:     doc.CaseId,
+			DocId:      doc.Id,
+			Content:    text,
 			OrderIndex: i,
-			TokenSize:  len(s),
+			TokenSize:  len(text),
 		})
 	}
 	return res, nil
@@ -100,11 +104,33 @@ func (d *RagConfig) GetMaxSummariesTokenLength() int {
 	return d.MaxSummariesTokenLength
 }
 
+const NewPageTag = "<!--break-->\n"
+const NewPageTagLength = len(NewPageTag)
+
 func LangChainGoSplitText(text string, chunkSize, chunkOverlap int) ([]string, error) {
 	splitter := textsplitter.NewRecursiveCharacter(func(options *textsplitter.Options) {
 		options.ChunkSize = chunkSize       // 每个块最大字符数
 		options.ChunkOverlap = chunkOverlap // 每个块重叠字符数
 	})
+	index := strings.Index(text, NewPageTag)
+	if index > -1 {
+		var list []string
+		for {
+			if index > -1 {
+				/*
+					chunks, err := splitter.SplitText(text[:index])
+					if err != nil {
+						return nil, err
+					}
+					list = append(list, chunks...)*/
+				list = append(list, text[:index])
+				text = text[index+NewPageTagLength:]
+			} else {
+				return list, nil
+			}
+			index = strings.Index(text, NewPageTag)
+		}
+	}
 	res, err := splitter.SplitText(text)
 	return res, err
 }

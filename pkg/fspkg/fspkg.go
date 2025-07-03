@@ -36,6 +36,7 @@ type IFsPkg interface {
 	//Open flag = os.O_RDONLY 只读 ； os.O_WRONLY只写;  perm= 0666
 	Open(filename string, flag int, perm os.FileMode, opts ...*fsopts.Options) (*fsm.File, error)
 	MkdirAll(path string, perm os.FileMode, opts ...*fsopts.Options)
+	MoveDir(aSrcDir, aDestDir string) error
 }
 
 // FsPkg
@@ -108,6 +109,10 @@ func (m *FsPkg) Create(name string, opts ...*fsopts.Options) afero.File {
 		panic(err)
 	}
 	return file
+}
+
+func (m *FsPkg) MoveDir(srcDir, destDir string) error {
+	return m.base.MoveDir(srcDir, destDir)
 }
 
 // Rename

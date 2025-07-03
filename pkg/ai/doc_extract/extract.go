@@ -58,7 +58,10 @@ func (e *Extract) AddExt(extName string, reader Reader) error {
 func (e *Extract) Extract(fs afero.Fs, filename string) (string, error) {
 	extName := strings.ToLower(path.Ext(filename))
 	if reader, ok := e.readers[extName]; ok {
-		return reader.ReadFile(fs, filename)
+		text, err := reader.ReadFile(fs, filename)
+		if err == nil {
+			return e.clear(text), nil
+		}
 	}
 	return "", fmt.Errorf("unsupported file type: %s", extName)
 }
@@ -67,4 +70,12 @@ func (e *Extract) IsSupport(filename string) bool {
 	extName := strings.ToLower(path.Ext(filename))
 	_, ok := e.readers[extName]
 	return ok
+}
+
+func (e *Extract) clear(text string) string {
+	text = strings.ReplaceAll(text, "\u0001", " ")
+	text = strings.ReplaceAll(text, "\u0014", " ")
+	text = strings.ReplaceAll(text, "\u0015", " ")
+	text = strings.ReplaceAll(text, "�", " ")
+	return text
 }

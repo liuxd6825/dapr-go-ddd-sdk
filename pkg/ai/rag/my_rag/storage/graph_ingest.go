@@ -66,10 +66,10 @@ func (d *GraphHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err 
 		}()
 	}
 
-	content := CleanContent(doc.Text)
+	doc.Text = CleanContent(doc.Text)
 	logger := d.logger.WithFields(logrus.Fields{"package": "my_rag.storage", "function": "Insert"})
 
-	chunks, err := d.config.GetChunksDocument(doc.TenantId, doc.CaseId, doc.Id, content)
+	chunks, err := d.config.GetChunksDocument(doc)
 	if err != nil {
 		return fmt.Errorf("failed to chunk string: %w", err)
 	}

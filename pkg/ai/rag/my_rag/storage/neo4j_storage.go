@@ -35,7 +35,7 @@ func NewNeo4jGraphStorage(dbKey string, logger logs.Logger) *Neo4jGraphStorage {
 		DBKey:              dbKey,
 		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
-		GraphLabels:        []string{"master"},
+		GraphLabels:        []string{"doc"},
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,
 		DBSchema:           dbschema.NewDBSchema("graph", "graph"),
@@ -62,7 +62,7 @@ func (n *Neo4jGraphStorage) CreateCase(ctx context.Context, tenantId, caseId str
 }
 
 func (n *Neo4jGraphStorage) DeleteTenant(ctx context.Context, tenantId string) error {
-	labels := fmt.Sprintf(":tenant_%s", tenantId)
+	labels := fmt.Sprintf(":tenant_%s:doc", tenantId)
 	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
 		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 			query := fmt.Sprintf("MATCH (n%s) DETACH DELETE n", labels)
@@ -77,7 +77,7 @@ func (n *Neo4jGraphStorage) DeleteTenant(ctx context.Context, tenantId string) e
 }
 
 func (n *Neo4jGraphStorage) DeleteCase(ctx context.Context, tenantId, caseId string) error {
-	labels := fmt.Sprintf(":tenant_%s:case_%s", tenantId, caseId)
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc", tenantId, caseId)
 	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
 		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 			query := fmt.Sprintf("MATCH (n%s) DETACH DELETE n", labels)
@@ -92,7 +92,7 @@ func (n *Neo4jGraphStorage) DeleteCase(ctx context.Context, tenantId, caseId str
 }
 
 func (n *Neo4jGraphStorage) DeleteDoc(ctx context.Context, tenantId, caseId, docId string) error {
-	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s", tenantId, caseId, docId)
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:doc", tenantId, caseId, docId)
 	_, err := n.session(func(ctx context.Context, sess neo4j.SessionWithContext) (any, error) {
 		return sess.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 			query := fmt.Sprintf("MATCH (n%s) DETACH DELETE n", labels)
@@ -170,7 +170,7 @@ func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, tenantId, 
 		"batch": batchData,
 	}
 
-	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:%s", tenantId, caseId, docId, label)
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:%s:doc", tenantId, caseId, docId, label)
 
 	cypher := fmt.Sprintf(`
 	UNWIND $batch AS row
@@ -221,7 +221,7 @@ func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, tenan
 		"batch": batchData,
 	}
 
-	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s", tenantId, caseId, docId)
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:doc", tenantId, caseId, docId)
 
 	cypher := fmt.Sprintf(`
 	UNWIND $batch AS row

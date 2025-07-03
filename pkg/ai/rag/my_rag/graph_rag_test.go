@@ -3,6 +3,7 @@ package my_rag
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
@@ -14,6 +15,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -25,7 +27,7 @@ var graphTxt string
 
 const tenantId = "test"
 const caseId = "1001"
-const docId = "doctest1001"
+const docId = "D001"
 
 func Test_GraphRag_CreateTenant(t *testing.T) {
 	ctx := context.Background()
@@ -80,8 +82,9 @@ func Test_GraphRag_LoadTenant(t *testing.T) {
 	}
 }
 
-func Test_GraphRag_IngestDocuments(t *testing.T) {
-	extract := doc_extract.NewExtract()
+func Test_LangChainGoSplitText(t *testing.T) {
+	logger := logrus.New()
+	extract := doc_extract.NewExtract(logger)
 	fs := afero.NewOsFs()
 	fileName := "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/xtest/天眼查-刘建新.pdf"
 	txt, err := extract.Extract(fs, fileName)
@@ -90,9 +93,24 @@ func Test_GraphRag_IngestDocuments(t *testing.T) {
 		return
 	}
 
+	list, err := storage.LangChainGoSplitText(txt, 500, 20)
+	assert.NoError(t, err)
+	t.Log(list)
+}
+
+func Test_GraphRag_SaveGraph(t *testing.T) {
+	logger := logrus.New()
+	extract := doc_extract.NewExtract(logger)
+	fs := afero.NewOsFs()
+	fileName := "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/xtest/天眼查-刘建新.pdf"
+	txt, err := extract.Extract(fs, fileName)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	doc := &entity.Document{
 		Id:       docId,
-		FileName: "x.txt",
+		FileName: "天眼查-刘建新.pdf",
 		Text:     txt,
 		TenantId: tenantId,
 		CaseId:   caseId,
@@ -100,11 +118,52 @@ func Test_GraphRag_IngestDocuments(t *testing.T) {
 	ctx := context.Background()
 	rag := newGraphRag(ctx, true)
 	gp.Try(func() error {
-		rag.IngestDocuments(ctx, []*entity.Document{doc})
+		return rag.SaveGraph(ctx, doc)
+	}).Catch(func(e error) {
+		t.Error(e)
+	})
+}
+
+func Test_GraphRag_IngestDocuments(t *testing.T) {
+	ctx := context.Background()
+	rag := newGraphRag(ctx, true)
+	gp.Try(func() error {
+		var files []string
+		//files = append(files, "刘建新-董监高对外投资及任职报告.pdf")
+		files = append(files, "张宇-董监高对外投资及任职报告.pdf")
+		docs, err := getDocs(t, files)
+		if err != nil {
+			return err
+		}
+		rag.IngestDocuments(ctx, docs)
 		return nil
 	}).Catch(func(e error) {
 		t.Error(e)
 	})
+}
+
+func getDocs(t *testing.T, files []string) ([]*entity.Document, error) {
+	logger := logrus.New()
+	extract := doc_extract.NewExtract(logger)
+	var docs []*entity.Document
+	fs := afero.NewOsFs()
+	for i, fileName := range files {
+		pathName := "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/xtest/" + fileName
+		txt, err := extract.Extract(fs, pathName)
+		if err != nil {
+			t.Error(err)
+			return nil, err
+		}
+		doc := &entity.Document{
+			Id:       fmt.Sprintf("D00%d", i),
+			FileName: fileName,
+			Text:     txt,
+			TenantId: tenantId,
+			CaseId:   caseId,
+		}
+		docs = append(docs, doc)
+	}
+	return docs, nil
 }
 
 func Test_GraphRag_Query(t *testing.T) {

@@ -94,21 +94,18 @@ func (s *DrawAPI) Update(ictx iris.Context) {
 func (s *DrawAPI) DeleteById(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		id := ictx.Params().GetString("id")
-		res := s.drawDao.DeleteById(ctx, id)
-		if res.RowsAffected == 0 {
-			return errors.ErrorOf("delete 0 by id: %s", id)
-		}
+		_ = s.drawDao.DeleteById(ctx, id)
 		return nil
 	})
 }
 
 func (s *DrawAPI) DeleteByIds(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		id := ictx.Params().GetString("id")
-		res := s.drawDao.DeleteById(ctx, id)
-		if res.RowsAffected == 0 {
-			return errors.ErrorOf("delete 0 by id: %s", id)
+		var cmd command.DeleteByIdsCommand
+		if err := web.GetCommandPost(ictx, &cmd); err != nil {
+			return err
 		}
+		_ = s.drawDao.DeleteByIds(ctx, cmd.Data)
 		return nil
 	})
 }
