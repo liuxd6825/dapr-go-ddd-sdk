@@ -27,7 +27,6 @@ func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...store.Opt
 				return err
 			}
 		}
-
 		// 是否找到数据
 		if isFound {
 			res = r.updateById(sCtx, entity, opts...)
@@ -51,9 +50,9 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) *s
 		if err := assert2.NotEmpty(r.GetTenantId(entity), assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
-		doc := r.entity2db(entity)
-		r.eb.SetCreatedInfo(ctx, doc)
 		id := r.eb.GetId(entity)
+		r.eb.SetCreatedInfo(ctx, entity)
+		doc := r.entity2db(entity)
 		logs.Info(ctx, logs.Fields{"dbType": "insert", "id": id})
 
 		mRes, err := r.getCollection(ctx).InsertOne(ctx, doc, getInsertOneOptions(opts...))

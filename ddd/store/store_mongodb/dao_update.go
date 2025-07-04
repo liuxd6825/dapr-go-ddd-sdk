@@ -30,11 +30,12 @@ func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...store.Options
 		sCtx := r.getSessionCtx(ctx)
 		id := r.GetId(entity)
 		tenantId := r.GetTenantId(entity)
+
 		filter := bson.M{
 			ConstIdField:       id,
 			ConstTenantIdField: tenantId,
 		}
-		mRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter, setData, uOpt)
+		mRes, err := r.getCollection(ctx).UpdateOne(sCtx, filter, setData, uOpt)
 		if err != nil {
 			return err
 		}
@@ -177,7 +178,8 @@ func (r *Dao[T]) getUpdateData(data any, opts ...store.Options) any {
 		if m, ok := data.(map[string]any); ok {
 			return r.getDbMap(m)
 		} else {
-			return data
+			doc := r.entity2db(data)
+			return doc
 		}
 
 	}

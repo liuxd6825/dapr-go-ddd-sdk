@@ -145,8 +145,8 @@ func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...store.Opt
 	return r.FindListByMap(ctx, tenantId, nil, opts...)
 }
 
-func (r *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) *store.FindPagingResult[T] {
-	return r.doFilter(query.GetTenantId(), query.GetFilter(), func(filter *rsql_mongo.Filter) (*store.FindPagingResult[T], bool, error) {
+func (r *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
+	return r.doFilter(query.GetTenantId(), query.GetFilter(), func(filter *rsql_mongo.Filter) (store.FindPagingResult[T], bool, error) {
 		if err := assert2.NotEmpty(query.GetTenantId(), assert2.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
@@ -160,7 +160,7 @@ func (r *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, op
 		}
 
 		findData := store.NewFindPagingResult[T](data, inOut.totalRows, query, err)
-		return findData, findData.IsFound, err
+		return findData, findData.GetIsFound(), err
 	})
 }
 
@@ -348,7 +348,7 @@ func (r *Dao[T]) getFindOptionsProjection(query store.FindPagingQuery) bson.D {
 	}
 */
 
-func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...store.Options) store.FindPagingResult[T] {
 	f := store.NewFindPagingQuery()
 	groupCols := []*store.GroupCol{
 		{Field: qry.GetField(), DataType: types.DataTypeString},
@@ -368,7 +368,7 @@ func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoComplet
 	return r.FindPaging(ctx, f, opts...)
 }
 
-func (r *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (r *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...store.Options) store.FindPagingResult[T] {
 	f := store.NewFindPagingQuery()
 
 	f.SetGroupCols(qry.GetGroupCols())
@@ -511,11 +511,13 @@ func (r *Dao[T]) sum(ctx context.Context, filter *rsql_mongo.Filter, valueCols [
 
 	cur, err := coll.Aggregate(r.getSessionCtx(ctx), pipeline)
 	if err != nil {
-		return store.NewFindPagingResultWithError[T](err).DataResult()
+		result := store.NewFindPagingResultWithError[T](err)
+		return result, false, err
 	}
 	err = cur.All(ctx, list)
 	if err != nil {
-		return store.NewFindPagingResultWithError[T](err).DataResult()
+		result := store.NewFindPagingResultWithError[T](err)
+		return result, false, err
 	}
 	return list, true, nil
 
@@ -559,7 +561,7 @@ func (r *Dao[T]) doList(tenantId, rsql string, fun func(filter *rsql_mongo.Filte
 	return store.NewFindListResult(data, ok, err)
 }
 
-func (r *Dao[T]) doFilter(tenantId, rsql string, fun func(filter *rsql_mongo.Filter) (*store.FindPagingResult[T], bool, error)) *store.FindPagingResult[T] {
+func (r *Dao[T]) doFilter(tenantId, rsql string, fun func(filter *rsql_mongo.Filter) (store.FindPagingResult[T], bool, error)) store.FindPagingResult[T] {
 	if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 		return store.NewFindPagingResultWithError[T](err)
 	}
@@ -697,7 +699,7 @@ func (r *Dao[T]) getSort(sort string) (bson.D, error) {
 		return entity
 	}
 */
-func (r *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...store.Options) (result *store.FindPagingResult[T]) {
+func (r *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...store.Options) (result store.FindPagingResult[T]) {
 	defer func() {
 		if e := recover(); e != nil {
 			if err, ok := e.(error); ok {
@@ -705,7 +707,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts
 			}
 		}
 	}()
-	var findData *store.FindPagingResult[T]
+	var findData store.FindPagingResult[T]
 	var err error
 	//data := r.NewEntityList()
 	queryGroup := NewQueryGroup(qry)
@@ -726,13 +728,17 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts
 	// 进行汇总计算
 	if len(qry.GetValueCols()) > 0 {
 		sumData, _, err := r.SumEntity(ctx, qry, opts...)
-		findData.SetSum(true, sumData, err)
+		findData.SetSumData(sumData)
+		findData.SetError(err)
+		findData.SetIsSum(true)
 	} else {
 		sumData := []T{}
-		findData.SetSum(false, sumData, err)
+		findData.SetSumData(sumData)
+		findData.SetError(err)
+		findData.SetIsSum(false)
 	}
 
-	findData.IsTotalRows = qry.GetIsTotalRows()
+	findData.SetIsTotalRows(qry.GetIsTotalRows())
 	return findData
 
 	g := queryGroup.GetGroup()
@@ -836,12 +842,16 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts
 	// 进行汇总计算
 	if len(qry.GetValueCols()) > 0 {
 		sumData, _, err := r.SumEntity(ctx, qry, opts...)
-		findData.SetSum(true, sumData, err)
+		findData.SetSumData(sumData)
+		findData.SetError(err)
+		findData.SetIsSum(true)
 	} else {
 		sumData := []T{}
-		findData.SetSum(false, sumData, err)
+		findData.SetSumData(sumData)
+		findData.SetError(err)
+		findData.SetIsSum(false)
 	}
-	findData.IsTotalRows = qry.GetIsTotalRows()
+	findData.SetIsTotalRows(qry.GetIsTotalRows())
 	return findData
 }
 

@@ -51,9 +51,9 @@ type IStore[T any] interface {
 	//FindListByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...Options) *FindListResult[T]
 	FindByRSQL(ctx context.Context, tenantId string, rsql string, opts ...Options) *FindListResult[T]
 	FindAll(ctx context.Context, tenantId string, opts ...Options) *FindListResult[T]
-	FindPaging(ctx context.Context, qry FindPagingQuery, opts ...Options) (result *FindPagingResult[T])
-	FindAutoComplete(ctx context.Context, qry FindAutoCompleteQuery, opts ...Options) *FindPagingResult[T]
-	FindDistinct(ctx context.Context, qry FindDistinctQuery, opts ...Options) *FindPagingResult[T]
+	FindPaging(ctx context.Context, qry FindPagingQuery, opts ...Options) (result FindPagingResult[T])
+	FindAutoComplete(ctx context.Context, qry FindAutoCompleteQuery, opts ...Options) FindPagingResult[T]
+	FindDistinct(ctx context.Context, qry FindDistinctQuery, opts ...Options) FindPagingResult[T]
 	FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) (T, error)
 	// 汇总
 

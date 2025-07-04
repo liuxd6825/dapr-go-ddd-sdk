@@ -549,7 +549,7 @@ func (d *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...store.Opt
 	return store.NewFindListResult[T](list, isFound, res.Error)
 }
 
-func (d *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...store.Options) (result *store.FindPagingResult[T]) {
+func (d *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...store.Options) (result store.FindPagingResult[T]) {
 	return d.findPaging(ctx, qry, opts...)
 }
 
@@ -564,9 +564,9 @@ func (d *Dao[T]) getAllFilter(qry store.FindPagingQuery) string {
 	return mustFilter
 }
 
-func (d *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
 	filter := d.getAllFilter(query)
-	return d.DoFilter(query.GetTenantId(), filter, func(sqlWhere string) (findRes *store.FindPagingResult[T], isFound bool, err error) {
+	return d.DoFilter(query.GetTenantId(), filter, func(sqlWhere string) (findRes store.FindPagingResult[T], isFound bool, err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
@@ -668,7 +668,9 @@ func (d *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, op
 			sumDb.Find(&sumList)
 			d.setListIds(sumList)
 
-			findData.SetSum(true, sumList, sumDb.Error)
+			findData.SetSumData(sumList)
+			findData.SetIsSum(true)
+			findData.SetError(sumDb.Error)
 		}
 
 		return findData, true, err
@@ -721,7 +723,7 @@ func (d *Dao[T]) setDbValueCols(db *gorm.DB, valCols []*store.ValueCol) {
 	}
 }
 
-func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...store.Options) store.FindPagingResult[T] {
 	f := store.NewFindPagingQuery()
 	groupCols := []*store.GroupCol{
 		{Field: qry.GetField(), DataType: types.DataTypeString},
@@ -741,7 +743,7 @@ func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoComplet
 	return d.FindPaging(ctx, f, opts...)
 }
 
-func (d *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...store.Options) store.FindPagingResult[T] {
 	f := store.NewFindPagingQuery()
 
 	f.SetGroupCols(qry.GetGroupCols())
@@ -834,12 +836,14 @@ func (d *Dao[T]) CountByMap(ctx context.Context, tenantId string, filterData any
 
 func (d *Dao[T]) CountByRSQL(ctx context.Context, tenantId string, rsql string, opts ...store.Options) (int64, error) {
 	var count int64
-	res := d.DoFilter(tenantId, rsql, func(sqlWhere string) (*store.FindPagingResult[T], bool, error) {
+	res := d.DoFilter(tenantId, rsql, func(sqlWhere string) (store.FindPagingResult[T], bool, error) {
 		table := d.table(ctx, opts...)
 		res := table.Where(sqlWhere).Select("count(*) as total").Scan(&count)
-		return store.NewFindPagingResultEmpty[T]().SetError(res.Error), res.Error == nil, nil
+		result := store.NewFindPagingResultEmpty[T]()
+		result.SetError(res.Error)
+		return result, res.Error == nil, nil
 	})
-	return count, res.Error
+	return count, res.GetError()
 }
 
 func (d *Dao[T]) table(ctx context.Context, opts ...store.Options) *gorm.DB {
@@ -899,10 +903,11 @@ func (d *Dao[T]) getSql(tenantId, rSql string) (string, error) {
 	return proc.GetSQL(), err
 }
 
-func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*store.FindPagingResult[T], bool, error)) (findRes *store.FindPagingResult[T]) {
+func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (store.FindPagingResult[T], bool, error)) (findRes store.FindPagingResult[T]) {
 	findRes = store.NewFindPagingResultEmpty[T]()
 	if tenantId == "" {
-		return findRes.SetError(errors.New("tenantId can not be empty"))
+		findRes.SetError(errors.New("tenantId can not be empty"))
+		return findRes
 	}
 	var sqlWhere string
 	if filter == "" {
@@ -910,7 +915,8 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*s
 	} else {
 		process := rsql_sql.NewProcess(tenantId)
 		if err := rsql.ParseProcess(filter, process); err != nil {
-			return findRes.SetError(err)
+			findRes.SetError(err)
+			return findRes
 		}
 		sqlWhere = fmt.Sprintf("tenant_id='%s' and (%s)", tenantId, process.GetSQL())
 	}
@@ -918,7 +924,8 @@ func (d *Dao[T]) DoFilter(tenantId, filter string, fun func(sqlWhere string) (*s
 	if data != nil {
 		findRes = data
 	}
-	return findRes.SetError(err)
+	findRes.SetError(err)
+	return
 }
 
 func (d *Dao[T]) StartTx(ctx context.Context, fun store.TxFunc, options ...*store.SessionOptions) (err error) {

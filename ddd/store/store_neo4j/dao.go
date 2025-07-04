@@ -102,7 +102,7 @@ func (d *Dao[T]) StartTx(ctx context.Context, fun store.TxFunc, options ...*stor
 	return nil
 }
 
-func (d *Dao[T]) DoFilter(ctx context.Context, tenantId string, fun func() (*store.FindPagingResult[T], bool, error), opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) DoFilter(ctx context.Context, tenantId string, fun func() (store.FindPagingResult[T], bool, error), opts ...store.Options) store.FindPagingResult[T] {
 	data, _, err := fun()
 	if err != nil {
 		return store.NewFindPagingResultWithError[T](err)

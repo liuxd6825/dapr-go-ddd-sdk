@@ -115,7 +115,7 @@ func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 	return d.FindByRSQL(ctx, tenantId, filter)
 }
 
-func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
 	res := store.NewFindPagingResultEmpty[T]()
 	gp.Try(func() error {
 
@@ -141,12 +141,12 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQ
 			return err
 		}
 		res.SetData(list)
-		res.Filter = query.GetFilter()
-		res.Fields = query.GetFields()
-		res.PageSize = query.GetPageSize()
-		res.PageNum = query.GetPageNum()
+		res.SetFilter(query.GetFilter())
+		res.SetFields(query.GetFields())
+		res.SetPageSize(query.GetPageSize())
+		res.SetPageNum(query.GetPageNum())
 		if len(list) > 0 {
-			res.IsFound = true
+			res.SetIsFound(true)
 		}
 
 		if query.GetIsTotalRows() {
@@ -162,7 +162,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQ
 			if err != nil {
 				return err
 			}
-			res.SetTotalRow(total)
+			res.SetTotalRows(total)
 		}
 
 		return err
@@ -172,7 +172,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQ
 	return res
 }
 
-func (d *Dao[T]) FindPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) FindPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
 	return d.findPagingByCypher(ctx, query, opts...)
 }
 
@@ -211,12 +211,12 @@ func (d *Dao[T]) FindByRSQL(ctx context.Context, tenantId, filter string, opts .
 	return res
 }
 
-func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...store.Options) store.FindPagingResult[T] {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (d *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...store.Options) *store.FindPagingResult[T] {
+func (d *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...store.Options) store.FindPagingResult[T] {
 	//TODO implement me
 	panic("implement me")
 }
