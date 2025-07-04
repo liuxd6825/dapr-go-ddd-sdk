@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -23,6 +22,5 @@ func NewChatDao(dbKey string) *ChatDao {
 	}
 	baseDao := dao.NewDao[*model.Chat](newCfg)
 	daoVal := &ChatDao{Dao: baseDao}
-	daoVal.Table().AutoMigrate(context.Background())
 	return daoVal
 }
