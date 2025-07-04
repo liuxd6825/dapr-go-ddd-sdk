@@ -67,7 +67,7 @@ func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interf
 }
 */
 
-func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging *store.FindPagingQueryRequest, opts ...*idao.CallOptions) *store.FindPagingResult[T] {
+func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging store.FindPagingQuery, opts ...*idao.CallOptions) store.FindPagingResult[T] {
 	findQuery := d.NewFindPagingQuery(ctx, findPaging)
 	res := d.store.FindPaging(ctx, findQuery, idao.NewRepositoryOptions(opts)...)
 	if res.GetError() != nil {
@@ -76,7 +76,7 @@ func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging *store.FindPagin
 	return res
 }
 
-func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry *store.FindAutoCompleteQueryRequest, opts ...*idao.CallOptions) *store.FindPagingResult[T] {
+func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...*idao.CallOptions) store.FindPagingResult[T] {
 	if qry == nil {
 		panic(errors.New("FindAutoComplete query is nil"))
 	}
@@ -89,7 +89,7 @@ func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry *store.FindAutoCo
 	return res
 }
 
-func (d *DaoBase[T]) FindDistinct(ctx context.Context, qry *store.FindDistinctQueryRequest, opts ...*idao.CallOptions) *store.FindPagingResult[T] {
+func (d *DaoBase[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...*idao.CallOptions) store.FindPagingResult[T] {
 	if qry == nil {
 		panic(errors.New("FindDistinctQueryRequest query is nil"))
 	}

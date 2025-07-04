@@ -32,14 +32,14 @@ type Dao[T any] interface {
 	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []T
 	FindOneByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) T
 	FindAll(ctx context.Context, opts ...*CallOptions) *store.FindListResult[T]
-	FindPaging(ctx context.Context, qry *store.FindPagingQueryRequest, opts ...*CallOptions) *store.FindPagingResult[T]
-	FindAutoComplete(ctx context.Context, qry *store.FindAutoCompleteQueryRequest, opts ...*CallOptions) *store.FindPagingResult[T]
-	FindDistinct(ctx context.Context, qry *store.FindDistinctQueryRequest, opts ...*CallOptions) *store.FindPagingResult[T]
+	FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...*CallOptions) store.FindPagingResult[T]
+	FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...*CallOptions) store.FindPagingResult[T]
+	FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...*CallOptions) store.FindPagingResult[T]
 
 	//SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) T
 	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...*CallOptions) map[string]any
-	SumEntity(ctx context.Context, qry *store.FindPagingQueryRequest, opts ...*CallOptions) []T
-	SumByQuery(ctx context.Context, qry *store.FindPagingQueryRequest, opts ...*CallOptions) map[string]any
+	SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...*CallOptions) []T
+	SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...*CallOptions) map[string]any
 
 	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64
 	Table() Table

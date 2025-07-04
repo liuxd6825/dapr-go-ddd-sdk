@@ -42,6 +42,11 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 	dbSch := store.NewDBSchema()
 	for _, f := range gSch.Fields {
 		field := store.NewField()
+		if title, ok := f.TagSettings["TITLE"]; ok {
+			field.Title = title
+		} else {
+			field.Name = f.Name
+		}
 		field.Name = f.Name
 		field.DBName = f.DBName
 		field.StructField = f.StructField
