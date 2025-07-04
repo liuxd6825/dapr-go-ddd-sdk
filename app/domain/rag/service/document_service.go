@@ -98,14 +98,14 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 				PageSize: 1,
 			}
 			findResult := s.dao.FindPaging(ctx, findQuery)
-			if findResult.Error != nil {
-				return findResult.Error
+			if findResult.GetError() != nil {
+				return findResult.GetError()
 			}
-			if len(findResult.Data) == 0 {
+			if len(findResult.GetData()) == 0 {
 				break
 			}
 			// 处理所有文档
-			list := findResult.Data
+			list := findResult.GetData()
 			env := env.GetEnv()
 			for _, doc := range list {
 				fs, ok := env.Fsm.GetFs(doc.FsKey)
