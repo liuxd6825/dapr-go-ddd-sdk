@@ -7,44 +7,35 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
-func (d *DaoBase[T]) FindById(ctx context.Context, id string, opts ...idao.CallOptions) T {
+func (d *DaoBase[T]) FindById(ctx context.Context, id string, opts ...idao.CallOptions) (T, error) {
 	tenantId := d.GetTenantId(ctx)
 	res := d.store.FindById(ctx, tenantId, id, idao.NewCallOptions(opts...))
-	if res.Error != nil {
-		panic(res.Error)
-	}
-	return res.Data
+	return res.Data, res.Error
 }
 
-func (d *DaoBase[T]) FindByIds(ctx context.Context, ids []string, opts ...idao.CallOptions) []T {
+func (d *DaoBase[T]) FindByIds(ctx context.Context, ids []string, opts ...idao.CallOptions) ([]T, error) {
 	tenantId := d.GetTenantId(ctx)
 	data, _, err := d.store.FindByIds(ctx, tenantId, ids, idao.NewCallOptions(opts...)).Result()
-	if err != nil {
-		panic(err)
-	}
-	return data
+	return data, err
 }
 
-func (d *DaoBase[T]) FindOneByRSQL(ctx context.Context, rsql string, opts ...idao.CallOptions) T {
+func (d *DaoBase[T]) FindOneByRSQL(ctx context.Context, rsql string, opts ...idao.CallOptions) (T, error) {
+	var null T
 	tenantId := d.GetTenantId(ctx)
 	list := d.store.FindByRSQL(ctx, tenantId, rsql, idao.NewCallOptions(opts...))
 	if list.Error != nil {
-		panic(list.Error)
+		return null, list.Error
 	}
 	if len(list.Data) == 0 {
-		var null T
-		return null
+		return null, nil
 	}
-	return list.Data[0]
+	return list.Data[0], nil
 }
 
-func (d *DaoBase[T]) FindByRSQL(ctx context.Context, rsql string, opts ...idao.CallOptions) []T {
+func (d *DaoBase[T]) FindByRSQL(ctx context.Context, rsql string, opts ...idao.CallOptions) ([]T, error) {
 	tenantId := d.GetTenantId(ctx)
 	res := d.store.FindByRSQL(ctx, tenantId, rsql, idao.NewCallOptions(opts...))
-	if res.GetError() != nil {
-		panic(res.GetError())
-	}
-	return res.Data
+	return res.GetData(), res.GetError()
 }
 
 func (d *DaoBase[T]) FindAll(ctx context.Context, opts ...idao.CallOptions) *store.FindListResult[T] {

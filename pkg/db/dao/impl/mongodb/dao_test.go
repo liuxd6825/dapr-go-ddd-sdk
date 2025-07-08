@@ -154,7 +154,8 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.FindById", func(t *testing.T) {
 		gp.Try(func() error {
-			e := dao.FindById(ctx, id)
+			e, err := dao.FindById(ctx, id)
+			assert.Nil(t, err)
 			assert.NotNil(t, e)
 			if e != nil {
 				if dataId, ok := e["id"].(string); ok {
@@ -213,14 +214,16 @@ func Test_Dao(t *testing.T) {
 	})
 
 	t.Run("dao.FindByRSQL", func(t *testing.T) {
-		findList := dao.FindByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+		findList, err := dao.FindByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+		assert.Nil(t, err)
 		t.Log("list:", findList)
 		assert.Equal(t, newCount, int64(len(findList)))
 	})
 
 	t.Run("dao.CountByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			res := dao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			res, err := dao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			assert.Nil(t, err)
 			assert.Equal(t, newCount, res)
 			t.Log("count:", res)
 			return nil
@@ -236,7 +239,8 @@ func Test_Dao(t *testing.T) {
 				AggFunc: "sum",
 				Field:   "age",
 			})
-			res := dao.SumByRSQL(ctx, "", vals)
+			res, err := dao.SumByRSQL(ctx, "", vals)
+			assert.Nil(t, err)
 			t.Log("count:", res)
 			return nil
 		}).Catch(func(err error) {
@@ -411,7 +415,8 @@ func Test_DaoStruct(t *testing.T) {
 
 	t.Run("dao.FindById", func(t *testing.T) {
 		gp.Try(func() error {
-			e := dao.FindById(ctx, id)
+			e, err := dao.FindById(ctx, id)
+			assert.NoError(t, err)
 			assert.NotNil(t, e)
 			assert.Equal(t, e.Id, id)
 			t.Log("findById:", e)
@@ -461,14 +466,16 @@ func Test_DaoStruct(t *testing.T) {
 	})
 
 	t.Run("dao.FindByRSQL", func(t *testing.T) {
-		findList := dao.FindByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+		findList, err := dao.FindByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+		assert.Nil(t, err)
 		t.Log("list:", findList)
 		assert.Equal(t, newCount, int64(len(findList)))
 	})
 
 	t.Run("dao.CountByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			res := dao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			res, err := dao.CountByRSQL(ctx, fmt.Sprintf("creatorName=='%s'", "test"))
+			assert.Nil(t, err)
 			assert.Equal(t, newCount, res)
 			t.Log("count:", res)
 			return nil
@@ -484,7 +491,8 @@ func Test_DaoStruct(t *testing.T) {
 				AggFunc: "sum",
 				Field:   "age",
 			})
-			res := dao.SumByRSQL(ctx, "", vals)
+			res, err := dao.SumByRSQL(ctx, "", vals)
+			assert.Nil(t, err)
 			t.Log("count:", res)
 			return nil
 		}).Catch(func(err error) {
