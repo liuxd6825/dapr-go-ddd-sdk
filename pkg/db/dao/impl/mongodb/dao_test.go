@@ -594,6 +594,9 @@ func Test_DaoStruct_Update(t *testing.T) {
 	assert.Equal(t, int64(1), res2.RowsAffected)
 
 	human.Name = humanName + "2"
+	human.CreatedTime = nil
+	human.CreatorId = ""
+	human.CreatorName = ""
 	res3 := dao.Update(ctx, human)
 	assert.Equal(t, int64(1), res3.RowsAffected)
 }
