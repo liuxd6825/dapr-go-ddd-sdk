@@ -458,15 +458,15 @@ func AsFieldName(name string) string {
 	return stringutils.SnakeString(name)
 }
 
+// entity2db
 func (r *Dao[T]) entity2db(entity any) map[string]any {
 	data := map[string]any{}
 	isMap := r.eb.GetConfig().IsMap
 	if isMap {
-		eMap, isMap := entity.(map[string]any)
-		if !isMap {
+		eMap, isMapVal := entity.(map[string]any)
+		if !isMapVal {
 			panic("store_mongodb.dao entity is not a map")
 		}
-
 		for _, field := range r.schema.Fields {
 			if field.PrimaryKey {
 				data[field.Name] = eMap[field.Name]
@@ -503,6 +503,11 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 				if field.DataType == store.DataType_Date || field.DataType == store.DataType_Time {
 					if pDate, ok := val.(primitive.DateTime); ok {
 						timeVal := pDate.Time()
+						val = &timeVal
+					}
+				} else if field.DataType == store.DataType_Array {
+					if arr, ok := val.(primitive.A); ok {
+						timeVal := arr
 						val = &timeVal
 					}
 				}

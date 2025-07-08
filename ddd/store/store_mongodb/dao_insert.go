@@ -5,7 +5,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -45,16 +44,12 @@ func (r *Dao[T]) InsertOrUpdate(ctx context.Context, entity T, opts ...store.Opt
 func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-
-		ctx := r.getSessionCtx(ctx)
-		if err := assert2.NotEmpty(r.GetTenantId(entity), assert2.NewOptions("tenantId is empty")); err != nil {
+		tenantId := r.GetTenantId(entity)
+		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
-		id := r.eb.GetId(entity)
-		r.eb.SetCreatedInfo(ctx, entity)
-		doc := r.entity2db(entity)
-		logs.Info(ctx, logs.Fields{"dbType": "insert", "id": id})
-
+		doc := r.getInsertData(ctx, tenantId, entity)
+		ctx := r.getSessionCtx(ctx)
 		mRes, err := r.getCollection(ctx).InsertOne(ctx, doc, getInsertOneOptions(opts...))
 		if err != nil {
 			return err
@@ -80,12 +75,12 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) *s
 func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string]interface{}, opts ...store.Options) (res *store.SetResult[T]) {
 	res = store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		ctx := r.getSessionCtx(ctx)
 		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
-		data["tenant_id"] = tenantId
-		inRes, err := r.getCollection(ctx).InsertOne(ctx, data, getInsertOneOptions(opts...))
+		doc := r.getInsertData(ctx, tenantId, data)
+		ctx := r.getSessionCtx(ctx)
+		inRes, err := r.getCollection(ctx).InsertOne(ctx, doc, getInsertOneOptions(opts...))
 		if inRes != nil && inRes.InsertedID != nil {
 			res.SetRowsAffected(1)
 		}
@@ -110,10 +105,10 @@ func (r *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 		}
 		var docs []interface{}
 		for _, e := range entities {
-			r.eb.SetCreatedInfo(ctx, e)
-			doc := r.entity2db(e)
+			doc := r.getInsertData(ctx, tenantId, e)
 			docs = append(docs, doc)
 		}
+
 		mRes, err := r.getCollection(ctx).InsertMany(ctx, docs, getInsertManyOptions(opts...))
 		if err == nil && mRes != nil {
 			count := int64(len(mRes.InsertedIDs))

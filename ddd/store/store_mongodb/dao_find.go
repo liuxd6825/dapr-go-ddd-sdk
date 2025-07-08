@@ -60,27 +60,31 @@ func (r *Dao[T]) FindByIds(ctx context.Context, tenantId string, ids []string, o
 }
 
 func (r *Dao[T]) mFindList(ctx context.Context, filter any, opts ...*mongo_options.FindOptions) ([]T, bool, error) {
-	var mapList []map[string]any
 	var list []T
 	sCtx := r.getSessionCtx(ctx)
 	cursor, err := r.getCollection(sCtx).Find(sCtx, filter, opts...)
 	if err != nil {
 		return nil, false, err
 	}
-	err = cursor.All(ctx, &mapList)
+	err = cursor.All(ctx, &list)
 	if err != nil {
 		return nil, false, err
 	}
-	if len(mapList) == 0 {
+	if len(list) == 0 {
 		list = []T{}
 		return list, false, nil
 	}
 
-	for _, data := range mapList {
-		e := r.db2entity(data)
-		list = append(list, e)
+	if r.eb.GetConfig().IsMap {
+		for i, item := range list {
+			if eMap, ok := any(item).(map[string]any); ok {
+				e := r.db2entity(eMap)
+				list[i] = e
+			}
+		}
 	}
-	return list, len(mapList) > 0, err
+
+	return list, len(list) > 0, err
 }
 
 func (r *Dao[T]) mFindOne(ctx context.Context, filter any, opts ...*mongo_options.FindOneOptions) (T, bool, error) {
@@ -88,15 +92,16 @@ func (r *Dao[T]) mFindOne(ctx context.Context, filter any, opts ...*mongo_option
 	var entity T
 	sCtx := r.getSessionCtx(ctx)
 	result := r.getCollection(ctx).FindOne(sCtx, filter, opts...)
-	var data map[string]any
-	err := result.Decode(&data)
+	err := result.Decode(&entity)
 	if err != nil {
 		return null, false, err
 	}
-	if data != nil {
-		entity = r.db2entity(data)
+	if r.eb.GetConfig().IsMap {
+		if eMap, ok := any(entity).(map[string]any); ok {
+			r.db2entity(eMap)
+		}
 	}
-	return entity, data != nil, err
+	return entity, any(entity) != nil, err
 }
 
 func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...store.Options) *store.FindOneResult[T] {

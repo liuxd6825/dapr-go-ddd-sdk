@@ -18,22 +18,21 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *s
 func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		r.eb.SetUpdatedInfo(ctx, entity)
-
 		opt := store.NewOptions(opts...)
-		data := r.getUpdateData(entity, opt)
-
-		uOpt := getUpdateOptions(opts...)
-		setData := bson.M{"$set": data}
-
-		sCtx := r.getSessionCtx(ctx)
 		id := r.GetId(entity)
 		tenantId := r.GetTenantId(entity)
+
+		data := r.getUpdateData(ctx, tenantId, entity, opt)
+		setData := bson.M{"$set": data}
+
+		uOpt := getUpdateOptions(opts...)
+		sCtx := r.getSessionCtx(ctx)
 
 		filter := bson.M{
 			ConstIdField:       id,
 			ConstTenantIdField: tenantId,
 		}
+
 		mRes, err := r.getCollection(ctx).UpdateOne(sCtx, filter, setData, uOpt)
 		if err != nil {
 			return err
@@ -60,10 +59,11 @@ func (r *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, 
 			return errors.New("aggregate update is not supported")
 		}
 		opt := store.NewOptions(opts...)
-		r.eb.SetUpdatedInfo(ctx, data)
-		mData := r.getUpdateData(data, opt)
-		setData := bson.M{"$set": mData}
 		updateOptions := getUpdateOptions(opts...)
+
+		mData := r.getUpdateData(ctx, tenantId, data, opt)
+		setData := bson.M{"$set": mData}
+
 		sCtx := r.getSessionCtx(ctx)
 		mRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter.Match, setData, updateOptions)
 		if mRes != nil {
@@ -87,12 +87,12 @@ func (r *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, 
 		for _, entity := range entities {
 			r.eb.SetUpdatedInfo(ctx, entity)
 			item := r.entity2db(entity)
-			data := bson.M{"$set": item}
+			setData := bson.M{"$set": item}
 			id := r.GetId(entity)
 
 			model := mongo.NewUpdateOneModel().SetFilter(
 				bson.M{ConstTenantIdField: tenantId, ConstIdField: id},
-			).SetUpdate(data).SetUpsert(false)
+			).SetUpdate(setData).SetUpsert(false)
 			list = append(list, model)
 		}
 
@@ -115,7 +115,7 @@ func (r *Dao[T]) UpdateMapById(ctx context.Context, tenantId string, id string, 
 	filter := bson.M{ConstTenantIdField: tenantId, ConstIdField: id}
 	m := r.getDbMap(data)
 	r.eb.SetUpdatedInfo(ctx, data)
-	res := r.UpdateMapAndGetCount(ctx, tenantId, filter, m, opts...)
+	res := r.updateMap(ctx, tenantId, filter, m, opts...)
 	return res
 }
 
@@ -126,7 +126,7 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 		if err != nil {
 			return err
 		}
-		res = r.UpdateMapAndGetCount(ctx, tenantId, filter.Match, data, opts...)
+		res = r.updateMap(ctx, tenantId, filter.Match, data, opts...)
 		return res.Error
 	}).Catch(func(err error) {
 		res.SetError(err)
@@ -134,7 +134,7 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 	return res
 }
 
-func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...store.Options) *store.SetResult[T] {
+func (r *Dao[T]) updateMap(ctx context.Context, tenantId string, filter any, data map[string]any, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
 		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
@@ -145,15 +145,12 @@ func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 			return err
 		}
 		updateOptions := getUpdateOptions(opts...)
-		var f any
-		if v, ok := filter.(map[string]any); ok {
-			f = r.NewFilter(tenantId, v)
-		} else {
-			f = filter
-		}
+		doc := r.getUpdateData(ctx, tenantId, data, opts...)
+
+		setData := bson.M{"$set": doc}
+
 		sCtx := r.getSessionCtx(ctx)
-		r.eb.SetUpdatedInfo(ctx, data)
-		upeRes, err := r.getCollection(ctx).UpdateMany(sCtx, f, data, updateOptions)
+		upeRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter, setData, updateOptions)
 		res.SetError(err)
 		if upeRes != nil {
 			res.SetRowsAffected(upeRes.ModifiedCount)
@@ -165,39 +162,47 @@ func (r *Dao[T]) UpdateMapAndGetCount(ctx context.Context, tenantId string, filt
 	return res
 }
 
-func (r *Dao[T]) getUpdateData(data any, opts ...store.Options) any {
-	if opts == nil {
-		return data
-	}
-	opt := store.NewOptions(opts...)
-	updateCancel := opt.GetUpdateCancel()
-	updateFields := opt.GetUpdateFields()
-
-	if len(updateCancel) == 0 && len(updateFields) == 0 {
-		if m, ok := data.(map[string]any); ok {
-			return r.getDbMap(m)
-		} else {
-			doc := r.entity2db(data)
-			return doc
-		}
-	}
+func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, opts ...store.Options) any {
+	r.eb.SetUpdatedInfo(ctx, data)
 	doc := r.entity2db(data)
-	m := make(map[string]any)
+	opt := store.NewOptions(opts...)
 
-	updateFields = append(updateFields, "updated_time", "updater_id", "updater_name")
 	for _, field := range r.schema.Fields {
-		if updateCancel != nil && IncludeField(field, updateCancel) {
-			continue
-		}
-		if updateFields != nil {
-			if IncludeField(field, updateFields) {
-				m[field.DBName] = doc[field.DBName]
-			}
-		} else {
-			m[field.DBName] = doc[field.DBName]
+		if !field.Updatable || field.PrimaryKey {
+			delete(doc, field.DBName)
 		}
 	}
-	return m
+
+	updateFields := opt.GetUpdateFields()
+	if len(updateFields) > 0 {
+		for _, field := range r.schema.Fields {
+			if IncludeField(field, updateFields) {
+				continue
+			}
+			delete(doc, field.DBName)
+		}
+	}
+
+	cancelFields := opt.GetUpdateCancel()
+	if len(cancelFields) > 0 {
+		for _, field := range r.schema.Fields {
+			if IncludeField(field, cancelFields) {
+				delete(doc, field.DBName)
+			}
+		}
+	}
+	return doc
+}
+
+func (r *Dao[T]) getInsertData(ctx context.Context, tenantId string, data any, opts ...store.Options) any {
+	r.eb.SetCreatedInfo(ctx, data)
+	doc := r.entity2db(data)
+	for _, field := range r.schema.Fields {
+		if !field.Creatable {
+			delete(doc, field.DBName)
+		}
+	}
+	return doc
 }
 
 func IncludeField(field *store.Field, fields []string) bool {

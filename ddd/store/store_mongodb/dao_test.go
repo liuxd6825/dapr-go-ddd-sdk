@@ -123,11 +123,11 @@ func TestMapper_Search(t *testing.T) {
 		qry.SetPageSize(20)
 
 		res := recordDao.FindPaging(ctx, qry)
-		if res.Error == nil {
-			logObject(t, "Data: ", res.Data)
-			logObject(t, "Sum: ", res.SumData)
+		if res.GetError() == nil {
+			logObject(t, "Data: ", res.GetData())
+			logObject(t, "Sum: ", res.GetSumData())
 		} else {
-			t.Error(res.Error)
+			t.Error(res.GetError())
 		}
 	})
 
@@ -141,11 +141,11 @@ func TestMapper_Search(t *testing.T) {
 		qry.SetGroupKeys([]any{humanName})
 
 		res := recordDao.FindPaging(ctx, qry)
-		if res.Error == nil {
-			logObject(t, "Data: ", res.Data)
-			logObject(t, "Sum: ", res.SumData)
+		if res.GetError() == nil {
+			logObject(t, "Data: ", res.GetData())
+			logObject(t, "Sum: ", res.GetSumData())
 		} else {
-			t.Error(res.Error)
+			t.Error(res.GetError())
 		}
 	})
 
