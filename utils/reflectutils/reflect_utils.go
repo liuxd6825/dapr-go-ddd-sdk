@@ -400,13 +400,24 @@ func SetField(data any, fieldName string, val any) bool {
 		if !field.CanSet() {
 			return false
 		}
-		// 根据字段类型设置nil
-		switch field.Kind() {
-		case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
+		if val == nil {
 			field.Set(reflect.Zero(field.Type()))
-		default:
+		} else {
 			field.Set(reflect.ValueOf(val))
 		}
+		// 根据字段类型设置nil
+		/*
+			switch field.Kind() {
+			case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
+				if val == nil {
+					field.Set(reflect.Zero(field.Type()))
+				} else {
+					field.Set(reflect.ValueOf(val))
+				}
+			default:
+				field.Set(reflect.ValueOf(val))
+			}
+		*/
 	}
 	return true
 }
