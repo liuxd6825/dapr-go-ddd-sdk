@@ -27,21 +27,21 @@ type Dao[T any] interface {
 	DeleteAll(ctx context.Context, opts ...CallOptions) *Result
 	DeleteByRSQL(ctx context.Context, rsql string, opts ...CallOptions) *Result
 
-	FindById(ctx context.Context, id string, opts ...CallOptions) T
-	FindByIds(ctx context.Context, ids []string, opts ...CallOptions) []T
-	FindByRSQL(ctx context.Context, rsql string, opts ...CallOptions) []T
-	FindOneByRSQL(ctx context.Context, rsql string, opts ...CallOptions) T
+	FindById(ctx context.Context, id string, opts ...CallOptions) (T, error)
+	FindByIds(ctx context.Context, ids []string, opts ...CallOptions) ([]T, error)
+	FindByRSQL(ctx context.Context, rsql string, opts ...CallOptions) ([]T, error)
+	FindOneByRSQL(ctx context.Context, rsql string, opts ...CallOptions) (T, error)
 	FindAll(ctx context.Context, opts ...CallOptions) *store.FindListResult[T]
 	FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) store.FindPagingResult[T]
 	FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...CallOptions) store.FindPagingResult[T]
 	FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...CallOptions) store.FindPagingResult[T]
 
 	//SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...CallOptions) T
-	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...CallOptions) map[string]any
-	SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) []T
-	SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) map[string]any
+	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...CallOptions) (map[string]any, error)
+	SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) ([]T, error)
+	SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) (map[string]any, error)
 
-	CountByRSQL(ctx context.Context, rsql string, opts ...CallOptions) int64
+	CountByRSQL(ctx context.Context, rsql string, opts ...CallOptions) (int64, error)
 	Table() Table
 
 	GetStore() store.IStore[T]

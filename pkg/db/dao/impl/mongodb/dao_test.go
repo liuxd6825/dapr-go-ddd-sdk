@@ -20,9 +20,7 @@ import (
 )
 
 type Human struct {
-	Id         string    `gorm:"primaryKey" bson:"id"`
-	CaseId     string    `gorm:"case_id" bson:"case_id"`
-	TenantId   string    `gorm:"tenant_id" bson:"tenant_id"`
+	xtest.Base `bson:",inline"`
 	Name       string    `gorm:"name" bson:"name"`
 	Age        int64     `gorm:"age" bson:"age"`
 	Analyse    string    `gorm:"analyse" bson:"analyse"`
@@ -322,10 +320,12 @@ func Test_DaoStruct(t *testing.T) {
 
 	for i := int64(0); i < newCount; i++ {
 		entity := &Human{
-			Id:         randomutils.NewId(),
+			Base: xtest.Base{
+				Id:       randomutils.NewId(),
+				TenantId: xtest.TenantId,
+				CaseId:   xtest.CaseId,
+			},
 			Name:       humanName,
-			TenantId:   xtest.TenantId,
-			CaseId:     xtest.CaseId,
 			Analyse:    "",
 			Age:        randomutils.Int64Max(100),
 			Birthday:   randomutils.Date(),
@@ -369,8 +369,11 @@ func Test_DaoStruct(t *testing.T) {
 
 	id := idutils.NewId()
 	human := &Human{
-		Id:         id,
-		TenantId:   "test",
+		Base: xtest.Base{
+			Id:       randomutils.NewId(),
+			TenantId: xtest.TenantId,
+			CaseId:   xtest.CaseId,
+		},
 		Analyse:    "",
 		Birthday:   time.Now(),
 		PeopleType: []string{"1111"},
@@ -545,4 +548,52 @@ func Test_DaoStruct(t *testing.T) {
 	})
 
 	t.Run("dao.FindByRSQL", func(t *testing.T) {})
+}
+
+func newHumanDao() idao.Dao[*Human] {
+	xtest.InitEnv_MongoLocal()
+	daoCfg := &idao.DaoConfig{
+		DBKey:      "db",
+		DBSchema:   dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
+		Env:        env.GetEnv(),
+		IsPubEvent: false,
+	}
+
+	return NewDao[*Human](daoCfg)
+}
+
+func Test_DaoStruct_Update(t *testing.T) {
+	dao := newHumanDao()
+	ctx, err := restapp.NewTestContext(context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	humanName := "updateName"
+	id := idutils.NewId()
+	human := &Human{
+		Base: xtest.Base{
+			Id:       randomutils.NewId(),
+			TenantId: xtest.TenantId,
+			CaseId:   xtest.CaseId,
+		},
+		Analyse:    "",
+		Birthday:   time.Now(),
+		PeopleType: []string{"1111"},
+		Name:       humanName,
+		Age:        int64(1),
+		Remark:     "remark," + id,
+		Tags:       []string{"tag10", "tag20"},
+	}
+
+	res1 := dao.Create(ctx, human)
+	assert.Equal(t, int64(1), res1.RowsAffected)
+
+	human.Name = humanName + "1"
+	res2 := dao.Update(ctx, human, idao.NewCallOptions().SetUpdateFields([]string{"name"}))
+	assert.Equal(t, int64(1), res2.RowsAffected)
+
+	human.Name = humanName + "2"
+	res3 := dao.Update(ctx, human)
+	assert.Equal(t, int64(1), res3.RowsAffected)
 }
