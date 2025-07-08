@@ -129,7 +129,10 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 				return err
 			}
 
-			res := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			res, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			if err != nil {
+				return err
+			}
 			folders := []*model.Folder{}
 			for _, f := range res {
 				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.OldName+"/") {
@@ -154,7 +157,7 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 
 			s.folderService.Update(ctx, &folder, opts)
 
-			err := s.fsService.Rename(cmd.Data.OldName, cmd.Data.FolderPath)
+			err = s.fsService.Rename(cmd.Data.OldName, cmd.Data.FolderPath)
 			if err != nil {
 				return err
 			}
@@ -237,7 +240,10 @@ func (s *FolderAPI) Delete(ictx iris.Context) {
 			//	return errors.New("存在文档")
 			//}
 
-			res := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			res, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			if err != nil {
+				return err
+			}
 			for _, f := range res {
 				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.FolderPath+"/") {
 					s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id==%s", f.Id))

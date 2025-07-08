@@ -19,6 +19,6 @@ func NewDrawService() *DrawService {
 	}
 }
 
-func (s *DrawService) FindById(ctx context.Context, id string) *model.Draw {
+func (s *DrawService) FindById(ctx context.Context, id string) (*model.Draw, error) {
 	return s.drawDao.FindById(ctx, id)
 }

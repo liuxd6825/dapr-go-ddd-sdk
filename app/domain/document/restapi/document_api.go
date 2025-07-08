@@ -89,7 +89,10 @@ func (s *DocumentAPI) Download(ictx iris.Context) {
 			return errors.New("Url参数file-id不能为空")
 		}
 
-		file := s.fileService.FindById(ctx, fileId)
+		file, err := s.fileService.FindById(ctx, fileId)
+		if err != nil {
+			return err
+		}
 		if file == nil {
 			return errors.New("没有找到文件记录,fileId=" + fileId)
 		}
@@ -99,7 +102,7 @@ func (s *DocumentAPI) Download(ictx iris.Context) {
 			return errors.New("没有找到文件,objectName=" + file.ObjectName)
 		}
 
-		err := s.fsService.Download(ictx, file.ObjectName, file.Name)
+		err = s.fsService.Download(ictx, file.ObjectName, file.Name)
 		if err != nil {
 			return err
 		}
@@ -170,7 +173,10 @@ func (s *DocumentAPI) Move(ictx iris.Context) {
 				return err
 			}
 
-			files := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
+			files, err := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
+			if err != nil {
+				return err
+			}
 			for _, file := range files {
 				file.FolderId = cmd.Data.FolderId
 			}
@@ -203,7 +209,10 @@ func (s *DocumentAPI) Update(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			files := s.fileService.FindByRSQL(ctx, "document_id=='"+cmd.Data.Id+"'")
+			files, err := s.fileService.FindByRSQL(ctx, "document_id=='"+cmd.Data.Id+"'")
+			if err != nil {
+				return err
+			}
 			for _, file := range files {
 				file.IsMain = false
 			}

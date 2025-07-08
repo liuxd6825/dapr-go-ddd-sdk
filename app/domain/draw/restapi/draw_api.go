@@ -128,7 +128,10 @@ func (s *DrawAPI) FindPaging(ictx iris.Context) {
 func (s *DrawAPI) FindById(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		id := ictx.Params().GetString("id")
-		draw := s.drawDao.FindById(ctx, id)
+		draw, err := s.drawDao.FindById(ctx, id)
+		if err != nil {
+			return err
+		}
 		if draw != nil {
 			return web.SetData(ictx, draw)
 		}
@@ -138,7 +141,10 @@ func (s *DrawAPI) FindById(ictx iris.Context) {
 
 func (s *DrawAPI) ReadFile(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
-		draw := s.getDrawById(ctx, ictx.Params().GetString("id"))
+		draw, err := s.getDrawById(ctx, ictx.Params().GetString("id"))
+		if err != nil {
+			return err
+		}
 		ictx.Header("Case_Id", draw.CaseId)
 		ictx.Header("Title", url.QueryEscape(draw.Name))
 		content, err := s.fileService.Read(ctx, draw.CaseId, draw.FileName)
@@ -152,12 +158,15 @@ func (s *DrawAPI) ReadFile(ictx iris.Context) {
 func (s *DrawAPI) SaveFile(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		id := ictx.Params().GetString("id")
-		draw := s.getDrawById(ctx, id)
+		draw, err := s.getDrawById(ctx, id)
+		if err != nil {
+			return err
+		}
 		if draw == nil {
 			return errors.ErrorOf("没有找到分析图: %s", id)
 		}
 		var saveRequest request.SaveFileRequest
-		err := ictx.ReadJSON(&saveRequest)
+		err = ictx.ReadJSON(&saveRequest)
 		if err != nil {
 			return err
 		}
@@ -169,14 +178,11 @@ func (s *DrawAPI) SaveFile(ictx iris.Context) {
 	})
 }
 
-func (s *DrawAPI) getDrawById(ctx context.Context, id string) *model.Draw {
+func (s *DrawAPI) getDrawById(ctx context.Context, id string) (*model.Draw, error) {
 	if id == "" {
 		panic(errors.New("id is required"))
 	}
 
-	draw := s.drawDao.FindById(ctx, id)
-	if draw == nil {
-		panic(errors.New("can not find draw"))
-	}
-	return draw
+	draw, err := s.drawDao.FindById(ctx, id)
+	return draw, err
 }

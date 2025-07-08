@@ -78,7 +78,10 @@ func (s *FileAPI) UpdateIsMain(ictx iris.Context) {
 				return err
 			}
 
-			files := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.DocumentId))
+			files, err := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.DocumentId))
+			if err != nil {
+				return err
+			}
 			if len(files) > 0 {
 				for _, file := range files {
 					file.IsMain = false
@@ -159,7 +162,10 @@ func (s *FileAPI) FindPaging(ictx iris.Context) {
 func (s *FileAPI) FindByDocumentId(ictx iris.Context) {
 	web.Try(ictx, func(ctx context.Context) error {
 		docId := ictx.URLParam("document-id")
-		files := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", docId))
+		files, err := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", docId))
+		if err != nil {
+			return err
+		}
 		return web.SetData(ictx, files)
 	}).Catch(func(ctx context.Context, err error) {
 		web.SetError(ictx, err)

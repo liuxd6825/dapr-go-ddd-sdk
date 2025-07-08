@@ -41,7 +41,10 @@ func (d *BusRelationDao) CreateSameName(ctx context.Context, node *model2.Node) 
 }
 
 func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model2.Relation {
-	nodes := d.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", name))
+	nodes, err := d.FindByRSQL(ctx, fmt.Sprintf("name=='%s'", name))
+	if err != nil {
+		panic(err)
+	}
 	if len(nodes) == 0 {
 		return nil
 	}

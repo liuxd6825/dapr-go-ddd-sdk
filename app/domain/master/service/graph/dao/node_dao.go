@@ -175,11 +175,7 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 
 	if isChangedRelType {
 		fmtStr := `
-			MATCH (n1$<labels>)-[r1{id:$<id>}]->(m1$<labels>) DELETE r1  WITH n1,m1
-			CREATE (n1)-[r2:$<relType>{
-				id:$<id>,case_id:$<caseId>,tenant_id:$<tenantId>,source:$<source>,table:$<table>,
-				target:$<target>,source_ids:$<id>,source_type:$<sourceType>,keywords:$<keywords>,description:$<description>
-			}]->(m1) 
+			MATCH (n$<labels>)-[r{id:$<id>}]->(m$<labels>) DELETE r 
 		`
 		fb := stringutils.NewFmtBuilder()
 		fb.String("labels", labels)
@@ -195,6 +191,15 @@ func (d *NodeDao) UpdateRelNode(ctx context.Context, record *model2.Record) {
 		fb.Varchar("description", "")
 		fb.Varchar("table", rel.Table)
 
+		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
+			panic(err)
+		}
+		fmtStr = `
+			MATCH (n1$<labels>{id:$<source>}), (m1$<labels>{id:$<target>}) WITH n1,m1
+			CREATE (n1)-[r1:$<relType>{id:$<id>,case_id:$<caseId>,tenant_id:$<tenantId>,source:$<source>,table:$<table>,
+				target:$<target>,source_ids:$<id>,source_type:$<sourceType>,keywords:$<keywords>,description:$<description>
+			}]->(m1)
+		`
 		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
 			panic(err)
 		}

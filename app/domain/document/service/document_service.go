@@ -15,6 +15,7 @@ func NewDocumentService() *DocumentService {
 	}
 }
 
-func (s *DocumentService) HasDocumentByFolder(ctx context.Context, folderId string) bool {
-	return s.CountByRSQL(ctx, "folder_id=='"+folderId+"'") > 0
+func (s *DocumentService) HasDocumentByFolder(ctx context.Context, folderId string) (bool, error) {
+	count, err := s.CountByRSQL(ctx, "folder_id=='"+folderId+"'")
+	return count > 0, err
 }

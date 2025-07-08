@@ -17,6 +17,7 @@ func NewFolderService() *FolderService {
 	}
 }
 
-func (s *FolderService) HasChildren(ctx context.Context, parentId string) bool {
-	return s.CountByRSQL(ctx, "parent_id=='"+parentId+"'") > 0
+func (s *FolderService) HasChildren(ctx context.Context, parentId string) (bool, error) {
+	count, err := s.CountByRSQL(ctx, "parent_id=='"+parentId+"'")
+	return count > 0, err
 }
