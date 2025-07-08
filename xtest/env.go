@@ -42,6 +42,30 @@ func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
 	return res
 }
 
+func InitEnv_MongoRemote() *env.Env {
+	envVal := NewEnvConfigMongo(GetMongoEnv_Remote())
+	env.SetEnv(envVal)
+	return envVal
+}
+
+func InitEnv_MongoLocal() *env.Env {
+	envVal := NewEnvConfigMongo(GetMongoEnv_Local())
+	env.SetEnv(envVal)
+	return envVal
+}
+
+func NewEnvConfigMongo(mongoCfg *env.Mongo) *env.Env {
+	res := env.NewEnv()
+	res.App.AppId = "test"
+	res.App.AppName = "app"
+	res.App.HttpHost = "localhost"
+	res.App.HttpPort = 0
+
+	res.AddMongo(mongoCfg)
+	res.Init()
+	return res
+}
+
 func NewEnvConfig_Fs(name, path string) *env.Env {
 	res := env.NewEnv()
 	res.App.AppId = "test"

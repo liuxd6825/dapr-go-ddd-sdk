@@ -14,6 +14,7 @@ import (
 var (
 	EnvName                 = "dev"
 	TenantId                = "test"
+	CaseId                  = "case_id"
 	DefaultOperationTimeout = 5
 )
 

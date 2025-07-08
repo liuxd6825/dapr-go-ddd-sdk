@@ -3,10 +3,8 @@ package xtest
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -16,28 +14,6 @@ import (
 
 type MongoConn struct {
 	Client *mongo.Client
-}
-
-func NewMongo() *mongodb.MongoDB {
-	var client *mongo.Client
-
-	// 设置MongoDB连接URL
-	clientOptions := options.Client().ApplyURI("mongodb://192.168.65.5:27018,192.168.65.5:27019,192.168.65.5:27020/?retryWrites=false&replicaSet=mongors&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
-
-	// 连接到MongoDB
-	clientVal, err := mongo.Connect(context.TODO(), clientOptions)
-	if err != nil {
-		panic(err)
-	}
-	client = clientVal
-	// 确保连接成功
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		panic(err)
-	}
-
-	db := mongodb.NenMongoDBWithClient("test", client)
-	return db
 }
 
 type MySQLConn struct {
