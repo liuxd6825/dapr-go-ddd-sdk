@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"strings"
 )
 
 func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *store.SetResult[T] {
@@ -210,7 +211,8 @@ func IncludeField(field *store.Field, fields []string) bool {
 		return false
 	}
 	for _, f := range fields {
-		if f == field.DBName || f == field.Name {
+		f = strings.ToLower(f)
+		if f == strings.ToLower(field.DBName) || f == strings.ToLower(field.Name) {
 			return true
 		}
 	}
