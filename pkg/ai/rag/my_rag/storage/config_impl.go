@@ -2,8 +2,11 @@ package storage
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/chunks/xlsx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/tmc/langchaingo/textsplitter"
+	"path"
 	"strings"
 	"time"
 )
@@ -17,8 +20,9 @@ type RagConfig struct {
 	GleanCount                 int           // 调用LLM进行补偿次数
 	ConcurrencyCount           int           //
 	EntityExtractionPromptData *EntityExtractionPromptData
-	ChunksDocument             func(doc *entity.Document) ([]Source, error)
+	ChunksDocument             func(llm llm.LLM, doc *entity.Document) ([]Source, error)
 	BatchSize                  int
+	xlsxChunk                  *xlsx.XlsxChunk
 }
 
 func NewRagConfig(opts ...func(cfg *RagConfig)) *RagConfig {
@@ -36,6 +40,7 @@ func NewRagConfig(opts ...func(cfg *RagConfig)) *RagConfig {
 			EntityTypes: []string{"人员", "公司", "产品", "机构", "合同", "交易", "案件"},
 			Language:    "中文",
 		},
+		xlsxChunk: xlsx.NewXlsxChunk(),
 	}
 	config.ChunksDocument = config.getChunksDocument
 	for _, opt := range opts {
@@ -50,11 +55,56 @@ func (d *RagConfig) GetBatchSize() int {
 	return d.BatchSize
 }
 
-func (d *RagConfig) GetChunksDocument(doc *entity.Document) ([]Source, error) {
-	return d.ChunksDocument(doc)
+func (d *RagConfig) GetChunksDocument(llm llm.LLM, doc *entity.Document) ([]Source, error) {
+	return d.ChunksDocument(llm, doc)
 }
 
-func (d *RagConfig) getChunksDocument(doc *entity.Document) ([]Source, error) {
+func (d *RagConfig) getChunksDocument(llm llm.LLM, doc *entity.Document) ([]Source, error) {
+	if path.Ext(doc.FileName) == ".xlsx" {
+		sheets, err := d.xlsxChunk.GetSheets(llm, doc.Text)
+		if err != nil {
+			return nil, err
+		}
+		res := make([]Source, 0)
+		pageSize := 100
+		for _, sheet := range sheets {
+			rows := sheet.GetRows()
+			total := len(rows)
+			count := total / pageSize
+			if count%pageSize > 0 {
+				count++
+			}
+			for j := 0; j < count; j++ {
+				sb := strings.Builder{}
+				sb.WriteString(fmt.Sprintf("# 文件名:%s\n", doc.FileName))
+				sb.WriteString(fmt.Sprintf("### Sheet名称:%s 第%d页内容 \n", sheet.SheetName, j))
+				sb.WriteString(fmt.Sprintf("```csv\n"))
+				for _, line := range sheet.GetFields() {
+					sb.WriteString(line)
+				}
+				start := j * pageSize
+				end := start + pageSize
+				if end > total {
+					end = total
+				}
+				pageRows := rows[start:end]
+				for _, line := range pageRows {
+					sb.WriteString(line)
+				}
+				sb.WriteString(fmt.Sprintf("```\n"))
+				s := Source{
+					TenantId: doc.TenantId,
+					CaseId:   doc.CaseId,
+					DocId:    doc.Id,
+				}
+				s.Content = sb.String()
+				res = append(res, s)
+			}
+
+		}
+		return res, nil
+	}
+
 	list, err := LangChainGoSplitText(doc.Text, d.ChunkSize, d.Overlap)
 	if err != nil {
 		return nil, err

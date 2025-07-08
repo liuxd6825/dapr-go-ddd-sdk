@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cloudwego/eino/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"slices"
@@ -33,7 +33,7 @@ func InsertDocument(ctx context.Context, doc *entity.Document, config Config, st
 	doc.Text = CleanContent(doc.Text)
 	logger := log.WithFields(logrus.Fields{"package": "my_rag.storage", "function": "Insert"})
 
-	chunks, err := config.GetChunksDocument(doc)
+	chunks, err := config.GetChunksDocument(llm, doc)
 	if err != nil {
 		return fmt.Errorf("failed to chunk string: %w", err)
 	}

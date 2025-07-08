@@ -4,11 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
+	llm2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
-	llm2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -131,7 +132,7 @@ func Test_GraphRag_IngestDocuments(t *testing.T) {
 		var files []string
 		//files = append(files, "刘建新-董监高对外投资及任职报告.pdf")
 		files = append(files, "张宇-董监高对外投资及任职报告.pdf")
-		docs, err := getDocs(t, files)
+		docs, err := getDocs(t, "pdf", files)
 		if err != nil {
 			return err
 		}
@@ -142,7 +143,25 @@ func Test_GraphRag_IngestDocuments(t *testing.T) {
 	})
 }
 
-func getDocs(t *testing.T, files []string) ([]*entity.Document, error) {
+func Test_GraphRag_IngestXlsx(t *testing.T) {
+	ctx := context.Background()
+	rag := newGraphRag(ctx, true)
+	gp.Try(func() error {
+		var files []string
+		//files = append(files, "刘建新-董监高对外投资及任职报告.pdf")
+		files = append(files, "赵蕾流水汇总.xlsx")
+		docs, err := getDocs(t, "xlsx", files)
+		if err != nil {
+			return err
+		}
+		rag.IngestDocuments(ctx, docs)
+		return nil
+	}).Catch(func(e error) {
+		t.Error(e)
+	})
+}
+
+func getDocs(t *testing.T, docIdType string, files []string) ([]*entity.Document, error) {
 	logger := logrus.New()
 	extract := doc_extract.NewExtract(logger)
 	var docs []*entity.Document
@@ -155,7 +174,7 @@ func getDocs(t *testing.T, files []string) ([]*entity.Document, error) {
 			return nil, err
 		}
 		doc := &entity.Document{
-			Id:       fmt.Sprintf("D00%d", i),
+			Id:       fmt.Sprintf("%s%d", docIdType, i),
 			FileName: fileName,
 			Text:     txt,
 			TenantId: tenantId,
@@ -189,21 +208,7 @@ func Test_GraphRag_Query(t *testing.T) {
 func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	env.SetEnv(xtest.NewEnvConfig_Neo4j("192.168.120.224"))
 
-	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
-		BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-		Model:   "deepseek-r1-distill-llama-70b", // 使用的模型版本
-		APIKey:  "sk-4a999651298047efaaf38aea633ba636",
-	})
-
-	/*
-		llm, err := llm2.NewOllama(ctx, ollama.ChatModelConfig{
-			BaseURL: "http://localhost:11434",
-			Model:   "modelscope.cn/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF:latest",
-		})*/
-
-	if err != nil {
-		panic(err)
-	}
+	llm := newLLM2(ctx)
 
 	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
 		BaseURL:        "http://192.168.120.224:11434",
@@ -222,4 +227,28 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	config := storage.NewRagConfig()
 	store := storage.NewStorage(graph, vector, keyValue, embedder)
 	return NewGraphRag(llm, store, config, logger)
+}
+
+func newLLM1(ctx context.Context) llm2.LLM {
+	llm, err := llm2.NewOpenAI(ctx, openai.ChatModelConfig{
+		BaseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+		Model:   "deepseek-r1-distill-llama-70b", // 使用的模型版本
+		APIKey:  "sk-4a999651298047efaaf38aea633ba636",
+	})
+	if err != nil {
+		panic(err)
+	}
+	return llm
+}
+
+func newLLM2(ctx context.Context) llm2.LLM {
+	llm, err := llm2.NewOllama(ctx, ollama.ChatModelConfig{
+		BaseURL: "http://localhost:11434",
+		Model:   "modelscope.cn/unsloth/DeepSeek-R1-Distill-Qwen-7B-GGUF:latest",
+	})
+	if err != nil {
+		panic(err)
+	}
+	llm.WithTools()
+	return llm
 }

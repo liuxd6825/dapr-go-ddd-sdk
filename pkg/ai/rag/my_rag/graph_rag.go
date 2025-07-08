@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/cloudwego/eino/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -82,7 +82,7 @@ func (g *GraphRag) IngestDocument(ctx context.Context, doc *entity.Document) (ch
 	}
 
 	// 分块处理文本
-	chunks, err := g.config.GetChunksDocument(doc)
+	chunks, err := g.config.GetChunksDocument(g.LLM, doc)
 	if err != nil {
 		return 0, err
 	}
@@ -115,7 +115,7 @@ func (g *GraphRag) SaveGraph(ctx context.Context, doc *entity.Document) (err err
 
 func (g *GraphRag) SaveVector(ctx context.Context, doc *entity.Document) (chunkCount int, err error) {
 	// 分块处理文本
-	chunks, err := g.config.GetChunksDocument(doc)
+	chunks, err := g.config.GetChunksDocument(g.LLM, doc)
 	if err != nil {
 		return 0, err
 	}

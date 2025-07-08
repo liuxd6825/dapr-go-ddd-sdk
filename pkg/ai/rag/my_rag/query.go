@@ -76,7 +76,7 @@ type QueryParam struct {
 
 // NewQueryParam creates a new QueryParam with default values
 func NewQueryParam() *QueryParam {
-	topK, _ := strconv.Atoi(getEnv("TOP_K", "60"))
+	topK, _ := strconv.Atoi(getEnv("TOP_K", "2000"))
 	maxTokenTextChunk, _ := strconv.Atoi(getEnv("MAX_TOKEN_TEXT_CHUNK", "4000"))
 	maxTokenRelationDesc, _ := strconv.Atoi(getEnv("MAX_TOKEN_RELATION_DESC", "4000"))
 	maxTokenEntityDesc, _ := strconv.Atoi(getEnv("MAX_TOKEN_ENTITY_DESC", "4000"))

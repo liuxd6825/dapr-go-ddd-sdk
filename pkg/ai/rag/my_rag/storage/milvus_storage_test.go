@@ -4,12 +4,14 @@ import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"testing"
 )
 
 func Test_VectorInsertDoc(t *testing.T) {
-	extract := doc_extract.NewExtract()
+	logger := logrus.New()
+	extract := doc_extract.NewExtract(logger)
 	fs := afero.NewOsFs()
 	fileName := "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/xtest/天眼查-刘建新.pdf"
 	txt, err := extract.Extract(fs, fileName)

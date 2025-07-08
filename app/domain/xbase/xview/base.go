@@ -9,9 +9,9 @@ type Base struct {
 	TenantId string `json:"tenantId,omitempty"  bson:"tenant_id" gorm:"index:idx_tenant_id" desc:"租户ID"` // 租户ID
 	CaseId   string `json:"caseId,omitempty"  bson:"case_id" gorm:"index:idx_case_id" desc:"案件ID" `      // 案件ID
 
-	CreatedTime *time.Time `json:"createdTime,omitempty"  bson:"created_time" gorm:"created_time" desc:"创建时间" `                // 创建时间
-	CreatorId   string     `json:"creatorId,omitempty"  bson:"creator_id" gorm:"creator_id,index:idx_creator_id" desc:"创建人ID"` // 创建人ID
-	CreatorName string     `json:"creatorName,omitempty"  bson:"creator_name" gorm:"creator_name" desc:"创建人名称"`                // 创建人名称
+	CreatedTime *time.Time `json:"createdTime" gorm:"created_time;<-:create" bson:"created_time"`               // 创建时间
+	CreatorId   string     `json:"creatorId" gorm:"creatorId;<-:create" bson:"creator_id,index:idx_creator_id"` // 创建人ID
+	CreatorName string     `json:"creatorName" gorm:"creator_name;<-:create" bson:"creator_name"`               // 创建人名称
 
 	DeletedTime *time.Time `json:"deletedTime,omitempty"  bson:"deleted_time" gorm:"deleted_time" desc:"删除时间"`                 // 删除时间
 	DeleterId   string     `json:"deleterId,omitempty"  bson:"deleter_id" gorm:"deleter_id,index:idx_deleter_id" desc:"删除人ID"` // 删除人ID

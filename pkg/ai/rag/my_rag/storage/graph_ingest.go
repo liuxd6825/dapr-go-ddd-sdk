@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -69,7 +69,7 @@ func (d *GraphHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err 
 	doc.Text = CleanContent(doc.Text)
 	logger := d.logger.WithFields(logrus.Fields{"package": "my_rag.storage", "function": "Insert"})
 
-	chunks, err := d.config.GetChunksDocument(doc)
+	chunks, err := d.config.GetChunksDocument(d.llm, doc)
 	if err != nil {
 		return fmt.Errorf("failed to chunk string: %w", err)
 	}

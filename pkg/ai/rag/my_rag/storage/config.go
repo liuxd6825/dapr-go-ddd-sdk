@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"time"
 )
@@ -10,7 +11,7 @@ type Config interface {
 	// GetChunksDocument splits a document's content into smaller, manageable chunks.
 	// It returns a slice of Source objects representing the document chunks,
 	// without assigning IDs (IDs will be generated in the Insert function).
-	GetChunksDocument(doc *entity.Document) ([]Source, error)
+	GetChunksDocument(llm llm.LLM, doc *entity.Document) ([]Source, error)
 	// GetEntityExtractionPromptData returns the data needed to generate prompts for extracting
 	// entities and relationships from text content.
 	// The implementation doesn't need to fill the Input field, as it will be filled in the

@@ -35,7 +35,7 @@ func (r *Reader) ReadFile(fs afero.Fs, fileName string) (string, error) {
 
 	sb := strings.Builder{}
 	for _, sheet := range f.Sheets() {
-		sb.WriteString(fmt.Sprintf("*%s\n", sheet.Name()))
+		sb.WriteString(fmt.Sprintf("### %s\n", sheet.Name()))
 		sb.WriteString("```csv\n")
 		for _, row := range sheet.Rows() {
 			for _, cell := range row.Cells() {

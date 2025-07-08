@@ -387,7 +387,7 @@ func SetFieldString(data any, fieldName string, val string) {
 	}
 }
 
-func SetField(data interface{}, fieldName string, val interface{}) error {
+func SetField(data any, fieldName string, val any) error {
 	v := reflect.ValueOf(data)
 
 	// 处理指针类型
