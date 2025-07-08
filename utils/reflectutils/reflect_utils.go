@@ -387,7 +387,144 @@ func SetFieldString(data any, fieldName string, val string) {
 	}
 }
 
-func SetField(data any, fieldName string, val any) bool {
+func SetField(data interface{}, fieldName string, val interface{}) error {
+	v := reflect.ValueOf(data)
+
+	// 处理指针类型
+	if v.Kind() == reflect.Ptr {
+		// 如果是双重指针（**T），需要解引用两次
+		if v.Elem().Kind() == reflect.Ptr {
+			if v.Elem().IsNil() {
+				return fmt.Errorf("double pointer is nil")
+			}
+			v = v.Elem().Elem()
+		} else {
+			v = v.Elem()
+		}
+	}
+
+	// 处理结构体
+	if v.Kind() == reflect.Struct {
+		field := v.FieldByName(fieldName)
+		if !field.IsValid() {
+			return fmt.Errorf("field %s not found", fieldName)
+		}
+		if !field.CanSet() {
+			return fmt.Errorf("field %s cannot be set", fieldName)
+		}
+
+		valValue := reflect.ValueOf(val)
+		if field.Kind() == reflect.Ptr {
+			// 处理目标字段是指针的情况
+			if valValue.Kind() != reflect.Ptr {
+				// 非指针值赋给指针字段
+				if valValue.CanConvert(field.Type().Elem()) {
+					newVal := reflect.New(field.Type().Elem())
+					newVal.Elem().Set(valValue.Convert(field.Type().Elem()))
+					field.Set(newVal)
+				} else {
+					return fmt.Errorf("type mismatch: field %s is %s, got %s",
+						fieldName, field.Type(), valValue.Type())
+				}
+			} else {
+				// 指针值赋给指针字段
+				if valValue.Type().AssignableTo(field.Type()) {
+					field.Set(valValue)
+				} else if valValue.Elem().CanConvert(field.Type().Elem()) {
+					newVal := reflect.New(field.Type().Elem())
+					newVal.Elem().Set(valValue.Elem().Convert(field.Type().Elem()))
+					field.Set(newVal)
+				} else {
+					return fmt.Errorf("type mismatch: field %s is %s, got %s",
+						fieldName, field.Type(), valValue.Type())
+				}
+			}
+		} else {
+			// 处理目标字段是非指针的情况
+			if valValue.Kind() == reflect.Ptr {
+				// 指针值赋给非指针字段
+				if valValue.Elem().CanConvert(field.Type()) {
+					field.Set(valValue.Elem().Convert(field.Type()))
+				} else {
+					return fmt.Errorf("type mismatch: field %s is %s, got %s",
+						fieldName, field.Type(), valValue.Type())
+				}
+			} else {
+				// 非指针值赋给非指针字段
+				if valValue.CanConvert(field.Type()) {
+					field.Set(valValue.Convert(field.Type()))
+				} else {
+					return fmt.Errorf("type mismatch: field %s is %s, got %s",
+						fieldName, field.Type(), valValue.Type())
+				}
+			}
+		}
+		return nil
+	}
+
+	// 处理map
+	if v.Kind() == reflect.Map {
+		if v.Type().Key().Kind() != reflect.String {
+			return fmt.Errorf("map key must be string")
+		}
+
+		valValue := reflect.ValueOf(val)
+		mapValueType := v.Type().Elem()
+
+		// 处理map值为指针类型的情况
+		if mapValueType.Kind() == reflect.Ptr {
+			if valValue.Kind() != reflect.Ptr {
+				// 非指针值赋给指针map值
+				if valValue.CanConvert(mapValueType.Elem()) {
+					newVal := reflect.New(mapValueType.Elem())
+					newVal.Elem().Set(valValue.Convert(mapValueType.Elem()))
+					valValue = newVal
+				} else {
+					return fmt.Errorf("type mismatch: map value is %s, got %s",
+						mapValueType, valValue.Type())
+				}
+			} else {
+				// 指针值赋给指针map值
+				if !valValue.Type().AssignableTo(mapValueType) {
+					if valValue.Elem().CanConvert(mapValueType.Elem()) {
+						newVal := reflect.New(mapValueType.Elem())
+						newVal.Elem().Set(valValue.Elem().Convert(mapValueType.Elem()))
+						valValue = newVal
+					} else {
+						return fmt.Errorf("type mismatch: map value is %s, got %s",
+							mapValueType, valValue.Type())
+					}
+				}
+			}
+		} else {
+			// 处理map值为非指针类型的情况
+			if valValue.Kind() == reflect.Ptr {
+				// 指针值赋给非指针map值
+				if valValue.Elem().CanConvert(mapValueType) {
+					valValue = valValue.Elem().Convert(mapValueType)
+				} else {
+					return fmt.Errorf("type mismatch: map value is %s, got %s",
+						mapValueType, valValue.Type())
+				}
+			} else {
+				// 非指针值赋给非指针map值
+				if valValue.CanConvert(mapValueType) {
+					valValue = valValue.Convert(mapValueType)
+				} else {
+					return fmt.Errorf("type mismatch: map value is %s, got %s",
+						mapValueType, valValue.Type())
+				}
+			}
+		}
+
+		v.SetMapIndex(reflect.ValueOf(fieldName), valValue)
+		return nil
+	}
+
+	return fmt.Errorf("unsupported type: %s", v.Kind())
+}
+
+func SetField2(data any, fieldName string, val any) bool {
 	if m, ok := data.(map[string]interface{}); ok {
 		m[fieldName] = val
 		return true
@@ -400,24 +537,31 @@ func SetField(data any, fieldName string, val any) bool {
 		if !field.CanSet() {
 			return false
 		}
+
 		if val == nil {
-			field.Set(reflect.Zero(field.Type()))
-		} else {
-			field.Set(reflect.ValueOf(val))
-		}
-		// 根据字段类型设置nil
-		/*
 			switch field.Kind() {
 			case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func:
-				if val == nil {
-					field.Set(reflect.Zero(field.Type()))
-				} else {
-					field.Set(reflect.ValueOf(val))
-				}
+				field.Set(reflect.Zero(field.Type()))
 			default:
-				field.Set(reflect.ValueOf(val))
+				break
 			}
-		*/
+		}
+		valRef := reflect.ValueOf(val)
+		// 如果是指针类型，设置为指向的值
+		if valRef.IsValid() && !valRef.IsNil() {
+			field.Set(reflect.New(field.Type().Elem()))
+			field.Elem().Set(valRef)
+		} else {
+			field.Set(reflect.Zero(field.Type()))
+		}
+		// 根据字段类型设置值
+		if field.Kind() == reflect.Ptr {
+			if valRef.Kind() == reflect.Ptr {
+				field.Set(valRef)
+			} else {
+
+			}
+		}
 	}
 	return true
 }
