@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongo_options "go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -499,10 +500,15 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 			for _, field := range r.schema.Fields {
 				errFieldName = field.Name
 				val := data[field.DBName]
+				if field.DataType == store.DataType_Date || field.DataType == store.DataType_Time {
+					if pDate, ok := val.(primitive.DateTime); ok {
+						timeVal := pDate.Time()
+						val = &timeVal
+					}
+				}
 				if val != nil {
 					reflectutils.SetField(entity, field.Name, val)
 				}
-
 			}
 			return nil
 		}).Catch(func(err error) {
