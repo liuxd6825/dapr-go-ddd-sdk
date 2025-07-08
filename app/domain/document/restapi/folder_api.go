@@ -139,7 +139,9 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 				}
 			}
 			if len(folders) > 0 {
-				s.folderService.UpdateMany(ctx, folders)
+				opts := idao.NewCallOptions()
+				opts.SetUpdateFields([]string{"folderPath"})
+				s.folderService.UpdateMany(ctx, folders, opts)
 			}
 
 			opts := idao.NewCallOptions()

@@ -143,11 +143,11 @@ func (s *DocumentAPI) Rename(ictx iris.Context) {
 			docModel.ObjectName = cmd.Data.ObjectName
 			s.documentService.Update(ctx, &docModel, opts)
 
-			fileMode := model.File{}
-			fileMode.Id = cmd.Data.FileId
-			fileMode.Name = cmd.Data.Name
-			fileMode.ObjectName = cmd.Data.ObjectName
-			s.fileService.Update(ctx, &fileMode, opts)
+			fileModel := model.File{}
+			fileModel.Id = cmd.Data.FileId
+			fileModel.Name = cmd.Data.Name
+			fileModel.ObjectName = cmd.Data.ObjectName
+			s.fileService.Update(ctx, &fileModel, opts)
 
 			err := s.fsService.Rename(cmd.Data.FolderPath+"/"+cmd.Data.OldName, cmd.Data.FolderPath+"/"+cmd.Data.ObjectName)
 			if err != nil {

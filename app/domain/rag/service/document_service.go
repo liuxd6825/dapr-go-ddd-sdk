@@ -184,7 +184,7 @@ func (s *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreat
 }
 
 // Create 创建文档
-func (s *DocumentService) create(ctx context.Context, entity *model.Document, opts ...*idao.CallOptions) error {
+func (s *DocumentService) create(ctx context.Context, entity *model.Document, opts ...idao.CallOptions) error {
 	if entity == nil {
 		return errors.New("DocumentService.Create(entity): entity is nil")
 	}
@@ -218,12 +218,12 @@ func (s *DocumentService) create(ctx context.Context, entity *model.Document, op
 }
 
 // Delete 删除文档
-func (s *DocumentService) Delete(ctx context.Context, cmd *command.DocumentDeleteCommand, opts ...*idao.CallOptions) error {
+func (s *DocumentService) Delete(ctx context.Context, cmd *command.DocumentDeleteCommand, opts ...idao.CallOptions) error {
 	return s.delete(ctx, cmd.Data.CaseId, cmd.Data.Id)
 }
 
 // Delete 删除文档
-func (s *DocumentService) delete(ctx context.Context, caseId, id string, opts ...*idao.CallOptions) error {
+func (s *DocumentService) delete(ctx context.Context, caseId, id string, opts ...idao.CallOptions) error {
 	errs := errors.NewVerifyError()
 	tenantId, _ := appctx.GetTenantId(ctx)
 	if tenantId == "" {
