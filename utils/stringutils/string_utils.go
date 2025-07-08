@@ -333,3 +333,21 @@ func Join(val []string, front, suffix, sep string) string {
 	}
 	return sb.String()
 }
+
+// Include 检查字符串是否在列表中
+func Include(str string, list []string, ignoreCase bool) bool {
+	if ignoreCase {
+		for _, item := range list {
+			if strings.EqualFold(str, item) {
+				return true
+			}
+		}
+	} else {
+		for _, item := range list {
+			if str == item {
+				return true
+			}
+		}
+	}
+	return false
+}
