@@ -7,7 +7,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mapperutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -68,7 +67,7 @@ func (r *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, 
 		sCtx := r.getSessionCtx(ctx)
 		mRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter.Match, setData, updateOptions)
 		if mRes != nil {
-			res.SetRowsAffected(mRes.ModifiedCount)
+			res.SetRowsAffected(mRes.ModifiedCount + mRes.UpsertedCount)
 		}
 		return err
 
@@ -174,27 +173,41 @@ func (r *Dao[T]) getUpdateData(data any, opts ...store.Options) any {
 	updateCancel := opt.GetUpdateCancel()
 	updateFields := opt.GetUpdateFields()
 
-	if (updateCancel == nil || len(updateCancel) == 0) && (updateFields == nil || len(updateFields) == 0) {
+	if len(updateCancel) == 0 && len(updateFields) == 0 {
 		if m, ok := data.(map[string]any); ok {
 			return r.getDbMap(m)
 		} else {
 			doc := r.entity2db(data)
 			return doc
 		}
-
 	}
+	doc := r.entity2db(data)
 	m := make(map[string]any)
 
-	maskType := mapperutils.MaskTypeContain
-	mask := updateFields
-	mask = append(mask, "UpdatedTime", "UpdaterId", "UpdaterName")
-	if updateCancel != nil {
-		maskType = mapperutils.MaskTypeExclude
-		mask = updateCancel
+	updateFields = append(updateFields, "updated_time", "updater_id", "updater_name")
+	for _, field := range r.schema.Fields {
+		if updateCancel != nil && IncludeField(field, updateCancel) {
+			continue
+		}
+		if updateFields != nil {
+			if IncludeField(field, updateFields) {
+				m[field.DBName] = doc[field.DBName]
+			}
+		} else {
+			m[field.DBName] = doc[field.DBName]
+		}
 	}
-	if err := mapperutils.MaskMapperType(data, &m, mask, maskType); err != nil {
-		return store.NewSetResultEmpty[T]().SetError(err)
-	}
-	m = r.getDbMap(m)
 	return m
+}
+
+func IncludeField(field *store.Field, fields []string) bool {
+	if fields == nil || len(fields) == 0 {
+		return false
+	}
+	for _, f := range fields {
+		if f == field.DBName || f == field.Name {
+			return true
+		}
+	}
+	return false
 }

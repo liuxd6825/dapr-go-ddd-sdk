@@ -3,6 +3,15 @@ package store
 import "time"
 
 type Options interface {
+	GetEventType() *string
+	SetEventType(v *string) Options
+
+	GetEventVer() *string
+	SetEventVer(v *string) Options
+
+	GetCommandId() *string
+	SetCommandId(v *string) Options
+
 	//
 	// GetTimeout
 	// @Description: 超时时间
@@ -52,12 +61,43 @@ type Options interface {
 }
 
 type RepositoryOptions struct {
+	eventType *string
+	eventVer  *string
+	commandId *string
+
 	sort          *string
 	timeout       *time.Duration
 	updateFields  []string
 	updateCancel  []string
 	upsert        *bool
 	nullNotUpdate *bool // 空值是否更新
+}
+
+func (o *RepositoryOptions) GetEventType() *string {
+	return o.eventType
+}
+
+func (o *RepositoryOptions) SetEventType(v *string) Options {
+	o.eventType = v
+	return o
+}
+
+func (o *RepositoryOptions) GetEventVer() *string {
+	return o.eventVer
+}
+
+func (o *RepositoryOptions) SetEventVer(v *string) Options {
+	o.eventVer = v
+	return o
+}
+
+func (o *RepositoryOptions) GetCommandId() *string {
+	return o.commandId
+}
+
+func (o *RepositoryOptions) SetCommandId(v *string) Options {
+	o.commandId = v
+	return o
 }
 
 func NewOptions(o ...Options) Options {
@@ -78,6 +118,15 @@ func NewOptions(o ...Options) Options {
 		if item.GetUpdateFields() != nil {
 			res.updateFields = item.GetUpdateFields()
 		}
+		if item.GetEventType() != nil {
+			res.eventType = item.GetEventType()
+		}
+		if item.GetEventVer() != nil {
+			res.eventVer = item.GetEventVer()
+		}
+		if item.GetCommandId() != nil {
+			res.commandId = item.GetCommandId()
+		}
 	}
 	return res
 }
@@ -88,6 +137,7 @@ func (o *RepositoryOptions) GetNullUpdate() bool {
 	}
 	return *o.nullNotUpdate
 }
+
 func (o *RepositoryOptions) SetNullUpdate(val bool) Options {
 	b := val
 	o.nullNotUpdate = &b
