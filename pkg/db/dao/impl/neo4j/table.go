@@ -31,10 +31,8 @@ func (t *Table) GetSchema() *store.DBSchema {
 	return t.schema
 }
 
-func (t *Table) AutoMigrate(ctx context.Context) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
+func (t *Table) AutoMigrate(ctx context.Context) error {
+	return nil
 }
 
 func (t *Table) Exist(ctx context.Context) bool {
@@ -44,9 +42,6 @@ func (t *Table) Exist(ctx context.Context) bool {
 	return true
 }
 
-func (t *Table) Drop(ctx context.Context) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
+func (t *Table) Drop(ctx context.Context) error {
+	return nil
 }
