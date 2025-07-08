@@ -72,8 +72,7 @@ func parseProcess(expr Expression, process Process) error {
 	}
 	switch expr.(type) {
 	case *FuncComparison:
-		ex, _ := expr.(*FuncComparison)
-		fmt.Println(ex.Val)
+		_, _ = expr.(*FuncComparison)
 		break
 	case *AndExpression:
 		ex, _ := expr.(*AndExpression)

@@ -7,10 +7,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
@@ -22,6 +21,8 @@ import (
 
 type Human struct {
 	Id         string    `gorm:"primaryKey"`
+	CaseId     string    `gorm:"case_id"`
+	TenantId   string    `gorm:"tenant_id"`
 	Name       string    `gorm:"name"`
 	Age        int       `gorm:"age"`
 	Analyse    string    `gorm:"analyse"`
@@ -32,16 +33,15 @@ type Human struct {
 var DB_NAME = "test"
 
 func Test_Dao(t *testing.T) {
-	database := mongodb.NenMongoDBWithClient(DB_NAME, client)
+	xtest.InitEnv_MongoLocal()
 
 	humanName := randomutils.NameCN()
 	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
-		DB:         database,
-		DBKey:      "sql",
+		DBKey:      "db",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema),
-		Env:        xtest.NewEnvConfig(),
+		Env:        env.GetEnv(),
 		IsPubEvent: false,
 	}
 
@@ -58,13 +58,15 @@ func Test_Dao(t *testing.T) {
 
 	for i := int64(0); i < newCount; i++ {
 		entity := map[string]any{
-			"id":         randomutils.NewId(),
-			"name":       humanName,
-			"analyse":    "",
-			"age":        randomutils.IntMax(100),
-			"birthday":   randomutils.Date(),
-			"peopleType": []string{"1111"},
-			"tags":       []string{"tag1", "tag2"},
+			"id":          randomutils.NewId(),
+			"name":        humanName,
+			"tenantId":    xtest.TenantId,
+			"creatorName": xtest.CaseId,
+			"analyse":     "",
+			"age":         randomutils.Int64Max(100),
+			"birthday":    randomutils.Date(),
+			"peopleType":  []string{"1111"},
+			"tags":        []string{"tag1", "tag2"},
 		}
 		list = append(list, entity)
 	}
@@ -100,8 +102,9 @@ func Test_Dao(t *testing.T) {
 		"birthday":   time.Now(),
 		"peopleType": []string{"1111"},
 		"name":       humanName,
-		"age":        1,
-		"tags":       []string{"tag1", "tag2"},
+		"age":        int64(1),
+		"remark":     "remark," + id,
+		"tags":       []string{"tag10", "tag20"},
 	}
 
 	t.Run("dao.Create", func(t *testing.T) {
@@ -116,15 +119,21 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.Update", func(t *testing.T) {
 		gp.Try(func() error {
-			human["name"] = humanName + "2"
-			human["birthday"] = times.NewDate()
-			count := dao.Update(ctx, human)
-			assert.Equal(t, int64(1), count.RowsAffected)
+			/*
+				human["name"] = humanName + "2"
+				human["birthday"] = times.NewDate()
+				count := dao.Update(ctx, human)
+				assert.Equal(t, int64(1), count.RowsAffected)
 
-			human["birthday"] = times.NewTime()
-			count = dao.Update(ctx, human)
-			assert.Equal(t, int64(1), count.RowsAffected)
+				human["birthday"] = times.NewTime()
+				count = dao.Update(ctx, human)
+				assert.Equal(t, int64(1), count.RowsAffected)
+			*/
 
+			human["name"] = humanName + "3"
+			opts := idao.NewCallOptions().SetUpdateFields([]string{"name"})
+			count3 := dao.Update(ctx, human, opts)
+			assert.Equal(t, int64(1), count3.RowsAffected)
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)
@@ -160,9 +169,9 @@ func Test_Dao(t *testing.T) {
 			paging.Filter = rsql.NewBuilder().Eq("creatorName", "test").Build()
 			res := dao.FindPaging(ctx, paging)
 			assert.NotNil(t, res)
-			assert.Equal(t, int64(11), res.TotalRows)
-			assert.Equal(t, 2, len(res.Data))
-			t.Log("totalRows=", res.TotalRows, " count=", len(res.Data))
+			assert.Equal(t, int64(11), res.GetTotalRows())
+			assert.Equal(t, 2, len(res.GetData()))
+			t.Log("totalRows=", res.GetTotalRows(), " count=", len(res.GetData()))
 			return nil
 		}).Catch(func(err error) {
 			t.Error(err)

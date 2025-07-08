@@ -286,6 +286,9 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 		authMechanism = config.AuthMechanism
 	}
 
+	if opts.Auth == nil {
+		opts.Auth = &options.Credential{}
+	}
 	opts.Auth.AuthSource = authSource
 	opts.Auth.AuthMechanism = authMechanism
 

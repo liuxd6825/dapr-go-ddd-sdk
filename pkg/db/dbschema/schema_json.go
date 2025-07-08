@@ -136,7 +136,7 @@ func getDataType(prop *jsonschema.Schema) DataType {
 	} else if prop.Types.Contains(jsonschema.JsonType_ObjectType) {
 		return gormschema.Json
 	} else if prop.Types.Contains(jsonschema.JsonType_ArrayType) {
-		return gormschema.Json
+		return gormschema.Array
 	}
 	return gormschema.String
 }

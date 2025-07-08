@@ -10,82 +10,46 @@ type Dao[T any] interface {
 	GetAggField() string
 	GetConfig() *DaoConfig
 
-	Create(ctx context.Context, entity T, opts ...*CallOptions) *Result
-	CreateMany(ctx context.Context, entity []T, opts ...*CallOptions) *Result
-	CreateUpdate(ctx context.Context, entity T, opts ...*CallOptions) *Result
+	Create(ctx context.Context, entity T, opts ...CallOptions) *Result
+	CreateMany(ctx context.Context, entity []T, opts ...CallOptions) *Result
+	CreateUpdate(ctx context.Context, entity T, opts ...CallOptions) *Result
 
-	Merge(ctx context.Context, entity T, fields map[string]string, opts ...*CallOptions) *Result
+	Merge(ctx context.Context, entity T, fields map[string]string, opts ...CallOptions) *Result
 
-	Update(ctx context.Context, entity T, opts ...*CallOptions) *Result
-	UpdateMap(ctx context.Context, id string, entity map[string]any, opts ...*CallOptions) *Result
-	UpdateMany(ctx context.Context, entities []T, opts ...*CallOptions) *Result
-	UpdateByRSQL(ctx context.Context, rsql string, entity T, opts ...*CallOptions) *Result
+	Update(ctx context.Context, entity T, opts ...CallOptions) *Result
+	UpdateMap(ctx context.Context, id string, entity map[string]any, opts ...CallOptions) *Result
+	UpdateMany(ctx context.Context, entities []T, opts ...CallOptions) *Result
+	UpdateByRSQL(ctx context.Context, rsql string, entity T, opts ...CallOptions) *Result
 
-	Delete(ctx context.Context, entity T, opts ...*CallOptions) *Result
-	DeleteById(ctx context.Context, id string, opts ...*CallOptions) *Result
-	DeleteByIds(ctx context.Context, ids []string, opts ...*CallOptions) *Result
-	DeleteAll(ctx context.Context, opts ...*CallOptions) *Result
-	DeleteByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) *Result
+	Delete(ctx context.Context, entity T, opts ...CallOptions) *Result
+	DeleteById(ctx context.Context, id string, opts ...CallOptions) *Result
+	DeleteByIds(ctx context.Context, ids []string, opts ...CallOptions) *Result
+	DeleteAll(ctx context.Context, opts ...CallOptions) *Result
+	DeleteByRSQL(ctx context.Context, rsql string, opts ...CallOptions) *Result
 
-	FindById(ctx context.Context, id string, opts ...*CallOptions) T
-	FindByIds(ctx context.Context, ids []string, opts ...*CallOptions) []T
-	FindByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) []T
-	FindOneByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) T
-	FindAll(ctx context.Context, opts ...*CallOptions) *store.FindListResult[T]
-	FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...*CallOptions) store.FindPagingResult[T]
-	FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...*CallOptions) store.FindPagingResult[T]
-	FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...*CallOptions) store.FindPagingResult[T]
+	FindById(ctx context.Context, id string, opts ...CallOptions) T
+	FindByIds(ctx context.Context, ids []string, opts ...CallOptions) []T
+	FindByRSQL(ctx context.Context, rsql string, opts ...CallOptions) []T
+	FindOneByRSQL(ctx context.Context, rsql string, opts ...CallOptions) T
+	FindAll(ctx context.Context, opts ...CallOptions) *store.FindListResult[T]
+	FindPaging(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) store.FindPagingResult[T]
+	FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...CallOptions) store.FindPagingResult[T]
+	FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...CallOptions) store.FindPagingResult[T]
 
-	//SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...*CallOptions) T
-	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...*CallOptions) map[string]any
-	SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...*CallOptions) []T
-	SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...*CallOptions) map[string]any
+	//SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...CallOptions) T
+	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...CallOptions) map[string]any
+	SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) []T
+	SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) map[string]any
 
-	CountByRSQL(ctx context.Context, rsql string, opts ...*CallOptions) int64
+	CountByRSQL(ctx context.Context, rsql string, opts ...CallOptions) int64
 	Table() Table
 
 	GetStore() store.IStore[T]
 	//GetFilterMap(tenantId string, rSql string) map[string]any
 }
 
-type CallOptions struct {
-	EventType *string
-	EventVer  *string
-	CommandId *string
-	store.RepositoryOptions
-}
+type CallOptions = store.Options
 
-func NewRepositoryOptions(opts []*CallOptions) []store.Options {
-	var res []store.Options
-	for _, o := range opts {
-		res = append(res, o)
-	}
-	return res
-}
-
-func NewCallOptions(opts ...*CallOptions) *CallOptions {
-	o := new(CallOptions)
-	for _, i := range opts {
-		if i.EventVer != nil {
-			o.EventVer = i.EventVer
-		}
-		if i.EventType != nil {
-			o.EventType = i.EventType
-		}
-	}
-	return o
-}
-
-func (e *CallOptions) GetEventVer(defVal string) string {
-	if e != nil && e.EventVer == nil {
-		return defVal
-	}
-	return *e.EventVer
-}
-
-func (e *CallOptions) GetCommandId(defVal string) string {
-	if e != nil && e.CommandId != nil {
-		return *e.CommandId
-	}
-	return defVal
+func NewCallOptions(opts ...CallOptions) CallOptions {
+	return store.NewOptions(opts...)
 }

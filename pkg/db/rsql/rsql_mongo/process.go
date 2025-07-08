@@ -21,7 +21,7 @@ type Process struct {
 }
 
 const (
-	_id       = "_id"
+	_id       = "id"
 	tenant_id = "tenant_id"
 )
 

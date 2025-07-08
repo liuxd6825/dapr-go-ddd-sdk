@@ -6,13 +6,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
-func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...*idao.CallOptions) *idao.Result {
+func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...idao.CallOptions) *idao.Result {
 	if d.IsNil(entity) {
 		panic(fmt.Errorf("Dao.Update() entity is nil"))
 	}
 	tenantId := d.GetTenantId(ctx)
 	d.store.SetTenantId(entity, tenantId)
-	res := d.store.Update(ctx, entity, idao.NewRepositoryOptions(opts)...)
+	res := d.store.Update(ctx, entity, idao.NewCallOptions(opts...))
 	if res.Error != nil {
 		panic(res.Error)
 	}
@@ -21,9 +21,9 @@ func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...*idao.CallOpt
 	return idao.NewResult(res)
 }
 
-func (d *DaoBase[T]) UpdateMap(ctx context.Context, id string, data map[string]any, opts ...*idao.CallOptions) *idao.Result {
+func (d *DaoBase[T]) UpdateMap(ctx context.Context, id string, data map[string]any, opts ...idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.store.UpdateMap(ctx, tenantId, id, data, idao.NewRepositoryOptions(opts)...)
+	res := d.store.UpdateMap(ctx, tenantId, id, data, idao.NewCallOptions(opts...))
 	if res.Error != nil {
 		panic(res.Error)
 	}
@@ -31,18 +31,18 @@ func (d *DaoBase[T]) UpdateMap(ctx context.Context, id string, data map[string]a
 	return idao.NewResult(res)
 }
 
-func (d *DaoBase[T]) UpdateMany(ctx context.Context, list []T, opts ...*idao.CallOptions) *idao.Result {
+func (d *DaoBase[T]) UpdateMany(ctx context.Context, list []T, opts ...idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.store.UpdateMany(ctx, tenantId, list, idao.NewRepositoryOptions(opts)...)
+	res := d.store.UpdateMany(ctx, tenantId, list, idao.NewCallOptions(opts...))
 	if res.Error != nil {
 		panic(res.Error)
 	}
 	return idao.NewResult(res)
 }
 
-func (d *DaoBase[T]) UpdateByRSQL(ctx context.Context, filterRSQL string, data T, opts ...*idao.CallOptions) *idao.Result {
+func (d *DaoBase[T]) UpdateByRSQL(ctx context.Context, filterRSQL string, data T, opts ...idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
-	res := d.store.UpdateByRSQL(ctx, tenantId, filterRSQL, data, idao.NewRepositoryOptions(opts)...)
+	res := d.store.UpdateByRSQL(ctx, tenantId, filterRSQL, data, idao.NewCallOptions(opts...))
 	if res.Error != nil {
 		panic(res.Error)
 	}

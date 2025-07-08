@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, entity T, opts ...*idao.CallOptions) {
+func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, entity T, opts ...idao.CallOptions) {
 	return
 	if !d.isPubEvent {
 		return
@@ -42,7 +42,7 @@ func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, 
 
 }
 
-func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessType, list []map[string]any, opts ...*idao.CallOptions) {
+func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessType, list []map[string]any, opts ...idao.CallOptions) {
 	if !d.isPubEvent {
 		return
 	}
@@ -71,7 +71,7 @@ func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessT
 	*/
 }
 
-func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType idao.AccessType, entity T, opt *idao.CallOptions) (*dbevent.Event, error) {
+func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType idao.AccessType, entity T, opt idao.CallOptions) (*dbevent.Event, error) {
 	o := idao.NewCallOptions(opt)
 	eventId := idutils.NewId()
 	tenantId := d.store.GetTenantId(entity)
@@ -81,10 +81,10 @@ func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType idao.AccessType, 
 	}
 	eventType := d.GetEventType(operateType, opt)
 	event := dbevent.NewEvent()
-	event.CommandId = o.GetCommandId(idutils.NewId())
+	event.CommandId = getString(o.GetCommandId(), idutils.NewId())
 	event.EventId = eventId
 	event.EventType = eventType
-	event.EventVer = o.GetEventVer("v1.0")
+	event.EventVer = getString(o.GetEventVer(), "v1.0")
 	event.TenantId = tenantId
 	event.CreatedTime = time.Now()
 	event.AggId = aggId
@@ -94,7 +94,14 @@ func (d *DaoBase[T]) NewEvent(ctx context.Context, operateType idao.AccessType, 
 	return event, nil
 }
 
-func (d *DaoBase[T]) NewAggregateAndEvent(ctx context.Context, operateType idao.AccessType, entity T, opts ...*idao.CallOptions) (*dbevent.Aggregate, *dbevent.Event, error) {
+func getString(s *string, defVal string) string {
+	if s == nil {
+		return defVal
+	}
+	return *s
+}
+
+func (d *DaoBase[T]) NewAggregateAndEvent(ctx context.Context, operateType idao.AccessType, entity T, opts ...idao.CallOptions) (*dbevent.Aggregate, *dbevent.Event, error) {
 	opt := idao.NewCallOptions(opts...)
 	event, err := d.NewEvent(ctx, operateType, entity, opt)
 	if err != nil {
@@ -107,15 +114,15 @@ func (d *DaoBase[T]) NewAggregateAndEvent(ctx context.Context, operateType idao.
 	return agg, event, nil
 }
 
-func (d *DaoBase[T]) GetEventType(accessType idao.AccessType, opts *idao.CallOptions) string {
+func (d *DaoBase[T]) GetEventType(accessType idao.AccessType, opts idao.CallOptions) string {
 	eventType := d.tableName
-	if opts != nil && opts.EventType != nil {
-		eventType = *opts.EventType
+	if opts != nil && opts.GetEventType() != nil {
+		eventType = *opts.GetEventType()
 	}
 	return fmt.Sprintf("%s.%s.%s", d.appId, eventType, string(accessType))
 }
 
-func (d *DaoBase[T]) NewAggregate(entity T, opt *idao.CallOptions) (*dbevent.Aggregate, error) {
+func (d *DaoBase[T]) NewAggregate(entity T, opt idao.CallOptions) (*dbevent.Aggregate, error) {
 	tenantId := d.store.GetTenantId(entity)
 	aggId, err := d.GetAggId(entity, opt)
 	if err != nil {

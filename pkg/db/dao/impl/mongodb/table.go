@@ -2,7 +2,6 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -36,12 +35,15 @@ func (t *Table) GetSchema() *store.DBSchema {
 	return t.schema
 }
 
-func (t *Table) AutoMigrate(ctx context.Context) {
+func (t *Table) AutoMigrate(ctx context.Context) error {
 	var err error
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	validator := t.getValidator(ctx)
+	validator, err := t.getValidator(ctx)
+	if err != nil {
+		return errors.ErrorOf("Table.AutoMigrate() getValidator error:%s", err.Error())
+	}
 	if isExist, e := t.db.ExistCollection(ctx, t.tableName); e != nil {
 		err = e
 	} else if !isExist {
@@ -75,8 +77,9 @@ func (t *Table) AutoMigrate(ctx context.Context) {
 
 	err = t.CreateIndexes(ctx)
 	if err != nil {
-		panic(err)
+		return errors.ErrorOf("Table.AutoMigrate() CreateIndexes error:%s", err.Error())
 	}
+	return err
 }
 
 func (t *Table) Exist(ctx context.Context) bool {
@@ -90,7 +93,7 @@ func (t *Table) Exist(ctx context.Context) bool {
 	return isExist
 }
 
-func (t *Table) Drop(ctx context.Context) {
+func (t *Table) Drop(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -100,9 +103,7 @@ func (t *Table) Drop(ctx context.Context) {
 	} else if isExist {
 		err = t.db.GetCollection(t.tableName).Drop(ctx)
 	}
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 // CreateIndexes
@@ -177,16 +178,19 @@ func (t *Table) CreateIndexes(ctx context.Context) error {
 	return err
 }
 
-func (t *Table) getValidator(ctx context.Context) bson.M {
+func (t *Table) getValidator(ctx context.Context) (bson.M, error) {
 	// 定义 JSON Schema 验证规则
-	jsonSchema := t.getJsonSchema(ctx)
+	jsonSchema, err := t.getJsonSchema(ctx)
+	if err != nil {
+		return nil, err
+	}
 	validator := bson.M{
 		"$jsonSchema": jsonSchema,
 	}
-	return validator
+	return validator, nil
 }
 
-func (t *Table) getJsonSchema(ctx context.Context) bson.M {
+func (t *Table) getJsonSchema(ctx context.Context) (bson.M, error) {
 	// 定义 JSON Schema 验证规则
 	required := []string{}
 	properties := bson.M{}
@@ -195,7 +199,10 @@ func (t *Table) getJsonSchema(ctx context.Context) bson.M {
 		if notNull || field.PrimaryKey {
 			required = append(required, field.DBName)
 		}
-		dataType := t.getBsonType(field.DataType)
+		dataType, err := t.getBsonType(field)
+		if err != nil {
+			return nil, errors.ErrorOf("Table.getJsonSchema() getBsonType error %s", err.Error())
+		}
 		bsonType := []string{dataType}
 		if !notNull {
 			bsonType = append(bsonType, "null")
@@ -213,7 +220,7 @@ func (t *Table) getJsonSchema(ctx context.Context) bson.M {
 	if len(required) > 0 {
 		jsonSchema["required"] = required // 必填字段]
 	}
-	return jsonSchema
+	return jsonSchema, nil
 }
 
 /*
@@ -240,22 +247,23 @@ bsonType 值	说明
 "minKey"	最小键（内部排序用）
 "maxKey"	最大键（内部排序用）
 */
-func (t *Table) getBsonType(dataType store.DataType) string {
-	switch dataType {
-	case store.DataType_Bool, store.DataType_Array, store.DataType_String, store.DataType_Date:
-		return string(dataType)
+func (t *Table) getBsonType(field *store.Field) (string, error) {
+	switch field.DataType {
+	case store.DataType_Array:
+		return "array", nil
+	case store.DataType_Bool, store.DataType_String, store.DataType_Date:
+		return string(field.DataType), nil
 	case store.DataType_Bytes:
-		return "binData"
+		return "binData", nil
 	case store.DataType_Time:
-		return "date"
+		return "date", nil
 	case store.DataType_Float:
-		return "double"
+		return "double", nil
 	case store.DataType_Int, store.DataType_Uint:
-		return "long"
+		return "long", nil
 	case store.DataType_Json:
-		return "object"
+		return "object", nil
 	default:
-		panic(fmt.Sprintf("Table.getBsonType(dataType) invalid data type" + string(dataType)))
+		return "", errors.ErrorOf("Table.getBsonType(dataType) invalid data type error:%s", string(field.DataType))
 	}
-	return ""
 }

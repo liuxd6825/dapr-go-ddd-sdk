@@ -18,7 +18,7 @@ func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*idao.
 	return count
 }*/
 
-func (d *DaoBase[T]) CountByRSQL(ctx context.Context, rSQL string, opts ...*idao.CallOptions) int64 {
+func (d *DaoBase[T]) CountByRSQL(ctx context.Context, rSQL string, opts ...idao.CallOptions) int64 {
 	opt := idao.NewCallOptions(opts...)
 	tenantId := d.GetTenantId(ctx)
 	count, err := d.store.CountByRSQL(ctx, tenantId, rSQL, opt)
@@ -28,8 +28,8 @@ func (d *DaoBase[T]) CountByRSQL(ctx context.Context, rSQL string, opts ...*idao
 	return count
 }
 
-func (d *DaoBase[T]) SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...*idao.CallOptions) []T {
-	data, _, err := d.store.SumEntity(ctx, qry, idao.NewRepositoryOptions(opts)...)
+func (d *DaoBase[T]) SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...idao.CallOptions) []T {
+	data, _, err := d.store.SumEntity(ctx, qry, idao.NewCallOptions(opts...))
 	if err != nil {
 		panic(err)
 	}
@@ -46,16 +46,16 @@ func (d *DaoBase) SumMap(ctx context.Context, qry *ddd_repository.FindPagingQuer
 }
 */
 
-func (d *DaoBase[T]) SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...*idao.CallOptions) map[string]any {
+func (d *DaoBase[T]) SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...idao.CallOptions) map[string]any {
 	data := map[string]any{}
-	_, _, err := d.store.SumByQuery(ctx, qry, data, idao.NewRepositoryOptions(opts)...)
+	_, _, err := d.store.SumByQuery(ctx, qry, data, idao.NewCallOptions(opts...))
 	if err != nil {
 		panic(err)
 	}
 	return data
 }
 
-func (d *DaoBase[T]) SumByRSQL(ctx context.Context, rSQL string, valueCols []*store.ValueCol, opts ...*idao.CallOptions) map[string]any {
+func (d *DaoBase[T]) SumByRSQL(ctx context.Context, rSQL string, valueCols []*store.ValueCol, opts ...idao.CallOptions) map[string]any {
 	opt := idao.NewCallOptions(opts...)
 	tenantId := d.GetTenantId(ctx)
 	return d.store.SumByRSQL(ctx, tenantId, rSQL, valueCols, opt)
