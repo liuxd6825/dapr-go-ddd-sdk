@@ -507,14 +507,16 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 					}
 				}
 				if val != nil {
-					reflectutils.SetField(entity, field.Name, val)
+					err := reflectutils.SetField(entity, field.Name, val)
+					if err != nil {
+						return errors.New("set field %s to entity %T error: %s", field.Name, entity, err.Error())
+					}
 				}
 			}
 			return nil
 		}).Catch(func(err error) {
 			panic(fmt.Sprintf("转换db值到属性%s时出错：%s", errFieldName, err.Error()))
 		})
-
 	}
 	return entity
 }
