@@ -37,7 +37,7 @@ func (t *Table) GetSchema() *store.DBSchema {
 	return t.dbSch
 }
 
-func (t *Table) AutoMigrate(ctx context.Context) {
+func (t *Table) AutoMigrate(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -48,9 +48,7 @@ func (t *Table) AutoMigrate(ctx context.Context) {
 		err = t.db.Table(t.tableName).AutoMigrate(t.gormSch)
 	}
 
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
 
 func (t *Table) Exist(ctx context.Context) bool {
@@ -70,13 +68,11 @@ func (t *Table) Exist(ctx context.Context) bool {
 	return true
 }
 
-func (t *Table) Drop(ctx context.Context) {
+func (t *Table) Drop(ctx context.Context) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	migrator := t.db.Migrator()
 	err := migrator.DropTable(t.gormSch.Table)
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
