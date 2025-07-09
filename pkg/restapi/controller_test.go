@@ -3,6 +3,7 @@ package restapi
 import (
 	"context"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,7 +15,8 @@ type api struct {
 func (a *api) InitController(app *iris.Application) error {
 	a.app = app
 	h := NewController(app, "/api", a)
-	h.GetData("/get-data/{id}", "GetData")
+	//h.GetData("/get-data/{id}", "GetData")
+	h.GetPaging("/paging", "GetPaging")
 	return nil
 }
 
@@ -24,6 +26,10 @@ type GetDataParams struct {
 
 func (a *api) GetData(ctx context.Context, params *GetDataParams) (any, error) {
 	return params, nil
+}
+
+func (a *api) GetPaging(ctx context.Context, query *store.FindPagingQueryRequest) (any, error) {
+	return query, nil
 }
 
 func Test_Controller_Get(t *testing.T) {

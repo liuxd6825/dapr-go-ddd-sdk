@@ -17,6 +17,14 @@ const (
 
 // GetParams 将请求参数绑定到目标结构体
 func GetParams(ctx iris.Context, target interface{}) error {
+	// 处理请求体JSON
+	if ctx.Request().Method == iris.MethodPost || ctx.Request().Method == iris.MethodPut {
+		if err := ctx.ReadJSON(target); err != nil && !iris.IsErrPath(err) {
+			return err
+		}
+	}
+
+	isRead := false
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
 		return errors.New("target must be a pointer to a struct")
@@ -33,6 +41,7 @@ func GetParams(ctx iris.Context, target interface{}) error {
 				if err := setFieldValue(fieldValue, val); err != nil {
 					return err
 				}
+				isRead = true
 				continue
 			}
 		}
@@ -43,6 +52,7 @@ func GetParams(ctx iris.Context, target interface{}) error {
 				if err := setFieldValue(fieldValue, val); err != nil {
 					return err
 				}
+				isRead = true
 				continue
 			}
 		}
@@ -53,12 +63,14 @@ func GetParams(ctx iris.Context, target interface{}) error {
 				if err := setFieldValue(fieldValue, val); err != nil {
 					return err
 				}
+				isRead = true
 				continue
 			}
 			if val := ctx.URLParam(paramName); val != "" {
 				if err := setFieldValue(fieldValue, val); err != nil {
 					return err
 				}
+				isRead = true
 				continue
 			}
 		}
@@ -68,15 +80,16 @@ func GetParams(ctx iris.Context, target interface{}) error {
 			if err := bindNestedStruct(ctx, fieldValue); err != nil {
 				return err
 			}
+			isRead = true
 		}
 	}
 
 	// 处理请求体JSON
-	/*
+	if !isRead {
 		if err := ctx.ReadJSON(target); err != nil && !iris.IsErrPath(err) {
 			return err
 		}
-	*/
+	}
 	return nil
 }
 

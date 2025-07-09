@@ -3,17 +3,19 @@ package restapi
 import (
 	context2 "context"
 	"github.com/kataras/iris/v12/context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"reflect"
 )
 
 type CallMethod struct {
-	Method   reflect.Value
-	InCtx    int
-	InICtx   int
-	InParams int
-	OutData  int
-	OutError int
+	Method        reflect.Value
+	InCtx         int
+	InICtx        int
+	InParams      int
+	CloseInParams bool // 是否关闭InParams参数
+	OutData       int
+	OutError      int
 }
 
 func NewCallMethod(object any, methodName string) (*CallMethod, error) {
@@ -40,6 +42,11 @@ func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 			callMethod.InICtx = i
 		} else if paramType.Kind() == reflect.Ptr && paramType.Elem().Kind() == reflect.Struct {
 			callMethod.InParams = i
+		} else if paramType == reflect.TypeOf((*store.FindPagingQuery)(nil)).Elem() {
+			// 允许any类型作为参数
+			callMethod.InParams = i
+		} else {
+			return nil, errors.New("unsupported parameter type: %s", paramType.String())
 		}
 	}
 

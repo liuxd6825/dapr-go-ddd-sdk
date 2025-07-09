@@ -29,8 +29,9 @@ type Controller interface {
 }
 
 type CallOptions struct {
-	Before func(ictx *context.Context, params any) (any, error)
-	After  func(ictx *context.Context, resData any, err error) (any, error)
+	InitMethod func(callMethod *CallMethod)
+	Before     func(ictx *context.Context, params any) (any, error)
+	After      func(ictx *context.Context, resData any, err error) (any, error)
 }
 
 func InitController(app *iris.Application, controller Controller) {
@@ -94,6 +95,14 @@ func (c *ApiController) GetData(path string, handlerName string, opts ...CallOpt
 }
 
 func (c *ApiController) GetPaging(path string, handlerName string, opts ...CallOptions) *router.Route {
+	opts = append(opts, CallOptions{
+		InitMethod: func(method *CallMethod) {
+			method.CloseInParams = true
+		},
+		Before: func(ictx *context.Context, param any) (any, error) {
+			return GetFindPagingRequest(ictx)
+		},
+	})
 	r := c.call(iris.MethodGet, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
@@ -142,23 +151,27 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 			if err != nil {
 				return errors.New("get context error: %s ", err.Error())
 			}
+			for _, opt := range opts {
+				if opt.InitMethod != nil {
+					opt.InitMethod(callMethod)
+				}
+			}
 
-			if callMethod.InParams >= 0 {
+			if callMethod.InParams >= 0 && !callMethod.CloseInParams {
 				inParamsType := callMethod.Method.Type().In(callMethod.InParams)
 				params, err = c.GetParams(ictx, inParamsType)
 				if err != nil {
 					return err
 				}
-				for _, opt := range opts {
-					if opt.Before != nil {
-						params, err = opt.Before(ictx, params)
-						if err != nil {
-							return err
-						}
+			}
+			for _, opt := range opts {
+				if opt.Before != nil {
+					params, err = opt.Before(ictx, params)
+					if err != nil {
+						return err
 					}
 				}
 			}
-
 			data, err := callMethod.Call(ctx, ictx, params)
 			for _, opt := range opts {
 				if opt.After != nil {
@@ -185,7 +198,6 @@ func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type)
 			return nil, errors.New("create params error: %s ", err.Error())
 		}
 		params = paramsValue.Interface()
-		println(params)
 		if err := GetParams(ictx, params); err != nil {
 			return nil, err
 		}
