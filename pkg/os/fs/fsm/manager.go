@@ -242,9 +242,16 @@ func (m *Manager) MoveDir(aSrcDir, aDestDir string) error {
 		srcPath := srcDir + "/" + file.Name()
 		destPath := destDir + "/" + file.Name()
 
-		err = fs.Rename(srcPath, destPath)
-		if err != nil {
-			return err
+		if file.IsDir() {
+			err = m.MoveDir(srcPath, destPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = fs.Rename(srcPath, destPath)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

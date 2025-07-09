@@ -89,12 +89,19 @@ func (s *FsService) WriteAt(fileName string, data []byte, chunkIndex string, chu
 	return nil
 }
 
+func (s *FsService) MoveDir(source string, target string) error {
+	return s.docFs.MoveDir(source, target)
+}
+
 func (s *FsService) Download(ictx iris.Context, objectName string, fileName string) error {
-	writeFile, err := s.docFs.Open("/"+objectName, os.O_WRONLY, 0666)
-	//writeFile, err := os.Open(fsopts.GetAbsPath("/" + objectName))
+	writeFile, err := s.docFs.Open(objectName, os.O_RDONLY, 0666)
+
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = writeFile.Close()
+	}()
 
 	fileInfo, err := writeFile.Stat()
 
@@ -104,12 +111,7 @@ func (s *FsService) Download(ictx iris.Context, objectName string, fileName stri
 
 	ictx.ResponseWriter().Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(fileName))
 
-	ictx.ServeContentWithRate(writeFile, filepath.Base(fileName), fileInfo.ModTime(), 0, 0)
-
-	err = writeFile.Close()
-	if err != nil {
-		return err
-	}
+	ictx.ServeContentWithRate(writeFile, filepath.Base(fileName), fileInfo.ModTime(), 1024*iris.KB, 1024*iris.KB)
 
 	return nil
 }

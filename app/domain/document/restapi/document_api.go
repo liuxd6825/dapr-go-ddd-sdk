@@ -24,17 +24,20 @@ type DocumentAPI struct {
 	documentService *service.DocumentService
 	fileService     *service.FileService
 	fsService       *service.FsService
+	folderService   *service.FolderService
 }
 
 func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
 	documentService := service.NewDocumentService()
 	fileService := service.NewFileService()
 	fsService := service.NewFsService()
+	folderService := service.NewFolderService()
 	return &DocumentAPI{
 		env:             env,
 		documentService: documentService,
 		fileService:     fileService,
 		fsService:       fsService,
+		folderService:   folderService,
 	}
 }
 
@@ -63,7 +66,10 @@ func (s *DocumentAPI) UploadChunk(ictx iris.Context) {
 		has := s.fsService.Exists(folderPath + "/" + objectName)
 
 		if chunkIndex == "0" && !has {
-			s.fsService.Create(folderPath + "/" + objectName)
+			file := s.fsService.Create(folderPath + "/" + objectName)
+			if file != nil {
+				file.Close()
+			}
 		}
 
 		data, err := io.ReadAll(chunk)
@@ -97,12 +103,20 @@ func (s *DocumentAPI) Download(ictx iris.Context) {
 			return errors.New("没有找到文件记录,fileId=" + fileId)
 		}
 
-		has := s.fsService.Exists(file.ObjectName)
-		if !has {
-			return errors.New("没有找到文件,objectName=" + file.ObjectName)
+		folder, err := s.folderService.FindById(ctx, file.FolderId)
+		if err != nil {
+			return err
+		}
+		if folder == nil {
+			return errors.New("没有找到文件目录,fileId=" + fileId)
 		}
 
-		err = s.fsService.Download(ictx, file.ObjectName, file.Name)
+		has := s.fsService.Exists(folder.FolderPath + "/" + file.ObjectName)
+		if !has {
+			return errors.New("没有找到文件,objectName=" + folder.FolderPath + "/" + file.ObjectName)
+		}
+
+		err = s.fsService.Download(ictx, folder.FolderPath+"/"+file.ObjectName, file.Name)
 		if err != nil {
 			return err
 		}
@@ -180,19 +194,27 @@ func (s *DocumentAPI) Move(ictx iris.Context) {
 			for _, file := range files {
 				file.FolderId = cmd.Data.FolderId
 			}
+
+			opts := idao.NewCallOptions()
+			opts.SetUpdateFields([]string{"folder_id"})
+
 			if len(files) > 0 {
-				s.fileService.UpdateMany(ctx, files)
+				s.fileService.UpdateMany(ctx, files, opts)
 			}
 
 			doc := model.Document{}
 			doc.Id = cmd.Data.Id
 			doc.FolderId = cmd.Data.FolderId
-			s.documentService.Update(ctx, &doc)
+
+			s.documentService.Update(ctx, &doc, opts)
 
 			//处理文件移动 非主版本文件也需要移动
-			//for _, file := range files {
-			//
-			//}
+			for _, file := range files {
+				err = s.fsService.Rename(cmd.Data.SourcePath+"/"+file.ObjectName, cmd.Data.TargetPath+"/"+file.ObjectName)
+				if err != nil {
+					return err
+				}
+			}
 
 			return nil
 		})
