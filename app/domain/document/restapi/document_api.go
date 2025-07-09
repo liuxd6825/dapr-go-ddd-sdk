@@ -138,7 +138,7 @@ func (s *DocumentAPI) Rename(ictx iris.Context) {
 				return err
 			}
 			opts := idao.NewCallOptions()
-			opts.SetUpdateFields([]string{"name", "objectName", "updatedTime", "updaterId", "updaterName"})
+			opts.SetUpdateFields([]string{"name", "object_name"})
 
 			docModel := model.Document{}
 			docModel.Id = cmd.Data.Id

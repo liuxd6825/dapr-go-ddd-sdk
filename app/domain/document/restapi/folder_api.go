@@ -143,12 +143,12 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 			}
 			if len(folders) > 0 {
 				opts := idao.NewCallOptions()
-				opts.SetUpdateFields([]string{"folderPath"})
+				opts.SetUpdateFields([]string{"folder_path"})
 				s.folderService.UpdateMany(ctx, folders, opts)
 			}
 
 			opts := idao.NewCallOptions()
-			opts.SetUpdateFields([]string{"name", "folderPath", "updatedTime", "updaterId", "updaterName"})
+			opts.SetUpdateFields([]string{"name", "folder_path"})
 
 			folder := model.Folder{}
 			folder.Id = cmd.Data.Id
@@ -177,7 +177,7 @@ func (s *FolderAPI) SetColor(ictx iris.Context) {
 			return err
 		}
 		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"color", "updatedTime", "updaterId", "updaterName"})
+		opts.SetUpdateFields([]string{"color"})
 		s.folderService.Update(ctx, &cmd.Data, opts)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
@@ -193,7 +193,7 @@ func (s *FolderAPI) Move(ictx iris.Context) {
 				return err
 			}
 			opts := idao.NewCallOptions()
-			opts.SetUpdateFields([]string{"parentId", "updatedTime", "updaterId", "updaterName"})
+			opts.SetUpdateFields([]string{"parent_id"})
 
 			folder := model.Folder{}
 			folder.Id = cmd.Data.Id

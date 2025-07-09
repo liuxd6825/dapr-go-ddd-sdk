@@ -62,7 +62,7 @@ func (s *FileAPI) UpdateVerInfo(ictx iris.Context) {
 			return err
 		}
 		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"verInfo", "updatedTime", "updaterId", "updaterName"})
+		opts.SetUpdateFields([]string{"ver_info"})
 		s.fileService.Update(ctx, &cmd.Data, opts)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
@@ -87,14 +87,15 @@ func (s *FileAPI) UpdateIsMain(ictx iris.Context) {
 					file.IsMain = false
 				}
 				opts := idao.NewCallOptions()
-				opts.SetUpdateFields([]string{"isMain", "updatedTime", "updaterId", "updaterName"})
+				opts.SetUpdateFields([]string{"is_main"})
 				s.fileService.UpdateMany(ctx, files, opts)
 			}
 
 			opts := idao.NewCallOptions()
-			opts.SetUpdateFields([]string{"isMain", "updatedTime", "updaterId", "updaterName"})
+			opts.SetUpdateFields([]string{"is_main"})
 			s.fileService.Update(ctx, &cmd.Data, opts)
 
+			opts.SetUpdateFields([]string{"object_name", "name", "download_url", "preview_url", "file_id", "size_title", "size", "ext_name", "thumbnail"})
 			doc := model.Document{}
 			doc.Id = cmd.Data.DocumentId
 			doc.ObjectName = cmd.Data.ObjectName
@@ -106,7 +107,7 @@ func (s *FileAPI) UpdateIsMain(ictx iris.Context) {
 			doc.Size = cmd.Data.Size
 			doc.ExtName = cmd.Data.ExtName
 			doc.Thumbnail = cmd.Data.Thumbnail
-			s.docService.Update(ctx, &doc)
+			s.docService.Update(ctx, &doc, opts)
 
 			return nil
 		})

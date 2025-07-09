@@ -1,7 +1,11 @@
 package model
 
+import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase/xmodel"
+
 type Document struct {
-	Base          `bson:",inline"`
+	xmodel.Base   `bson:",inline"`
+	BusId         string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
+	EntityId      string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
 	RootId        string `gorm:"root_id" json:"rootId,omitempty" bson:"root_id"`                      //根目录Id    tenant_id_bus_id_entity_id形式拼接
 	RootPath      string `gorm:"root_path" json:"rootPath,omitempty" bson:"root_path"`                //物理根目录
 	FolderId      string `gorm:"folder_id" json:"folderId,omitempty" bson:"folder_id"`                //目录Id
@@ -23,24 +27,30 @@ type Document struct {
 }
 
 type RenameDocument struct {
-	Base       `bson:",inline"`
-	FileId     string `gorm:"file_id" json:"fileId,omitempty" bson:"file_id"`
-	Name       string `gorm:"name" json:"name,omitempty" bson:"name"`
-	ObjectName string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"`
-	OldName    string `gorm:"old_name" json:"oldName,omitempty" bson:"old_name"`
-	FolderPath string `gorm:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`
+	xmodel.Base `bson:",inline"`
+	BusId       string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
+	EntityId    string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
+	FileId      string `gorm:"file_id" json:"fileId,omitempty" bson:"file_id"`
+	Name        string `gorm:"name" json:"name,omitempty" bson:"name"`
+	ObjectName  string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"`
+	OldName     string `gorm:"old_name" json:"oldName,omitempty" bson:"old_name"`
+	FolderPath  string `gorm:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`
 }
 
 type DeleteDocument struct {
-	Base       `bson:",inline"`
-	ObjectName string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"` //实际存储的文件名称
-	FolderPath string `gorm:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`
+	xmodel.Base `bson:",inline"`
+	BusId       string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
+	EntityId    string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
+	ObjectName  string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"` //实际存储的文件名称
+	FolderPath  string `gorm:"folder_path" json:"folderPath,omitempty" bson:"folder_path"`
 }
 
 type MoveDocument struct {
-	Base       `bson:",inline"`
-	ObjectName string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"` //实际存储的文件名称
-	FolderId   string `gorm:"folder_id" json:"folderId,omitempty" bson:"folder_id"`
-	SourcePath string `gorm:"source_path" json:"sourcePath,omitempty" bson:"source_path"`
-	TargetPath string `gorm:"target_path" json:"targetPath,omitempty" bson:"target_path"`
+	xmodel.Base `bson:",inline"`
+	BusId       string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
+	EntityId    string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
+	ObjectName  string `gorm:"object_name" json:"objectName,omitempty" bson:"object_name"` //实际存储的文件名称
+	FolderId    string `gorm:"folder_id" json:"folderId,omitempty" bson:"folder_id"`
+	SourcePath  string `gorm:"source_path" json:"sourcePath,omitempty" bson:"source_path"`
+	TargetPath  string `gorm:"target_path" json:"targetPath,omitempty" bson:"target_path"`
 }

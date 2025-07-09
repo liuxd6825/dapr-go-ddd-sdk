@@ -7,9 +7,9 @@ type Base struct {
 	CaseId      string     `json:"caseId" gorm:"type:varchar(255);case_id" bson:"case_id"`
 	TenantId    string     `json:"tenantId" gorm:"type:varchar(255);tenant_id" bson:"tenant_id"`
 	CreatedTime *time.Time `json:"createdTime" gorm:"created_time;<-:create" bson:"created_time"`
-	CreatorId   string     `json:"creatorId" gorm:"creatorId;<-:create" bson:"creator_id"`
+	CreatorId   string     `json:"creatorId" gorm:"creator_id;<-:create" bson:"creator_id"`
 	CreatorName string     `json:"creatorName" gorm:"creator_name;<-:create" bson:"creator_name"`
-	UpdatedTime *time.Time `json:"updateTime" gorm:"updated_time" bson:"update_time"`
+	UpdatedTime *time.Time `json:"updatedTime" gorm:"updated_time" bson:"updated_time"`
 	UpdaterId   string     `json:"updaterId" gorm:"updater_id" bson:"updater_id"`
 	UpdaterName string     `json:"updaterName" gorm:"updater_name" bson:"updater_name"`
 	DeletedTime *time.Time `json:"deletedTime" gorm:"deleted_time" bson:"deleted_time"`
