@@ -1,4 +1,4 @@
-package web
+package restapi
 
 import (
 	"github.com/kataras/iris/v12"
@@ -17,6 +17,15 @@ func SetError(ctx iris.Context, err error) {
 			ctx.StatusCode(iris.StatusInternalServerError)
 		}
 	}
+}
+
+func SetNotFoundError(ictx iris.Context, err error) {
+	req := ictx.Request()
+	if err != nil {
+		logs.Error(ictx, logs.Fields{"method": req.Method, "uri": req.RequestURI, "error": err.Error()})
+		ictx.SetErr(err)
+	}
+	ictx.StatusCode(iris.StatusFound)
 }
 
 func SetData(ctx iris.Context, data any) error {

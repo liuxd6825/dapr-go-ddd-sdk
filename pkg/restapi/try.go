@@ -1,4 +1,4 @@
-package web
+package restapi
 
 import (
 	"context"
