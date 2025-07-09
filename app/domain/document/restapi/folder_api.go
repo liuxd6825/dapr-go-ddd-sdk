@@ -192,6 +192,25 @@ func (s *FolderAPI) Move(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
+
+			res, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			if err != nil {
+				return err
+			}
+			folders := []*model.Folder{}
+			for _, f := range res {
+				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.SourcePath+"/") {
+					f.FolderPath = strings.Replace(f.FolderPath+"/", cmd.Data.SourcePath+"/", cmd.Data.TargetPath+"/"+cmd.Data.Name+"/", -1)
+					f.FolderPath = strings.TrimSuffix(f.FolderPath, "/")
+					folders = append(folders, f)
+				}
+			}
+			if len(folders) > 0 {
+				opts := idao.NewCallOptions()
+				opts.SetUpdateFields([]string{"folder_path"})
+				s.folderService.UpdateMany(ctx, folders, opts)
+			}
+
 			opts := idao.NewCallOptions()
 			opts.SetUpdateFields([]string{"parent_id"})
 
@@ -201,7 +220,10 @@ func (s *FolderAPI) Move(ictx iris.Context) {
 
 			s.folderService.Update(ctx, &folder, opts)
 
-			//移动文件夹操作
+			err = s.fsService.MoveDir(cmd.Data.SourcePath, cmd.Data.TargetPath+"/"+cmd.Data.Name)
+			if err != nil {
+				return err
+			}
 			return nil
 		})
 		return err
@@ -246,9 +268,9 @@ func (s *FolderAPI) Delete(ictx iris.Context) {
 			}
 			for _, f := range res {
 				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.FolderPath+"/") {
-					s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id==%s", f.Id))
-					s.docService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id==%s", f.Id))
-					s.folderService.DeleteById(ctx, cmd.Data.Id)
+					s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+					s.docService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+					s.folderService.DeleteById(ctx, f.Id)
 				}
 			}
 			s.fsService.RemoveAll(cmd.Data.FolderPath)
