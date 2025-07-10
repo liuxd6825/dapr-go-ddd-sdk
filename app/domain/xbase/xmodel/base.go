@@ -1,8 +1,6 @@
 package xmodel
 
-import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-)
+import "github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 
 // Base
 // @Description: 视图基类

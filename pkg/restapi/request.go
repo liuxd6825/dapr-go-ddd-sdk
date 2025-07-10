@@ -5,27 +5,20 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 )
 
-type FindByIdRequest = store.FindByIdQueryRequest
+type FindByIdRequest struct {
+	Id string `json:"id" path:"id" required:"true"`
+}
+
+type FindByIdsRequest struct {
+	Ids []string `json:"ids" path:"ids" required:"true"` // 聚合根Id列表
+}
+
 type FindPagingRequest = store.FindPagingQueryRequest
 type FindDistinctRequest = store.FindDistinctQueryRequest
-type FindByIdsRequest = store.FindByIdsQueryRequest
-type FindAllRequest = store.FindAllQueryRequest
 type FindAutoCompleteRequest = store.FindAutoCompleteQueryRequest
 type FindPagingByCaseIdRequest = store.FindPagingByCaseIdQueryRequest
 
 var restAssembler = RestAssembler{}
-
-func GetFindByIdRequest(ictx iris.Context) (*FindByIdRequest, error) {
-	return restAssembler.AsFindByIdRequest(ictx)
-}
-
-func GetFindByIdsRequest(ictx iris.Context) (*FindByIdsRequest, error) {
-	return restAssembler.AsFindByIdsRequest(ictx)
-}
-
-func GetFindAllRequest(ictx iris.Context) (*FindAllRequest, error) {
-	return restAssembler.AsFindAllRequest(ictx)
-}
 
 func GetFindAutoCompleteRequest(ictx iris.Context) (*FindAutoCompleteRequest, error) {
 	return restAssembler.AsFindAutoCompleteRequest(ictx)

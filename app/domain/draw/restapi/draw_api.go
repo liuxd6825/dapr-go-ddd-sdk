@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -79,7 +78,7 @@ func (s *DrawAPI) Create(ctx context.Context, ictx iris.Context, cmd *command.Cr
 	return s.fileService.Create(ctx, draw.CaseId, draw.Id)
 }
 
-func (s *DrawAPI) Update(ctx context.Context, ictx iris.Context, cmd command.UpdateCommand) (any, error) {
+func (s *DrawAPI) Update(ctx context.Context, cmd *command.UpdateCommand) (any, error) {
 	draw := &model.Draw{}
 	draw.Id = cmd.Data.Id
 	draw.CaseId = cmd.Data.CaseId
@@ -95,72 +94,60 @@ func (s *DrawAPI) Update(ctx context.Context, ictx iris.Context, cmd command.Upd
 	return nil, nil
 }
 
-func (s *DrawAPI) DeleteById(ctx context.Context, ictx iris.Context, cmd command.DeleteCommand) error {
+func (s *DrawAPI) DeleteById(ctx context.Context, cmd *command.DeleteCommand) error {
 	return s.drawDao.DeleteById(ctx, cmd.Data.Id).Error
 }
 
-func (s *DrawAPI) DeleteByIds(ctx context.Context, ictx iris.Context, cmd command.DeleteByIdsCommand) error {
-	if err := restapi.GetCommandPost(ictx, &cmd); err != nil {
-		return err
-	}
+func (s *DrawAPI) DeleteByIds(ctx context.Context, cmd *command.DeleteByIdsCommand) error {
 	return s.drawDao.DeleteByIds(ctx, cmd.Data).Error
 }
 
-func (s *DrawAPI) FindPaging(ctx context.Context, ictx iris.Context, query *store.FindPagingQueryRequest) any {
+func (s *DrawAPI) FindPaging(ctx context.Context, query *restapi.FindPagingRequest) any {
 	return s.drawDao.FindPaging(ctx, query)
 }
 
-func (s *DrawAPI) FindById(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		id := ictx.Params().GetString("id")
-		draw, err := s.drawDao.FindById(ctx, id)
-		if err != nil {
-			return err
-		}
-		if draw != nil {
-			return restapi.SetData(ictx, draw)
-		}
-		return nil
-	})
+func (s *DrawAPI) FindById(ctx context.Context, query *restapi.FindByIdRequest) (any, error) {
+	draw, err := s.drawDao.FindById(ctx, query.Id)
+	return draw, err
 }
 
-func (s *DrawAPI) ReadFile(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		draw, err := s.getDrawById(ctx, ictx.Params().GetString("id"))
-		if err != nil {
-			return err
-		}
-		ictx.Header("Case_Id", draw.CaseId)
-		ictx.Header("Title", url.QueryEscape(draw.Name))
-		content, err := s.fileService.Read(ctx, draw.CaseId, draw.FileName)
-		if err == nil {
-			_, err = ictx.Write(content)
-		}
+type DrawFileRequest struct {
+	Id string `json:"id" path:"id" required:"true" title:"案件ID"`
+}
+
+func (s *DrawAPI) ReadFile(ctx context.Context, ictx iris.Context, params *DrawFileRequest) error {
+	draw, err := s.getDrawById(ctx, params.Id)
+	if err != nil {
 		return err
-	})
+	}
+	ictx.Header("Case_Id", draw.CaseId)
+	ictx.Header("Title", url.QueryEscape(draw.Name))
+	content, err := s.fileService.Read(ctx, draw.CaseId, draw.FileName)
+	if err == nil {
+		_, err = ictx.Write(content)
+	}
+	return err
 }
 
-func (s *DrawAPI) SaveFile(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		id := ictx.Params().GetString("id")
-		draw, err := s.getDrawById(ctx, id)
-		if err != nil {
-			return err
-		}
-		if draw == nil {
-			return errors.ErrorOf("没有找到分析图: %s", id)
-		}
-		var saveRequest request.SaveFileRequest
-		err = ictx.ReadJSON(&saveRequest)
-		if err != nil {
-			return err
-		}
-		err = s.fileService.Save(ctx, draw.CaseId, draw.FileName, saveRequest.XML)
-		if err != nil {
-			return err
-		}
-		return s.graphService.Save(ctx, draw.CaseId, draw.Id, &saveRequest)
-	})
+func (s *DrawAPI) SaveFile(ctx context.Context, ictx iris.Context) error {
+	id := ictx.Params().GetString("id")
+	draw, err := s.getDrawById(ctx, id)
+	if err != nil {
+		return err
+	}
+	if draw == nil {
+		return errors.ErrorOf("没有找到分析图: %s", id)
+	}
+	var saveRequest request.SaveFileRequest
+	err = ictx.ReadJSON(&saveRequest)
+	if err != nil {
+		return err
+	}
+	err = s.fileService.Save(ctx, draw.CaseId, draw.FileName, saveRequest.XML)
+	if err != nil {
+		return err
+	}
+	return s.graphService.Save(ctx, draw.CaseId, draw.Id, &saveRequest)
 }
 
 func (s *DrawAPI) getDrawById(ctx context.Context, id string) (*model.Draw, error) {

@@ -2,6 +2,7 @@ package restapi
 
 import (
 	context2 "context"
+	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -38,9 +39,10 @@ func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 		paramType := method.Type().In(i)
 		if paramType == reflect.TypeOf((*context2.Context)(nil)).Elem() {
 			callMethod.InCtx = i
-		} else if paramType == reflect.TypeOf((*context.Context)(nil)).Elem() {
+		} else if paramType == reflect.TypeOf((*iris.Context)(nil)).Elem() {
 			callMethod.InICtx = i
 		} else if paramType.Kind() == reflect.Ptr && paramType.Elem().Kind() == reflect.Struct {
+			println(i, " ParamType:", paramType.Elem().Name())
 			callMethod.InParams = i
 		} else if paramType == reflect.TypeOf((*store.FindPagingQuery)(nil)).Elem() {
 			// 允许any类型作为参数

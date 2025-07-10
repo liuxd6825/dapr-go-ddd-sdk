@@ -40,7 +40,7 @@ type FindByDrawIdParams struct {
 	DrawId string `json:"drawId" path:"drawId" required:"true"`
 }
 
-func (s *GraphAPI) FindByDrawId(ctx context.Context, params FindByDrawIdParams) (any, error) {
+func (s *GraphAPI) FindByDrawId(ctx context.Context, params *FindByDrawIdParams) (any, error) {
 	graphView := s.graphService.FindById(ctx, params.CaseId, params.DrawId)
 	result := response.NewResultList(graphView)
 	return result, nil

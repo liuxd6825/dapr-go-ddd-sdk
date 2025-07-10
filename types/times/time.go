@@ -76,12 +76,21 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	return b, nil
 }
 
+// MarshalBSONValue 实现bson自定义序列化
 func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bson.MarshalValue(time.Time(t).UTC())
+	tt := time.Time(t)
+	return bson.MarshalValue(tt)
 }
 
-func (t *Time) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {
-	return bson.UnmarshalValue(bt, data, t)
+// UnmarshalBSONValue 实现bson自定义反序列化
+func (t *Time) UnmarshalBSONValue(bType bsontype.Type, data []byte) error {
+	var tt time.Time
+	err := bson.UnmarshalValue(bType, data, &tt)
+	if err != nil {
+		return err
+	}
+	*t = Time(tt)
+	return nil
 }
 
 func (t *Time) GetSchemaType() string {

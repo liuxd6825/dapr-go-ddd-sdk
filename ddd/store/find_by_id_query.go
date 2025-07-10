@@ -9,8 +9,8 @@ type FindByIdQuery interface {
 }
 
 type FindByIdQueryRequest struct {
-	TenantId string `json:"tenantId" bson:"tenant_id"`
-	Id       string `json:"id" bson:"id"`
+	TenantId string `json:"tenantId" `
+	Id       string `json:"id" path:"id" required:"true" ` // 聚合根Id
 }
 
 func NewFindByIdQuery() FindByIdQuery {

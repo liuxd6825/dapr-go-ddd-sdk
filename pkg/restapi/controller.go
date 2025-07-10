@@ -137,9 +137,18 @@ func (c *ApiController) Handle(method string, path string, handlerName string, o
 }
 
 func (c *ApiController) call(method string, path string, handlerName string, opts ...CallOptions) *router.Route {
+	if handlerName == "ReadFile" {
+		println(handlerName)
+	}
 	callMethod, err := c.newCallMethod(handlerName)
 	if err != nil {
-		panic(errors.New("get api func error: %s ", err.Error()))
+		ctlType := reflect.TypeOf(c.ctl)
+		if ctlType.Kind() == reflect.Ptr {
+			ctlType = ctlType.Elem()
+		}
+		pkgPath := ctlType.PkgPath()
+		typeName := ctlType.Name()
+		panic(errors.New("%s %s.%s() func error: %s ", pkgPath, typeName, handlerName, err.Error()))
 	}
 	relativePath := c.getPath(path)
 	r := c.app.Handle(method, relativePath, func(ictx *context.Context) {

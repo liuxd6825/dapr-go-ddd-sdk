@@ -80,7 +80,12 @@ func (t Date) MarshalBSONValue() (bsontype.Type, []byte, error) {
 }
 
 func (t *Date) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {
-	return bson.UnmarshalValue(bt, data, t)
+	var tt time.Time
+	if err := bson.UnmarshalValue(bt, data, &tt); err != nil {
+		return err
+	}
+	*t = Date(tt)
+	return nil
 }
 
 func (t Date) String() string {

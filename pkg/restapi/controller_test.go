@@ -15,9 +15,9 @@ type api struct {
 func (a *api) InitController(app *iris.Application) error {
 	a.app = app
 	h := NewController(app, "/api", a)
-	h.GetData("/get-data/{id}", "GetData")
-	h.GetPaging("/paging", "GetPaging")
-	h.GetOne("/get-one/{id}", "GetOne")
+	//h.GetData("/get-data/{id}", "GetData")
+	//h.GetPaging("/paging", "GetPaging")
+	//h.GetOne("/get-one/{id}", "GetOne")
 	h.Post("/create", "Create")
 	return nil
 }
@@ -34,7 +34,7 @@ type GetDataParams struct {
 	Date *times.Date `json:"date" query:"date" required:"true" title:"日期"`
 }
 
-func (a *api) Create(ctx context.Context, params *CreateCommand) (any, error) {
+func (a *api) Create(ctx context.Context, ictx iris.Context, params *CreateCommand) (any, error) {
 	return params, nil
 }
 

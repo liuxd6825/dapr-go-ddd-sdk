@@ -28,46 +28,6 @@ func (a *RestAssembler) NewOptions() *Options {
 	}
 }
 
-func (a *RestAssembler) AsFindByIdRequest(ictx iris.Context) (*FindByIdRequest, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
-	id, err := a.GetId(ictx)
-	if err != nil {
-		return nil, err
-	}
-	return &FindByIdRequest{
-		TenantId: tenantId,
-		Id:       id,
-	}, nil
-}
-
-func (a *RestAssembler) AsFindByIdsRequest(ictx iris.Context) (*FindByIdsRequest, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
-	ids, err := a.GetIds(ictx)
-	if err != nil {
-		return nil, err
-	}
-	return &FindByIdsRequest{
-		TenantId: tenantId,
-		Ids:      ids,
-	}, nil
-}
-
-func (a *RestAssembler) AsFindAllRequest(ictx iris.Context) (*FindAllRequest, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
-	return &FindAllRequest{
-		TenantId: tenantId,
-	}, nil
-}
-
 func (a *RestAssembler) AsFindAutoCompleteRequest(ictx iris.Context) (*FindAutoCompleteRequest, error) {
 	var err error
 	dto := &FindAutoCompleteRequest{}
