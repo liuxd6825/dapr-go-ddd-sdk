@@ -22,7 +22,9 @@ type UpdateCommand struct {
 
 type DeleteCommand struct {
 	CommandId string `json:"commandId"`
-	Data      string `json:"data"`
+	Data      struct {
+		Id string `json:"id" gorm:"type:varchar(50);primary_key"  `
+	} `json:"data"`
 }
 
 type Data struct {

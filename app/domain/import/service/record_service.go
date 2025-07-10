@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/cmdwrite"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
@@ -21,7 +21,7 @@ type RecordService struct {
 	repos *dao.RecordDao
 }
 
-func NewRecordIeDomainService() *RecordService {
+func NewRecordService() *RecordService {
 	return singleutils.CreateObj[*RecordService](func() *RecordService {
 		return &RecordService{
 			repos: dao.NewRecordDao(config.DBKey),
@@ -39,19 +39,19 @@ func (s *RecordService) addFieldError(data map[string][]string, field string, me
 	}
 }
 
-func (s *RecordService) Delete(ctx context.Context, appcmd *cmdwrite.RecordIeDeleteCommand) {
-	s.repos.DeleteById(ctx, appcmd.Data.Id)
+func (s *RecordService) Delete(ctx context.Context, appcmd *command.RecordIeDeleteCommand) error {
+	return s.repos.DeleteById(ctx, appcmd.Data.Id).GetError()
 }
 
-func (s *RecordService) DeleteByTaskId(ctx context.Context, taskId string) {
-	s.repos.DeleteById(ctx, taskId)
+func (s *RecordService) DeleteByTaskId(ctx context.Context, taskId string) error {
+	return s.repos.DeleteById(ctx, taskId).GetError()
 }
 
-func (s *RecordService) Create(ctx context.Context, m *model.RecordIe) {
-	s.repos.Create(ctx, m)
+func (s *RecordService) Create(ctx context.Context, m *model.RecordIe) error {
+	return s.repos.Create(ctx, m).GetError()
 }
 
-func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) {
+func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) (int64, error) {
 	for _, r := range list {
 		data, err := s.Check(ctx, r)
 		if err != nil {
@@ -59,39 +59,40 @@ func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) 
 		}
 		r.Errors = data
 	}
-	s.repos.CreateMany(ctx, list)
+	res := s.repos.CreateMany(ctx, list)
+	return res.GetRowsAffected(), res.GetError()
 }
 
-func (s *RecordService) Update(ctx context.Context, cmd *cmdwrite.RecordIeUpdateCommand) *model.RecordIe {
+func (s *RecordService) Update(ctx context.Context, cmd *command.RecordIeUpdateCommand) (*model.RecordIe, error) {
 	err := cmd.Validate()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if cmd.IsValidOnly {
-		panic(err)
+		return nil, err
 	}
 
 	data, err := maputils.NewMapWithOptions(cmd.Data, cmd.UpdateMask, false)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	setData := bson.M{
 		"$set": data,
 	}
 	s.repos.UpdateMap(ctx, cmd.Data.Id, setData)
-	record := s.repos.FindById(ctx, cmd.Data.Id)
-	return record
+	record, err := s.repos.FindById(ctx, cmd.Data.Id)
+	return record, err
 }
 
-func (s *RecordService) UpdateField(ctx context.Context, cmd *cmdwrite.RecordIeUpdateFieldCommand) (*model.RecordIe, bool, error) {
+func (s *RecordService) UpdateField(ctx context.Context, cmd *command.RecordIeUpdateFieldCommand) (*model.RecordIe, bool, error) {
 	var err error
 	s.repos.UpdateMap(ctx, cmd.Data.Id, cmd.Data.Values)
-	res := s.repos.FindById(ctx, cmd.Data.Id)
+	res, err := s.repos.FindById(ctx, cmd.Data.Id)
 	res.Errors, err = s.Check(ctx, res)
 	return res, true, err
 }
 
-func (s *RecordService) UpdateByFilter(ctx context.Context, cmd *cmdwrite.RecordIeUpdateFilterCommand) {
+func (s *RecordService) UpdateByFilter(ctx context.Context, cmd *command.RecordIeUpdateFilterCommand) error {
 	if err := cmd.Validate(); err != nil {
 		panic(err)
 	}

@@ -109,7 +109,7 @@ type FindByIdRequest struct {
 	Id       string `json:"id"`
 }
 
-type FindByAllRequest struct {
+type FindAllQueryRequest struct {
 	TenantId string `json:"tenantId"`
 }
 
@@ -387,7 +387,7 @@ func (r *FindByIdRequest) GetId() string {
 	return r.Id
 }
 
-func (r *FindByAllRequest) GetTenantId() string {
+func (r *FindAllQueryRequest) GetTenantId() string {
 	return r.TenantId
 }
 

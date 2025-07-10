@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/cmdquery"
-	cmdwrite2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/cmdwrite"
+	cmdwrite2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"sync"
@@ -77,14 +77,14 @@ func (t *TemplateDomainService) Update(ctx context.Context, cmd *cmdwrite2.TempU
 	t.dao.Update(ctx, temp)
 }
 
-func (t *TemplateDomainService) FindById(ctx context.Context, qry *cmdquery.TemplateFindByIdQuery) *model.Template {
+func (t *TemplateDomainService) FindById(ctx context.Context, qry *query.TemplateFindByIdQuery) *model.Template {
 	if err := qry.Validate(); err != nil {
 		panic(err)
 	}
 	return t.dao.FindById(ctx, qry.Id)
 }
 
-func (t *TemplateDomainService) FindPaging(ctx context.Context, caseId string, qry *cmdquery.TemplateFindPagingQuery) *store.FindPagingResult[*model.Template] {
+func (t *TemplateDomainService) FindPaging(ctx context.Context, caseId string, qry *query.TemplateFindPagingQuery) *store.FindPagingResult[*model.Template] {
 	qry.SetMustFilter(fmt.Sprintf("case_id='%s'", caseId))
 	return t.dao.FindPaging(ctx, qry)
 }

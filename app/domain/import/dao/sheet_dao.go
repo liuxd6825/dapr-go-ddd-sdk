@@ -3,8 +3,8 @@ package dao
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/cmdquery"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -28,7 +28,7 @@ func NewSheetDao(dbKey string) *SheetDao {
 	return daoVal
 }
 
-func (f *SheetDao) FindByName(ctx context.Context, qry *cmdquery.FindSheetByNameQuery) *store.FindPagingResult[*model.Sheet] {
+func (f *SheetDao) FindByName(ctx context.Context, qry *query.FindSheetByNameQuery) store.FindPagingResult[*model.Sheet] {
 	q := store.NewFindPagingQueryRequest()
 	filter := fmt.Sprintf(`case_id=="%v" and doc_id=="%v" and file_id=="%v" and name=="%v" `, qry.CaseId, qry.DocId, qry.FileId, qry.Name)
 	q.SetMustFilter(filter)

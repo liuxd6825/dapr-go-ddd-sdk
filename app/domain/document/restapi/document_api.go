@@ -16,7 +16,7 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DocumentAPI struct {
@@ -53,7 +53,7 @@ func (s *DocumentAPI) BeforeActivation(b mvc.BeforeActivation) {
 }
 
 func (s *DocumentAPI) UploadChunk(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		chunk, _, err := ictx.FormFile("chunk")
 		chunkIndex := ictx.FormValue("chunkIndex")
 		chunkSize := ictx.FormValue("chunkSize")
@@ -84,12 +84,12 @@ func (s *DocumentAPI) UploadChunk(ictx iris.Context) {
 
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) Download(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		fileId := ictx.URLParam("file-id")
 		if fileId == "" {
 			return errors.New("Url参数file-id不能为空")
@@ -123,12 +123,12 @@ func (s *DocumentAPI) Download(ictx iris.Context) {
 
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) Create(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.DocumentCreateCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -140,12 +140,12 @@ func (s *DocumentAPI) Create(ictx iris.Context) {
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) Rename(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.DocumentRenameCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -175,12 +175,12 @@ func (s *DocumentAPI) Rename(ictx iris.Context) {
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) Move(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.DocumentMoveCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -220,12 +220,12 @@ func (s *DocumentAPI) Move(ictx iris.Context) {
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) Update(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.DocumentUpdateCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -248,12 +248,12 @@ func (s *DocumentAPI) Update(ictx iris.Context) {
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) Delete(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.DocumentDeleteCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -267,12 +267,12 @@ func (s *DocumentAPI) Delete(ictx iris.Context) {
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *DocumentAPI) FindPaging(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		folderId := ictx.URLParam("folder-id")
 		//user, _ := appctx.GetAuthUser(ctx)
 		qry := store.NewFindPagingQueryRequest()
@@ -282,8 +282,8 @@ func (s *DocumentAPI) FindPaging(ictx iris.Context) {
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.documentService.FindPaging(ctx, qry)
-		return web.SetData(ictx, res)
+		return restapi.SetData(ictx, res)
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }

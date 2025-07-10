@@ -6,7 +6,7 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
@@ -43,7 +43,7 @@ func (s *SchemaAPI) ReadFile(ctx iris.Context, file string) {
 		}
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -55,7 +55,7 @@ func (s *SchemaAPI) WriteFile(ctx iris.Context, file string) {
 		}
 		return s.service.WriteFile(ctx, file, body)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -67,7 +67,7 @@ func (s *SchemaAPI) WriteJson(ctx iris.Context, file string) {
 		}
 		return s.service.WriteJson(ctx, file, body)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -76,7 +76,7 @@ func (s *SchemaAPI) ReadPath(ctx iris.Context, path string) {
 		list := s.service.ReadPath(ctx, path)
 		return ctx.JSON(list)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -86,7 +86,7 @@ func (s *SchemaAPI) GetSchema(ctx iris.Context, file string) {
 		view := sch.GetView()
 		return ctx.JSON(view)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -96,7 +96,7 @@ func (s *SchemaAPI) GetSchemaProperties(ctx iris.Context, file string) {
 		view := sch.GetView()
 		return ctx.JSON(view.Properties)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -105,7 +105,7 @@ func (s *SchemaAPI) ReadAllPath(ctx iris.Context, path string) {
 		list := s.service.ReadAllPath(ctx, path)
 		return ctx.JSON(list)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -124,7 +124,7 @@ func (s *SchemaAPI) CreatePath(ctx iris.Context) {
 		err = s.service.CreatePath(ctx, pathName)
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -143,7 +143,7 @@ func (s *SchemaAPI) CreateFile(ctx iris.Context) {
 		err = s.service.CreateFile(ctx, fileName)
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -163,7 +163,7 @@ func (s *SchemaAPI) RenameFile(ctx iris.Context) {
 		err = s.service.RenameFile(ctx, oldFileName, newFileName)
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -182,7 +182,7 @@ func (s *SchemaAPI) RemoveFile(ctx iris.Context) {
 		err = s.service.RemoveFile(ctx, fileName)
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -201,6 +201,6 @@ func (s *SchemaAPI) RemovePath(ctx iris.Context) {
 		err = s.service.RemovePath(ctx, pathName)
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }

@@ -3,15 +3,15 @@ package restapi
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "draw"}, func() error {
-		RegisterDrawApi(app, baseUrl, env, rootPath)
-		RegisterGraphApi(app, baseUrl, env, rootPath)
+		RegisterDrawApi(app, baseUrl, env)
+		RegisterGraphApi(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -19,15 +19,13 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPat
 	}
 }
 
-func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	drawioAPI := NewDrawIoAPI(env, rootPath)
-	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
-		a.Handle(drawioAPI)
-	})
+func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env) {
+	drawioAPI := NewDrawIoAPI(env, baseUrl)
+	restapi.InitController(app, drawioAPI)
 }
-func RegisterGraphApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	graphApi := NewGraphAPI(env, rootPath)
-	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
-		a.Handle(graphApi)
-	})
+
+func RegisterGraphApi(app *iris.Application, baseUrl string, env *env.Env) {
+	graphApi := NewGraphAPI(env, baseUrl)
+	restapi.InitController(app, graphApi)
+
 }

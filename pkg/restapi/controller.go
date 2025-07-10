@@ -6,7 +6,6 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -20,7 +19,6 @@ type ApiController struct {
 	routes   []*router.Route
 	ctl      any
 }
-type FindPagingQuery = store.FindPagingQuery
 
 type ApiFunc func(ctx context2.Context, ictx *context.Context, params any) (any, error)
 
@@ -156,7 +154,6 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 					opt.InitMethod(callMethod)
 				}
 			}
-
 			if callMethod.InParams >= 0 && !callMethod.CloseInParams {
 				inParamsType := callMethod.Method.Type().In(callMethod.InParams)
 				params, err = c.GetParams(ictx, inParamsType)

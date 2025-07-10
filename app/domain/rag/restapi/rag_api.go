@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type RagAPI struct {
@@ -45,16 +45,16 @@ func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
 
 // CreateTenant 加载租户知识库数据
 func (s *RagAPI) CreateTenant(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		return s.ragService.CreateTenant(ctx)
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 // CreateCase 加载租户知识库数据
 func (s *RagAPI) CreateCase(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		var cmd *command.RagCreateCaseCommand
 		err := ictx.ReadJSON(&cmd)
 		if err != nil {
@@ -69,12 +69,12 @@ func (s *RagAPI) CreateCase(ictx iris.Context) {
 		}
 		return s.ragService.CreateCase(ctx, cmd.Data.CaseId)
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *RagAPI) Query(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		var query *my_rag.QueryParam
 		if err := ictx.ReadJSON(&query); err != nil {
 			return err
@@ -104,6 +104,6 @@ func (s *RagAPI) Query(ictx iris.Context) {
 		}
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }

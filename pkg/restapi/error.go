@@ -4,6 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 )
 
 func SetError(ctx iris.Context, err error) {
@@ -28,7 +29,17 @@ func SetNotFoundError(ictx iris.Context, err error) {
 	ictx.StatusCode(iris.StatusFound)
 }
 
-func SetData(ctx iris.Context, data any) error {
+func SetData2(ctx iris.Context, data any) error {
 	ctx.StatusCode(iris.StatusOK)
 	return ctx.JSON(data)
+}
+
+func SetData(ictx iris.Context, data any) error {
+	jsonData, err := jsonutils.MarshalBytes(data)
+	if err != nil {
+		return err
+	}
+	ictx.ContentType("application/json")
+	_, err = ictx.Write(jsonData)
+	return err
 }

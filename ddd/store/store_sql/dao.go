@@ -381,8 +381,23 @@ func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 	res := store.NewSetResult[T]()
 	gp.Try(func() error {
 		data[TenantId] = tenantId
-
 		db := d.GetUpdateDB(ctx, data, opts...).Model(d.entity).Where("id", id).Updates(data)
+		res.RowsAffected = db.RowsAffected
+		return db.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
+}
+
+func (d *Dao[T]) UpdateMapByRSQL(ctx context.Context, tenantId string, filterRSQL string, data map[string]any, opts ...store.Options) *store.SetResult[T] {
+	res := store.NewSetResult[T]()
+	gp.Try(func() error {
+		where, err := d.getSql(tenantId, filterRSQL)
+		if err != nil {
+			return err
+		}
+		db := d.GetUpdateDB(ctx, data, opts...).Model(d.entity).Where(where).Updates(data)
 		res.Error = db.Error
 		res.RowsAffected = db.RowsAffected
 		return res.Error

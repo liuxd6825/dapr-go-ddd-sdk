@@ -39,11 +39,14 @@ func main() {
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
 			err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "all"}, func() error {
-				master.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-				drawio.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-				graph.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-				rag.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
-				doc.RegisterAllApi(server.App(), "/api/v1.0", server.EnvConfig(), "")
+				baseUrl := "/api/v1.0"
+				app := server.App()
+				env := server.EnvConfig()
+				master.RegisterAllApi(app, baseUrl, env)
+				drawio.RegisterAllApi(app, baseUrl, env)
+				graph.RegisterAllApi(app, baseUrl, env)
+				rag.RegisterAllApi(app, baseUrl, env)
+				doc.RegisterAllApi(app, baseUrl, env)
 				return nil
 			})
 			return err

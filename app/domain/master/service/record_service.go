@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/cmdquery"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/view"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -17,14 +17,14 @@ type RecordQueryService interface {
 	DeleteByTaskId(ctx context.Context, taskId string, opts ...idao.CallOptions) error
 	DeleteAll(ctx context.Context, opts ...idao.CallOptions) error
 
-	FindById(ctx context.Context, qry *cmdquery.RecordFindByIdQuery, opts ...idao.CallOptions) (*view.RecordView, error)
-	FindByIds(ctx context.Context, qry *cmdquery.RecordFindByIdsQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
-	FindAll(ctx context.Context, qry *cmdquery.RecordFindAllQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
+	FindById(ctx context.Context, qry *query.RecordFindByIdQuery, opts ...idao.CallOptions) (*view.RecordView, error)
+	FindByIds(ctx context.Context, qry *query.RecordFindByIdsQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
+	FindAll(ctx context.Context, qry *query.RecordFindAllQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
 	FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*view.RecordView], error)
-	FindPagingByCaseId(ctx context.Context, qry *cmdquery.RecordFindByCaseIdQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*view.RecordView], error)
-	FindByDocId(ctx context.Context, qry *cmdquery.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
-	FindByTaskId(ctx context.Context, qry *cmdquery.RecordFindByTaskIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
-	FindByFileId(ctx context.Context, qry *cmdquery.RecordFindByFileIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
+	FindPagingByCaseId(ctx context.Context, qry *query.RecordFindByCaseIdQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*view.RecordView], error)
+	FindByDocId(ctx context.Context, qry *query.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
+	FindByTaskId(ctx context.Context, qry *query.RecordFindByTaskIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
+	FindByFileId(ctx context.Context, qry *query.RecordFindByFileIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error)
 }
 
 type RecordQueryServiceImpl struct {
@@ -59,16 +59,16 @@ func (r *RecordQueryServiceImpl) DeleteAll(ctx context.Context, opts ...idao.Cal
 	return r.dao.DeleteAll(ctx, opts...).GetError()
 }
 
-func (r *RecordQueryServiceImpl) FindById(ctx context.Context, qry *cmdquery.RecordFindByIdQuery, opts ...idao.CallOptions) (*view.RecordView, error) {
+func (r *RecordQueryServiceImpl) FindById(ctx context.Context, qry *query.RecordFindByIdQuery, opts ...idao.CallOptions) (*view.RecordView, error) {
 	return r.dao.FindById(ctx, qry.Id, opts...)
 }
 
-func (r *RecordQueryServiceImpl) FindByIds(ctx context.Context, qry *cmdquery.RecordFindByIdsQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
+func (r *RecordQueryServiceImpl) FindByIds(ctx context.Context, qry *query.RecordFindByIdsQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *RecordQueryServiceImpl) FindAll(ctx context.Context, qry *cmdquery.RecordFindAllQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
+func (r *RecordQueryServiceImpl) FindAll(ctx context.Context, qry *query.RecordFindAllQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -78,22 +78,22 @@ func (r *RecordQueryServiceImpl) FindPaging(ctx context.Context, qry *ddd_query.
 	panic("implement me")
 }
 
-func (r *RecordQueryServiceImpl) FindPagingByCaseId(ctx context.Context, qry *cmdquery.RecordFindByCaseIdQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*view.RecordView], error) {
+func (r *RecordQueryServiceImpl) FindPagingByCaseId(ctx context.Context, qry *query.RecordFindByCaseIdQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*view.RecordView], error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *RecordQueryServiceImpl) FindByDocId(ctx context.Context, qry *cmdquery.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
+func (r *RecordQueryServiceImpl) FindByDocId(ctx context.Context, qry *query.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *RecordQueryServiceImpl) FindByTaskId(ctx context.Context, qry *cmdquery.RecordFindByTaskIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
+func (r *RecordQueryServiceImpl) FindByTaskId(ctx context.Context, qry *query.RecordFindByTaskIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (r *RecordQueryServiceImpl) FindByFileId(ctx context.Context, qry *cmdquery.RecordFindByFileIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
+func (r *RecordQueryServiceImpl) FindByFileId(ctx context.Context, qry *query.RecordFindByFileIdQuery, opts ...idao.CallOptions) ([]*view.RecordView, error) {
 	//TODO implement me
 	panic("implement me")
 }

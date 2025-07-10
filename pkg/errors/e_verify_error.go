@@ -51,3 +51,17 @@ func (v *VerifyError) GetError() error {
 	}
 	return nil
 }
+
+func (v *VerifyError) MergeWithPrefix(prefix string, ve *VerifyError) {
+	if ve == nil {
+		return
+	}
+	for _, e := range ve.Errors {
+		newField := prefix + "." + e.Field
+		v.Errors = append(v.Errors, FieldError{
+			Field:   newField,
+			Title:   e.Title,
+			Message: e.Message,
+		})
+	}
+}

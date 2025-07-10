@@ -42,6 +42,11 @@ func (d *Dao[T]) UpdateByRSQL(ctx context.Context, tenantId, rSQL string, entity
 	return res
 }
 
+func (d *Dao[T]) UpdateMapByRSQL(ctx context.Context, tenantId string, filterRSQL string, data map[string]any, opts ...store.Options) *store.SetResult[T] {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (d *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...store.Options) *store.SetResult[T] {
 	//TODO implement me
 	panic("implement me")

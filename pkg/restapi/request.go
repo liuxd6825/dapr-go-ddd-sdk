@@ -2,32 +2,39 @@ package restapi
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 )
 
-var restAssembler = restapp.RestAssembler{}
+type FindByIdRequest = store.FindByIdQueryRequest
+type FindPagingRequest = store.FindPagingQueryRequest
+type FindDistinctRequest = store.FindDistinctQueryRequest
+type FindByIdsRequest = store.FindByIdsQueryRequest
+type FindAllRequest = store.FindAllQueryRequest
+type FindAutoCompleteRequest = store.FindAutoCompleteQueryRequest
+type FindPagingByCaseIdRequest = store.FindPagingByCaseIdQueryRequest
 
-func GetFindByIdRequest(ictx iris.Context) (*ddd_query.FindByIdQuery, error) {
+var restAssembler = RestAssembler{}
+
+func GetFindByIdRequest(ictx iris.Context) (*FindByIdRequest, error) {
 	return restAssembler.AsFindByIdRequest(ictx)
 }
 
-func GetFindByIdsRequest(ictx iris.Context) (*ddd_query.FindByIdsQuery, error) {
+func GetFindByIdsRequest(ictx iris.Context) (*FindByIdsRequest, error) {
 	return restAssembler.AsFindByIdsRequest(ictx)
 }
 
-func GetFindAllRequest(ictx iris.Context) (*ddd_query.FindAllQuery, error) {
+func GetFindAllRequest(ictx iris.Context) (*FindAllRequest, error) {
 	return restAssembler.AsFindAllRequest(ictx)
 }
 
-func GetFindAutoCompleteRequest(ictx iris.Context) (ddd_query.FindAutoCompleteQuery, error) {
+func GetFindAutoCompleteRequest(ictx iris.Context) (*FindAutoCompleteRequest, error) {
 	return restAssembler.AsFindAutoCompleteRequest(ictx)
 }
 
-func GetDistinctRequest(ictx iris.Context) (ddd_query.FindDistinctQuery, error) {
+func GetDistinctRequest(ictx iris.Context) (*FindDistinctRequest, error) {
 	return restAssembler.AsDistinctRequest(ictx)
 }
 
-func GetFindPagingRequest(ictx iris.Context) (*ddd_query.FindPagingQuery, error) {
+func GetFindPagingRequest(ictx iris.Context) (*FindPagingRequest, error) {
 	return restAssembler.AsFindPagingRequest(ictx)
 }

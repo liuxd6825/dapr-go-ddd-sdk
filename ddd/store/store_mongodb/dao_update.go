@@ -135,6 +135,21 @@ func (r *Dao[T]) UpdateMap(ctx context.Context, tenantId string, id string, data
 	return res
 }
 
+func (r *Dao[T]) UpdateMapByRSQL(ctx context.Context, tenantId string, filterRSQL string, data map[string]any, opts ...store.Options) *store.SetResult[T] {
+	res := store.NewSetResultEmpty[T]()
+	gp.Try(func() error {
+		filter, err := r.getFilter(tenantId, filterRSQL)
+		if err != nil {
+			return err
+		}
+		res = r.updateMap(ctx, tenantId, filter.Match, data, opts...)
+		return res.Error
+	}).Catch(func(err error) {
+		res.SetError(err)
+	})
+	return res
+}
+
 func (r *Dao[T]) updateMap(ctx context.Context, tenantId string, filter any, data map[string]any, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {

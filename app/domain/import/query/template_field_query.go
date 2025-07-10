@@ -1,4 +1,4 @@
-package cmdquery
+package query
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"

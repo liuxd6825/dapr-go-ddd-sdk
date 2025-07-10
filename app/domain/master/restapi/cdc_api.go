@@ -1,15 +1,13 @@
 package restapi
 
 import (
+	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	graph2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/graph/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"net/http"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CdcAPI struct {
@@ -28,45 +26,34 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 	}
 }
 
-func (s *CdcAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
-	b.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
+func (s *CdcAPI) InitController(app *iris.Application) error {
+	handler := restapi.NewController(app, s.rootPath, s)
+	handler.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
+	handler.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
+	return nil
 }
 
-func (s *CdcAPI) DaprOptions(ctx iris.Context) {
-	ctx.StatusCode(http.StatusOK)
-	return
+func (s *CdcAPI) DaprOptions(ctx context.Context) error {
+	return nil
 }
 
-func (s *CdcAPI) DataChange(ctx iris.Context) {
-	gp.Try(func() error {
-		ctx.StatusCode(iris.StatusOK)
-		var record model.Record
-		// 反序列化请求体到结构体
-		if err := ctx.ReadJSON(&record); err != nil {
-			return err
-		}
-		logs.InfoMsg(ctx, "record", " opType=", record.OpType, " table=", record.Table)
+func (s *CdcAPI) DataChange(ctx context.Context, record *model.Record) error {
+	logs.InfoMsg(ctx, "record", " opType=", record.OpType, " table=", record.Table)
 
-		dbSch := s.cdcService.GetDBSchema(record.Table)
-		if dbSch == nil {
-			return nil
-		}
-		record.DBSchema = dbSch
-
-		// 根据操作类型处理数据
-		switch record.OpType {
-		case "c":
-			s.cdcService.Create(&record)
-		case "u":
-			s.cdcService.Update(&record)
-		case "d":
-			s.cdcService.Delete(&record)
-		}
-
+	dbSch := s.cdcService.GetDBSchema(record.Table)
+	if dbSch == nil {
 		return nil
-	}).Catch(func(e error) {
-		web.SetError(ctx, e)
-	})
+	}
+	record.DBSchema = dbSch
 
+	// 根据操作类型处理数据
+	switch record.OpType {
+	case "c":
+		s.cdcService.Create(record)
+	case "u":
+		s.cdcService.Update(record)
+	case "d":
+		s.cdcService.Delete(record)
+	}
+	return nil
 }

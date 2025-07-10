@@ -12,13 +12,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type ChatAPI struct {
 	env         *env.Env
 	chatService *service.ChatService
 	msgService  *service.MessageService
+	rootPath    string
 }
 
 func NewChatAPI(env *env.Env, rootPath string) *ChatAPI {
@@ -28,6 +29,7 @@ func NewChatAPI(env *env.Env, rootPath string) *ChatAPI {
 		env:         env,
 		chatService: chatService,
 		msgService:  msgService,
+		rootPath:    rootPath,
 	}
 }
 
@@ -39,81 +41,54 @@ func (s *ChatAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/rag/chat", "FindPaging")
 }
 
-func (s *ChatAPI) Create(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.ChatCreateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		vErr := errors.NewVerifyError()
-		if cmd.Data.CaseId == "" {
-			vErr.AppendField("caseId", "不能为空", "案件ID")
-		}
-		if vErr.HasError() {
-			return vErr
-		}
-		s.chatService.Create(ctx, &cmd.Data)
-		return nil
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *ChatAPI) InitController(app *iris.Application) error {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+	ctl.Post("chat", "Create")
+	ctl.Put("chat", "Update")
+	ctl.Put("chat:rename", "Rename")
+	ctl.Delete("chat", "Delete")
+	ctl.GetPaging("chat", "FindPaging")
+	return nil
 }
 
-func (s *ChatAPI) Rename(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.ChatUpdateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"title"})
-		s.chatService.Update(ctx, &cmd.Data, opts)
-		return nil
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *ChatAPI) Create(ctx context.Context, cmd *command.ChatCreateCommand) error {
+	vErr := errors.NewVerifyError()
+	if cmd.Data.CaseId == "" {
+		vErr.AppendField("caseId", "不能为空", "案件ID")
+	}
+	if vErr.HasError() {
+		return vErr
+	}
+	s.chatService.Create(ctx, &cmd.Data)
+	return nil
 }
 
-func (s *ChatAPI) Update(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.ChatUpdateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.chatService.Update(ctx, &cmd.Data)
-		return nil
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *ChatAPI) Rename(ctx context.Context, cmd *command.ChatUpdateCommand) error {
+	opts := idao.NewCallOptions()
+	opts.SetUpdateFields([]string{"title"})
+	return s.chatService.Update(ctx, &cmd.Data, opts).GetError()
 }
 
-func (s *ChatAPI) Delete(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.ChatDeleteCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.msgService.DeleteByRSQL(ctx, "chat_id=='"+cmd.Data.Id+"'")
-		s.chatService.DeleteById(ctx, cmd.Data.Id)
-		return nil
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *ChatAPI) Update(ctx context.Context, cmd *command.ChatUpdateCommand) error {
+	return s.chatService.Update(ctx, &cmd.Data).GetError()
 }
 
-func (s *ChatAPI) FindPaging(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		caseId := ictx.URLParam("case-id")
-		user, _ := appctx.GetAuthUser(ctx)
-		qry := store.NewFindPagingQueryRequest()
-		qry.PageNum = 0
-		qry.PageSize = 99999999999999
-		qry.Filter = "case_id=='" + caseId + "' and creator_id=='" + user.GetId() + "'"
-		qry.Sort = "created_time:desc"
-		qry.IsTotalRows = true
-		res := s.chatService.FindPaging(ctx, qry)
-		return web.SetData(ictx, res)
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *ChatAPI) Delete(ctx context.Context, cmd *command.ChatDeleteCommand) {
+	s.msgService.DeleteByRSQL(ctx, "chat_id=='"+cmd.Data.Id+"'")
+	s.chatService.DeleteById(ctx, cmd.Data.Id)
+}
+
+func (s *ChatAPI) FindPaging(ctx context.Context, ictx iris.Context, qry *store.FindPagingQueryRequest) (any, error) {
+	caseId := ictx.URLParam("case-id")
+	user, _ := appctx.GetAuthUser(ctx)
+	qry.PageNum = 0
+	qry.PageSize = 99999999999999
+	qry.Filter = "case_id=='" + caseId + "' and creator_id=='" + user.GetId() + "'"
+	qry.Sort = "created_time:desc"
+	qry.IsTotalRows = true
+	res := s.chatService.FindPaging(ctx, qry)
+	if res.GetError() == nil {
+		return nil, res.GetError()
+	}
+	return res, nil
 }

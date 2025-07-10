@@ -7,12 +7,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type GraphAPI struct {
 	env          *env.Env
 	graphService *service.GraphService
+	rootPath     string
 }
 
 func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
@@ -20,6 +21,7 @@ func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
 	return &GraphAPI{
 		env:          env,
 		graphService: graphService,
+		rootPath:     rootPath,
 	}
 }
 
@@ -27,14 +29,19 @@ func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/case/{caseId}/draw/{drawId}/graph", "FindByDrawId")
 }
 
-func (s *GraphAPI) FindByDrawId(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		caseId := ictx.Params().Get("caseId")
-		id := ictx.Params().Get("drawId")
-		graphView := s.graphService.FindById(ctx, caseId, id)
-		result := response.NewResultList(graphView)
-		return web.SetData(ictx, result)
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *GraphAPI) InitController(app *iris.Application) error {
+	controller := restapi.NewController(app, s.rootPath)
+	controller.GetOne("/case/{caseId}/draw/{drawId}/graph", "FindByDrawId")
+	return nil
+}
+
+type FindByDrawIdParams struct {
+	CaseId string `json:"caseId" path:"caseId" required:"true"`
+	DrawId string `json:"drawId" path:"drawId" required:"true"`
+}
+
+func (s *GraphAPI) FindByDrawId(ctx context.Context, ictx iris.Context, params FindByDrawIdParams) (any, error) {
+	graphView := s.graphService.FindById(ctx, params.CaseId, params.DrawId)
+	result := response.NewResultList(graphView)
+	return result, nil
 }

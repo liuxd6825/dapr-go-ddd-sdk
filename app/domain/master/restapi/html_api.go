@@ -5,7 +5,7 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 )
 
@@ -33,7 +33,7 @@ func (s *HtmlAPI) ReadFile(ctx iris.Context, file string) {
 		}
 		return err
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -43,7 +43,7 @@ func (s *HtmlAPI) WriteFile(ctx iris.Context) {
 		data := ctx.FormValue("data")
 		return s.service.WriteFile(ctx, fileName, []byte(data))
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -52,7 +52,7 @@ func (s *HtmlAPI) ReadPath(ctx iris.Context, path string) {
 		list := s.service.ReadPath(ctx, path, false)
 		return ctx.JSON(list)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }
 
@@ -61,6 +61,6 @@ func (s *HtmlAPI) ReadAllPath(ctx iris.Context, path string) {
 		list := s.service.ReadPath(ctx, path, true)
 		return ctx.JSON(list)
 	}).Catch(func(err error) {
-		web.SetError(ctx, err)
+		restapi.SetError(ctx, err)
 	})
 }

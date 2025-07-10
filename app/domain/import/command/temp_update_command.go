@@ -1,4 +1,4 @@
-package cmdwrite
+package command
 
 import (
 	"fmt"

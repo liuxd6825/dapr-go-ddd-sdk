@@ -49,6 +49,14 @@ func (d *DaoBase[T]) UpdateByRSQL(ctx context.Context, filterRSQL string, data T
 	return idao.NewResult(res)
 }
 
+func (d *DaoBase[T]) UpdateMapByRSQL(ctx context.Context, rsql string, data map[string]any, opts ...idao.CallOptions) *idao.Result {
+	tenantId := d.GetTenantId(ctx)
+	res := d.store.UpdateMapByRSQL(ctx, tenantId, rsql, data, idao.NewCallOptions(opts...))
+	if res.Error != nil {
+		panic(res.Error)
+	}
+	return idao.NewResult(res)
+}
 func (d *DaoBase[T]) IsNil(entity T) bool {
 	return any(entity) == nil
 }

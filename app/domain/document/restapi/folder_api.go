@@ -13,7 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"strings"
 )
 
@@ -51,7 +51,7 @@ func (s *FolderAPI) BeforeActivation(b mvc.BeforeActivation) {
 }
 
 func (s *FolderAPI) CreateRoot(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.FolderCreateCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -84,12 +84,12 @@ func (s *FolderAPI) CreateRoot(ictx iris.Context) {
 
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) Create(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.FolderCreateCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -117,12 +117,12 @@ func (s *FolderAPI) Create(ictx iris.Context) {
 
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) Rename(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.FolderRenameCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -166,12 +166,12 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) SetColor(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		var cmd *command.FolderUpdateCommand
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
@@ -181,12 +181,12 @@ func (s *FolderAPI) SetColor(ictx iris.Context) {
 		s.folderService.Update(ctx, &cmd.Data, opts)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) Move(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.FolderMoveCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -228,12 +228,12 @@ func (s *FolderAPI) Move(ictx iris.Context) {
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) Update(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		var cmd *command.FolderUpdateCommand
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
@@ -241,12 +241,12 @@ func (s *FolderAPI) Update(ictx iris.Context) {
 		s.folderService.Update(ctx, &cmd.Data)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) Delete(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 			var cmd *command.FolderDeleteCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
@@ -279,12 +279,12 @@ func (s *FolderAPI) Delete(ictx iris.Context) {
 
 		return err
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }
 
 func (s *FolderAPI) FindPaging(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		parentId := ictx.URLParam("folder-id")
 		qry := store.NewFindPagingQueryRequest()
 		qry.PageNum = 0
@@ -293,8 +293,8 @@ func (s *FolderAPI) FindPaging(ictx iris.Context) {
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.folderService.FindPaging(ctx, qry)
-		return web.SetData(ictx, res)
+		return restapi.SetData(ictx, res)
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }

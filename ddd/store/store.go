@@ -32,6 +32,7 @@ type IStore[T any] interface {
 	UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data T, opts ...Options) *SetResult[T]
 	UpdateMany(ctx context.Context, tenantId string, entities []T, opts ...Options) *SetResult[T]
 	UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) *SetResult[T]
+	UpdateMapByRSQL(ctx context.Context, tenantId string, rsql string, data map[string]any, opts ...Options) *SetResult[T]
 	//UpdateMapAndGetCount(ctx context.Context, tenantId string, filter any, data any, opts ...Options) *SetResult[T]
 
 	// 删除

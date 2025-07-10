@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/cmdquery"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
 )
@@ -43,7 +43,7 @@ func (f *RowService) FindById(ctx context.Context, id string) (*model.Row, bool,
 	f.repos.FindById(ctx, id)
 }
 
-func (f *RowService) FindBySheet(ctx context.Context, qry *cmdquery.FindRowBySheetQuery) []*model.Row {
+func (f *RowService) FindBySheet(ctx context.Context, qry *query.FindRowBySheetQuery) []*model.Row {
 	b := idao.NewFindPagingQueryBuilder().SetPageNum(0).SetPageSize(1000)
 	b.SetTenantId(qry.TenantId)
 	b.SetMustFilter(fmt.Sprintf("case_id=='%v'", qry.CaseId))

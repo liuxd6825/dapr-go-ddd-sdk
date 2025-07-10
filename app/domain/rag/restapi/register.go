@@ -6,36 +6,36 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	RegisterRagApi(app, baseUrl, env, rootPath)
-	RegisterChatApi(app, baseUrl, env, rootPath)
-	RegisterMessageApi(app, baseUrl, env, rootPath)
-	RegisterDocumentApi(app, baseUrl, env, rootPath)
+func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
+	RegisterRagApi(app, baseUrl, env)
+	RegisterChatApi(app, baseUrl, env)
+	RegisterMessageApi(app, baseUrl, env)
+	RegisterDocumentApi(app, baseUrl, env)
 }
 
-func RegisterRagApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	ragApi := NewRagAPI(env, rootPath)
+func RegisterRagApi(app *iris.Application, baseUrl string, env *env.Env) {
+	ragApi := NewRagAPI(env, baseUrl)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(ragApi)
 	})
 }
 
-func RegisterMessageApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	api := NewMessageAPI(env, rootPath)
+func RegisterMessageApi(app *iris.Application, baseUrl string, env *env.Env) {
+	api := NewMessageAPI(env, baseUrl)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(api)
 	})
 }
 
-func RegisterChatApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	api := NewChatAPI(env, rootPath)
+func RegisterChatApi(app *iris.Application, baseUrl string, env *env.Env) {
+	api := NewChatAPI(env, baseUrl)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(api)
 	})
 }
 
-func RegisterDocumentApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	api := NewDocumentAPI(env, rootPath)
+func RegisterDocumentApi(app *iris.Application, baseUrl string, env *env.Env) {
+	api := NewDocumentAPI(env, baseUrl)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(api)
 	})

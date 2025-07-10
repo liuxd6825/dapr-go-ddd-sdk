@@ -3,28 +3,39 @@ package restapi
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
-	paramTag = "param" // 路径/查询参数标签
-	bodyTag  = "body"  // 请求体标签
-	pathTag  = "path"  // 路径参数标签
-	queryTag = "query" // 查询参数标签
+	paramTag    = "param"    // 路径/查询参数标签
+	bodyTag     = "body"     // 请求体标签
+	pathTag     = "path"     // 路径参数标签
+	queryTag    = "query"    // 查询参数标签
+	requiredTag = "required" // 必填参数标签
+	jsonTag     = "json"
+	titleTag    = "title" // 字段标题标签
 )
 
 // GetParams 将请求参数绑定到目标结构体
-func GetParams(ctx iris.Context, target interface{}) error {
+func GetParams(ctx iris.Context, target interface{}) (err error) {
 	// 处理请求体JSON
 	if ctx.Request().Method == iris.MethodPost || ctx.Request().Method == iris.MethodPut {
-		if err := ctx.ReadJSON(target); err != nil && !iris.IsErrPath(err) {
+		err = ctx.ReadJSON(target)
+		if err != nil {
 			return err
 		}
+		err = ValidParams(target)
+		return err
 	}
 
-	isRead := false
+	// 数据验证对象
+	verifyErr := errors.NewVerifyError()
+
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
 		return errors.New("target must be a pointer to a struct")
@@ -34,67 +45,133 @@ func GetParams(ctx iris.Context, target interface{}) error {
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)
 		fieldValue := targetValue.Elem().Field(i)
-
 		// 处理路径参数
 		if pathName := field.Tag.Get(pathTag); pathName != "" {
 			if val := ctx.Params().Get(pathName); val != "" {
-				if err := setFieldValue(fieldValue, val); err != nil {
-					return err
+				if err := setFieldValue(&fieldValue, val); err != nil {
+					verifyErr.AppendField(field.Name, err.Error())
 				}
-				isRead = true
-				continue
 			}
-		}
-
-		// 处理查询参数
-		if queryName := field.Tag.Get(queryTag); queryName != "" {
+		} else if queryName := field.Tag.Get(queryTag); queryName != "" { // 处理查询参数
 			if val := ctx.URLParam(queryName); val != "" {
-				if err := setFieldValue(fieldValue, val); err != nil {
-					return err
+				if err := setFieldValue(&fieldValue, val); err != nil {
+					verifyErr.AppendField(field.Name, err.Error())
 				}
-				isRead = true
-				continue
 			}
-		}
-
-		// 处理通用param标签（兼容旧版）
-		if paramName := field.Tag.Get(paramTag); paramName != "" {
+		} else if paramName := field.Tag.Get(paramTag); paramName != "" { // 处理通用param标签（兼容旧版）
 			if val := ctx.Params().Get(paramName); val != "" {
-				if err := setFieldValue(fieldValue, val); err != nil {
-					return err
+				if err := setFieldValue(&fieldValue, val); err != nil {
+					verifyErr.AppendField(field.Name, err.Error())
 				}
-				isRead = true
-				continue
-			}
-			if val := ctx.URLParam(paramName); val != "" {
-				if err := setFieldValue(fieldValue, val); err != nil {
-					return err
+			} else if val := ctx.URLParam(paramName); val != "" {
+				if err := setFieldValue(&fieldValue, val); err != nil {
+					verifyErr.AppendField(field.Name, err.Error())
 				}
-				isRead = true
-				continue
 			}
-		}
-
-		// 处理嵌套结构体
-		if field.Type.Kind() == reflect.Struct {
-			if err := bindNestedStruct(ctx, fieldValue); err != nil {
-				return err
+		} else if field.Type.Kind() == reflect.Struct { // 处理嵌套结构体
+			err := bindNestedStruct(ctx, &fieldValue)
+			if err != nil {
+				// 检查是否为VerifyError类型，合并子结构体的验证错误
+				if ve, ok := err.(*errors.VerifyError); ok {
+					verifyErr.MergeWithPrefix(field.Name, ve)
+				} else {
+					verifyErr.AppendField(field.Name, err.Error())
+				}
 			}
-			isRead = true
 		}
 	}
 
-	// 处理请求体JSON
-	if !isRead {
-		if err := ctx.ReadJSON(target); err != nil && !iris.IsErrPath(err) {
-			return err
-		}
+	return verifyErr.GetError()
+}
+
+func ValidParams(target interface{}) error {
+	targetValue := reflect.ValueOf(target)
+	if targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
+		return errors.New("target must be a pointer to a struct")
 	}
-	return nil
+	verifyError := errors.NewVerifyError()
+	targetType := targetValue.Elem().Type()
+	for i := 0; i < targetType.NumField(); i++ {
+		field := targetType.Field(i)
+		fieldValue := targetValue.Elem().Field(i)
+		validField(verifyError, &field, fieldValue)
+	}
+	return verifyError.GetError()
+}
+
+// validField 递归校验单个字段，支持结构体、结构体指针、必填校验
+func validField(verifyError *errors.VerifyError, field *reflect.StructField, fieldValue reflect.Value) {
+	// 支持 time.Time 及其别名类型（如 times.Time）必填校验
+	if isTimeType(field.Type) {
+		isRequired := fieldIsRequired(field)
+		if isRequired && isZeroTime(fieldValue) {
+			appendFieldError(verifyError, field, "不能为空")
+		}
+		return
+	}
+	// 支持 *time.Time 及其别名类型指针必填校验
+	if isTimePtrType(field.Type) {
+		isRequired := fieldIsRequired(field)
+		if isRequired && (fieldValue.IsNil() || isZeroTime(fieldValue.Elem())) {
+			appendFieldError(verifyError, field, "不能为空")
+		}
+		return
+	}
+	// 结构体类型递归
+	if field.Type.Kind() == reflect.Struct {
+		err := ValidParams(fieldValue.Addr().Interface())
+		if ve, ok := err.(*errors.VerifyError); ok && ve.Count() > 0 {
+			verifyError.MergeWithPrefix(getJsonFieldName(field), ve)
+		}
+		return
+	}
+	// 结构体指针类型递归和必填
+	if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+		required := field.Tag.Get(requiredTag)
+		if strings.ToLower(required) == "true" && fieldValue.IsNil() {
+			appendFieldError(verifyError, field, "不能为空")
+			return
+		}
+		if !fieldValue.IsNil() {
+			err := ValidParams(fieldValue.Interface())
+			if ve, ok := err.(*errors.VerifyError); ok && ve.Count() > 0 {
+				verifyError.MergeWithPrefix(getJsonFieldName(field), ve)
+			}
+		}
+		return
+	}
+
+	// 普通字段必填
+	required := field.Tag.Get(requiredTag)
+	if strings.ToLower(required) == "true" && (fieldValue.IsZero() || (fieldValue.Kind() == reflect.String && fieldValue.String() == "")) {
+		appendFieldError(verifyError, field, "不能为空")
+	}
+}
+
+func fieldIsRequired(field *reflect.StructField) bool {
+	required := field.Tag.Get(requiredTag)
+	if strings.ToLower(required) == "true" {
+		return true
+	}
+	return false
+}
+
+func appendFieldError(verifyError *errors.VerifyError, field *reflect.StructField, msg string) {
+	name := getJsonFieldName(field)
+	title := field.Tag.Get(titleTag)
+	verifyError.AppendField(name, msg, title)
+}
+
+func getJsonFieldName(field *reflect.StructField) string {
+	name := field.Tag.Get(jsonTag)
+	if name == "" {
+		name = stringutils.FirstLower(field.Name)
+	}
+	return name
 }
 
 // bindNestedStruct 处理嵌套结构体绑定
-func bindNestedStruct(ctx iris.Context, field reflect.Value) error {
+func bindNestedStruct(ctx iris.Context, field *reflect.Value) error {
 	nestedPtr := reflect.New(field.Type())
 	if err := GetParams(ctx, nestedPtr.Interface()); err != nil {
 		return err
@@ -104,7 +181,7 @@ func bindNestedStruct(ctx iris.Context, field reflect.Value) error {
 }
 
 // setFieldValue 设置字段值并处理类型转换
-func setFieldValue(field reflect.Value, value string) error {
+func setFieldValue(field *reflect.Value, value string) error {
 	switch field.Kind() {
 	case reflect.String:
 		field.SetString(value)
@@ -128,4 +205,49 @@ func setFieldValue(field reflect.Value, value string) error {
 		field.SetBool(boolVal)
 	}
 	return nil
+}
+
+// 判断是否为 time.Time 或 times.Time 及其别名类型
+func isTimeType(t reflect.Type) bool {
+	if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(times.Time{}) {
+		return true
+	}
+	if t == reflect.TypeOf(times.Time{}) || t == reflect.TypeOf(times.Time{}) {
+		return true
+	}
+	if t == reflect.TypeOf(times.Date{}) || t == reflect.TypeOf(times.Date{}) {
+		return true
+	}
+	return false
+}
+
+// 判断是否为 *time.Time 或 *times.Time 及其别名类型
+func isTimePtrType(t reflect.Type) bool {
+	if t == reflect.TypeOf(&time.Time{}) || t == reflect.TypeOf(&times.Time{}) {
+		return true
+	}
+	if t == reflect.TypeOf(&times.Time{}) || t == reflect.TypeOf(&times.Time{}) {
+		return true
+	}
+	if t == reflect.TypeOf(&times.Date{}) || t == reflect.TypeOf(&times.Date{}) {
+		return true
+	}
+	return false
+}
+
+// 判断时间是否为零值
+func isZeroTime(v reflect.Value) bool {
+	if !v.IsValid() {
+		return true
+	}
+	if v.Type() == reflect.TypeOf(time.Time{}) {
+		return v.Interface().(time.Time).IsZero()
+	}
+	if v.Type() == reflect.TypeOf(times.Time{}) {
+		return v.Interface().(times.Time) == times.Time{}
+	}
+	if v.Type() == reflect.TypeOf(times.Date{}) {
+		return v.Interface().(times.Date) == times.Date{}
+	}
+	return true
 }

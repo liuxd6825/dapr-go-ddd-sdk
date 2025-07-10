@@ -1,13 +1,12 @@
 package restapi
 
 import (
+	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	graph2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/graph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type GraphAPI struct {
@@ -25,42 +24,41 @@ func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
 	}
 }
 
-func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodGet, "/case/{caseId}/master/graph?id={id}", "FindById")
-	b.Handle(iris.MethodGet, "/case/{caseId}/master/graph", "FindByCaseId")
+func (s *GraphAPI) InitController(app *iris.Application) error {
+	controller := restapi.NewController(app, s.rootPath, s)
+	controller.GetOne("/case/{caseId}/master/graph?id={id}", "FindById")
+	controller.GetList("/case/{caseId}/master/graph", "FindByCaseId")
+	return nil
 }
 
-func (s *GraphAPI) FindByCaseId(ctx iris.Context) {
-	gp.Try(func() error {
-		caseId := ctx.URLParam("caseId")
-		graphView := s.queryService.FindByCaseId(ctx, caseId)
-		resData := response.NewResultList(graphView)
-		return web.SetData(ctx, resData)
-	}).Catch(func(e error) {
-		web.SetError(ctx, e)
-	})
+type FindByCaseIdParams struct {
+	CaseId string `json:"caseId" path:"caseId" required:"true"`
 }
 
-func (s *GraphAPI) FindById(ctx iris.Context) {
-	gp.Try(func() error {
-		caseId := ctx.URLParam("caseId")
-		id := ctx.URLParam("id")
-		graphView := s.queryService.FindById(ctx, caseId, id)
-		resData := response.NewResultList(graphView)
-		return web.SetData(ctx, resData)
-	}).Catch(func(e error) {
-		web.SetError(ctx, e)
-	})
+func (s *GraphAPI) FindByCaseId(ctx context.Context, params *FindByCaseIdParams) (any, error) {
+	graphView := s.queryService.FindByCaseId(ctx, params.CaseId)
+	resData := response.NewResultList(graphView)
+	return resData, nil
 }
 
-func (s *GraphAPI) FindByName(ctx iris.Context) {
-	gp.Try(func() error {
-		caseId := ctx.URLParam("caseId")
-		name := ctx.URLParam("name")
-		graphView := s.queryService.FindById(ctx, caseId, name)
-		resData := response.NewResultList(graphView)
-		return web.SetData(ctx, resData)
-	}).Catch(func(e error) {
-		web.SetError(ctx, e)
-	})
+type FindByIdParams struct {
+	CaseId string `json:"caseId" path:"caseId" required:"true"`
+	Id     string `json:"id" query:"id" required:"true"`
+}
+
+func (s *GraphAPI) FindById(ctx context.Context, params *FindByIdParams) (any, error) {
+	graphView := s.queryService.FindById(ctx, params.CaseId, params.Id)
+	data := response.NewResultList(graphView)
+	return data, nil
+}
+
+type FindByNameParams struct {
+	CaseId string `json:"caseId" path:"caseId" required:"true"`
+	Name   string `json:"name" path:"name" required:"true"`
+}
+
+func (s *GraphAPI) FindByName(ctx context.Context, params *FindByNameParams) (any, error) {
+	graphView := s.queryService.FindById(ctx, params.CaseId, params.Name)
+	resData := response.NewResultList(graphView)
+	return resData, nil
 }

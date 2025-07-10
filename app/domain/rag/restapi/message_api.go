@@ -8,12 +8,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/web"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type MessageAPI struct {
 	env        *env.Env
 	msgService *service.MessageService
+	rootPath   string
 }
 
 func NewMessageAPI(env *env.Env, rootPath string) *MessageAPI {
@@ -21,6 +22,7 @@ func NewMessageAPI(env *env.Env, rootPath string) *MessageAPI {
 	return &MessageAPI{
 		env:        env,
 		msgService: messageService,
+		rootPath:   rootPath,
 	}
 }
 
@@ -30,34 +32,24 @@ func (s *MessageAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/rag/{chatId}/messages", "GetByChatId")
 }
 
-func (s *MessageAPI) Create(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.MessageCreateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.msgService.Create(ctx, &cmd.Data)
-		return nil
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *MessageAPI) InitController(app *iris.Application) error {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+	ctl.Post("message", "Create")
+	ctl.Put("message", "Update")
+	ctl.GetOne("/{chatId}/messages", "GetByChatId")
+	return nil
 }
 
-func (s *MessageAPI) Update(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.MessageUpdateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-		s.msgService.Update(ctx, &cmd.Data)
-		return nil
-	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
-	})
+func (s *MessageAPI) Create(ctx context.Context, cmd *command.MessageCreateCommand) error {
+	return s.msgService.Create(ctx, &cmd.Data).GetError()
+}
+
+func (s *MessageAPI) Update(ctx context.Context, cmd *command.MessageUpdateCommand) error {
+	return s.msgService.Update(ctx, &cmd.Data).GetError()
 }
 
 func (s *MessageAPI) GetByChatId(ictx iris.Context) {
-	web.Try(ictx, func(ctx context.Context) error {
+	restapi.Try(ictx, func(ctx context.Context) error {
 		chatId := ictx.Params().GetString("chatId")
 		qry := store.NewFindPagingQueryRequest()
 		qry.PageNum = 0
@@ -66,8 +58,8 @@ func (s *MessageAPI) GetByChatId(ictx iris.Context) {
 		qry.Sort = "order_num:asc"
 		qry.IsTotalRows = true
 		res := s.msgService.FindPaging(ctx, qry)
-		return web.SetData(ictx, res)
+		return restapi.SetData(ictx, res)
 	}).Catch(func(ctx context.Context, err error) {
-		web.SetError(ictx, err)
+		restapi.SetError(ictx, err)
 	})
 }

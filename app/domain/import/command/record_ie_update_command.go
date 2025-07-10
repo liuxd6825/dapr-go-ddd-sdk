@@ -1,4 +1,4 @@
-package cmdwrite
+package command
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"

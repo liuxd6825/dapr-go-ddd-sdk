@@ -1,6 +1,6 @@
 package store
 
-type IFindByIdQuery interface {
+type FindByIdQuery interface {
 	GetId() string
 	SetId(val string) FindByIdQuery
 
@@ -8,29 +8,29 @@ type IFindByIdQuery interface {
 	SetTenantId(val string) FindByIdQuery
 }
 
-type FindByIdQuery struct {
+type FindByIdQueryRequest struct {
 	TenantId string `json:"tenantId" bson:"tenant_id"`
 	Id       string `json:"id" bson:"id"`
 }
 
-func NewFindByIdQuery() *FindByIdQuery {
-	return &FindByIdQuery{}
+func NewFindByIdQuery() FindByIdQuery {
+	return &FindByIdQueryRequest{}
 }
 
-func (q *FindByIdQuery) GetId() string {
+func (q *FindByIdQueryRequest) GetId() string {
 	return q.Id
 }
 
-func (q *FindByIdQuery) SetId(val string) *FindByIdQuery {
+func (q *FindByIdQueryRequest) SetId(val string) FindByIdQuery {
 	q.Id = val
 	return q
 }
 
-func (q *FindByIdQuery) GetTenantId() string {
+func (q *FindByIdQueryRequest) GetTenantId() string {
 	return q.TenantId
 }
 
-func (q *FindByIdQuery) SetTenantId(val string) *FindByIdQuery {
+func (q *FindByIdQueryRequest) SetTenantId(val string) FindByIdQuery {
 	q.TenantId = val
 	return q
 }

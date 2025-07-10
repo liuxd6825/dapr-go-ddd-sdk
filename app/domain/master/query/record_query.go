@@ -1,4 +1,4 @@
-package cmdquery
+package query
 
 import (
 	"fmt"
