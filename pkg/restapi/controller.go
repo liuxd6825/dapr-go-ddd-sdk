@@ -7,6 +7,7 @@ import (
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"reflect"
@@ -137,9 +138,6 @@ func (c *ApiController) Handle(method string, path string, handlerName string, o
 }
 
 func (c *ApiController) call(method string, path string, handlerName string, opts ...CallOptions) *router.Route {
-	if handlerName == "ReadFile" {
-		println(handlerName)
-	}
 	callMethod, err := c.newCallMethod(handlerName)
 	if err != nil {
 		ctlType := reflect.TypeOf(c.ctl)
@@ -158,6 +156,7 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 			if err != nil {
 				return errors.New("get context error: %s ", err.Error())
 			}
+			logs.Info(ctx, logs.Fields{"method:": ictx.Method(), "url:": ictx.Request().URL})
 			for _, opt := range opts {
 				if opt.InitMethod != nil {
 					opt.InitMethod(callMethod)
@@ -184,11 +183,10 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 					data, err = opt.After(ictx, data, err)
 				}
 			}
-			if data != nil {
+			if callMethod.OutData >= 0 {
 				err = SetData(ictx, data)
 			}
 			return err
-
 		}).Catch(func(err error) {
 			SetError(ictx, err)
 		})

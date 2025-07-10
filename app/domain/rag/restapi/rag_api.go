@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -17,6 +16,7 @@ import (
 type RagAPI struct {
 	env        *env.Env
 	ragService *service.RagService
+	rootPath   string
 }
 
 type Message struct {
@@ -34,6 +34,7 @@ func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
 	return &RagAPI{
 		env:        env,
 		ragService: ragService,
+		rootPath:   rootPath,
 	}
 }
 
@@ -43,67 +44,37 @@ func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/rag/create-case", "CreateCase")
 }
 
+func (s *RagAPI) InitController(app *iris.Application) error {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+	ctl.Post("query", "Query")
+	ctl.Post("create-tenant", "CreateTenant")
+	ctl.Post("create-case", "CreateCase")
+	return nil
+}
+
 // CreateTenant 加载租户知识库数据
-func (s *RagAPI) CreateTenant(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		return s.ragService.CreateTenant(ctx)
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+func (s *RagAPI) CreateTenant(ctx context.Context) error {
+	return s.ragService.CreateTenant(ctx)
 }
 
 // CreateCase 加载租户知识库数据
-func (s *RagAPI) CreateCase(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.RagCreateCaseCommand
-		err := ictx.ReadJSON(&cmd)
-		if err != nil {
-			return err
-		}
-		vErr := errors.NewVerifyError()
-		if cmd.Data.CaseId == "" {
-			vErr.AppendField("caseId", "不能为空", "案件ID")
-		}
-		if vErr.HasError() {
-			return vErr
-		}
-		return s.ragService.CreateCase(ctx, cmd.Data.CaseId)
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+func (s *RagAPI) CreateCase(ctx context.Context, cmd *command.RagCreateCaseCommand) error {
+	return s.ragService.CreateCase(ctx, cmd.Data.CaseId)
 }
 
-func (s *RagAPI) Query(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		var query *my_rag.QueryParam
-		if err := ictx.ReadJSON(&query); err != nil {
-			return err
+// Query 查询
+func (s *RagAPI) Query(ctx context.Context, ictx iris.Context, query *my_rag.QueryParam) error {
+	isPrint := logs.GetLevel() >= logs.InfoLevel
+	ictx.Header("Content-Type", "text/event-stream")
+	_, err := s.ragService.Query(ctx, *query, func(txt string) {
+		_, _ = ictx.Writef(txt)
+		if isPrint {
+			fmt.Print(txt)
 		}
-		vErr := errors.NewVerifyError()
-		if query.Query == "" {
-			vErr.AppendField("query", "不能为空", "查询内容")
-		}
-		if query.CaseId == "" {
-			vErr.AppendField("caseId", "不能为空", "项目ID")
-		}
-		if vErr.HasError() {
-			return vErr
-		}
-
-		isPrint := logs.GetLevel() >= logs.InfoLevel
-		ictx.Header("Content-Type", "text/event-stream")
-		_, err := s.ragService.Query(ctx, *query, func(txt string) {
-			_, _ = ictx.Writef(txt)
-			if isPrint {
-				fmt.Print(txt)
-			}
-			ictx.ResponseWriter().Flush()
-		})
-		if err == nil && isPrint {
-			fmt.Print("\n")
-		}
-		return err
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
+		ictx.ResponseWriter().Flush()
 	})
+	if err == nil && isPrint {
+		//fmt.Print("\n")
+	}
+	return err
 }

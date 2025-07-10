@@ -3,10 +3,8 @@ package restapi
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -26,17 +24,11 @@ func NewMessageAPI(env *env.Env, rootPath string) *MessageAPI {
 	}
 }
 
-func (s *MessageAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodPost, "/rag/message", "Create")
-	b.Handle(iris.MethodPut, "/rag/message", "Update")
-	b.Handle(iris.MethodGet, "/rag/{chatId}/messages", "GetByChatId")
-}
-
 func (s *MessageAPI) InitController(app *iris.Application) error {
 	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
 	ctl.Post("message", "Create")
 	ctl.Put("message", "Update")
-	ctl.GetOne("/{chatId}/messages", "GetByChatId")
+	ctl.GetPaging("/{chatId}/messages", "GetByChatId")
 	return nil
 }
 
@@ -48,18 +40,13 @@ func (s *MessageAPI) Update(ctx context.Context, cmd *command.MessageUpdateComma
 	return s.msgService.Update(ctx, &cmd.Data).GetError()
 }
 
-func (s *MessageAPI) GetByChatId(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		chatId := ictx.Params().GetString("chatId")
-		qry := store.NewFindPagingQueryRequest()
-		qry.PageNum = 0
-		qry.PageSize = 99999999999999
-		qry.Filter = "chat_id=='" + chatId + "'"
-		qry.Sort = "order_num:asc"
-		qry.IsTotalRows = true
-		res := s.msgService.FindPaging(ctx, qry)
-		return restapi.SetData(ictx, res)
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+func (s *MessageAPI) GetByChatId(ctx context.Context, ictx iris.Context, qry *restapi.FindPagingRequest) (any, error) {
+	chatId := ictx.Params().GetString("chatId")
+	qry.PageNum = 0
+	qry.PageSize = 99999999999999
+	qry.MustFilter = "chat_id=='" + chatId + "'"
+	qry.Sort = "order_num:asc"
+	qry.IsTotalRows = true
+	res := s.msgService.FindPaging(ctx, qry)
+	return res, res.GetError()
 }

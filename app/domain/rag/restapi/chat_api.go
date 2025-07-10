@@ -59,13 +59,11 @@ func (s *ChatAPI) Create(ctx context.Context, cmd *command.ChatCreateCommand) er
 	if vErr.HasError() {
 		return vErr
 	}
-	s.chatService.Create(ctx, &cmd.Data)
-	return nil
+	return s.chatService.Create(ctx, &cmd.Data).GetError()
 }
 
 func (s *ChatAPI) Rename(ctx context.Context, cmd *command.ChatUpdateCommand) error {
-	opts := idao.NewCallOptions()
-	opts.SetUpdateFields([]string{"title"})
+	opts := idao.NewCallOptions().SetUpdateFields([]string{"title"})
 	return s.chatService.Update(ctx, &cmd.Data, opts).GetError()
 }
 
@@ -87,8 +85,5 @@ func (s *ChatAPI) FindPaging(ctx context.Context, ictx iris.Context, qry *store.
 	qry.Sort = "created_time:desc"
 	qry.IsTotalRows = true
 	res := s.chatService.FindPaging(ctx, qry)
-	if res.GetError() == nil {
-		return nil, res.GetError()
-	}
-	return res, nil
+	return res, res.GetError()
 }
