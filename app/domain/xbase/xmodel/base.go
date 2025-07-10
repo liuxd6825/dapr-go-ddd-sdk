@@ -20,5 +20,5 @@ type Base struct {
 	DeleterId   string      `json:"deleterId"  gorm:"deleter_id;title:删除人ID" bson:"deleter_id,index:idx_deleter_id" title:"删除人ID"` // 删除人ID
 	DeleterName string      `json:"deleterName"  gorm:"deleter_name;title:删除人名称" bson:"deleter_name" title:"删除人名称"`                // 删除人名称
 	IsDeleted   bool        `json:"isDeleted"  gorm:"is_deleted;title:是否删除" bson:"is_deleted" title:"是否删除"`                        // 是否删除
-	Remark      string      `json:"remarks"  gorm:"remark;title:备注" bson:"remarks" title:"备注"`                                     // 备注
+	Remark      string      `json:"remark"  gorm:"remark;title:备注" bson:"remark" title:"备注"`                                       // 备注
 }

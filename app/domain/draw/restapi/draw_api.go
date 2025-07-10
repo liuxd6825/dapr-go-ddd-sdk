@@ -52,14 +52,14 @@ func (s *DrawAPI) BeforeActivation(b mvc.BeforeActivation) {
 
 func (s *DrawAPI) InitController(app *iris.Application) error {
 	controller := restapi.NewController(app, s.rootPath, s)
-	controller.Post("/draw", s.Create, nil)
-	controller.Put("/draw", s.Update, nil)
-	controller.Delete("/draw:deleteBatch", s.DeleteByIds, nil)
-	controller.Delete("/draw", s.DeleteById, nil)
-	controller.GetOne("/draw/{id}", s.FindById, nil)
-	controller.GetPaging("/draw", s.FindPaging, nil)
-	controller.Post("/draw/{id}/file", s.SaveFile, nil)
-	controller.GetData("/draw/{id}/file", s.ReadFile, nil)
+	controller.Post("/draw", "Create")
+	controller.Put("/draw", "Update")
+	controller.Delete("/draw:deleteBatch", "DeleteByIds")
+	controller.Delete("/draw", "DeleteById")
+	controller.GetOne("/draw/{id}", "FindById")
+	controller.GetPaging("/draw", "FindPaging")
+	controller.Post("/draw/{id}/file", "SaveFile")
+	controller.GetData("/draw/{id}/file", "ReadFile")
 	return nil
 }
 

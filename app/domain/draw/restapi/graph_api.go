@@ -30,7 +30,7 @@ func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
 }
 
 func (s *GraphAPI) InitController(app *iris.Application) error {
-	controller := restapi.NewController(app, s.rootPath)
+	controller := restapi.NewController(app, s.rootPath, s)
 	controller.GetOne("/case/{caseId}/draw/{drawId}/graph", "FindByDrawId")
 	return nil
 }
@@ -40,7 +40,7 @@ type FindByDrawIdParams struct {
 	DrawId string `json:"drawId" path:"drawId" required:"true"`
 }
 
-func (s *GraphAPI) FindByDrawId(ctx context.Context, ictx iris.Context, params FindByDrawIdParams) (any, error) {
+func (s *GraphAPI) FindByDrawId(ctx context.Context, params FindByDrawIdParams) (any, error) {
 	graphView := s.graphService.FindById(ctx, params.CaseId, params.DrawId)
 	result := response.NewResultList(graphView)
 	return result, nil
