@@ -77,7 +77,7 @@ func Int() int {
 }
 
 func IntMax(max int) int {
-	v := RangeRand(0, int64(max-1))
+	v := RangeRand(1, int64(max-1))
 	return int(v)
 }
 
@@ -253,6 +253,15 @@ func Date() time.Time {
 func PDate() *time.Time {
 	value := Date()
 	return &value
+}
+
+func NewYear(year int) time.Time {
+	month := time.Month(IntMax(12))
+	day := IntMax(27)
+	hour := IntMax(24)
+	min := IntMax(59)
+	date := time.Date(year, month, day, hour, min, 0, 0, time.UTC)
+	return date
 }
 
 func Time() time.Time {

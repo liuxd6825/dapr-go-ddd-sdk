@@ -35,10 +35,10 @@ func (f *FileService) DeleteById(ctx context.Context, id string) {
 	f.repos.DeleteById(ctx, id)
 }
 
-func (f *FileService) FindById(ctx context.Context, caseId, fileId string) *model.File {
+func (f *FileService) FindById(ctx context.Context, caseId, fileId string) (*model.File, error) {
 	return f.repos.FindOneByRSQL(ctx, fmt.Sprintf("case_id='%s' and file_id='%s'", caseId, fileId))
 }
 
-func (f *FileService) FindPaging(ctx context.Context, qry *idao.FindPagingQuery) *store.FindPagingResult[*model.File] {
+func (f *FileService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store.FindPagingResult[*model.File] {
 	return f.repos.FindPaging(ctx, qry)
 }

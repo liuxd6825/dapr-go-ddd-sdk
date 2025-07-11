@@ -12,35 +12,35 @@ import (
 )
 
 type RowService struct {
-	repos *dao.RowDao
+	rowDao *dao.RowDao
 }
 
 func NewRowService() *RowService {
 	return singleutils.CreateObj[*RowService](func() *RowService {
 		return &RowService{
-			repos: dao.NewRowDao(config.DBKey),
+			rowDao: dao.NewRowDao(config.DBKey),
 		}
 	})
 }
 
 func (f *RowService) Create(ctx context.Context, m *model.Row) {
-	f.repos.Create(ctx, m)
+	f.rowDao.Create(ctx, m)
 }
 
 func (f *RowService) CreateMany(ctx context.Context, m []*model.Row) {
-	f.repos.CreateMany(ctx, m)
+	f.rowDao.CreateMany(ctx, m)
 }
 
 func (f *RowService) Update(ctx context.Context, m *model.Row) {
-	f.repos.Update(ctx, m)
+	f.rowDao.Update(ctx, m)
 }
 
 func (f *RowService) DeleteById(ctx context.Context, id string) {
-	f.repos.DeleteById(ctx, id)
+	f.rowDao.DeleteById(ctx, id)
 }
 
-func (f *RowService) FindById(ctx context.Context, id string) (*model.Row, bool, error) {
-	f.repos.FindById(ctx, id)
+func (f *RowService) FindById(ctx context.Context, id string) (*model.Row, error) {
+	return f.rowDao.FindById(ctx, id)
 }
 
 func (f *RowService) FindBySheet(ctx context.Context, qry *query.FindRowBySheetQuery) []*model.Row {
@@ -50,9 +50,9 @@ func (f *RowService) FindBySheet(ctx context.Context, qry *query.FindRowBySheetQ
 	b.SetFilter(fmt.Sprintf("sheet_id=='%s'", qry.SheetId))
 	b.SetSort("row_num:asc")
 	res := f.FindPaging(ctx, b.Build())
-	return res.Data
+	return res.GetData()
 }
 
-func (f *RowService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) *idao.FindPagingResult[*model.Row] {
-	return f.repos.FindPaging(ctx, qry)
+func (f *RowService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) idao.FindPagingResult[*model.Row] {
+	return f.rowDao.FindPaging(ctx, qry)
 }

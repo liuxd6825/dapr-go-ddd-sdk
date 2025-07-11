@@ -7,7 +7,7 @@ type Result struct {
 	Error        error `json:"error,omitempty"` // 错误信息
 }
 
-type FindPagingResult[T any] struct {
+type FindPagingResult[T any] interface {
 	store.FindPagingResult[T]
 }
 
@@ -19,9 +19,9 @@ type RowsError interface {
 	GetError() error
 }
 
-func NewFindPagingResult[T any]() *FindPagingResult[T] {
+/*func NewFindPagingResult[T any]() *FindPagingResult[T] {
 	return &FindPagingResult[T]{}
-}
+}*/
 
 func NewResult(rows RowsAffected) *Result {
 	if rows != nil {

@@ -37,42 +37,53 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 	}()
 	gSch, err := gormschema.ParseWithSpecialTableName(data, &sync.Map{}, gormschema.NamingStrategy{}, tableName)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("NewDBSchemaWithStruct() error: %s", err.Error()))
 	}
 	dbSch := store.NewDBSchema()
 	for _, f := range gSch.Fields {
-		field := store.NewField()
-		if title, ok := f.TagSettings["TITLE"]; ok {
-			field.Title = title
-		} else {
-			field.Name = f.Name
+		field, err := newField(f)
+		if err != nil {
+			err = errors.ErrorOf("field:%s; error:%s", f.Name, err.Error())
+			return nil
 		}
-		field.Name = f.Name
-		field.DBName = f.DBName
-		field.StructField = f.StructField
-		field.IndirectFieldType = f.IndirectFieldType
-		field.Serializer = f.Serializer
-		field.FieldType = f.FieldType
-		field.Tag = f.Tag
-		field.FieldType = f.FieldType
-		field.DataType = f.DataType
-		field.ValueOf = f.ValueOf
-		field.Creatable = f.Creatable
-		field.Updatable = f.Updatable
-		field.PrimaryKey = f.PrimaryKey
-
-		field.RelType = f.RelType
-		field.RelEndId = f.RelEndId
-		field.RelStartId = f.RelStartId
-		field.NodeLabelFormat = f.NodeLabelFormat
-		field.NodeLabel = f.NodeLabel
-
 		dbSch.AddField(field)
 	}
 	dbSch.SetTableName(tableName)
 	dbSch.SetName(name)
 	dbSch.GormSchema = gSch
 	return dbSch
+}
+
+func newField(f *gormschema.Field) (field *store.Field, err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	field = store.NewField()
+	if title, ok := f.TagSettings["TITLE"]; ok {
+		field.Title = title
+	} else {
+		field.Title = f.Name
+	}
+	field.Name = f.Name
+	field.DBName = f.DBName
+	field.StructField = f.StructField
+	field.IndirectFieldType = f.IndirectFieldType
+	field.Serializer = f.Serializer
+	field.FieldType = f.FieldType
+	field.Tag = f.Tag
+	field.FieldType = f.FieldType
+	field.DataType = f.DataType
+	field.ValueOf = f.ValueOf
+	field.Creatable = f.Creatable
+	field.Updatable = f.Updatable
+	field.PrimaryKey = f.PrimaryKey
+
+	field.RelType = f.RelType
+	field.RelEndId = f.RelEndId
+	field.RelStartId = f.RelStartId
+	field.NodeLabelFormat = f.NodeLabelFormat
+	field.NodeLabel = f.NodeLabel
+	return field, err
 }
 
 func NewGormSchema(dbSch *store.DBSchema) *gormschema.Schema {

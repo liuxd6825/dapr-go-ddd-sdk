@@ -7,34 +7,34 @@ import (
 )
 
 type RecordTemplate struct {
-	Iden     *readexcel.Field `json:"iden"`
-	Name     *readexcel.Field `json:"name"`
-	Acct     *readexcel.Field `json:"acct"`
-	AcctType *readexcel.Field `json:"acctType"`
-	Category *readexcel.Field `json:"category"`
-	BankName *readexcel.Field `json:"bankName"`
-	Balance  *readexcel.Field `json:"balance"`
+	Iden     *readexcel.Field `json:"iden" bson:"iden"`
+	Name     *readexcel.Field `json:"name" bson:"name"`
+	Acct     *readexcel.Field `json:"acct" bson:"acct"`
+	AcctType *readexcel.Field `json:"acctType" bson:"acct_type"`
+	Category *readexcel.Field `json:"category" bson:"category"`
+	BankName *readexcel.Field `json:"bankName" bson:"bank_name"`
+	Balance  *readexcel.Field `json:"balance" bson:"balance"`
 
-	OppIden     *readexcel.Field `json:"oppIden"`
-	OppName     *readexcel.Field `json:"oppName"`
-	OppAcct     *readexcel.Field `json:"oppAcct"`
-	OppAcctType *readexcel.Field `json:"oppAcctType"`
-	OppCategory *readexcel.Field `json:"oppCategory"`
-	OppBankName *readexcel.Field `json:"oppBankName"`
+	OppIden     *readexcel.Field `json:"oppIden" bson:"opp_iden"`
+	OppName     *readexcel.Field `json:"oppName" bson:"opp_name"`
+	OppAcct     *readexcel.Field `json:"oppAcct" bson:"opp_acct"`
+	OppAcctType *readexcel.Field `json:"oppAcctType" bson:"opp_acct_type"`
+	OppCategory *readexcel.Field `json:"oppCategory" bson:"opp_category"`
+	OppBankName *readexcel.Field `json:"oppBankName" bson:"opp_bank_name"`
 
-	Serial     *readexcel.Field     `json:"serial"`
-	Income     *readexcel.Field     `json:"income"`
-	Payout     *readexcel.Field     `json:"payout"`
-	Amount     *readexcel.Field     `json:"amount"`
-	Date       *readexcel.Field     `json:"date"`
-	Type       *readexcel.Field     `json:"type"`
-	Ccy        *readexcel.Field     `json:"ccy"`
-	Place      *readexcel.Field     `json:"place"`
-	Summary    *readexcel.Field     `json:"summary"`
-	Notes      *readexcel.Field     `json:"notes"`
-	MapHeadRow int64                `json:"mapHeadRow"`
-	MapHeads   []*readexcel.MapHead `json:"mapHeads"`
-	Consts     []*readexcel.Const   `json:"consts"`
+	Serial     *readexcel.Field     `json:"serial" bson:"serial"`
+	Income     *readexcel.Field     `json:"income" bson:"income"`
+	Payout     *readexcel.Field     `json:"payout" bson:"payout"`
+	Amount     *readexcel.Field     `json:"amount" bson:"amount"`
+	Date       *readexcel.Field     `json:"date" bson:"date"`
+	Type       *readexcel.Field     `json:"type" bson:"type"`
+	Ccy        *readexcel.Field     `json:"ccy" bson:"ccy"`
+	Place      *readexcel.Field     `json:"place" bson:"place"`
+	Summary    *readexcel.Field     `json:"summary" bson:"summary"`
+	Notes      *readexcel.Field     `json:"notes" bson:"notes"`
+	MapHeadRow int64                `json:"mapHeadRow" bson:"map_head_row"`
+	MapHeads   []*readexcel.MapHead `json:"mapHeads" bson:"map_heads"`
+	Consts     []*readexcel.Const   `json:"consts" bson:"consts"`
 
 	fields map[string]*readexcel.Field
 }

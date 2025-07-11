@@ -174,7 +174,7 @@ func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, erro
 					"script":    field.Script,
 					"error":     err.Error(),
 				}
-				logs.Error(ctx, "", fields)
+				logs.Error(ctx, fields, fields)
 				continue
 			}
 

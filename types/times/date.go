@@ -36,6 +36,13 @@ func NewDate() *Date {
 	return &res
 }
 
+func NowDate() *Date {
+	t := time.Now()
+	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	res := Date(d)
+	return &res
+}
+
 func NewDateWithString(val string) (t *Date, err error) {
 	if val == "" {
 		return nil, errors.New("time value is empty")

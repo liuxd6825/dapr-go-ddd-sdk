@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
@@ -47,11 +48,11 @@ func (s *RecordService) DeleteByTaskId(ctx context.Context, taskId string) error
 	return s.repos.DeleteById(ctx, taskId).GetError()
 }
 
-func (s *RecordService) Create(ctx context.Context, m *model.RecordIe) error {
+func (s *RecordService) Create(ctx context.Context, m *model.Record) error {
 	return s.repos.Create(ctx, m).GetError()
 }
 
-func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) (int64, error) {
+func (s *RecordService) CreateMany(ctx context.Context, list []*model.Record) (int64, error) {
 	for _, r := range list {
 		data, err := s.Check(ctx, r)
 		if err != nil {
@@ -63,7 +64,7 @@ func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) 
 	return res.GetRowsAffected(), res.GetError()
 }
 
-func (s *RecordService) Update(ctx context.Context, cmd *command.RecordIeUpdateCommand) (*model.RecordIe, error) {
+func (s *RecordService) Update(ctx context.Context, cmd *command.RecordIeUpdateCommand) (*model.Record, error) {
 	err := cmd.Validate()
 	if err != nil {
 		return nil, err
@@ -84,7 +85,7 @@ func (s *RecordService) Update(ctx context.Context, cmd *command.RecordIeUpdateC
 	return record, err
 }
 
-func (s *RecordService) UpdateField(ctx context.Context, cmd *command.RecordIeUpdateFieldCommand) (*model.RecordIe, bool, error) {
+func (s *RecordService) UpdateField(ctx context.Context, cmd *command.RecordIeUpdateFieldCommand) (*model.Record, bool, error) {
 	var err error
 	s.repos.UpdateMap(ctx, cmd.Data.Id, cmd.Data.Values)
 	res, err := s.repos.FindById(ctx, cmd.Data.Id)
@@ -97,14 +98,14 @@ func (s *RecordService) UpdateByFilter(ctx context.Context, cmd *command.RecordI
 		panic(err)
 	}
 	filter := fmt.Sprintf("%s and taskId=='%s'", cmd.Data.Filter, cmd.Data.TaskId)
-	s.repos.UpdateMapByRSQL(ctx, filter, cmd.Data.Values)
+	return s.repos.UpdateMapByRSQL(ctx, filter, cmd.Data.Values).GetError()
 }
 
-func (s *RecordService) FindById(ctx context.Context, tenantId, id string) *model.RecordIe {
+func (s *RecordService) FindById(ctx context.Context, tenantId, id string) (*model.Record, error) {
 	return s.repos.FindById(ctx, id)
 }
 
-func (s *RecordService) FindPaging(ctx context.Context, qry *store.FindPagingQueryRequest) *store.FindPagingResult[*model.RecordIe] {
+func (s *RecordService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store.FindPagingResult[*model.Record] {
 	return s.repos.FindPaging(ctx, qry)
 }
 
@@ -114,10 +115,10 @@ func (s *RecordService) FindPaging(ctx context.Context, qry *store.FindPagingQue
 // @param ctx
 // @param qry
 // @param opts
-// @return *ddd_repository.FindPagingResult[*model.RecordIe]
+// @return *ddd_repository.FindPagingResult[*model.Record]
 // @return bool
 // @return error
-func (s *RecordService) FindPagingByTaskId(ctx context.Context, taskId string, isFindError bool) *store.FindPagingResult[*model.RecordIe] {
+func (s *RecordService) FindPagingByTaskId(ctx context.Context, taskId string, isFindError bool) store.FindPagingResult[*model.Record] {
 	var mustFilter string
 	tenantId := appctx.GetTenantId2(ctx)
 	if isFindError {
@@ -130,7 +131,7 @@ func (s *RecordService) FindPagingByTaskId(ctx context.Context, taskId string, i
 
 	res := s.repos.FindPaging(ctx, qry)
 	if res != nil {
-		for _, v := range res.Data {
+		for _, v := range res.GetData() {
 			v.Errors, _ = s.Check(ctx, v)
 		}
 	}
@@ -138,7 +139,7 @@ func (s *RecordService) FindPagingByTaskId(ctx context.Context, taskId string, i
 	return res
 }
 
-func (s *RecordService) CountErrorByTaskId(ctx context.Context, tenantId, taskId string) int64 {
+func (s *RecordService) CountErrorByTaskId(ctx context.Context, tenantId, taskId string) (int64, error) {
 	rsql := s.getErrorSql(ctx, tenantId, taskId)
 	return s.repos.CountByRSQL(ctx, rsql)
 }
@@ -160,7 +161,7 @@ func (s *RecordService) getErrorSql(ctx context.Context, tenantId, taskId string
 		`, taskId)
 }
 
-func (s *RecordService) Check(ctx context.Context, r *model.RecordIe) (map[string][]string, error) {
+func (s *RecordService) Check(ctx context.Context, r *model.Record) (map[string][]string, error) {
 	if r == nil {
 		return nil, errors.New("检查的【流水记录】不能为空。")
 	}

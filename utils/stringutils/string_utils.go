@@ -300,6 +300,10 @@ func P2Str(p *string) string {
 	return *p
 }
 
+func PStr(s string) *string {
+	return &s
+}
+
 func AnyToString(v any) string {
 	if v == nil {
 		return ""

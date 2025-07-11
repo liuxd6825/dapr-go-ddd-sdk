@@ -42,8 +42,8 @@ func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
 	return res
 }
 
-func InitEnv_MongoRemote() *env.Env {
-	envVal := NewEnvConfigMongo(GetMongoEnv_Remote())
+func InitEnv_MongoRemote(opts ...*MongoOptions) *env.Env {
+	envVal := NewEnvConfigMongo(GetMongoEnv_Remote(opts...))
 	env.SetEnv(envVal)
 	return envVal
 }
