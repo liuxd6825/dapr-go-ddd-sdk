@@ -8,6 +8,7 @@ import (
 	graph "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/restapi"
 	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
+	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
@@ -47,6 +48,7 @@ func main() {
 				graph.RegisterAllApi(app, baseUrl, env)
 				rag.RegisterAllApi(app, baseUrl, env)
 				doc.RegisterAllApi(app, baseUrl, env)
+				tag.RegisterAllApi(app, baseUrl, env)
 				return nil
 			})
 			return err

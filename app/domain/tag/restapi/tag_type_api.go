@@ -17,7 +17,7 @@ type TagTypeAPI struct {
 	tagTypeService *service.TagTypeService
 }
 
-func NewTagTypeAPI(env *env.Env, rootPath string) *TagTypeAPI {
+func NewTagTypeAPI(env *env.Env) *TagTypeAPI {
 	tagTypeService := service.NewTagTypeService()
 	return &TagTypeAPI{
 		env:            env,

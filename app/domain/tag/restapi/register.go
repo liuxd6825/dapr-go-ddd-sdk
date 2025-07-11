@@ -8,10 +8,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "tag"}, func() error {
-		RegisterTagApi(app, baseUrl, env, rootPath)
-		RegisterTagTypeApi(app, baseUrl, env, rootPath)
+		RegisterTagApi(app, baseUrl, env)
+		RegisterTagTypeApi(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -19,15 +19,15 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env, rootPat
 	}
 }
 
-func RegisterTagApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	ragApi := NewTagAPI(env, rootPath)
+func RegisterTagApi(app *iris.Application, baseUrl string, env *env.Env) {
+	ragApi := NewTagAPI(env)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(ragApi)
 	})
 }
 
-func RegisterTagTypeApi(app *iris.Application, baseUrl string, env *env.Env, rootPath string) {
-	api := NewTagTypeAPI(env, rootPath)
+func RegisterTagTypeApi(app *iris.Application, baseUrl string, env *env.Env) {
+	api := NewTagTypeAPI(env)
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(api)
 	})
