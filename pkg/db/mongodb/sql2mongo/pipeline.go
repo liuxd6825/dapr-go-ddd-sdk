@@ -15,8 +15,10 @@ import (
 1. 支持 select name,sex form users
 2. 支持 select count(sex) form users
 3. 支持 select * from users where name='张三' or name like '张三%' and sex = 1 支持and、 or、 is null、is not null, != ,>, <等所有比较符
-4. 支持  select sum(sex) form users
-5. 支持  SELECT SUM(age), AVG(money) FROM mcp_item WHERE name = '张三' AND date BETWEEN '2026-05-01' AND '2026-05-31'
+4. 支持 select sum(sex) form users
+5. 支持 SELECT SUM(age), AVG(money) FROM mcp_item WHERE name = '张三' AND date BETWEEN '2026-05-01' AND '2026-05-31'
+6. 支持 SELECT date, SUM(amount) FROM import_record WHERE creator_name = '张宇' AND date BETWEEN '2012-01-01' AND '2012-12-31' GROUP BY date ORDER BY date NULLS FIRST
+7. 支持 SELECT STRFTIME('%Y-%m', date) as ym, SUM(amount) as total_amount FROM import_record WHERE name = '张宇' GROUP BY ym ORDER BY ym
 */
 
 // Pipeline 将简单SQL转换为MongoDB Aggregate Pipeline

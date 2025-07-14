@@ -28,16 +28,20 @@ type Record struct {
 	OppCategory string `json:"oppCategory"   gorm:"opp_category" bson:"opp_category"  validate:"-" desc:"对方类别"`    // 对方类别
 	OppBankName string `json:"oppBankName"  gorm:"opp_bank_name" bson:"opp_bank_name"  validate:"-" desc:"对方开户银行"` // 对方开户银行
 
-	Serial  string     `json:"serial"   gorm:"serial" bson:"serial" validate:"-" desc:"流水号"`            // 流水号
-	Payout  *float64   `json:"payout"   gorm:"payout" bson:"payout" index:""  validate:"-" desc:"支出金额"` // 借方发生额（支出）
-	Income  *float64   `json:"income"  gorm:"income" bson:"income" index:""   validate:"-" desc:"收入金额"` // 贷方发生额（收入）
-	Amount  *float64   `json:"amount"   gorm:"amount" bson:"amount" index:""  validate:"-" desc:"交易金额"` // 交易金额
-	Date    *time.Time `json:"date"   gorm:"date" bson:"date" index:"" validate:"-" desc:"交易时间"`        // 交易时间
-	Type    string     `json:"type"   gorm:"type" bson:"type" validate:"-" desc:"交易类型"`                 // 交易类型
-	Ccy     string     `json:"ccy"  gorm:"ccy" bson:"ccy" validate:"-" desc:"交易币种" `                    // 交易币种
-	Place   string     `json:"place"   gorm:"place"  bson:"place" validate:"-" desc:"地点"`               // 交易地点
-	Summary string     `json:"summary"   gorm:"summary" bson:"summary" validate:"-" desc:"摘要"`          // 摘要
-	Notes   string     `json:"notes"   gorm:"notes"  bson:"notes" validate:"-" desc:"备注"`               // 备注
+	Serial string     `json:"serial"   gorm:"serial" bson:"serial" validate:"-" desc:"流水号"`            // 流水号
+	Payout *float64   `json:"payout"   gorm:"payout" bson:"payout" index:""  validate:"-" desc:"支出金额"` // 借方发生额（支出）
+	Income *float64   `json:"income"  gorm:"income" bson:"income" index:""   validate:"-" desc:"收入金额"` // 贷方发生额（收入）
+	Amount *float64   `json:"amount"   gorm:"amount" bson:"amount" index:""  validate:"-" desc:"交易金额"` // 交易金额
+	Date   *time.Time `json:"date"   gorm:"date" bson:"date" index:"" validate:"-" desc:"交易时间"`        // 交易时间
+	Year   int        `json:"year" gorm:"year" bson:"year" desc:"交易年份"`
+	Month  int        `json:"month" gorm:"month" bson:"month" desc:"交易月份"`
+	Day    int        `json:"day" gorm:"day" bson:"day" desc:"交易天份"`
+
+	Type    string `json:"type"   gorm:"type" bson:"type" validate:"-" desc:"交易类型"`        // 交易类型
+	Ccy     string `json:"ccy"  gorm:"ccy" bson:"ccy" validate:"-" desc:"交易币种" `           // 交易币种
+	Place   string `json:"place"   gorm:"place"  bson:"place" validate:"-" desc:"地点"`      // 交易地点
+	Summary string `json:"summary"   gorm:"summary" bson:"summary" validate:"-" desc:"摘要"` // 摘要
+	Notes   string `json:"notes"   gorm:"notes"  bson:"notes" validate:"-" desc:"备注"`      // 备注
 
 	Errors map[string][]string `json:"errors" gorm:"errors;json" bson:"errors"`
 	Cells  map[string]Cells    `json:"cells" gorm:"cells;json" bson:"cells"`

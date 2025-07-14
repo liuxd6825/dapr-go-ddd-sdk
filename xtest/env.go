@@ -48,8 +48,8 @@ func InitEnv_MongoRemote(opts ...*MongoOptions) *env.Env {
 	return envVal
 }
 
-func InitEnv_MongoLocal() *env.Env {
-	envVal := NewEnvConfigMongo(GetMongoEnv_Local())
+func InitEnv_MongoLocal(opts ...*MongoOptions) *env.Env {
+	envVal := NewEnvConfigMongo(GetMongoEnv_Local(opts...))
 	env.SetEnv(envVal)
 	return envVal
 }

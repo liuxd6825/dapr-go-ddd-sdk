@@ -10,8 +10,12 @@ import (
 )
 
 func Test_Record_Insert(t *testing.T) {
-	opts := &xtest.MongoOptions{DBName: stringutils.PStr("master")}
-	xtest.InitEnv_MongoRemote(opts)
+	/*
+		opts := &xtest.MongoOptions{DBName: stringutils.PStr("master")}
+		xtest.InitEnv_MongoRemote(opts)
+	*/
+	opts := &xtest.MongoOptions{DBName: stringutils.PStr("test")}
+	xtest.InitEnv_MongoLocal(opts)
 
 	count := int64(10)
 	accounts := getAccounts(int(count))
@@ -51,6 +55,9 @@ func Test_Record_Insert(t *testing.T) {
 			FileId:      "fieldId",
 			Iden:        "001",
 			Date:        &date,
+			Year:        date.Year(),
+			Month:       int(date.Month()),
+			Day:         date.Day(),
 			Name:        acc.Name,
 			Acct:        acc.Account,
 			AcctType:    acc.AccountType,

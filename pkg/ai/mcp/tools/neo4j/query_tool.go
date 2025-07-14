@@ -1,10 +1,8 @@
-package tools
+package neo4j
 
 import (
 	"context"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/mcp/common"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/mcp/neo4j_mcp/neo4jdb"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/sirupsen/logrus"
@@ -13,6 +11,8 @@ import (
 type QueryTool struct {
 	tool   mcp.Tool
 	driver neo4j.Driver
+	cfg    *Config
+	logger *logrus.Logger
 }
 
 type QueryInParameter struct {
@@ -22,30 +22,25 @@ type QueryInParameter struct {
 	Cypher   string `json:"cypher"`
 }
 
-func NewNeo4jQueryTool(driver neo4j.Driver) *QueryTool {
-	tool := &QueryTool{driver: driver, tool: mcp.NewTool("neo4j-query",
-		mcp.WithDescription("Neo4j Data Relationship Query"),
-		mcp.WithString("tenantId",
-			mcp.Required(),
-			mcp.Description("Tenant ID in the system"),
-		),
-		mcp.WithString("caseId",
-			mcp.Required(),
-			mcp.Description("ID of the project case"),
-		),
-		mcp.WithString("userId",
-			mcp.Required(),
-			mcp.Description("User ID in the system"),
-		),
-		mcp.WithString("cypher",
-			mcp.Required(),
-			mcp.Description("cypher statements in the neo4j database"),
-		),
-	)}
-	return tool
+func NewNeo4jQueryTool(ctx context.Context, cfg *Config, logger *logrus.Logger) (*QueryTool, error) {
+	driver, err := connect(cfg)
+	if err != nil {
+		return nil, err
+	}
+	tool := &QueryTool{
+		cfg:    cfg,
+		driver: driver,
+		tool:   newTool(cfg),
+		logger: logger,
+	}
+	return tool, nil
 }
 
-func (q *QueryTool) handler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (q *QueryTool) GetTool() mcp.Tool {
+	return q.tool
+}
+
+func (q *QueryTool) Handler(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	inParam, err := q.getRequest(request)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
@@ -60,7 +55,7 @@ func (q *QueryTool) handler(ctx context.Context, request mcp.CallToolRequest) (*
 		logrus.Error(err.Error())
 		return nil, err
 	}
-	data := neo4jdb.GetData(ctx, result)
+	data := GetData(ctx, result)
 	dataJson, err := json.Marshal(data)
 	if err != nil {
 		logrus.Error(err.Error())
@@ -100,6 +95,33 @@ func (q *QueryTool) getRequest(request mcp.CallToolRequest) (*QueryInParameter, 
 	}, nil
 
 }
-func (q *QueryTool) Register(s common.IMCPServer) {
-	s.AddTool(q.tool, q.handler)
+
+func connect(cfg *Config) (neo4j.Driver, error) {
+	driver, err := neo4j.NewDriver(cfg.DB.Uri, neo4j.BasicAuth(cfg.DB.Username, cfg.DB.Password, ""))
+	if err != nil {
+		return nil, err
+	}
+	return driver, nil
+}
+
+func newTool(cfg *Config) mcp.Tool {
+	return mcp.NewTool(cfg.Tool.Name,
+		mcp.WithDescription(cfg.Tool.Description),
+		mcp.WithString("tenantId",
+			mcp.Required(),
+			mcp.Description("Tenant ID in the system"),
+		),
+		mcp.WithString("caseId",
+			mcp.Required(),
+			mcp.Description("ID of the project case"),
+		),
+		mcp.WithString("userId",
+			mcp.Required(),
+			mcp.Description("User ID in the system"),
+		),
+		mcp.WithString("cypher",
+			mcp.Required(),
+			mcp.Description("cypher statements in the neo4j database"),
+		),
+	)
 }

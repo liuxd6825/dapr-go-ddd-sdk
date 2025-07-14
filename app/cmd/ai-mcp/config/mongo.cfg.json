@@ -1,0 +1,31 @@
+{
+  "app_name": "",
+  "addr": "",
+  "rs_name": "",
+  "user_name":"",
+  "password": "",
+  "auto_db": "",
+  "auth_mechanism": "",
+  "connect_timeout": "",
+  "db_name": "",
+  "llm_binding": "ollama",
+  "llm_model": "qwen2.5-coder:14b",
+  "llm_binding_host": "",
+  "tools": [
+    {
+      "name": "",
+      "coll_name": "",
+      "db_name": "",
+      "description": "",
+      "options": [
+        {
+          "name": "",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "sql_prompt": ""
+    }
+  ]
+}
+

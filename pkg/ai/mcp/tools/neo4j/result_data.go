@@ -1,4 +1,4 @@
-package neo4jdb
+package neo4j
 
 import (
 	"context"
