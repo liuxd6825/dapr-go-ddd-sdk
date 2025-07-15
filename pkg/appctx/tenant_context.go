@@ -1,6 +1,9 @@
 package appctx
 
-import "context"
+import (
+	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+)
 
 type tenantValue struct {
 	tenantId string
@@ -71,4 +74,28 @@ func GetTenantId2(ctx context.Context) string {
 		panic("wrong type")
 	}
 	return tenVal.tenantId
+}
+
+// GetTenantId3
+//
+//	@Description: 根据上下文取得租户ID
+//	@param ctx
+//	@return string
+//	@return bool
+func GetTenantId3(ctx context.Context) (string, error) {
+	if ctx == nil {
+		return "", errors.New("nil context")
+	}
+	val := ctx.Value(tenantCtxKey)
+	if val == nil {
+		if user, ok := GetAuthUser(ctx); ok {
+			return user.GetTenantId(), nil
+		}
+		return "", errors.New("token error in context")
+	}
+	tenVal, ok := val.(*tenantValue)
+	if !ok {
+		panic("wrong type")
+	}
+	return tenVal.tenantId, nil
 }

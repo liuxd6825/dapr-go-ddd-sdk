@@ -78,6 +78,11 @@ func NewBuilder(opts ...NewBuilderOptions) *Builder {
 
 // formatValue 处理不同数据类型的值格式化
 func (b *Builder) formatValue(value interface{}) string {
+	return formatValue(value)
+}
+
+// formatValue 处理不同数据类型的值格式化
+func formatValue(value interface{}) string {
 	if value == nil {
 		return "null"
 	}
@@ -100,23 +105,23 @@ func (b *Builder) formatValue(value interface{}) string {
 			if val.IsNil() {
 				return "null"
 			}
-			return b.formatValue(val.Elem().Interface())
+			return formatValue(val.Elem().Interface())
 		}
 		return fmt.Sprintf(`"%v"`, v)
 	}
 }
 
 // Like 模糊
-func (b *Builder) Like(field string, value interface{}) Condition {
+func Like(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "~=",
-		value:    b.formatValue(value),
+		value:    formatValue(value),
 	}
 }
 
 // Eq 等于
-func (b *Builder) Eq(field string, value interface{}) Condition {
+func Eq(field string, value interface{}) Condition {
 	if value == nil {
 		return &baseCondition{
 			field:    field,
@@ -127,12 +132,12 @@ func (b *Builder) Eq(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "==",
-		value:    b.formatValue(value),
+		value:    formatValue(value),
 	}
 }
 
 // Null 等于
-func (b *Builder) Null(field string) Condition {
+func Null(field string) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=null=",
@@ -141,7 +146,7 @@ func (b *Builder) Null(field string) Condition {
 }
 
 // NotNull 等于
-func (b *Builder) NotNull(field string) Condition {
+func NotNull(field string) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=!null=",
@@ -150,11 +155,11 @@ func (b *Builder) NotNull(field string) Condition {
 }
 
 // Start 以..开头
-func (b *Builder) Start(field string, val any) Condition {
+func Start(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=start=",
-		value:    b.formatValue(val),
+		value:    formatValue(val),
 	}
 }
 
@@ -168,20 +173,20 @@ func (b *Builder) End(field string, val any) Condition {
 }
 
 // Contains 包含
-func (b *Builder) Contains(field string, val any) Condition {
+func Contains(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=contains=",
-		value:    b.formatValue(val),
+		value:    formatValue(val),
 	}
 }
 
 // NotContains 包含
-func (b *Builder) NotContains(field string, val any) Condition {
+func NotContains(field string, val any) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "=!contains=",
-		value:    b.formatValue(val),
+		value:    formatValue(val),
 	}
 }
 
@@ -202,36 +207,38 @@ func (b *Builder) Neq(field string, value interface{}) Condition {
 }
 
 // Gt 大于
-func (b *Builder) Gt(field string, value interface{}) Condition {
+func Gt(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: ">",
-		value:    b.formatValue(value),
+		value:    formatValue(value),
 	}
 }
 
 // Ge 大于等于
-func (b *Builder) Ge(field string, value interface{}) Condition {
+func Ge(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: ">=",
-		value:    b.formatValue(value),
+		value:    formatValue(value),
 	}
 }
 
-func (b *Builder) Lt(field string, value interface{}) Condition {
+// Lt 小于
+func Lt(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "<",
-		value:    b.formatValue(value),
+		value:    formatValue(value),
 	}
 }
 
-func (b *Builder) Le(field string, value interface{}) Condition {
+// Le 小于等于
+func Le(field string, value interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "<=",
-		value:    b.formatValue(value),
+		value:    formatValue(value),
 	}
 }
 
@@ -244,7 +251,7 @@ func (b *Builder) RSQL(filter string) Condition {
 }
 
 // In 条件生成方法
-func (b *Builder) In(field string, values interface{}) Condition {
+func In(field string, values interface{}) Condition {
 	val := reflect.ValueOf(values)
 	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
 		panic("In values must be a slice or array")
@@ -252,7 +259,7 @@ func (b *Builder) In(field string, values interface{}) Condition {
 
 	var formatted []string
 	for i := 0; i < val.Len(); i++ {
-		formatted = append(formatted, b.formatValue(val.Index(i).Interface()))
+		formatted = append(formatted, formatValue(val.Index(i).Interface()))
 	}
 
 	return &inCondition{
@@ -262,7 +269,7 @@ func (b *Builder) In(field string, values interface{}) Condition {
 }
 
 // Out 条件生成方法
-func (b *Builder) Out(field string, values interface{}) Condition {
+func Out(field string, values interface{}) Condition {
 	val := reflect.ValueOf(values)
 	if val.Kind() != reflect.Slice && val.Kind() != reflect.Array {
 		panic("In values must be a slice or array")
@@ -270,7 +277,7 @@ func (b *Builder) Out(field string, values interface{}) Condition {
 
 	var formatted []string
 	for i := 0; i < val.Len(); i++ {
-		formatted = append(formatted, b.formatValue(val.Index(i).Interface()))
+		formatted = append(formatted, formatValue(val.Index(i).Interface()))
 	}
 
 	return &outCondition{

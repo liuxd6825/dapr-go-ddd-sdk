@@ -13,7 +13,7 @@ type FindPagingByCaseIdQuery interface {
 
 type FindPagingByCaseIdQueryRequest struct {
 	FindPagingQueryRequest
-	CaseId string `json:"caseId"`
+	CaseId string `json:"caseId" required:"true" query:"case-id" path:"caseId" title:"案件ID" `
 }
 
 func NewFindPagingByCaseIdQuery(paging *FindPagingQueryRequest, caseId string) *FindPagingByCaseIdQueryRequest {

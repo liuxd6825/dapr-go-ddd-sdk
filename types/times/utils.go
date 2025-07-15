@@ -25,21 +25,21 @@ var (
 // Now
 // @Description: 获取毫秒值为0的当前时间
 // @return time.Time
-func Now() time.Time {
+func Now() Time {
 	return now()
 }
 
-func PNow() *time.Time {
+func PNow() *Time {
 	t := now()
 	return &t
 }
 
-func now() time.Time {
+func now() Time {
 	t := time.Now()
 	if IsUTCTimeZone() {
-		return t.UTC()
+		return Time(t.UTC())
 	}
-	return t
+	return Time(t)
 }
 
 func AsDate(data any) (*Date, error) {

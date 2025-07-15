@@ -2,6 +2,7 @@ package ddd
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"reflect"
 	"strings"
@@ -52,13 +53,18 @@ func ApplyCommand(ctx context.Context, agg any, cmd Command, opts ...*ApplyComma
 	opt := NewApplyCommandOptions()
 	opt.Merge(opts...)
 
+	tenantId, err := appctx.GetTenantId3(ctx)
+	if err != nil {
+		return err
+	}
+
 	if ok := isAggregateCreateCommand(ctx, agg, cmd); ok {
 		return callCommandHandler(ctx, agg, cmd)
 	}
 
 	loadOpt := NewLoadAggregateOptions().SetEventStorageKey(opt.EventStorageKey)
 	aggId := cmd.GetAggregateId().RootId()
-	_, find, err := LoadAggregate(ctx, cmd.GetTenantId(), aggId, agg, loadOpt)
+	_, find, err := LoadAggregate(ctx, tenantId, aggId, agg, loadOpt)
 	if err != nil {
 		return err
 	}

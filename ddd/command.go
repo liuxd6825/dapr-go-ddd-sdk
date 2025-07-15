@@ -29,7 +29,6 @@ type IsAggregateCreateCommand interface {
 
 type Command interface {
 	GetCommandId
-	GetTenantId
 	GetAggregateId
 	GetIsValidOnly
 	Verify

@@ -19,6 +19,7 @@ func NewEnvConfig() *env.Env {
 
 func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
 	addr := "localhost"
+	dbKey := "neo4j"
 	for _, ip := range ipAddr {
 		if ip != "" {
 			addr = ip
@@ -29,9 +30,12 @@ func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
 	res.App.AppName = "app"
 	res.App.HttpHost = "localhost"
 	res.App.HttpPort = 0
+	res.App.Meta = map[string]any{
+		"db": dbKey,
+	}
 
 	res.AddNeo4j(&env.Neo4j{
-		DbKey:    "neo4j",
+		DbKey:    dbKey,
 		Host:     addr,
 		Port:     "7687",
 		Database: "",
@@ -60,6 +64,9 @@ func NewEnvConfigMongo(mongoCfg *env.Mongo) *env.Env {
 	res.App.AppName = "app"
 	res.App.HttpHost = "localhost"
 	res.App.HttpPort = 0
+	res.App.Meta = map[string]any{
+		"db": mongoCfg.DbKey,
+	}
 
 	res.AddMongo(mongoCfg)
 	res.Init()

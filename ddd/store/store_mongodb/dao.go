@@ -461,17 +461,28 @@ func AsFieldName(name string) string {
 // entity2db
 func (r *Dao[T]) entity2db(entity any) map[string]any {
 	data := map[string]any{}
-	isMap := r.eb.GetConfig().IsMap
-	if isMap {
-		eMap, isMapVal := entity.(map[string]any)
-		if !isMapVal {
-			panic("store_mongodb.dao entity is not a map")
+	entityIsMap := r.eb.GetConfig().IsMap
+	eMap, isMap := entity.(map[string]any)
+	if entityIsMap {
+		if !isMap {
+			panic("entity is not map")
 		}
-		for _, field := range r.schema.Fields {
-			if field.PrimaryKey {
-				data[field.Name] = eMap[field.Name]
+	}
+
+	if isMap {
+		if entityIsMap {
+			for _, field := range r.schema.Fields {
+				fieldValue, ok := eMap[field.Name]
+				if !ok {
+					fieldValue, ok = eMap[field.DBName]
+				}
+				if !ok {
+					fieldValue = nil
+				}
+				data[field.DBName] = fieldValue
 			}
-			data[field.DBName] = eMap[field.Name]
+		} else {
+			return eMap
 		}
 	} else {
 		for _, field := range r.schema.Fields {

@@ -12,13 +12,14 @@ import (
 )
 
 const (
-	paramTag    = "param"    // 路径/查询参数标签
-	bodyTag     = "body"     // 请求体标签
-	pathTag     = "path"     // 路径参数标签
-	queryTag    = "query"    // 查询参数标签
-	requiredTag = "required" // 必填参数标签
-	jsonTag     = "json"
-	titleTag    = "title" // 字段标题标签
+	ParamTag    = "param"    // 路径/查询参数标签
+	BodyTag     = "body"     // 请求体标签
+	PathTag     = "path"     // 路径参数标签
+	QueryTag    = "query"    // 查询参数标签
+	RequiredTag = "required" // 必填参数标签
+	JsonTag     = "json"     // json数据体
+	TitleTag    = "title"    // 字段标题标签
+	ValidateTag = "validate"
 )
 
 // GetParams 将请求参数绑定到目标结构体
@@ -29,7 +30,7 @@ func GetParams(ctx iris.Context, target interface{}) (err error) {
 		if err != nil {
 			return err
 		}
-		err = ValidParams(target)
+		err = Validate(target)
 		return err
 	}
 
@@ -45,20 +46,23 @@ func GetParams(ctx iris.Context, target interface{}) (err error) {
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)
 		fieldValue := targetValue.Elem().Field(i)
-		// 处理路径参数
-		if pathName := field.Tag.Get(pathTag); pathName != "" {
+
+		if pathName := field.Tag.Get(PathTag); pathName != "" {
+			// 处理路径参数 /api/v1.0/user/{id}
 			if val := ctx.Params().Get(pathName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
 				}
 			}
-		} else if queryName := field.Tag.Get(queryTag); queryName != "" { // 处理查询参数
+		} else if queryName := field.Tag.Get(QueryTag); queryName != "" {
+			// 处理查询参数 ?name=lxd
 			if val := ctx.URLParam(queryName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
 				}
 			}
-		} else if paramName := field.Tag.Get(paramTag); paramName != "" { // 处理通用param标签（兼容旧版）
+		} else if paramName := field.Tag.Get(ParamTag); paramName != "" {
+			// 处理通用param标签（兼容双模式）
 			if val := ctx.Params().Get(paramName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
@@ -84,12 +88,14 @@ func GetParams(ctx iris.Context, target interface{}) (err error) {
 	return verifyErr.GetError()
 }
 
-func ValidParams(target interface{}) error {
+func Validate(target interface{}) error {
+
+	verifyError := errors.NewVerifyError()
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
 		return errors.New("target must be a pointer to a struct")
 	}
-	verifyError := errors.NewVerifyError()
+
 	targetType := targetValue.Elem().Type()
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)
@@ -119,7 +125,7 @@ func validField(verifyError *errors.VerifyError, field *reflect.StructField, fie
 	}
 	// 结构体类型递归
 	if field.Type.Kind() == reflect.Struct {
-		err := ValidParams(fieldValue.Addr().Interface())
+		err := Validate(fieldValue.Addr().Interface())
 		if ve, ok := err.(*errors.VerifyError); ok && ve.Count() > 0 {
 			verifyError.MergeWithPrefix(getJsonFieldName(field), ve)
 		}
@@ -127,13 +133,13 @@ func validField(verifyError *errors.VerifyError, field *reflect.StructField, fie
 	}
 	// 结构体指针类型递归和必填
 	if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
-		required := field.Tag.Get(requiredTag)
+		required := field.Tag.Get(RequiredTag)
 		if strings.ToLower(required) == "true" && fieldValue.IsNil() {
 			appendFieldError(verifyError, field, "不能为空")
 			return
 		}
 		if !fieldValue.IsNil() {
-			err := ValidParams(fieldValue.Interface())
+			err := Validate(fieldValue.Interface())
 			if ve, ok := err.(*errors.VerifyError); ok && ve.Count() > 0 {
 				verifyError.MergeWithPrefix(getJsonFieldName(field), ve)
 			}
@@ -142,15 +148,19 @@ func validField(verifyError *errors.VerifyError, field *reflect.StructField, fie
 	}
 
 	// 普通字段必填
-	required := field.Tag.Get(requiredTag)
+	required := field.Tag.Get(RequiredTag)
 	if strings.ToLower(required) == "true" && (fieldValue.IsZero() || (fieldValue.Kind() == reflect.String && fieldValue.String() == "")) {
 		appendFieldError(verifyError, field, "不能为空")
 	}
 }
 
 func fieldIsRequired(field *reflect.StructField) bool {
-	required := field.Tag.Get(requiredTag)
+	required := field.Tag.Get(RequiredTag)
 	if strings.ToLower(required) == "true" {
+		return true
+	}
+	validate := field.Tag.Get(ValidateTag)
+	if strings.Contains(validate, "required") {
 		return true
 	}
 	return false
@@ -158,12 +168,12 @@ func fieldIsRequired(field *reflect.StructField) bool {
 
 func appendFieldError(verifyError *errors.VerifyError, field *reflect.StructField, msg string) {
 	name := getJsonFieldName(field)
-	title := field.Tag.Get(titleTag)
+	title := field.Tag.Get(TitleTag)
 	verifyError.AppendField(name, msg, title)
 }
 
 func getJsonFieldName(field *reflect.StructField) string {
-	name := field.Tag.Get(jsonTag)
+	name := field.Tag.Get(JsonTag)
 	if name == "" {
 		name = stringutils.FirstLower(field.Name)
 	}

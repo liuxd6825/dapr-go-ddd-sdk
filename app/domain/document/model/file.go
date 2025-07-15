@@ -1,9 +1,11 @@
 package model
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase/xmodel"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+)
 
 type File struct {
-	xmodel.Base   `bson:",inline"`
+	xbase.Base    `bson:",inline"`
 	BusId         string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
 	EntityId      string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
 	RootId        string `gorm:"root_id" json:"rootId,omitempty" bson:"root_id"`                      //根目录Id    tenant_id_bus_id_entity_id形式拼接

@@ -14,8 +14,12 @@ import (
 )
 
 type FsService struct {
-	docFs fspkg.IFsPkg
+	docFs         fspkg.IFsPkg
+	fileService   *FileService
+	folderService *FolderService
 }
+
+const DocumentFsName = "documentIoStore"
 
 var _fileService *FsService
 var _fileServiceOnce sync.Once
@@ -28,13 +32,16 @@ func NewFsService() *FsService {
 }
 
 func newFsService() *FsService {
-	fileService := &FsService{}
+	fileService := &FsService{
+		fileService:   NewFileService(),
+		folderService: NewFolderService(),
+	}
 	fileService.Init()
 	return fileService
 }
 
 func (s *FsService) Init() *FsService {
-	docFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "documentIoStore")
+	docFs, err := fs_pkg.NewFsPkg(env.GetEnv(), DocumentFsName)
 	if err != nil {
 		panic("documentIoStore fs not exist in config")
 	}
@@ -93,25 +100,26 @@ func (s *FsService) MoveDir(source string, target string) error {
 	return s.docFs.MoveDir(source, target)
 }
 
-func (s *FsService) Download(ictx iris.Context, objectName string, fileName string) error {
-	writeFile, err := s.docFs.Open(objectName, os.O_RDONLY, 0666)
+// Download 下载文件取Web  objectName:带路径的文件完整名称  saveFileName:保存到本地时的文件名称
+func (s *FsService) Download(ictx iris.Context, fullFileName string, saveFileName string) error {
+	readFile, err := s.docFs.Open(fullFileName, os.O_RDONLY, 0666)
 
 	if err != nil {
 		return err
 	}
 	defer func() {
-		_ = writeFile.Close()
+		_ = readFile.Close()
 	}()
 
-	fileInfo, err := writeFile.Stat()
+	fileInfo, err := readFile.Stat()
 
 	if err != nil {
 		return err
 	}
 
-	ictx.ResponseWriter().Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(fileName))
+	ictx.ResponseWriter().Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(saveFileName))
 
-	ictx.ServeContentWithRate(writeFile, filepath.Base(fileName), fileInfo.ModTime(), 1024*iris.KB, 1024*iris.KB)
+	ictx.ServeContentWithRate(readFile, filepath.Base(saveFileName), fileInfo.ModTime(), 1024*iris.KB, 1024*iris.KB)
 
 	return nil
 }

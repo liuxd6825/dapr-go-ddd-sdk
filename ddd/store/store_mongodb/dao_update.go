@@ -156,15 +156,12 @@ func (r *Dao[T]) updateMap(ctx context.Context, tenantId string, filter any, dat
 		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
-
 		if err := assert2.NotNil(filter, assert2.NewOptions("filterMap is nil")); err != nil {
 			return err
 		}
 		updateOptions := getUpdateOptions(opts...)
 		doc := r.getUpdateData(ctx, tenantId, data, opts...)
-
 		setData := bson.M{"$set": doc}
-
 		sCtx := r.getSessionCtx(ctx)
 		upeRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter, setData, updateOptions)
 		res.SetError(err)
@@ -186,6 +183,7 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 	for _, field := range r.schema.Fields {
 		if !field.Updatable || field.PrimaryKey {
 			delete(doc, field.DBName)
+			delete(doc, field.Name)
 		}
 	}
 
