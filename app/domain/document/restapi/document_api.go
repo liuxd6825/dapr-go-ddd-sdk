@@ -48,6 +48,7 @@ func (s *DocumentAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPut, "/doc/document", "Update")
 	b.Handle(iris.MethodPut, "/doc/document:rename", "Rename")
 	b.Handle(iris.MethodPut, "/doc/document:move", "Move")
+	b.Handle(iris.MethodPut, "/doc/document:update-tags", "UpdateTags")
 	b.Handle(iris.MethodDelete, "/doc/document", "Delete")
 	b.Handle(iris.MethodGet, "/doc/document", "FindPaging")
 }
@@ -216,6 +217,26 @@ func (s *DocumentAPI) Move(ictx iris.Context) {
 				}
 			}
 
+			return nil
+		})
+		return err
+	}).Catch(func(ctx context.Context, err error) {
+		restapi.SetError(ictx, err)
+	})
+}
+
+func (s *DocumentAPI) UpdateTags(ictx iris.Context) {
+	restapi.Try(ictx, func(ctx context.Context) error {
+		err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			var cmd *command.DocumentUpdateCommand
+			if err := ictx.ReadJSON(&cmd); err != nil {
+				return err
+			}
+
+			opts := idao.NewCallOptions()
+			opts.SetUpdateFields([]string{"tag_id", "tag_name", "tag_color"})
+
+			s.documentService.Update(ctx, &cmd.Data, opts)
 			return nil
 		})
 		return err

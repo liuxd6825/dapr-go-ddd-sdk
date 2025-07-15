@@ -5,8 +5,8 @@ import (
 )
 
 type Draw struct {
-	xbase.Base `bson:",inline"`
-	Status     string `json:"status" gorm:"status" bson:"status"`
-	Name       string `json:"name" gorm:"name" bson:"name"`
-	FileName   string `json:"fileName" gorm:"file_name" bson:"file_name"`
+	xbase.BaseModel `bson:",inline"`
+	Status          string `json:"status" gorm:"status" bson:"status"`
+	Name            string `json:"name" gorm:"name" bson:"name"`
+	FileName        string `json:"fileName" gorm:"file_name" bson:"file_name"`
 }

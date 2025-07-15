@@ -5,8 +5,8 @@ import (
 )
 
 type TagType struct {
-	xbase.Base `bson:",inline"`
-	Name       string `gorm:"name" json:"name,omitempty" bson:"name"`
-	ParentId   string `gorm:"parent_id" json:"parentId,omitempty" bson:"parent_id"`
-	IsETag     bool   `gorm:"is_e_tag" json:"isETag,omitempty" bson:"is_e_tag"` //是否企业标签
+	xbase.BaseModel `bson:",inline"`
+	Name            string `gorm:"name" json:"name,omitempty" bson:"name"`
+	ParentId        string `gorm:"parent_id" json:"parentId,omitempty" bson:"parent_id"`
+	IsETag          bool   `gorm:"is_e_tag" json:"isETag,omitempty" bson:"is_e_tag"` //是否企业标签
 }
