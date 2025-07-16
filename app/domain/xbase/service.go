@@ -13,7 +13,7 @@ type ValidateObject interface {
 	Validate() error
 }
 
-func (b *Service) ValidCommand(object any) error {
+func ValidCommand(object any) error {
 	if object == nil {
 		return errors.New("Validate() object is null")
 	}
@@ -25,9 +25,21 @@ func (b *Service) ValidCommand(object any) error {
 	return restapi.Validate(object)
 }
 
-func (b *Service) DoCommand(ctx context.Context, cmd any, fun func(ctx context.Context) error) error {
-	if err := b.ValidCommand(cmd); err != nil {
+type DoCommandOptions struct {
+	CacheKey string
+}
+
+func DoCommand(ctx context.Context, cmd any, fun func(ctx context.Context) error, opts ...DoCommandOptions) error {
+	if err := ValidCommand(cmd); err != nil {
 		return err
 	}
+	return fun(ctx)
+}
+
+type DoQueryOptions struct {
+	CacheKey string
+}
+
+func DoQuery[T any](ctx context.Context, qry any, fun func(ctx context.Context) (T, error), opts ...DoQueryOptions) (T, error) {
 	return fun(ctx)
 }

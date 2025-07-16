@@ -1,7 +1,6 @@
-package query
+package task
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
@@ -13,7 +12,7 @@ type TaskFindPagingByCaseIdQuery struct {
 
 // TaskFindByCaseIdQuery
 // @Description: 根据caseId分页查询
-type TaskFindByCaseIdQuery = ddd_query.FindPagingByCaseIdQuery
+type TaskFindByCaseIdQuery = idao.FindPagingByCaseIdQuery
 
 type SetImportProgressResult struct {
 	DataTotal  int64 `json:"dataTotal"`

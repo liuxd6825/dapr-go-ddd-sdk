@@ -1,13 +1,8 @@
-package service
+package task
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/recordie/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/enums"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/field"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -16,26 +11,26 @@ import (
 )
 
 type TaskService struct {
-	dao *dao.TaskDao
+	dao *TaskDao
 	xbase.Service
 }
 
 func NewTaskService() *TaskService {
 	return singleutils.CreateObj[*TaskService](func() *TaskService {
 		return &TaskService{
-			dao: dao.NewTaskDao(config.DBKey),
+			dao: NewTaskDao(config.DBKey),
 		}
 	})
 }
 
-func (r *TaskService) Create(ctx context.Context, cmd *command.TaskCreateCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		entity := &model.Task{}
+func (r *TaskService) Create(ctx context.Context, cmd *TaskCreateCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+		entity := &Task{}
 		entity.Id = cmd.Data.Id
 		entity.TenantId = cmd.Data.TenantId
 		entity.CaseId = cmd.Data.CaseId
 		entity.DocId = cmd.Data.DocId
-		entity.State = enums.TaskStateEditing
+		entity.State = TaskStateEditing
 		entity.SheetName = cmd.Data.SheetName
 		entity.FileName = cmd.Data.FileName
 		entity.FileId = cmd.Data.FileId
@@ -48,9 +43,9 @@ func (r *TaskService) Create(ctx context.Context, cmd *command.TaskCreateCommand
 
 }
 
-func (r *TaskService) Update(ctx context.Context, cmd *command.TaskUpdateCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		entity := &model.Task{}
+func (r *TaskService) Update(ctx context.Context, cmd *TaskUpdateCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+		entity := &Task{}
 		entity.Id = cmd.Data.Id
 		entity.TenantId = cmd.Data.TenantId
 		entity.DocId = cmd.Data.DocId
@@ -78,8 +73,8 @@ func (r *TaskService) CheckLock(ctx context.Context, taskId string) (bool, error
 	return true, nil
 }
 
-func (r *TaskService) Lock(ctx context.Context, cmd *command.TaskLockCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
+func (r *TaskService) Lock(ctx context.Context, cmd *TaskLockCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		task, err := r.FindById(ctx, cmd.Data.Id)
 		if err != nil {
 			return err
@@ -93,14 +88,14 @@ func (r *TaskService) Lock(ctx context.Context, cmd *command.TaskLockCommand) er
 	})
 }
 
-func (r *TaskService) Unlock(ctx context.Context, cmd *command.TaskUnlockCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
+func (r *TaskService) Unlock(ctx context.Context, cmd *TaskUnlockCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		return r.dao.UpdateLock(ctx, cmd.Data.Id, false)
 	})
 }
 
-func (r *TaskService) UpdateStart(ctx context.Context, cmd *command.TaskRecordCreateCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
+func (r *TaskService) UpdateStart(ctx context.Context, cmd *TaskRecordCreateCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		data := map[string]any{
 			"start_time": timeutils.PNow(),
 			//"state":      model.TaskStateStart,
@@ -109,8 +104,8 @@ func (r *TaskService) UpdateStart(ctx context.Context, cmd *command.TaskRecordCr
 	})
 }
 
-func (r *TaskService) Stop(ctx context.Context, cmd *command.TaskStopCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
+func (r *TaskService) Stop(ctx context.Context, cmd *TaskStopCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		data := map[string]any{
 			"end_time": timeutils.PNow(),
 			//"state":    model.TaskStateStop,
@@ -119,12 +114,12 @@ func (r *TaskService) Stop(ctx context.Context, cmd *command.TaskStopCommand) er
 	})
 }
 
-func (r *TaskService) Validate(ctx context.Context, m *command.TaskValidateCommand) error {
+func (r *TaskService) Validate(ctx context.Context, m *TaskValidateCommand) error {
 	return nil
 }
 
-func (r *TaskService) Delete(ctx context.Context, cmd *command.TaskDeleteCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
+func (r *TaskService) Delete(ctx context.Context, cmd *TaskDeleteCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		id := cmd.Data.Id
 		task, err := r.dao.FindById(ctx, id)
 		if err != nil {
@@ -132,7 +127,7 @@ func (r *TaskService) Delete(ctx context.Context, cmd *command.TaskDeleteCommand
 		}
 
 		switch task.State {
-		case enums.TaskStateEditing, enums.TaskStateGenerated, enums.TaskStateNone:
+		case TaskStateEditing, TaskStateGenerated, TaskStateNone:
 			err = r.dao.DeleteById(ctx, id).GetError()
 		default:
 			err = errors.New("状态不正确%s", task.State.Name())
@@ -141,27 +136,27 @@ func (r *TaskService) Delete(ctx context.Context, cmd *command.TaskDeleteCommand
 	})
 }
 
-func (r *TaskService) UpdateProgress(ctx context.Context, progress *field.TaskUpdateProgressFields) error {
+func (r *TaskService) UpdateProgress(ctx context.Context, progress *TaskUpdateProgressFields) error {
 	return r.dao.UpdateProgress(ctx, progress)
 }
 
-func (r *TaskService) UpdateState(ctx context.Context, cmd *command.TaskUpdateStateCommand) error {
-	return r.DoCommand(ctx, cmd, func(ctx context.Context) error {
+func (r *TaskService) UpdateState(ctx context.Context, cmd *TaskUpdateStateCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		return r.dao.SetState(ctx, cmd.Data.Id, cmd.Data.State, cmd.Data.Message)
 	})
 }
 
-func (r *TaskService) FindById(ctx context.Context, id string) (*model.Task, error) {
+func (r *TaskService) FindById(ctx context.Context, id string) (*Task, error) {
 	task, err := r.dao.FindById(ctx, id)
 	return task, err
 }
 
-func (r *TaskService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) (idao.FindPagingResult[*model.Task], error) {
+func (r *TaskService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) (idao.FindPagingResult[*Task], error) {
 	res := r.dao.FindPaging(ctx, qry)
 	return res, res.GetError()
 }
 
-func (r *TaskService) FindPagingByCaseId(ctx context.Context, qry idao.FindPagingByCaseIdQuery) (idao.FindPagingResult[*model.Task], error) {
+func (r *TaskService) FindPagingByCaseId(ctx context.Context, qry idao.FindPagingByCaseIdQuery) (idao.FindPagingResult[*Task], error) {
 	res := r.dao.FindPaging(ctx, qry)
 	return res, res.GetError()
 }

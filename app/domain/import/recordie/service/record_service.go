@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/recordie/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/recordie/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/recordie/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/recordie/model"
 

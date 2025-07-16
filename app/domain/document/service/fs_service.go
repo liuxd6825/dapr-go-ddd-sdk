@@ -14,30 +14,25 @@ import (
 )
 
 type FsService struct {
-	docFs         fspkg.IFsPkg
-	fileService   *FileService
-	folderService *FolderService
+	docFs fspkg.IFsPkg
 }
 
 const DocumentFsName = "documentIoStore"
 
-var _fileService *FsService
-var _fileServiceOnce sync.Once
+var _fsService *FsService
+var _fsServiceOnce sync.Once
 
 func NewFsService() *FsService {
-	_fileServiceOnce.Do(func() {
-		_fileService = newFsService()
+	_fsServiceOnce.Do(func() {
+		_fsService = newFsService()
 	})
-	return _fileService
+	return _fsService
 }
 
 func newFsService() *FsService {
-	fileService := &FsService{
-		fileService:   NewFileService(),
-		folderService: NewFolderService(),
-	}
-	fileService.Init()
-	return fileService
+	fsService := &FsService{}
+	fsService.Init()
+	return fsService
 }
 
 func (s *FsService) Init() *FsService {

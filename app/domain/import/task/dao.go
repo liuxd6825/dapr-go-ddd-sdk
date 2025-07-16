@@ -1,10 +1,7 @@
-package dao
+package task
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/enums"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/field"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/task/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -13,19 +10,19 @@ import (
 )
 
 type TaskDao struct {
-	idao.Dao[*model.Task]
+	idao.Dao[*Task]
 }
 
 func NewTaskDao(dbKey string) *TaskDao {
 	tableName := "import_task"
-	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Task{}, tableName)
+	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &Task{}, tableName)
 	newCfg := &dao.NewConfig{
 		DBKey:      dbKey,
 		IsPubEvent: dao.IsFalse(),
 		TableName:  tableName,
 		DBSchema:   dbSch,
 	}
-	baseDao := dao.NewDao[*model.Task](newCfg)
+	baseDao := dao.NewDao[*Task](newCfg)
 	daoVal := &TaskDao{Dao: baseDao}
 	return daoVal
 }
@@ -38,7 +35,7 @@ func (r *TaskDao) UpdateLock(ctx context.Context, taskId string, lock bool, opts
 	return r.UpdateMapByRSQL(ctx, rsqlBuilder.Build(), data).GetError()
 }
 
-func (r *TaskDao) UpdateProgress(ctx context.Context, setFields *field.TaskUpdateProgressFields) error {
+func (r *TaskDao) UpdateProgress(ctx context.Context, setFields *TaskUpdateProgressFields) error {
 	if err := assert.NotEmpty(setFields.Id); err != nil {
 		return err
 	}
@@ -59,7 +56,7 @@ func (r *TaskDao) UpdateProgress(ctx context.Context, setFields *field.TaskUpdat
 	return r.Dao.UpdateMap(ctx, setFields.Id, data).GetError()
 }
 
-func (r *TaskDao) SetState(ctx context.Context, taskId string, state enums.TaskState, message string) error {
+func (r *TaskDao) SetState(ctx context.Context, taskId string, state TaskState, message string) error {
 	if err := assert.NotEmpty(taskId); err != nil {
 		return err
 	}

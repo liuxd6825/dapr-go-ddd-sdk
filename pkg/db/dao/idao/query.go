@@ -6,6 +6,7 @@ type FindPagingQuery = store.FindPagingQuery
 type FindPagingQueryBuilder = store.FindPagingQueryBuilder
 type FindPagingQueryRequest = store.FindPagingQueryRequest
 type FindPagingByCaseIdQuery = store.FindPagingByCaseIdQuery
+type FindPagingByCaseIdQueryRequest = store.FindPagingByCaseIdQueryRequest
 
 func NewFindPagingQueryBuilder() FindPagingQueryBuilder {
 	return store.NewFindPagingQueryBuilder()
