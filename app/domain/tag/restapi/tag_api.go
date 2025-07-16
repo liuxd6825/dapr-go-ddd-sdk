@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -55,7 +56,11 @@ func (s *TagAPI) Update(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			s.tagService.Update(ctx, &cmd.Data)
+
+			opts := idao.NewCallOptions()
+			opts.SetUpdateFields([]string{"name", "color"})
+
+			s.tagService.Update(ctx, &cmd.Data, opts)
 			return nil
 		})
 		return err
@@ -82,12 +87,12 @@ func (s *TagAPI) Delete(ictx iris.Context) {
 
 func (s *TagAPI) FindPaging(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
-		folderId := ictx.URLParam("folder-id")
+		etag := ictx.URLParam("etag")
 		//user, _ := appctx.GetAuthUser(ctx)
 		qry := store.NewFindPagingQueryRequest()
 		qry.PageNum = 0
 		qry.PageSize = 99999999999999
-		qry.Filter = "folder_id=='" + folderId + "'"
+		qry.Filter = "is_e_tag==" + etag
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.tagService.FindPaging(ctx, qry)

@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -15,13 +16,16 @@ import (
 type TagTypeAPI struct {
 	env            *env.Env
 	tagTypeService *service.TagTypeService
+	tagService     *service.TagService
 }
 
 func NewTagTypeAPI(env *env.Env) *TagTypeAPI {
 	tagTypeService := service.NewTagTypeService()
+	tagService := service.NewTagService()
 	return &TagTypeAPI{
 		env:            env,
 		tagTypeService: tagTypeService,
+		tagService:     tagService,
 	}
 }
 
@@ -57,7 +61,11 @@ func (s *TagTypeAPI) Update(ictx iris.Context) {
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		s.tagTypeService.Update(ctx, &cmd.Data)
+
+		opts := idao.NewCallOptions()
+		opts.SetUpdateFields([]string{"name", "color"})
+
+		s.tagTypeService.Update(ctx, &cmd.Data, opts)
 		return nil
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
@@ -72,16 +80,10 @@ func (s *TagTypeAPI) Delete(ictx iris.Context) {
 				return err
 			}
 
-			//has := s.folderService.HasChildren(ctx, cmd.Data.Id)
-			//if has {
-			//	return errors.New("存在子目录")
-			//}
-			//has = s.docService.HasDocumentByFolder(ctx, cmd.Data.Id)
-			//if has {
-			//	return errors.New("存在文档")
-			//}
-
 			s.tagTypeService.DeleteById(ctx, cmd.Data.Id)
+
+			//err := s.DeleteByParentId(ctx, cmd.Data.Id)
+
 			return nil
 		})
 
@@ -91,13 +93,38 @@ func (s *TagTypeAPI) Delete(ictx iris.Context) {
 	})
 }
 
+func (s *TagTypeAPI) DeleteByParentId(ctx context.Context, id string) error {
+	//rows, err := s.tagTypeService.FindByRSQL(ctx, fmt.Sprintf("parent_id=='%s'", id))
+	//if err != nil {
+	//	return err
+	//}
+	//if len(rows) > 0 {
+	//	for _, row := range rows {
+	//		err = s.DeleteByParentId(ctx, row.Id)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	//} else {
+	//	res := s.tagService.DeleteByRSQL(ctx, fmt.Sprintf("tag_type_id=='%s'", id))
+	//	if res.Error != nil {
+	//		return res.Error
+	//	}
+	//	res = s.tagTypeService.DeleteById(ctx, id)
+	//	if res.Error != nil {
+	//		return res.Error
+	//	}
+	//}
+	return nil
+}
+
 func (s *TagTypeAPI) FindPaging(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
-		parentId := ictx.URLParam("folder-id")
+		etag := ictx.URLParam("etag")
 		qry := store.NewFindPagingQueryRequest()
 		qry.PageNum = 0
 		qry.PageSize = 99999999999999
-		qry.Filter = "parent_id=='" + parentId + "'"
+		qry.Filter = "is_e_tag==" + etag
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.tagTypeService.FindPaging(ctx, qry)
