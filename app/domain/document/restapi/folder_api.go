@@ -77,7 +77,11 @@ func (s *FolderAPI) CreateRoot(ictx iris.Context) {
 			cmd.Data.RootPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
 			cmd.Data.FolderPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
 			cmd.Data.Name = "根目录"
-			s.folderService.Create(ctx, &cmd.Data)
+			res := s.folderService.Create(ctx, &cmd.Data)
+			if res.Error != nil {
+				return res.Error
+			}
+
 			s.fsService.MkdirAll(cmd.Data.FolderPath)
 			return nil
 		})
@@ -110,7 +114,11 @@ func (s *FolderAPI) Create(ictx iris.Context) {
 				return vErr
 			}
 
-			s.folderService.Create(ctx, &cmd.Data)
+			res := s.folderService.Create(ctx, &cmd.Data)
+			if res.Error != nil {
+				return res.Error
+			}
+
 			s.fsService.MkdirAll(cmd.Data.FolderPath)
 			return nil
 		})
@@ -129,22 +137,27 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 				return err
 			}
 
-			res, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
 			if err != nil {
 				return err
 			}
 			folders := []*model.Folder{}
-			for _, f := range res {
+			for _, f := range arr {
 				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.OldName+"/") {
 					f.FolderPath = strings.Replace(f.FolderPath+"/", cmd.Data.OldName+"/", cmd.Data.FolderPath+"/", -1)
 					f.FolderPath = strings.TrimSuffix(f.FolderPath, "/")
 					folders = append(folders, f)
 				}
 			}
+
+			var res *idao.Result
 			if len(folders) > 0 {
 				opts := idao.NewCallOptions()
 				opts.SetUpdateFields([]string{"folder_path"})
-				s.folderService.UpdateMany(ctx, folders, opts)
+				res = s.folderService.UpdateMany(ctx, folders, opts)
+				if res.Error != nil {
+					return res.Error
+				}
 			}
 
 			opts := idao.NewCallOptions()
@@ -155,7 +168,10 @@ func (s *FolderAPI) Rename(ictx iris.Context) {
 			folder.Name = cmd.Data.Name
 			folder.FolderPath = cmd.Data.FolderPath
 
-			s.folderService.Update(ctx, &folder, opts)
+			res = s.folderService.Update(ctx, &folder, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			err = s.fsService.Rename(cmd.Data.OldName, cmd.Data.FolderPath)
 			if err != nil {
@@ -178,8 +194,8 @@ func (s *FolderAPI) SetColor(ictx iris.Context) {
 		}
 		opts := idao.NewCallOptions()
 		opts.SetUpdateFields([]string{"color"})
-		s.folderService.Update(ctx, &cmd.Data, opts)
-		return nil
+		res := s.folderService.Update(ctx, &cmd.Data, opts)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
@@ -193,22 +209,27 @@ func (s *FolderAPI) Move(ictx iris.Context) {
 				return err
 			}
 
-			res, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
 			if err != nil {
 				return err
 			}
 			folders := []*model.Folder{}
-			for _, f := range res {
+			for _, f := range arr {
 				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.SourcePath+"/") {
 					f.FolderPath = strings.Replace(f.FolderPath+"/", cmd.Data.SourcePath+"/", cmd.Data.TargetPath+"/"+cmd.Data.Name+"/", -1)
 					f.FolderPath = strings.TrimSuffix(f.FolderPath, "/")
 					folders = append(folders, f)
 				}
 			}
+
+			var res *idao.Result
 			if len(folders) > 0 {
 				opts := idao.NewCallOptions()
 				opts.SetUpdateFields([]string{"folder_path"})
-				s.folderService.UpdateMany(ctx, folders, opts)
+				res = s.folderService.UpdateMany(ctx, folders, opts)
+				if res.Error != nil {
+					return res.Error
+				}
 			}
 
 			opts := idao.NewCallOptions()
@@ -218,7 +239,10 @@ func (s *FolderAPI) Move(ictx iris.Context) {
 			folder.Id = cmd.Data.Id
 			folder.ParentId = cmd.Data.ParentId
 
-			s.folderService.Update(ctx, &folder, opts)
+			res = s.folderService.Update(ctx, &folder, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			err = s.fsService.MoveDir(cmd.Data.SourcePath, cmd.Data.TargetPath+"/"+cmd.Data.Name)
 			if err != nil {
@@ -238,8 +262,8 @@ func (s *FolderAPI) Update(ictx iris.Context) {
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		s.folderService.Update(ctx, &cmd.Data)
-		return nil
+		res := s.folderService.Update(ctx, &cmd.Data)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
@@ -262,15 +286,28 @@ func (s *FolderAPI) Delete(ictx iris.Context) {
 			//	return errors.New("存在文档")
 			//}
 
-			res, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+			arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
 			if err != nil {
 				return err
 			}
-			for _, f := range res {
+
+			var res *idao.Result
+			for _, f := range arr {
 				if strings.HasPrefix(f.FolderPath+"/", cmd.Data.FolderPath+"/") {
-					s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
-					s.docService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
-					s.folderService.DeleteById(ctx, f.Id)
+					res = s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+					if res.Error != nil {
+						return res.Error
+					}
+
+					res = s.docService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+					if res.Error != nil {
+						return res.Error
+					}
+
+					res = s.folderService.DeleteById(ctx, f.Id)
+					if res.Error != nil {
+						return res.Error
+					}
 				}
 			}
 			s.fsService.RemoveAll(cmd.Data.FolderPath)

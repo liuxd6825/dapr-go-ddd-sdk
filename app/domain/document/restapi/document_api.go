@@ -135,8 +135,14 @@ func (s *DocumentAPI) Create(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
-			s.documentService.Create(ctx, &cmd.Data)
+			res := s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
+			if res.Error != nil {
+				return res.Error
+			}
+			res = s.documentService.Create(ctx, &cmd.Data)
+			if res.Error != nil {
+				return res.Error
+			}
 			return nil
 		})
 		return err
@@ -159,13 +165,19 @@ func (s *DocumentAPI) Rename(ictx iris.Context) {
 			docModel.Id = cmd.Data.Id
 			docModel.Name = cmd.Data.Name
 			docModel.ObjectName = cmd.Data.ObjectName
-			s.documentService.Update(ctx, &docModel, opts)
+			res := s.documentService.Update(ctx, &docModel, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			fileModel := model.File{}
 			fileModel.Id = cmd.Data.FileId
 			fileModel.Name = cmd.Data.Name
 			fileModel.ObjectName = cmd.Data.ObjectName
-			s.fileService.Update(ctx, &fileModel, opts)
+			res = s.fileService.Update(ctx, &fileModel, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			err := s.fsService.Rename(cmd.Data.FolderPath+"/"+cmd.Data.OldName, cmd.Data.FolderPath+"/"+cmd.Data.ObjectName)
 			if err != nil {
@@ -199,15 +211,23 @@ func (s *DocumentAPI) Move(ictx iris.Context) {
 			opts := idao.NewCallOptions()
 			opts.SetUpdateFields([]string{"folder_id"})
 
+			var res *idao.Result
+
 			if len(files) > 0 {
-				s.fileService.UpdateMany(ctx, files, opts)
+				res = s.fileService.UpdateMany(ctx, files, opts)
+				if res.Error != nil {
+					return res.Error
+				}
 			}
 
 			doc := model.Document{}
 			doc.Id = cmd.Data.Id
 			doc.FolderId = cmd.Data.FolderId
 
-			s.documentService.Update(ctx, &doc, opts)
+			res = s.documentService.Update(ctx, &doc, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			//处理文件移动 非主版本文件也需要移动
 			for _, file := range files {
@@ -236,7 +256,11 @@ func (s *DocumentAPI) UpdateTags(ictx iris.Context) {
 			opts := idao.NewCallOptions()
 			opts.SetUpdateFields([]string{"tag_id", "tag_name", "tag_color"})
 
-			s.documentService.Update(ctx, &cmd.Data, opts)
+			res := s.documentService.Update(ctx, &cmd.Data, opts)
+			if res.Error != nil {
+				return res.Error
+			}
+
 			return nil
 		})
 		return err
@@ -259,12 +283,23 @@ func (s *DocumentAPI) Update(ictx iris.Context) {
 			for _, file := range files {
 				file.IsMain = false
 			}
+			var res *idao.Result
 			if len(files) > 0 {
-				s.fileService.UpdateMany(ctx, files)
+				res = s.fileService.UpdateMany(ctx, files)
+				if res.Error != nil {
+					return res.Error
+				}
 			}
 
-			s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
-			s.documentService.Update(ctx, &cmd.Data)
+			res = s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
+			if res.Error != nil {
+				return res.Error
+			}
+
+			res = s.documentService.Update(ctx, &cmd.Data)
+			if res.Error != nil {
+				return res.Error
+			}
 			return nil
 		})
 		return err
@@ -280,8 +315,15 @@ func (s *DocumentAPI) Delete(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			s.documentService.DeleteById(ctx, cmd.Data.Id)
-			s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
+			res := s.documentService.DeleteById(ctx, cmd.Data.Id)
+			if res.Error != nil {
+				return res.Error
+			}
+
+			res = s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
+			if res.Error != nil {
+				return res.Error
+			}
 
 			s.fsService.RemoveFile(fmt.Sprintf("/%s/%s", cmd.Data.FolderPath, cmd.Data.ObjectName))
 			return nil

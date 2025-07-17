@@ -44,9 +44,9 @@ func (s *TagTypeAPI) Create(ictx iris.Context) {
 				return err
 			}
 
-			s.tagTypeService.Create(ctx, &cmd.Data)
+			res := s.tagTypeService.Create(ctx, &cmd.Data)
 
-			return nil
+			return res.Error
 		})
 
 		return err
@@ -65,8 +65,8 @@ func (s *TagTypeAPI) Update(ictx iris.Context) {
 		opts := idao.NewCallOptions()
 		opts.SetUpdateFields([]string{"name", "color"})
 
-		s.tagTypeService.Update(ctx, &cmd.Data, opts)
-		return nil
+		res := s.tagTypeService.Update(ctx, &cmd.Data, opts)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
@@ -80,11 +80,11 @@ func (s *TagTypeAPI) Delete(ictx iris.Context) {
 				return err
 			}
 
-			s.tagTypeService.DeleteById(ctx, cmd.Data.Id)
+			res := s.tagTypeService.DeleteById(ctx, cmd.Data.Id)
 
 			//err := s.DeleteByParentId(ctx, cmd.Data.Id)
 
-			return nil
+			return res.Error
 		})
 
 		return err

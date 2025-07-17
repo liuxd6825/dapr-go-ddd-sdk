@@ -48,8 +48,8 @@ func (s *FileAPI) Create(ictx iris.Context) {
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		s.fileService.Create(ctx, &cmd.Data)
-		return nil
+		res := s.fileService.Create(ctx, &cmd.Data)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
@@ -63,8 +63,8 @@ func (s *FileAPI) UpdateVerInfo(ictx iris.Context) {
 		}
 		opts := idao.NewCallOptions()
 		opts.SetUpdateFields([]string{"ver_info"})
-		s.fileService.Update(ctx, &cmd.Data, opts)
-		return nil
+		res := s.fileService.Update(ctx, &cmd.Data, opts)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
@@ -82,18 +82,27 @@ func (s *FileAPI) UpdateIsMain(ictx iris.Context) {
 			if err != nil {
 				return err
 			}
+
+			var res *idao.Result
+
 			if len(files) > 0 {
 				for _, file := range files {
 					file.IsMain = false
 				}
 				opts := idao.NewCallOptions()
 				opts.SetUpdateFields([]string{"is_main"})
-				s.fileService.UpdateMany(ctx, files, opts)
+				res = s.fileService.UpdateMany(ctx, files, opts)
+				if res.Error != nil {
+					return res.Error
+				}
 			}
 
 			opts := idao.NewCallOptions()
 			opts.SetUpdateFields([]string{"is_main"})
-			s.fileService.Update(ctx, &cmd.Data, opts)
+			res = s.fileService.Update(ctx, &cmd.Data, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			opts.SetUpdateFields([]string{"object_name", "name", "download_url", "preview_url", "file_id", "size_title", "size", "ext_name", "thumbnail"})
 			doc := model.Document{}
@@ -107,7 +116,10 @@ func (s *FileAPI) UpdateIsMain(ictx iris.Context) {
 			doc.Size = cmd.Data.Size
 			doc.ExtName = cmd.Data.ExtName
 			doc.Thumbnail = cmd.Data.Thumbnail
-			s.docService.Update(ctx, &doc, opts)
+			res = s.docService.Update(ctx, &doc, opts)
+			if res.Error != nil {
+				return res.Error
+			}
 
 			return nil
 		})
@@ -123,8 +135,8 @@ func (s *FileAPI) Update(ictx iris.Context) {
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		s.fileService.Update(ctx, &cmd.Data)
-		return nil
+		res := s.fileService.Update(ctx, &cmd.Data)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
@@ -136,8 +148,8 @@ func (s *FileAPI) Delete(ictx iris.Context) {
 		if err := ictx.ReadJSON(&cmd); err != nil {
 			return err
 		}
-		s.fileService.DeleteById(ctx, cmd.Data.Id)
-		return nil
+		res := s.fileService.DeleteById(ctx, cmd.Data.Id)
+		return res.Error
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})
