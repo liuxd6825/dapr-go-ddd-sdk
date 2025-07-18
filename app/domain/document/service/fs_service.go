@@ -2,6 +2,7 @@ package service
 
 import (
 	_ "embed"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -93,6 +94,29 @@ func (s *FsService) WriteAt(fileName string, data []byte, chunkIndex string, chu
 
 func (s *FsService) MoveDir(source string, target string) error {
 	return s.docFs.MoveDir(source, target)
+}
+
+func (s *FsService) ReadFile(folderPath string, objectName string) ([]byte, error) {
+	fileName := fmt.Sprintf("%s/%s", folderPath, objectName)
+	readFile, err := s.docFs.Open(fileName, os.O_RDONLY, 0666)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = readFile.Close()
+	}()
+
+	fileInfo, err := readFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	bytes := make([]byte, fileInfo.Size())
+	_, err = readFile.Read(bytes)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
 }
 
 // Download 下载文件取Web  objectName:带路径的文件完整名称  saveFileName:保存到本地时的文件名称

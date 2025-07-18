@@ -13,6 +13,14 @@ type ValidateObject interface {
 	Validate() error
 }
 
+type DoCommandOptions struct {
+	CacheKey string
+}
+
+type DoQueryOptions struct {
+	CacheKey string
+}
+
 func ValidCommand(object any) error {
 	if object == nil {
 		return errors.New("Validate() object is null")
@@ -25,19 +33,14 @@ func ValidCommand(object any) error {
 	return restapi.Validate(object)
 }
 
-type DoCommandOptions struct {
-	CacheKey string
-}
-
 func DoCommand(ctx context.Context, cmd any, fun func(ctx context.Context) error, opts ...DoCommandOptions) error {
 	if err := ValidCommand(cmd); err != nil {
 		return err
 	}
+	if isValidOnly, ok := cmd.(IsValidOnly); ok && isValidOnly.GetIsValidOnly() {
+		return nil
+	}
 	return fun(ctx)
-}
-
-type DoQueryOptions struct {
-	CacheKey string
 }
 
 func DoQuery[T any](ctx context.Context, qry any, fun func(ctx context.Context) (T, error), opts ...DoQueryOptions) (T, error) {

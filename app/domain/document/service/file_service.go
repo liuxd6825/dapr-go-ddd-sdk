@@ -5,7 +5,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"os"
 )
 
 type FileService struct {
@@ -48,35 +47,9 @@ func (s *FileService) GetFile(document *model.Document) *model.File {
 	return file
 }
 
-func (s *FsService) ReadFile(fullFileName string) ([]byte, error) {
-	readFile, err := s.docFs.Open(fullFileName, os.O_RDONLY, 0666)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = readFile.Close()
-	}()
-
-	fileInfo, err := readFile.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	bytes := make([]byte, fileInfo.Size())
-	_, err = readFile.Read(bytes)
-	if err != nil {
-		return nil, err
-	}
-	return bytes, nil
-}
-
-func (s *FileService) ReadFile(ctx context.Context, fileId string) ([]byte, error) {
-	file, err := s.Dao.FindById(ctx, fileId)
-	if err != nil {
-		return nil, err
-	}
+func (s *FileService) ReadByteByFile(ctx context.Context, file *model.File) ([]byte, error) {
 	if file == nil {
-		return nil, errors.New("没有找到文件id:%s", fileId)
+		return nil, errors.New("file参数不能为nil")
 	}
 
 	folder, err := s.folderService.FindById(ctx, file.FolderId)
@@ -87,7 +60,30 @@ func (s *FileService) ReadFile(ctx context.Context, fileId string) ([]byte, erro
 		return nil, errors.New("没有找到目录id:%s", file.FolderId)
 	}
 
-	fullName := folder.FolderPath + "\"" + file.ObjectName
-	bytes, err := s.fsService.ReadFile(fullName)
+	bytes, err := s.fsService.ReadFile(folder.FolderPath, file.ObjectName)
 	return bytes, err
+}
+
+// ReadByteByFileId 根据文件ID从存储中读取文件的字节内容。
+//
+// 参数:
+//   - ctx: 上下文对象，用于控制请求的生命周期和取消操作。
+//   - fileId: 要读取的文件的唯一标识符。
+//
+// 返回值:
+//   - []byte: 文件内容的字节切片。
+//   - error: 如果在查找文件或读取过程中发生错误，则返回相应的错误信息。
+func (s *FileService) ReadByteByFileId(ctx context.Context, fileId string) ([]byte, error) {
+	// 通过文件ID调用DAO层获取文件对象
+	file, err := s.Dao.FindById(ctx, fileId)
+	if err != nil {
+		return nil, err
+	}
+	// 检查文件是否存在
+	if file == nil {
+		return nil, errors.New("没有找到文件id:%s", fileId)
+	}
+
+	// 调用ReadByteByFile方法实际读取文件内容
+	return s.ReadByteByFile(ctx, file)
 }

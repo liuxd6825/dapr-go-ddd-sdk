@@ -40,6 +40,9 @@ func (c *daprClient) SetMetadata(ctx context.Context, key, value string) error {
 }
 
 func (c *daprClient) PublishEvent(ctx context.Context, pubsubName, topicName string, data interface{}, opts ...daprsdkclient.PublishEventOption) error {
+	if topicName == "" {
+		topicName = GetTopic(data)
+	}
 	return c.grpcClient.PublishEvent(ctx, pubsubName, topicName, data, opts...)
 }
 

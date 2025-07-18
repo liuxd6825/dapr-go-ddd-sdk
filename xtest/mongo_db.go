@@ -66,6 +66,11 @@ func (o *MongoOptions) GetPwd() string {
 	return MongoPassword
 }
 
+func (o *MongoOptions) SetDBName(s string) *MongoOptions {
+	o.DBName = &s
+	return o
+}
+
 func GetMongoEnv_Remote(opts ...*MongoOptions) *env.Mongo {
 	opt := NewMongoOptions(opts...)
 	return &env.Mongo{

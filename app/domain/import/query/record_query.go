@@ -1,0 +1,44 @@
+package query
+
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+)
+
+type FindRowBySheetQuery struct {
+	TenantId string `json:"tenantId"`
+	CaseId   string `json:"caseId"`
+	DocId    string `json:"docId"`
+	FileId   string `json:"fileId"`
+	SheetId  string `json:"sheetId"`
+}
+
+type FindSheetByNameQuery struct {
+	TenantId string `json:"tenantId"`
+	CaseId   string `json:"caseId"`
+	DocId    string `json:"docId"`
+	FileId   string `json:"fileId"`
+	Name     string `json:"name"`
+}
+
+// RecordIeFindPagingByTaskIdQuery 分页查询命令
+type RecordIeFindPagingByTaskIdQuery struct {
+	idao.FindPagingQueryRequest
+	TaskId      string `json:"taskId"`
+	IsFindError bool   `json:"findError"`
+}
+
+type RecordFindByIdQueryRequest = store.FindByIdQueryRequest
+
+func NewRecordIeFindPagingByTaskIdQuery(taskId string, findError bool) *RecordIeFindPagingByTaskIdQuery {
+	qry := &RecordIeFindPagingByTaskIdQuery{
+		TaskId:      taskId,
+		IsFindError: findError,
+	}
+	qry.TaskId = taskId
+	qry.IsTotalRows = true
+	qry.PageSize = 1000
+	qry.PageNum = 1
+	qry.Filter = ""
+	return qry
+}

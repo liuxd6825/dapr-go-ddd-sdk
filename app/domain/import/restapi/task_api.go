@@ -1,0 +1,56 @@
+package restapi
+
+import (
+	"context"
+	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
+)
+
+type TaskAPI struct {
+	env         *env.Env
+	taskService *service.TaskService
+	rootPath    string
+}
+
+func NewTaskAPI(env *env.Env, rootPath string) *TaskAPI {
+	return &TaskAPI{
+		env:         env,
+		taskService: service.NewTaskService(),
+		rootPath:    rootPath,
+	}
+}
+
+func (s *TaskAPI) InitController(app *iris.Application) error {
+	s.taskService = service.NewTaskService()
+	ctl := restapi.NewController(app, s.rootPath, s)
+	ctl.Post("/tasks", "Create")
+	ctl.Put("/tasks", "Update")
+	ctl.GetOne("/tasks/{id}", "FindById")
+	ctl.GetPaging("/tasks", "FindPaging")
+	return nil
+}
+
+func (s *TaskAPI) Create(ctx context.Context, cmd *command.TaskCreateCommand) error {
+	return s.taskService.Create(ctx, cmd)
+}
+
+func (s *TaskAPI) Update(ctx context.Context, cmd *command.TaskUpdateCommand) error {
+	return s.taskService.Update(ctx, cmd)
+}
+
+func (s *TaskAPI) Delete(ctx context.Context, cmd *command.TaskDeleteCommand) error {
+	return s.taskService.Delete(ctx, cmd)
+}
+
+func (s *TaskAPI) FindById(ctx context.Context, id string) (*model.Task, error) {
+	return s.taskService.FindById(ctx, id)
+}
+
+func (s *TaskAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.Task], error) {
+	return s.taskService.FindPaging(ctx, qry)
+}

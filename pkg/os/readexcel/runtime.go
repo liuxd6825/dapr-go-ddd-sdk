@@ -19,55 +19,31 @@ func newRuntime() (*goja.Runtime, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := vm.Set("文字替换", replace); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取时间", toDateTime); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取绝对值", abs); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("是否有负号", isMinus); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取支出金额", payout); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("根据标识取支出金额", payoutByTag); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取收入金额", income); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("根据标识取收入金额", incomeByTag); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取交易金额", amount); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取浮点值", toFloat); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取文本", toString); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取数字文本", regexpNum); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取中间文本", match); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取支付宝账号", GetZhiFuBaoOppAcc); err != nil {
-		return nil, err
-	}
-	if err := vm.Set("取支付宝人名", GetZhiFuBaoOppName); err != nil {
-		return nil, err
-	}
-
+	setValue(vm, replace, "文字替换", "replace")
+	setValue(vm, toDateTime, "取时间", "toDateTime")
+	setValue(vm, abs, "取绝对值", "abs")
+	setValue(vm, isMinus, "是否有负号", "isMinus")
+	setValue(vm, payout, "取支出金额", "payout")
+	setValue(vm, payoutByTag, "根据标识取支出金额", "payoutByTag")
+	setValue(vm, income, "取收入金额", "income")
+	setValue(vm, incomeByTag, "根据标识取收入金额", "incomeByTag")
+	setValue(vm, amount, "取交易金额", "amount")
+	setValue(vm, toFloat, "取浮点值", "toFloat")
+	setValue(vm, toString, "取文本", "toString")
+	setValue(vm, regexpNum, "取数字文本", "regexpNum")
+	setValue(vm, match, "取中间文本", "match")
+	setValue(vm, GetZhiFuBaoOppAcc, "取支付宝账号", "getZhiFuBaoOppAcc")
+	setValue(vm, GetZhiFuBaoOppName, "取支付宝人名", "getZhiFuBaoOppName")
 	return vm, nil
 }
 
+func setValue(vm *goja.Runtime, value any, names ...string) {
+	for _, name := range names {
+		if name != "" {
+			_ = vm.Set(name, value)
+		}
+	}
+}
 func toString(list ...string) string {
 	for _, s := range list {
 		if s != "" {

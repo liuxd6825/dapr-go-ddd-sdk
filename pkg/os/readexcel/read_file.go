@@ -76,7 +76,9 @@ func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, erro
 
 	table := NewDataTable(temp)
 	countRow := rows.Count()
-
+	if temp.Heads == nil || len(temp.Heads) == 0 {
+		return nil, errors.New("readexcel.readBytes() temp heads is null")
+	}
 	iRow := temp.Heads[0].RowNum + 1
 	var index int64 = 0
 	for {

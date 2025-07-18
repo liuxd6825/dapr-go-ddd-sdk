@@ -242,7 +242,7 @@ func (c *daprClient) getError(err error) error {
 				value = strings.ReplaceAll(value, "\n", "")
 				msg = msg + value + "\n"
 			}
-			return errors.New(msg)
+			return errors.New(msg, "")
 		}
 	}
 	return err

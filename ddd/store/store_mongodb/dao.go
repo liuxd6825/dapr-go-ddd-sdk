@@ -275,7 +275,7 @@ func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
 	if err := r.Init(ctx, mongodb, coll); err != nil {
 		panic(err)
 	}
-	return r.collection
+	return coll
 }
 
 func (r *Dao[T]) Save(ctx context.Context, data *ddd.SetData[T], opts ...store.Options) (setResult *store.SetResult[T]) {
@@ -415,7 +415,6 @@ func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bs
 			bson.M{"phone": bson.M{"$gte": 1091, "$lte": 1100}},
 		}}
 	*/
-
 	if filterMap == nil || len(filterMap) == 0 {
 		return bson.M{ConstTenantIdField: bson.M{"$eq": tenantId}}
 	}
@@ -429,9 +428,6 @@ func (r *Dao[T]) NewFilter(tenantId string, filterMap map[string]interface{}) bs
 		case "$and", "$or":
 			ands = append(ands, bson.M{fieldName: fieldValue})
 		default:
-			if fieldName != ConstIdField {
-				fieldName = AsFieldName(fieldName)
-			}
 			item := bson.M{fieldName: bson.M{"$eq": fieldValue}}
 			ands = append(ands, item)
 		}

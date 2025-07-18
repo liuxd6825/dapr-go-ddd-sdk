@@ -57,6 +57,8 @@ type FindPagingResult[T any] interface {
 
 	GetError() error
 	SetError(err error)
+
+	GetDataLength() int64
 }
 
 type FindPagingResultStruct[T any] struct {

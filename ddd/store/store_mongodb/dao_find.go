@@ -2,12 +2,14 @@ package store_mongodb
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mongoutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -90,12 +92,23 @@ func (r *Dao[T]) mFindList(ctx context.Context, filter any, opts ...*mongo_optio
 func (r *Dao[T]) mFindOne(ctx context.Context, filter any, opts ...*mongo_options.FindOneOptions) (T, bool, error) {
 	var null T
 	var entity T
+	var err error
+
 	sCtx := r.getSessionCtx(ctx)
-	result := r.getCollection(ctx).FindOne(sCtx, filter, opts...)
-	err := result.Decode(&entity)
+	result := r.getCollection(sCtx).FindOne(sCtx, filter, opts...)
+	err = result.Err()
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return null, false, nil
+		}
+		return null, false, err
+	}
+
+	err = result.Decode(&entity)
 	if err != nil {
 		return null, false, err
 	}
+
 	if r.eb.GetConfig().IsMap {
 		if eMap, ok := any(entity).(map[string]any); ok {
 			r.db2entity(eMap)
@@ -107,6 +120,10 @@ func (r *Dao[T]) mFindOne(ctx context.Context, filter any, opts ...*mongo_option
 func (r *Dao[T]) FindOneByMap(ctx context.Context, tenantId string, filterMap map[string]interface{}, opts ...store.Options) *store.FindOneResult[T] {
 	return r.DoFindOne(func() (T, bool, error) {
 		filter := r.NewFilter(tenantId, filterMap)
+		logs.Info(ctx, logs.Fields{"filter": func() any {
+			bytes, _ := json.Marshal(filter)
+			return string(bytes)
+		}})
 		findOneOptions := getFindOneOptions(opts...)
 		data, isFound, err := r.mFindOne(ctx, filter, findOneOptions)
 		return data, isFound, err
@@ -613,12 +630,6 @@ func (r *Dao[T]) DoFindList(fun func() ([]T, bool, error)) *store.FindListResult
 
 func (r *Dao[T]) DoFindOne(fun func() (T, bool, error)) *store.FindOneResult[T] {
 	data, isFound, err := fun()
-	if err != nil {
-		if errors.IsErrorMongoNoDocuments(err) {
-			isFound = false
-			err = nil
-		}
-	}
 	return store.NewFindOneResult[T](data, isFound, err)
 }
 

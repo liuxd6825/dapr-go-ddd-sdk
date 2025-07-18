@@ -46,8 +46,15 @@ func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
 	return res
 }
 
-func InitEnv_MongoRemote(opts ...*MongoOptions) *env.Env {
+func InitEnv_MongoRemoteTest(opts ...*MongoOptions) *env.Env {
 	envVal := NewEnvConfigMongo(GetMongoEnv_Remote(opts...))
+	env.SetEnv(envVal)
+	return envVal
+}
+
+func InitEnv_MongoRemoteMaster(opts ...*MongoOptions) *env.Env {
+	opt := NewMongoOptions(opts...).SetDBName("master")
+	envVal := NewEnvConfigMongo(GetMongoEnv_Remote(opt))
 	env.SetEnv(envVal)
 	return envVal
 }
@@ -67,6 +74,12 @@ func NewEnvConfigMongo(mongoCfg *env.Mongo) *env.Env {
 	res.App.Meta = map[string]any{
 		"db": mongoCfg.DbKey,
 	}
+	docFs := map[string]any{
+		"name": "documentIoStore",
+		"type": "local",
+		"path": "/Users/lxd/Projects/duxm/h-master/document",
+	}
+	res.Fs = append(res.Fs, docFs)
 
 	res.AddMongo(mongoCfg)
 	res.Init()

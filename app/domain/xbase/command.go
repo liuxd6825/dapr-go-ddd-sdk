@@ -7,6 +7,10 @@ type Command[T any] struct {
 	Data        T        `json:"data"  validate:"required" title:"命令数据" `
 }
 
+type IsValidOnly interface {
+	GetIsValidOnly() bool
+}
+
 type DeleteByIdCommand = Command[IdField]
 
 type IdField struct {
@@ -15,4 +19,8 @@ type IdField struct {
 
 type IdsField struct {
 	Id []string `json:"ids" validate:"required"`
+}
+
+func (c *Command[T]) GetIsValidOnly() bool {
+	return c.IsValidOnly
 }

@@ -29,17 +29,12 @@ func (a *RestAssembler) NewOptions() *Options {
 }
 
 func (a *RestAssembler) AsFindByIdRequest(ictx iris.Context) (*ddd_query.FindByIdQuery, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
 	id, err := a.GetId(ictx)
 	if err != nil {
 		return nil, err
 	}
 	return &ddd_query.FindByIdQuery{
-		TenantId: tenantId,
-		Id:       id,
+		Id: id,
 	}, nil
 }
 

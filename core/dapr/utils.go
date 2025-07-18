@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 )
 
 func NewMap() map[string]interface{} {
@@ -49,4 +50,9 @@ func ToJson(data interface{}) (string, error) {
 func NewAppError(appID string, err error) error {
 	msg := fmt.Sprintf("appId is %s , %s", appID, err.Error())
 	return errors.New(msg)
+}
+
+func GetTopic(event any) string {
+	pkgName, typeName, _ := reflectutils.GetTypeDetails(event)
+	return fmt.Sprintf("%s/%s", pkgName, typeName)
 }
