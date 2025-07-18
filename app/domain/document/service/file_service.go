@@ -27,6 +27,7 @@ func (s *FileService) GetFile(document *model.Document) *model.File {
 	file.TenantId = document.TenantId
 	file.BusId = document.BusId
 	file.EntityId = document.EntityId
+	file.CaseId = document.CaseId
 	file.RootId = document.RootId
 	file.RootPath = document.RootPath
 	file.FolderId = document.FolderId

@@ -40,8 +40,8 @@ func (s *TagAPI) Create(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			s.tagService.Create(ctx, &cmd.Data)
-			return nil
+			res := s.tagService.Create(ctx, &cmd.Data)
+			return res.Error
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
@@ -60,8 +60,8 @@ func (s *TagAPI) Update(ictx iris.Context) {
 			opts := idao.NewCallOptions()
 			opts.SetUpdateFields([]string{"name", "color"})
 
-			s.tagService.Update(ctx, &cmd.Data, opts)
-			return nil
+			res := s.tagService.Update(ctx, &cmd.Data, opts)
+			return res.Error
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
@@ -76,8 +76,8 @@ func (s *TagAPI) Delete(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			s.tagService.DeleteById(ctx, cmd.Data.Id)
-			return nil
+			res := s.tagService.DeleteById(ctx, cmd.Data.Id)
+			return res.Error
 		})
 		return err
 	}).Catch(func(ctx context.Context, err error) {
