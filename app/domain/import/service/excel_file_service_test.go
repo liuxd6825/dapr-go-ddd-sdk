@@ -19,10 +19,11 @@ func Test_CreateFile(t *testing.T) {
 	cmd := &command.ExcelFileCreateCommand{}
 	cmd.CommandId = "FIcuNxpulmMopISDYhPdHyrAK"
 	cmd.Data = command.ExcelCreateByFileCommandData{
-		CaseId:   "1001",
-		DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
-		FileId:   fileId,
-		FileName: "赵蕾流水汇总.xlsx",
+		Id:        fileId,
+		CaseId:    "1001",
+		DocId:     "F3YOfd110hzRCKuT7eZPSHL4k",
+		DocFileId: fileId,
+		FileName:  "赵蕾流水汇总.xlsx",
 	}
 
 	service := NewExcelFileService()
