@@ -19,6 +19,11 @@ type CallMethod struct {
 	OutError      int
 }
 
+var errType = reflect.TypeOf((*error)(nil)).Elem()
+var ctxType = reflect.TypeOf((*context2.Context)(nil)).Elem()
+var ictxType = reflect.TypeOf((*iris.Context)(nil)).Elem()
+var findPagingQueryType = reflect.TypeOf((*store.FindPagingQuery)(nil)).Elem()
+
 func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 	method := reflect.ValueOf(object).MethodByName(methodName)
 	if !method.IsValid() {
@@ -37,15 +42,13 @@ func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 	inCount := method.Type().NumIn()
 	for i := 0; i < inCount; i++ {
 		paramType := method.Type().In(i)
-		if paramType == reflect.TypeOf((*context2.Context)(nil)).Elem() {
+		if paramType == ctxType {
 			callMethod.InCtx = i
-		} else if paramType == reflect.TypeOf((*iris.Context)(nil)).Elem() {
+		} else if paramType == ictxType {
 			callMethod.InICtx = i
 		} else if paramType.Kind() == reflect.Ptr && paramType.Elem().Kind() == reflect.Struct {
-			println(i, " ParamType:", paramType.Elem().Name())
 			callMethod.InParams = i
-		} else if paramType == reflect.TypeOf((*store.FindPagingQuery)(nil)).Elem() {
-			// 允许any类型作为参数
+		} else if paramType == findPagingQueryType || paramType.Kind() == reflect.Interface {
 			callMethod.InParams = i
 		} else {
 			return nil, errors.New("unsupported parameter type: %s", paramType.String())
@@ -55,10 +58,10 @@ func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 	outCount := method.Type().NumOut()
 	for i := 0; i < outCount; i++ {
 		outType := method.Type().Out(i)
-		if outType == reflect.TypeOf((*any)(nil)).Elem() {
-			callMethod.OutData = i
-		} else if outType == reflect.TypeOf((*error)(nil)).Elem() {
+		if outType == errType {
 			callMethod.OutError = i
+		} else {
+			callMethod.OutData = i
 		}
 	}
 
@@ -76,9 +79,7 @@ func (c *CallMethod) Call(ctx context2.Context, ictx *context.Context, params an
 	if c.InParams >= 0 {
 		in[c.InParams] = reflect.ValueOf(params)
 	}
-
 	out := c.Method.Call(in)
-
 	var resData any
 	var err error
 	if c.OutData >= 0 {
@@ -90,6 +91,5 @@ func (c *CallMethod) Call(ctx context2.Context, ictx *context.Context, params an
 			err = errValue.Interface().(error)
 		}
 	}
-
 	return resData, err
 }

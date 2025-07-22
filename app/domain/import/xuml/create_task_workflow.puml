@@ -1,0 +1,62 @@
+Edit online
+@startuml
+
+actor       用户       as user
+boundary    TaskUI    as ui
+control     TaskUC     as uc
+entity      Task      as task
+entity      ExcelFile    as file
+entity      DocFile   as docFile
+entity      ExcelSheet    as sheet
+entity      ExcelRow   as row
+
+user -> ui : 打开新建任务
+activate ui
+ui -> ui: 显示任务界面
+deactivate ui
+
+user -> ui : 浏览文件目录
+activate ui
+ui -> ui: 显示文件选择界面
+ui -> uc : 读取文件列表
+uc -> docFile : 读取文件列表
+deactivate ui
+
+user -> ui : 确定要导入的文件
+activate ui
+ui -> uc : 查找文件
+uc -> file: 查找文件
+
+ui -> ui : [文件不存在] 系统提示用户是否要导入
+activate ui
+ui -> ui : 系统显示等待对话框
+ui -> uc : 创建文件
+uc -> file : 创建文件
+activate file
+file -> docFile : 取得二进制流
+file -> file : 解析文件内容
+file -> sheet : 创建sheet
+file -> row : 创建row
+file -> file : 保存文件
+deactivate file
+deactivate ui
+ui -> uc : 显示Sheet列表
+uc -> sheet : 读取Sheet列表
+deactivate uc
+deactivate ui
+
+user -> ui : 选择要导入的Sheet名称
+activate ui
+ui -> ui : 检查Sheet是否实使用
+deactivate ui
+
+user -> ui : 保存
+ui -> uc : 保存
+activate uc
+uc -> sheet : 检查sheet.taskId是否为空，
+uc -> uc : [不为空]退出，系统提示sheet已被使用
+uc -> sheet : 并更新taskId属性
+uc -> task : 保存任务（状态:编辑， 保存后文件属性不可修改）
+deactivate uc
+
+@enduml

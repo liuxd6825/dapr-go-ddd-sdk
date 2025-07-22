@@ -6,9 +6,10 @@ import (
 
 type Template struct {
 	xbase.BaseModel `gorm:",inline"`
+	TaskId          string           `json:"taskId" gorm:"task_id"  bson:"task_id" index:""`
 	Name            string           `json:"name" gorm:"name"  bson:"name" index:"" `
 	FileId          string           `json:"fileId" gorm:"file_id"   bson:"file_id" index:"" `
-	FileName        string           `json:"fileName"gorm:"file_name"  bson:"file_name" index:"" `
+	FileName        string           `json:"fileName" gorm:"file_name"  bson:"file_name" index:"" `
 	SheetName       string           `json:"sheetName"  gorm:"sheet_name" bson:"sheet_name"`
 	BankName        string           `json:"bankName" gorm:"bank_name"  bson:"bank_name" index:"" `
 	SchemaId        string           `json:"schemaId" gorm:"schema_id"  bson:"schema_id"  index:"" `

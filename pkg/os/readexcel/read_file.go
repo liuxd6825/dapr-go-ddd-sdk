@@ -287,48 +287,40 @@ func getExcelDate(excelStr string) time.Time {
 	//return eTime.Add(time.Second * time.Duration(days*86400))
 }
 
-func ReviewFile(fileName string, sheetName string, maxRows int64) (*Review, error) {
+func ReviewFile(fileName string, maxRows int64) (*Review, error) {
 	bytes, err := readFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	return ReadBytesToMap(bytes, sheetName, maxRows)
+	return ReadBytesToMap(bytes, maxRows)
 }
 
-func ReadBytesToMap(bytes []byte, sheetName string, maxRows int64) (*Review, error) {
+func ReadBytesToMap(bytes []byte, maxRows int64) (*Review, error) {
 	f, err := xlsx.OpenBinary(bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	sheet, err := getSheet(f, sheetName)
-	if err != nil {
-		return nil, err
-	}
-	if sheet == nil {
-		return nil, errors.New("sheetName is null")
-	}
 	review := &Review{}
-	for c := 0; c < len(sheet.Cols); c++ {
-		review.AddColumns(GetCellLabel(c + 1))
+	if err != nil {
+		return nil, err
 	}
 	for _, s := range f.Sheets {
-		review.AddSheetName(&Sheet{Name: s.Name, MaxCol: int64(s.MaxCol), MaxRow: int64(s.MaxRow)})
-	}
-	review.OpenSheet = sheet.Name
-	for rIdx := 0; rIdx < sheet.MaxRow; rIdx++ {
-		row := sheet.Row(rIdx)
-		item := ReviewItem{}
-		item["$row"] = rIdx
-		for cIdx := 0; cIdx < len(row.Cells); cIdx++ {
-			key := GetCellLabel(cIdx + 1)
-			if cell := row.Cells[cIdx]; cell != nil {
-				item[key] = row.Cells[cIdx].String()
-			}
+		sheet := &Sheet{Name: s.Name, MaxCol: int64(s.MaxCol), MaxRow: int64(s.MaxRow)}
+		review.AddSheet(sheet)
+		for c := 0; c < len(s.Cols); c++ {
+			sheet.AddColumns(GetCellLabel(c + 1))
 		}
-		review.AddItems(item)
-		if maxRows > 0 && int64(rIdx) > maxRows {
-			break
+		for rIdx := 0; rIdx < s.MaxRow; rIdx++ {
+			row := s.Row(rIdx)
+			item := ReviewItem{}
+			item["$row"] = rIdx
+			for cIdx := 0; cIdx < len(row.Cells); cIdx++ {
+				key := GetCellLabel(cIdx + 1)
+				if cell := row.Cells[cIdx]; cell != nil {
+					item[key] = row.Cells[cIdx].String()
+				}
+			}
+			sheet.AddItems(item)
+			if maxRows > 0 && int64(rIdx) > maxRows {
+				break
+			}
 		}
 	}
 	return review, nil

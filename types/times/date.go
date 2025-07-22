@@ -74,10 +74,13 @@ func (t *Date) IsSchemaDateTime() bool {
 	return true
 }
 
-func (t Date) MarshalJSON() ([]byte, error) {
+func (t *Date) MarshalJSON() ([]byte, error) {
+	if t == nil || t.IsNil() {
+		return []byte("null"), nil
+	}
 	b := make([]byte, 0, len(dateJSONFormat)+2)
 	b = append(b, '"')
-	b = time.Time(t).AppendFormat(b, dateJSONFormat)
+	b = time.Time(*t).AppendFormat(b, dateJSONFormat)
 	b = append(b, '"')
 	return b, nil
 }

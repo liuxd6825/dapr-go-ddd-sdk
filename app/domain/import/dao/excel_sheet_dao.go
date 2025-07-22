@@ -2,13 +2,13 @@ package dao
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 )
 
 type ExcelSheetDao struct {
@@ -28,9 +28,12 @@ func NewExcelSheetDao(dbKey string) *ExcelSheetDao {
 	return daoVal
 }
 
-func (f *ExcelSheetDao) FindByName(ctx context.Context, qry *query.FindSheetByNameQuery) store.FindPagingResult[*model.ExcelSheet] {
+func (f *ExcelSheetDao) FindByName(ctx context.Context, qry *query.ExcelSheetFindByNameQuery) store.FindPagingResult[*model.ExcelSheet] {
 	q := store.NewFindPagingQueryRequest()
-	filter := fmt.Sprintf(`case_id=="%v" and doc_id=="%v" and file_id=="%v" and name=="%v" `, qry.CaseId, qry.DocId, qry.FileId, qry.Name)
-	q.SetMustFilter(filter)
+	build := rsql.NewBuilder().And(
+		rsql.Eq("file_id", qry.FileId),
+		rsql.Eq("name", qry.Name),
+	)
+	q.SetMustFilter(build.Build())
 	return f.Dao.FindPaging(ctx, q)
 }

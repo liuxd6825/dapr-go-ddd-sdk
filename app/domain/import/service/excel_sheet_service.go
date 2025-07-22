@@ -6,66 +6,68 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
-	"strings"
 )
 
-type SheetService struct {
+type ExcelSheetService struct {
 	repos idao.Dao[*model.ExcelSheet]
 }
 
-func NewSheetService() *SheetService {
-	return singleutils.CreateObj[*SheetService](func() *SheetService {
-		return &SheetService{
+func NewExcelSheetService() *ExcelSheetService {
+	return singleutils.CreateObj[*ExcelSheetService](func() *ExcelSheetService {
+		return &ExcelSheetService{
 			repos: dao.NewExcelSheetDao(config.DBKey),
 		}
 	})
 }
 
-func (f *SheetService) Create(ctx context.Context, m *model.ExcelSheet) error {
+func (f *ExcelSheetService) Create(ctx context.Context, m *model.ExcelSheet) error {
 	return f.repos.Create(ctx, m).GetError()
 }
 
-func (f *SheetService) CreateMany(ctx context.Context, m []*model.ExcelSheet) error {
+func (f *ExcelSheetService) CreateMany(ctx context.Context, m []*model.ExcelSheet) error {
 	return f.repos.CreateMany(ctx, m).GetError()
 }
 
-func (f *SheetService) Update(ctx context.Context, m *model.ExcelSheet) error {
+func (f *ExcelSheetService) Update(ctx context.Context, m *model.ExcelSheet) error {
 	return f.repos.Update(ctx, m).GetError()
 }
 
-func (f *SheetService) DeleteById(ctx context.Context, id string) error {
+func (f *ExcelSheetService) DeleteById(ctx context.Context, id string) error {
 	return f.repos.DeleteById(ctx, id).GetError()
 }
 
-func (f *SheetService) FindById(ctx context.Context, id string) (*model.ExcelSheet, error) {
+func (f *ExcelSheetService) DeleteByFileId(ctx context.Context, fileId string) error {
+	build := rsql.NewBuilder().And(
+		rsql.Eq("file_Id", fileId),
+	)
+	return f.repos.DeleteByRSQL(ctx, build.Build()).GetError()
+}
+
+func (f *ExcelSheetService) DeleteByDocId(ctx context.Context, docId string) error {
+	build := rsql.NewBuilder().And(
+		rsql.Eq("doc_Id", docId),
+	)
+	return f.repos.DeleteByRSQL(ctx, build.Build()).GetError()
+}
+
+func (f *ExcelSheetService) FindById(ctx context.Context, id string) (*model.ExcelSheet, error) {
 	return f.repos.FindById(ctx, id)
 }
 
-func (f *SheetService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) (idao.FindPagingResult[*model.ExcelSheet], error) {
+func (f *ExcelSheetService) FindByFileId(ctx context.Context, fileId string) ([]*model.ExcelSheet, error) {
+	build := rsql.NewBuilder().And(
+		rsql.Eq("file_Id", fileId),
+	)
+	return f.repos.FindByRSQL(ctx, build.Build())
+}
+
+func (f *ExcelSheetService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) (idao.FindPagingResult[*model.ExcelSheet], error) {
 	res := f.repos.FindPaging(ctx, qry)
 	return res, res.GetError()
-}
-
-/*
-func (f *SheetService) FindByName(ctx context.Context, qry *query.FindSheetByNameQuery) ([]*model.ExcelSheet, bool, error) {
-	return f.repos.FindByName(ctx, qry)
-}
-*/
-
-func newSheetInfos(items []*readexcel.Sheet) []*model.ExcelFileSheetInfo {
-	var sheets []*model.ExcelFileSheetInfo
-	for _, item := range items {
-		sheet := &model.ExcelFileSheetInfo{
-			Name:   item.Name,
-			MaxCol: item.MaxCol,
-			MaxRow: item.MaxRow,
-		}
-		sheets = append(sheets, sheet)
-	}
-	return sheets
 }
 
 func newRows(file *model.ExcelFile, sheetId string, items []readexcel.ReviewItem) []*model.ExcelRow {
@@ -86,23 +88,19 @@ func newRows(file *model.ExcelFile, sheetId string, items []readexcel.ReviewItem
 	return rows
 }
 
-func newSheetId(fileId, sheetName string) string {
-	return fileId + sheetName
-}
-
 func newSheet(file *model.ExcelFile, sheetName string, maxRow int64, maxCol int64, columns []string) *model.ExcelSheet {
 	sheet := &model.ExcelSheet{
-		Id:       file.Id + strings.Trim(sheetName, " "),
-		TenantId: file.TenantId,
-		CaseId:   file.CaseId,
-		DocId:    file.DocId,
-
-		FileId:   file.Id,
-		FileName: file.Name,
-		Name:     sheetName,
-		MaxRow:   maxRow,
-		MaxCol:   maxCol,
-		Columns:  columns,
+		Id:        file.Id,
+		TenantId:  file.TenantId,
+		CaseId:    file.CaseId,
+		DocId:     file.DocId,
+		DocFileId: file.DocFileId,
+		FileId:    file.Id,
+		FileName:  file.Name,
+		Name:      sheetName,
+		MaxRow:    maxRow,
+		MaxCol:    maxCol,
+		Columns:   columns,
 	}
 	return sheet
 }

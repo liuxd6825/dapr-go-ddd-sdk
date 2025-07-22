@@ -13,7 +13,9 @@ type TempCreateCommand struct {
 type TempUpdateCommand struct {
 	xbase.Command[field.TempUpdateField]
 }
-type TempDeleteCommand = xbase.Command[field.TempDeleteField]
+type TempDeleteCommand struct {
+	xbase.Command[field.TempDeleteField]
+}
 
 // Validate
 // @Description: 命令数据验证

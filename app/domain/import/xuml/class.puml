@@ -1,0 +1,22 @@
+@startuml
+class   file as "ExcelFile" {
+    string name
+    string state 状态
+}
+class   sheet as "ExcelSheet" {
+    // 在使用保存时需要更新此字段
+    string taskId
+}
+class   row as "ExcelRow"
+class   docFile as "DocFile"
+class   task as "Task"
+class   record as "Record"
+class   mRecord as "MasterRecord"
+task "1" -- "1" file
+task "1" -- "1" sheet
+file "1" -- "*" sheet
+sheet "1" -- "*" row
+docFile "1" -- "1" file
+row "1" -- "1..0" record
+record "1" -- "1..0" mRecord
+@enduml

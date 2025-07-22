@@ -12,8 +12,6 @@ import (
 var recordService *RecordService
 var ctx context.Context
 
-const taskId = "taskId"
-
 func init() {
 	xtest.InitEnv_MongoRemoteMaster()
 	ctx = xtest.NewContext()
@@ -21,20 +19,20 @@ func init() {
 }
 
 func TestRecordService_Create(t *testing.T) {
-	res, err := recordService.Create4Excel(ctx, &command.RecordCreate4ExcelCommand{
-		CommandId: "0001",
-		Data: field.RecordCreate4ExcelCommandFields{
-			BatchSize: 100,
-			CaseId:    "1001",
-			DocId:     "F3YOfd110hzRCKuT7eZPSHL4k",
-			FileId:    "FIcuNxpulmMopISDYhPdHyrAK",
-			FileName:  "10w.xlsx",
-			IsView:    false,
-			SheetName: "1w",
-			TaskId:    taskId,
-			Template:  NewRecordTemplate10w(),
-		},
-	}, nil)
+	cmd := &command.RecordCreate4ExcelCommand{}
+	cmd.CommandId = "0001"
+	cmd.Data = field.RecordCreate4ExcelCommandFields{
+		BatchSize: 100,
+		CaseId:    "1001",
+		DocId:     "F3YOfd110hzRCKuT7eZPSHL4k",
+		FileId:    "FIcuNxpulmMopISDYhPdHyrAK",
+		FileName:  "10w.xlsx",
+		IsView:    false,
+		SheetName: "1w",
+		TaskId:    taskId,
+		Template:  NewRecordTemplate10w(),
+	}
+	res, err := recordService.Create4Excel(ctx, cmd, nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -55,17 +53,18 @@ func TestRecordService_Import2Master(t *testing.T) {
 		return
 	}
 
-	err := recordService.Import2Master(ctx, &command.RecordImport2MasterAppCmd{
-		CommandId: "0002",
-		Data: field.RecordImport2MasterFields{
-			CaseId:   "1001",
-			DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
-			FileId:   "FIcuNxpulmMopISDYhPdHyrAK",
-			FileName: "10w.xlsx",
-			TaskId:   taskId,
-			PageSize: 1000,
-		},
-	})
+	cmd := &command.RecordImport2MasterCommand{}
+	cmd.CommandId = "0002"
+	cmd.Data = field.RecordImport2MasterFields{
+		CaseId:   "1001",
+		DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
+		FileId:   "FIcuNxpulmMopISDYhPdHyrAK",
+		FileName: "10w.xlsx",
+		TaskId:   taskId,
+		PageSize: 1000,
+	}
+
+	err := recordService.Import2Master(ctx, cmd)
 	if err != nil {
 		t.Error(err)
 		return

@@ -31,7 +31,6 @@ func (r *TaskService) Create(ctx context.Context, cmd *command.TaskCreateCommand
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		entity := &model.Task{}
 		entity.Id = cmd.Data.Id
-		entity.TenantId = cmd.Data.TenantId
 		entity.CaseId = cmd.Data.CaseId
 		entity.DocId = cmd.Data.DocId
 		entity.State = model.TaskStateEditing
@@ -50,7 +49,6 @@ func (r *TaskService) Update(ctx context.Context, cmd *command.TaskUpdateCommand
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		entity := &model.Task{}
 		entity.Id = cmd.Data.Id
-		entity.TenantId = cmd.Data.TenantId
 		entity.DocId = cmd.Data.DocId
 		entity.SheetName = cmd.Data.SheetName
 		entity.FileName = cmd.Data.FileName
@@ -115,10 +113,6 @@ func (r *TaskService) Stop(ctx context.Context, cmd *command.TaskStopCommand) er
 		}
 		return r.dao.UpdateMap(ctx, cmd.Data.Id, data).GetError()
 	})
-}
-
-func (r *TaskService) Validate(ctx context.Context, m *command.TaskValidateCommand) error {
-	return nil
 }
 
 func (r *TaskService) Delete(ctx context.Context, cmd *command.TaskDeleteCommand) error {

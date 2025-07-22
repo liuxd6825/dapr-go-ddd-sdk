@@ -6,6 +6,7 @@ import (
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	graph "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/restapi"
+	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
@@ -49,6 +50,7 @@ func main() {
 				rag.RegisterAllApi(app, baseUrl, env)
 				doc.RegisterAllApi(app, baseUrl, env)
 				tag.RegisterAllApi(app, baseUrl, env)
+				excelImport.RegisterAllApi(app, baseUrl, env)
 				return nil
 			})
 			return err

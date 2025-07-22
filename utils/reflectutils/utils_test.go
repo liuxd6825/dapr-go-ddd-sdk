@@ -35,3 +35,13 @@ func Test_NewObject(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log(v)
 }
+
+type ActionLogProxy = ActionLog
+
+func Test_GetTypeDetails(t *testing.T) {
+	pkgPath, typeName, fields := GetTypeDetails(&ActionLog{})
+	t.Logf("pkgPath: %s, typeName: %s, fields: %v", pkgPath, typeName, fields)
+
+	pkgPath, typeName, fields = GetTypeDetails(&ActionLogProxy{})
+	t.Logf("pkgPath: %s, typeName: %s, fields: %v", pkgPath, typeName, fields)
+}

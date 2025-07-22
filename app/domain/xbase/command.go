@@ -11,6 +11,10 @@ type IsValidOnly interface {
 	GetIsValidOnly() bool
 }
 
+type GetCmdData interface {
+	GetCmdData() any
+}
+
 type DeleteByIdCommand = Command[IdField]
 
 type IdField struct {
@@ -23,4 +27,32 @@ type IdsField struct {
 
 func (c *Command[T]) GetIsValidOnly() bool {
 	return c.IsValidOnly
+}
+
+func (c *Command[T]) SetData(data T) *Command[T] {
+	c.Data = data
+	return c
+}
+
+func (c *Command[T]) GetData() T {
+	return c.Data
+}
+
+func (c *Command[T]) GeCmdData() any {
+	return c.Data
+}
+
+func (c *Command[T]) SetUpdateMask(updateMask []string) *Command[T] {
+	c.UpdateMask = updateMask
+	return c
+}
+
+func (c *Command[T]) SetIsValidOnly(isValidOnly bool) *Command[T] {
+	c.IsValidOnly = isValidOnly
+	return c
+}
+
+func (c *Command[T]) SetCommandId(commandId string) *Command[T] {
+	c.CommandId = commandId
+	return c
 }

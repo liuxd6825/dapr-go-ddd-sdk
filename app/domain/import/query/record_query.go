@@ -5,22 +5,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
-type FindRowBySheetQuery struct {
-	TenantId string `json:"tenantId"`
-	CaseId   string `json:"caseId"`
-	DocId    string `json:"docId"`
-	FileId   string `json:"fileId"`
-	SheetId  string `json:"sheetId"`
-}
-
-type FindSheetByNameQuery struct {
-	TenantId string `json:"tenantId"`
-	CaseId   string `json:"caseId"`
-	DocId    string `json:"docId"`
-	FileId   string `json:"fileId"`
-	Name     string `json:"name"`
-}
-
 // RecordIeFindPagingByTaskIdQuery 分页查询命令
 type RecordIeFindPagingByTaskIdQuery struct {
 	idao.FindPagingQueryRequest

@@ -1,28 +1,28 @@
 package readexcel
 
 type Review struct {
-	Columns   []string     `json:"columns"`
-	Items     []ReviewItem `json:"items"`
-	Sheets    []*Sheet     `json:"sheets"`
-	OpenSheet string       `json:"openSheet"`
+	Sheets    []*Sheet `json:"sheets"`
+	OpenSheet string   `json:"openSheet"`
 }
 
 type Sheet struct {
-	Name   string `json:"name"`
-	MaxCol int64  `json:"maxCol"`
-	MaxRow int64  `json:"maxRow"`
+	Columns []string     `json:"columns"`
+	Name    string       `json:"name"`
+	MaxCol  int64        `json:"maxCol"`
+	MaxRow  int64        `json:"maxRow"`
+	Items   []ReviewItem `json:"items"`
 }
 
 type ReviewItem = map[string]any
 
-func (r *Review) AddItems(item ...ReviewItem) {
+func (r *Sheet) AddItems(item ...ReviewItem) {
 	r.Items = append(r.Items, item...)
 }
 
-func (r *Review) AddColumns(column ...string) {
+func (r *Sheet) AddColumns(column ...string) {
 	r.Columns = append(r.Columns, column...)
 }
 
-func (r *Review) AddSheetName(sheet ...*Sheet) {
+func (r *Review) AddSheet(sheet ...*Sheet) {
 	r.Sheets = append(r.Sheets, sheet...)
 }

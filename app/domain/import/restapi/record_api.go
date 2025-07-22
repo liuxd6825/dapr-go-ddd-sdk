@@ -12,46 +12,52 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-type TaskAPI struct {
+type RecordAPI struct {
 	env           *env.Env
-	recordService *service.RecordService
 	rootPath      string
+	recordService *service.RecordService
 }
 
-func NewTaskAPI(env *env.Env, rootPath string) *TaskAPI {
-	return &TaskAPI{
+func NewRecordAPI(env *env.Env, rootPath string) *RecordAPI {
+	return &RecordAPI{
 		env:           env,
-		recordService: service.NewRecordService(),
 		rootPath:      rootPath,
+		recordService: service.NewRecordService(),
 	}
 }
 
-func (s *TaskAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath, s)
-	ctl.Post("/tasks", "Create")
-	ctl.Put("/tasks", "Update")
-	ctl.GetOne("/tasks/{id}", "FindById")
-	ctl.GetPaging("/tasks", "FindPaging")
+func (s *RecordAPI) InitController(app *iris.Application) error {
+	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+	ctl.Post("record", "Create")
+	ctl.Post("record:import2master", "Import2Master")
+	ctl.Delete("record", "Delete")
+	ctl.Put("record", "Update")
+	ctl.GetOne("record/{id}", "FindById")
+	ctl.GetPaging("record", "FindPaging")
 	return nil
 }
 
-func (s *TaskAPI) Create(ctx context.Context, cmd *command.RecordCreateCommand) error {
+func (s *RecordAPI) Create(ctx context.Context, cmd *command.RecordCreateCommand) error {
 	return s.recordService.Create(ctx, cmd)
 }
 
-func (s *TaskAPI) Update(ctx context.Context, cmd *command.RecordUpdateCommand) (any, error) {
+func (s *RecordAPI) Update(ctx context.Context, cmd *command.RecordUpdateCommand) (any, error) {
 	return s.recordService.Update(ctx, cmd)
 }
 
-func (s *TaskAPI) Delete(ctx context.Context, cmd *command.RecordDeleteCommand) error {
+func (s *RecordAPI) Delete(ctx context.Context, cmd *command.RecordDeleteCommand) error {
 	return s.recordService.Delete(ctx, cmd)
 }
 
-func (s *TaskAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQueryRequest) (*model.RecordIe, error) {
+func (s *RecordAPI) Import2Master(ctx context.Context, cmd *command.RecordImport2MasterCommand) error {
+	return s.recordService.Import2Master(ctx, cmd)
+}
+
+func (s *RecordAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQueryRequest) (*model.RecordIe, error) {
 	return s.recordService.FindById(ctx, qry.Id)
 }
 
-func (s *TaskAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.RecordIe], error) {
+func (s *RecordAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.RecordIe], error) {
 	res := s.recordService.FindPaging(ctx, qry)
 	return res, res.GetError()
 }

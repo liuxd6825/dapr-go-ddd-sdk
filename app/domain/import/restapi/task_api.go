@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -47,8 +48,8 @@ func (s *TaskAPI) Delete(ctx context.Context, cmd *command.TaskDeleteCommand) er
 	return s.taskService.Delete(ctx, cmd)
 }
 
-func (s *TaskAPI) FindById(ctx context.Context, id string) (*model.Task, error) {
-	return s.taskService.FindById(ctx, id)
+func (s *TaskAPI) FindById(ctx context.Context, qry *query.TaskFindByIdQuery) (*model.Task, error) {
+	return s.taskService.FindById(ctx, qry.Id)
 }
 
 func (s *TaskAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.Task], error) {

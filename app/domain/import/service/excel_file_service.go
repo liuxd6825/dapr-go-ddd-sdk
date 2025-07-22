@@ -2,47 +2,129 @@ package service
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	db "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
 )
 
-type FileService struct {
-	repos *dao.ExcelFileDao
+// ExcelFileService excel文件服务 从文档中心导入的文件
+type ExcelFileService struct {
+	dao            *dao.ExcelFileDao
+	docFileService *service.FileService
+	sheetService   *ExcelSheetService
+	rowService     *ExcelRowService
 }
 
-func NewFileService() *FileService {
-	return singleutils.CreateObj[*FileService](func() *FileService {
-		return &FileService{
-			repos: dao.NewExcelFileDao(config.DBKey),
+func NewExcelFileService() *ExcelFileService {
+	return singleutils.CreateObj[*ExcelFileService](func() *ExcelFileService {
+		return &ExcelFileService{
+			dao:            dao.NewExcelFileDao(config.DBKey),
+			docFileService: service.NewFileService(),
+			sheetService:   NewExcelSheetService(),
+			rowService:     NewExcelRowService(),
 		}
 	})
 }
 
-func (f *FileService) Create(ctx context.Context, m *model.ExcelFile) error {
-	return f.repos.Create(ctx, m).GetError()
+func (s *ExcelFileService) Create(ctx context.Context, cmd *command.ExcelFileCreateCommand) (*model.ExcelFile, error) {
+	return xbase.DoCommand2[*model.ExcelFile](ctx, cmd, func(ctx context.Context) (*model.ExcelFile, error) {
+		file, err := s.FindByDocFileId(ctx, cmd.Data.DocFileId)
+		if err != nil {
+			return nil, err
+		} else if file != nil {
+			return file, err
+		}
+
+		file = &model.ExcelFile{
+			Id:        cmd.Data.Id,
+			Name:      cmd.Data.FileName,
+			DocId:     cmd.Data.DocId,
+			DocFileId: cmd.Data.DocFileId,
+			CaseId:    cmd.Data.CaseId,
+		}
+		bytes, err := s.readExcelFile(ctx, file.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		views, err := readexcel.ReadBytesToMap(bytes, 1000)
+		if err != nil {
+			return nil, err
+		}
+
+		// 需要开启事物
+		err = db.StartTx(ctx, db.NewTxCfg(config.DBKey), func(txCtx context.Context, options ...*store.SessionOptions) error {
+			for _, item := range views.Sheets {
+				sheet := newSheet(file, item.Name, item.MaxRow, item.MaxCol, item.Columns)
+				sheet.FileName = file.Name
+				sheet.FileId = file.Id
+				sheet.DocId = cmd.Data.DocId
+				sheet.DocFileId = cmd.Data.DocFileId
+				if err = s.sheetService.Create(ctx, sheet); err != nil {
+					return err
+				}
+				rows := newRows(file, sheet.Id, item.Items)
+				if err = s.rowService.CreateMany(ctx, rows); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		return file, err
+	})
+
 }
 
-func (f *FileService) Update(ctx context.Context, m *model.ExcelFile) error {
-	return f.repos.Update(ctx, m).GetError()
+func (s *ExcelFileService) Update(ctx context.Context, m *command.ExcelFileUpdateCommand) error {
+	return xbase.DoCommand(ctx, m, func(ctx context.Context) error {
+		return s.dao.Update(ctx, m.Data).GetError()
+	})
 }
 
-func (f *FileService) DeleteById(ctx context.Context, id string) {
-	f.repos.DeleteById(ctx, id)
+func (s *ExcelFileService) Delete(ctx context.Context, m *command.ExcelFileDeleteCommand) error {
+	return xbase.DoCommand(ctx, m, func(ctx context.Context) error {
+		return s.dao.Delete(ctx, m.Data).GetError()
+	})
 }
 
-func (f *FileService) FindById(ctx context.Context, caseId, fileId string) (*model.ExcelFile, error) {
+func (s *ExcelFileService) DeleteById(ctx context.Context, m *command.ExcelFileDeleteByIdCommand) error {
+	return xbase.DoCommand(ctx, m, func(ctx context.Context) error {
+		s.sheetService.DeleteByFileId(ctx, m.Data.Id)
+		return s.dao.DeleteById(ctx, m.Data.Id).GetError()
+	})
+}
+func (s *ExcelFileService) FindById(ctx context.Context, fileId string) (*model.ExcelFile, error) {
+	return s.dao.FindById(ctx, fileId)
+}
+
+func (s *ExcelFileService) FindByFileId(ctx context.Context, fileId string) ([]*model.ExcelFile, error) {
 	build := rsql.NewBuilder().And(
-		rsql.Eq("case_id", caseId),
-		rsql.Eq("field_id", fileId),
+		rsql.Eq("file_Id", fileId),
 	)
-	return f.repos.FindOneByRSQL(ctx, build.Build())
+	return s.dao.FindByRSQL(ctx, build.Build())
 }
 
-func (f *FileService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store.FindPagingResult[*model.ExcelFile] {
-	return f.repos.FindPaging(ctx, qry)
+func (s *ExcelFileService) FindByDocFileId(ctx context.Context, docFileId string) (*model.ExcelFile, error) {
+	build := rsql.NewBuilder().And(
+		rsql.Eq("doc_file_Id", docFileId),
+	)
+	return s.dao.FindOneByRSQL(ctx, build.Build())
+}
+
+func (s *ExcelFileService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store.FindPagingResult[*model.ExcelFile] {
+	return s.dao.FindPaging(ctx, qry)
+}
+
+func (s *ExcelFileService) readExcelFile(ctx context.Context, fileId string) ([]byte, error) {
+	bytes, err := s.docFileService.ReadByteByFileId(ctx, fileId)
+	return bytes, err
 }

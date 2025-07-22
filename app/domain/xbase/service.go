@@ -30,6 +30,11 @@ func ValidCommand(object any) error {
 			return err
 		}
 	}
+	if data, ok := object.(GetCmdData); ok {
+		if data.GetCmdData() == nil {
+			return errors.New("GetCmdData() object is null")
+		}
+	}
 	return restapi.Validate(object)
 }
 
@@ -43,6 +48,21 @@ func DoCommand(ctx context.Context, cmd any, fun func(ctx context.Context) error
 	return fun(ctx)
 }
 
-func DoQuery[T any](ctx context.Context, qry any, fun func(ctx context.Context) (T, error), opts ...DoQueryOptions) (T, error) {
+func DoCommand2[T any](ctx context.Context, cmd any, fun func(ctx context.Context) (T, error), opts ...DoCommandOptions) (T, error) {
+	var null T
+	if err := ValidCommand(cmd); err != nil {
+		return null, err
+	}
+	if isValidOnly, ok := cmd.(IsValidOnly); ok && isValidOnly.GetIsValidOnly() {
+		return null, nil
+	}
+	return fun(ctx)
+}
+
+func DoQuery(ctx context.Context, qry any, fun func(ctx context.Context) (any, error), opts ...DoQueryOptions) (any, error) {
+	return fun(ctx)
+}
+
+func DoQuery2[T any](ctx context.Context, qry any, fun func(ctx context.Context) (T, error), opts ...DoQueryOptions) (T, error) {
 	return fun(ctx)
 }

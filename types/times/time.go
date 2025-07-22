@@ -66,8 +66,8 @@ func (t *Time) UnmarshalJSON(data []byte) (err error) {
 }
 
 func (t *Time) MarshalJSON() ([]byte, error) {
-	if t == nil {
-		return []byte(""), nil
+	if t == nil || t.IsNil() {
+		return []byte("null"), nil
 	}
 	b := make([]byte, 0, len(timeJSONFormat)+2)
 	b = append(b, '"')
@@ -132,5 +132,8 @@ func (t *Time) Date() *Date {
 }
 
 func (t *Time) IsNil() bool {
-	return t == nil
+	if t == nil {
+		return true
+	}
+	return t.Time().IsZero()
 }

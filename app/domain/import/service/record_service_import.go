@@ -12,7 +12,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -88,28 +87,28 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 }
 
 // Create4Excel
-// @Description: 从Excel文件创建记录
+// @Description: 从Excel文件批量创建流水记录
 // @receiver r
 // @param ctx
 // @param cmd
 // @return error
-func (s *RecordService) Create4Excel(ctx context.Context, appcmd *command.RecordCreate4ExcelCommand, batchBack func(batch readexcel.Batching) error) (res *Create4ExcelResult, err error) {
+func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCreate4ExcelCommand, batchBack func(batch readexcel.Batching) error) (res *Create4ExcelResult, err error) {
 	now := times.Now()
 	task := &task_pkg.Task{
-		DocId:     appcmd.Data.DocId,
-		FileId:    appcmd.Data.FileId,
-		FileName:  appcmd.Data.FileName,
-		SheetName: appcmd.Data.SheetName,
+		DocId:     cmd.Data.DocId,
+		FileId:    cmd.Data.FileId,
+		FileName:  cmd.Data.FileName,
+		SheetName: cmd.Data.SheetName,
 		Total:     0,
 		Complete:  0,
 		StartTime: &now,
 		State:     task_pkg.TaskStateEditing,
 	}
-	taskId := appcmd.Data.TaskId
+	taskId := cmd.Data.TaskId
 	task.Id = taskId
-	task.CaseId = appcmd.Data.CaseId
+	task.CaseId = cmd.Data.CaseId
 
-	fileByte, err := s.docFileService.ReadByteByFileId(ctx, appcmd.Data.FileId)
+	fileByte, err := s.docFileService.ReadByteByFileId(ctx, cmd.Data.FileId)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +116,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, appcmd *command.Record
 
 	gp.Try(func() error {
 		// 读取缓存数据
-		res, err = s.readExcel(ctx, task, appcmd.Data.Template, buffer, false, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
+		res, err = s.readExcel(ctx, task, cmd.Data.Template, buffer, false, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
 			fields := logs.Fields{
 				"call":       "readExcel()",
 				"taskId":     task.Id,
@@ -152,7 +151,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, appcmd *command.Record
 // @param ctx
 // @param appcmd
 // @return error
-func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.RecordImport2MasterAppCmd) (err error) {
+func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.RecordImport2MasterCommand) (err error) {
 	tenantId := appcmd.Data.TenantId
 	taskId := appcmd.Data.TaskId
 
@@ -167,7 +166,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 	pageSize := gp.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
 
 	// 批量导入数据
-	createMany := func(ctx context.Context, session ddd.Session, appcmd *command.RecordImport2MasterAppCmd) error {
+	createMany := func(ctx context.Context, appcmd *command.RecordImport2MasterCommand) error {
 		logs.Debugf(ctx, nil, "createMany() context=%v", func() any {
 			return appctx.GetMessage(ctx)
 		})
@@ -206,11 +205,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 	}
 	gp.Try(func() error {
 		startTime := times.PNow()
-		//开户DDD事件事务
-		err = ddd.StartSession(ctx, appcmd.Data.TenantId, func(ctx context.Context, session ddd.Session) (err error) {
-			return createMany(ctx, session, appcmd)
-		})
-
+		err = createMany(ctx, appcmd)
 		if err == nil {
 			cmd := command.NewTaskUpdateProgressCommand(appcmd.CommandId, taskId)
 			cmd.Data.CompleteRows = recordCount
@@ -356,7 +351,7 @@ func newCells(mapDataCells map[string]readexcel.DataCells) map[string]task_pkg.R
 // @param list
 // @return *command.RecordCreateManyFromExcelCommand
 // @return error
-func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterAppCmd, list []*task_pkg.RecordIe) (*command.RecordCreateManyFromExcelCommand, error) {
+func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*command.RecordCreateManyFromExcelCommand, error) {
 	items := make([]*field.RecordFields, 0)
 	for _, e := range list {
 		record := &field.RecordFields{
@@ -400,19 +395,19 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterAppC
 		items = append(items, record)
 	}
 
-	cmd := &command.RecordCreateManyFromExcelCommand{
-		CommandId:   appcmd.CommandId,
-		IsValidOnly: false,
-		Data: field.RecordCreateManyFromExcelFields{
-			TenantId:  appcmd.Data.TenantId,
-			CaseId:    appcmd.Data.CaseId,
-			DocId:     appcmd.Data.DocId,
-			FileName:  appcmd.Data.FileName,
-			FileId:    appcmd.Data.FileId,
-			SheetName: appcmd.Data.SheetName,
-			TaskId:    appcmd.Data.TaskId,
-			Items:     items,
-		},
+	cmd := &command.RecordCreateManyFromExcelCommand{}
+	cmd.CommandId = appcmd.CommandId
+	cmd.IsValidOnly = false
+	cmd.Data = field.RecordCreateManyFromExcelFields{
+		TenantId:  appcmd.Data.TenantId,
+		CaseId:    appcmd.Data.CaseId,
+		DocId:     appcmd.Data.DocId,
+		FileName:  appcmd.Data.FileName,
+		FileId:    appcmd.Data.FileId,
+		SheetName: appcmd.Data.SheetName,
+		TaskId:    appcmd.Data.TaskId,
+		Items:     items,
 	}
+
 	return cmd, nil
 }

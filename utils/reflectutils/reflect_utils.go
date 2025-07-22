@@ -212,6 +212,19 @@ func IsMap[T any]() bool {
 func IsNotEmpty[T any](v T) bool {
 	return !IsEmpty[T](v)
 }
+
+func IsNil(i any) bool {
+	if i == nil {
+		return true
+	}
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		return v.IsNil()
+	}
+	return false
+}
+
 func IsEmpty[T any](v T) bool {
 	// 获取值的反射对象
 	val := reflect.ValueOf(v)

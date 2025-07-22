@@ -75,14 +75,14 @@ func (c *ApiController) GetOne(path string, handlerName string, opts ...CallOpti
 			if err != nil {
 				return nil, err
 			}
-			if data == nil {
+			if reflectutils.IsNil(data) {
 				ictx.StatusCode(404)
-				return nil, errors.New("data not found")
+				return nil, NotFoundError()
 			}
 			return data, nil
 		},
 	})
-	r := c.call(iris.MethodGet, c.getPath(path), handlerName)
+	r := c.call(iris.MethodGet, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
@@ -146,36 +146,20 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 		}
 		pkgPath := ctlType.PkgPath()
 		typeName := ctlType.Name()
-		panic(errors.New("%s %s.%s() func error: %s ", pkgPath, typeName, handlerName, err.Error()))
+		err = errors.New("%s %s.%s() func error: %s ", pkgPath, typeName, handlerName, err.Error())
+		panic(err)
 	}
-	relativePath := c.getPath(path)
-	r := c.app.Handle(method, relativePath, func(ictx *context.Context) {
+	path = c.getPath(path)
+	r := c.app.Handle(method, path, func(ictx *context.Context) {
 		gp.Try(func() error {
-			var params any
 			ctx, err := c.GetCtx(ictx)
 			if err != nil {
-				return errors.New("get context error: %s ", err.Error())
+				SetError(ictx, err)
+				return err
 			}
-			logs.Info(ctx, logs.Fields{"method:": ictx.Method(), "url:": ictx.Request().URL})
-			for _, opt := range opts {
-				if opt.InitMethod != nil {
-					opt.InitMethod(callMethod)
-				}
-			}
-			if callMethod.InParams >= 0 && !callMethod.CloseInParams {
-				inParamsType := callMethod.Method.Type().In(callMethod.InParams)
-				params, err = c.GetParams(ictx, inParamsType)
-				if err != nil {
-					return err
-				}
-			}
-			for _, opt := range opts {
-				if opt.Before != nil {
-					params, err = opt.Before(ictx, params)
-					if err != nil {
-						return err
-					}
-				}
+			params, err := c.getParams(ctx, ictx, callMethod, opts...)
+			if err != nil {
+				return err
 			}
 			data, err := callMethod.Call(ctx, ictx, params)
 			for _, opt := range opts {
@@ -183,7 +167,7 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 					data, err = opt.After(ictx, data, err)
 				}
 			}
-			if callMethod.OutData >= 0 {
+			if err == nil && callMethod.OutData >= 0 {
 				err = SetData(ictx, data)
 			}
 			return err
@@ -193,6 +177,31 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 	})
 	c.addRouter(r)
 	return r
+}
+
+func (c *ApiController) getParams(ctx context2.Context, ictx *context.Context, callMethod *CallMethod, opts ...CallOptions) (params any, err error) {
+	// CallMethod初始化
+	for _, opt := range opts {
+		if opt.InitMethod != nil {
+			opt.InitMethod(callMethod)
+		}
+	}
+
+	if callMethod.InParams >= 0 && !callMethod.CloseInParams {
+		inParamsType := callMethod.Method.Type().In(callMethod.InParams)
+		params, err = c.GetParams(ictx, inParamsType)
+		if err != nil {
+			return nil, err
+		}
+	}
+	logs.Info(ctx, logs.Fields{"method:": ictx.Method(), "url:": ictx.Request().URL, "param": params})
+	// 后期处理
+	for _, opt := range opts {
+		if opt.Before != nil {
+			return opt.Before(ictx, params)
+		}
+	}
+	return params, err
 }
 
 func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type) (params any, err error) {

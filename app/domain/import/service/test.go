@@ -9,19 +9,19 @@ import (
 )
 
 func CreateTestExcelData(ctx context.Context, taskId string, fileName string, sheet string, batchSize int64, temp *model.RecordTemplate) error {
-	cmd := &command.RecordCreate4ExcelCommand{
-		CommandId: "001",
-		Data: field.RecordCreate4ExcelCommandFields{
-			CaseId:    "001",
-			DocId:     "docId",
-			FileId:    taskId,
-			TaskId:    taskId,
-			SheetName: sheet,
-			FileName:  fileName,
-			BatchSize: batchSize,
-			Template:  temp,
-		},
+	cmd := &command.RecordCreate4ExcelCommand{}
+	cmd.CommandId = "001"
+	cmd.Data = field.RecordCreate4ExcelCommandFields{
+		CaseId:    "001",
+		DocId:     "docId",
+		FileId:    taskId,
+		TaskId:    taskId,
+		SheetName: sheet,
+		FileName:  fileName,
+		BatchSize: batchSize,
+		Template:  temp,
 	}
+
 	appService := NewRecordService()
 	if _, err := appService.Create4Excel(ctx, cmd, func(batch readexcel.Batching) error {
 		return nil

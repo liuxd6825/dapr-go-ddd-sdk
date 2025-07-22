@@ -7,22 +7,48 @@ import (
 
 // TaskCreateCommand
 // @Description:
-type TaskCreateCommand = xbase.Command[field.TaskCreateFields]
-type TaskLockCommand = xbase.Command[field.TaskLockField]
-type TaskDeleteCommand = xbase.DeleteByIdCommand
+type TaskCreateCommand struct {
+	xbase.Command[field.TaskCreateFields]
+}
+type TaskLockCommand struct {
+	xbase.Command[field.TaskLockField]
+}
+type TaskDeleteCommand struct{ xbase.DeleteByIdCommand }
 
-type TaskRecordCreateCommand = xbase.Command[field.TaskRecordCreateFields]
-type TaskRecordDeleteCommand = xbase.Command[field.TaskRecordDeleteFields]
-type TaskRecordImportCommand = xbase.Command[field.TaskRecordImportFields]
-type TaskRecordNoImportCommand = xbase.Command[field.TaskRecordNoImportFields]
+type TaskRecordCreateCommand struct {
+	xbase.Command[field.TaskRecordCreateFields]
+}
+type TaskRecordDeleteCommand struct {
+	xbase.Command[field.TaskRecordDeleteFields]
+}
+type TaskRecordImportCommand struct {
+	xbase.Command[field.TaskRecordImportFields]
+}
+type TaskRecordNoImportCommand struct {
+	xbase.Command[field.TaskRecordNoImportFields]
+}
 
-type TaskStopCommand = xbase.Command[field.TaskStopFields]
-type TaskUpdateStateCommand = xbase.Command[field.TaskUpdateStateFields]
-type TaskUnlockCommand = xbase.Command[field.TaskLockField]
-type TaskUpdateCommand = xbase.Command[field.TaskUpdateFields]
-type TaskUpdateProgressCommand = xbase.Command[field.TaskUpdateProgressFields]
-type TaskUpdateRecordTemplateCommand = xbase.Command[field.TaskUpdateRecordTemplateFields]
-type TaskValidateCommand = xbase.Command[field.TaskStopFields]
+type TaskStopCommand struct {
+	xbase.Command[field.TaskStopFields]
+}
+type TaskUpdateStateCommand struct {
+	xbase.Command[field.TaskUpdateStateFields]
+}
+type TaskUnlockCommand struct {
+	xbase.Command[field.TaskLockField]
+}
+type TaskUpdateCommand struct {
+	xbase.Command[field.TaskUpdateFields]
+}
+type TaskUpdateProgressCommand struct {
+	xbase.Command[field.TaskUpdateProgressFields]
+}
+type TaskUpdateRecordTemplateCommand struct {
+	xbase.Command[field.TaskUpdateRecordTemplateFields]
+}
+type TaskValidateCommand struct {
+	xbase.Command[field.TaskStopFields]
+}
 
 func NewTaskUpdateProgressCommand(commandId, taskId string) *TaskUpdateProgressCommand {
 	cmd := &TaskUpdateProgressCommand{}

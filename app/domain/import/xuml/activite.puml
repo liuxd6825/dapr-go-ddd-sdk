@@ -1,0 +1,17 @@
+@startuml
+start
+:新增任务;
+:浏览文件（文档中心文件）;
+:确定导入的文件;
+if (文件存在?) then (no)
+  :创建文件;
+endif
+:选择Sheet;
+:保存任务;
+:查看源文件内容;
+:设置转换规则;
+:预览转换结果 record.Create4Excel();
+:更正转换结果;
+:导入到主数据 record.Import2Master();
+stop
+@enduml

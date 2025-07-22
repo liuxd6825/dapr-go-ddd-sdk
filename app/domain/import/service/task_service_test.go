@@ -20,18 +20,15 @@ func TestTaskDomainCmdService_Create(t *testing.T) {
 	ctx := xtest.NewContext()
 	// 更新导入进度
 	id := idutils.NewId()
-	cmd := &command.TaskCreateCommand{
-		CommandId:   id,
-		IsValidOnly: false,
-		Data: field.TaskCreateFields{
-			TenantId:  "test",
-			Id:        id,
-			CaseId:    id,
-			Name:      id,
-			DocId:     id,
-			FileId:    id,
-			SheetName: id,
-		},
+	cmd := &command.TaskCreateCommand{}
+	cmd.CommandId = id
+	cmd.Data = field.TaskCreateFields{
+		Id:        id,
+		CaseId:    id,
+		Name:      id,
+		DocId:     id,
+		FileId:    id,
+		SheetName: id,
 	}
 
 	service := NewTaskService()
