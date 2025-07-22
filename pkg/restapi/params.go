@@ -23,10 +23,14 @@ const (
 )
 
 // GetParams 将请求参数绑定到目标结构体
-func GetParams(ctx iris.Context, target interface{}) (err error) {
+func GetParams(ictx iris.Context, target interface{}) (err error) {
 	// 处理请求体JSON
-	if ctx.Request().Method == iris.MethodPost || ctx.Request().Method == iris.MethodPut {
-		err = ctx.ReadJSON(target)
+	request := ictx.Request()
+	if request.Method == iris.MethodPost || request.Method == iris.MethodPut {
+		if request.ContentLength == 0 {
+			return errors.New("request body is null")
+		}
+		err = ictx.ReadJSON(target)
 		if err != nil {
 			return err
 		}
@@ -46,34 +50,33 @@ func GetParams(ctx iris.Context, target interface{}) (err error) {
 	for i := 0; i < targetType.NumField(); i++ {
 		field := targetType.Field(i)
 		fieldValue := targetValue.Elem().Field(i)
-
 		if pathName := field.Tag.Get(PathTag); pathName != "" {
 			// 处理路径参数 /api/v1.0/user/{id}
-			if val := ctx.Params().Get(pathName); val != "" {
+			if val := ictx.Params().Get(pathName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
 				}
 			}
 		} else if queryName := field.Tag.Get(QueryTag); queryName != "" {
 			// 处理查询参数 ?name=lxd
-			if val := ctx.URLParam(queryName); val != "" {
+			if val := ictx.URLParam(queryName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
 				}
 			}
 		} else if paramName := field.Tag.Get(ParamTag); paramName != "" {
 			// 处理通用param标签（兼容双模式）
-			if val := ctx.Params().Get(paramName); val != "" {
+			if val := ictx.Params().Get(paramName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
 				}
-			} else if val := ctx.URLParam(paramName); val != "" {
+			} else if val := ictx.URLParam(paramName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(field.Name, err.Error())
 				}
 			}
 		} else if field.Type.Kind() == reflect.Struct { // 处理嵌套结构体
-			err := bindNestedStruct(ctx, &fieldValue)
+			err := bindNestedStruct(ictx, &fieldValue)
 			if err != nil {
 				// 检查是否为VerifyError类型，合并子结构体的验证错误
 				if ve, ok := err.(*errors.VerifyError); ok {

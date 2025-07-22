@@ -5,6 +5,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"strings"
 )
@@ -15,18 +16,53 @@ func NotFoundError() error {
 	return notFoundError
 }
 
+type InternalServerError struct {
+	Error      string     `json:"error"`
+	LogId      string     `json:"logId"`
+	Time       times.Time `json:"time"`
+	StatusCode int        `json:"statusCode"`
+}
+
+type VerifyError struct {
+	Error      any        `json:"error"`
+	LogId      string     `json:"logId"`
+	Time       times.Time `json:"time"`
+	StatusCode int        `json:"statusCode"`
+}
+
+func NewVerifyError(logId string, err *errors.VerifyError) *VerifyError {
+	return &VerifyError{
+		Error:      err.GetFieldErrors(),
+		LogId:      logId,
+		Time:       times.Now(),
+		StatusCode: iris.StatusBadRequest,
+	}
+}
+func NewInternalServerError(logId string, err error) *InternalServerError {
+	return &InternalServerError{
+		Error:      err.Error(),
+		LogId:      logId,
+		Time:       times.Now(),
+		StatusCode: iris.StatusInternalServerError,
+	}
+}
+
 func SetError(ctx iris.Context, err error) {
 	if err != nil {
 		req := ctx.Request()
-		logs.Error(ctx, logs.Fields{"method": req.Method, "uri": req.RequestURI, "error": err.Error()})
-		ctx.SetErr(err)
-		if _, ok := err.(*errors.VerifyError); ok {
+		logId := logs.GetLogId(ctx)
+		logs.Error(ctx, logs.Fields{"logId": logId, "method": req.Method, "uri": req.RequestURI, "error": err.Error()})
+		if vErr, ok := err.(*errors.VerifyError); ok {
 			ctx.StatusCode(iris.StatusBadRequest)
+			_ = ctx.JSON(NewVerifyError(logId, vErr))
 		} else if isNotFoundError(err) {
 			ctx.StatusCode(iris.StatusNotFound)
-		} else if err.Error() == "" {
+			_ = ctx.JSON(err)
+		} else {
 			ctx.StatusCode(iris.StatusInternalServerError)
+			_ = ctx.JSON(NewInternalServerError(logId, err))
 		}
+
 	}
 }
 

@@ -77,6 +77,9 @@ type Event interface {
 	GetTenantId() string
 }
 
+func GetLogId(ctx context.Context) string {
+	return idutils.NewId()
+}
 func getArgs(args ...any) []any {
 	var res []any
 	for _, arg := range args {

@@ -25,6 +25,19 @@ func (v *VerifyError) Appends(errs *VerifyError) {
 	}
 }
 
+func (v *VerifyError) GetFieldError(fieldName string) *FieldError {
+	for _, e := range v.Errors {
+		if e.Field == fieldName {
+			return &e
+		}
+	}
+	return nil
+}
+
+func (v *VerifyError) GetFieldErrors() []FieldError {
+	return v.Errors
+}
+
 func (v *VerifyError) AppendField(fieldName string, msg string, title ...string) {
 	fieldError := NewFieldError(fieldName, msg, title...)
 	v.Errors = append(v.Errors, *fieldError)
