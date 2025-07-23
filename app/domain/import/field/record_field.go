@@ -20,7 +20,6 @@ type RecordCreateFields struct {
 }
 
 type RecordCreateManyFromExcelFields struct {
-	TenantId   string          `json:"tenantId" validate:"required"  title:"租户ID"` // 租户ID
 	CaseId     string          `json:"caseId" validate:"required"  title:"案件ID"`   // 案件Id
 	DocId      string          `json:"docId" validate:"required"  title:"文档ID"`    // 文档Id
 	FileId     string          `json:"fileId" validate:"required"  title:"文件ID"`   // 文档Id

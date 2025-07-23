@@ -1,14 +1,10 @@
 package restapi
 
 import (
-	"github.com/go-playground/locales/zh"
-	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
-	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/validator"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
 	"strconv"
 	"strings"
@@ -26,37 +22,8 @@ const (
 	ValidateTag = "validate"
 )
 
-var (
-	validate *validator.Validate
-	trans    ut.Translator
-)
-
-func init() {
-	initValidator()
-}
-
-func initValidator() {
-	// 初始化验证器
-	validate = validator.New()
-	// 注册 TagNameFunc：优先使用 label 标签，否则字段名
-	validate.RegisterTagNameFunc(func(f reflect.StructField) string {
-		if label := f.Tag.Get("title"); label != "" {
-			return label + ":"
-		}
-		return f.Name + ":"
-	})
-
-	// 初始化中文翻译器
-	zhCn := zh.New()
-	uni := ut.New(zhCn, zhCn)
-	trans, _ = uni.GetTranslator("zh")
-
-	// 注册中文翻译器
-	zh_translations.RegisterDefaultTranslations(validate, trans)
-}
-
 // GetParams 将请求参数绑定到目标结构体
-func GetParams(ictx iris.Context, target interface{}) (err error) {
+func GetParams(ictx iris.Context, target interface{}, removeNames ...string) (err error) {
 	// 处理请求体JSON
 	request := ictx.Request()
 	if request.Method == iris.MethodPost || request.Method == iris.MethodPut {
@@ -67,7 +34,7 @@ func GetParams(ictx iris.Context, target interface{}) (err error) {
 		if err != nil {
 			return err
 		}
-		err = Validate(target)
+		err = validator.Validate(target, removeNames...)
 		return err
 	}
 
@@ -120,134 +87,10 @@ func GetParams(ictx iris.Context, target interface{}) (err error) {
 			}
 		}
 	}
-
-	return verifyErr.GetError()
-}
-func Validate(target interface{}) error {
-	err := validate.Struct(target)
-	if err != nil {
-		verifyError := errors.NewVerifyError()
-		if _, ok := err.(*validator.InvalidValidationError); ok {
-			return err
-		}
-
-		for _, err := range err.(validator.ValidationErrors) {
-			if fieldErr, ok := err.(validator.FieldError); ok {
-				sn := strings.Split(fieldErr.StructNamespace(), ".")
-				title := sn[0]
-				count := len(sn)
-				if count > 0 {
-					title = sn[count-1]
-					sn = sn[1:]
-				}
-				field := strings.Join(sn, ".")
-				msg := fieldErr.Translate(trans)
-				if strings.Contains(msg, ":") {
-					list := strings.Split(msg, ":")
-					title = list[0]
-					msg = list[1]
-				}
-				appendFieldError2(verifyError, field, title, msg)
-			}
-		}
-		return verifyError.GetError()
+	if err := verifyErr.IsHasError(); err {
+		return verifyErr.GetError()
 	}
-	return nil
-}
-func Validate2(target interface{}) error {
-
-	verifyError := errors.NewVerifyError()
-	targetValue := reflect.ValueOf(target)
-	if targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
-		return errors.New("target must be a pointer to a struct")
-	}
-
-	targetType := targetValue.Elem().Type()
-	for i := 0; i < targetType.NumField(); i++ {
-		field := targetType.Field(i)
-		fieldValue := targetValue.Elem().Field(i)
-		validField(verifyError, &field, fieldValue)
-	}
-	return verifyError.GetError()
-}
-
-// validField 递归校验单个字段，支持结构体、结构体指针、必填校验
-func validField(verifyError *errors.VerifyError, field *reflect.StructField, fieldValue reflect.Value) {
-	// 支持 time.Time 及其别名类型（如 times.Time）必填校验
-	if isTimeType(field.Type) {
-		isRequired := fieldIsRequired(field)
-		if isRequired && isZeroTime(fieldValue) {
-			appendFieldError(verifyError, field, "不能为空")
-		}
-		return
-	}
-	// 支持 *time.Time 及其别名类型指针必填校验
-	if isTimePtrType(field.Type) {
-		isRequired := fieldIsRequired(field)
-		if isRequired && (fieldValue.IsNil() || isZeroTime(fieldValue.Elem())) {
-			appendFieldError(verifyError, field, "不能为空")
-		}
-		return
-	}
-	// 结构体类型递归
-	if field.Type.Kind() == reflect.Struct {
-		err := Validate(fieldValue.Addr().Interface())
-		if ve, ok := err.(*errors.VerifyError); ok && ve.Count() > 0 {
-			verifyError.MergeWithPrefix(getJsonFieldName(field), ve)
-		}
-		return
-	}
-	// 结构体指针类型递归和必填
-	if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
-		required := field.Tag.Get(RequiredTag)
-		if strings.ToLower(required) == "true" && fieldValue.IsNil() {
-			appendFieldError(verifyError, field, "不能为空")
-			return
-		}
-		if !fieldValue.IsNil() {
-			err := Validate(fieldValue.Interface())
-			if ve, ok := err.(*errors.VerifyError); ok && ve.Count() > 0 {
-				verifyError.MergeWithPrefix(getJsonFieldName(field), ve)
-			}
-		}
-		return
-	}
-
-	// 普通字段必填
-	required := field.Tag.Get(RequiredTag)
-	if strings.ToLower(required) == "true" && (fieldValue.IsZero() || (fieldValue.Kind() == reflect.String && fieldValue.String() == "")) {
-		appendFieldError(verifyError, field, "不能为空")
-	}
-}
-
-func fieldIsRequired(field *reflect.StructField) (isRequired bool) {
-	required := field.Tag.Get(RequiredTag)
-	if strings.ToLower(required) == "true" {
-		return true
-	}
-	validate := field.Tag.Get(ValidateTag)
-	if strings.Contains(validate, "required") {
-		return true
-	}
-	return false
-}
-
-func appendFieldError(verifyError *errors.VerifyError, field *reflect.StructField, msg string) {
-	name := getJsonFieldName(field)
-	title := field.Tag.Get(TitleTag)
-	verifyError.AppendField(name, msg, title)
-}
-
-func appendFieldError2(verifyError *errors.VerifyError, field, title, msg string) {
-	verifyError.AppendField(field, msg, title)
-}
-
-func getJsonFieldName(field *reflect.StructField) string {
-	name := field.Tag.Get(JsonTag)
-	if name == "" {
-		name = stringutils.FirstLower(field.Name)
-	}
-	return name
+	return validator.Validate(target, removeNames...)
 }
 
 // bindNestedStruct 处理嵌套结构体绑定

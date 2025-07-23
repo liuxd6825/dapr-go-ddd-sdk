@@ -39,7 +39,7 @@ func NewVerifyError(logId string, err *errors.VerifyError) *VerifyError {
 }
 func NewInternalServerError(logId string, err error) *InternalServerError {
 	return &InternalServerError{
-		Error:      err,
+		Error:      err.Error(),
 		LogId:      logId,
 		Time:       times.Now(),
 		StatusCode: iris.StatusInternalServerError,

@@ -211,7 +211,7 @@ func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type)
 			return nil, errors.New("create params error: %s ", err.Error())
 		}
 		params = paramsValue.Interface()
-		if err := GetParams(ictx, params); err != nil {
+		if err := GetParams(ictx, params, "base", "command"); err != nil {
 			return nil, err
 		}
 	}

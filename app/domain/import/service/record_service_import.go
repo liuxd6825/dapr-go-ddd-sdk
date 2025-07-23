@@ -152,7 +152,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 // @param appcmd
 // @return error
 func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.RecordImport2MasterCommand) (err error) {
-	tenantId := appcmd.Data.TenantId
+	tenantId := appctx.GetTenantId2(ctx)
 	taskId := appcmd.Data.TaskId
 
 	if count, err := s.CountErrorByTaskId(ctx, tenantId, taskId); err != nil {
@@ -399,7 +399,6 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 	cmd.CommandId = appcmd.CommandId
 	cmd.IsValidOnly = false
 	cmd.Data = field.RecordCreateManyFromExcelFields{
-		TenantId:  appcmd.Data.TenantId,
 		CaseId:    appcmd.Data.CaseId,
 		DocId:     appcmd.Data.DocId,
 		FileName:  appcmd.Data.FileName,

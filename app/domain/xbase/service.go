@@ -3,7 +3,7 @@ package xbase
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/validator"
 )
 
 type Service struct {
@@ -35,7 +35,7 @@ func ValidCommand(object any) error {
 			return errors.New("GetCmdData() object is null")
 		}
 	}
-	return restapi.Validate(object)
+	return validator.Validate(object)
 }
 
 func DoCommand(ctx context.Context, cmd any, fun func(ctx context.Context) error, opts ...DoCommandOptions) error {

@@ -1,0 +1,98 @@
+package validator
+
+import (
+	"github.com/go-playground/locales/zh"
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
+	zh_translations "github.com/go-playground/validator/v10/translations/zh"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"reflect"
+	"strings"
+)
+
+var (
+	validate *validator.Validate
+	trans    ut.Translator
+)
+
+func init() {
+	validate, _ = New()
+}
+
+func New() (*validator.Validate, error) {
+	// 初始化验证器
+	validate = validator.New()
+	// 注册 TagNameFunc：优先使用 label 标签，否则字段名
+	validate.RegisterTagNameFunc(func(f reflect.StructField) string {
+		if label := f.Tag.Get("title"); label != "" {
+			return label
+		}
+		return f.Name
+	})
+
+	// 初始化中文翻译器
+	zhCn := zh.New()
+	uni := ut.New(zhCn, zhCn)
+	trans, _ = uni.GetTranslator("zh")
+
+	// 注册中文翻译器
+	err := zh_translations.RegisterDefaultTranslations(validate, trans)
+	if err != nil {
+		return nil, err
+	}
+	return validate, nil
+}
+
+func Validate(target interface{}, removeNames ...string) error {
+	return Validate2(validate, target, removeNames...)
+}
+
+func Validate2(validate *validator.Validate, target interface{}, removeNames ...string) error {
+	err := validate.Struct(target)
+	if err != nil {
+		verifyError := errors.NewVerifyError()
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			return err
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+			if fieldErr, ok := err.(validator.FieldError); ok {
+				title := getTitle(fieldErr)
+				structNamespace := fieldErr.StructNamespace()
+				sn := strings.Split(structNamespace, ".")
+				count := len(sn)
+				if count > 0 {
+					title = sn[count-1]
+					sn = sn[1:]
+				}
+				msg := fieldErr.Translate(trans)
+				field := getField(fieldErr, removeNames...)
+				verifyError.AppendField(field, msg, title)
+			}
+		}
+		return verifyError.GetError()
+	}
+	return nil
+}
+
+func getTitle(fieldErr validator.FieldError) string {
+	names := strings.Split(fieldErr.Namespace(), ".")
+	return stringutils.FirstLower(names[len(names)-1])
+}
+
+func getField(fieldErr validator.FieldError, removeNames ...string) string {
+	names := strings.Split(fieldErr.StructNamespace(), ".")
+	var res []string
+	for i, name := range names {
+		if i == 0 {
+			continue
+		}
+		if stringutils.Include(name, removeNames, true) {
+			continue
+		}
+		name = stringutils.FirstLower(name)
+		res = append(res, name)
+	}
+	return strings.Join(res, ".")
+}

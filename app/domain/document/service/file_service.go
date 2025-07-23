@@ -82,7 +82,7 @@ func (s *FileService) ReadByteByFileId(ctx context.Context, fileId string) ([]by
 	}
 	// 检查文件是否存在
 	if file == nil {
-		return nil, errors.New("没有找到文件id:%s", fileId)
+		return nil, errors.New("文档中心不存在id为%s的文件", fileId)
 	}
 
 	// 调用ReadByteByFile方法实际读取文件内容
