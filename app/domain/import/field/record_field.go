@@ -32,26 +32,25 @@ type RecordCreateManyFromExcelFields struct {
 }
 
 type RecordCreate4ExcelCommandFields struct {
-	CaseId    string                `json:"caseId,omitempty" title:"案件ID"`
-	DocId     string                `json:"docId,omitempty"   title:"文档ID"`
-	FileId    string                `json:"fileId,omitempty"    title:"文件ID"`
-	TaskId    string                `json:"taskId,omitempty"  title:"任务ID"`
-	FileName  string                `json:"fileName,omitempty"  title:"文件名称"`
-	SheetName string                `json:"sheetName,omitempty"  title:"Sheet页"`
-	BatchSize int64                 `json:"batchSize,omitempty"   title:"批大小"`
-	IsView    bool                  `json:"isView,omitempty" title:"是预览"`
-	Template  *model.RecordTemplate `json:"template,omitempty"   title:"模板"`
+	CaseId    string                `json:"caseId,omitempty"  validate:"required" title:"案件ID"`
+	DocId     string                `json:"docId,omitempty"  validate:"required"  title:"文档ID"`
+	FileId    string                `json:"fileId,omitempty"  validate:"required"   title:"文件ID"`
+	TaskId    string                `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
+	FileName  string                `json:"fileName,omitempty"  validate:"required" title:"文件名称"`
+	SheetName string                `json:"sheetName,omitempty" validate:"required"  title:"Sheet页"`
+	BatchSize int64                 `json:"batchSize,omitempty"  validate:"required"  title:"批大小"`
+	IsView    bool                  `json:"isView,omitempty"  validate:"required" title:"是预览"`
+	Template  *model.RecordTemplate `json:"template,omitempty"  validate:"required"  title:"模板"`
 }
 
 type RecordImport2MasterFields struct {
-	TenantId  string `json:"tenantId"`
-	CaseId    string `json:"caseId"`
-	DocId     string `json:"docId"`
-	FileId    string `json:"fileId"`
-	FileName  string `json:"fileName"`
-	SheetName string `json:"sheetName"`
-	TaskId    string `json:"taskId"`
-	PageSize  int64  `json:"pageSize"`
+	CaseId    string `json:"caseId"  validate:"required" `
+	DocId     string `json:"docId"  validate:"required" `
+	FileId    string `json:"fileId"  validate:"required" `
+	FileName  string `json:"fileName" validate:"required" `
+	SheetName string `json:"sheetName" validate:"required" `
+	TaskId    string `json:"taskId" validate:"required" `
+	PageSize  int64  `json:"pageSize" validate:"required" `
 }
 
 func (f RecordCreateManyFromExcelFields) Id() string {
@@ -63,12 +62,12 @@ func (f RecordCreateManyFromExcelFields) Id() string {
 type RecordFields struct {
 	Id string `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
 
-	RowNum    int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  desc:"行号"`
-	TaskId    string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  desc:"任务id"`
+	RowNum    int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
+	TaskId    string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  title:"任务id"`
 	CaseId    string `json:"caseId" validate:"required"  title:"案件Id"` // 案件Id
 	DocId     string `json:"docId" validate:"required"  title:"文档Id"`  // 文档Id
 	FileId    string `json:"fileId" validate:"required"  title:"文档Id"` // 文档Id
-	FileName  string `json:"fileName" title:"文件名"`
+	FileName  string `json:"fileName" validate:"-" title:"文件名"`
 	SheetName string `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
 
 	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`            // 标识

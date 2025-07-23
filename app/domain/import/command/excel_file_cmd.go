@@ -24,28 +24,28 @@ type ExcelCreateRowsCommand struct {
 }
 
 type ExcelCreateByFileCommandData struct {
-	Id        string `json:"id" validate:"required"  title:"主键"`
-	CaseId    string `json:"caseId" title:"案件Id"  required:"true"`
-	FileName  string `json:"fileName" title:"文件名" required:"true"`
-	SheetName string `json:"sheetName" title:"工作页" required:"true"`
-	DocId     string `json:"docId" title:"文档Id"  required:"true"`
-	DocFileId string `json:"docFileId" title:"文档文件Id" required:"true"`
+	Id        string `json:"id"   title:"主键" validate:"required"`
+	CaseId    string `json:"caseId" title:"案件Id"  validate:"required" `
+	FileName  string `json:"fileName" title:"文件名" validate:"required" `
+	SheetName string `json:"sheetName" title:"工作页" validate:"required" `
+	DocId     string `json:"docId" title:"文档Id"  validate:"required" `
+	DocFileId string `json:"docFileId" title:"文档文件Id" validate:"required" `
 }
 
 type ExcelCreateRowsCommandData struct {
-	CaseId    string `json:"caseId" title:"案件Id" required:"true"`
-	DocId     string `json:"docId" title:"文档Id" required:"true"`
-	FileId    string `json:"fileId" title:"文件Id" required:"true"`
-	FileName  string `json:"fileName" title:"文件名" required:"true"`
-	SheetName string `json:"sheetName" title:"工作页"`
+	CaseId    string `json:"caseId" title:"案件Id" validate:"required" `
+	DocId     string `json:"docId" title:"文档Id" validate:"required" `
+	FileId    string `json:"fileId" title:"文件Id" validate:"required" `
+	FileName  string `json:"fileName" title:"文件名" validate:"required" `
+	SheetName string `json:"sheetName" title:"工作页" validate:"required" `
 }
 
 type ExcelFindRecordsQuery struct {
-	CaseId    string                `json:"caseId"  required:"true"`
-	DocId     string                `json:"docId" required:"true"`
-	FileId    string                `json:"fileId" required:"true"`
-	FileName  string                `json:"fileName" required:"true"`
-	SheetName string                `json:"sheetName" required:"true"`
-	MaxRows   *int64                `json:"maxRows" required:"true"`
+	CaseId    string                `json:"caseId"  validate:"required" `
+	DocId     string                `json:"docId" validate:"required" `
+	FileId    string                `json:"fileId" validate:"required" `
+	FileName  string                `json:"fileName" validate:"required" `
+	SheetName string                `json:"sheetName" validate:"required" `
+	MaxRows   *int64                `json:"maxRows" validate:"required" `
 	Template  *model.RecordTemplate `json:"template"`
 }

@@ -12,69 +12,69 @@ type MapHead model.MapHead
 type TemplateField model.TemplateField
 
 type TaskCreateFields struct {
-	Id        string                 `json:"id" required:"true"`
-	CaseId    string                 `json:"caseId" required:"true"`
-	Name      string                 `json:"name" required:"true"`
-	SheetName string                 `json:"sheetName" required:"true"`
-	DocId     string                 `json:"docId" required:"true"`
-	FileId    string                 `json:"fileId" required:"true"`
-	FileName  string                 `json:"fileName" required:"true"`
-	SchemaId  string                 `json:"schemaId" required:"true"`
-	MapHeads  []*model.MapHead       `json:"mapHeads" required:"true"`
-	Fields    []*model.TemplateField `json:"fields" required:"true"`
+	Id        string                 `json:"id" validate:"required"`
+	CaseId    string                 `json:"caseId" validate:"required"`
+	Name      string                 `json:"name" validate:"required"`
+	SheetName string                 `json:"sheetName" validate:"required"`
+	DocId     string                 `json:"docId" validate:"required"`
+	FileId    string                 `json:"fileId" validate:"required"`
+	FileName  string                 `json:"fileName" validate:"required"`
+	SchemaId  string                 `json:"schemaId" validate:"required"`
+	MapHeads  []*model.MapHead       `json:"mapHeads" validate:"required"`
+	Fields    []*model.TemplateField `json:"fields" validate:"required"`
 	Remark    string                 `json:"remark" title:"备注"`
 }
 
 type TaskDeleteFields struct {
-	Id string `json:"id" title:"Id"  required:"true"`
+	Id string `json:"id" title:"Id"  validate:"required"`
 }
 
 type TaskRecordCreateFields struct {
-	Id        string `json:"id"  required:"true" title:"Id"`
-	BatchSize int64  `json:"batchSize"  required:"true"  title:"批数据"`
+	Id        string `json:"id"  validate:"required" title:"Id"`
+	BatchSize int64  `json:"batchSize"  validate:"required"  title:"批数据"`
 }
 
 type TaskRecordDeleteFields struct {
-	Id string `json:"id" required:"true"`
+	Id string `json:"id" validate:"required"`
 }
 
 type TaskRecordImportFields struct {
-	Id       string `json:"id"  required:"true" title:"Id" `
-	TenantId string `json:"tenantId" required:"true" title:"租户Id"`
-	PageSize int64  `json:"pageSize" required:"true" title:"分页大小"`
+	Id       string `json:"id"  validate:"required" title:"Id" `
+	TenantId string `json:"tenantId" validate:"required" title:"租户Id"`
+	PageSize int64  `json:"pageSize" validate:"required" title:"分页大小"`
 }
 
 type TaskRecordNoImportFields struct {
-	Id       string `json:"id" required:"true" title:"Id"`
-	SchemaId string `json:"schemaId" required:"true"  title:"主数据类型"`
+	Id       string `json:"id" validate:"required" title:"Id"`
+	SchemaId string `json:"schemaId" validate:"required"  title:"主数据类型"`
 }
 
 type TaskUpdateStateFields struct {
-	Id      string          `json:"id" required:"true" `
-	State   model.TaskState `json:"state" required:"true" `
-	Message string          `json:"message" required:"true" `
+	Id      string          `json:"id" validate:"required" `
+	State   model.TaskState `json:"state" validate:"required" `
+	Message string          `json:"message" validate:"required" `
 }
 
 type TaskUpdateFields struct {
-	Id        string                 `json:"id" required:"true"   title:"Id"`
-	CaseId    string                 `json:"caseId" required:"true"  title:"案件Id" `
-	DocId     string                 `json:"docId" required:"true"  title:"文档Id"`
-	FileId    string                 `json:"fileId" required:"true"  title:"文件Id"`
-	FileName  string                 `json:"fileName"  required:"true" title:"文件名称"`
-	SheetName string                 `json:"sheetName"  required:"true"  title:"Sheet页"`
-	StartTime *times.Time            `json:"startTime"  required:"true"  title:"开始时间"`
-	SchemaId  string                 `json:"schemaId"  required:"true" title:"主数据类型"`
-	MapHeads  []*model.MapHead       `json:"mapHeads"  required:"true"  title:"表头"`
-	Fields    []*model.TemplateField `json:"fields"  required:"true"  title:"字段"`
-	Remarks   string                 `json:"remarks"  required:"true" title:"备注"` // 备注
+	Id        string                 `json:"id" validate:"required"   title:"Id"`
+	CaseId    string                 `json:"caseId" validate:"required"  title:"案件Id" `
+	DocId     string                 `json:"docId" validate:"required"  title:"文档Id"`
+	FileId    string                 `json:"fileId" validate:"required"  title:"文件Id"`
+	FileName  string                 `json:"fileName"  validate:"required" title:"文件名称"`
+	SheetName string                 `json:"sheetName"  validate:"required"  title:"Sheet页"`
+	StartTime *times.Time            `json:"startTime"  validate:"required"  title:"开始时间"`
+	SchemaId  string                 `json:"schemaId"  validate:"required" title:"主数据类型"`
+	MapHeads  []*model.MapHead       `json:"mapHeads"  validate:"required"  title:"表头"`
+	Fields    []*model.TemplateField `json:"fields"  validate:"required"  title:"字段"`
+	Remarks   string                 `json:"remarks"  validate:"required" title:"备注"` // 备注
 }
 
 type TaskLockField struct {
-	Id string `json:"id"  title:"id"  required:"true" `
+	Id string `json:"id"  title:"id"  validate:"required" `
 }
 
 type TaskStopFields struct {
-	Id string `json:"id" title:"Id"  required:"true" `
+	Id string `json:"id" title:"Id"  validate:"required" `
 }
 
 type TaskUpdateProgressFields struct {

@@ -168,7 +168,7 @@ func (c *ApiController) call(method string, path string, handlerName string, opt
 				}
 			}
 			if err == nil && callMethod.OutData >= 0 {
-				err = SetData(ictx, data)
+				err = SetOKData(ictx, data)
 			}
 			return err
 		}).Catch(func(err error) {

@@ -6,7 +6,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"strings"
 )
 
@@ -17,7 +16,7 @@ func NotFoundError() error {
 }
 
 type InternalServerError struct {
-	Error      string     `json:"error"`
+	Error      any        `json:"error"`
 	LogId      string     `json:"logId"`
 	Time       times.Time `json:"time"`
 	StatusCode int        `json:"statusCode"`
@@ -40,7 +39,7 @@ func NewVerifyError(logId string, err *errors.VerifyError) *VerifyError {
 }
 func NewInternalServerError(logId string, err error) *InternalServerError {
 	return &InternalServerError{
-		Error:      err.Error(),
+		Error:      err,
 		LogId:      logId,
 		Time:       times.Now(),
 		StatusCode: iris.StatusInternalServerError,
@@ -78,19 +77,11 @@ func isNotFoundError(err error) bool {
 	}
 	return false
 }
-
-func SetData2(ictx iris.Context, data any) error {
+func SetOKData(ictx iris.Context, data any) error {
 	ictx.StatusCode(iris.StatusOK)
 	return ictx.JSON(data)
 }
 
 func SetData(ictx iris.Context, data any) error {
-	return SetData2(ictx, data)
-	jsonData, err := jsonutils.MarshalBytes(data)
-	if err != nil {
-		return err
-	}
-	ictx.ContentType("application/json")
-	_, err = ictx.Write(jsonData)
-	return err
+	return ictx.JSON(data)
 }

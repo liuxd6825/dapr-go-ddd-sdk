@@ -1,6 +1,10 @@
 package restapi
 
 import (
+	"github.com/go-playground/locales/zh"
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
+	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
@@ -21,6 +25,35 @@ const (
 	TitleTag    = "title"    // 字段标题标签
 	ValidateTag = "validate"
 )
+
+var (
+	validate *validator.Validate
+	trans    ut.Translator
+)
+
+func init() {
+	initValidator()
+}
+
+func initValidator() {
+	// 初始化验证器
+	validate = validator.New()
+	// 注册 TagNameFunc：优先使用 label 标签，否则字段名
+	validate.RegisterTagNameFunc(func(f reflect.StructField) string {
+		if label := f.Tag.Get("title"); label != "" {
+			return label + ":"
+		}
+		return f.Name + ":"
+	})
+
+	// 初始化中文翻译器
+	zhCn := zh.New()
+	uni := ut.New(zhCn, zhCn)
+	trans, _ = uni.GetTranslator("zh")
+
+	// 注册中文翻译器
+	zh_translations.RegisterDefaultTranslations(validate, trans)
+}
 
 // GetParams 将请求参数绑定到目标结构体
 func GetParams(ictx iris.Context, target interface{}) (err error) {
@@ -90,8 +123,38 @@ func GetParams(ictx iris.Context, target interface{}) (err error) {
 
 	return verifyErr.GetError()
 }
-
 func Validate(target interface{}) error {
+	err := validate.Struct(target)
+	if err != nil {
+		verifyError := errors.NewVerifyError()
+		if _, ok := err.(*validator.InvalidValidationError); ok {
+			return err
+		}
+
+		for _, err := range err.(validator.ValidationErrors) {
+			if fieldErr, ok := err.(validator.FieldError); ok {
+				sn := strings.Split(fieldErr.StructNamespace(), ".")
+				title := sn[0]
+				count := len(sn)
+				if count > 0 {
+					title = sn[count-1]
+					sn = sn[1:]
+				}
+				field := strings.Join(sn, ".")
+				msg := fieldErr.Translate(trans)
+				if strings.Contains(msg, ":") {
+					list := strings.Split(msg, ":")
+					title = list[0]
+					msg = list[1]
+				}
+				appendFieldError2(verifyError, field, title, msg)
+			}
+		}
+		return verifyError.GetError()
+	}
+	return nil
+}
+func Validate2(target interface{}) error {
 
 	verifyError := errors.NewVerifyError()
 	targetValue := reflect.ValueOf(target)
@@ -157,7 +220,7 @@ func validField(verifyError *errors.VerifyError, field *reflect.StructField, fie
 	}
 }
 
-func fieldIsRequired(field *reflect.StructField) bool {
+func fieldIsRequired(field *reflect.StructField) (isRequired bool) {
 	required := field.Tag.Get(RequiredTag)
 	if strings.ToLower(required) == "true" {
 		return true
@@ -173,6 +236,10 @@ func appendFieldError(verifyError *errors.VerifyError, field *reflect.StructFiel
 	name := getJsonFieldName(field)
 	title := field.Tag.Get(TitleTag)
 	verifyError.AppendField(name, msg, title)
+}
+
+func appendFieldError2(verifyError *errors.VerifyError, field, title, msg string) {
+	verifyError.AppendField(field, msg, title)
 }
 
 func getJsonFieldName(field *reflect.StructField) string {
