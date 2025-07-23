@@ -165,7 +165,7 @@ func (s *RecordService) FindPagingByTaskId(ctx context.Context, qry *query.Recor
 	if qry.IsFindError {
 		mustFilter = s.getErrorSql(ctx, tenantId, qry.TaskId)
 	} else {
-		mustFilter = fmt.Sprintf("taskId=='%s'", taskId)
+		mustFilter = fmt.Sprintf("task_id=='%s'", taskId)
 	}
 	qry.SetMustFilter(mustFilter)
 

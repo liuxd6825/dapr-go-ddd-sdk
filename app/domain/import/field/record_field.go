@@ -1,7 +1,6 @@
 package field
 
 import (
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
@@ -17,17 +16,6 @@ type RecordCreateFields struct {
 	SheetName string        `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
 	Record    *RecordFields `json:"records" validate:"required"  title:"流水明细"`     // 流水明细
 	Remark    string        `json:"remark" title:"备注"`
-}
-
-type RecordCreateManyFromExcelFields struct {
-	CaseId     string          `json:"caseId" validate:"required"  title:"案件ID"`   // 案件Id
-	DocId      string          `json:"docId" validate:"required"  title:"文档ID"`    // 文档Id
-	FileId     string          `json:"fileId" validate:"required"  title:"文件ID"`   // 文档Id
-	FileName   string          `json:"fileName" validate:"required"  title:"文件名称"` // 文件名称
-	SheetName  string          `json:"sheetName" validate:"required"  title:"工作表"` // 工作表
-	TaskId     string          `json:"taskId"  validate:"required" title:"任务ID" `  // 任务ID
-	Items      []*RecordFields `json:"records" validate:"required"  title:"流水明细"`  // 流水明细
-	IsAddItems bool            `json:"isAddItems"`
 }
 
 type RecordCreate4ExcelCommandFields struct {
@@ -50,51 +38,6 @@ type RecordImport2MasterFields struct {
 	SheetName string `json:"sheetName" validate:"required" `
 	TaskId    string `json:"taskId" validate:"required" `
 	PageSize  int64  `json:"pageSize" validate:"required" `
-}
-
-func (f RecordCreateManyFromExcelFields) Id() string {
-	return fmt.Sprintf("%s:%s:%s:%s", f.TaskId, f.CaseId, f.FileId, f.SheetName)
-}
-
-// RecordFields
-// 资金记录 实体类型
-type RecordFields struct {
-	Id string `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
-
-	RowNum    int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
-	TaskId    string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  title:"任务id"`
-	CaseId    string `json:"caseId" validate:"required"  title:"案件Id"` // 案件Id
-	DocId     string `json:"docId" validate:"required"  title:"文档Id"`  // 文档Id
-	FileId    string `json:"fileId" validate:"required"  title:"文档Id"` // 文档Id
-	FileName  string `json:"fileName" validate:"-" title:"文件名"`
-	SheetName string `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
-
-	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`            // 标识
-	Name     string   `json:"name"  bson:"name" validate:"-" title:"名称"`            // 名称
-	Acct     string   `json:"acct" bson:"acct" validate:"-" title:"账号"`             // 账号
-	AcctType string   `json:"accType" bson:"acct_type"  validate:"-" title:"账号类型"`  // 账号类型
-	Category string   `json:"category"  bson:"category" validate:"-" title:"类别"`    // 类别Id 公司或个人
-	Balance  *float64 `json:"balance" bson:"balance" validate:"-" title:"余额账户"`     // 余额账户
-	BankName string   `json:"bankName" bson:"bank_name"  validate:"-" title:"开户银行"` // 开户银行
-
-	OppIden     string `json:"oppIden" bson:"opp_iden" validate:"-" title:"对方标识"`             // 对方标识
-	OppName     string `json:"oppName" bson:"opp_name" validate:"-" title:"对方名称"`             // 对方名称
-	OppAcct     string `json:"oppAcct"  bson:"opp_acct" validate:"-" title:"对方账号"`            // 对方账号
-	OppAcctType string `json:"oppAccType" bson:"opp_acct_type"  validate:"-" title:"对方账号类型"`  // 对方账号类型
-	OppCategory string `json:"oppCategory" bson:"opp_category"  validate:"-" title:"对方类别"`    // 对方类别
-	OppBankName string `json:"oppBankName" bson:"opp_bank_name"  validate:"-" title:"对方开户银行"` // 对方开户银行
-
-	Serial  string            `json:"serial"   bson:"serial"  validate:"-" title:"流水号"`   // 流水号
-	Payout  *float64          `json:"payout"   bson:"payout"  validate:"-" title:"借方发生额"` // 借方发生额（支取）
-	Income  *float64          `json:"Income"  bson:"income"   validate:"-" title:"贷方发生额"` // 贷方发生额（收入）
-	Amount  *float64          `json:"amount"   bson:"amount"  validate:"-" title:"交易金额"`  // 交易金额
-	Date    *times.Time       `json:"date"   bson:"date"  validate:"-" title:"交易时间"`      // 交易时间
-	Type    string            `json:"type"   bson:"type"  validate:"-" title:"交易类型"`      // 交易类型
-	Ccy     string            `json:"ccy"  bson:"ccy"  validate:"-" title:"交易币种" `        // 交易币种
-	Place   string            `json:"place"   bson:"place"  validate:"-" title:"地点"`      // 交易地点
-	Summary string            `json:"summary"   bson:"summary"  validate:"-" title:"摘要"`  // 摘要
-	Notes   string            `json:"notes"   bson:"notes"  validate:"-" title:"备注"`      // 备注
-	Meta    *RecordMetaFields `json:"meta"  gorm:"meta;json" validate:"-" title:"元数据"`    // 元数据
 }
 
 type RecordIeCreateFields struct {
@@ -253,4 +196,45 @@ type Region struct {
 	X2 int64 `json:"x2" bson:"x2" validate:"-" `
 	Y1 int64 `json:"y1" bson:"y1" validate:"-" `
 	Y2 int64 `json:"y2" bson:"y2" validate:"-" `
+}
+
+// RecordFields
+// 资金记录 实体类型
+type RecordFields struct {
+	Id string `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
+
+	RowNum    int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
+	TaskId    string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  title:"任务id"`
+	CaseId    string `json:"caseId" validate:"required"  title:"案件Id"` // 案件Id
+	DocId     string `json:"docId" validate:"required"  title:"文档Id"`  // 文档Id
+	FileId    string `json:"fileId" validate:"required"  title:"文档Id"` // 文档Id
+	FileName  string `json:"fileName" validate:"-" title:"文件名"`
+	SheetName string `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
+
+	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`            // 标识
+	Name     string   `json:"name"  bson:"name" validate:"-" title:"名称"`            // 名称
+	Acct     string   `json:"acct" bson:"acct" validate:"-" title:"账号"`             // 账号
+	AcctType string   `json:"accType" bson:"acct_type"  validate:"-" title:"账号类型"`  // 账号类型
+	Category string   `json:"category"  bson:"category" validate:"-" title:"类别"`    // 类别Id 公司或个人
+	Balance  *float64 `json:"balance" bson:"balance" validate:"-" title:"余额账户"`     // 余额账户
+	BankName string   `json:"bankName" bson:"bank_name"  validate:"-" title:"开户银行"` // 开户银行
+
+	OppIden     string `json:"oppIden" bson:"opp_iden" validate:"-" title:"对方标识"`             // 对方标识
+	OppName     string `json:"oppName" bson:"opp_name" validate:"-" title:"对方名称"`             // 对方名称
+	OppAcct     string `json:"oppAcct"  bson:"opp_acct" validate:"-" title:"对方账号"`            // 对方账号
+	OppAcctType string `json:"oppAccType" bson:"opp_acct_type"  validate:"-" title:"对方账号类型"`  // 对方账号类型
+	OppCategory string `json:"oppCategory" bson:"opp_category"  validate:"-" title:"对方类别"`    // 对方类别
+	OppBankName string `json:"oppBankName" bson:"opp_bank_name"  validate:"-" title:"对方开户银行"` // 对方开户银行
+
+	Serial  string            `json:"serial"   bson:"serial"  validate:"-" title:"流水号"`   // 流水号
+	Payout  *float64          `json:"payout"   bson:"payout"  validate:"-" title:"借方发生额"` // 借方发生额（支取）
+	Income  *float64          `json:"Income"  bson:"income"   validate:"-" title:"贷方发生额"` // 贷方发生额（收入）
+	Amount  *float64          `json:"amount"   bson:"amount"  validate:"-" title:"交易金额"`  // 交易金额
+	Date    *times.Time       `json:"date"   bson:"date"  validate:"-" title:"交易时间"`      // 交易时间
+	Type    string            `json:"type"   bson:"type"  validate:"-" title:"交易类型"`      // 交易类型
+	Ccy     string            `json:"ccy"  bson:"ccy"  validate:"-" title:"交易币种" `        // 交易币种
+	Place   string            `json:"place"   bson:"place"  validate:"-" title:"地点"`      // 交易地点
+	Summary string            `json:"summary"   bson:"summary"  validate:"-" title:"摘要"`  // 摘要
+	Notes   string            `json:"notes"   bson:"notes"  validate:"-" title:"备注"`      // 备注
+	Meta    *RecordMetaFields `json:"meta"  gorm:"meta;json" validate:"-" title:"元数据"`    // 元数据
 }

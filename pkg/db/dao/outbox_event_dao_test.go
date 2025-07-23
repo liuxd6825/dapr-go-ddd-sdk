@@ -8,7 +8,7 @@ import (
 )
 
 func Test_NewOutboxDao(t *testing.T) {
-	data := &dbevent.Outbox{}
+	data := &dbevent.OutboxEvent{}
 	gSch, err := gormschema.ParseWithSpecialTableName(data, &sync.Map{}, gormschema.NamingStrategy{}, "sys_outbox")
 	if gSch == nil && err != nil {
 		panic(err)

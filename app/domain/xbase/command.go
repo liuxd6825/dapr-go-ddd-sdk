@@ -25,6 +25,14 @@ type IdsField struct {
 	Id []string `json:"ids" validate:"required"`
 }
 
+func (c *Command[T]) GetCommandId() string {
+	return c.CommandId
+}
+
+func (c *Command[T]) GetVersion() string {
+	return "v1"
+}
+
 func (c *Command[T]) GetIsValidOnly() bool {
 	return c.IsValidOnly
 }

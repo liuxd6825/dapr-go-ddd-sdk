@@ -4,6 +4,8 @@ import "time"
 
 type Event struct {
 	TenantId    string    `json:"tenantId,omitempty"`
+	TopicName   string    `json:"topicName,omitempty"`
+	AppId       string    `json:"appId"`
 	EventId     string    `json:"eventId,omitempty"`
 	EventType   string    `json:"eventType,omitempty"`
 	EventVer    string    `json:"eventVersion,omitempty"`

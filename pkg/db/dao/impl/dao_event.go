@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
 )
 
 func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, entity T, opts ...idao.CallOptions) {
 	return
+
 	if !d.isPubEvent {
 		return
 	}
@@ -22,20 +23,14 @@ func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, 
 	}
 
 	if d.cfg != nil && d.cfg.OutboxDao != nil {
-		metadata := ddd_context.GetMetadataContext(ctx)
-		outbox := &dbevent.Outbox{
+		//metadata := ddd_context.GetMetadataContext(ctx)
+		outbox := &dbevent.OutboxEvent{
 			Id:          uuid.NewString(),
 			TenantId:    event.TenantId,
 			AppId:       "test",
-			EventId:     event.EventId,
-			EventType:   event.EventType,
-			EventVer:    event.EventVer,
-			CommandId:   event.CommandId,
-			AggId:       event.AggId,
-			AggType:     event.AggType,
-			CreatedTime: &event.CreatedTime,
+			CreatedTime: times.GetTime(&event.CreatedTime),
 			Data:        event.Data,
-			Metadata:    metadata,
+			//Meta:        metadata,
 		}
 		d.cfg.OutboxDao.Create(ctx, outbox, opts...)
 	}

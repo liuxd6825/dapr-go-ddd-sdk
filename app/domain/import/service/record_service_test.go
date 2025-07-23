@@ -41,8 +41,8 @@ func TestRecordService_Create(t *testing.T) {
 
 }
 
-func TestRecordService_Import2Master(t *testing.T) {
-	qry := query.NewRecordIeFindPagingByTaskIdQuery(taskId, true)
+func TestRecordService_FindPagingByTaskId(t *testing.T) {
+	qry := query.NewRecordIeFindPagingByTaskIdQuery("taskId", false)
 	findRes := recordService.FindPagingByTaskId(ctx, qry)
 	if findRes.GetError() != nil {
 		t.Error(findRes.GetError())
@@ -52,7 +52,9 @@ func TestRecordService_Import2Master(t *testing.T) {
 		t.Error("error record count>0")
 		return
 	}
+}
 
+func TestRecordService_Import2Master(t *testing.T) {
 	cmd := &command.RecordImport2MasterCommand{}
 	cmd.CommandId = "0002"
 	cmd.Data = field.RecordImport2MasterFields{
@@ -60,7 +62,7 @@ func TestRecordService_Import2Master(t *testing.T) {
 		DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
 		FileId:   "FIcuNxpulmMopISDYhPdHyrAK",
 		FileName: "10w.xlsx",
-		TaskId:   taskId,
+		TaskId:   "taskId",
 		PageSize: 1000,
 	}
 

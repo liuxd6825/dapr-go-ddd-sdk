@@ -23,7 +23,7 @@ type DaoConfig struct {
 	IsCancelSoftDelete bool            `json:"isCancelSoftDelete"` // 取消软删除
 	GraphType          GraphType       `json:"graphType"`          // 节点类型 在neo4j: node, rel
 	GraphLabels        []string        `json:"graphLabels"`
-	OutboxDao          Dao[*dbevent.Outbox]
+	OutboxDao          Dao[*dbevent.OutboxEvent]
 }
 
 const (

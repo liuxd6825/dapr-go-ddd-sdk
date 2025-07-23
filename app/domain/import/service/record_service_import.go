@@ -7,11 +7,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task_pkg "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -152,14 +152,15 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 // @param appcmd
 // @return error
 func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.RecordImport2MasterCommand) (err error) {
-	tenantId := appctx.GetTenantId2(ctx)
 	taskId := appcmd.Data.TaskId
-
-	if count, err := s.CountErrorByTaskId(ctx, tenantId, taskId); err != nil {
-		return err
-	} else if count > 0 {
-		return errors.New("发现错误数据%v条，请更正后再提交。", count)
-	}
+	/*
+		tenantId := appctx.GetTenantId2(ctx)
+		if count, err := s.CountErrorByTaskId(ctx, tenantId, taskId); err != nil {
+			return err
+		} else if count > 0 {
+			return errors.New("发现错误数据%v条，请更正后再提交。", count)
+		}
+	*/
 
 	pageNum := int64(0)
 	recordCount := int64(0)
@@ -181,7 +182,9 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 			if err != nil {
 				return err
 			}
-
+			if res.GetDataLength() == 0 {
+				return nil
+			}
 			// 如果没有数据
 			if res.GetPageNum() > pageNum {
 				return nil
@@ -222,8 +225,8 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 	return err
 }
 
-func (s *RecordService) PublishImportRecordToMasterEvent(ctx context.Context, appcmd *command.RecordCreateManyFromExcelCommand) (err error) {
-	return dapr.GetDaprClient().PublishEvent(ctx, config.EventBus, "", appcmd)
+func (s *RecordService) PublishImportRecordToMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) (err error) {
+	return xbase.PublishEvent(ctx, config.ImportAppId, event, nil)
 }
 
 func NewContext(ctx context.Context, task *TaskOptions) context.Context {
@@ -351,7 +354,7 @@ func newCells(mapDataCells map[string]readexcel.DataCells) map[string]task_pkg.R
 // @param list
 // @return *command.RecordCreateManyFromExcelCommand
 // @return error
-func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*command.RecordCreateManyFromExcelCommand, error) {
+func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*event.RecordImportMasterEvent, error) {
 	items := make([]*field.RecordFields, 0)
 	for _, e := range list {
 		record := &field.RecordFields{
@@ -395,10 +398,10 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 		items = append(items, record)
 	}
 
-	cmd := &command.RecordCreateManyFromExcelCommand{}
+	cmd := &event.RecordImportMasterEvent{}
 	cmd.CommandId = appcmd.CommandId
 	cmd.IsValidOnly = false
-	cmd.Data = field.RecordCreateManyFromExcelFields{
+	cmd.Data = event.RecordImportMasterEventData{
 		CaseId:    appcmd.Data.CaseId,
 		DocId:     appcmd.Data.DocId,
 		FileName:  appcmd.Data.FileName,

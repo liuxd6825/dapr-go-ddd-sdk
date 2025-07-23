@@ -42,9 +42,3 @@ type RecordUpdateCommand struct {
 type RecordUpdateFieldCommand struct {
 	xbase.Command[field.RecordIeUpdateFieldFields]
 }
-
-// RecordCreateManyFromExcelCommand
-// @Description:
-type RecordCreateManyFromExcelCommand struct {
-	xbase.Command[field.RecordCreateManyFromExcelFields]
-}

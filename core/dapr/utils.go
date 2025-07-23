@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
 func NewMap() map[string]interface{} {
@@ -53,6 +54,8 @@ func NewAppError(appID string, err error) error {
 }
 
 func GetTopic(event any) string {
-	pkgName, typeName, _ := reflectutils.GetTypeDetails(event)
-	return fmt.Sprintf("%s/%s", pkgName, typeName)
+	system, typeName, _ := reflectutils.GetTypeDetails(event)
+	res := fmt.Sprintf("%s/%s", system, typeName)
+	res = stringutils.MidlineString(res)
+	return res
 }
