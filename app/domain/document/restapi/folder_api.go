@@ -77,7 +77,7 @@ func (s *FolderAPI) CreateRoot(ictx iris.Context) {
 			cmd.Data.RootId = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
 			cmd.Data.RootPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
 			cmd.Data.FolderPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
-			cmd.Data.Name = "根目录"
+			cmd.Data.Name = "文件库"
 			res := s.folderService.Create(ctx, &cmd.Data)
 			if res.Error != nil {
 				return res.Error
