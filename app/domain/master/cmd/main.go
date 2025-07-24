@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 )
@@ -23,7 +22,7 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
-			restapi.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
+			//restapi.RegisterAllApi(server.App(), "/api/v1", server.EnvConfig(), "")
 			return nil
 		},
 	})

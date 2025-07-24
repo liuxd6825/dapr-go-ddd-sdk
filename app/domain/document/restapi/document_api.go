@@ -9,8 +9,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
+	tagModel "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	tagSvc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"io"
+	"strings"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 
@@ -25,6 +29,7 @@ type DocumentAPI struct {
 	fileService     *service.FileService
 	fsService       *service.FsService
 	folderService   *service.FolderService
+	tagRelationSvc  *tagSvc.TagRelationService
 }
 
 func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
@@ -32,12 +37,14 @@ func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
 	fileService := service.NewFileService()
 	fsService := service.NewFsService()
 	folderService := service.NewFolderService()
+	tagRelationSvc := tagSvc.NewTagRelationService()
 	return &DocumentAPI{
 		env:             env,
 		documentService: documentService,
 		fileService:     fileService,
 		fsService:       fsService,
 		folderService:   folderService,
+		tagRelationSvc:  tagRelationSvc,
 	}
 }
 
@@ -51,6 +58,8 @@ func (s *DocumentAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPut, "/doc/document:update-tags", "UpdateTags")
 	b.Handle(iris.MethodDelete, "/doc/document", "Delete")
 	b.Handle(iris.MethodGet, "/doc/document", "FindPaging")
+	b.Handle(iris.MethodGet, "/doc/document/:id", "FindById")
+	b.Handle(iris.MethodGet, "/doc/document:by-tag", "FindByTagId")
 }
 
 func (s *DocumentAPI) UploadChunk(ictx iris.Context) {
@@ -253,10 +262,37 @@ func (s *DocumentAPI) UpdateTags(ictx iris.Context) {
 				return err
 			}
 
+			res := s.tagRelationSvc.DeleteByRSQL(ctx, fmt.Sprintf("bus_id=='%s'", cmd.Data.Id))
+			if res.Error != nil {
+				return res.Error
+			}
+			if cmd.Data.TagId != "" {
+				arrTagId := strings.Split(cmd.Data.TagId, ",")
+				arrTagName := strings.Split(cmd.Data.TagName, ",")
+				arrTagColor := strings.Split(cmd.Data.TagColor, ",")
+				trs := make([]*tagModel.TagRelation, 0)
+				for index, tagId := range arrTagId {
+					tr := &tagModel.TagRelation{}
+					tr.Id = idutils.NewId()
+					tr.TagId = tagId
+					tr.TagName = arrTagName[index]
+					tr.TagColor = arrTagColor[index]
+					tr.CaseId = cmd.Data.CaseId
+					tr.BusId = cmd.Data.Id
+					tr.BusType = "文档中心"
+					tr.ChangedSource = "BusinessSystem"
+					trs = append(trs, tr)
+				}
+				res = s.tagRelationSvc.CreateMany(ctx, trs)
+				if res.Error != nil {
+					return res.Error
+				}
+			}
+
 			opts := idao.NewCallOptions()
 			opts.SetUpdateFields([]string{"tag_id", "tag_name", "tag_color"})
 
-			res := s.documentService.Update(ctx, &cmd.Data, opts)
+			res = s.documentService.Update(ctx, &cmd.Data, opts)
 			if res.Error != nil {
 				return res.Error
 			}
@@ -296,7 +332,9 @@ func (s *DocumentAPI) Update(ictx iris.Context) {
 				return res.Error
 			}
 
-			res = s.documentService.Update(ctx, &cmd.Data)
+			opts := idao.NewCallOptions()
+			opts.SetUpdateFields([]string{"file_id", "name", "object_name", "ext_name", "size", "size_title", "download_total", "download_url", "preview_url", "thumbnail", "md5"})
+			res = s.documentService.Update(ctx, &cmd.Data, opts)
 			if res.Error != nil {
 				return res.Error
 			}
@@ -315,7 +353,13 @@ func (s *DocumentAPI) Delete(ictx iris.Context) {
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
 			}
-			res := s.documentService.DeleteById(ctx, cmd.Data.Id)
+
+			res := s.tagRelationSvc.DeleteByRSQL(ctx, fmt.Sprintf("bus_id=='%s'", cmd.Data.Id))
+			if res.Error != nil {
+				return res.Error
+			}
+
+			res = s.documentService.DeleteById(ctx, cmd.Data.Id)
 			if res.Error != nil {
 				return res.Error
 			}
@@ -342,6 +386,37 @@ func (s *DocumentAPI) FindPaging(ictx iris.Context) {
 		qry.PageNum = 0
 		qry.PageSize = 99999999999999
 		qry.Filter = "folder_id=='" + folderId + "'"
+		qry.Sort = "created_time:desc"
+		qry.IsTotalRows = true
+		res := s.documentService.FindPaging(ctx, qry)
+		return restapi.SetData(ictx, res)
+	}).Catch(func(ctx context.Context, err error) {
+		restapi.SetError(ictx, err)
+	})
+}
+
+func (s *DocumentAPI) FindById(ictx iris.Context) {
+	restapi.Try(ictx, func(ctx context.Context) error {
+		id := ictx.Params().GetString("id")
+		res, err := s.documentService.FindById(ctx, id)
+		if err != nil {
+			return err
+		}
+		return restapi.SetData(ictx, res)
+	}).Catch(func(ctx context.Context, err error) {
+		restapi.SetError(ictx, err)
+	})
+}
+
+func (s *DocumentAPI) FindByTagId(ictx iris.Context) {
+	restapi.Try(ictx, func(ctx context.Context) error {
+		tagId := ictx.URLParam("tag-id")
+		caseId := ictx.URLParam("case-id")
+		//user, _ := appctx.GetAuthUser(ctx)
+		qry := store.NewFindPagingQueryRequest()
+		qry.PageNum = 0
+		qry.PageSize = 99999999999999
+		qry.Filter = fmt.Sprintf("case_id=='%s' and tag_id=contains='%s'", caseId, tagId)
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.documentService.FindPaging(ctx, qry)

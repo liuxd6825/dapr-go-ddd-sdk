@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
@@ -120,11 +121,21 @@ func (s *TagTypeAPI) DeleteByParentId(ctx context.Context, id string) error {
 
 func (s *TagTypeAPI) FindPaging(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
+		tenantId := ictx.URLParam("tenant-id")
+		caseId := ictx.URLParam("case-id")
 		etag := ictx.URLParam("etag")
+
+		var filter string
+		if etag == "true" {
+			filter = fmt.Sprintf("tenant_id=='%s' and is_e_tag==%s", tenantId, etag)
+		} else {
+			filter = fmt.Sprintf("tenant_id=='%s' and ((case_id=='%s' and is_e_tag==%s) or is_e_tag==%s)", tenantId, caseId, etag, "true")
+		}
+
 		qry := store.NewFindPagingQueryRequest()
 		qry.PageNum = 0
 		qry.PageSize = 99999999999999
-		qry.Filter = "is_e_tag==" + etag
+		qry.Filter = filter
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.tagTypeService.FindPaging(ctx, qry)
