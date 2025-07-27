@@ -48,6 +48,7 @@ func (s *FolderAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPut, "/doc/folder:move", "Move")
 	b.Handle(iris.MethodDelete, "/doc/folder", "Delete")
 	b.Handle(iris.MethodGet, "/doc/folder", "FindPaging")
+	b.Handle(iris.MethodGet, "/doc/folder/:id", "FindById")
 }
 
 func (s *FolderAPI) CreateRoot(ictx iris.Context) {
@@ -76,7 +77,7 @@ func (s *FolderAPI) CreateRoot(ictx iris.Context) {
 			cmd.Data.RootId = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
 			cmd.Data.RootPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
 			cmd.Data.FolderPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
-			cmd.Data.Name = "根目录"
+			cmd.Data.Name = "文件库"
 			res := s.folderService.Create(ctx, &cmd.Data)
 			if res.Error != nil {
 				return res.Error
@@ -330,6 +331,19 @@ func (s *FolderAPI) FindPaging(ictx iris.Context) {
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.folderService.FindPaging(ctx, qry)
+		return restapi.SetData(ictx, res)
+	}).Catch(func(ctx context.Context, err error) {
+		restapi.SetError(ictx, err)
+	})
+}
+
+func (s *FolderAPI) FindById(ictx iris.Context) {
+	restapi.Try(ictx, func(ctx context.Context) error {
+		id := ictx.Params().GetString("id")
+		res, err := s.folderService.FindById(ctx, id)
+		if err != nil {
+			return err
+		}
 		return restapi.SetData(ictx, res)
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
