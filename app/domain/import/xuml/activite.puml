@@ -13,5 +13,6 @@ endif
 :预览转换结果 record.Create4Excel();
 :更正转换结果;
 :导入到主数据 record.Import2Master();
+:发送RecordImport2MasterEvent事件();
 stop
 @enduml

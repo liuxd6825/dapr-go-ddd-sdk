@@ -17,7 +17,7 @@ func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...idao.CallOpti
 		panic(res.Error)
 	}
 
-	d.PublishEvent(ctx, idao.AccessTypeUpdate, entity, opts...)
+	//d.PublishEvent(ctx, idao.AccessTypeUpdate, entity, opts...)
 	return idao.NewResult(res)
 }
 

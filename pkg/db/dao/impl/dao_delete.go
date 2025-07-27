@@ -25,7 +25,7 @@ func (d *DaoBase[T]) DeleteById(ctx context.Context, id string, opts ...idao.Cal
 		entity := d.store.NewEntity()
 		d.store.SetTenantId(entity, tenantId)
 		d.store.SetId(entity, id)
-		d.PublishEvent(ctx, idao.AccessTypeDelete, entity, opts...)
+		//d.PublishEvent(ctx, idao.AccessTypeDelete, entity, opts...)
 	}
 	return idao.NewResult(res)
 }
@@ -42,7 +42,7 @@ func (d *DaoBase[T]) deleteById(ctx context.Context, id string, opts ...idao.Cal
 		entity := d.store.NewEntity()
 		d.store.SetTenantId(entity, tenantId)
 		d.store.SetId(entity, id)
-		d.PublishEvent(ctx, idao.AccessTypeDelete, entity, opts...)
+		//d.PublishEvent(ctx, idao.AccessTypeDelete, entity, opts...)
 	}
 	return res.RowsAffected
 }

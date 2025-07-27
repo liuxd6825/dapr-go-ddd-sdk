@@ -21,7 +21,7 @@ func (d *DaoBase[T]) Create(ctx context.Context, entity T, opts ...idao.CallOpti
 		panic(fmt.Sprintf("tableName: %s; %s ", d.tableName, res.Error))
 	}
 
-	d.PublishEvent(ctx, idao.AccessTypeCreate, entity, opts...)
+	//d.PublishEvent(ctx, idao.AccessTypeCreate, entity, opts...)
 	return idao.NewResult(res)
 }
 

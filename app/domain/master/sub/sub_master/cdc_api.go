@@ -1,4 +1,4 @@
-package restapi
+package sub_master
 
 import (
 	"context"
@@ -27,9 +27,9 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 }
 
 func (s *CdcAPI) InitController(app *iris.Application) error {
-	handler := restapi.NewController(app, s.rootPath, s)
-	handler.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
-	handler.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
+	ctl := restapi.NewController(app, s.rootPath, s)
+	ctl.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
+	ctl.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
 	return nil
 }
 

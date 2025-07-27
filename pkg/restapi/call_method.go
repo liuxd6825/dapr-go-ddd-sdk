@@ -19,6 +19,7 @@ type CallMethod struct {
 	OutError      int
 }
 
+var mapType = reflect.TypeOf((*map[string]any)(nil)).Elem()
 var errType = reflect.TypeOf((*error)(nil)).Elem()
 var ctxType = reflect.TypeOf((*context2.Context)(nil)).Elem()
 var ictxType = reflect.TypeOf((*iris.Context)(nil)).Elem()
@@ -46,6 +47,8 @@ func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 			callMethod.InCtx = i
 		} else if paramType == ictxType {
 			callMethod.InICtx = i
+		} else if paramType == mapType {
+			callMethod.InParams = i
 		} else if paramType.Kind() == reflect.Ptr && paramType.Elem().Kind() == reflect.Struct {
 			callMethod.InParams = i
 		} else if paramType == findPagingQueryType || paramType.Kind() == reflect.Interface {

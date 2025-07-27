@@ -3,40 +3,39 @@ package impl
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
 )
 
-func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, entity T, opts ...idao.CallOptions) {
-	return
-
-	if !d.isPubEvent {
+/*
+	func (d *DaoBase[T]) PublishEvent(ctx context.Context, opeType idao.AccessType, entity T, opts ...idao.CallOptions) {
 		return
-	}
-	_, event, err := d.NewAggregateAndEvent(ctx, opeType, entity, opts...)
-	if err != nil {
-		panic(err)
-	}
 
-	if d.cfg != nil && d.cfg.OutboxDao != nil {
-		//metadata := ddd_context.GetMetadataContext(ctx)
-		outbox := &dbevent.OutboxEvent{
-			Id:          uuid.NewString(),
-			TenantId:    event.TenantId,
-			AppId:       "test",
-			CreatedTime: times.GetTime(&event.CreatedTime),
-			Data:        event.Data,
-			//Meta:        metadata,
+		if !d.isPubEvent {
+			return
 		}
-		d.cfg.OutboxDao.Create(ctx, outbox, opts...)
-	}
+		_, event, err := d.NewAggregateAndEvent(ctx, opeType, entity, opts...)
+		if err != nil {
+			panic(err)
+		}
+
+		if d.cfg != nil && d.cfg.OutboxDao != nil {
+			//metadata := ddd_context.GetMetadataContext(ctx)
+			outbox := &dbevent.OutboxEvent{
+				Id:          uuid.NewString(),
+				TenantId:    event.TenantId,
+				AppId:       "test",
+				CreatedTime: times.GetTime(&event.CreatedTime),
+				Data:        event.Data,
+				//Meta:        metadata,
+			}
+			d.cfg.OutboxDao.Create(ctx, outbox, opts...)
+		}
 
 }
-
+*/
 func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessType, list []map[string]any, opts ...idao.CallOptions) {
 	if !d.isPubEvent {
 		return

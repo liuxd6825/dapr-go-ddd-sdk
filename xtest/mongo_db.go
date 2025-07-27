@@ -49,7 +49,7 @@ func (o *MongoOptions) GetReplicaSet() string {
 	if o.ReplicaSet != nil {
 		return *o.ReplicaSet
 	}
-	return MongoReplicaSet
+	return ""
 }
 
 func (o *MongoOptions) GetUser() string {
@@ -76,10 +76,10 @@ func GetMongoEnv_Remote(opts ...*MongoOptions) *env.Mongo {
 	return &env.Mongo{
 		DbKey:      MongoDBKey,
 		Host:       MongoHostRemote,
-		ReplicaSet: opt.GetReplicaSet(),
-		DbName:     opt.GetDBName(),
-		User:       opt.GetUser(),
-		Pwd:        opt.GetPwd(),
+		ReplicaSet: getStr(opt.GetReplicaSet(), MongoReplicaSet),
+		DbName:     getStr(opt.GetDBName(), MongoDBName),
+		User:       getStr(opt.GetUser(), MongoUser),
+		Pwd:        getStr(opt.GetPwd(), MongoPassword),
 	}
 }
 
@@ -88,9 +88,16 @@ func GetMongoEnv_Local(opts ...*MongoOptions) *env.Mongo {
 	return &env.Mongo{
 		DbKey:      MongoDBKey,
 		Host:       MongoHostLocal,
-		ReplicaSet: "rs0",
-		DbName:     MongoDBName,
-		User:       opt.GetUser(),
-		Pwd:        opt.GetPwd(),
+		ReplicaSet: getStr(opt.GetReplicaSet(), "rs0"),
+		DbName:     getStr(opt.GetDBName(), MongoDBName),
+		User:       getStr(opt.GetUser(), MongoUser),
+		Pwd:        getStr(opt.GetPwd(), MongoPassword),
 	}
+}
+
+func getStr(val string, def string) string {
+	if val == "" {
+		return def
+	}
+	return val
 }

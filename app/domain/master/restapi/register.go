@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/sub/sub_import"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/sub/sub_master"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
@@ -14,6 +16,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		RegisterSchema(app, baseUrl, env)
 		RegisterHtml(app, baseUrl, env)
 		RegisterCdcToNeo4j(app, baseUrl, env)
+		RegisterSub(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -37,5 +40,9 @@ func RegisterHtml(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.InitController(app, NewGraphAPI(env, baseUrl))
-	restapi.InitController(app, NewCdcAPI(env, baseUrl))
+	restapi.InitController(app, sub_master.NewCdcAPI(env, baseUrl))
+}
+
+func RegisterSub(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.InitController(app, sub_import.NewRecordEventHandler(env, baseUrl))
 }

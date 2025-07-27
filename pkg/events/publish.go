@@ -1,4 +1,4 @@
-package xbase
+package events
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -19,7 +18,7 @@ import (
 var _outboxDao idao.OutboxEventDao
 var _outboxOnce sync.Once
 
-func PublishEvent(ctx context.Context, appId string, data any, meta any) error {
+func Publish(ctx context.Context, appId string, data any, meta any) error {
 	tenantId, err := appctx.GetTenantId3(ctx)
 	if err != nil {
 		return err
@@ -52,14 +51,7 @@ func getEvent(ctx context.Context, appId string, tenantId string, data any, meta
 			return nil, err
 		}
 	}
-	dataStr, err := jsonutils.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-	metaStr, err := jsonutils.Marshal(metaMap)
-	if err != nil {
-		return nil, err
-	}
+
 	_, topic, _ := reflectutils.GetTypeDetails(data)
 	topic = stringutils.MidlineString(topic)
 	event := &dbevent.OutboxEvent{
@@ -67,8 +59,8 @@ func getEvent(ctx context.Context, appId string, tenantId string, data any, meta
 		AppId:       appId,
 		TenantId:    tenantId,
 		Topic:       topic,
-		Data:        dataStr,
-		Meta:        metaStr,
+		Data:        data,
+		Meta:        metaMap,
 		CreatedTime: times.NewTime(),
 	}
 	return event, err

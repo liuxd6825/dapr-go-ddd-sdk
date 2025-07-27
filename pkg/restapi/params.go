@@ -22,20 +22,26 @@ const (
 	ValidateTag = "validate"
 )
 
-// GetParams 将请求参数绑定到目标结构体
-func GetParams(ictx iris.Context, target interface{}, removeNames ...string) (err error) {
+// GetWebParams 将请求参数绑定到目标结构体
+func GetWebParams(ictx iris.Context, target interface{}, removeNames ...string) (res any, err error) {
 	// 处理请求体JSON
 	request := ictx.Request()
 	if request.Method == iris.MethodPost || request.Method == iris.MethodPut {
 		if request.ContentLength == 0 {
-			return errors.New("request body is null")
+			return nil, errors.New("request body is null")
 		}
 		err = ictx.ReadJSON(target)
 		if err != nil {
-			return err
+			return nil, err
+		}
+		if dataMap, ok := target.(*map[string]any); ok {
+			return dataMap, err
+		}
+		if dataMap, ok := target.(map[string]any); ok {
+			return dataMap, err
 		}
 		err = validator.Validate(target, removeNames...)
-		return err
+		return res, err
 	}
 
 	// 数据验证对象
@@ -43,7 +49,7 @@ func GetParams(ictx iris.Context, target interface{}, removeNames ...string) (er
 
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr || targetValue.Elem().Kind() != reflect.Struct {
-		return errors.New("target must be a pointer to a struct")
+		return nil, errors.New("target must be a pointer to a struct")
 	}
 
 	targetType := targetValue.Elem().Type()
@@ -88,18 +94,19 @@ func GetParams(ictx iris.Context, target interface{}, removeNames ...string) (er
 		}
 	}
 	if err := verifyErr.IsHasError(); err {
-		return verifyErr.GetError()
+		return nil, verifyErr.GetError()
 	}
-	return validator.Validate(target, removeNames...)
+	return res, validator.Validate(target, removeNames...)
 }
 
 // bindNestedStruct 处理嵌套结构体绑定
 func bindNestedStruct(ctx iris.Context, field *reflect.Value) error {
 	nestedPtr := reflect.New(field.Type())
-	if err := GetParams(ctx, nestedPtr.Interface()); err != nil {
+	param, err := GetWebParams(ctx, nestedPtr.Interface())
+	if err != nil {
 		return err
 	}
-	field.Set(nestedPtr.Elem())
+	field.Set(reflect.ValueOf(param))
 	return nil
 }
 
