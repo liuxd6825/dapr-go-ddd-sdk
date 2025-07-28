@@ -6,15 +6,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"sync"
 )
-
-type Event[T any] struct {
-	EventId    string      `json:"eventId" bson:"eventId" validate:"required" `
-	OccurredOn *times.Time `json:"occurredOn" bson:"occurredOn" validate:"required" `
-	Data       T           `json:"data"  bson:"data" validate:"required"`
-}
 
 var _outboxDao idao.OutboxEventDao
 var _outboxOnce sync.Once

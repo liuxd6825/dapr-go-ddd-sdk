@@ -401,6 +401,7 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 
 	cmd := &event.RecordImportMasterEvent{}
 	cmd.EventId = idutils.NewId()
+	cmd.OccurredOn = time.Now()
 	cmd.Data = event.RecordImportMasterEventData{
 		CaseId:    appcmd.Data.CaseId,
 		DocId:     appcmd.Data.DocId,

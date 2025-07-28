@@ -3,13 +3,13 @@ package event
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
 )
 
 // RecordImportMasterEvent
 // @Description:
 type RecordImportMasterEvent struct {
-	xbase.Event[RecordImportMasterEventData]
+	events.Event[RecordImportMasterEventData]
 }
 
 type RecordImportMasterEventData struct {

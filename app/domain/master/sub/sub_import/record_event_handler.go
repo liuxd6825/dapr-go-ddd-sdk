@@ -19,6 +19,7 @@ func NewRecordEventHandler(env *env.Env, baseUrl string) *RecordEventSubHandler 
 		env:      env,
 	}
 }
+
 func (s *RecordEventSubHandler) InitController(app *iris.Application) error {
 	ctl := restapi.NewController(app, "/subscribe/import", s)
 	ctl.EventHandle("record-import-master-event", "RecordImportMasterEvent")

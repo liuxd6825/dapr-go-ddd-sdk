@@ -3,7 +3,6 @@ package events
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"time"
 )
 
@@ -34,9 +33,9 @@ type EventPayload struct {
 
 // Event 事件本体
 type Event[T any] struct {
-	EventId    string      `json:"eventId" bson:"eventId" validate:"required" `
-	OccurredOn *times.Time `json:"occurredOn" bson:"occurredOn" validate:"required" `
-	Data       T           `json:"data"  bson:"data" validate:"required"`
+	EventId    string    `json:"eventId" bson:"eventId" validate:"required" `
+	OccurredOn time.Time `json:"occurredOn" bson:"occurredOn" validate:"required" `
+	Data       T         `json:"data"  bson:"data" validate:"required"`
 }
 
 const (
