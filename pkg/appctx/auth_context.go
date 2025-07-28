@@ -3,6 +3,7 @@ package appctx
 import (
 	"context"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 )
 
 type authKey struct {
@@ -64,6 +65,11 @@ func GetAuthToken(ctx context.Context) (AuthToken, bool) {
 		return val.(AuthToken), true
 	}
 	return nil, false
+}
+
+func NewAuthTokenEntity(valMap map[string]any) (tk *AuthTokenEntity) {
+	maputils.Decode(valMap, &tk)
+	return tk
 }
 
 func IsNotFundErr(err error) bool {
