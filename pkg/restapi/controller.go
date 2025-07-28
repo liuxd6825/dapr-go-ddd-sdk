@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -28,8 +29,8 @@ type Controller interface {
 
 type CallOptions struct {
 	InitMethod func(callMethod *CallMethod)
-	Before     func(ictx *context.Context, params any) (any, error)
-	After      func(ictx *context.Context, resData any, err error) (any, error)
+	Before     func(ictx *context.Context, params any) (any, context2.Context, error)
+	After      func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
 }
 
 func InitController(app *iris.Application, controller Controller) {
@@ -70,7 +71,7 @@ func (c *ApiController) newCallMethod(handlerName string) (callMethod *CallMetho
 
 func (c *ApiController) GetOne(path string, handlerName string, opts ...CallOptions) *router.Route {
 	opts = append(opts, CallOptions{
-		After: func(ictx *context.Context, data any, err error) (any, error) {
+		After: func(ctx context2.Context, ictx *context.Context, data any, err error) (any, error) {
 			if err != nil {
 				return nil, err
 			}
@@ -97,8 +98,13 @@ func (c *ApiController) GetPaging(path string, handlerName string, opts ...CallO
 		InitMethod: func(method *CallMethod) {
 			method.CloseInParams = true
 		},
-		Before: func(ictx *context.Context, param any) (any, error) {
-			return GetFindPagingRequest(ictx)
+		Before: func(ictx *context.Context, param any) (any, context2.Context, error) {
+			request, err := GetFindPagingRequest(ictx)
+			if err != nil {
+				return nil, nil, err
+			}
+			ctx := appctx.NewWebContext(context2.Background(), ictx)
+			return request, ctx, nil
 		},
 	})
 	r := c.call(iris.MethodGet, path, handlerName, opts...)
@@ -165,15 +171,14 @@ func (c *ApiController) callMethod(method string, path string, handlerName strin
 	path = c.getPath(path)
 	r := c.app.Handle(method, path, func(ictx *context.Context) {
 		gp.Try(func() error {
-			ctx := context2.Background()
-			params, ctx, err := c.getParams(ctx, ictx, callMethod, isEventHandle, opts...)
+			params, ctx, err := c.getParams(ictx, callMethod, isEventHandle, opts...)
 			if err != nil {
 				return err
 			}
 			data, err := callMethod.Call(ctx, ictx, params)
 			for _, opt := range opts {
 				if opt.After != nil {
-					data, err = opt.After(ictx, data, err)
+					data, err = opt.After(ctx, ictx, data, err)
 				}
 			}
 			if err == nil && callMethod.OutData >= 0 {
@@ -188,7 +193,7 @@ func (c *ApiController) callMethod(method string, path string, handlerName strin
 	return r
 }
 
-func (c *ApiController) getParams(ctx context2.Context, ictx *context.Context, callMethod *CallMethod, isEventHandle bool, opts ...CallOptions) (params any, rctx context2.Context, err error) {
+func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod, isEventHandle bool, opts ...CallOptions) (params any, rctx context2.Context, err error) {
 	// CallMethod初始化
 	for _, opt := range opts {
 		if opt.InitMethod != nil {
@@ -207,9 +212,12 @@ func (c *ApiController) getParams(ctx context2.Context, ictx *context.Context, c
 	// 后期处理
 	for _, opt := range opts {
 		if opt.Before != nil {
-			params, err = opt.Before(ictx, params)
+			params, rctx, err = opt.Before(ictx, params)
 			break
 		}
+	}
+	if err == nil && rctx == nil {
+		rctx = appctx.NewWebContext(context2.Background(), ictx)
 	}
 	return params, rctx, err
 }

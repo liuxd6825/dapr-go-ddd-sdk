@@ -28,8 +28,8 @@ type Event struct {
 	CreatedTime time.Time       `json:"created_time"`
 	Data        json.RawMessage `json:"data"` // 使用 json.RawMessage 来接收原始的 JSON 数据
 	Meta        json.RawMessage `json:"meta"`
-	TenantID    string          `json:"tenant_id"`
-	Topic       string          `json:"topic"`
+	EventType   string          `json:"event_type"`
+	TenantId    string          `json:"tenant_id"`
 }
 
 func (c *CloudEvent) GetData() (string, error) {

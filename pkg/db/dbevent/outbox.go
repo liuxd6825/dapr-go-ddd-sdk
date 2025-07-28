@@ -21,12 +21,13 @@ type Outbox struct {
 
 type OutboxEvent struct {
 	Id          string         `gorm:"id;primaryKey" bson:"id" json:"id"`
-	TenantId    string         `gorm:"tenant_id" bson:"tenant_id" json:"tenant_id"` // 租户ID
-	AppId       string         `gorm:"app_id" bson:"app_id" json:"app_id"`
-	Topic       string         `gorm:"topic" bson:"topic" json:"topic"`
-	Data        map[string]any `gorm:"data;json"  bson:"data"   json:"data"`                                    // 事件数据
-	Meta        map[string]any `gorm:"meta;json" bson:"meta"  json:"meta"`                                      // 上下文数据
-	CreatedTime *times.Time    `gorm:"created_time;index:,sort:desc,"  bson:"created_time"  json:"createdTime"` // 发生事件
+	TenantId    string         `gorm:"tenant_id" bson:"tenant_id" json:"tenantId"` // 租户ID
+	AppId       string         `gorm:"app_id" bson:"app_id" json:"appId"`
+	EventType   string         `gorm:"event_type" bson:"event_type" json:"eventType"`
+	Data        map[string]any `gorm:"data;json" bson:"data" json:"data"`                                     // 事件数据
+	Meta        map[string]any `gorm:"meta;json" bson:"meta" json:"meta"`                                     // 上下文数据
+	CreatedTime *times.Time    `gorm:"created_time;index:,sort:desc," bson:"created_time" json:"createdTime"` // 发生事件
+	//Version     string         `gorm:"version" bson:"version"  json:"version"`                                // 事件数据版本
 }
 
 type OutboxStatus string

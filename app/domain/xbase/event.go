@@ -17,6 +17,12 @@ import (
 	"sync"
 )
 
+type Event[T any] struct {
+	EventId    string      `json:"eventId" bson:"eventId" validate:"required" `
+	OccurredOn *times.Time `json:"occurredOn" bson:"occurredOn" validate:"required" `
+	Data       T           `json:"data"  bson:"data" validate:"required"`
+}
+
 var _outboxDao idao.OutboxEventDao
 var _outboxOnce sync.Once
 
@@ -42,23 +48,60 @@ func newOutboxEventDao() idao.OutboxEventDao {
 
 func getEvent(ctx context.Context, appId string, tenantId string, data any, meta map[string]any) (*dbevent.OutboxEvent, error) {
 	var err error
-	_, topic, _ := reflectutils.GetTypeDetails(data)
-	topic = stringutils.MidlineString(topic)
+	_, eventType, _ := reflectutils.GetTypeDetails(data)
+	eventType = stringutils.MidlineString(eventType)
+
+	meta, err = newMeta(ctx, tenantId, meta)
+	if err != nil {
+		return nil, err
+	}
 
 	dataMap, err := convertStructToMapViaReflection(data)
 	if err != nil {
 		return nil, err
 	}
 	event := &dbevent.OutboxEvent{
-		Id:          idutils.NewId(),
+		Id:          idutils.NewUlid2(),
 		AppId:       appId,
 		TenantId:    tenantId,
-		Topic:       topic,
+		EventType:   eventType,
 		Data:        dataMap,
 		Meta:        meta,
 		CreatedTime: times.NewTime(),
 	}
 	return event, err
+}
+func newMeta(ctx context.Context, tenantId string, meta map[string]any) (map[string]any, error) {
+	const (
+		TENANT_ID = "tenantId"
+		AUTO_USER = "autoUser"
+		HEADER    = "header"
+	)
+	if meta == nil {
+		meta = make(map[string]any)
+	}
+	if _, ok := meta[TENANT_ID]; !ok {
+		meta[TENANT_ID] = tenantId
+	}
+
+	if _, ok := meta[AUTO_USER]; !ok {
+		if autoUser, ok := appctx.GetAuthUser(ctx); ok {
+			autoUserMap, err := convertStructToMapViaReflection(autoUser)
+			if err != nil {
+				return nil, err
+			}
+			meta[AUTO_USER] = autoUserMap
+		}
+	}
+
+	if _, ok := meta[HEADER]; !ok {
+		if header, ok := appctx.GetHeader(ctx); ok {
+			meta[HEADER] = header
+		} else {
+			meta[HEADER] = appctx.Header{}
+		}
+	}
+	return meta, nil
 }
 
 // getFieldNameFromTag 从字段的 tag 中获取用作 map key 的名称，优先使用 json tag

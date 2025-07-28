@@ -28,11 +28,11 @@ func NewTaskAPI(env *env.Env, rootPath string) *TaskAPI {
 
 func (s *TaskAPI) InitController(app *iris.Application) error {
 	s.taskService = service.NewTaskService()
-	ctl := restapi.NewController(app, s.rootPath, s)
-	ctl.Post("/tasks", "Create")
-	ctl.Put("/tasks", "Update")
-	ctl.GetOne("/tasks/{id}", "FindById")
-	ctl.GetPaging("/tasks", "FindPaging")
+	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+	ctl.Post("/task", "Create")
+	ctl.Put("/task", "Update")
+	ctl.GetOne("/task/{id}", "FindById")
+	ctl.GetPaging("/task", "FindPaging")
 	return nil
 }
 

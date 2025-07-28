@@ -9,7 +9,7 @@ import (
 // RecordImportMasterEvent
 // @Description:
 type RecordImportMasterEvent struct {
-	xbase.Command[RecordImportMasterEventData]
+	xbase.Event[RecordImportMasterEventData]
 }
 
 type RecordImportMasterEventData struct {

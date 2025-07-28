@@ -32,6 +32,6 @@ func (s *RecordEventSubHandler) Check(ctx context.Context) error {
 }
 
 func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) error {
-	println("subscribe/import/record-import-master-event", event.CommandId)
+	println("subscribe/import/record-import-master-event", event)
 	return nil
 }

@@ -11,7 +11,7 @@ const NanoCode = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const NanoLength = 24
 
 func NewId() string {
-	id, _ := NewNId()
+	id, _ := NewUlid()
 	return id
 }
 
@@ -21,4 +21,9 @@ func NewNId() (string, error) {
 
 func NewUlid() (string, error) {
 	return ulid.Make().String(), nil
+}
+
+func NewUlid2() string {
+	id := ulid.Make()
+	return id.String()
 }

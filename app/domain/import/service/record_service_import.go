@@ -18,6 +18,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
 )
 
@@ -399,8 +400,7 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 	}
 
 	cmd := &event.RecordImportMasterEvent{}
-	cmd.CommandId = appcmd.CommandId
-	cmd.IsValidOnly = false
+	cmd.EventId = idutils.NewId()
 	cmd.Data = event.RecordImportMasterEventData{
 		CaseId:    appcmd.Data.CaseId,
 		DocId:     appcmd.Data.DocId,

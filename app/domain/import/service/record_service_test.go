@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
 )
@@ -56,7 +57,7 @@ func TestRecordService_FindPagingByTaskId(t *testing.T) {
 
 func TestRecordService_Import2Master(t *testing.T) {
 	cmd := &command.RecordImport2MasterCommand{}
-	cmd.CommandId = "0002"
+	cmd.CommandId = idutils.NewUlid2()
 	cmd.Data = field.RecordImport2MasterFields{
 		CaseId:   "1001",
 		DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
