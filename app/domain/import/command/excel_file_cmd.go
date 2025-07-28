@@ -8,6 +8,15 @@ import (
 type ExcelFileCreateCommand struct {
 	xbase.Command[ExcelCreateByFileCommandData]
 }
+type ExcelCreateByFileCommandData struct {
+	Id        string `json:"id"   title:"主键" validate:"required"`
+	CaseId    string `json:"caseId" title:"案件Id"  validate:"required" `
+	FileName  string `json:"fileName" title:"文件名" validate:"required" `
+	SheetName string `json:"sheetName" title:"工作页" validate:"required" `
+	DocId     string `json:"docId" title:"文档Id"  validate:"required" `
+	DocFileId string `json:"docFileId" title:"文档文件Id" validate:"required" `
+}
+
 type ExcelFileUpdateCommand struct {
 	xbase.Command[*model.ExcelFile]
 }
@@ -21,15 +30,6 @@ type ExcelFileDeleteByIdCommand struct {
 
 type ExcelCreateRowsCommand struct {
 	xbase.Command[ExcelCreateRowsCommandData]
-}
-
-type ExcelCreateByFileCommandData struct {
-	Id        string `json:"id"   title:"主键" validate:"required"`
-	CaseId    string `json:"caseId" title:"案件Id"  validate:"required" `
-	FileName  string `json:"fileName" title:"文件名" validate:"required" `
-	SheetName string `json:"sheetName" title:"工作页" validate:"required" `
-	DocId     string `json:"docId" title:"文档Id"  validate:"required" `
-	DocFileId string `json:"docFileId" title:"文档文件Id" validate:"required" `
 }
 
 type ExcelCreateRowsCommandData struct {

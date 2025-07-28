@@ -4,6 +4,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"strings"
 	"time"
 )
 
@@ -60,7 +61,15 @@ func GetTimeJSONFormat() string {
 }
 
 func (t *Time) UnmarshalJSON(data []byte) (err error) {
-	now, err := time.ParseInLocation(`"`+timeJSONFormat+`"`, string(data), time.Local)
+	str := string(data)
+	format := timeJSONFormat
+	if strings.Contains(str, "T") && strings.Contains(str, "+") {
+		//"2006-01-02 15:04:05"
+		format = time.RFC3339Nano
+	} else if strings.Contains(str, "T") && strings.Contains(str, "Z") {
+		format = time.RFC3339
+	}
+	now, err := time.ParseInLocation(`"`+format+`"`, str, time.Local)
 	*t = Time(now)
 	return
 }

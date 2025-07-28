@@ -147,6 +147,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/nikolalohinski/gonja v1.5.3 // indirect
+	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/ollama/ollama v0.6.1 // indirect
 	github.com/onsi/gomega v1.33.1 // indirect
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect

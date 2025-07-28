@@ -19,7 +19,7 @@ type RecordImportMasterEventData struct {
 	FileName   string                `json:"fileName" validate:"required"  title:"文件名称"` // 文件名称
 	SheetName  string                `json:"sheetName" validate:"required"  title:"工作表"` // 工作表
 	TaskId     string                `json:"taskId"  validate:"required" title:"任务ID" `  // 任务ID
-	Items      []*field.RecordFields `json:"records" validate:"required"  title:"流水明细"`  // 流水明细
+	Items      []*field.RecordFields `json:"items" validate:"required"  title:"流水明细"`    // 流水明细
 	IsAddItems bool                  `json:"isAddItems"`
 }
 
