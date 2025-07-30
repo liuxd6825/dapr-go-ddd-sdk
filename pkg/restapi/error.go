@@ -46,6 +46,15 @@ func NewInternalServerError(logId string, err error) *InternalServerError {
 	}
 }
 
+func NewNotFountError(logId string, err error) *InternalServerError {
+	return &InternalServerError{
+		Error:      err.Error(),
+		LogId:      logId,
+		Time:       times.Now(),
+		StatusCode: iris.StatusNotFound,
+	}
+}
+
 func SetError(ctx iris.Context, err error) {
 	if err != nil {
 		req := ctx.Request()
@@ -56,7 +65,7 @@ func SetError(ctx iris.Context, err error) {
 			_ = ctx.JSON(NewVerifyError(logId, vErr))
 		} else if isNotFoundError(err) {
 			ctx.StatusCode(iris.StatusNotFound)
-			_ = ctx.JSON(err)
+			_ = ctx.JSON(NewNotFountError(logId, err))
 		} else {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			_ = ctx.JSON(NewInternalServerError(logId, err))

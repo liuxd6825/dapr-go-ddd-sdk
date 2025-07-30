@@ -96,6 +96,7 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames ...string) 
 	if err := verifyErr.IsHasError(); err {
 		return nil, verifyErr.GetError()
 	}
+	res = targetValue.Interface()
 	return res, validator.Validate(target, removeNames...)
 }
 
