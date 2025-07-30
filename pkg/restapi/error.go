@@ -15,7 +15,7 @@ func NotFoundError() error {
 	return notFoundError
 }
 
-type InternalServerError struct {
+type WebError struct {
 	Error      any        `json:"error"`
 	LogId      string     `json:"logId"`
 	Time       times.Time `json:"time"`
@@ -37,8 +37,8 @@ func NewVerifyError(logId string, err *errors.VerifyError) *VerifyError {
 		StatusCode: iris.StatusBadRequest,
 	}
 }
-func NewInternalServerError(logId string, err error) *InternalServerError {
-	return &InternalServerError{
+func NewInternalServerError(logId string, err error) *WebError {
+	return &WebError{
 		Error:      err.Error(),
 		LogId:      logId,
 		Time:       times.Now(),
@@ -46,31 +46,30 @@ func NewInternalServerError(logId string, err error) *InternalServerError {
 	}
 }
 
-func NewNotFountError(logId string, err error) *InternalServerError {
-	return &InternalServerError{
+func NewWebError(ictx iris.Context, logId string, err error, statusCode int) *WebError {
+	ictx.StatusCode(statusCode)
+	return &WebError{
 		Error:      err.Error(),
 		LogId:      logId,
 		Time:       times.Now(),
-		StatusCode: iris.StatusNotFound,
+		StatusCode: statusCode,
 	}
 }
 
-func SetError(ctx iris.Context, err error) {
+func SetError(ictx iris.Context, err error) {
 	if err != nil {
-		req := ctx.Request()
-		logId := logs.GetLogId(ctx)
-		logs.Error(ctx, logs.Fields{"logId": logId, "method": req.Method, "uri": req.RequestURI, "error": err.Error()})
+		req := ictx.Request()
+		logId := logs.GetLogId(ictx)
+		logs.Error(ictx, logs.Fields{"logId": logId, "method": req.Method, "uri": req.RequestURI, "error": err.Error()})
+		var data any
 		if vErr, ok := err.(*errors.VerifyError); ok {
-			ctx.StatusCode(iris.StatusBadRequest)
-			_ = ctx.JSON(NewVerifyError(logId, vErr))
+			data = NewWebError(ictx, logId, vErr, iris.StatusBadRequest)
 		} else if isNotFoundError(err) {
-			ctx.StatusCode(iris.StatusNotFound)
-			_ = ctx.JSON(NewNotFountError(logId, err))
+			data = NewWebError(ictx, logId, err, iris.StatusNotFound)
 		} else {
-			ctx.StatusCode(iris.StatusInternalServerError)
-			_ = ctx.JSON(NewInternalServerError(logId, err))
+			data = NewWebError(ictx, logId, err, iris.StatusInternalServerError)
 		}
-
+		_ = ictx.JSON(data)
 	}
 }
 

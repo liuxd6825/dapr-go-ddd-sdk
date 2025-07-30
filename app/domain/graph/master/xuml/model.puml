@@ -1,0 +1,22 @@
+@startuml
+
+class  graph as "Graph" {
+}
+
+class  master as "master" {
+}
+
+class  detail as "detail" {
+}
+
+class  node as "node" {
+}
+
+class  edge as "edge" {
+}
+
+
+
+
+
+@enduml

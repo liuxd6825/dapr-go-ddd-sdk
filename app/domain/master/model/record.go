@@ -34,6 +34,8 @@ type Record struct {
 	Place           string      `json:"place,omitempty"   bson:"place"  index:""  validate:"-" title:"地点"`                        // 交易地点
 	Summary         string      `json:"summary,omitempty"   bson:"summary" index:""   validate:"-" title:"摘要"`                    // 摘要
 	Notes           string      `json:"notes,omitempty"   bson:"notes"  index:""  validate:"-" title:"备注"`                        // 备注
+	DataSource      string      `json:"dataSource,omitempty"   bson:"data_source"  index:""   validate:"-" title:"数据源"`
+	DataSourceId    string      `json:"dataSourceId,omitempty"   bson:"data_source_id"  index:""   validate:"-" title:"数据源id"`
 }
 
 func NewRecord() *Record {

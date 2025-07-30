@@ -10,7 +10,7 @@ import (
 
 func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "draw"}, func() error {
-		RegisterDrawApi(app, baseUrl, env)
+		RegisterDrawGraphApi(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -18,7 +18,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	}
 }
 
-func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env) {
-	drawioAPI := NewDrawIoAPI(env, baseUrl)
-	restapi.InitController(app, drawioAPI)
+func RegisterDrawGraphApi(app *iris.Application, baseUrl string, env *env.Env) {
+	graphApi := NewGraphAPI(env, baseUrl)
+	restapi.InitController(app, graphApi)
 }

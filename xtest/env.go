@@ -17,18 +17,46 @@ func NewEnvConfig() *env.Env {
 	return res
 }
 
-func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
+type Neo4jOptions struct {
+	Addr     string
+	DBKey    string
+	Port     string
+	Database string
+	UserName string
+	Password string
+}
+
+func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
 	addr := "localhost"
 	dbKey := "neo4j"
-	for _, ip := range ipAddr {
-		if ip != "" {
-			addr = ip
+	port := "7687"
+	database := ""
+	userName := "neo4j"
+	password := "12345678"
+	for _, opt := range opts {
+		if opt.Addr != "" {
+			addr = opt.Addr
+		}
+		if opt.DBKey != "" {
+			dbKey = opt.DBKey
+		}
+		if opt.Port != "" {
+			port = opt.Port
+		}
+		if opt.Database != "" {
+			database = opt.Database
+		}
+		if opt.UserName != "" {
+			userName = opt.UserName
+		}
+		if opt.Password != "" {
+			password = opt.Password
 		}
 	}
 	res := env.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
-	res.App.HttpHost = "localhost"
+	res.App.HttpHost = ""
 	res.App.HttpPort = 0
 	res.App.Meta = map[string]any{
 		"db": dbKey,
@@ -37,13 +65,35 @@ func NewEnvConfig_Neo4j(ipAddr ...string) *env.Env {
 	res.AddNeo4j(&env.Neo4j{
 		DbKey:    dbKey,
 		Host:     addr,
-		Port:     "7687",
-		Database: "",
-		UserName: "neo4j",
-		Password: "12345678",
+		Port:     port,
+		Database: database,
+		UserName: userName,
+		Password: password,
 	})
 	res.Init()
 	return res
+}
+
+var Neo4jRemoveOption = Neo4jOptions{
+	Addr:     "192.168.120.224",
+	Port:     "7687",
+	Database: "",
+	Password: "12345678",
+	UserName: "neo4j",
+}
+
+var Neo4jLocalOption = Neo4jOptions{
+	Addr:     "127.0.0.1",
+	Port:     "7687",
+	Database: "",
+	Password: "12345678",
+	UserName: "neo4j",
+}
+
+func InitEnv_Neo4j(opts ...Neo4jOptions) *env.Env {
+	envVal := NewEnvConfigNeo4j(opts...)
+	env.SetEnv(envVal)
+	return envVal
 }
 
 func InitEnv_MongoRemoteTest(opts ...*MongoOptions) *env.Env {

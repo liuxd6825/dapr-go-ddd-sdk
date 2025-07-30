@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type nodeCypher[T any] struct {
@@ -618,11 +619,20 @@ func (c *nodeCypher[T]) NewCreateMap(ctx context.Context, data any) map[string]a
 }
 
 func (c *nodeCypher[T]) newMap(ctx context.Context, data any, opts ...func(map[string]any)) map[string]any {
-	v, err := c.schema.NewMap(ctx, data, opts...)
+	dataMap, err := c.schema.NewMap(ctx, data, opts...)
 	if err != nil {
 		panic(err)
 	}
-	return v
+	for key, val := range dataMap {
+		if timeVal, ok := val.(*time.Time); ok {
+			if timeVal != nil {
+				dataMap[key] = timeVal.Unix()
+			} else {
+				dataMap[key] = nil
+			}
+		}
+	}
+	return dataMap
 }
 
 func (c *nodeCypher[T]) newCreateList(ctx context.Context, list []T) []map[string]any {

@@ -1,0 +1,28 @@
+Edit online
+@startuml
+
+actor     用户     as user
+boundary  主数据    as master
+entity    db    as db
+control   olake   as olake
+control   mq   as mq
+control   dapr      as dapr
+control   CdcAPI  as cdcAPI
+control   MasterService as masterSvr
+control   RecordService as recordSvr
+
+user -> master : 编辑主数据
+user -> master : 保存主数据
+activate master
+master -> db : 保存主数据
+db -> olake : cdc事件
+olake -> mq : 发送cdc消息
+mq -> dapr : 发送cdc消息
+dapr -> cdcAPI : 订阅cdc消息
+cdcAPI -> masterSvr : [非流水表] 生成主数据关系
+cdcAPI -> recordSvr : [是流水表] 生成流水关系
+
+deactivate master
+
+
+@enduml

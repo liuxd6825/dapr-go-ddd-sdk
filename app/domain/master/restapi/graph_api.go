@@ -3,7 +3,7 @@ package restapi
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	graph2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/graph"
+	graph2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
