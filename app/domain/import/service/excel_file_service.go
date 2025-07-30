@@ -51,7 +51,7 @@ func (s *ExcelFileService) Create(ctx context.Context, cmd *command.ExcelFileCre
 			DocFileId: cmd.Data.DocFileId,
 			CaseId:    cmd.Data.CaseId,
 		}
-		bytes, err := s.readExcelFile(ctx, file.Id)
+		bytes, err := s.readExcelFile(ctx, cmd.Data.DocFileId)
 		if err != nil {
 			return nil, err
 		}

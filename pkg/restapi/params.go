@@ -41,7 +41,7 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames ...string) 
 			return dataMap, err
 		}
 		err = validator.Validate(target, removeNames...)
-		return res, err
+		return target, err
 	}
 
 	// 数据验证对象
