@@ -13,10 +13,19 @@ type CDCRecord struct {
 	Table        string             `json:"table"`  // 数据表
 	Before       map[string]any     `json:"before"` // 之前数据
 	After        map[string]any     `json:"after"`  // 之后数据
-	OpType       string             `json:"opType"` // 操作状态 "r" for read/backfill, "c" for create, "u" for update, "d" for delete
+	OpType       OpType             `json:"opType"` // 操作状态 "r" for read/backfill, "c" for create, "u" for update, "d" for delete
 	CdcTimestamp time.Time          `json:"cdcTimestamp"`
 	DBSchema     *dbschema.DBSchema `json:"-"`
 }
+
+type OpType string
+
+const (
+	OpTypeRead   OpType = "r"
+	OpTypeCreate OpType = "c"
+	OpTypeUpdate OpType = "u"
+	OpTypeDelete OpType = "d"
+)
 
 // IsMaster 是主数据
 func (r *CDCRecord) IsMaster() bool {

@@ -19,17 +19,17 @@ type RecordDao struct {
 var _recordDao *RecordDao
 var _recordOnce sync.Once
 
-func NewRecordDao() *RecordDao {
+func NewRecordDao(dbKey string) *RecordDao {
 	_recordOnce.Do(func() {
-		_recordDao = newRecordDao("record")
+		_recordDao = newRecordDao(dbKey, "record")
 	})
 	return _recordDao
 }
 
-func newRecordDao(labels ...string) *RecordDao {
+func newRecordDao(dbKey string, labels ...string) *RecordDao {
 	dbSch := dbschema.NewDBSchemaWithStruct("record", &model.Record{}, "record")
 	nodeCfg := &dao.NewConfig{
-		DBKey:              "neo4j",
+		DBKey:              dbKey,
 		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        labels,
