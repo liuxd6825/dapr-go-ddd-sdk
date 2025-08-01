@@ -69,17 +69,17 @@ type GroupCol struct {
 }
 
 type FindPagingQueryRequest struct {
-	TenantId    string      `json:"tenantId"`
-	Fields      string      `json:"fields"` // 以逗号分隔多个字段
-	Filter      string      `json:"filter"`
+	TenantId    string      `json:"tenantId" query:"tenant-id"`
+	Fields      string      `json:"fields" query:"fields"` // 以逗号分隔多个字段
+	Filter      string      `json:"filter" query:"filter"`
 	MustFilter  string      `json:"-"`
-	Sort        string      `json:"sort"`
-	PageNum     int64       `json:"pageNum"`
-	PageSize    int64       `json:"pageSize"`
-	IsTotalRows bool        `json:"isTotalRows"`
-	GroupCols   []*GroupCol `json:"groupCols"`
-	GroupKeys   []any       `json:"groupKeys"`
-	ValueCols   []*ValueCol `json:"valueCols"`
+	Sort        string      `json:"sort" query:"sort"`
+	PageNum     int64       `json:"pageNum" query:"page-num"`
+	PageSize    int64       `json:"pageSize" query:"page-size"`
+	IsTotalRows bool        `json:"isTotalRows" query:"is-total-rows"`
+	GroupCols   []*GroupCol `json:"groupCols" query:"group-cols"`
+	GroupKeys   []any       `json:"groupKeys" query:"group-keys"`
+	ValueCols   []*ValueCol `json:"valueCols" query:"value-cols"`
 }
 
 func NewFindPagingQueryRequest() *FindPagingQueryRequest {

@@ -49,6 +49,7 @@ func (s *FolderAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodDelete, "/doc/folder", "Delete")
 	b.Handle(iris.MethodGet, "/doc/folder", "FindPaging")
 	b.Handle(iris.MethodGet, "/doc/folder/:id", "FindById")
+	b.Handle(iris.MethodGet, "/doc/folder:tree", "FindTree")
 }
 
 func (s *FolderAPI) CreateRoot(ictx iris.Context) {
@@ -332,6 +333,24 @@ func (s *FolderAPI) FindPaging(ictx iris.Context) {
 		qry.IsTotalRows = true
 		res := s.folderService.FindPaging(ctx, qry)
 		return restapi.SetData(ictx, res)
+	}).Catch(func(ctx context.Context, err error) {
+		restapi.SetError(ictx, err)
+	})
+}
+
+func (s *FolderAPI) FindTree(ictx iris.Context) {
+	restapi.Try(ictx, func(ctx context.Context) error {
+		tenantId := ictx.URLParam("tenant-id")
+		busId := ictx.URLParam("bus-id")
+		entityId := ictx.URLParam("entity-id")
+		qry := store.NewFindPagingQueryRequest()
+		qry.PageNum = 0
+		qry.PageSize = 99999999999999
+		qry.Filter = fmt.Sprintf("tenant_id=='%s' and bus_id=='%s' and entity_id=='%s'", tenantId, busId, entityId)
+		qry.Sort = "created_time:desc"
+		qry.IsTotalRows = true
+		res := s.folderService.FindPaging(ctx, qry)
+		return restapi.SetData(ictx, s.folderService.TranslateTreeData(res.GetData()))
 	}).Catch(func(ctx context.Context, err error) {
 		restapi.SetError(ictx, err)
 	})

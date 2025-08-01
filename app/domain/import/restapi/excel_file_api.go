@@ -34,6 +34,7 @@ func (s *ExcelFileApi) InitController(app *iris.Application) error {
 	ctl.Delete("file", "Delete")
 	ctl.GetPaging("file", "FindPaging")
 	ctl.GetOne("file/{id}", "FindById")
+	ctl.GetOne("file:doc-file-id", "FindByDocFileId")
 	return nil
 }
 
@@ -52,6 +53,11 @@ func (s *ExcelFileApi) Delete(ctx context.Context, cmd *command.ExcelFileDeleteB
 func (s *ExcelFileApi) FindById(ctx context.Context, qry *query.ExcelFileFindByIdQuery) (*model.ExcelFile, error) {
 	return s.fileService.FindById(ctx, qry.FileId)
 }
+
+func (s *ExcelFileApi) FindByDocFileId(ctx context.Context, qry *query.ExcelFileFindByDocFileIdQuery) (*model.ExcelFile, error) {
+	return s.fileService.FindByDocFileId(ctx, qry.DocFileId)
+}
+
 func (s *ExcelFileApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (any, error) {
 	res := s.fileService.FindPaging(ctx, qry)
 	return res, res.GetError()

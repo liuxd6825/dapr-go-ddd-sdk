@@ -20,13 +20,14 @@ type Task struct {
 	DocId      string           `json:"docId,omitempty" gorm:"doc_id" bson:"doc_id" index:"" title:"文档id"`
 	FileId     string           `json:"fileId,omitempty" gorm:"file_id" bson:"file_id" index:"" title:"文件id"`
 	FileName   string           `json:"fileName,omitempty" gorm:"file_name"  bson:"file_name" index:""  title:"文件名称"`
+	SheetId    string           `json:"sheetId,omitempty"  gorm:"sheet_id" bson:"sheet_id"  title:"Sheet页"`
 	SheetName  string           `json:"sheetName,omitempty"  gorm:"sheet_name" bson:"sheet_name"  title:"Sheet页"`
 	StartTime  *times.Time      `json:"startTime,omitempty" gorm:"start_time"  bson:"start_time"  title:"开始时间"`
 	EndTime    *times.Time      `json:"endTime,omitempty" gorm:"end_time"  bson:"end_time"  title:"最后日期"`
 	Total      int64            `json:"total,omitempty" gorm:"total"  bson:"total"  title:"总记录数"`
 	Complete   int64            `json:"complete,omitempty" gorm:"complete"  bson:"complete" title:"完成数量"`
 	SchemaId   string           `json:"schemaId,omitempty" gorm:"schema_id"  bson:"schema_id" title:"主数据类型ID"`
-	SchemaName string           `json:"schemaName,omitempty" gorm:"schema_nam"  bson:"schema_name" title:"主数据类型"`
+	SchemaName string           `json:"schemaName,omitempty" gorm:"schema_name"  bson:"schema_name" title:"主数据类型"`
 	MapHeads   []*MapHead       `json:"mapHeads" gorm:"map_heads;type:json"  bson:"map_heads"`
 	Fields     []*TemplateField `json:"fields,omitempty" gorm:"fields;type:json"  bson:"fields" title:"模板"`
 	State      TaskState        `json:"state,omitempty" gorm:"state"  bson:"state" title:"状态"`

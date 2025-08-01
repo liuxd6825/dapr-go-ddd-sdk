@@ -14,7 +14,7 @@ type ExcelSheet struct {
 
 	MaxRow  int64    `json:"maxRow" gorm:"max_row"  bson:"max_row"`
 	MaxCol  int64    `json:"maxCol" gorm:"max_col"  bson:"max_col"`
-	Columns []string `json:"columns" gorm:"columns;json"  bson:"columns;"`
+	Columns []string `json:"columns" gorm:"columns;json"  bson:"columns"`
 }
 
 func (f *ExcelSheet) GetTenantId() string {
