@@ -32,7 +32,7 @@ func ReadFileToEntity[T any](ctx context.Context, fileName string, sheetName str
 	return ReadByteToEntity(ctx, bytes.NewBuffer(bs), sheetName, temp, isView, newItem, batchFunc, opts...)
 }
 
-func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template, isView bool,
+func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template, isPreview bool,
 	newItem func(ctx context.Context, row *DataRow, temp *Template) (T, error),
 	batchFunc func(ctx context.Context, list []T, paging Batching) error, opts ...*Options) (*DataTable, error) {
 
@@ -73,7 +73,7 @@ func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetNam
 				return nil, err
 			}
 			// 是数据预览
-			if isView {
+			if isPreview {
 				break
 			}
 			list = make([]T, 0)

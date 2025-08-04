@@ -38,6 +38,29 @@ type Create4ExcelResult struct {
 	ErrorCount  int64 `json:"errorCount"`
 }
 
+// Preview Excel文件内容预览
+func (s *RecordService) Preview(ctx context.Context, task *task_pkg.Task, temp *task_pkg.RecordTemplate) (records []*task_pkg.RecordIe, res *Create4ExcelResult, err error) {
+	fileByte, err := s.docFileService.ReadByteByFileId(ctx, task.FileId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	buffer := bytes.NewBuffer(fileByte)
+	gp.Try(func() error {
+		// 读取缓存数据
+		res, err = s.readExcel(ctx, task, temp, buffer, true, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
+			records = list
+			return nil
+		})
+		return err
+	}).Catch(func(e error) {
+		err = e
+	}).Finally(func() {
+
+	})
+	return records, res, err
+}
+
 // readExcel
 // @Description: 读取excel文件
 // @receiver r
@@ -49,7 +72,7 @@ type Create4ExcelResult struct {
 // @param opts
 // @return error
 func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp *task_pkg.RecordTemplate,
-	buffer *bytes.Buffer, isView bool, batchFunc func(ctx context.Context, list []*task_pkg.RecordIe, paging readexcel.Batching) error,
+	buffer *bytes.Buffer, isPreview bool, batchFunc func(ctx context.Context, list []*task_pkg.RecordIe, paging readexcel.Batching) error,
 ) (*Create4ExcelResult, error) {
 	if task == nil {
 		return nil, errors.New("parameter 'task' is null")
@@ -74,7 +97,7 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 		FileId:   task.FileId,
 		TaskId:   task.Id,
 	})
-	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isView, newRecord, batchFun)
+	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isPreview, newRecord, batchFun)
 
 	if err != nil {
 		return nil, err
