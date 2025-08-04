@@ -381,11 +381,15 @@ func (s *DocumentAPI) Delete(ictx iris.Context) {
 func (s *DocumentAPI) FindPaging(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
 		folderId := ictx.URLParam("folder-id")
+		filter := ictx.URLParam("filter")
 		//user, _ := appctx.GetAuthUser(ctx)
 		qry := store.NewFindPagingQueryRequest()
 		qry.PageNum = 0
 		qry.PageSize = 99999999999999
 		qry.Filter = "folder_id=='" + folderId + "'"
+		if len(filter) > 0 {
+			qry.Filter += " and " + filter
+		}
 		qry.Sort = "created_time:desc"
 		qry.IsTotalRows = true
 		res := s.documentService.FindPaging(ctx, qry)

@@ -63,6 +63,10 @@ func (s *ExcelFileService) Create(ctx context.Context, cmd *command.ExcelFileCre
 
 		// 需要开启事物
 		err = db.StartTx(ctx, db.NewTxCfg(config.DBKey), func(txCtx context.Context, options ...*store.SessionOptions) error {
+			res := s.dao.Create(ctx, file)
+			if res.Error != nil {
+				return res.Error
+			}
 			for _, item := range views.Sheets {
 				sheet := newSheet(file, item.Name, item.MaxRow, item.MaxCol, item.Columns)
 				sheet.FileName = file.Name
@@ -108,14 +112,14 @@ func (s *ExcelFileService) FindById(ctx context.Context, fileId string) (*model.
 
 func (s *ExcelFileService) FindByFileId(ctx context.Context, fileId string) ([]*model.ExcelFile, error) {
 	build := rsql.NewBuilder().And(
-		rsql.Eq("file_Id", fileId),
+		rsql.Eq("file_id", fileId),
 	)
 	return s.dao.FindByRSQL(ctx, build.Build())
 }
 
 func (s *ExcelFileService) FindByDocFileId(ctx context.Context, docFileId string) (*model.ExcelFile, error) {
 	build := rsql.NewBuilder().And(
-		rsql.Eq("doc_file_Id", docFileId),
+		rsql.Eq("doc_file_id", docFileId),
 	)
 	return s.dao.FindOneByRSQL(ctx, build.Build())
 }

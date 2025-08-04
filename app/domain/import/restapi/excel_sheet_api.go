@@ -30,9 +30,10 @@ func (s *ExcelSheetApi) InitController(app *iris.Application) error {
 	ctl := restapi.NewController(app, s.rootPath+"/import", s)
 	ctl.Post("sheet", "Create")
 	ctl.Put("sheet", "Update")
-	ctl.GetOne("sheet", "FindById")
+	ctl.GetOne("sheet/{id}", "FindById")
 	ctl.GetPaging("sheet", "FindPaging")
 	ctl.GetData("sheet:file-id", "FindByFileId")
+	ctl.GetData("sheet:doc-file-id", "FindByDocFileId")
 	return nil
 }
 
@@ -50,6 +51,10 @@ func (s *ExcelSheetApi) FindPaging(ctx context.Context, qry *idao.FindPagingQuer
 
 func (s *ExcelSheetApi) FindById(ctx context.Context, qry *query.ExcelSheetFindByIdQuery) (*model.ExcelSheet, error) {
 	return s.service.FindById(ctx, qry.Id)
+}
+
+func (s *ExcelSheetApi) FindByDocFileId(ctx context.Context, qry *query.ExcelSheetFindByDocFieldIdQuery) ([]*model.ExcelSheet, error) {
+	return s.service.FindByDocFileId(ctx, qry.DocFileId)
 }
 
 func (s *ExcelSheetApi) FindByFileId(ctx context.Context, qry *query.ExcelSheetFindByFieldIdQuery) ([]*model.ExcelSheet, error) {

@@ -35,10 +35,12 @@ func (r *TaskService) Create(ctx context.Context, cmd *command.TaskCreateCommand
 		entity.DocId = cmd.Data.DocId
 		entity.State = model.TaskStateEditing
 		entity.SheetName = cmd.Data.SheetName
+		entity.SheetId = cmd.Data.SheetId
 		entity.FileName = cmd.Data.FileName
 		entity.FileId = cmd.Data.FileId
 		entity.Remark = cmd.Data.Remark
 		entity.SchemaId = cmd.Data.SchemaId
+		entity.SchemaName = cmd.Data.SchemaName
 		entity.MapHeads = cmd.Data.MapHeads
 		entity.Fields = cmd.Data.Fields
 		return r.dao.Create(ctx, entity).GetError()
@@ -50,10 +52,11 @@ func (r *TaskService) Update(ctx context.Context, cmd *command.TaskUpdateCommand
 		entity := &model.Task{}
 		entity.Id = cmd.Data.Id
 		entity.DocId = cmd.Data.DocId
+		entity.SheetId = cmd.Data.SheetId
 		entity.SheetName = cmd.Data.SheetName
 		entity.FileName = cmd.Data.FileName
 		entity.FileId = cmd.Data.FileId
-		entity.Remark = cmd.Data.Remarks
+		entity.Remark = cmd.Data.Remark
 		entity.MapHeads = cmd.Data.MapHeads
 		entity.Fields = cmd.Data.Fields
 

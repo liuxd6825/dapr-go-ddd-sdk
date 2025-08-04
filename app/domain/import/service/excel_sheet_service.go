@@ -60,7 +60,14 @@ func (f *ExcelSheetService) FindById(ctx context.Context, id string) (*model.Exc
 
 func (f *ExcelSheetService) FindByFileId(ctx context.Context, fileId string) ([]*model.ExcelSheet, error) {
 	build := rsql.NewBuilder().And(
-		rsql.Eq("file_Id", fileId),
+		rsql.Eq("file_id", fileId),
+	)
+	return f.repos.FindByRSQL(ctx, build.Build())
+}
+
+func (f *ExcelSheetService) FindByDocFileId(ctx context.Context, docFileId string) ([]*model.ExcelSheet, error) {
+	build := rsql.NewBuilder().And(
+		rsql.Eq("doc_file_id", docFileId),
 	)
 	return f.repos.FindByRSQL(ctx, build.Build())
 }
@@ -90,7 +97,7 @@ func newRows(file *model.ExcelFile, sheetId string, items []readexcel.ReviewItem
 
 func newSheet(file *model.ExcelFile, sheetName string, maxRow int64, maxCol int64, columns []string) *model.ExcelSheet {
 	sheet := &model.ExcelSheet{
-		Id:        file.Id,
+		Id:        idutils.NewId(), //file.Id,
 		TenantId:  file.TenantId,
 		CaseId:    file.CaseId,
 		DocId:     file.DocId,

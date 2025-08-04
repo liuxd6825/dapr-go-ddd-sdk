@@ -33,6 +33,7 @@ func (s *ExcelRowApi) InitController(app *iris.Application) error {
 	ctl.Delete("row", "Delete")
 	ctl.GetPaging("row", "FindPaging")
 	ctl.GetOne("row/{id}", "FindById")
+	ctl.GetData("row:rows", "FindRows")
 	return nil
 }
 
@@ -55,4 +56,8 @@ func (s *ExcelRowApi) FindById(ctx context.Context, qry *query.ExcelRowFindByIdQ
 func (s *ExcelRowApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.ExcelRow], error) {
 	res := s.rowService.FindPaging(ctx, qry)
 	return res, res.GetError()
+}
+
+func (f *ExcelRowApi) FindRows(ctx context.Context, qry *query.ExcelRowFindPreviewQuery) (*query.ExcelRowFindPreviewQueryResult, error) {
+	return f.rowService.FindRows(ctx, qry)
 }
