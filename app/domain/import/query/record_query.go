@@ -8,8 +8,8 @@ import (
 // RecordIeFindPagingByTaskIdQuery 分页查询命令
 type RecordIeFindPagingByTaskIdQuery struct {
 	idao.FindPagingQueryRequest
-	TaskId      string `json:"taskId"`
-	IsFindError bool   `json:"findError"`
+	TaskId      string `json:"taskId" param:"task-id" `
+	IsFindError bool   `json:"findError" param:"is-find-error"`
 }
 
 type RecordFindByIdQueryRequest = store.FindByIdQueryRequest

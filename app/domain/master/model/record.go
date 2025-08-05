@@ -36,10 +36,11 @@ type Record struct {
 	Notes           string      `json:"notes,omitempty"   bson:"notes"  index:""  validate:"-" title:"备注"`                        // 备注
 	DataSource      string      `json:"dataSource,omitempty"   bson:"data_source"  index:""   validate:"-" title:"数据源"`
 	DataSourceId    string      `json:"dataSourceId,omitempty"   bson:"data_source_id"  index:""   validate:"-" title:"数据源id"`
-	//SuTime          bool        `json:"suTime" bson:"su_time"  index:""   validate:"-" title:"时间可疑" `
-	//SuHz            bool        `json:"suHz" bson:"su_hz"  index:""   validate:"-" title:"频率可疑" `
-	//SuAmount        bool        `json:"suAmount" bson:"su_amount"  index:""   validate:"-" title:"金额可疑" `
-	//SuOpp           bool        `json:"suOpp" bson:"su_opp"  index:""   validate:"-" title:"对手可疑" `
+	SuLarge         bool        `json:"suLarge" bson:"su_large"  index:""   validate:"-" title:"金额可疑" `
+	SuInt           bool        `json:"suInt" bson:"su_int"  index:""   validate:"-" title:"整数可疑" `
+	SuCollar        bool        `json:"suCollar" bson:"su_collar"  index:""   validate:"-" title:"对敲可疑" `
+	SuNear          bool        `json:"suNear" bson:"su_near"  index:""   validate:"-" title:"临界可疑" `
+	RiskCount       int         `json:"riskCount" bson:"risk_count"  index:""   validate:"-" title:"风险数" `
 }
 
 func NewRecord() *Record {

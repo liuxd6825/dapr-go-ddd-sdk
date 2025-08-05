@@ -107,7 +107,17 @@ func bindNestedStruct(ctx iris.Context, field *reflect.Value) error {
 	if err != nil {
 		return err
 	}
-	field.Set(reflect.ValueOf(param))
+	
+	// GetWebParams返回的是interface{}类型，我们需要将其转换为正确的类型
+	paramValue := reflect.ValueOf(param)
+	if paramValue.Type().AssignableTo(field.Type()) {
+		field.Set(paramValue)
+	} else if paramValue.Type().AssignableTo(reflect.PtrTo(field.Type())) {
+		field.Set(paramValue.Elem())
+	} else {
+		return errors.New("cannot assign param to field: type mismatch")
+	}
+
 	return nil
 }
 

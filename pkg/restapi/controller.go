@@ -94,19 +94,20 @@ func (c *ApiController) GetData(path string, handlerName string, opts ...CallOpt
 }
 
 func (c *ApiController) GetPaging(path string, handlerName string, opts ...CallOptions) *router.Route {
-	opts = append(opts, CallOptions{
-		InitMethod: func(method *CallMethod) {
-			method.CloseInParams = true
-		},
-		Before: func(ictx *context.Context, param any) (any, context2.Context, error) {
-			request, err := GetFindPagingRequest(ictx)
-			if err != nil {
-				return nil, nil, err
-			}
-			ctx := appctx.NewWebContext(context2.Background(), ictx)
-			return request, ctx, nil
-		},
-	})
+	/*
+		opts = append(opts, CallOptions{
+			InitMethod: func(method *CallMethod) {
+				// method.CloseInParams = true
+			},
+			Before: func(ictx *context.Context, param any) (any, context2.Context, error) {
+				request, err := GetFindPagingRequest(ictx, param)
+				if err != nil {
+					return nil, nil, err
+				}
+				ctx := appctx.NewWebContext(context2.Background(), ictx)
+				return request, ctx, nil
+			},
+		})*/
 	r := c.call(iris.MethodGet, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
