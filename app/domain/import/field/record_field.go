@@ -14,7 +14,7 @@ type RecordCreateFields struct {
 	DocId     string        `json:"docId" validate:"required"  title:"文档Id"`       // 文档Id
 	FileId    string        `json:"fileId" validate:"required"  title:"文档Id"`      // 文档Id
 	SheetName string        `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
-	Record    *RecordFields `json:"records" validate:"required"  title:"流水明细"`     // 流水明细
+	Record    *RecordFields `json:"record" validate:"required"  title:"流水明细"`      // 流水明细
 	Remark    string        `json:"remark" title:"备注"`
 }
 
@@ -26,7 +26,7 @@ type RecordCreate4ExcelCommandFields struct {
 	FileName  string                `json:"fileName,omitempty"  validate:"required" title:"文件名称"`
 	SheetName string                `json:"sheetName,omitempty" validate:"required"  title:"Sheet页"`
 	BatchSize int64                 `json:"batchSize,omitempty"  validate:"required"  title:"批大小"`
-	IsView    bool                  `json:"isView,omitempty"  validate:"required" title:"是预览"`
+	IsView    bool                  `json:"isView,omitempty"  title:"是预览"`
 	Template  *model.RecordTemplate `json:"template,omitempty"  validate:"required"  title:"模板"`
 }
 
@@ -40,6 +40,16 @@ type RecordImport2MasterFields struct {
 	PageSize  int64  `json:"pageSize" validate:"required" `
 }
 
+type RecordPreviewCommandFields struct {
+	CaseId    string                `json:"caseId,omitempty"  validate:"required" title:"案件ID"`
+	DocId     string                `json:"docId,omitempty"  validate:"required"  title:"文档ID"`
+	FileId    string                `json:"fileId,omitempty"  validate:"required"   title:"文件ID"`
+	TaskId    string                `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
+	FileName  string                `json:"fileName,omitempty"  validate:"required" title:"文件名称"`
+	SheetName string                `json:"sheetName,omitempty" validate:"required"  title:"Sheet页"`
+	Template  *model.RecordTemplate `json:"template,omitempty"  validate:"required"  title:"模板"`
+}
+
 type RecordIeCreateFields struct {
 	TenantId string `json:"tenantId"`
 	Id       string `json:"id"`
@@ -48,14 +58,17 @@ type RecordIeCreateFields struct {
 }
 
 type RecordIeUpdateFieldFields struct {
+	TenantId string `json:"tenantId"`
+
 	Id     string         `json:"id"`
 	Values map[string]any `json:"values"`
 }
 
 type RecordIeUpdateFilterFields struct {
-	Filter string         `json:"filter"`
-	TaskId string         `json:"taskId"`
-	Values map[string]any `json:"values"`
+	TenantId string         `json:"tenantId"`
+	Filter   string         `json:"filter"`
+	TaskId   string         `json:"taskId"`
+	Values   map[string]any `json:"values"`
 }
 
 type RecordIeDeleteFields struct {
@@ -64,8 +77,9 @@ type RecordIeDeleteFields struct {
 }
 
 type RecordIeUpdateFields struct {
-	Id     string `json:"id,omitempty"  bson:"_id"   validate:"required"  title:"租户标识"` // 行Id
-	RowNum int64  `json:"rowNum,omitempty" bson:"rowNum" title:"租户标识"`
+	TenantId string `json:"tenantId"`
+	Id       string `json:"id,omitempty"  bson:"_id"   validate:"required"  title:"租户标识"` // 行Id
+	RowNum   int64  `json:"rowNum,omitempty" bson:"rowNum" title:"租户标识"`
 
 	CaseId string `json:"caseId,omitempty" bson:"case_id" title:"案件id"`
 	TaskId string `json:"taskId,omitempty" bson:"task_id"  title:"任务id"`

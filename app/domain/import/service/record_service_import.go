@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
@@ -160,6 +161,15 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 			//  time.Sleep(20 * time.Second) // 用于Actor超时测试使用
 			return nil
 		})
+		if err == nil {
+			cmd1 := command.TaskUpdateStateCommand{}
+			cmd1.CommandId = cmd.CommandId
+			cmd1.Data = field.TaskUpdateStateFields{}
+			cmd1.Data.Id = cmd.Data.TaskId
+			cmd1.Data.State = task_pkg.TaskStateGenerated
+			cmd1.Data.Message = fmt.Sprintf("成功%v条，错误%v条", res.RecordTotal, res.ErrorCount)
+			err = s.taskService.UpdateState(ctx, &cmd1)
+		}
 		return err
 	}).Catch(func(e error) {
 		err = e
@@ -235,8 +245,9 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 		err = createMany(ctx, appcmd)
 		if err == nil {
 			cmd := command.NewTaskUpdateProgressCommand(appcmd.CommandId, taskId)
-			cmd.Data.CompleteRows = recordCount
+			cmd.Data.Complete = recordCount
 			cmd.Data.StartTime = startTime
+			cmd.Data.State = task_pkg.TaskStateImported
 			cmd.Data.EndTime = times.PNow()
 			err = s.taskService.UpdateProgress(ctx, &cmd.Data)
 		}

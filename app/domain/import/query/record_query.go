@@ -5,6 +5,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
+type RecordIeFindByTaskIdQuery struct {
+	TaskId string `json:"taskId" param:"task-id" query:"task-id"`
+}
+
 // RecordIeFindPagingByTaskIdQuery 分页查询命令
 type RecordIeFindPagingByTaskIdQuery struct {
 	idao.FindPagingQueryRequest

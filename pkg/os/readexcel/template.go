@@ -141,7 +141,7 @@ const (
 // @Description: 映射规则
 type MapColumn struct {
 	Key      string   `json:"key"`
-	Label    string   `json:"colLabel"`
+	Label    string   `json:"label"`
 	DataType DataType `json:"dataType"`
 	Script   string   `json:"script"`
 }

@@ -207,7 +207,8 @@ func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, erro
 }
 
 func getCellString(str string) string {
-	return strings.ReplaceAll(str, "\t", "")
+
+	return strings.Trim(strings.ReplaceAll(str, "\t", ""), " ")
 }
 
 func GetSheetNames(buffer *bytes.Buffer) ([]string, error) {

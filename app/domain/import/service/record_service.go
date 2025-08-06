@@ -89,7 +89,7 @@ func (s *RecordService) Delete(ctx context.Context, appcmd *command.RecordDelete
 }
 
 func (s *RecordService) DeleteByTaskId(ctx context.Context, taskId string) error {
-	return s.dao.DeleteById(ctx, taskId).GetError()
+	return s.dao.DeleteByRSQL(ctx, fmt.Sprintf("task_id=='%s'", taskId)).GetError()
 }
 
 func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) (int64, error) {
@@ -136,7 +136,10 @@ func (s *RecordService) UpdateField(ctx context.Context, cmd *command.RecordUpda
 
 func (s *RecordService) UpdateByFilter(ctx context.Context, cmd *command.RecordUpdateFilterCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		filter := fmt.Sprintf("%s and taskId=='%s'", cmd.Data.Filter, cmd.Data.TaskId)
+		filter := fmt.Sprintf("taskId=='%s'", cmd.Data.TaskId)
+		if len(cmd.Data.Filter) > 0 {
+			filter = fmt.Sprintf("%s and %s", filter, cmd.Data.Filter)
+		}
 		return s.dao.UpdateMapByRSQL(ctx, filter, cmd.Data.Values).GetError()
 	})
 }
@@ -177,6 +180,11 @@ func (s *RecordService) FindPagingByTaskId(ctx context.Context, qry *query.Recor
 	}
 
 	return res
+}
+
+func (s *RecordService) CountRecordIeByTaskId(ctx context.Context, taskId string) (int64, error) {
+	rsql := fmt.Sprintf("task_id=='%s'", taskId)
+	return s.dao.CountByRSQL(ctx, rsql)
 }
 
 func (s *RecordService) CountErrorByTaskId(ctx context.Context, tenantId, taskId string) (int64, error) {
