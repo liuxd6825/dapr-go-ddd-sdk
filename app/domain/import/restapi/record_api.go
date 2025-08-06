@@ -91,7 +91,6 @@ func (s *RecordAPI) Preview(ctx context.Context, cmd *command.RecordPreviewComma
 
 func (s *RecordAPI) GenerateRecord(ctx context.Context, cmd *command.RecordCreate4ExcelCommand) (*service.Create4ExcelResult, error) {
 	return s.recordService.Create4Excel(ctx, cmd, func(batch readexcel.Batching) error {
-		batch.BatchSize = 1000
 		return nil
 	})
 }
