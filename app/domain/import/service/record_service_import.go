@@ -98,7 +98,7 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 		FileId:   task.FileId,
 		TaskId:   task.Id,
 	})
-	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isPreview, newRecord, batchFun)
+	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isPreview, newRecord, batchFun, &readexcel.Options{BatchSize: 1000})
 
 	if err != nil {
 		return nil, err
