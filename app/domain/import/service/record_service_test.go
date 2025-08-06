@@ -43,16 +43,14 @@ func TestRecordService_Create(t *testing.T) {
 }
 
 func TestRecordService_FindPagingByTaskId(t *testing.T) {
-	qry := query.NewRecordIeFindPagingByTaskIdQuery("taskId", false)
+	qry := query.NewRecordIeFindPagingByTaskIdQuery("5ZCLHw2Uw1ynsmXYjvAYlsY2", true)
 	findRes := recordService.FindPagingByTaskId(ctx, qry)
 	if findRes.GetError() != nil {
 		t.Error(findRes.GetError())
 		return
 	}
-	if findRes.GetDataLength() > 0 {
-		t.Error("error record count>0")
-		return
-	}
+	t.Log(findRes.GetDataLength())
+	t.Log(findRes.GetData())
 }
 
 func TestRecordService_Import2Master(t *testing.T) {

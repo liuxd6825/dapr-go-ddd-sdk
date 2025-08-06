@@ -23,7 +23,7 @@ const (
 )
 
 // GetWebParams 将请求参数绑定到目标结构体
-func GetWebParams(ictx iris.Context, target interface{}, removeNames ...string) (res any, err error) {
+func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, callOpts ...CallOptions) (res any, err error) {
 	// 处理请求体JSON
 	request := ictx.Request()
 	if request.Method == iris.MethodPost || request.Method == iris.MethodPut {
@@ -54,41 +54,59 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames ...string) 
 
 	targetType := targetValue.Elem().Type()
 	for i := 0; i < targetType.NumField(); i++ {
-		field := targetType.Field(i)
+		fieldType := targetType.Field(i)
 		fieldValue := targetValue.Elem().Field(i)
-		if pathName := field.Tag.Get(PathTag); pathName != "" {
+
+		isSet := false
+		for _, opt := range callOpts {
+			if opt.GetFieldValue != nil {
+				if val, ok, err := opt.GetFieldValue(ictx, target, fieldType, fieldValue); err != nil {
+					return nil, err
+				} else if ok {
+					refVal := reflect.ValueOf(val)
+					fieldValue.Set(refVal)
+					isSet = true
+					break
+				}
+			}
+		}
+		if isSet {
+			continue
+		}
+
+		if pathName := fieldType.Tag.Get(PathTag); pathName != "" {
 			// 处理路径参数 /api/v1.0/user/{id}
 			if val := ictx.Params().Get(pathName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
-					verifyErr.AppendField(field.Name, err.Error())
+					verifyErr.AppendField(fieldType.Name, err.Error())
 				}
 			}
-		} else if queryName := field.Tag.Get(QueryTag); queryName != "" {
+		} else if queryName := fieldType.Tag.Get(QueryTag); queryName != "" {
 			// 处理查询参数 ?name=lxd
 			if val := ictx.URLParam(queryName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
-					verifyErr.AppendField(field.Name, err.Error())
+					verifyErr.AppendField(fieldType.Name, err.Error())
 				}
 			}
-		} else if paramName := field.Tag.Get(ParamTag); paramName != "" {
+		} else if paramName := fieldType.Tag.Get(ParamTag); paramName != "" {
 			// 处理通用param标签（兼容双模式）
 			if val := ictx.Params().Get(paramName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
-					verifyErr.AppendField(field.Name, err.Error())
+					verifyErr.AppendField(fieldType.Name, err.Error())
 				}
 			} else if val := ictx.URLParam(paramName); val != "" {
 				if err := setFieldValue(&fieldValue, val); err != nil {
-					verifyErr.AppendField(field.Name, err.Error())
+					verifyErr.AppendField(fieldType.Name, err.Error())
 				}
 			}
-		} else if field.Type.Kind() == reflect.Struct { // 处理嵌套结构体
-			err := bindNestedStruct(ictx, &fieldValue)
+		} else if fieldType.Type.Kind() == reflect.Struct { // 处理嵌套结构体
+			err := bindNestedStruct(ictx, &fieldValue, callOpts...)
 			if err != nil {
 				// 检查是否为VerifyError类型，合并子结构体的验证错误
 				if ve, ok := err.(*errors.VerifyError); ok {
-					verifyErr.MergeWithPrefix(field.Name, ve)
+					verifyErr.MergeWithPrefix(fieldType.Name, ve)
 				} else {
-					verifyErr.AppendField(field.Name, err.Error())
+					verifyErr.AppendField(fieldType.Name, err.Error())
 				}
 			}
 		}
@@ -101,13 +119,13 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames ...string) 
 }
 
 // bindNestedStruct 处理嵌套结构体绑定
-func bindNestedStruct(ctx iris.Context, field *reflect.Value) error {
+func bindNestedStruct(ctx iris.Context, field *reflect.Value, options ...CallOptions) error {
 	nestedPtr := reflect.New(field.Type())
-	param, err := GetWebParams(ctx, nestedPtr.Interface())
+	param, err := GetWebParams(ctx, nestedPtr.Interface(), nil, options...)
 	if err != nil {
 		return err
 	}
-	
+
 	// GetWebParams返回的是interface{}类型，我们需要将其转换为正确的类型
 	paramValue := reflect.ValueOf(param)
 	if paramValue.Type().AssignableTo(field.Type()) {

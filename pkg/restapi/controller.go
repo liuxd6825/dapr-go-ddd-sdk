@@ -6,6 +6,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -28,9 +29,10 @@ type Controller interface {
 }
 
 type CallOptions struct {
-	InitMethod func(callMethod *CallMethod)
-	Before     func(ictx *context.Context, params any) (any, context2.Context, error)
-	After      func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
+	InitMethod    func(callMethod *CallMethod)
+	GetFieldValue func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
+	Before        func(ictx *context.Context, params any) (any, context2.Context, error)
+	After         func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
 }
 
 func InitController(app *iris.Application, controller Controller) {
@@ -94,20 +96,35 @@ func (c *ApiController) GetData(path string, handlerName string, opts ...CallOpt
 }
 
 func (c *ApiController) GetPaging(path string, handlerName string, opts ...CallOptions) *router.Route {
-	/*
-		opts = append(opts, CallOptions{
-			InitMethod: func(method *CallMethod) {
-				// method.CloseInParams = true
-			},
-			Before: func(ictx *context.Context, param any) (any, context2.Context, error) {
-				request, err := GetFindPagingRequest(ictx, param)
-				if err != nil {
-					return nil, nil, err
+	opts = append(opts, CallOptions{
+		GetFieldValue: func(ictx *context.Context, object any, fieldType reflect.StructField, fieldValue reflect.Value) (outParam any, ok bool, err error) {
+			switch fieldType.Name {
+			case "ValueCols":
+				valueCols := ictx.URLParam("value-cols")
+				var val []*store.ValueCol
+				if valueCols != "" {
+					val = store.NewValueColsWidth(valueCols)
 				}
-				ctx := appctx.NewWebContext(context2.Background(), ictx)
-				return request, ctx, nil
-			},
-		})*/
+				return val, true, nil
+			case "GroupCols":
+				groupCols := ictx.URLParam("group-cols")
+				var val []*store.GroupCol
+				if groupCols != "" {
+					val = store.NewGroupColsWidthString(groupCols)
+				}
+				return val, true, nil
+			case "GroupKeys":
+				groupKeys := ictx.URLParam("group-keys")
+				var val []any
+				if groupKeys != "" {
+					val = store.NewGroupKeysWidthString(groupKeys)
+				}
+				return val, true, nil
+			}
+			return nil, false, nil
+		},
+	})
+
 	r := c.call(iris.MethodGet, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
@@ -204,7 +221,7 @@ func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod,
 
 	if callMethod.InParams >= 0 && !callMethod.CloseInParams {
 		inParamsType := callMethod.Method.Type().In(callMethod.InParams)
-		params, rctx, err = c.GetParams(ictx, inParamsType, isEventHandle)
+		params, rctx, err = c.GetParams(ictx, inParamsType, isEventHandle, opts...)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -227,13 +244,14 @@ func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod,
 // ictx: iris请求上下文
 // paramType: 参数类型
 // isEventHandle: 是否是事件处理
-func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type, isEventHandle bool) (params any, rctx context2.Context, err error) {
+func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type, isEventHandle bool, opts ...CallOptions) (params any, rctx context2.Context, err error) {
+	paramsValue, err := reflectutils.New(paramType)
+	if err != nil {
+		return nil, nil, errors.New("create params error: %s ", err.Error())
+	}
+	params = paramsValue.Interface()
+
 	if isEventHandle {
-		paramsValue, err := reflectutils.New(paramType)
-		if err != nil {
-			return nil, nil, errors.New("create params error: %s ", err.Error())
-		}
-		params = paramsValue.Interface()
 		params, rctx, err = GetEventParams(ictx, params)
 		return params, rctx, err
 	}
@@ -243,12 +261,7 @@ func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type,
 			return nil, nil, err
 		}
 
-		paramsValue, err := reflectutils.New(paramType)
-		if err != nil {
-			return nil, nil, errors.New("create params error: %s ", err.Error())
-		}
-		params = paramsValue.Interface()
-		params, err = GetWebParams(ictx, params, "base", "command")
+		params, err = GetWebParams(ictx, params, []string{"base", "command"}, opts...)
 		if err != nil {
 			return nil, nil, err
 		}

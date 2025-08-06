@@ -22,7 +22,7 @@ func NewRecordIeFindPagingByTaskIdQuery(taskId string, findError bool) *RecordIe
 	qry.TaskId = taskId
 	qry.IsTotalRows = true
 	qry.PageSize = 1000
-	qry.PageNum = 1
+	qry.PageNum = 0
 	qry.Filter = ""
 	return qry
 }

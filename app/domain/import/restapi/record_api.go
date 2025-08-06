@@ -34,6 +34,7 @@ func (s *RecordAPI) InitController(app *iris.Application) error {
 	ctl.Put("record", "Update")
 	ctl.GetOne("record/{id}", "FindById")
 	ctl.GetPaging("record", "FindPaging")
+	ctl.GetPaging("record:task-id", "TaskFindPaging")
 	return nil
 }
 
@@ -59,5 +60,10 @@ func (s *RecordAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQuery
 
 func (s *RecordAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.RecordIe], error) {
 	res := s.recordService.FindPaging(ctx, qry)
+	return res, res.GetError()
+}
+
+func (s *RecordAPI) TaskFindPaging(ctx context.Context, qry *query.RecordIeFindPagingByTaskIdQuery) (idao.FindPagingResult[*model.RecordIe], error) {
+	res := s.recordService.FindPagingByTaskId(ctx, qry)
 	return res, res.GetError()
 }

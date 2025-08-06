@@ -170,7 +170,7 @@ func (p *Process) OnFnProcess(expr rsql.Expression, fn *rsql.FuncValue) rsql.Val
 }
 
 func (p *Process) OnIsNull(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$in", []interface{}{nil}}})
+	p.current.addChildItem(p.getFieldName(name), nil)
 }
 
 func (p *Process) OnNotIsNull(name string, value interface{}, rValue rsql.Value) {

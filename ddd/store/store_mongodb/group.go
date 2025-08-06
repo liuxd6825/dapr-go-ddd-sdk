@@ -348,7 +348,9 @@ func toDate(v interface{}) time.Time {
 func getRsqlAnds(s ...string) string {
 	res := ""
 	for _, item := range s {
-		res = getRsqlAnd(res, item)
+		if item != "" {
+			res = getRsqlAnd(res, item)
+		}
 	}
 	return res
 }

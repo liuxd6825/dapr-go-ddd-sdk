@@ -10,10 +10,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
@@ -186,16 +186,15 @@ func (s *RecordService) CountErrorByTaskId(ctx context.Context, tenantId, taskId
 
 func (s *RecordService) getErrorSql(ctx context.Context, tenantId, taskId string) string {
 	return fmt.Sprintf(`
-			(   ((payout=null=0 or payout=='' or payout==0) and (income=null=0 or income=='' or income==0)) 
-				or ((payout!=0) and (income!=0)) 
-				or ((payout==0) and (income==0)) 
+			( 	(payout=!null=0 and income=!null=0) 
+				or (payout=null=0 and income=null=0) 
 				or date=null=0 or date=='' 
 				or name=null=0 or name=='' 
 				or acct=null=0 or acct=='' 
-				or bankName=null=0 or bankName=='' 
-				or oppName=null=0 or oppName=='' 
-				or oppAcct=null=0 or oppAcct==''
-				or oppBankName=null=0 or oppBankName==''
+				or bank_name=null=0 or bank_name=='' 
+				or opp_name=null=0 or opp_name=='' 
+				or opp_acct=null=0 or opp_acct==''
+				or opp_bank_name=null=0 or opp_bank_name==''
 				or amount=null=0 or amount==0 or amount==''
 			) and taskId=='%s'
 		`, taskId)
@@ -206,7 +205,7 @@ func (s *RecordService) Check(ctx context.Context, r *model.RecordIe) (map[strin
 		return nil, errors.New("检查的【流水记录】不能为空。")
 	}
 	data := map[string][]string{}
-	if r.Date == nil {
+	if r.Date.IsNil() {
 		s.addFieldError(data, "date", "不能为空")
 	}
 
