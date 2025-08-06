@@ -59,15 +59,13 @@ type RecordIeUpdateFilterFields struct {
 }
 
 type RecordIeDeleteFields struct {
-	TenantId string `json:"tenantId"`
-	TaskId   string `json:"taskId"`
-	Id       string `json:"id,omitempty"  title:"租户标识"` // 行Id
+	TaskId string `json:"taskId"`
+	Id     string `json:"id,omitempty"  title:"租户标识"` // 行Id
 }
 
 type RecordIeUpdateFields struct {
-	TenantId string `json:"tenantId"`
-	Id       string `json:"id,omitempty"  bson:"_id"   validate:"required"  title:"租户标识"` // 行Id
-	RowNum   int64  `json:"rowNum,omitempty" bson:"rowNum" title:"租户标识"`
+	Id     string `json:"id,omitempty"  bson:"_id"   validate:"required"  title:"租户标识"` // 行Id
+	RowNum int64  `json:"rowNum,omitempty" bson:"rowNum" title:"租户标识"`
 
 	CaseId string `json:"caseId,omitempty" bson:"case_id" title:"案件id"`
 	TaskId string `json:"taskId,omitempty" bson:"task_id"  title:"任务id"`
