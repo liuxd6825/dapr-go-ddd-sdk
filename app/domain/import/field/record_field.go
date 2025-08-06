@@ -48,17 +48,14 @@ type RecordIeCreateFields struct {
 }
 
 type RecordIeUpdateFieldFields struct {
-	TenantId string `json:"tenantId"`
-
 	Id     string         `json:"id"`
 	Values map[string]any `json:"values"`
 }
 
 type RecordIeUpdateFilterFields struct {
-	TenantId string         `json:"tenantId"`
-	Filter   string         `json:"filter"`
-	TaskId   string         `json:"taskId"`
-	Values   map[string]any `json:"values"`
+	Filter string         `json:"filter"`
+	TaskId string         `json:"taskId"`
+	Values map[string]any `json:"values"`
 }
 
 type RecordIeDeleteFields struct {

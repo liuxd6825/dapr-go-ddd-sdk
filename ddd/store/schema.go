@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/jsonschema/v6"
 	gormschema "gorm.io/gorm/schema"
 	"reflect"
@@ -73,6 +74,7 @@ func (sch *DBSchema) initFields() {
 
 func (sch *DBSchema) LookedField(name string) *Field {
 	sch.initFields()
+	name = stringutils.AsFieldName(name)
 	if f, ok := sch.FieldDbName[name]; ok {
 		return f
 	}

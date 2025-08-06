@@ -478,7 +478,14 @@ func (r *Dao[T]) entity2db(entity any) map[string]any {
 				data[field.DBName] = fieldValue
 			}
 		} else {
-			return eMap
+			newMap := map[string]any{}
+			for key, val := range eMap {
+				field := r.schema.LookedField(key)
+				if field != nil {
+					newMap[field.DBName] = val
+				}
+			}
+			return newMap
 		}
 	} else {
 		for _, field := range r.schema.Fields {

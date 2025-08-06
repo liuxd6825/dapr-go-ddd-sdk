@@ -71,3 +71,19 @@ func TestRecordService_Import2Master(t *testing.T) {
 		return
 	}
 }
+
+func TestRecordService_UpdateFilterCommand(t *testing.T) {
+	cmd := &command.RecordUpdateFilterCommand{}
+	cmd.CommandId = idutils.NewUlid2()
+	cmd.Data = field.RecordIeUpdateFilterFields{
+		TaskId: "5ZCLHw2Uw1ynsmXYjvAYlsY2",
+		Filter: "(acct=contains='YYYYYYY')",
+		Values: map[string]any{"Acct": "11111", "BankName": "222222"},
+	}
+
+	err := recordService.UpdateByFilter(ctx, cmd)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
