@@ -29,10 +29,39 @@ type Controller interface {
 }
 
 type CallOptions struct {
+	ParamsInBody  *bool // 强制要求参数入HttpBody中获取
 	InitMethod    func(callMethod *CallMethod)
 	GetFieldValue func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
 	Before        func(ictx *context.Context, params any) (any, context2.Context, error)
 	After         func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
+}
+
+func NewCallOptions(opts ...CallOptions) CallOptions {
+	o := CallOptions{}
+	for _, i := range opts {
+		if i.InitMethod != nil {
+			o.InitMethod = i.InitMethod
+		}
+		if i.GetFieldValue != nil {
+			o.GetFieldValue = i.GetFieldValue
+		}
+		if i.Before != nil {
+			o.Before = i.Before
+		}
+		if i.After != nil {
+			o.After = i.After
+		}
+		if i.ParamsInBody != nil {
+			o.ParamsInBody = i.ParamsInBody
+		}
+	}
+	return o
+}
+
+func WithParamsInBody(paramsInBody bool) CallOptions {
+	return CallOptions{
+		ParamsInBody: &paramsInBody,
+	}
 }
 
 func InitController(app *iris.Application, controller Controller) {

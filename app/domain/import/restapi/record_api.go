@@ -30,7 +30,7 @@ func (s *RecordAPI) InitController(app *iris.Application) error {
 	ctl := restapi.NewController(app, s.rootPath+"/import", s)
 	ctl.Post("record", "Create")
 	ctl.Post("record:import2master", "Import2Master")
-	ctl.Delete("record", "Delete")
+	ctl.Delete("record", "Delete", restapi.WithParamsInBody(true))
 	ctl.Put("record", "Update")
 	ctl.GetOne("record/{id}", "FindById")
 	ctl.GetPaging("record", "FindPaging")

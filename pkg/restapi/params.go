@@ -24,9 +24,10 @@ const (
 
 // GetWebParams 将请求参数绑定到目标结构体
 func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, callOpts ...CallOptions) (res any, err error) {
+	opts := NewCallOptions(callOpts...)
 	// 处理请求体JSON
 	request := ictx.Request()
-	if request.Method == iris.MethodPost || request.Method == iris.MethodPut {
+	if request.Method == iris.MethodPost || request.Method == iris.MethodPut || (opts.ParamsInBody != nil && *opts.ParamsInBody) {
 		if request.ContentLength == 0 {
 			return nil, errors.New("request body is null")
 		}
