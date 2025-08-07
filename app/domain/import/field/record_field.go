@@ -18,6 +18,16 @@ type RecordCreateFields struct {
 	Remark    string        `json:"remark" title:"备注"`
 }
 
+type RecordPreviewCommandFields struct {
+	CaseId    string                `json:"caseId,omitempty"  validate:"required" title:"案件ID"`
+	DocId     string                `json:"docId,omitempty"  validate:"required"  title:"文档ID"`
+	FileId    string                `json:"fileId,omitempty"  validate:"required"   title:"文件ID"`
+	TaskId    string                `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
+	FileName  string                `json:"fileName,omitempty"  validate:"required" title:"文件名称"`
+	SheetName string                `json:"sheetName,omitempty" validate:"required"  title:"Sheet页"`
+	Template  *model.RecordTemplate `json:"template,omitempty"  validate:"required"  title:"模板"`
+}
+
 type RecordCreate4ExcelCommandFields struct {
 	TaskId    string                `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
 	CaseId    string                `json:"caseId,omitempty"  validate:"required" title:"案件ID"`
@@ -43,10 +53,9 @@ type RecordImport2MasterFields struct {
 }
 
 type RecordIeCreateFields struct {
-	TenantId string `json:"tenantId"`
-	Id       string `json:"id"`
-	Field    string `json:"field"`
-	Value    any    `json:"value"`
+	Id    string `json:"id"`
+	Field string `json:"field"`
+	Value any    `json:"value"`
 }
 
 type RecordIeUpdateFieldFields struct {
