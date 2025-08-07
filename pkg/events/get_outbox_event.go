@@ -19,7 +19,7 @@ func NewOutboxEvent(ctx context.Context, appId string, tenantId string, data any
 		return nil, err
 	}
 
-	dataMap, err := convertStructToMapViaReflection(data)
+	dataMap, err := StructToMap(data)
 	if err != nil {
 		return nil, err
 	}

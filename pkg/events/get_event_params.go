@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"reflect"
 	"strings"
 )
@@ -75,7 +74,7 @@ func newMeta(ctx context.Context, tenantId string, meta map[string]any) (map[str
 
 	if _, ok := meta[AUTH_USER]; !ok {
 		if autoUser, ok := appctx.GetAuthUser(ctx); ok {
-			autoUserMap, err := convertStructToMapViaReflection(autoUser)
+			autoUserMap, err := StructToMap(autoUser)
 			if err != nil {
 				return nil, err
 			}
@@ -103,45 +102,60 @@ func getFieldNameFromTag(field reflect.StructField) string {
 	return strings.Split(tag, ",")[0]
 }
 
-// ConvertStructToMapViaReflection 使用反射将结构体转为Map
-func convertStructToMapViaReflection(data any) (map[string]any, error) {
-	result := make(map[string]any)
-	val := reflect.ValueOf(data)
-	typ := reflect.TypeOf(data)
-
-	// 如果是指针，需要获取其指向的元素
-	if typ.Kind() == reflect.Ptr {
-		val = val.Elem()
-		typ = typ.Elem()
+// StructToMap 使用反射将结构体转为Map
+func StructToMap(data any) (map[string]any, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
 	}
+	var mapData map[string]any
+	err = json.Unmarshal(jsonData, &mapData)
+	return mapData, err
+	/*	result := make(map[string]any)
+		val := reflect.ValueOf(data)
+		typ := reflect.TypeOf(data)
 
-	// 确保是结构体类型
-	if typ.Kind() != reflect.Struct {
-		return nil, errors.New("input data must be a struct or a pointer to a struct")
-	}
+		// 如果是指针，需要获取其指向的元素
+		if typ.Kind() == reflect.Ptr {
+			val = val.Elem()
+			typ = typ.Elem()
+		}
 
-	// 辅助函数，用于递归处理
-	var processFields func(v reflect.Value, t reflect.Type)
-	processFields = func(v reflect.Value, t reflect.Type) {
-		for i := 0; i < t.NumField(); i++ {
-			field := t.Field(i)
-			fieldValue := v.Field(i)
+		// 确保是结构体类型
+		if typ.Kind() != reflect.Struct {
+			return nil, errors.New("input data must be a struct or a pointer to a struct")
+		}
 
-			// 如果是匿名嵌入字段，则递归处理
-			if field.Anonymous {
-				// 确保嵌入的字段也是一个结构体
-				if fieldValue.Kind() == reflect.Struct {
+		// 辅助函数，用于递归处理
+		var processFields func(v reflect.Value, t reflect.Type)
+		processFields = func(v reflect.Value, t reflect.Type) {
+			for i := 0; i < t.NumField(); i++ {
+				field := t.Field(i)
+				fieldValue := v.Field(i)
+
+				// 如果是匿名嵌入字段，则递归处理
+				if field.Anonymous {
+					// 确保嵌入的字段也是一个结构体
+					if fieldValue.Kind() == reflect.Struct {
+						processFields(fieldValue, fieldValue.Type())
+					} else if fieldValue.Kind() == reflect.Ptr && fieldValue.Elem().Kind() == reflect.Struct {
+						processFields(fieldValue.Elem(), fieldValue.Type().Elem())
+					}
+					continue
+				} else if field.Type.Kind() == reflect.Ptr && field.Type.Elem().Kind() == reflect.Struct {
+					processFields(fieldValue.Elem(), fieldValue.Type().Elem())
+				} else if field.Type.Kind() == reflect.Struct {
 					processFields(fieldValue, fieldValue.Type())
 				}
-				continue
+
+				// 对于普通字段，获取其 tag 作为 key，并存入 map
+				fieldName := getFieldNameFromTag(field)
+				result[fieldName] = fieldValue.Interface()
 			}
-
-			// 对于普通字段，获取其 tag 作为 key，并存入 map
-			fieldName := getFieldNameFromTag(field)
-			result[fieldName] = fieldValue.Interface()
 		}
-	}
 
-	processFields(val, typ)
-	return result, nil
+		processFields(val, typ)
+		return result, nil
+
+	*/
 }

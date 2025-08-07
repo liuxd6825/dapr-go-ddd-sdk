@@ -20,13 +20,13 @@ type Outbox struct {
 }*/
 
 type OutboxEvent struct {
-	Id          string         `gorm:"id;primaryKey" bson:"id" json:"id"`
-	TenantId    string         `gorm:"tenant_id" bson:"tenant_id" json:"tenantId"` // 租户ID
-	AppId       string         `gorm:"app_id" bson:"app_id" json:"appId"`
-	EventType   string         `gorm:"event_type" bson:"event_type" json:"eventType"`
-	Data        map[string]any `gorm:"data;json" bson:"data" json:"data"`                                     // 事件数据
-	Meta        map[string]any `gorm:"meta;json" bson:"meta" json:"meta"`                                     // 上下文数据
-	CreatedTime *times.Time    `gorm:"created_time;index:,sort:desc," bson:"created_time" json:"createdTime"` // 发生事件
+	Id          string         `json:"id" gorm:"id;primaryKey" bson:"id" json:"id"`
+	TenantId    string         `json:"tenantId" gorm:"tenant_id" bson:"tenant_id" json:"tenantId"` // 租户ID
+	AppId       string         `json:"appId" gorm:"app_id" bson:"app_id" json:"appId"`
+	EventType   string         `json:"eventType" gorm:"event_type" bson:"event_type" json:"eventType"`
+	Data        map[string]any `json:"data" gorm:"data;json" bson:"data" json:"data"`                                            // 事件数据
+	Meta        map[string]any `json:"meta" gorm:"meta;json" bson:"meta" json:"meta"`                                            // 上下文数据
+	CreatedTime *times.Time    `json:"createdTime" gorm:"created_time;index:,sort:desc," bson:"created_time" json:"createdTime"` // 发生事件
 	//Version     string         `gorm:"version" bson:"version"  json:"version"`                                // 事件数据版本
 }
 
