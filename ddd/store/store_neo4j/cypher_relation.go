@@ -359,7 +359,9 @@ func (c *relationCypher[T]) FindAll(ctx context.Context, tenantId string) (Cyphe
 }
 
 func (c *relationCypher[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery) (CypherResult, error) {
-	where, err := GetNeo4jWhere(qry.GetTenantId(), "r", qry.GetFilter())
+	tenantId := appctx.GetTenantId2(ctx)
+
+	where, err := GetNeo4jWhere(tenantId, "r", qry.GetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +372,7 @@ func (c *relationCypher[T]) FindPaging(ctx context.Context, qry store.FindPaging
 	if err != nil {
 		return nil, err
 	}
-	match := c.getQueryMatch(qry.GetTenantId())
+	match := c.getQueryMatch(tenantId)
 	cypher := fmt.Sprintf("%s %s RETURN r %s SKIP %v LIMIT %v ", match, where, order, skip, pageSize)
 	countCypher := ""
 	if qry.GetIsTotalRows() {

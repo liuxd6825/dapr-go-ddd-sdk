@@ -441,7 +441,6 @@ func (c *WebContext) GetCaseId() string {
 
 func (c *WebContext) GetFindPaging() *store.FindPagingQueryRequest {
 	v, _ := c.RestAssembler.AsFindPagingRequest(c.ictx)
-	v.TenantId = c.GetTenantId()
 	return v
 }
 

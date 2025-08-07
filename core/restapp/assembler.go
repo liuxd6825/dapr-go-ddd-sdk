@@ -39,28 +39,17 @@ func (a *RestAssembler) AsFindByIdRequest(ictx iris.Context) (*ddd_query.FindByI
 }
 
 func (a *RestAssembler) AsFindByIdsRequest(ictx iris.Context) (*ddd_query.FindByIdsQuery, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
 	ids, err := a.GetIds(ictx)
 	if err != nil {
 		return nil, err
 	}
 	return &ddd_query.FindByIdsQuery{
-		TenantId: tenantId,
-		Ids:      ids,
+		Ids: ids,
 	}, nil
 }
 
 func (a *RestAssembler) AsFindAllRequest(ictx iris.Context) (*ddd_query.FindAllQuery, error) {
-	tenantId, err := a.GetTenantId(ictx)
-	if err != nil {
-		return nil, err
-	}
-	return &ddd_query.FindAllQuery{
-		TenantId: tenantId,
-	}, nil
+	return &ddd_query.FindAllQuery{}, nil
 }
 
 func (a *RestAssembler) AsFindAutoCompleteRequest(ictx iris.Context) (ddd_query.FindAutoCompleteQuery, error) {
@@ -96,7 +85,6 @@ func (a *RestAssembler) AsDistinctRequest(ictx iris.Context) (ddd_query.FindDist
 	dto.Sort = ictx.URLParamDefault("sort", "")
 	dto.Fields = ictx.URLParamDefault("fields", "")
 	dto.GroupCols = ictx.URLParamDefault("group-cols", "")
-	dto.TenantId, err = a.GetTenantId(ictx)
 
 	return dto.GetQuery(), err
 }

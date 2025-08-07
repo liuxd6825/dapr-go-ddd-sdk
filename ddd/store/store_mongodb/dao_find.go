@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_mongo"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -168,8 +169,9 @@ func (r *Dao[T]) FindAll(ctx context.Context, tenantId string, opts ...store.Opt
 }
 
 func (r *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
-	return r.doFilter(query.GetTenantId(), query.GetFilter(), func(filter *rsql_mongo.Filter) (store.FindPagingResult[T], bool, error) {
-		if err := assert2.NotEmpty(query.GetTenantId(), assert2.NewOptions("tenantId is empty")); err != nil {
+	tenantId := appctx.GetTenantId2(ctx)
+	return r.doFilter(tenantId, query.GetFilter(), func(filter *rsql_mongo.Filter) (store.FindPagingResult[T], bool, error) {
+		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return nil, false, err
 		}
 		ctx = r.getSessionCtx(ctx)
@@ -377,7 +379,6 @@ func (r *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoComplet
 	}
 
 	f.SetGroupCols(groupCols)
-	f.SetTenantId(qry.GetTenantId())
 	f.SetFields(qry.GetFields())
 	f.SetFilter(qry.GetFilter())
 	f.SetMustFilter(qry.GetMustWhere())
@@ -394,7 +395,6 @@ func (r *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, 
 	f := store.NewFindPagingQuery()
 
 	f.SetGroupCols(qry.GetGroupCols())
-	f.SetTenantId(qry.GetTenantId())
 	f.SetFields(qry.GetFields())
 	f.SetFilter(qry.GetFilter())
 	f.SetMustFilter(qry.GetMustWhere())
@@ -452,9 +452,10 @@ func (r *Dao[T]) SumByQuery(ctx context.Context, qry store.FindPagingQuery, data
 	if len(qry.GetValueCols()) == 0 {
 		return nil, false, nil
 	}
+	tenantId := appctx.GetTenantId2(ctx)
 
 	var err error
-	process := rsql_mongo.NewProcess(qry.GetTenantId())
+	process := rsql_mongo.NewProcess(tenantId)
 
 	f1 := qry.GetFilter()
 	f2 := qry.GetMustFilter()
@@ -726,7 +727,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry store.FindPagingQuery, opts
 	var findData store.FindPagingResult[T]
 	var err error
 	//data := r.NewEntityList()
-	queryGroup := NewQueryGroup(qry)
+	queryGroup := NewQueryGroup(ctx, qry)
 	//findOptions := getFindOptions(opts...)
 	ctx = r.getSessionCtx(ctx)
 
@@ -876,7 +877,7 @@ func (r *Dao[T]) find(ctx context.Context, fOpt *findOption, opts ...store.Optio
 
 	var qry *QueryGroup
 	if fOpt.query != nil {
-		qry = NewQueryGroup(fOpt.query)
+		qry = NewQueryGroup(ctx, fOpt.query)
 	}
 
 	if qry == nil {

@@ -58,6 +58,6 @@ func (s *ExcelRowApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryR
 	return res, res.GetError()
 }
 
-func (f *ExcelRowApi) FindRows(ctx context.Context, qry *query.ExcelRowFindPreviewQuery) (*query.ExcelRowFindPreviewQueryResult, error) {
-	return f.rowService.FindRows(ctx, qry)
+func (s *ExcelRowApi) FindRows(ctx context.Context, qry *query.ExcelRowFindPreviewQuery) (*query.ExcelRowFindPreviewQueryResult, error) {
+	return s.rowService.FindRows(ctx, qry)
 }

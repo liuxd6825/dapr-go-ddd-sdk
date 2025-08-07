@@ -9,9 +9,6 @@ import (
 )
 
 type FindPagingQuery interface {
-	GetTenantId() string
-	SetTenantId(string)
-
 	GetFields() string
 	SetFields(string)
 
@@ -44,7 +41,6 @@ type FindPagingQuery interface {
 }
 
 type FindPagingQueryBuilder interface {
-	SetTenantId(string) FindPagingQueryBuilder
 	SetFields(string) FindPagingQueryBuilder
 	SetFilter(format string, value ...any) FindPagingQueryBuilder
 	SetMustFilter(format string, value ...any) FindPagingQueryBuilder
@@ -69,7 +65,6 @@ type GroupCol struct {
 }
 
 type FindPagingQueryRequest struct {
-	TenantId    string      `json:"tenantId" query:"tenant-id"`
 	Fields      string      `json:"fields" query:"fields"` // 以逗号分隔多个字段
 	Filter      string      `json:"filter" query:"filter"`
 	MustFilter  string      `json:"-"`
@@ -91,7 +86,6 @@ type FindPagingQueryMustWhere interface {
 }
 
 type FindPagingQueryDTO struct {
-	TenantId    string `json:"tenantId"`
 	Fields      string `json:"fields"`
 	Filter      string `json:"filter"`
 	MustFilter  string `json:"mustFilter"`
@@ -105,12 +99,10 @@ type FindPagingQueryDTO struct {
 }
 
 type FindByIdRequest struct {
-	TenantId string `json:"tenantId"`
-	Id       string `json:"id"`
+	Id string `json:"id" query:"id" validate:"required" title:"id"`
 }
 
 type FindAllQueryRequest struct {
-	TenantId string `json:"tenantId"`
 }
 
 type AggFunc string
@@ -197,7 +189,6 @@ func (d *FindPagingQueryDTO) NewFindPagingQueryRequest() *FindPagingQueryRequest
 	r.Filter = d.Filter
 	r.MustFilter = d.MustFilter
 	r.Fields = d.Fields
-	r.TenantId = d.TenantId
 	r.Sort = d.Sort
 	r.IsTotalRows = d.IsTotalRows
 	r.ValueCols = d.newValueCols(d.ValueCols)
@@ -272,14 +263,6 @@ func (s *ValueCols) Add(field string, aggFunc AggFunc) *ValueCols {
 
 func (s *ValueCols) GetCols() []*ValueCol {
 	return s.Cols
-}
-
-func (q *FindPagingQueryRequest) GetTenantId() string {
-	return q.TenantId
-}
-
-func (q *FindPagingQueryRequest) SetTenantId(value string) {
-	q.TenantId = value
 }
 
 func (q *FindPagingQueryRequest) GetFields() string {
@@ -373,27 +356,11 @@ func (q *FindPagingQueryRequest) AsMap() map[string]any {
 // @Description: 命令数据验证
 func (q *FindPagingQueryRequest) Validate() error {
 	ve := errors.NewVerifyError()
-	if len(q.TenantId) == 0 {
-		ve.AppendField("TenantId", "不能为空")
-	}
 	return ve.GetError()
-}
-
-func (r *FindByIdRequest) GetTenantId() string {
-	return r.TenantId
 }
 
 func (r *FindByIdRequest) GetId() string {
 	return r.Id
-}
-
-func (r *FindAllQueryRequest) GetTenantId() string {
-	return r.TenantId
-}
-
-func (f *findPagingQueryBuilder) SetTenantId(s string) FindPagingQueryBuilder {
-	f.query.SetTenantId(s)
-	return f
 }
 
 func (f *findPagingQueryBuilder) SetFields(s string) FindPagingQueryBuilder {
@@ -450,12 +417,6 @@ func (f *findPagingQueryBuilder) SetMapToQuery(m map[string]any) FindPagingQuery
 
 	if sort, err := maputils.GetString(m, "sort", ""); err == nil {
 		f.query.SetSort(sort)
-	} else {
-		panic(err)
-	}
-
-	if tenantId, err := maputils.GetString(m, "tenantId", ""); err == nil {
-		f.query.SetTenantId(tenantId)
 	} else {
 		panic(err)
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -581,7 +582,8 @@ func (d *Dao[T]) getAllFilter(qry store.FindPagingQuery) string {
 
 func (d *Dao[T]) findPaging(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
 	filter := d.getAllFilter(query)
-	return d.DoFilter(query.GetTenantId(), filter, func(sqlWhere string) (findRes store.FindPagingResult[T], isFound bool, err error) {
+	tenantId := appctx.GetTenantId2(ctx)
+	return d.DoFilter(tenantId, filter, func(sqlWhere string) (findRes store.FindPagingResult[T], isFound bool, err error) {
 		defer func() {
 			err = errors.GetRecoverError(err, recover())
 		}()
@@ -745,7 +747,6 @@ func (d *Dao[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoComplet
 	}
 
 	f.SetGroupCols(groupCols)
-	f.SetTenantId(qry.GetTenantId())
 	f.SetFields(qry.GetFields())
 	f.SetFilter(qry.GetFilter())
 	f.SetMustFilter(qry.GetMustWhere())
@@ -762,7 +763,6 @@ func (d *Dao[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, 
 	f := store.NewFindPagingQuery()
 
 	f.SetGroupCols(qry.GetGroupCols())
-	f.SetTenantId(qry.GetTenantId())
 	f.SetFields(qry.GetFields())
 	f.SetFilter(qry.GetFilter())
 	f.SetMustFilter(qry.GetMustWhere())
@@ -799,8 +799,8 @@ func (d *Dao[T]) SumByQuery(ctx context.Context, qry store.FindPagingQuery, resD
 		}
 	}
 	filter := getSqlAnds(f1, f2, f3)
-
-	res, found, err := d.sum(ctx, qry.GetTenantId(), filter, qry.GetValueCols(), resData, opts...)
+	tenantId := appctx.GetTenantId2(ctx)
+	res, found, err := d.sum(ctx, tenantId, filter, qry.GetValueCols(), resData, opts...)
 	return res, found, err
 }
 

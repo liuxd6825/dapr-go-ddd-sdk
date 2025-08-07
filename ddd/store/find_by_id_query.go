@@ -6,7 +6,7 @@ type FindByIdQuery interface {
 }
 
 type FindByIdQueryRequest struct {
-	Id string `json:"id" path:"id" required:"true" ` // 聚合根Id
+	Id string `json:"id" query:"id" validate:"required"` // 聚合根Id
 }
 
 func NewFindByIdQuery() FindByIdQuery {

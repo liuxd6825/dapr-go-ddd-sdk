@@ -126,7 +126,5 @@ func (d *DaoBase[T]) NewFindPagingQuery(ctx context.Context, findPagingMap any) 
 	} else {
 		panic("FindPaging(findPagingMap:any) findPagingMap is map[string]any or ddd_repository.FindPagingQuery ")
 	}
-	tenantId := d.GetTenantId(ctx)
-	qry.SetTenantId(tenantId)
 	return qry
 }

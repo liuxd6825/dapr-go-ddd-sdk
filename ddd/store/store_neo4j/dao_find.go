@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -118,8 +119,8 @@ func (d *Dao[T]) FindListByMap(ctx context.Context, tenantId string, filterMap m
 func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQuery, opts ...store.Options) store.FindPagingResult[T] {
 	res := store.NewFindPagingResultEmpty[T]()
 	gp.Try(func() error {
-
-		err := assert2.NotEmpty(query.GetTenantId(), assert2.NewOptions("TenantId cannot be empty"))
+		tenantId := appctx.GetTenantId2(ctx)
+		err := assert2.NotEmpty(tenantId, assert2.NewOptions("TenantId cannot be empty"))
 		if err != nil {
 			return err
 		}
@@ -130,7 +131,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQ
 		}
 
 		cypher := cr.Cypher()
-		println(cypher)
+
 		result, err := d.Query(ctx, cypher, cr.Params())
 		if err != nil {
 			return err
@@ -150,7 +151,7 @@ func (d *Dao[T]) findPagingByCypher(ctx context.Context, query store.FindPagingQ
 		}
 
 		if query.GetIsTotalRows() {
-			count, err := d.Cypher.Count(ctx, query.GetTenantId(), query.GetFilter())
+			count, err := d.Cypher.Count(ctx, tenantId, query.GetFilter())
 			if err != nil {
 				return err
 			}

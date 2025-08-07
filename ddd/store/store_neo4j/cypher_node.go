@@ -390,7 +390,8 @@ func (c *nodeCypher[T]) Count(ctx context.Context, tenantId, filter string) (Cyp
 }
 
 func (c *nodeCypher[T]) FindPaging(ctx context.Context, query store.FindPagingQuery) (CypherResult, error) {
-	where, err := GetNeo4jWhere(query.GetTenantId(), "n", query.GetFilter())
+	tenantId := appctx.GetTenantId2(ctx)
+	where, err := GetNeo4jWhere(tenantId, "n", query.GetFilter())
 	if err != nil {
 		return nil, err
 	}
@@ -403,7 +404,6 @@ func (c *nodeCypher[T]) FindPaging(ctx context.Context, query store.FindPagingQu
 	if err != nil {
 		return nil, err
 	}
-	tenantId := query.GetTenantId()
 	cypher := fmt.Sprintf("MATCH (n%v) %v RETURN n %v SKIP %v LIMIT %v ", c.getLabels("tenant_"+tenantId), where, order, skip, pageSize)
 	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 	return NewCypherBuilderResult(cypher, nil, keys), nil

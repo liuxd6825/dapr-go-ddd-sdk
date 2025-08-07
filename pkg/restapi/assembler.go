@@ -61,7 +61,6 @@ func (a *RestAssembler) AsDistinctRequest(ictx iris.Context) (*FindDistinctReque
 	dto.Sort = ictx.URLParamDefault("sort", "")
 	dto.Fields = ictx.URLParamDefault("fields", "")
 	dto.GroupCols = ictx.URLParamDefault("group-cols", "")
-	dto.TenantId, err = a.GetTenantId(ictx)
 	qry, ok := dto.GetQuery().(*FindDistinctRequest)
 	if !ok {
 		return nil, errors.New("failed to convert to FindDistinctQueryRequest")

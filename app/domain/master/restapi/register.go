@@ -17,6 +17,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		RegisterHtml(app, baseUrl, env)
 		RegisterCdcToNeo4j(app, baseUrl, env)
 		RegisterSub(app, baseUrl, env)
+		RegisterRecord(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -36,6 +37,10 @@ func RegisterHtml(app *iris.Application, baseUrl string, env *env.Env) {
 	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
 		a.Handle(htmlAPI)
 	})
+}
+
+func RegisterRecord(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.InitController(app, NewRecordAPI(baseUrl))
 }
 
 func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env) {

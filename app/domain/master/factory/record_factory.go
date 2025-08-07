@@ -22,6 +22,7 @@ func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *eve
 		if err := mapperutils.Mapper(fields, v); err != nil {
 			return nil, err
 		}
+
 		v.TenantId = appctx.GetTenantId2(ctx)
 		v.CaseId = e.Data.CaseId
 		v.DocId = e.Data.DocId
@@ -29,6 +30,11 @@ func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *eve
 		v.FileId = e.Data.FileId
 		v.SheetId = e.Data.SheetId
 		v.RowNum = fields.RowNum
+		if fields.Date != nil {
+			v.Year = fields.Date.Year()
+			v.Month = int(fields.Date.Month())
+			v.Day = fields.Date.Day()
+		}
 		list[i] = v
 	}
 	return list, nil

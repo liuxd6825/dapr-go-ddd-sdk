@@ -1,10 +1,12 @@
 package store_mongodb
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_mongo"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +25,7 @@ type QueryGroup struct {
 	Query     store.FindPagingQuery
 }
 
-func NewQueryGroup(qry store.FindPagingQuery) *QueryGroup {
+func NewQueryGroup(ctx context.Context, qry store.FindPagingQuery) *QueryGroup {
 	var err error
 	if qry == nil {
 		panic(errors.New("query is nil"))
@@ -39,9 +41,10 @@ func NewQueryGroup(qry store.FindPagingQuery) *QueryGroup {
 		}
 	}
 	filter := getRsqlAnds(f1, f2, f3)
+	tenantId := appctx.GetTenantId2(ctx)
 	baseGroup := &QueryGroup{
 		Query:     qry,
-		TenantId:  qry.GetTenantId(),
+		TenantId:  tenantId,
 		Filter:    filter,
 		GroupCols: qry.GetGroupCols(),
 		GroupKeys: qry.GetGroupKeys(),

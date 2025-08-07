@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"sync"
 )
@@ -73,9 +74,8 @@ func (r *RecordService) FindAll(ctx context.Context, qry *query.RecordFindAllQue
 	panic("implement me")
 }
 
-func (r *RecordService) FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*model.Record], error) {
-	//TODO implement me
-	panic("implement me")
+func (r *RecordService) FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.Record] {
+	return r.dao.FindPaging(ctx, qry, opts...)
 }
 
 func (r *RecordService) FindPagingByCaseId(ctx context.Context, qry *query.RecordFindByCaseIdQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*model.Record], error) {

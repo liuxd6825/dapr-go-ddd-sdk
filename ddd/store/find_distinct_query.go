@@ -3,9 +3,6 @@ package store
 import "fmt"
 
 type FindDistinctQuery interface {
-	GetTenantId() string
-	SetTenantId(string)
-
 	GetFields() string
 	SetFields(string)
 
@@ -31,7 +28,6 @@ type FindDistinctQuery interface {
 }
 
 type FindDistinctQueryRequest struct {
-	TenantId  string      `json:"tenantId" bson:"tenant_id" gorm:"tenant_id"`
 	CaseId    string      `json:"caseId" bson:"case_id" gorm:"case_id"`
 	PageNum   int64       `json:"pageNum" bson:"page_num" gorm:"page_num"`
 	PageSize  int64       `json:"pageSize" bson:"page_size" gorm:"page_size"`
@@ -42,7 +38,6 @@ type FindDistinctQueryRequest struct {
 }
 
 type FindDistinctQueryDTO struct {
-	TenantId  string `json:"tenantId" bson:"tenant_id" gorm:"tenant_id"`
 	CaseId    string `json:"caseId" bson:"case_id" gorm:"case_id"`
 	PageNum   int64  `json:"pageNum" bson:"page_num" gorm:"page_num"`
 	PageSize  int64  `json:"pageSize" bson:"page_size" gorm:"page_size"`
@@ -62,7 +57,6 @@ func NewFindDistinctQueryDTO() *FindDistinctQueryDTO {
 
 func (f *FindDistinctQueryDTO) GetQuery() FindDistinctQuery {
 	r := &FindDistinctQueryRequest{}
-	r.TenantId = f.TenantId
 	r.CaseId = f.CaseId
 
 	r.PageNum = f.PageNum
@@ -80,14 +74,6 @@ func (f *FindDistinctQueryRequest) GetMustWhere() string {
 		return fmt.Sprintf(`caseId=="%s"`, f.CaseId)
 	}
 	return ""
-}
-
-func (f *FindDistinctQueryRequest) GetTenantId() string {
-	return f.TenantId
-}
-
-func (f *FindDistinctQueryRequest) SetTenantId(s string) {
-	f.TenantId = s
 }
 
 func (f *FindDistinctQueryRequest) GetCaseId() string {

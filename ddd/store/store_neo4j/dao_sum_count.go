@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 )
 
 func (d *Dao[T]) SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...store.Options) ([]T, bool, error) {
@@ -27,8 +28,9 @@ func (d *Dao[T]) SumByQuery(ctx context.Context, qry store.FindPagingQuery, resD
 			return nil, false, err
 		}
 	}
+	tenantId := appctx.GetTenantId2(ctx)
 	filter := getSqlAnds(f1, f2, f3)
-	res, found, err := d.sum(ctx, qry.GetTenantId(), filter, qry.GetValueCols(), resData, opts...)
+	res, found, err := d.sum(ctx, tenantId, filter, qry.GetValueCols(), resData, opts...)
 	return res, found, err
 }
 
