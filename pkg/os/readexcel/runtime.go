@@ -136,7 +136,14 @@ func payout(val any) *float64 {
 	}
 	v := toFloat(val)
 	v = 0 - abs(v)
-	return &v
+	return getMoney(v)
+}
+
+func getMoney(val float64) *float64 {
+	if val == 0 {
+		return nil
+	}
+	return &val
 }
 
 func isNull(val any) bool {
@@ -168,7 +175,7 @@ func income(val any) *float64 {
 	}
 	v := toFloat(val)
 	v = abs(v)
-	return &v
+	return getMoney(v)
 }
 
 func incomeByTag(tagValue, tagName string, money any) *float64 {

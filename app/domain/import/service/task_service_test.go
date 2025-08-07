@@ -43,12 +43,11 @@ func TestTaskDomainCmdService_Create(t *testing.T) {
 	// 更新导入进度
 	now := times.PNow()
 	p := &field.TaskUpdateProgressFields{
-		Id:           id,
-		CompleteRows: 1,
-		State:        task2.TaskStateError,
-		StartTime:    now,
-		EndTime:      now,
-		Message:      "message",
+		Id:        id,
+		State:     task2.TaskStateError,
+		StartTime: now,
+		EndTime:   now,
+		Message:   "message",
 	}
 
 	err = service.UpdateProgress(ctx, p)

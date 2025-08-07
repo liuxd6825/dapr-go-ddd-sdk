@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"reflect"
@@ -220,6 +221,10 @@ func (c *ApiController) callMethod(method string, path string, handlerName strin
 		gp.Try(func() error {
 			params, ctx, err := c.getParams(ictx, callMethod, isEventHandle, opts...)
 			if err != nil {
+				if isEventHandle {
+					logs.Error(context2.Background(), logs.Fields{"type": "event", "urlPath": path, "handlerName": handlerName, "error": err.Error()})
+					return nil
+				}
 				return err
 			}
 			data, err := callMethod.Call(ctx, ictx, params)

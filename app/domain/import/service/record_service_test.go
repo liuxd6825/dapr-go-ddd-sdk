@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
+	"time"
 )
 
 var recordService *RecordService
@@ -86,4 +89,28 @@ func TestRecordService_UpdateFilterCommand(t *testing.T) {
 		t.Error(err)
 		return
 	}
+}
+
+func TestRecordService_UpdateByQueryCommand(t *testing.T) {
+	e := &event.RecordImportMasterEvent{}
+	e.EventId = idutils.NewUlid2()
+	e.OccurredOn = time.Now()
+	e.Data = event.RecordImportMasterEventData{
+		CaseId:   "1001",
+		DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
+		FileName: "10w.xlsx",
+		Items: []*field.RecordFields{
+			{
+				Id:   "1",
+				Acct: "111111",
+			},
+		},
+	}
+
+	mapData, err := events.StructToMap(e)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(mapData)
 }
