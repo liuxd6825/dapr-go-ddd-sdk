@@ -130,32 +130,52 @@ func isMinus(val any) bool {
 // @Description: 取得支出金额
 // @param val
 // @return float64
-func payout(val any) float64 {
+func payout(val any) *float64 {
+	if isNull(val) {
+		return nil
+	}
 	v := toFloat(val)
-	return 0 - abs(v)
+	v = 0 - abs(v)
+	return &v
 }
 
-func payoutByTag(tagValue, tagName string, money any) float64 {
+func isNull(val any) bool {
+	if val == nil {
+		return true
+	}
+	if v, ok := val.(string); ok {
+		if v == "" {
+			return true
+		}
+	}
+	return false
+}
+
+func payoutByTag(tagValue, tagName string, money any) *float64 {
 	if tagValue == tagName {
 		return payout(money)
 	}
-	return 0
+	return nil
 }
 
 // income
 // @Description: 取得收入金额
 // @param val
 // @return float64
-func income(val any) float64 {
+func income(val any) *float64 {
+	if isNull(val) {
+		return nil
+	}
 	v := toFloat(val)
-	return abs(v)
+	v = abs(v)
+	return &v
 }
 
-func incomeByTag(tagValue, tagName string, money any) float64 {
+func incomeByTag(tagValue, tagName string, money any) *float64 {
 	if tagValue == tagName {
 		return income(money)
 	}
-	return 0
+	return nil
 }
 
 // amount

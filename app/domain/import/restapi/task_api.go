@@ -31,6 +31,7 @@ func (s *TaskAPI) InitController(app *iris.Application) error {
 	ctl := restapi.NewController(app, s.rootPath+"/import", s)
 	ctl.Post("/task", "Create")
 	ctl.Put("/task", "Update")
+	ctl.Delete("/task", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/task/{id}", "FindById")
 	ctl.GetPaging("/task", "FindPaging")
 	return nil

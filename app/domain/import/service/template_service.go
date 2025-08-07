@@ -39,6 +39,7 @@ func (t *TemplateService) Create(ctx context.Context, cmd *command.TempCreateCom
 	temp.Name = cmd.Data.Name
 	temp.BankName = cmd.Data.BankName
 	temp.SheetName = cmd.Data.SheetName
+
 	temp.SchemaId = cmd.Data.SchemaId
 	temp.Remark = cmd.Data.Remark
 	temp.FileId = cmd.Data.FileId
@@ -84,6 +85,6 @@ func (t *TemplateService) FindById(ctx context.Context, qry *query.TemplateFindB
 }
 
 func (t *TemplateService) FindPaging(ctx context.Context, caseId string, qry *query.TemplateFindPagingQuery) idao.FindPagingResult[*model.Template] {
-	qry.SetMustFilter(fmt.Sprintf("case_id='%s'", caseId))
+	qry.SetMustFilter(fmt.Sprintf("case_id=='%s'", caseId))
 	return t.dao.FindPaging(ctx, qry)
 }

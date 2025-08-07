@@ -69,7 +69,7 @@ type TaskUpdateFields struct {
 	SchemaName string                 `json:"schemaName" validate:"required"`
 	MapHeads   []*model.MapHead       `json:"mapHeads"  validate:"required"  title:"表头"`
 	Fields     []*model.TemplateField `json:"fields"  validate:"required"  title:"字段"`
-	Remark     string                 `json:"remarks" title:"备注"` // 备注
+	Remark     string                 `json:"remark" title:"备注"` // 备注
 }
 
 type TaskLockField struct {

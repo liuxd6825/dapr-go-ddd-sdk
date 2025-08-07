@@ -43,6 +43,7 @@ func (s *RecordAPI) InitController(app *iris.Application) error {
 	ctl.GetPaging("record", "FindPaging")
 	ctl.GetPaging("record:by-task", "FindPagingByTaskId")
 	ctl.GetData("record:record-count", "CountRecordIeByTaskId")
+	ctl.GetData("record:error-count", "CountErrorByTaskId")
 
 	return nil
 }
@@ -62,10 +63,6 @@ func (s *RecordAPI) UpdateField(ctx context.Context, cmd *command.RecordUpdateFi
 
 func (s *RecordAPI) UpdateByFilter(ctx context.Context, cmd *command.RecordUpdateFilterCommand) error {
 	return s.recordService.UpdateByFilter(ctx, cmd)
-}
-
-func (s *RecordAPI) CountRecordIeByTaskId(ctx context.Context, qry *query.RecordIeFindByTaskIdQuery) (int64, error) {
-	return s.recordService.CountRecordIeByTaskId(ctx, qry.TaskId)
 }
 
 func (s *RecordAPI) Delete(ctx context.Context, cmd *command.RecordDeleteCommand) error {
@@ -97,6 +94,14 @@ func (s *RecordAPI) GenerateRecord(ctx context.Context, cmd *command.RecordCreat
 
 func (s *RecordAPI) Import2Master(ctx context.Context, cmd *command.RecordImport2MasterCommand) error {
 	return s.recordService.Import2Master(ctx, cmd)
+}
+
+func (s *RecordAPI) CountRecordIeByTaskId(ctx context.Context, qry *query.RecordIeFindByTaskIdQuery) (int64, error) {
+	return s.recordService.CountRecordIeByTaskId(ctx, qry.TaskId)
+}
+
+func (s *RecordAPI) CountErrorByTaskId(ctx context.Context, qry *query.RecordIeFindByTaskIdQuery) (int64, error) {
+	return s.recordService.CountErrorByTaskId(ctx, "", qry.TaskId)
 }
 
 func (s *RecordAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQueryRequest) (*model.RecordIe, error) {

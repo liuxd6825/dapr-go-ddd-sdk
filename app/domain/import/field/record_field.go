@@ -8,13 +8,13 @@ import (
 
 type RecordCreateFields struct {
 	TaskId    string        `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
-	CaseId    string        `json:"caseId" validate:"required"  title:"案件Id"`      // 案件Id
-	DocId     string        `json:"docId" validate:"required"  title:"文档Id"`       // 文档Id
-	FileId    string        `json:"fileId" validate:"required"  title:"文件Id"`      // 文档Id
-	FileName  string        `json:"fileName" validate:"required"  title:"文件名称"`    // 文档Id
-	SheetId   string        `json:"sheetId" validate:"required"  title:"SheetId"`  // sheet页ID
+	CaseId    string        `json:"caseId" validate:"required"  title:"案件Id"`     // 案件Id
+	DocId     string        `json:"docId" validate:"required"  title:"文档Id"`      // 文档Id
+	FileId    string        `json:"fileId" validate:"required"  title:"文件Id"`     // 文档Id
+	FileName  string        `json:"fileName" validate:"required"  title:"文件名称"` // 文档Id
+	SheetId   string        `json:"sheetId" validate:"required"  title:"SheetId"`   // sheet页ID
 	SheetName string        `json:"sheetName" validate:"required"  title:"Sheet页"` // sheet页
-	Record    *RecordFields `json:"records" validate:"required"  title:"流水明细"`     // 流水明细
+	Record    *RecordFields `json:"records" validate:"required"  title:"流水明细"`  // 流水明细
 	Remark    string        `json:"remark" title:"备注"`
 }
 
@@ -37,7 +37,7 @@ type RecordCreate4ExcelCommandFields struct {
 	SheetId   string                `json:"sheetId" validate:"required"  title:"SheetId"` // sheet页ID
 	SheetName string                `json:"sheetName,omitempty" validate:"required"  title:"Sheet页"`
 	BatchSize int64                 `json:"batchSize,omitempty"  validate:"required"  title:"批大小"`
-	IsView    bool                  `json:"isView,omitempty"  validate:"required" title:"是预览"`
+	IsView    bool                  `json:"isView,omitempty"  validate:"-" title:"是预览"`
 	Template  *model.RecordTemplate `json:"template,omitempty"  validate:"required"  title:"模板"`
 }
 
@@ -83,31 +83,31 @@ type RecordIeUpdateFields struct {
 	DocId  string `json:"docId,omitempty" bson:"doc_id"  title:"文档id"`
 	FileId string `json:"fileId,omitempty" bson:"file_id"  title:"文件id"`
 
-	Iden     string   `json:"iden,omitempty"  bson:"iden"   validate:"-" title:"我方标识"`            // 标识
-	Name     string   `json:"name,omitempty"   bson:"name"  validate:"-" title:"我方名称"`            // 名称
-	Acct     string   `json:"acct,omitempty"   bson:"acct"  validate:"-" title:"我方账号"`            // 账号
+	Iden     string   `json:"iden,omitempty"  bson:"iden"   validate:"-" title:"我方标识"`              // 标识
+	Name     string   `json:"name,omitempty"   bson:"name"  validate:"-" title:"我方名称"`              // 名称
+	Acct     string   `json:"acct,omitempty"   bson:"acct"  validate:"-" title:"我方账号"`              // 账号
 	AcctType string   `json:"acctType,omitempty"   bson:"acct_type"  validate:"-" title:"我方账号类型"` // 账号类型
-	Category string   `json:"category,omitempty"   bson:"category"  validate:"-" title:"我方类别"`    // 类别Id 公司或个人
+	Category string   `json:"category,omitempty"   bson:"category"  validate:"-" title:"我方类别"`      // 类别Id 公司或个人
 	BankName string   `json:"bankName,omitempty"  bson:"bank_name"   validate:"-" title:"我方开户银行"` // 开户银行
 	Balance  *float64 `json:"balance,omitempty"   bson:"balance"  validate:"-" title:"我方余额账户"`    // 余额账户
 
-	OppIden     string `json:"oppIden,omitempty"   bson:"opp_iden"  validate:"-" title:"对方标识"`            // 对方标识
-	OppName     string `json:"oppName,omitempty"   bson:"opp_name"  validate:"-" title:"对方名称"`            // 对方名称
-	OppAcct     string `json:"oppAcct,omitempty"   bson:"opp_acct"  validate:"-" title:"对方账号"`            // 对方账号
+	OppIden     string `json:"oppIden,omitempty"   bson:"opp_iden"  validate:"-" title:"对方标识"`              // 对方标识
+	OppName     string `json:"oppName,omitempty"   bson:"opp_name"  validate:"-" title:"对方名称"`              // 对方名称
+	OppAcct     string `json:"oppAcct,omitempty"   bson:"opp_acct"  validate:"-" title:"对方账号"`              // 对方账号
 	OppAcctType string `json:"oppAcctType,omitempty"   bson:"opp_acct_type"  validate:"-" title:"对方账号类型"` // 对方账号类型
-	OppCategory string `json:"oppCategory,omitempty"   bson:"opp_category"  validate:"-" title:"对方类别"`    // 对方类别
+	OppCategory string `json:"oppCategory,omitempty"   bson:"opp_category"  validate:"-" title:"对方类别"`      // 对方类别
 	OppBankName string `json:"oppBankName,omitempty"  bson:"opp_bank_name"   validate:"-" title:"对方开户银行"` // 对方开户银行
 
-	Serial  string     `json:"serial,omitempty"   bson:"serial"  validate:"-" title:"流水号"`  // 流水号
+	Serial  string     `json:"serial,omitempty"   bson:"serial"  validate:"-" title:"流水号"`   // 流水号
 	Payout  *float64   `json:"payout,omitempty"   bson:"payout"  validate:"-" title:"支出金额"` // 借方发生额（支出）
 	Income  *float64   `json:"income,omitempty"  bson:"income"   validate:"-" title:"收入金额"` // 贷方发生额（收入）
 	Amount  *float64   `json:"amount,omitempty"   bson:"amount"  validate:"-" title:"交易金额"` // 交易金额
 	Date    *time.Time `json:"date,omitempty"   bson:"date"  validate:"-" title:"交易时间"`     // 交易时间
 	Type    string     `json:"type,omitempty"   bson:"type"  validate:"-" title:"交易类型"`     // 交易类型
 	Ccy     string     `json:"ccy,omitempty"  bson:"ccy"  validate:"-" title:"交易币种" `       // 交易币种
-	Place   string     `json:"place,omitempty"   bson:"place"  validate:"-" title:"地点"`     // 交易地点
-	Summary string     `json:"summary,omitempty"   bson:"summary"  validate:"-" title:"摘要"` // 摘要
-	Notes   string     `json:"notes,omitempty"   bson:"notes"  validate:"-" title:"备注"`     // 备注
+	Place   string     `json:"place,omitempty"   bson:"place"  validate:"-" title:"地点"`       // 交易地点
+	Summary string     `json:"summary,omitempty"   bson:"summary"  validate:"-" title:"摘要"`   // 摘要
+	Notes   string     `json:"notes,omitempty"   bson:"notes"  validate:"-" title:"备注"`       // 备注
 }
 
 // RecordMetaFields
@@ -117,18 +117,18 @@ type RecordMetaFields struct {
 	SrcType enum.SourceType `json:"srcType" bson:"src_type,omitempty"`
 	Meta    *RowMeta        `json:"meta" bson:"meta,omitempty"`
 
-	Name     *FieldMeta `json:"name" bson:"name" validate:"-" title:"名称"`                     // 名称
-	Acct     *FieldMeta `json:"acct"  bson:"acct" validate:"-" title:"账号"`                    // 账号
-	AcctType *FieldMeta `json:"accType" bson:"acct_type" validate:"-" title:"账号类型"`           // 账号类型
-	Category *FieldMeta `json:"category" bson:"category" validate:"-" title:"类别"`             // 类别
-	Balance  *FieldMeta `json:"balance" bson:"balance" validate:"-" title:"余额账户"`             // 余额账户
+	Name     *FieldMeta `json:"name" bson:"name" validate:"-" title:"名称"`                      // 名称
+	Acct     *FieldMeta `json:"acct"  bson:"acct" validate:"-" title:"账号"`                     // 账号
+	AcctType *FieldMeta `json:"accType" bson:"acct_type" validate:"-" title:"账号类型"`          // 账号类型
+	Category *FieldMeta `json:"category" bson:"category" validate:"-" title:"类别"`              // 类别
+	Balance  *FieldMeta `json:"balance" bson:"balance" validate:"-" title:"余额账户"`            // 余额账户
 	BankName *FieldMeta `json:"bankName" bson:"bank_name,omitempty" validate:"-" title:"开户行"` // 开户行
 
-	OppAcct     *FieldMeta `json:"oppAcct"  bson:"opp_acct" validate:"-" title:"对方账号"`                    // 对方账号
-	OppAccType  *FieldMeta `json:"oppAccType" bson:"opp_acct_type" validate:"-" title:"对方账号类型"`           // 对方账号类型
-	OppCategory *FieldMeta `json:"oppCategory" bson:"opp_category" validate:"-" title:"对方类别"`             // 对方类别
-	OppIden     *FieldMeta `json:"oppIden" bson:"opp_iden"  validate:"-" title:"对方标识"`                    // 对方标识
-	OppName     *FieldMeta `json:"oppName" bson:"opp_name" validate:"-" title:"对方名称"`                     // 对方名称
+	OppAcct     *FieldMeta `json:"oppAcct"  bson:"opp_acct" validate:"-" title:"对方账号"`                     // 对方账号
+	OppAccType  *FieldMeta `json:"oppAccType" bson:"opp_acct_type" validate:"-" title:"对方账号类型"`          // 对方账号类型
+	OppCategory *FieldMeta `json:"oppCategory" bson:"opp_category" validate:"-" title:"对方类别"`              // 对方类别
+	OppIden     *FieldMeta `json:"oppIden" bson:"opp_iden"  validate:"-" title:"对方标识"`                     // 对方标识
+	OppName     *FieldMeta `json:"oppName" bson:"opp_name" validate:"-" title:"对方名称"`                      // 对方名称
 	OppBankName *FieldMeta `json:"oppBankName" bson:"opp_bank_name,omitempty" validate:"-" title:"对方开户行"` // 对方开户行
 
 	Amount *FieldMeta `json:"amount" bson:"amount,omitempty" validate:"-" title:"交易金额"` // 交易金额
@@ -138,10 +138,10 @@ type RecordMetaFields struct {
 	Type   *FieldMeta `json:"type" bson:"type,omitempty" validate:"-" title:"交易类型"`     // 交易类型
 	Ccy    *FieldMeta `json:"ccy" bson:"ccy,omitempty" validate:"-" title:"交易币种"`       // 交易币种
 
-	Serial  *FieldMeta `json:"serial"   bson:"serial,omitempty"  validate:"-" title:"流水号"`   // 流水号
+	Serial  *FieldMeta `json:"serial"   bson:"serial,omitempty"  validate:"-" title:"流水号"`     // 流水号
 	Payout  *FieldMeta `json:"payout"   bson:"payout,omitempty"  validate:"-" title:"借方发生额"` // 借方发生额（支取）
 	Income  *FieldMeta `json:"income"  bson:"income,omitempty"   validate:"-" title:"贷方发生额"` // 贷方发生额（收入）
-	Summary *FieldMeta `json:"summary"   bson:"summary,omitempty"  validate:"-" title:"摘要"`  // 摘要
+	Summary *FieldMeta `json:"summary"   bson:"summary,omitempty"  validate:"-" title:"摘要"`     // 摘要
 
 }
 
@@ -209,30 +209,30 @@ type Region struct {
 type RecordFields struct {
 	Id       string   `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
 	RowNum   int64    `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
-	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`            // 标识
-	Name     string   `json:"name"  bson:"name" validate:"-" title:"名称"`            // 名称
-	Acct     string   `json:"acct" bson:"acct" validate:"-" title:"账号"`             // 账号
+	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`              // 标识
+	Name     string   `json:"name"  bson:"name" validate:"-" title:"名称"`              // 名称
+	Acct     string   `json:"acct" bson:"acct" validate:"-" title:"账号"`               // 账号
 	AcctType string   `json:"accType" bson:"acct_type"  validate:"-" title:"账号类型"`  // 账号类型
-	Category string   `json:"category"  bson:"category" validate:"-" title:"类别"`    // 类别Id 公司或个人
+	Category string   `json:"category"  bson:"category" validate:"-" title:"类别"`      // 类别Id 公司或个人
 	Balance  *float64 `json:"balance" bson:"balance" validate:"-" title:"余额账户"`     // 余额账户
 	BankName string   `json:"bankName" bson:"bank_name"  validate:"-" title:"开户银行"` // 开户银行
 
-	OppIden     string `json:"oppIden" bson:"opp_iden" validate:"-" title:"对方标识"`             // 对方标识
-	OppName     string `json:"oppName" bson:"opp_name" validate:"-" title:"对方名称"`             // 对方名称
-	OppAcct     string `json:"oppAcct"  bson:"opp_acct" validate:"-" title:"对方账号"`            // 对方账号
+	OppIden     string `json:"oppIden" bson:"opp_iden" validate:"-" title:"对方标识"`               // 对方标识
+	OppName     string `json:"oppName" bson:"opp_name" validate:"-" title:"对方名称"`               // 对方名称
+	OppAcct     string `json:"oppAcct"  bson:"opp_acct" validate:"-" title:"对方账号"`              // 对方账号
 	OppAcctType string `json:"oppAccType" bson:"opp_acct_type"  validate:"-" title:"对方账号类型"`  // 对方账号类型
-	OppCategory string `json:"oppCategory" bson:"opp_category"  validate:"-" title:"对方类别"`    // 对方类别
+	OppCategory string `json:"oppCategory" bson:"opp_category"  validate:"-" title:"对方类别"`      // 对方类别
 	OppBankName string `json:"oppBankName" bson:"opp_bank_name"  validate:"-" title:"对方开户银行"` // 对方开户银行
 
-	Serial  string            `json:"serial"   bson:"serial"  validate:"-" title:"流水号"`   // 流水号
+	Serial  string            `json:"serial"   bson:"serial"  validate:"-" title:"流水号"`     // 流水号
 	Payout  *float64          `json:"payout"   bson:"payout"  validate:"-" title:"借方发生额"` // 借方发生额（支取）
 	Income  *float64          `json:"Income"  bson:"income"   validate:"-" title:"贷方发生额"` // 贷方发生额（收入）
-	Amount  *float64          `json:"amount"   bson:"amount"  validate:"-" title:"交易金额"`  // 交易金额
-	Date    *time.Time        `json:"date"   bson:"date"  validate:"-" title:"交易时间"`      // 交易时间
-	Type    string            `json:"type"   bson:"type"  validate:"-" title:"交易类型"`      // 交易类型
-	Ccy     string            `json:"ccy"  bson:"ccy"  validate:"-" title:"交易币种" `        // 交易币种
-	Place   string            `json:"place"   bson:"place"  validate:"-" title:"地点"`      // 交易地点
-	Summary string            `json:"summary"   bson:"summary"  validate:"-" title:"摘要"`  // 摘要
-	Notes   string            `json:"notes"   bson:"notes"  validate:"-" title:"备注"`      // 备注
-	Meta    *RecordMetaFields `json:"meta"  gorm:"meta;json" validate:"-" title:"元数据"`    // 元数据
+	Amount  *float64          `json:"amount"   bson:"amount"  validate:"-" title:"交易金额"`   // 交易金额
+	Date    *time.Time        `json:"date"   bson:"date"  validate:"-" title:"交易时间"`       // 交易时间
+	Type    string            `json:"type"   bson:"type"  validate:"-" title:"交易类型"`       // 交易类型
+	Ccy     string            `json:"ccy"  bson:"ccy"  validate:"-" title:"交易币种" `         // 交易币种
+	Place   string            `json:"place"   bson:"place"  validate:"-" title:"地点"`         // 交易地点
+	Summary string            `json:"summary"   bson:"summary"  validate:"-" title:"摘要"`     // 摘要
+	Notes   string            `json:"notes"   bson:"notes"  validate:"-" title:"备注"`         // 备注
+	Meta    *RecordMetaFields `json:"meta"  gorm:"meta;json" validate:"-" title:"元数据"`      // 元数据
 }

@@ -11,8 +11,10 @@ type Template struct {
 	FileId          string           `json:"fileId" gorm:"file_id"   bson:"file_id" index:"" `
 	FileName        string           `json:"fileName" gorm:"file_name"  bson:"file_name" index:"" `
 	SheetName       string           `json:"sheetName"  gorm:"sheet_name" bson:"sheet_name"`
+	SheetId         string           `json:"sheetId"  gorm:"sheet_id" bson:"sheet_id"`
 	BankName        string           `json:"bankName" gorm:"bank_name"  bson:"bank_name" index:"" `
 	SchemaId        string           `json:"schemaId" gorm:"schema_id"  bson:"schema_id"  index:"" `
+	SchemaName      string           `json:"schemaName" gorm:"schema_name"  bson:"schema_name"  index:"" `
 	MapHeads        []*MapHead       `json:"mapHeads" gorm:"map_heads" bson:"map_heads"`
 	Fields          []*TemplateField `json:"fields" gorm:"fields" bson:"fields"`
 }
