@@ -2,17 +2,17 @@ package model
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"time"
 )
 
 type Base = xbase.BaseModel
 
 type Progress struct {
 	Base    `bson:",inline"`
-	TaskId  string     `json:"taskId" bson:"task_id" index:""`
-	Type    string     `json:"type" bson:"type" index:""`
-	Time    times.Time `json:"time" bson:"time" index:""`
-	Message string     `json:"message" bson:"message"`
+	TaskId  string    `json:"taskId" bson:"task_id" index:""`
+	Type    string    `json:"type" bson:"type" index:""`
+	Time    time.Time `json:"time" bson:"time" index:""`
+	Message string    `json:"message" bson:"message"`
 }
 
 type Task struct {
@@ -22,8 +22,8 @@ type Task struct {
 	FileName   string           `json:"fileName,omitempty" gorm:"file_name"  bson:"file_name" index:""  title:"文件名称"`
 	SheetId    string           `json:"sheetId,omitempty"  gorm:"sheet_id" bson:"sheet_id"  title:"Sheet页"`
 	SheetName  string           `json:"sheetName,omitempty"  gorm:"sheet_name" bson:"sheet_name"  title:"Sheet页"`
-	StartTime  *times.Time      `json:"startTime,omitempty" gorm:"start_time"  bson:"start_time"  title:"开始时间"`
-	EndTime    *times.Time      `json:"endTime,omitempty" gorm:"end_time"  bson:"end_time"  title:"最后日期"`
+	StartTime  *time.Time       `json:"startTime,omitempty" gorm:"start_time"  bson:"start_time"  title:"开始时间"`
+	EndTime    *time.Time       `json:"endTime,omitempty" gorm:"end_time"  bson:"end_time"  title:"最后日期"`
 	Total      int64            `json:"total,omitempty" gorm:"total"  bson:"total"  title:"总记录数"`
 	Complete   int64            `json:"complete,omitempty" gorm:"complete"  bson:"complete" title:"完成数量"`
 	SchemaId   string           `json:"schemaId,omitempty" gorm:"schema_id"  bson:"schema_id" title:"主数据类型ID"`

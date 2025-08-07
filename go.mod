@@ -137,6 +137,7 @@ require (
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/liamylian/jsontime v1.0.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/meguminnnnnnnnn/go-openai v0.0.0-20250523041550-e202cd57070c // indirect
 	github.com/microsoft/go-mssqldb v1.6.0 // indirect

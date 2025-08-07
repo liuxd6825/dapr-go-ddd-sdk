@@ -16,8 +16,8 @@ func NewRecordFactory() *RecordFactory {
 }
 
 func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *event.RecordImportMasterEvent) ([]*model.Record, error) {
-	var list []*model.Record
-	for _, fields := range e.Data.Items {
+	list := make([]*model.Record, len(e.Data.Items))
+	for i, fields := range e.Data.Items {
 		v := model.NewRecord()
 		if err := mapperutils.Mapper(fields, v); err != nil {
 			return nil, err
@@ -27,8 +27,9 @@ func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *eve
 		v.DocId = e.Data.DocId
 		v.TaskId = e.Data.TaskId
 		v.FileId = e.Data.FileId
-		v.FileName = e.Data.FileName
-		list = append(list, v)
+		v.SheetId = e.Data.SheetId
+		v.RowNum = fields.RowNum
+		list[i] = v
 	}
 	return list, nil
 }

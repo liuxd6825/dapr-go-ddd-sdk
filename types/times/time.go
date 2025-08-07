@@ -4,7 +4,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
-	"strings"
 	"time"
 )
 
@@ -26,7 +25,7 @@ func GetTime(value ...*time.Time) *Time {
 	var t *Time
 	for _, v := range value {
 		if v != nil {
-			t := Time(*v)
+			t := Time(v.Local())
 			return &t
 		}
 	}
@@ -34,8 +33,9 @@ func GetTime(value ...*time.Time) *Time {
 }
 
 func NewTime() *Time {
-	t := Time(time.Now())
-	return &t
+	val := time.Now()
+	t := GetTime(&val)
+	return t
 }
 
 func NewTimeWithString(val string) (t *Time, err error) {
@@ -60,7 +60,7 @@ func GetTimeJSONFormat() string {
 	return timeJSONFormat
 }
 
-func (t *Time) UnmarshalJSON(data []byte) (err error) {
+/*func (t *Time) UnmarshalJSON(data []byte) (err error) {
 	str := string(data)
 	format := timeJSONFormat
 	if strings.Contains(str, "T") && strings.Contains(str, "+") {
@@ -69,8 +69,12 @@ func (t *Time) UnmarshalJSON(data []byte) (err error) {
 	} else if strings.Contains(str, "T") && strings.Contains(str, "Z") {
 		format = time.RFC3339
 	}
-	now, err := time.ParseInLocation(`"`+format+`"`, str, time.Local)
-	*t = Time(now)
+	newTime, err := time.ParseInLocation(`"`+format+`"`, str, time.Local)
+	if err != nil {
+		return err
+	}
+	val := GetTime(&newTime)
+	*t = *val
 	return
 }
 
@@ -84,10 +88,10 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	b = append(b, '"')
 	return b, nil
 }
-
+*/
 // MarshalBSONValue 实现bson自定义序列化
-func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	tt := time.Time(t)
+func (t *Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	tt := time.Time(*t)
 	return bson.MarshalValue(tt)
 }
 
@@ -102,6 +106,14 @@ func (t *Time) UnmarshalBSONValue(bType bsontype.Type, data []byte) error {
 	return nil
 }
 
+func (t *Time) Equals(v *Time) bool {
+	if t == nil && v == nil {
+		return true
+	}
+	v1 := t.Time()
+	v2 := v.Time()
+	return v1.Equal(v2)
+}
 func (t *Time) GetSchemaType() string {
 	return "datetime"
 }
@@ -110,11 +122,8 @@ func (t *Time) IsSchemaDateTime() bool {
 	return true
 }
 
-func (t *Time) String() string {
-	if t == nil {
-		return ""
-	}
-	return time.Time(*t).Format(timeJSONFormat)
+func (t Time) String() string {
+	return time.Time(t).Format(timeJSONFormat)
 }
 
 func (t *Time) PTime() *time.Time {

@@ -60,12 +60,6 @@ func GetDateJSONFormat() string {
 	return dateJSONFormat
 }
 
-func (t *Date) UnmarshalJSON(data []byte) (err error) {
-	now, err := time.ParseInLocation(`"`+dateJSONFormat+`"`, string(data), time.Local)
-	*t = Date(now)
-	return err
-}
-
 func (t *Date) GetSchemaType() string {
 	return "date"
 }
@@ -74,7 +68,7 @@ func (t *Date) IsSchemaDateTime() bool {
 	return true
 }
 
-func (t *Date) MarshalJSON() ([]byte, error) {
+/*func (t *Date) MarshalJSON() ([]byte, error) {
 	if t == nil || t.IsNil() {
 		return []byte("null"), nil
 	}
@@ -83,8 +77,18 @@ func (t *Date) MarshalJSON() ([]byte, error) {
 	b = time.Time(*t).AppendFormat(b, dateJSONFormat)
 	b = append(b, '"')
 	return b, nil
-}
+}*/
 
+/*
+	func (t *Date) UnmarshalJSON(data []byte) (err error) {
+		now, err := time.ParseInLocation(`"`+dateJSONFormat+`"`, string(data), time.Local)
+		if err != nil {
+			return err
+		}
+		*t = Date(now)
+		return err
+	}
+*/
 func (t Date) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	return bson.MarshalValue(t.Time().UTC())
 }

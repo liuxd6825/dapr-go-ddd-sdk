@@ -85,9 +85,14 @@ func isNotFoundError(err error) bool {
 	}
 	return false
 }
-func SetOKData(ictx iris.Context, data any) error {
+func SetOKJsonData(ictx iris.Context, data any) error {
 	ictx.StatusCode(iris.StatusOK)
-	return ictx.JSON(data)
+	jsonStr, err := JsonMarshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = ictx.WriteString(jsonStr)
+	return err
 }
 
 func SetData(ictx iris.Context, data any) error {

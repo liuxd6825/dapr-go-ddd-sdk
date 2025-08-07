@@ -10,12 +10,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
-
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -53,12 +52,13 @@ func (s *RecordService) Create(ctx context.Context, cmd *command.RecordCreateCom
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		dr := cmd.Data.Record
 		record := &model.RecordIe{
-			BaseModel: xbase.BaseModel{
-				TenantId: cmd.Data.TenantId,
-			},
-			DocId:       cmd.Data.DocId,
-			FileId:      cmd.Data.FileId,
-			TaskId:      dr.TaskId,
+			BaseModel: xbase.BaseModel{},
+
+			DocId:   cmd.Data.DocId,
+			FileId:  cmd.Data.FileId,
+			TaskId:  cmd.Data.TaskId,
+			SheetId: cmd.Data.SheetId,
+
 			RowNum:      dr.RowNum,
 			Name:        dr.Name,
 			Acct:        dr.Acct,
@@ -205,7 +205,7 @@ func (s *RecordService) Check(ctx context.Context, r *model.RecordIe) (map[strin
 		return nil, errors.New("检查的【流水记录】不能为空。")
 	}
 	data := map[string][]string{}
-	if r.Date.IsNil() {
+	if r.Date.IsZero() {
 		s.addFieldError(data, "date", "不能为空")
 	}
 

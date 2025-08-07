@@ -8,11 +8,13 @@ import (
 
 type authKey struct {
 }
+type authUserKey struct{}
 
 var (
 	NotFundErr      = errors.New("AuthContext not found")
 	ContextIsNilErr = errors.New("context is null")
 	authCtxKey      = authKey{}
+	authUserCtxKey  = authUserKey{}
 )
 
 func NewAuthContext(ctx context.Context, token string) (context.Context, error) {
@@ -25,6 +27,10 @@ func NewAuthContext(ctx context.Context, token string) (context.Context, error) 
 
 func NewAuthContextUser(ctx context.Context, tk *AuthTokenEntity) (context.Context, error) {
 	return context.WithValue(ctx, authCtxKey, tk), nil
+}
+
+func NewAuthUserContext(ctx context.Context, authUser AuthUser) (context.Context, error) {
+	return context.WithValue(ctx, authUserCtxKey, authUser), nil
 }
 
 func SetAuthContext(ctx context.Context, token string) (context.Context, error) {
@@ -41,8 +47,21 @@ func SetAuthContext(ctx context.Context, token string) (context.Context, error) 
 	}
 	return context.WithValue(ctx, authCtxKey, newToken), nil
 }
+func getAuthUser(ctx context.Context) (AuthUser, bool) {
+	val := ctx.Value(authUserCtxKey)
+	if val == nil {
+		return nil, false
+	}
+	if authUser, ok := val.(AuthUser); ok {
+		return authUser, true
+	}
+	return nil, false
+}
 
 func GetAuthUser(ctx context.Context) (AuthUser, bool) {
+	if authUser, ok := getAuthUser(ctx); ok {
+		return authUser, true
+	}
 	token, isFound := GetAuthToken(ctx)
 	if !isFound {
 		return nil, false
@@ -54,6 +73,12 @@ func GetAuthUser(ctx context.Context) (AuthUser, bool) {
 		return nil, false
 	}
 	return token.GetUser(), true
+}
+
+func NewAuthUserEntity(valMap map[string]any) (tk AuthUser) {
+	var authUser AuthUserEntity
+	maputils.Decode(valMap, &authUser)
+	return &authUser
 }
 
 func GetAuthToken(ctx context.Context) (AuthToken, bool) {

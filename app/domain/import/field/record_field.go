@@ -3,27 +3,28 @@ package field
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"time"
 )
 
 type RecordCreateFields struct {
-	Id        string        `json:"id" validate:"required"  title:"主键"`            // 主键
-	TenantId  string        `json:"tenantId" validate:"required"  title:"租户ID"`    // 租户ID
+	TaskId    string        `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
 	CaseId    string        `json:"caseId" validate:"required"  title:"案件Id"`      // 案件Id
 	DocId     string        `json:"docId" validate:"required"  title:"文档Id"`       // 文档Id
-	FileId    string        `json:"fileId" validate:"required"  title:"文档Id"`      // 文档Id
-	SheetName string        `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
+	FileId    string        `json:"fileId" validate:"required"  title:"文件Id"`      // 文档Id
+	FileName  string        `json:"fileName" validate:"required"  title:"文件名称"`    // 文档Id
+	SheetId   string        `json:"sheetId" validate:"required"  title:"SheetId"`  // sheet页ID
+	SheetName string        `json:"sheetName" validate:"required"  title:"Sheet页"` // sheet页
 	Record    *RecordFields `json:"records" validate:"required"  title:"流水明细"`     // 流水明细
 	Remark    string        `json:"remark" title:"备注"`
 }
 
 type RecordCreate4ExcelCommandFields struct {
+	TaskId    string                `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
 	CaseId    string                `json:"caseId,omitempty"  validate:"required" title:"案件ID"`
 	DocId     string                `json:"docId,omitempty"  validate:"required"  title:"文档ID"`
 	FileId    string                `json:"fileId,omitempty"  validate:"required"   title:"文件ID"`
-	TaskId    string                `json:"taskId,omitempty"  validate:"required" title:"任务ID"`
 	FileName  string                `json:"fileName,omitempty"  validate:"required" title:"文件名称"`
+	SheetId   string                `json:"sheetId" validate:"required"  title:"SheetId"` // sheet页ID
 	SheetName string                `json:"sheetName,omitempty" validate:"required"  title:"Sheet页"`
 	BatchSize int64                 `json:"batchSize,omitempty"  validate:"required"  title:"批大小"`
 	IsView    bool                  `json:"isView,omitempty"  validate:"required" title:"是预览"`
@@ -31,12 +32,13 @@ type RecordCreate4ExcelCommandFields struct {
 }
 
 type RecordImport2MasterFields struct {
+	TaskId    string `json:"taskId" validate:"required" `
 	CaseId    string `json:"caseId"  validate:"required" `
 	DocId     string `json:"docId"  validate:"required" `
 	FileId    string `json:"fileId"  validate:"required" `
 	FileName  string `json:"fileName" validate:"required" `
+	SheetId   string `json:"sheetId" validate:"required" `
 	SheetName string `json:"sheetName" validate:"required" `
-	TaskId    string `json:"taskId" validate:"required" `
 	PageSize  int64  `json:"pageSize" validate:"required" `
 }
 
@@ -196,16 +198,8 @@ type Region struct {
 // RecordFields
 // 资金记录 实体类型
 type RecordFields struct {
-	Id string `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
-
-	RowNum    int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
-	TaskId    string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  title:"任务id"`
-	CaseId    string `json:"caseId" validate:"required"  title:"案件Id"` // 案件Id
-	DocId     string `json:"docId" validate:"required"  title:"文档Id"`  // 文档Id
-	FileId    string `json:"fileId" validate:"required"  title:"文档Id"` // 文档Id
-	FileName  string `json:"fileName" validate:"-" title:"文件名"`
-	SheetName string `json:"sheetName" validate:"required"  title:"sheet页"` // sheet页
-
+	Id       string   `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
+	RowNum   int64    `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
 	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`            // 标识
 	Name     string   `json:"name"  bson:"name" validate:"-" title:"名称"`            // 名称
 	Acct     string   `json:"acct" bson:"acct" validate:"-" title:"账号"`             // 账号
@@ -225,7 +219,7 @@ type RecordFields struct {
 	Payout  *float64          `json:"payout"   bson:"payout"  validate:"-" title:"借方发生额"` // 借方发生额（支取）
 	Income  *float64          `json:"Income"  bson:"income"   validate:"-" title:"贷方发生额"` // 贷方发生额（收入）
 	Amount  *float64          `json:"amount"   bson:"amount"  validate:"-" title:"交易金额"`  // 交易金额
-	Date    *times.Time       `json:"date"   bson:"date"  validate:"-" title:"交易时间"`      // 交易时间
+	Date    *time.Time        `json:"date"   bson:"date"  validate:"-" title:"交易时间"`      // 交易时间
 	Type    string            `json:"type"   bson:"type"  validate:"-" title:"交易类型"`      // 交易类型
 	Ccy     string            `json:"ccy"  bson:"ccy"  validate:"-" title:"交易币种" `        // 交易币种
 	Place   string            `json:"place"   bson:"place"  validate:"-" title:"地点"`      // 交易地点

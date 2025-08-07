@@ -229,7 +229,7 @@ func (c *ApiController) callMethod(method string, path string, handlerName strin
 				}
 			}
 			if err == nil && callMethod.OutData >= 0 {
-				err = SetOKData(ictx, data)
+				err = SetOKJsonData(ictx, data)
 			}
 			return err
 		}).Catch(func(err error) {

@@ -156,6 +156,9 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 		return
 	}
 	authUser := b.GetAuthUser(ctx)
+	if authUser == nil {
+		panic("context authUser is nil")
+	}
 	timeNow := time.Now().UTC()
 
 	b.setField(entity, fields.CreatedTime, &timeNow)

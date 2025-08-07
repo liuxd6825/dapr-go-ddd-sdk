@@ -10,7 +10,7 @@ import (
 )
 
 // GetEventParams 接受事件端取得事件参数
-func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, rctx context.Context, err error) {
+func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, ctx context.Context, err error) {
 	cloudData, err := cloudEvent.GetData()
 	if err != nil {
 		return nil, nil, err
@@ -21,9 +21,9 @@ func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, rctx co
 	if err != nil {
 		return nil, nil, err
 	}
-	rctx = context.Background()
+	ctx = context.Background()
 	if payload.Data == nil {
-		return target, rctx, nil
+		return target, ctx, nil
 	}
 	err = json.Unmarshal(payload.Data, target)
 	if err != nil {
@@ -36,11 +36,14 @@ func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, rctx co
 		if err != nil {
 			return nil, nil, err
 		}
+		if val, ok := meta["autoUser"]; ok {
+			meta[AUTH_USER] = val
+		}
 
 		if mapVal, ok := meta[AUTH_USER]; ok {
 			if authUserMap, ok := mapVal.(map[string]any); ok {
-				tk := appctx.NewAuthTokenEntity(authUserMap)
-				rctx, err = appctx.NewAuthContextUser(rctx, tk)
+				authUser := appctx.NewAuthUserEntity(authUserMap)
+				ctx, err = appctx.NewAuthUserContext(ctx, authUser)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -49,17 +52,17 @@ func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, rctx co
 
 		if idVal, ok := meta[TENANT_ID]; ok {
 			if tenantId, ok := idVal.(string); ok {
-				rctx = appctx.NewTenantContext(rctx, tenantId)
+				ctx = appctx.NewTenantContext(ctx, tenantId)
 			}
 		}
 
 		if headerVal, ok := meta[HEADER]; ok {
 			if header, ok := headerVal.(map[string][]string); ok {
-				rctx = appctx.NewHeaderContext(rctx, header)
+				ctx = appctx.NewHeaderContext(ctx, header)
 			}
 		}
 	}
-	return target, rctx, err
+	return target, ctx, err
 }
 
 func newMeta(ctx context.Context, tenantId string, meta map[string]any) (map[string]any, error) {

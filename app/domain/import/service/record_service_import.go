@@ -117,7 +117,7 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 // @param cmd
 // @return error
 func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCreate4ExcelCommand, batchBack func(batch readexcel.Batching) error) (res *Create4ExcelResult, err error) {
-	now := times.Now()
+	now := time.Now()
 	task := &task_pkg.Task{
 		DocId:     cmd.Data.DocId,
 		FileId:    cmd.Data.FileId,
@@ -339,7 +339,7 @@ func newRecord(ctx context.Context, row *readexcel.DataRow, temp *readexcel.Temp
 	})
 
 	row.GetDate(temp, task_pkg.FieldName_Date.String(), func(v *time.Time) {
-		record.Date = times.GetTime(v)
+		record.Date = v
 	}, func(err ...error) {
 		record.AddErrors(err...)
 	})
@@ -382,7 +382,7 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 	items := make([]*field.RecordFields, 0)
 	for _, e := range list {
 		record := &field.RecordFields{
-
+			RowNum:   e.RowNum,
 			Id:       e.Id,
 			Iden:     e.Iden,
 			Name:     e.Name,
@@ -430,6 +430,7 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 		DocId:     appcmd.Data.DocId,
 		FileName:  appcmd.Data.FileName,
 		FileId:    appcmd.Data.FileId,
+		SheetId:   appcmd.Data.SheetId,
 		SheetName: appcmd.Data.SheetName,
 		TaskId:    appcmd.Data.TaskId,
 		Items:     items,
