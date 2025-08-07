@@ -31,7 +31,11 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, c
 		if request.ContentLength == 0 {
 			return nil, errors.New("request body is null")
 		}
-		err = ictx.ReadJSON(target)
+		jsonBytes, err := ictx.GetBody()
+		if err != nil {
+			return nil, err
+		}
+		err = JsonUnmarshal(jsonBytes, target)
 		if err != nil {
 			return nil, err
 		}
