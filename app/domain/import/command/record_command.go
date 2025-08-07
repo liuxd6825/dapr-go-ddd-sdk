@@ -5,6 +5,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
 )
 
+type RecordPreviewCommand struct {
+	xbase.Command[field.RecordPreviewCommandFields]
+}
+
 type RecordCreate4ExcelCommand struct {
 	xbase.Command[field.RecordCreate4ExcelCommandFields]
 }

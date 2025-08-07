@@ -81,12 +81,12 @@ type TaskStopFields struct {
 }
 
 type TaskUpdateProgressFields struct {
-	Id           string          `json:"id" title:"ID"`
-	CompleteRows int64           `json:"completeRows" title:"完成数量"`
-	State        model.TaskState `json:"state"  title:"状态"`
-	Message      string          `json:"message"  title:"信息"`
-	StartTime    *times.Time     `json:"startTime"   title:"开始时间"`
-	EndTime      *times.Time     `json:"endTime"  title:"最后日期"`
+	Id        string          `json:"id" title:"ID"`
+	Complete  int64           `json:"complete" title:"完成数量"`
+	State     model.TaskState `json:"state"  title:"状态"`
+	Message   string          `json:"message"  title:"信息"`
+	StartTime *times.Time     `json:"startTime"   title:"开始时间"`
+	EndTime   *times.Time     `json:"endTime"  title:"最后日期"`
 }
 
 type TaskUpdateRecordTemplateFields struct {
