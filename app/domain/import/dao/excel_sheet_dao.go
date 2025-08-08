@@ -18,11 +18,10 @@ type ExcelSheetDao struct {
 func NewExcelSheetDao(dbKey string) *ExcelSheetDao {
 	tableName := "import_excel_sheet"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.ExcelSheet{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	daoVal := &ExcelSheetDao{Dao: dao.NewDao[*model.ExcelSheet](newCfg)}
 	return daoVal

@@ -14,11 +14,10 @@ type MessageDao struct {
 func NewMessageDao(dbKey string) *MessageDao {
 	tableName := "rag_message"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Message{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.Message](newCfg)
 	daoVal := &MessageDao{Dao: baseDao}

@@ -95,15 +95,14 @@ func (s *Proxy) AutoMigrateAll(path string) error {
 
 func (s *Proxy) AutoMigrateTable(ctx context.Context, schFile string) {
 	sch := s.LoadSchemaFile(schFile, "")
-	aggField, aggType, tableName, isPubEvent, dbKey := s.getSchemaDBInfos(sch)
+	aggField, aggType, tableName, _, dbKey := s.getSchemaDBInfos(sch)
 	dbSch := dbschema.NewDBSchemaWithJsonSchema(sch)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		AggField:   aggField,
-		AggType:    aggType,
-		TableName:  tableName,
-		IsPubEvent: &isPubEvent,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		AggField:  aggField,
+		AggType:   aggType,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	vDao := dao.NewDao[map[string]any](newCfg)
 	vDao.Table().AutoMigrate(ctx)

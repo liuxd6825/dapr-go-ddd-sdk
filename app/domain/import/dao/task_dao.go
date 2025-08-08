@@ -18,11 +18,10 @@ type TaskDao struct {
 func NewTaskDao(dbKey string) *TaskDao {
 	tableName := "import_task"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Task{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.Task](newCfg)
 	daoVal := &TaskDao{Dao: baseDao}

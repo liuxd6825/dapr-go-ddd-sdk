@@ -21,9 +21,8 @@ type BusRelationDao struct {
 }
 
 func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *MasterNodeDao) *BusRelationDao {
-	relCfg := &dao.NewConfig{
+	relCfg := &dao.DaoConfig{
 		DBKey:              "neo4j",
-		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Rel,
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,

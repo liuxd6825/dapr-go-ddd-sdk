@@ -14,7 +14,7 @@ type ExcelRowDao struct {
 func NewExcelRowDao(dbKey string) *ExcelRowDao {
 	tableName := "import_excel_row"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.ExcelRow{}, tableName)
-	newCfg := &dao.NewConfig{
+	newCfg := &dao.DaoConfig{
 		DBKey:     dbKey,
 		TableName: tableName,
 		DBSchema:  dbSch,

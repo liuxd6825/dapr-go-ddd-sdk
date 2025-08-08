@@ -14,11 +14,10 @@ type ChatDao struct {
 func NewChatDao(dbKey string) *ChatDao {
 	tableName := "rag_chat"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Chat{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.Chat](newCfg)
 	daoVal := &ChatDao{Dao: baseDao}

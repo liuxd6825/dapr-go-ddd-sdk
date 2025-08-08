@@ -19,9 +19,8 @@ type GraphDao struct {
 }
 
 func NewGraphDao(neo4jDBKey string) *GraphDao {
-	nodeCfg := &dao.NewConfig{
+	nodeCfg := &dao.DaoConfig{
 		DBKey:              neo4jDBKey,
-		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        []string{"draw"},
 		IsCancelModified:   true,

@@ -28,9 +28,8 @@ func NewRecordDao(dbKey string) *RecordDao {
 
 func newRecordDao(dbKey string, labels ...string) *RecordDao {
 	dbSch := dbschema.NewDBSchemaWithStruct("record", &model.Record{}, "record")
-	nodeCfg := &dao.NewConfig{
+	nodeCfg := &dao.DaoConfig{
 		DBKey:              dbKey,
-		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        labels,
 		IsCancelModified:   true,

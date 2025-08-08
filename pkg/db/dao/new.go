@@ -15,7 +15,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 )
 
-type NewConfig struct {
+type DaoConfig struct {
 	DBKey string `json:"dbKey"` // 可选 DBKey 与 DB
 	DB    any    `json:"db"`    // 可选 DBKey 与 DB
 	// IsPubEvent         *bool           `json:"isPubEvent"`         // 可选
@@ -44,7 +44,7 @@ func IsTrue() *bool {
 	return &isTrue
 }
 
-func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
+func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 	if newCfg == nil {
 		panic("new dao must have a non-nil pointer")
 	}
@@ -161,4 +161,14 @@ func getDaoKey(dbKey, tableName string, className string) string {
 func getDBItem(env *env.Env, dbKey string) env.DBItem {
 	item := env.GetDB(dbKey)
 	return item
+}
+
+func NewConfig(dbKey string, tableName string, entity any) *DaoConfig {
+	dbSch := dbschema.NewDBSchemaWithStruct(tableName, entity, tableName)
+	newCfg := &DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
+	}
+	return newCfg
 }

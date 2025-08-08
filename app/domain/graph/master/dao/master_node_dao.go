@@ -26,9 +26,8 @@ type IStore[T any] interface {
 }
 
 func NewMasterNodeDao(labels []string, dbSch *store.DBSchema) *MasterNodeDao {
-	nodeCfg := &dao.NewConfig{
+	nodeCfg := &dao.DaoConfig{
 		DBKey:              "neo4j",
-		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        labels,
 		IsCancelModified:   true,

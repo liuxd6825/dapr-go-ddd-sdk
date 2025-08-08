@@ -13,13 +13,13 @@ type DrawDao struct {
 }
 
 func NewDrawDao(dbKey string) *DrawDao {
-	d := dao.NewDao[*model.Draw](&dao.NewConfig{
+	base := dao.NewDao[*model.Draw](&dao.DaoConfig{
 		DBKey:    dbKey,
 		DBSchema: dbschema.NewDBSchemaWithStruct("draw", &model.Draw{}, "draw"),
 		Env:      env.GetEnv(),
 		IsCache:  true,
 	})
 	return &DrawDao{
-		Dao: d,
+		Dao: base,
 	}
 }

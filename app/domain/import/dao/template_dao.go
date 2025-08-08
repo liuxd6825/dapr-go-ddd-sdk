@@ -14,11 +14,10 @@ type TemplateDao struct {
 func NewTemplateDao(dbKey string) *TemplateDao {
 	tableName := "import_template"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Template{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.Template](newCfg)
 	daoVal := &TemplateDao{Dao: baseDao}

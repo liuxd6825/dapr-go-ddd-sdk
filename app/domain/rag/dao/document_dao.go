@@ -14,11 +14,10 @@ type DocumentDao struct {
 func NewDocumentDao(dbKey string) *DocumentDao {
 	tableName := "rag_document"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Document{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.Document](newCfg)
 	daoVal := &DocumentDao{Dao: baseDao}

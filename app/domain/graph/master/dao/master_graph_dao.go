@@ -17,9 +17,8 @@ type MasterGraphDao struct {
 }
 
 func NewMasterGraphDao() *MasterGraphDao {
-	nodeCfg := &dao.NewConfig{
+	nodeCfg := &dao.DaoConfig{
 		DBKey:              "neo4j",
-		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        []string{"master"},
 		IsCancelModified:   true,

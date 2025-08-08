@@ -14,11 +14,10 @@ type RecordDao struct {
 func NewRecordDao(dbKey string) *RecordDao {
 	tableName := "master_record"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Record{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.Record](newCfg)
 	daoVal := &RecordDao{Dao: baseDao}

@@ -14,11 +14,10 @@ type TagTypeDao struct {
 func NewTagTypeDao(dbKey string) *TagTypeDao {
 	tableName := "sys_tag_type"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.TagType{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.TagType](newCfg)
 	daoVal := &TagTypeDao{Dao: baseDao}

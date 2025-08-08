@@ -22,7 +22,7 @@ type ExcelRowService struct {
 func NewExcelRowService() *ExcelRowService {
 	return singleutils.CreateObj[*ExcelRowService](func() *ExcelRowService {
 		return &ExcelRowService{
-			rowDao:       dao.NewRowDao(config.DBKey),
+			rowDao:       dao.NewExcelRowDao(config.DBKey),
 			sheetService: NewExcelSheetService(),
 		}
 	})

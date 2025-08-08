@@ -31,9 +31,8 @@ type Neo4jGraphStorage struct {
 // It returns an initialized Neo4J struct and any error encountered during connection setup.
 // The returned Neo4J instance must be closed with Close() when no longer needed to free up resources.
 func NewNeo4jGraphStorage(dbKey string, logger logs.Logger) *Neo4jGraphStorage {
-	nodeCfg := &dao.NewConfig{
+	nodeCfg := &dao.DaoConfig{
 		DBKey:              dbKey,
-		IsPubEvent:         dao.IsFalse(),
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        []string{"doc"},
 		IsCancelModified:   true,

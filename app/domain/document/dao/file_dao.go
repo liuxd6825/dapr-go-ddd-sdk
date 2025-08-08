@@ -14,11 +14,10 @@ type FileDao struct {
 func NewFileDao(dbKey string) *FileDao {
 	tableName := "doc_file"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.File{}, tableName)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: dao.IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := dao.NewDao[*model.File](newCfg)
 	daoVal := &FileDao{Dao: baseDao}

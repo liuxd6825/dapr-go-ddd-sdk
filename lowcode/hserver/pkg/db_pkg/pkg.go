@@ -40,19 +40,18 @@ func (p *Pkg) NewRSQLBuilder() *rsql.Builder {
 
 func (p *Pkg) NewDao(schFile string) idao.Dao[map[string]any] {
 	sch := p.schemaPkg.LoadFile(schFile, "")
-	aggField, aggType, tableName, isPubEvent, dbKey := p.getInfos(sch)
+	aggField, aggType, tableName, _, dbKey := p.getInfos(sch)
 	daoKey := p.GetKey(dbKey, tableName)
 	if v, ok := p.daoMap.Get(daoKey); ok {
 		return v
 	}
 	dbSch := dbschema.NewDBSchemaWithJsonSchema(sch)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		AggField:   aggField,
-		AggType:    aggType,
-		TableName:  tableName,
-		IsPubEvent: &isPubEvent,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		AggField:  aggField,
+		AggType:   aggType,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	vDao := dao.NewDao[map[string]any](newCfg)
 	p.daoMap.Set(daoKey, vDao)
@@ -60,15 +59,14 @@ func (p *Pkg) NewDao(schFile string) idao.Dao[map[string]any] {
 }
 
 func (p *Pkg) NewDaoWithCfg(cfg *NewDaoConfig) idao.Dao[map[string]any] {
-	aggField, aggType, tableName, isPubEvent, dbKey := p.getInfos(cfg.Schema)
+	aggField, aggType, tableName, _, dbKey := p.getInfos(cfg.Schema)
 	dbSch := dbschema.NewDBSchemaWithJsonSchema(cfg.Schema)
-	newCfg := &dao.NewConfig{
-		DBKey:      dbKey,
-		AggField:   aggField,
-		AggType:    aggType,
-		TableName:  tableName,
-		IsPubEvent: &isPubEvent,
-		DBSchema:   dbSch,
+	newCfg := &dao.DaoConfig{
+		DBKey:     dbKey,
+		AggField:  aggField,
+		AggType:   aggType,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	return dao.NewDao[map[string]any](newCfg)
 }
