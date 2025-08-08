@@ -231,7 +231,7 @@ func arguments(tokens *iterator) (Value, error) {
 	if tokens.current().Type == LeftParenToken {
 		return valueList(tokens)
 	} else {
-		return value(tokens)
+		return toValue(tokens)
 	}
 }
 
@@ -240,7 +240,7 @@ func valueList(tokens *iterator) (Value, error) {
 	var items []Value
 	current := tokens.current()
 	for current.Type != RightParenToken {
-		c, err := value(tokens)
+		c, err := toValue(tokens)
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +253,7 @@ func valueList(tokens *iterator) (Value, error) {
 	return &ListValue{items}, nil
 }
 
-func value(tokens *iterator) (Value, error) {
+func toValue(tokens *iterator) (Value, error) {
 	v := tokens.currentAndMove()
 	switch v.Type {
 	case FuncToken:
