@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"sync"
 )
@@ -32,21 +32,24 @@ func NewTemplateService() *TemplateService {
 	return _templateDomainService
 }
 
-func (t *TemplateService) Create(ctx context.Context, cmd *command.TempCreateCommand) {
-	temp := &model.Template{}
-	temp.Id = cmd.Data.Id
-	temp.CaseId = cmd.Data.CaseId
-	temp.Name = cmd.Data.Name
-	temp.BankName = cmd.Data.BankName
-	temp.SheetName = cmd.Data.SheetName
-
-	temp.SchemaId = cmd.Data.SchemaId
-	temp.Remark = cmd.Data.Remark
-	temp.FileId = cmd.Data.FileId
-	temp.FileName = cmd.Data.FileName
-	temp.Fields = cmd.Data.Fields
-	temp.MapHeads = cmd.Data.MapHeads
-	t.dao.Create(ctx, temp)
+func (t *TemplateService) Create(ctx context.Context, cmd *command.TempCreateCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+		temp := &model.Template{}
+		temp.Id = cmd.Data.Id
+		temp.CaseId = cmd.Data.CaseId
+		temp.Name = cmd.Data.Name
+		temp.BankName = cmd.Data.BankName
+		temp.SheetName = cmd.Data.SheetName
+		temp.SheetId = cmd.Data.SheetId
+		temp.SchemaId = cmd.Data.SchemaId
+		temp.SchemaName = cmd.Data.SchemaName
+		temp.Remark = cmd.Data.Remark
+		temp.FileId = cmd.Data.FileId
+		temp.FileName = cmd.Data.FileName
+		temp.Fields = cmd.Data.Fields
+		temp.MapHeads = cmd.Data.MapHeads
+		return t.dao.Create(ctx, temp).GetError()
+	})
 }
 
 func (t *TemplateService) Delete(ctx context.Context, cmd *command.TempDeleteCommand) error {
@@ -84,7 +87,8 @@ func (t *TemplateService) FindById(ctx context.Context, qry *query.TemplateFindB
 	return t.dao.FindById(ctx, qry.Id)
 }
 
-func (t *TemplateService) FindPaging(ctx context.Context, caseId string, qry *query.TemplateFindPagingQuery) idao.FindPagingResult[*model.Template] {
-	qry.SetMustFilter(fmt.Sprintf("case_id=='%s'", caseId))
-	return t.dao.FindPaging(ctx, qry)
+func (t *TemplateService) FindPaging(ctx context.Context, caseId string, qry store.FindPagingQuery) (idao.FindPagingResult[*model.Template], error) {
+	//qry.SetMustFilter(fmt.Sprintf("case_id=='%s'", caseId))
+	res := t.dao.FindPaging(ctx, qry)
+	return res, res.GetError()
 }

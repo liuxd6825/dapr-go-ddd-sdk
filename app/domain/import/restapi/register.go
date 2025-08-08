@@ -15,6 +15,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		RegisterExcelSheetApi(app, baseUrl, env)
 		RegisterTaskApi(app, baseUrl, env)
 		RegisterRecordAPI(app, baseUrl, env)
+		RegisterTemplateAPI(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -44,5 +45,10 @@ func RegisterTaskApi(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterRecordAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewRecordAPI(env, baseUrl)
+	restapi.InitController(app, api)
+}
+
+func RegisterTemplateAPI(app *iris.Application, baseUrl string, env *env.Env) {
+	api := NewTemplateAPI(env, baseUrl)
 	restapi.InitController(app, api)
 }
