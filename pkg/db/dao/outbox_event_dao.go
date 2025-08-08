@@ -14,10 +14,9 @@ func NewOutboxEventDao(dbKey string) idao.OutboxEventDao {
 	tableName := "sys_outbox_event"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &dbevent.OutboxEvent{}, tableName)
 	newCfg := &NewConfig{
-		DBKey:      dbKey,
-		IsPubEvent: IsFalse(),
-		TableName:  tableName,
-		DBSchema:   dbSch,
+		DBKey:     dbKey,
+		TableName: tableName,
+		DBSchema:  dbSch,
 	}
 	baseDao := NewDao[*dbevent.OutboxEvent](newCfg)
 	dao := &OutboxEventDao{Dao: baseDao}

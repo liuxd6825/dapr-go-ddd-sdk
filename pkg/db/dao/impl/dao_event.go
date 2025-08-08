@@ -37,9 +37,6 @@ import (
 }
 */
 func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessType, list []map[string]any, opts ...idao.CallOptions) {
-	if !d.isPubEvent {
-		return
-	}
 
 	/*
 		agg, event, err := d.NewAggregateAndEvent(opeType, list, opts...)

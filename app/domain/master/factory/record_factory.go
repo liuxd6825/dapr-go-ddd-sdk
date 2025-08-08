@@ -35,6 +35,7 @@ func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *eve
 			v.Month = int(fields.Date.Month())
 			v.Day = fields.Date.Day()
 		}
+		v.TranId = model.NewTranId(v)
 		list[i] = v
 	}
 	return list, nil

@@ -29,23 +29,6 @@ type VerifyError struct {
 	StatusCode int        `json:"statusCode"`
 }
 
-func NewVerifyError(logId string, err *errors.VerifyError) *VerifyError {
-	return &VerifyError{
-		Error:      err.GetFieldErrors(),
-		LogId:      logId,
-		Time:       times.Now(),
-		StatusCode: iris.StatusBadRequest,
-	}
-}
-func NewInternalServerError(logId string, err error) *WebError {
-	return &WebError{
-		Error:      err.Error(),
-		LogId:      logId,
-		Time:       times.Now(),
-		StatusCode: iris.StatusInternalServerError,
-	}
-}
-
 func NewWebError(ictx iris.Context, logId string, err error, statusCode int) *WebError {
 	ictx.StatusCode(statusCode)
 	return &WebError{
@@ -60,7 +43,13 @@ func SetError(ictx iris.Context, err error) {
 	if err != nil {
 		req := ictx.Request()
 		logId := logs.GetLogId(ictx)
-		logs.Error(ictx, logs.Fields{"logId": logId, "method": req.Method, "uri": req.RequestURI, "error": err.Error()})
+		logs.Error(ictx, logs.Fields{
+			"logId":      logId,
+			"method":     req.Method,
+			"uri":        req.RequestURI,
+			"error":      err.Error(),
+			"remoteAddr": req.RemoteAddr,
+		})
 		var data any
 		if vErr, ok := err.(*errors.VerifyError); ok {
 			data = NewWebError(ictx, logId, vErr, iris.StatusBadRequest)

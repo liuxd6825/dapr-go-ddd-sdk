@@ -16,7 +16,6 @@ type DaoBase[T any] struct {
 	appId       string          // 应用ID
 	aggField    string          // 聚合根字段
 	aggType     string          // 聚合根类型名称
-	isPubEvent  bool            // 是否发布事件
 	eventPrefix string          // 事件前缀
 	store       store.IStore[T] // 数据访问
 	env         *env.Env        // 环境变量
@@ -52,7 +51,6 @@ func NewDaoBase[T any](store store.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
 		dbKey:       cfg.DBKey,
 		tableName:   tableName,
 		appId:       cfg.GetEnv().App.AppId,
-		isPubEvent:  cfg.GetIsPubEvent(),
 		aggField:    aggField,
 		aggType:     cfg.AggType,
 		eventPrefix: "eventPrefix",
@@ -77,10 +75,6 @@ func (d *DaoBase[T]) SetAggField(val string) {
 
 func (d *DaoBase[T]) GetAggField() string {
 	return d.aggField
-}
-
-func (d *DaoBase[T]) GetIsPubEvent() bool {
-	return d.isPubEvent
 }
 
 func (d *DaoBase[T]) GetEventPrefix() string {

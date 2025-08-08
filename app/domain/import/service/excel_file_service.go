@@ -9,9 +9,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	db "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	db "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
 )

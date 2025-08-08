@@ -12,8 +12,8 @@ type GraphType string
 type FieldStyle string
 
 type DaoConfig struct {
-	DBKey              string          `json:"dbKey"`              // 数据库Key
-	IsPubEvent         bool            `json:"isPubEvent"`         // 是否发布消息
+	DBKey string `json:"dbKey"` // 数据库Key
+	//IsPubEvent         bool            `json:"isPubEvent"`         // 是否发布消息
 	AggField           string          `json:"aggField"`           // 聚合根字段
 	AggType            string          `json:"aggType"`            // 聚合根类型
 	Env                *env.Env        `json:"env"`                // 环境配置
@@ -71,9 +71,6 @@ func (c *DaoConfig) GetDBKey() string {
 	return c.DBKey
 }
 
-func (c *DaoConfig) GetIsPubEvent() bool {
-	return c.IsPubEvent
-}
 func (c *DaoConfig) GetAggField() string {
 	return c.AggField
 }

@@ -3,26 +3,32 @@ package sub_import
 import (
 	"context"
 	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/factory"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type RecordEventSubHandler struct {
-	rootPath string
-	env      *env.Env
-	factory  *factory.RecordFactory
-	service  *service.RecordService
+	rootPath          string
+	env               *env.Env
+	factory           *factory.RecordFactory
+	recordService     *service.RecordService
+	tranDetailService *service.TranDetailService
 }
 
 func NewRecordEventHandler(env *env.Env, baseUrl string) *RecordEventSubHandler {
 	return &RecordEventSubHandler{
-		rootPath: baseUrl,
-		env:      env,
-		factory:  factory.NewRecordFactory(),
-		service:  service.NewRecordService(),
+		rootPath:          baseUrl,
+		env:               env,
+		factory:           factory.NewRecordFactory(),
+		recordService:     service.NewRecordService(),
+		tranDetailService: service.NewTranDetailService(),
 	}
 }
 
@@ -43,5 +49,17 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, eve
 	if err != nil {
 		return err
 	}
-	return s.service.CreateMany(ctx, records)
+	var details []*model.TranDetail
+	for _, record := range records {
+		details = append(details, model.NewTranDetailFromRecord(record))
+	}
+
+	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+		err = s.recordService.CreateMany(ctx, records)
+		if err != nil {
+			return err
+		}
+		return s.tranDetailService.CreateMany(ctx, details)
+	})
+
 }

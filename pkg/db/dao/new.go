@@ -16,9 +16,9 @@ import (
 )
 
 type NewConfig struct {
-	DBKey              string          `json:"dbKey"`              // 可选 DBKey 与 DB
-	DB                 any             `json:"db"`                 // 可选 DBKey 与 DB
-	IsPubEvent         *bool           `json:"isPubEvent"`         // 可选
+	DBKey string `json:"dbKey"` // 可选 DBKey 与 DB
+	DB    any    `json:"db"`    // 可选 DBKey 与 DB
+	// IsPubEvent         *bool           `json:"isPubEvent"`         // 可选
 	AggField           string          `json:"aggField"`           // 可选
 	AggType            string          `json:"aggType"`            // 可选
 	DBSchema           *store.DBSchema `json:"dbSchema"`           // 可选
@@ -97,17 +97,18 @@ func NewDao[T any](newCfg *NewConfig) idao.Dao[T] {
 		panic(fmt.Sprintf("No dbKey exists  %s  ", dbKey))
 	}
 
-	isPubEvent := false
-	if newCfg.IsPubEvent != nil {
-		isPubEvent = *newCfg.IsPubEvent
-	} else {
-		isPubEvent = env.GetEnv().App.IsPubEvent
-	}
+	/*
+		isPubEvent := false
+		if newCfg.IsPubEvent != nil {
+			isPubEvent = *newCfg.IsPubEvent
+		} else {
+			isPubEvent = env.GetEnv().App.IsPubEvent
+		}*/
 
 	daoCfg := &idao.DaoConfig{
-		DBKey:              dbKey,
-		DB:                 newCfg.DB,
-		IsPubEvent:         isPubEvent,
+		DBKey: dbKey,
+		DB:    newCfg.DB,
+		//IsPubEvent:         isPubEvent,
 		AggField:           newCfg.AggField,
 		AggType:            newCfg.AggType,
 		Env:                envInst,
