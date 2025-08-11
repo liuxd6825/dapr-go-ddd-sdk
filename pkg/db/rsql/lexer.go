@@ -329,9 +329,9 @@ func (t *Lexer) processReserved() *Token {
 	} else if t.isString(idx, "=!null=") {
 		return t.generateToken(NotIsNullToken, idx+7)
 	} else if t.isString(idx, "=start=") {
-		return t.generateToken(IsNullToken, idx+7)
+		return t.generateToken(StartToken, idx+7)
 	} else if t.isString(idx, "=end=") {
-		return t.generateToken(NotIsNullToken, idx+5)
+		return t.generateToken(EndToken, idx+5)
 	}
 	return unknownToken()
 }
