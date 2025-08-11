@@ -3,8 +3,8 @@ package readexcel
 import (
 	"fmt"
 	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"math"
 	"regexp"
