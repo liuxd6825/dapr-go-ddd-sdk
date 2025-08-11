@@ -17,6 +17,7 @@ import (
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/liuxd6825/k6server/js/modules"
 	"io"
+	"time"
 )
 
 type WebContext struct {
@@ -160,6 +161,16 @@ func (c *WebContext) ReadMap(sch *jsonschema.Schema) map[string]any {
 		panic("ReadObject() invalid object")
 	}
 
+	if dataVal, ok := object["data"]; ok {
+		if data, ok := dataVal.(map[string]any); ok {
+			if timeVal, ok := data["birthday"]; ok {
+				if t, ok := timeVal.(*times.Date); ok {
+					utc := t.Time().UTC()
+					fmt.Println(utc.Format(time.DateTime))
+				}
+			}
+		}
+	}
 	if sch != nil {
 		err = schema.Validate(sch, object)
 	}

@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -292,22 +293,18 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 	opts.Auth.AuthSource = authSource
 	opts.Auth.AuthMechanism = authMechanism
 
-	/*
-		// 解决mongo不是本地时区的问题
-		builder := bsoncodec.NewRegistryBuilder()
+	// 1. 创建一个自定义的 BSON Registry 以便使用本地时区
+	rb := bson.NewRegistryBuilder()
+	// NewTimeCodec 有一个选项可以设置 UseLocalTimeZone 为 true
+	// 这会使得从 BSON 的 datetime 类型解码时，自动转换为 time.Local
+	timeCodec := TimeCodec{}
+	rb.RegisterTypeDecoder(reflect.TypeOf(time.Time{}), timeCodec)
+	rb.RegisterTypeDecoder(reflect.TypeOf(times.Time{}), timeCodec)
+	rb.RegisterTypeDecoder(reflect.TypeOf(&times.Date{}), timeCodec)
+	registry := rb.Build()
 
-		// 注册默认的编码和解码器
-		bsoncodec.DefaultValueEncoders{}.RegisterDefaultEncoders(builder)
-		bsoncodec.DefaultValueDecoders{}.RegisterDefaultDecoders(builder)
-
-		// 注册时间解码器
-		tTime := reflect.TypeOf(time.Time{})
-		tCodec := bsoncodec.NewTimeCodec(bsonoptions.TimeCodec().SetUseLocalTimeZone(true))
-	*/
-
-	opts.SetBSONOptions(&options.BSONOptions{
-		UseLocalTimeZone: times.IsLocalTimeZone(),
-	})
+	// 2. 将配置好的 Registry 应用到客户端选项中
+	opts.SetRegistry(registry)
 
 	if optionsFunc != nil {
 		_ = optionsFunc(opts)

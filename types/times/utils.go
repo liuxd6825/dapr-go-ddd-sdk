@@ -42,6 +42,10 @@ func now() Time {
 	return Time(t)
 }
 
+func Parse(layout, val string) (time.Time, error) {
+	return time.ParseInLocation(layout, val, dateLocation)
+}
+
 func AsDate(data any) (*Date, error) {
 	val, err := AsTime(data)
 	if err != nil {
@@ -151,7 +155,7 @@ func StrToDateTime(str string) (res *time.Time, err error) {
 		format = time.RFC3339Nano
 	}
 
-	val, er := time.Parse(format, str)
+	val, er := Parse(format, str)
 	if er != nil {
 		return nil, er
 	}

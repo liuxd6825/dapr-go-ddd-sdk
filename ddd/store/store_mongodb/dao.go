@@ -469,11 +469,11 @@ func (r *Dao[T]) entity2db(entity any) map[string]any {
 		if entityIsMap {
 			for _, field := range r.schema.Fields {
 				fieldValue, ok := eMap[field.Name]
-				if !ok {
+				if !ok && field.Name != field.DBName {
 					fieldValue, ok = eMap[field.DBName]
 				}
 				if !ok {
-					fieldValue = nil
+					fieldValue = field.DefaultValueInterface
 				}
 				data[field.DBName] = fieldValue
 			}

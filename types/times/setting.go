@@ -20,6 +20,7 @@ const LocalMsTimeFormat = "2006-01-02 15:04:05.000000"
 func SetUTCTimeZone() {
 	timeZone = timeUTC
 	isUTCTime = true
+	time.Local = time.UTC
 }
 
 // SetLocalTimeZone

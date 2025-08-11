@@ -11,6 +11,7 @@ type Date time.Time
 
 var (
 	dateJSONFormat = "2006-01-02"
+	dateLocation   = time.UTC
 )
 
 type IDate interface {
@@ -21,7 +22,7 @@ func GetDate(value ...*time.Time) *Date {
 	for _, v := range value {
 		if v != nil {
 			t := *v
-			d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+			d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, dateLocation)
 			res := Date(d)
 			return &res
 		}
@@ -31,14 +32,14 @@ func GetDate(value ...*time.Time) *Date {
 
 func NewDate() *Date {
 	t := time.Now()
-	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, dateLocation)
 	res := Date(d)
 	return &res
 }
 
 func NowDate() *Date {
 	t := time.Now()
-	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.Local)
+	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, dateLocation)
 	res := Date(d)
 	return &res
 }
@@ -47,7 +48,7 @@ func NewDateWithString(val string) (t *Date, err error) {
 	if val == "" {
 		return nil, errors.New("time value is empty")
 	}
-	now, err := time.ParseInLocation(`"`+dateJSONFormat+`"`, val, time.Local)
+	now, err := time.ParseInLocation(`"`+dateJSONFormat+`"`, val, dateLocation)
 	*t = Date(now)
 	return t, err
 }
@@ -89,8 +90,10 @@ func (t *Date) IsSchemaDateTime() bool {
 		return err
 	}
 */
+
 func (t Date) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bson.MarshalValue(t.Time().UTC())
+	tt := time.Time(t)
+	return bson.MarshalValue(tt.UTC())
 }
 
 func (t *Date) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {

@@ -18,6 +18,9 @@ import (
 
 const SystemTenantId = "system"
 
+func init() {
+
+}
 func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []RegisterEventType, isTest bool, fun func(cxt context.Context) error) error {
 	if envCfg == nil {
 		return errors.New("envConfig is null")
@@ -27,8 +30,8 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 		envCfg.App.HttpHost = "0.0.0.0"
 	}
 
-	// 设置全局时区为本地时区
-	times.SetLocalTimeZone()
+	// 解决mongo数据库上日期的时区不一致的问题
+	times.SetUTCTimeZone()
 
 	userlog.Init(envCfg.App.AppId, envCfg.App.AppName)
 
