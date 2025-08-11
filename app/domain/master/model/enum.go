@@ -7,11 +7,11 @@ const (
 	IOType_In  IOType = 1
 )
 
-type CashType int
+type CashType bool
 
 const (
-	CashType_None CashType = 0 // 非现金
-	CashType_Cash CashType = 1
+	CashType_None CashType = false // 非现金
+	CashType_Cash CashType = true  // 现金
 )
 
 type AcctType string

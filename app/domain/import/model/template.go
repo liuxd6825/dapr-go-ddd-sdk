@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
 )
 
@@ -49,14 +50,4 @@ type TemplateField struct {
 
 // DataType
 // @Description: 数据类型
-type DataType string
-
-const (
-	DataType_None     DataType = ""
-	DataType_String   DataType = "str"
-	DataType_Integer  DataType = "int"
-	DataType_DateTime DataType = "dateTime"
-	DataType_Date     DataType = "date"
-	DataType_Time     DataType = "time"
-	DataType_Money    DataType = "money"
-)
+type DataType = readexcel.DataType

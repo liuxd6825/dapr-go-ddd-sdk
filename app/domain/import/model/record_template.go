@@ -2,8 +2,8 @@ package model
 
 import (
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
 )
 
 type RecordTemplate struct {
@@ -11,7 +11,7 @@ type RecordTemplate struct {
 	Name     *readexcel.Field `json:"name" bson:"name"`
 	Acct     *readexcel.Field `json:"acct" bson:"acct"`
 	AcctType *readexcel.Field `json:"acctType" bson:"acct_type"`
-	Category *readexcel.Field `json:"category" bson:"category"`
+	//Category *readexcel.Field `json:"category" bson:"category"`
 	BankName *readexcel.Field `json:"bankName" bson:"bank_name"`
 	Balance  *readexcel.Field `json:"balance" bson:"balance"`
 
@@ -19,9 +19,10 @@ type RecordTemplate struct {
 	OppName     *readexcel.Field `json:"oppName" bson:"opp_name"`
 	OppAcct     *readexcel.Field `json:"oppAcct" bson:"opp_acct"`
 	OppAcctType *readexcel.Field `json:"oppAcctType" bson:"opp_acct_type"`
-	OppCategory *readexcel.Field `json:"oppCategory" bson:"opp_category"`
+	//OppCategory *readexcel.Field `json:"oppCategory" bson:"opp_category"`
 	OppBankName *readexcel.Field `json:"oppBankName" bson:"opp_bank_name"`
 
+	Cash       *readexcel.Field     `json:"cash" bson:"cash"`
 	Serial     *readexcel.Field     `json:"serial" bson:"serial"`
 	Income     *readexcel.Field     `json:"income" bson:"income"`
 	Payout     *readexcel.Field     `json:"payout" bson:"payout"`
@@ -41,31 +42,32 @@ type RecordTemplate struct {
 
 func NewRecordTemplate() *RecordTemplate {
 	t := &RecordTemplate{
-		Iden:     readexcel.NewField("iden", "标识", readexcel.String, true),
-		Name:     readexcel.NewField("name", "名称", readexcel.String, false),
-		Acct:     readexcel.NewField("acct", "账号", readexcel.String, false),
-		AcctType: readexcel.NewField("acctType", "账号类型", readexcel.String, true),
-		Category: readexcel.NewField("category", "类别", readexcel.String, true),
-		BankName: readexcel.NewField("bankName", "开户行", readexcel.String, false),
-		Balance:  readexcel.NewField("balance", "余额", readexcel.Money, true),
+		Iden:     readexcel.NewField("iden", "标识", readexcel.DataType_String, true),
+		Name:     readexcel.NewField("name", "名称", readexcel.DataType_String, false),
+		Acct:     readexcel.NewField("acct", "账号", readexcel.DataType_String, false),
+		AcctType: readexcel.NewField("acctType", "账号类型", readexcel.DataType_String, true),
+		//Category: readexcel.NewField("category", "类别", readexcel.DataType_String, true),
+		BankName: readexcel.NewField("bankName", "开户行", readexcel.DataType_String, false),
+		Balance:  readexcel.NewField("balance", "余额", readexcel.DataType_Money, true),
 
-		OppIden:     readexcel.NewField("oppIden", "对方标识", readexcel.String, true),
-		OppName:     readexcel.NewField("oppName", "对方名称", readexcel.String, false),
-		OppAcct:     readexcel.NewField("oppAcct", "对方账号", readexcel.String, false),
-		OppAcctType: readexcel.NewField("oppAcctType", "对方账号类型", readexcel.String, true),
-		OppCategory: readexcel.NewField("oppCategory", "对方类别", readexcel.String, true),
-		OppBankName: readexcel.NewField("oppBankName", "对方开户行", readexcel.String, false),
+		OppIden:     readexcel.NewField("oppIden", "对方标识", readexcel.DataType_String, true),
+		OppName:     readexcel.NewField("oppName", "对方名称", readexcel.DataType_String, false),
+		OppAcct:     readexcel.NewField("oppAcct", "对方账号", readexcel.DataType_String, false),
+		OppAcctType: readexcel.NewField("oppAcctType", "对方账号类型", readexcel.DataType_String, true),
+		//OppCategory: readexcel.NewField("oppCategory", "对方类别", readexcel.DataType_String, true),
+		OppBankName: readexcel.NewField("oppBankName", "对方开户行", readexcel.DataType_String, false),
 
-		Serial:  readexcel.NewField("serial", "流水号", readexcel.String, true),
-		Income:  readexcel.NewField("income", "收入金额(贷)", readexcel.Money, false),
-		Payout:  readexcel.NewField("payout", "支出金额(借)", readexcel.Money, false),
-		Amount:  readexcel.NewField("amount", "交易金额", readexcel.String, true),
-		Date:    readexcel.NewField("date", "交易日期", readexcel.DateTime, false),
-		Type:    readexcel.NewField("type", "交易类型", readexcel.String, true),
-		Ccy:     readexcel.NewField("ccy", "币种", readexcel.String, true),
-		Place:   readexcel.NewField("place", "交易地点", readexcel.String, true),
-		Summary: readexcel.NewField("summary", "摘要", readexcel.String, true),
-		Notes:   readexcel.NewField("notes", "备注", readexcel.String, true),
+		Cash:    readexcel.NewField("cash", "现金标识", readexcel.DataType_Boolean, true),
+		Serial:  readexcel.NewField("serial", "流水号", readexcel.DataType_String, true),
+		Income:  readexcel.NewField("income", "收入金额(贷)", readexcel.DataType_Money, false),
+		Payout:  readexcel.NewField("payout", "支出金额(借)", readexcel.DataType_Money, false),
+		Amount:  readexcel.NewField("amount", "交易金额", readexcel.DataType_String, true),
+		Date:    readexcel.NewField("date", "交易日期", readexcel.DataType_DateTime, false),
+		Type:    readexcel.NewField("type", "交易类型", readexcel.DataType_String, true),
+		Ccy:     readexcel.NewField("ccy", "币种", readexcel.DataType_String, true),
+		Place:   readexcel.NewField("place", "交易地点", readexcel.DataType_String, true),
+		Summary: readexcel.NewField("summary", "摘要", readexcel.DataType_String, true),
+		Notes:   readexcel.NewField("notes", "备注", readexcel.DataType_String, true),
 	}
 	t.Name.AddReplace("（", "(").AddReplace("）", ")").AddReplace(" ", "")
 	t.OppName.AddReplace("（", "(").AddReplace("）", ")").AddReplace(" ", "")
@@ -75,7 +77,7 @@ func NewRecordTemplate() *RecordTemplate {
 	fields[t.Name.Name] = t.Name
 	fields[t.Acct.Name] = t.Acct
 	fields[t.AcctType.Name] = t.AcctType
-	fields[t.Category.Name] = t.Category
+	//fields[t.Category.Name] = t.Category
 	fields[t.BankName.Name] = t.BankName
 	fields[t.Balance.Name] = t.Balance
 
@@ -83,7 +85,7 @@ func NewRecordTemplate() *RecordTemplate {
 	fields[t.OppName.Name] = t.OppName
 	fields[t.OppAcct.Name] = t.OppAcct
 	fields[t.OppAcctType.Name] = t.OppAcctType
-	fields[t.OppCategory.Name] = t.OppCategory
+	//fields[t.OppCategory.Name] = t.OppCategory
 	fields[t.OppBankName.Name] = t.OppBankName
 
 	fields[t.Serial.Name] = t.Serial
@@ -107,7 +109,7 @@ func (t *RecordTemplate) NewTemplate() (*readexcel.Template, error) {
 		t.Name,
 		t.Acct,
 		t.AcctType,
-		t.Category,
+		//t.Category,
 		t.BankName,
 		t.Balance,
 
@@ -115,7 +117,7 @@ func (t *RecordTemplate) NewTemplate() (*readexcel.Template, error) {
 		t.OppName,
 		t.OppAcct,
 		t.OppAcctType,
-		t.OppCategory,
+		//t.OppCategory,
 		t.OppBankName,
 
 		t.Serial,
