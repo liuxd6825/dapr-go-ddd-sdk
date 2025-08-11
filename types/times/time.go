@@ -29,8 +29,8 @@ func GetTime(value ...*time.Time) *Time {
 	var t *Time
 	for _, v := range value {
 		if v != nil {
-			t := Time(v.UTC())
-			return &t
+			tt := Time(*v)
+			return &tt
 		}
 	}
 	return t
@@ -46,7 +46,7 @@ func NewTimeWithString(val string) (t *Time, err error) {
 	if val == "" {
 		return nil, errors.New("time value is empty")
 	}
-	now, err := time.ParseInLocation(`"`+timeJSONFormat+`"`, val, time.UTC)
+	now, err := time.Parse(`"`+timeJSONFormat+`"`, val)
 	*t = Time(now)
 	return t, err
 }
@@ -96,15 +96,18 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 
 // MarshalBSONValue 实现bson自定义序列化
 func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	return bson.MarshalValue(t.Time())
+	tt := time.Time(t)
+	return bson.MarshalValue(tt)
 }
 
 // UnmarshalBSONValue 实现bson自定义反序列化
-func (t *Time) UnmarshalBSONValue(bType bsontype.Type, data []byte) error {
+func (t *Time) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {
 	var tt time.Time
-	err := bson.UnmarshalValue(bType, data, &tt)
-	if err != nil {
+	if err := bson.UnmarshalValue(bt, data, &tt); err != nil {
 		return err
+	}
+	if tt.Location() == time.UTC {
+		tt.In(shanghaiLocation)
 	}
 	*t = Time(tt)
 	return nil

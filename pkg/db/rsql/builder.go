@@ -235,6 +235,7 @@ func (b *Builder) Neq(field string, val interface{}) Condition {
 	return Neq(field, val)
 }
 
+// Neq 不等于
 func Neq(field string, val any) Condition {
 	if val == nil {
 		return &baseCondition{
@@ -250,6 +251,7 @@ func Neq(field string, val any) Condition {
 	}
 }
 
+// Gt 大于
 func (b *Builder) Gt(field string, value interface{}) Condition {
 	return Gt(field, value)
 }
@@ -263,6 +265,7 @@ func Gt(field string, value interface{}) Condition {
 	}
 }
 
+// Ge 大于等于
 func (b *Builder) Ge(field string, val interface{}) Condition {
 	return Ge(field, val)
 }

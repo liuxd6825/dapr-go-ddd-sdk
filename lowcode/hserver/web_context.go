@@ -165,7 +165,7 @@ func (c *WebContext) ReadMap(sch *jsonschema.Schema) map[string]any {
 		if data, ok := dataVal.(map[string]any); ok {
 			if timeVal, ok := data["birthday"]; ok {
 				if t, ok := timeVal.(*times.Date); ok {
-					utc := t.Time().UTC()
+					utc := t.Time()
 					fmt.Println(utc.Format(time.DateTime))
 				}
 			}

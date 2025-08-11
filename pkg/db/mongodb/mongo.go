@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -12,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readconcern"
 	"go.mongodb.org/mongo-driver/mongo/writeconcern"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -293,22 +291,13 @@ func getMongoDBClient(config *Config, optionsFunc InitOptionsFunc) (*mongo.Clien
 	opts.Auth.AuthSource = authSource
 	opts.Auth.AuthMechanism = authMechanism
 
-	// 1. 创建一个自定义的 BSON Registry 以便使用本地时区
-	rb := bson.NewRegistryBuilder()
-	// NewTimeCodec 有一个选项可以设置 UseLocalTimeZone 为 true
-	// 这会使得从 BSON 的 datetime 类型解码时，自动转换为 time.Local
-	timeCodec := TimeCodec{}
-	rb.RegisterTypeDecoder(reflect.TypeOf(time.Time{}), timeCodec)
-	rb.RegisterTypeDecoder(reflect.TypeOf(times.Time{}), timeCodec)
-	rb.RegisterTypeDecoder(reflect.TypeOf(&times.Date{}), timeCodec)
-	registry := rb.Build()
-
-	// 2. 将配置好的 Registry 应用到客户端选项中
-	opts.SetRegistry(registry)
-
 	if optionsFunc != nil {
 		_ = optionsFunc(opts)
 	}
+	if opts.BSONOptions == nil {
+		opts.BSONOptions = &options.BSONOptions{}
+	}
+	opts.BSONOptions.UseLocalTimeZone = true
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("%v uri:%v", err.Error(), uri))

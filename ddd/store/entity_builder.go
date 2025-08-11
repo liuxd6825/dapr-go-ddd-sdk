@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"time"
 )
 
 type EntityBuilder[T any] interface {
@@ -159,7 +159,7 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 	if authUser == nil {
 		panic("context authUser is nil")
 	}
-	timeNow := time.Now().UTC()
+	timeNow := times.Now()
 
 	b.setField(entity, fields.CreatedTime, &timeNow)
 	b.setField(entity, fields.CreatorName, authUser.GetName())
@@ -180,7 +180,7 @@ func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 		return
 	}
 	authUser := b.GetAuthUser(ctx)
-	timeNow := time.Now().UTC()
+	timeNow := times.Now()
 
 	b.setField(entity, fields.UpdatedTime, &timeNow)
 	b.setField(entity, fields.UpdaterName, authUser.GetName())

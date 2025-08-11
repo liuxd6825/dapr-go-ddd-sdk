@@ -31,7 +31,7 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 	}
 
 	// 解决mongo数据库上日期的时区不一致的问题
-	times.SetUTCTimeZone()
+	times.SetLocalTimeZone()
 
 	userlog.Init(envCfg.App.AppId, envCfg.App.AppName)
 

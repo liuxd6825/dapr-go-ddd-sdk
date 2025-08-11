@@ -63,9 +63,6 @@ func parseObject(decoder *json.Decoder, opts *UnmarshalTimeOptions) (map[string]
 		if !ok {
 			return nil, fmt.Errorf("expected string for key, got %T", t)
 		}
-		if key == "age" {
-			println(key)
-		}
 
 		// 获取子字段的 TimeFields 配置
 		var subFields map[string]any

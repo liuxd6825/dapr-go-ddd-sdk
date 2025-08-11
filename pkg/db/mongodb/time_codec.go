@@ -5,6 +5,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/bsoncodec"
 	"go.mongodb.org/mongo-driver/bson/bsonrw"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"reflect"
 	"time"
 )
@@ -18,7 +19,7 @@ var emptyValue = reflect.Value{}
 
 const timeFormatString = "2006-01-02T15:04:05.999Z07:00"
 
-func (tc TimeCodec) DecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
+func (tc *TimeCodec) DecodeValue(dc bsoncodec.DecodeContext, vr bsonrw.ValueReader, val reflect.Value) error {
 	if !val.CanSet() || val.Type() != tTime {
 		return bsoncodec.ValueDecoderError{Name: "TimeDecodeValue", Types: []reflect.Type{tTime}, Received: val}
 	}
@@ -85,4 +86,13 @@ func (tc *TimeCodec) decodeType(dc bsoncodec.DecodeContext, vr bsonrw.ValueReade
 	tt := timeVal.UTC()
 	timeVal = tt.Add(time.Duration(8) * time.Hour)
 	return reflect.ValueOf(timeVal), nil
+}
+
+func (tc *TimeCodec) EncodeValue(context bsoncodec.EncodeContext, writer bsonrw.ValueWriter, val reflect.Value) error {
+	if !val.IsValid() || val.Type() != tTime {
+		return bsoncodec.ValueEncoderError{Name: "TimeEncodeValue", Types: []reflect.Type{tTime}, Received: val}
+	}
+	tt := val.Interface().(time.Time)
+	dt := primitive.NewDateTimeFromTime(tt)
+	return writer.WriteDateTime(int64(dt))
 }

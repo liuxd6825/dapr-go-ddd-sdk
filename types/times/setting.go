@@ -20,7 +20,7 @@ const LocalMsTimeFormat = "2006-01-02 15:04:05.000000"
 func SetUTCTimeZone() {
 	timeZone = timeUTC
 	isUTCTime = true
-	time.Local = time.UTC
+	//time.Local = time.UTC
 }
 
 // SetLocalTimeZone
@@ -29,6 +29,15 @@ func SetUTCTimeZone() {
 func SetLocalTimeZone() {
 	timeZone = timeLocal
 	isUTCTime = false
+
+	// 1. 设置应用程序的本地时区 (这是关键)
+	// 只要设置了 time.Local，驱动程序的默认行为就会正确工作
+	timeLocal, _ = time.LoadLocation("Asia/Shanghai")
+	time.Local = timeLocal
+}
+
+func GetLocalTimeZone() *time.Location {
+	return timeLocal
 }
 
 // GetTimeZone

@@ -11,7 +11,7 @@ type Date time.Time
 
 var (
 	dateJSONFormat = "2006-01-02"
-	dateLocation   = time.UTC
+	dateLocation   = time.Local
 )
 
 type IDate interface {
@@ -93,13 +93,18 @@ func (t *Date) IsSchemaDateTime() bool {
 
 func (t Date) MarshalBSONValue() (bsontype.Type, []byte, error) {
 	tt := time.Time(t)
-	return bson.MarshalValue(tt.UTC())
+	return bson.MarshalValue(tt)
 }
+
+var shanghaiLocation, _ = time.LoadLocation("Asia/Shanghai")
 
 func (t *Date) UnmarshalBSONValue(bt bsontype.Type, data []byte) error {
 	var tt time.Time
 	if err := bson.UnmarshalValue(bt, data, &tt); err != nil {
 		return err
+	}
+	if tt.Location() == time.UTC {
+		tt.In(shanghaiLocation)
 	}
 	*t = Date(tt)
 	return nil

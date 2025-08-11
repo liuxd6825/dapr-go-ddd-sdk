@@ -70,8 +70,8 @@ func (r *RecordService) FindByIds(ctx context.Context, qry *query.RecordFindById
 }
 
 func (r *RecordService) FindAll(ctx context.Context, qry *query.RecordFindAllQuery, opts ...idao.CallOptions) ([]*model.Record, error) {
-	//TODO implement me
-	panic("implement me")
+	result := r.dao.FindAll(ctx, opts...)
+	return result.Data, result.GetError()
 }
 
 func (r *RecordService) FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.Record] {

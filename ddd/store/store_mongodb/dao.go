@@ -506,7 +506,22 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 			panic("store_mongodb.dao entity is not a map")
 		}
 		for _, field := range r.schema.Fields {
-			eMap[field.Name] = data[field.DBName]
+			val := data[field.DBName]
+			if field.DataType == store.DataType_Date || field.DataType == store.DataType_Time {
+				if pDate, ok := val.(primitive.DateTime); ok {
+					/*
+						timeVal := pDate.Time().In(times.GetLocalTimeZone())
+						val = &timeVal
+					*/
+					val = pDate
+				}
+			} else if field.DataType == store.DataType_Array {
+				if arr, ok := val.(primitive.A); ok {
+					timeVal := arr
+					val = &timeVal
+				}
+			}
+			eMap[field.Name] = val
 		}
 	} else {
 		var errFieldName string
