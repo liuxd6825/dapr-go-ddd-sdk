@@ -21,6 +21,10 @@ var (
 	timeJSONFormat = "2006-01-02 15:04:05"
 )
 
+func init() {
+	time.Local = time.UTC
+}
+
 func GetTime(value ...*time.Time) *Time {
 	var t *Time
 	for _, v := range value {
