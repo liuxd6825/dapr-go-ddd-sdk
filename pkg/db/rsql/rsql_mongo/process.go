@@ -75,16 +75,14 @@ func (p *Process) OnOrEnd() {
 }
 
 func (p *Process) OnEquals(name string, value interface{}, rValue rsql.Value) {
-	value = p.getValue(rValue)
 	p.current.addChildItem(p.getFieldName(name), value)
 }
 
 func (p *Process) OnNotEquals(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$ne", p.getValue(rValue)}})
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$ne", value}})
 }
 
 func (p *Process) OnLike(name string, value interface{}, rValue rsql.Value) {
-	value = p.getValue(rValue)
 	pattern := fmt.Sprintf("%s", value)
 	pattern = strings.ReplaceAll(pattern, "*", "")
 
@@ -92,23 +90,23 @@ func (p *Process) OnLike(name string, value interface{}, rValue rsql.Value) {
 }
 
 func (p *Process) OnNotLike(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$lt", p.getValue(rValue)}})
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$lt", value}})
 }
 
 func (p *Process) OnGreaterThan(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$gt", p.getValue(rValue)}})
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$gt", value}})
 }
 
 func (p *Process) OnGreaterThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$gte", p.getValue(rValue)}})
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$gte", value}})
 }
 
 func (p *Process) OnLessThan(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$lt", p.getValue(rValue)}})
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$lt", value}})
 }
 
 func (p *Process) OnLessThanOrEquals(name string, value interface{}, rValue rsql.Value) {
-	p.current.addChildItem(p.getFieldName(name), bson.D{{"$lte", p.getValue(rValue)}})
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$lte", value}})
 }
 
 func (p *Process) OnIn(name string, value interface{}, rValue rsql.Value) {
@@ -126,13 +124,13 @@ func (p *Process) OnNotIn(name string, value interface{}, rValue rsql.Value) {
 }
 
 func (p *Process) OnContains(name string, value interface{}, rValue rsql.Value) {
-	val := fmt.Sprintf(".*%v.*", p.getValue(rValue))
+	val := fmt.Sprintf(".*%v.*", value)
 	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
 	p.current.addChildItem(p.getFieldName(name), bson.D{{"$regex", primitive.Regex{Pattern: val, Options: "i"}}})
 }
 
 func (p *Process) OnNotContains(name string, value interface{}, rValue rsql.Value) {
-	val := fmt.Sprintf(".*%v.*", p.getValue(rValue))
+	val := fmt.Sprintf(".*%v.*", value)
 	// "$regex": primitive.Regex{Pattern: ".*"+city+".*", Options: "i"}
 	p.current.addChildItem(p.getFieldName(name), bson.D{{"$not", primitive.Regex{Pattern: val, Options: "i"}}})
 }
@@ -247,13 +245,13 @@ func (p *Process) getValue(value rsql.Value) interface{} {
 		v = sv.Value
 	case *rsql.DateValue:
 		sv, _ := value.(*rsql.DateValue)
-		v, err = time.Parse(rsql.DateLayout, sv.Value)
+		v, err = time.ParseInLocation(rsql.DateLayout, sv.Value, time.Local)
 	case *rsql.DoubleValue:
 		sv, _ := value.(*rsql.DoubleValue)
 		v = sv.Value
 	case *rsql.DateTimeValue:
 		sv, _ := value.(*rsql.DateTimeValue)
-		v, err = time.Parse(rsql.DateTimeLayout, sv.Value)
+		v, err = time.ParseInLocation(rsql.DateTimeLayout, sv.Value, time.Local)
 	case *rsql.BooleanValue:
 		sv, _ := value.(*rsql.BooleanValue)
 		v = sv.Value
