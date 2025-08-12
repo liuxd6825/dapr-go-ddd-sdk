@@ -89,6 +89,8 @@ func (b *Builder) formatValue(value interface{}) string {
 	return formatValue(value)
 }
 
+const LocalDateFormat = "2006-01-02"
+
 // formatValue 处理不同数据类型的值格式化
 func formatValue(value interface{}) string {
 	if value == nil {
@@ -106,7 +108,10 @@ func formatValue(value interface{}) string {
 	case bool:
 		return fmt.Sprintf("%v", v)
 	case time.Time:
-		return fmt.Sprintf(`"%s"`, v.Format(time.RFC3339))
+		if v.Hour() == 0 && v.Minute() == 0 && v.Second() == 0 {
+			return fmt.Sprintf(`%s`, v.Format(LocalDateFormat))
+		}
+		return fmt.Sprintf(`%s`, v.Format(time.DateTime))
 	default:
 		val := reflect.ValueOf(value)
 		if val.Kind() == reflect.Ptr {
@@ -265,13 +270,13 @@ func Gt(field string, value interface{}) Condition {
 	}
 }
 
-// Ge 大于等于
-func (b *Builder) Ge(field string, val interface{}) Condition {
-	return Ge(field, val)
+// Gte 大于等于
+func (b *Builder) Gte(field string, val interface{}) Condition {
+	return Gte(field, val)
 }
 
-// Ge 大于等于
-func Ge(field string, val interface{}) Condition {
+// Gte 大于等于
+func Gte(field string, val interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: ">=",
@@ -292,12 +297,13 @@ func Lt(field string, val interface{}) Condition {
 	}
 }
 
-func (b *Builder) Le(field string, val interface{}) Condition {
+// Lte 小于等于
+func (b *Builder) Lte(field string, val interface{}) Condition {
 	return Lt(field, val)
 }
 
-// Le 小于等于
-func Le(field string, val interface{}) Condition {
+// Lte 小于等于
+func Lte(field string, val interface{}) Condition {
 	return &baseCondition{
 		field:    field,
 		operator: "<=",
@@ -305,6 +311,7 @@ func Le(field string, val interface{}) Condition {
 	}
 }
 
+// In 条件生成方法
 func (b *Builder) In(field string, val interface{}) Condition {
 	return In(field, val)
 }

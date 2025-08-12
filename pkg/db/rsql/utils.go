@@ -49,13 +49,13 @@ func getValue(value Value) any {
 		v = sv.Value
 	case *DateValue:
 		sv, _ := value.(*DateValue)
-		v, err = time.Parse(DateLayout, sv.Value)
+		v, err = time.ParseInLocation(DateLayout, sv.Value, time.Local)
 	case *DoubleValue:
 		sv, _ := value.(*DoubleValue)
 		v = sv.Value
 	case *DateTimeValue:
 		sv, _ := value.(*DateTimeValue)
-		v, err = time.Parse(DateTimeLayout, sv.Value)
+		v, err = time.ParseInLocation(DateTimeLayout, sv.Value, time.Local)
 	case *BooleanValue:
 		sv, _ := value.(*BooleanValue)
 		v = sv.Value
