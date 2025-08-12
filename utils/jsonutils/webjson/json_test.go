@@ -1,4 +1,4 @@
-package restapi
+package webjson
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
@@ -17,13 +17,13 @@ func Test_JsonMarshal(t *testing.T) {
 		Time1: dateTime,
 		Time2: &dateTime,
 	}
-	data, e := JsonMarshal(example)
+	data, e := Marshal(example)
 	if e != nil {
 		t.Error(e)
 	} else {
 		t.Log(data)
 		var e Example
-		err := JsonUnmarshal([]byte(data), &e)
+		err := Unmarshal([]byte(data), &e)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -44,13 +44,13 @@ func Test_JsonMarshal2(t *testing.T) {
 		Time1: dateTime,
 		Time2: &dateTime,
 	}
-	data, e := JsonMarshal(example)
+	data, e := Marshal(example)
 	if e != nil {
 		t.Error(e)
 	} else {
 		t.Log(data)
 		var e Example2
-		err := JsonUnmarshal([]byte(data), &e)
+		err := Unmarshal([]byte(data), &e)
 		if err != nil {
 			t.Error(err)
 		} else {
@@ -72,13 +72,38 @@ func Test_JsonMarshal3(t *testing.T) {
 		Date1: *dateTime,
 		Date2: dateTime,
 	}
-	data, e := JsonMarshal(example)
+	data, e := Marshal(example)
 	if e != nil {
 		t.Error(e)
 	} else {
 		t.Log(data)
 		var e DateExample
-		err := JsonUnmarshal([]byte(data), &e)
+		err := Unmarshal([]byte(data), &e)
+		if err != nil {
+			t.Error(err)
+		} else {
+			t.Log("Date1:", e.Date1)
+			t.Log("Date2:", e.Date2)
+			t.Log("Date3:", e.Date3)
+		}
+	}
+}
+
+func Test_JsonMarshalMap(t *testing.T) {
+	dateTime := times.NewDate()
+	timeVal := time.Now()
+	example := map[string]any{
+		"date1": *dateTime,
+		"date2": dateTime,
+		"time1": timeVal,
+	}
+	data, e := Marshal(example)
+	if e != nil {
+		t.Error(e)
+	} else {
+		t.Log(data)
+		var e DateExample
+		err := Unmarshal([]byte(data), &e)
 		if err != nil {
 			t.Error(err)
 		} else {

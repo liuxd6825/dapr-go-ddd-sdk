@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/validator"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils/webjson"
 	"reflect"
 	"strconv"
 	"strings"
@@ -35,7 +36,7 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, c
 		if err != nil {
 			return nil, err
 		}
-		err = JsonUnmarshal(jsonBytes, target)
+		err = webjson.Unmarshal(jsonBytes, target)
 		if err != nil {
 			return nil, err
 		}

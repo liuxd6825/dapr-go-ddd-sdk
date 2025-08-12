@@ -112,7 +112,7 @@ func (r *Dao[T]) mFindOne(ctx context.Context, filter any, opts ...*mongo_option
 
 	if r.eb.GetConfig().IsMap {
 		if eMap, ok := any(entity).(map[string]any); ok {
-			r.db2entity(eMap)
+			entity = r.db2entity(eMap)
 		}
 	}
 	return entity, any(entity) != nil, err

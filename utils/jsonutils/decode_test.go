@@ -40,9 +40,9 @@ func Test_DecodeWithTimeConversion(t *testing.T) {
 			}
 			b, ok := key.(bool)
 			if b || !ok {
-				timeVal = times.NewTime(&tm)
+				timeVal = times.GetTime(&tm)
 			} else {
-				timeVal = times.NewDate(&tm)
+				timeVal = times.GetDate(&tm)
 			}
 			return timeVal, err
 		},

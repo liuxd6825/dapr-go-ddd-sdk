@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mapperutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
@@ -509,11 +510,8 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 			val := data[field.DBName]
 			if field.DataType == store.DataType_Date || field.DataType == store.DataType_Time {
 				if pDate, ok := val.(primitive.DateTime); ok {
-					/*
-						timeVal := pDate.Time().In(times.GetLocalTimeZone())
-						val = &timeVal
-					*/
-					val = pDate
+					timeVal := pDate.Time().In(times.GetLocalTimeZone())
+					val = &timeVal
 				}
 			} else if field.DataType == store.DataType_Array {
 				if arr, ok := val.(primitive.A); ok {

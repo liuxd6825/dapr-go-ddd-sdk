@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils/webjson"
 	"strings"
 )
 
@@ -76,7 +77,7 @@ func isNotFoundError(err error) bool {
 }
 func SetOKJsonData(ictx iris.Context, data any) error {
 	ictx.StatusCode(iris.StatusOK)
-	jsonStr, err := JsonMarshal(data)
+	jsonStr, err := webjson.Marshal(data)
 	if err != nil {
 		return err
 	}
