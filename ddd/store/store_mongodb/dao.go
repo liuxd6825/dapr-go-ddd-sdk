@@ -474,7 +474,7 @@ func (r *Dao[T]) entity2db(entity any) map[string]any {
 					fieldValue, ok = eMap[field.DBName]
 				}
 				if !ok {
-					fieldValue = field.DefaultValueInterface
+					//fieldValue = field.DefaultValueInterface
 				}
 				data[field.DBName] = fieldValue
 			}

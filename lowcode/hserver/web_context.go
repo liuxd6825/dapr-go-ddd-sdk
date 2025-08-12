@@ -14,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils/webjson"
 	"github.com/liuxd6825/jsonschema/v6"
 	"github.com/liuxd6825/k6server/js/modules"
 	"io"
@@ -293,12 +294,12 @@ func (c *WebContext) FormObject(name string, required bool, schema *jsonschema.S
 }
 
 func (c *WebContext) WriteJson(data any) {
-	jsonData, err := jsonutils.MarshalBytes(data)
+	jsonStr, err := webjson.Marshal(data)
 	if err != nil {
 		panic(err)
 	}
 	c.ictx.ContentType("application/json")
-	_, err = c.ictx.Write(jsonData)
+	_, err = c.ictx.WriteString(jsonStr)
 	if err != nil {
 		panic(err)
 	}
