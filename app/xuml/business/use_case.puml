@@ -1,0 +1,55 @@
+
+@startuml
+left to right direction
+actor "数据收集人" as fc
+rectangle 主数据 {
+  usecase "导入流水" as record
+  usecase "管理人员" as human
+  usecase "管理公司" as company
+  usecase "管理账号" as account
+  usecase "管理合同" as contract
+  usecase "管理产品" as product
+}
+
+fc --> record
+fc --> human
+fc --> company
+fc --> account
+fc --> product
+fc --> contract
+
+
+actor "财务审计员" as audit
+rectangle 异常交易 {
+    usecase "管理异常阀值" as set_threshold
+
+    usecase "按金额筛选" as filter_amount
+        usecase "单笔大金额" as   filter_single
+        filter_amount --> filter_single
+        note right of filter_single : "筛选出所有单笔金额\n超过预设阈值的交易。"
+
+        usecase "规整金额" as filter_int
+        filter_amount --> filter_int
+        note right of filter_int : "筛选出金额为十万、百万等非常规整的数字\n（如 500,000.00；1,000,000.00）。\n商业交易通常包含零头，精确到分。"
+
+        usecase "略低金额" as filter_low
+        filter_amount --> filter_low
+        note right of filter_low : "筛选出金额略低于监管或内部控制报告标准\n（如499,999元，略低于50万大额支付报告标准\n）的交易，这可能意在规避监管。"
+
+        usecase "一进一出" as filter_inout
+        filter_amount --> filter_inout
+        note right of filter_inout : "查找在短时间内（如1-3天内）金额\n相同或相近的“一进一出”交易，特别是在\n同一对手方或关联方之间。"
+
+    usecase "按时间筛选" as filter_time
+    usecase "按频率筛选" as filter_hz
+    usecase "按对手方筛选" as filter_opp
+    usecase "大额交易筛选" as filter_large
+
+}
+audit --> set_threshold
+audit --> filter_amount
+audit --> filter_time
+audit --> filter_opp
+audit --> filter_large
+
+@enduml
