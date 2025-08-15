@@ -157,6 +157,20 @@ func Eq(field string, value interface{}) Condition {
 	}
 }
 
+// Mod 取模，取余
+func (b *Builder) Mod(field string, value interface{}) Condition {
+	return Eq(field, value)
+}
+
+// Mod 取模，取余
+func Mod(field string, value interface{}) Condition {
+	return &baseCondition{
+		field:    field,
+		operator: "=mod=",
+		value:    fmt.Sprintf("%d", value),
+	}
+}
+
 func (b *Builder) Null(field string) Condition {
 	return Null(field)
 }

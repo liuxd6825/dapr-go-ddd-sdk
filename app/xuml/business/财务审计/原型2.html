@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>执行异常交易分析</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,.05);
+            border: none;
+        }
+        .card-header {
+            font-weight: 600;
+            background-color: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .accordion-button:not(.collapsed) {
+            color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        .status-badge {
+            cursor: pointer;
+        }
+        .info-area, #result-area, #analysis-progress {
+            display: none; /* Initially hidden */
+        }
+        .form-check-label {
+            margin-left: .5rem;
+        }
+        .mismatch-table select[multiple] {
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid my-4">
+    <h2 class="mb-4"><i class="bi bi-robot me-2"></i>执行异常交易分析</h2>
+
+    <!-- =================================== -->
+    <!-- ======   A. 分析配置区       ====== -->
+    <!-- =================================== -->
+    <div id="config-area" class="card">
+        <div class="card-header">
+            <i class="bi bi-sliders"></i> 1. 分析配置区
+        </div>
+        <div class="card-body">
+            <fieldset id="config-fieldset">
+                <div class="row g-3">
+                    <div class="col-md-12"><label for="taskName" class="form-label"><strong>分析任务名称</strong></label><input type="text" class="form-control" id="taskName" value="2024-Q1 常规资金流水审计" required></div>
+                    <div class="col-md-6"><label class="form-label"><strong>审计期间</strong></label><div class="input-group"><input type="date" class="form-control" value="2024-01-01"><span class="input-group-text">至</span><input type="date" class="form-control" value="2024-03-31"></div></div>
+                    <div class="col-md-6"><label class="form-label"><strong>分析账户</strong></label><select class="form-select" multiple><option selected>招商银行基本户 (***1234)</option><option selected>建设银行一般户 (***5678)</option></select></div>
+                </div>
+                <hr class="my-4">
+                <h5><strong>分析规则配置</strong></h5>
+                <div class="accordion" id="rulesAccordion">
+                    <!-- 金额特征 -->
+                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#c1"><i class="bi bi-cash-coin me-2"></i>金额特征</button></h2><div id="c1" class="accordion-collapse collapse show" data-bs-parent="#rulesAccordion"><div class="accordion-body">
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r1" checked><label class="form-check-label" for="r1">大额交易: 单笔金额 > <input type="number" class="form-control-sm" value="500000" style="width: 100px;"> 元</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r2" checked><label class="form-check-label" for="r2">整数交易: 金额为整 <input type="number" class="form-control-sm" value="100000" style="width: 100px;"> 的倍数</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r3" checked onchange="toggleThresholdOptions()"><label class="form-check-label" for="r3">临界金额: 金额接近监管/内控阈值</label></div>
+                        <div class="ms-4 p-3 border rounded" id="thresholdOptions">
+                            <div class="form-check"><input class="form-check-input" type="radio" name="thresholdType" id="thresholdPercent" value="percent" onchange="updateThresholdInputs()" checked><label class="form-check-label" for="thresholdPercent">按百分比: 低于大额/审批阈值 <input type="number" class="form-control-sm" value="5" style="width: 60px;"> % 以内</label></div>
+                            <div class="form-check mt-2"><input class="form-check-input" type="radio" name="thresholdType" id="thresholdFixed" value="fixed" onchange="updateThresholdInputs()"><label class="form-check-label" for="thresholdFixed">按固定值: 金额在 <span id="fixedInputsWrapper" style="display: none;"><input type="number" class="form-control-sm" value="490000" style="width: 100px;"> 至 <input type="number" class="form-control-sm" value="500000" style="width: 100px;"> 之间</span></label></div>
+                        </div>
+                        <div class="form-check form-switch mt-3 mb-2"><input class="form-check-input" type="checkbox" id="r4"><label class="form-check-label" for="r4">对敲交易: <input type="number" class="form-control-sm" value="3" style="width: 60px;"> 天内金额相同或相近的进出</label></div>
+                    </div></div></div>
+                    <!-- 时间特征 -->
+                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c2"><i class="bi bi-clock-history me-2"></i>时间特征</button></h2><div id="c2" class="accordion-collapse collapse" data-bs-parent="#rulesAccordion"><div class="accordion-body">
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r5" checked><label class="form-check-label" for="r5">非工作时间交易 (晚 <input type="time" class="form-control-sm" value="18:00" style="width: 110px;"> 至 次日 <input type="time" class="form-control-sm" value="08:00" style="width: 110px;"> 及法定节假日)</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r6" checked><label class="form-check-label" for="r6">快进快出: 资金到账后 <input type="number" class="form-control-sm" value="2" style="width: 60px;"> 小时内迅速转走</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r7"><label class="form-check-label" for="r7">集中支付: 在 <input type="time" class="form-control-sm" value="23:00" style="width: 110px;"> 至 <input type="time" class="form-control-sm" value="02:00" style="width: 110px;"> 时间段内, 交易笔数 > <input type="number" class="form-control-sm" value="10" style="width: 70px;"> 笔</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r8" checked onchange="toggleSignificantDateOptions()"><label class="form-check-label" for="r8">重大日期交易 (临近资产负债表日)</label></div>
+                        <div class="ms-4 p-3 border rounded" id="significantDateOptions">
+                            <div class="mb-2"><label class="form-label fw-bold">适用日期类型:</label><div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="dateTypeMonth" value="month" checked><label class="form-check-label" for="dateTypeMonth">月末</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="dateTypeQuarter" value="quarter" checked><label class="form-check-label" for="dateTypeQuarter">季末</label></div><div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="dateTypeYear" value="year" checked><label class="form-check-label" for="dateTypeYear">年末</label></div></div>
+                            <div><label class="form-label fw-bold">时间窗口:</label><div>识别重大日期前 <input type="number" class="form-control-sm" value="5" style="width: 60px;"> 天 及后 <input type="number" class="form-control-sm" value="2" style="width: 60px;"> 天内的交易</div></div>
+                        </div>
+                    </div></div></div>
+                    <!-- 频率特征 -->
+                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c3"><i class="bi bi-reception-4 me-2"></i>频率特征</button></h2><div id="c3" class="accordion-collapse collapse" data-bs-parent="#rulesAccordion"><div class="accordion-body">
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r9" checked><label class="form-check-label" for="r9">高频交易对手方: (非核心供应商/客户) 交易次数 > <input type="number" class="form-control-sm" value="10" style="width: 70px;"> 次 / <select class="form-select-sm" style="width: 80px;"><option selected>月</option><option>季</option><option>年</option></select></label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r10" checked onchange="toggleRegularityOptions()"><label class="form-check-label" for="r10">异常规律性支付 (固定周期、固定金额支付给个人或非供应商)</label></div>
+                        <div class="ms-4 p-3 border rounded" id="regularityOptions">
+                            <div class="mb-2"><span class="fw-bold">周期定义:</span> 每 <input type="number" class="form-control-sm" value="7" style="width: 60px;"> <select class="form-select-sm" style="width: 70px;"><option selected>天</option><option>周</option><option>月</option></select></div>
+                            <div class="mb-2"><span class="fw-bold">容差设置:</span> 周期容差 ± <input type="number" class="form-control-sm" value="1" style="width: 60px;"> 天, 金额容差在 <input type="number" class="form-control-sm" value="2" style="width: 60px;"> % 以内</div>
+                            <div><span class="fw-bold">触发条件:</span> 最小发生次数 > <input type="number" class="form-control-sm" value="3" style="width: 60px;"> 次</div>
+                        </div>
+                        <div class="form-check form-switch mt-3 mb-2"><input class="form-check-input" type="checkbox" id="r11" checked><label class="form-check-label" for="r11">休眠账户激活: 超过 <input type="number" class="form-control-sm" value="180" style="width: 70px;"> 天无交易后, 在 <input type="number" class="form-control-sm" value="30" style="width: 70px;"> 天内发生 <input type="number" class="form-control-sm" value="3" style="width: 60px;"> 笔以上交易</label></div>
+                    </div></div></div>
+                    <!-- 对手方特征 -->
+                    <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c4"><i class="bi bi-person-bounding-box me-2"></i>对手方特征</button></h2><div id="c4" class="accordion-collapse collapse" data-bs-parent="#rulesAccordion"><div class="accordion-body">
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r12" checked><label class="form-check-label" for="r12">关联方交易 (匹配股东、高管、子公司名单)</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r13" checked><label class="form-check-label" for="r13">大额公转私/私转公交易: 单笔 > <input type="number" class="form-control-sm" value="50000" style="width: 100px;"> 元</label></div>
+                        <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r14" checked onchange="toggleHighRiskOptions()"><label class="form-check-label" for="r14">高风险对手方</label></div>
+                        <div class="ms-4 p-3 border rounded" id="highRiskOptions">
+                            <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r14a" checked><label class="form-check-label" for="r14a">工商信息异常 (需集成第三方数据)</label></div>
+                            <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" id="r14b" checked><label class="form-check-label" for="r14b">新成立即大额交易: 公司成立 < <input type="number" class="form-control-sm" value="180" style="width: 70px;"> 天内, 发生单笔 > <input type="number" class="form-control-sm" value="100000" style="width: 100px;"> 元交易</label></div>
+                        </div>
+
+                        <!-- === 修改的业务不匹配部分 === -->
+                        <div class="form-check form-switch mt-3 mb-2"><input class="form-check-input" type="checkbox" id="r15" checked onchange="toggleBusinessMismatchOptions()"><label class="form-check-label" for="r15">业务不匹配对手方 (交易内容与对手方经营范围不符)</label></div>
+                        <div class="ms-4 p-3 border rounded" id="businessMismatchOptions">
+                            <p class="form-text">请为不同类型的交易摘要，配置期望的对手方经营范围。当实际不符时，系统将发出预警。</p>
+                            <div class="table-responsive mismatch-table">
+                                <table class="table table-bordered table-sm align-middle">
+                                    <thead class="table-light"><tr><th>摘要分类</th><th>摘要关键词示例</th><th>期望对手方经营范围</th><th>启用</th></tr></thead>
+                                    <tbody>
+                                    <tr><td>技术服务类</td><td><small>咨询费, 技术支持, 设计费, 软件开发, 测试费</small></td><td><select class="form-select" multiple><option selected>技术服务</option><option>咨询服务</option><option>软件和信息技术</option></select></td><td><div class="form-check d-flex justify-content-center"><input class="form-check-input" type="checkbox" checked></div></td></tr>
+                                    <tr><td>商贸采购类</td><td><small>货款, 材料款, 预付款, 设备采购</small></td><td><select class="form-select" multiple><option selected>批发和零售业</option><option>制造业</option><option>进出口贸易</option></select></td><td><div class="form-check d-flex justify-content-center"><input class="form-check-input" type="checkbox" checked></div></td></tr>
+                                    <tr><td>市场推广类</td><td><small>推广费, 广告费, 市场活动, 展览费</small></td><td><select class="form-select" multiple><option selected>广告业</option><option selected>会展服务</option><option>咨询服务</option></select></td><td><div class="form-check d-flex justify-content-center"><input class="form-check-input" type="checkbox" checked></div></td></tr>
+                                    <tr><td>工程施工类</td><td><small>工程款, 施工款, 监理费</small></td><td><select class="form-select" multiple><option selected>建筑业</option><option>安装和维修</option></select></td><td><div class="form-check d-flex justify-content-center"><input class="form-check-input" type="checkbox"></div></td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- === 修改结束 === -->
+
+                        <div class="form-check form-switch mt-3 mb-2"><input class="form-check-input" type="checkbox" id="r16" checked onchange="toggleConcentrationOptions()"><label class="form-check-label" for="r16">资金高度集中于少数非核心供应商</label></div>
+                        <div class="ms-4 p-3 border rounded" id="concentrationOptions">
+                            <div>支付给 Top <input type="number" class="form-control-sm" value="5" style="width: 60px;"> 位非核心供应商的资金 > 总支付额的 <input type="number" class="form-control-sm" value="30" style="width: 60px;"> %</div>
+                        </div>
+                    </div></div></div>
+                </div>
+                <div class="d-flex justify-content-end mt-4"><button type="button" class="btn btn-outline-secondary me-2" onclick="resetConfig()">重置</button><button type="button" class="btn btn-secondary me-2">另存为模板</button><button id="analyze-btn" type="button" class="btn btn-primary btn-lg" onclick="startAnalysis()"><i class="bi bi-play-circle"></i> 执行分析</button></div>
+            </fieldset>
+        </div>
+    </div>
+
+    <div id="analysis-progress" class="alert alert-info"><div class="d-flex align-items-center"><strong>正在分析中...</strong><div class="spinner-border ms-auto" role="status" aria-hidden="true"></div></div><div class="progress mt-2"><div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%;">0%</div></div><small id="progress-text" class="d-block mt-1">正在创建分析任务...</small></div>
+
+    <div class="info-area card"><div class="card-header"><i class="bi bi-info-circle"></i> 2. 分析任务信息</div><div class="card-body"><div class="row"><div class="col-md-4"><strong>任务ID:</strong> <span id="info-task-id"></span></div><div class="col-md-4"><strong>任务名称:</strong> <span id="info-task-name"></span></div><div class="col-md-4"><strong>状态:</strong> <span id="info-task-status" class="badge"></span></div><div class="col-md-4"><strong>执行人:</strong> <span id="info-executed-by"></span></div><div class="col-md-4"><strong>完成时间:</strong> <span id="info-end-time"></span></div></div></div></div>
+
+    <div id="result-area">
+        <div class="card"><div class="card-header"><i class="bi bi-bar-chart-line"></i> 3. 结果概要仪表盘</div><div class="card-body"><div class="row text-center g-3"><div class="col-lg-3 col-6"><div class="p-3 border rounded"><h5>已分析流水总数</h5><h3 class="display-6">125,800</h3></div></div><div class="col-lg-3 col-6"><div class="p-3 border rounded bg-warning bg-opacity-10"><h5>发现可疑交易</h5><h3 class="display-6 text-warning">89</h3></div></div><div class="col-lg-3 col-6"><div class="p-3 border rounded"><h5>涉及可疑总金额</h5><h3 class="display-6">¥4,567万</h3></div></div><div class="col-lg-3 col-6"><div class="p-3 border rounded bg-danger bg-opacity-10"><h5>最高可疑度</h5><h3 class="display-6 text-danger">4</h3></div></div></div><div class="row mt-4"><div class="col-lg-4"><h6 class="text-center">可疑原因分布</h6><canvas id="reasonChart"></canvas></div><div class="col-lg-8"><h6 class="text-center">可疑交易金额分布趋势 (万元)</h6><canvas id="trendChart"></canvas></div></div></div></div>
+        <div class="card"><div class="card-header"><i class="bi bi-table"></i> 4. 可疑交易列表</div><div class="card-body"><div class="table-responsive"><table class="table table-hover table-striped align-middle"><thead class="table-light"><tr><th>可疑度</th><th>交易日期</th><th>支出金额</th><th>对手方名称</th><th>摘要</th><th>可疑原因标签</th><th>操作</th></tr></thead><tbody><tr><td><span class="badge bg-danger fs-6">★★★★</span></td><td>2024-03-30 23:15:00</td><td>¥499,999.00</td><td>上海XX信息咨询有限公司</td><td>咨询费</td><td><span class="badge bg-danger status-badge" title="临界金额">金额</span> <span class="badge bg-warning text-dark status-badge" title="非工作时间交易">时间</span> <span class="badge bg-info text-dark status-badge" title="高风险对手方">对手方</span></td><td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td></tr><tr><td><span class="badge bg-danger fs-6">★★★★</span></td><td>2024-03-31 02:20:10</td><td>¥1,200,000.00</td><td>王五 (个人)</td><td>资金拆借</td><td><span class="badge bg-danger status-badge" title="整数交易">金额</span> <span class="badge bg-warning text-dark status-badge" title="非工作时间交易">时间</span> <span class="badge bg-info text-dark status-badge" title="大额公转私">对手方</span></td><td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td></tr><tr><td><span class="badge bg-warning text-dark fs-6">★★★</span></td><td>2024-02-15 09:35:10</td><td>¥1,000,000.00</td><td>深圳YY科技有限公司</td><td>货款</td><td><span class="badge bg-danger status-badge" title="整数交易">金额</span> <span class="badge bg-secondary status-badge" title="高频交易">频率</span></td><td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td></tr><tr><td><span class="badge bg-warning text-dark fs-6">★★★</span></td><td>2024-01-20 19:05:22</td><td>¥50,000.00</td><td>张三 (个人)</td><td>备用金</td><td><span class="badge bg-warning text-dark status-badge" title="非工作时间交易">时间</span> <span class="badge bg-info text-dark status-badge" title="公转私">对手方</span></td><td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td></tr></tbody></table></div></div></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let reasonChartInstance, trendChartInstance;
+
+    function startAnalysis() {
+        document.getElementById('config-fieldset').disabled = true;
+        document.getElementById('analyze-btn').innerHTML = '<span class="spinner-border spinner-border-sm"></span> 分析中...';
+        document.getElementById('analyze-btn').disabled = true;
+        document.querySelector('.info-area').style.display = 'none';
+        document.getElementById('result-area').style.display = 'none';
+        document.getElementById('analysis-progress').style.display = 'block';
+
+        let progress = 0;
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const interval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 100) progress = 100;
+            progressBar.style.width = progress + '%';
+            progressBar.innerText = Math.round(progress) + '%';
+
+            if (progress < 10) progressText.innerText = '正在创建分析任务 (ID: AT20240813-001)...';
+            else if (progress < 40) progressText.innerText = '正在加载和标准化流水数据...';
+            else if (progress < 80) progressText.innerText = '正在执行分析规则，匹配疑点...';
+            else progressText.innerText = '正在生成结果与仪表盘...';
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                displayResults();
+            }
+        }, 400);
+    }
+
+    function displayResults() {
+        document.getElementById('analysis-progress').style.display = 'none';
+
+        const infoArea = document.querySelector('.info-area');
+        infoArea.style.display = 'block';
+        document.getElementById('info-task-id').textContent = 'AT20240813-001';
+        document.getElementById('info-task-name').textContent = document.getElementById('taskName').value;
+        const statusBadge = document.getElementById('info-task-status');
+        statusBadge.className = 'badge bg-success';
+        statusBadge.textContent = '已完成';
+        document.getElementById('info-executed-by').textContent = '财务审计人员A';
+        document.getElementById('info-end-time').textContent = new Date().toLocaleString();
+
+        document.getElementById('result-area').style.display = 'block';
+        drawCharts();
+    }
+
+    function resetConfig() {
+        document.getElementById('config-fieldset').disabled = false;
+        document.getElementById('analyze-btn').innerHTML = '<i class="bi bi-play-circle"></i> 执行分析';
+        document.getElementById('analyze-btn').disabled = false;
+        document.querySelector('.info-area').style.display = 'none';
+        document.getElementById('result-area').style.display = 'none';
+    }
+
+    function drawCharts() {
+        if(reasonChartInstance) reasonChartInstance.destroy();
+        if(trendChartInstance) trendChartInstance.destroy();
+
+        reasonChartInstance = new Chart(document.getElementById('reasonChart'), { type: 'doughnut', data: { labels: ['金额可疑', '时间可疑', '对手方可疑', '频率可疑'], datasets: [{ data: [40, 25, 30, 5], backgroundColor: ['#dc3545', '#ffc107', '#0dcaf0', '#6c757d'] }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } } } });
+        trendChartInstance = new Chart(document.getElementById('trendChart'), { type: 'bar', data: { labels: ['1月', '2月', '3月上半月', '3月下半月'], datasets: [{ label: '可疑交易金额', data: [1200, 850, 560, 1957], backgroundColor: 'rgba(23, 162, 184, 0.6)' }] }, options: { responsive: true, scales: { y: { beginAtZero: true } } } });
+    }
+
+    function toggleThresholdOptions() {
+        const isChecked = document.getElementById('r3').checked;
+        document.getElementById('thresholdOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function updateThresholdInputs() {
+        const isPercent = document.getElementById('thresholdPercent').checked;
+        document.getElementById('fixedInputsWrapper').style.display = isPercent ? 'none' : 'inline';
+        const fixedInputs = document.querySelectorAll('#fixedInputsWrapper input');
+        const percentInput = document.querySelector('#thresholdPercent + label input');
+        percentInput.disabled = !isPercent;
+        fixedInputs.forEach(input => { input.disabled = isPercent; });
+    }
+
+    function toggleSignificantDateOptions() {
+        const isChecked = document.getElementById('r8').checked;
+        document.getElementById('significantDateOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function toggleRegularityOptions() {
+        const isChecked = document.getElementById('r10').checked;
+        document.getElementById('regularityOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function toggleHighRiskOptions() {
+        const isChecked = document.getElementById('r14').checked;
+        document.getElementById('highRiskOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    function toggleConcentrationOptions() {
+        const isChecked = document.getElementById('r16').checked;
+        document.getElementById('concentrationOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    // --- NEW JAVASCRIPT FOR BUSINESS MISMATCH OPTIONS ---
+    function toggleBusinessMismatchOptions() {
+        const isChecked = document.getElementById('r15').checked;
+        document.getElementById('businessMismatchOptions').style.display = isChecked ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        toggleThresholdOptions();
+        updateThresholdInputs();
+        toggleSignificantDateOptions();
+        toggleRegularityOptions();
+        toggleHighRiskOptions();
+        toggleConcentrationOptions();
+        toggleBusinessMismatchOptions(); // Call the new function on page load
+    });
+</script>
+</body>
+</html>

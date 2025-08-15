@@ -28,6 +28,10 @@ func Test_SubQuery(t *testing.T) {
 	process(t, "test", "id=in=sub(table:human_certificate, field:human_id, rsql:certificate_code~='2222')")
 }
 
+func Test_ModQuery(t *testing.T) {
+	process(t, "test", "amount==mod()")
+}
+
 func process(t *testing.T, tenantId string, input string) any {
 	p := NewProcess(tenantId)
 	err := rsql.ParseProcess(input, p)

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>执行异常交易分析</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .card-header {
+            font-weight: 600;
+        }
+        .accordion-button:not(.collapsed) {
+            color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        .status-badge {
+            cursor: pointer;
+        }
+        #result-area {
+            display: none; /* Initially hidden */
+        }
+        #analysis-progress {
+            display: none; /* Initially hidden */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid my-4">
+    <h2 class="mb-4">执行异常交易分析</h2>
+
+    <!-- =================================== -->
+    <!-- ======   A. 分析配置区       ====== -->
+    <!-- =================================== -->
+    <div id="config-area" class="card">
+        <div class="card-header">
+            <i class="bi bi-sliders"></i> 分析配置区
+        </div>
+        <div class="card-body">
+            <fieldset id="config-fieldset">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label for="taskName" class="form-label"><strong>分析任务名称</strong></label>
+                        <input type="text" class="form-control" id="taskName" value="2024-Q1 常规资金流水审计" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="auditPeriod" class="form-label"><strong>审计期间</strong></label>
+                        <div class="input-group">
+                            <input type="date" class="form-control" id="startDate" value="2024-01-01">
+                            <span class="input-group-text">至</span>
+                            <input type="date" class="form-control" id="endDate" value="2024-03-31">
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="accounts" class="form-label"><strong>分析账户</strong></label>
+                        <select class="form-select" id="accounts" multiple>
+                            <option selected>招商银行基本户 (***1234)</option>
+                            <option>建设银行一般户 (***5678)</option>
+                            <option>工商银行纳税户 (***9012)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h5><strong>分析规则配置</strong></h5>
+                <div class="accordion" id="rulesAccordion">
+                    <!-- 金额特征 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingAmount">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAmount" aria-expanded="true" aria-controls="collapseAmount">
+                                <i class="bi bi-cash-coin me-2"></i> 金额特征
+                            </button>
+                        </h2>
+                        <div id="collapseAmount" class="accordion-collapse collapse show" aria-labelledby="headingAmount">
+                            <div class="accordion-body">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" checked></div>
+                                    <span class="input-group-text">大额交易: 单笔金额 ></span>
+                                    <input type="number" class="form-control" value="500000">
+                                    <span class="input-group-text">元</span>
+                                </div>
+                                <div class="input-group mb-3">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" checked></div>
+                                    <span class="input-group-text">整数交易: 金额为整</span>
+                                    <input type="number" class="form-control" value="100000">
+                                    <span class="input-group-text">的倍数</span>
+                                </div>
+                                <div class="input-group mb-3">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" checked></div>
+                                    <span class="input-group-text">临界金额: 金额在</span>
+                                    <input type="number" class="form-control" value="490000">
+                                    <span class="input-group-text">至</span>
+                                    <input type="number" class="form-control" value="500000">
+                                    <span class="input-group-text">之间</span>
+                                </div>
+                                <div class="input-group mb-3">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox"></div>
+                                    <span class="input-group-text">对敲交易:</span>
+                                    <input type="number" class="form-control" value="3">
+                                    <span class="input-group-text">天内金额相同或相近的进出</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 时间特征 -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingTime">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTime" aria-expanded="false" aria-controls="collapseTime">
+                                <i class="bi bi-clock-history me-2"></i> 时间特征
+                            </button>
+                        </h2>
+                        <div id="collapseTime" class="accordion-collapse collapse" aria-labelledby="headingTime">
+                            <div class="accordion-body">
+                                <div class="input-group mb-3">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" checked></div>
+                                    <span class="input-group-text">非工作时间交易: 工作日 18:00 - 08:00及法定节假日</span>
+                                </div>
+                                <div class="input-group mb-3">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" checked></div>
+                                    <span class="input-group-text">快进快出: 资金到账后</span>
+                                    <input type="number" class="form-control" value="2">
+                                    <span class="input-group-text">小时内转出</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 其他特征面板可仿照以上结构添加 -->
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn btn-outline-secondary me-2" onclick="resetConfig()">重置</button>
+                    <button type="button" class="btn btn-secondary me-2">另存为模板</button>
+                    <button id="analyze-btn" type="button" class="btn btn-primary btn-lg" onclick="startAnalysis()">
+                        <i class="bi bi-play-circle"></i> 执行分析
+                    </button>
+                </div>
+            </fieldset>
+        </div>
+    </div>
+
+    <!-- =================================== -->
+    <!-- ======     B. 结果概要区     ====== -->
+    <!-- =================================== -->
+    <!-- 分析进度条 -->
+    <div id="analysis-progress" class="alert alert-info">
+        <div class="d-flex align-items-center">
+            <strong>正在分析中...</strong>
+            <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+        </div>
+        <div class="progress mt-2">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+        <small id="progress-text" class="d-block mt-1">正在准备数据...</small>
+    </div>
+
+    <!-- 分析结果仪表盘 -->
+    <div id="result-area">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart-line"></i> 结果概要仪表盘
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-card p-3 border rounded">
+                            <h5>已分析流水总数</h5>
+                            <h3 class="display-6">125,800</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card p-3 border rounded bg-warning bg-opacity-10">
+                            <h5>发现可疑交易</h5>
+                            <h3 class="display-6 text-warning">89</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card p-3 border rounded">
+                            <h5>涉及可疑总金额</h5>
+                            <h3 class="display-6">¥4,567万</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card p-3 border rounded bg-danger bg-opacity-10">
+                            <h5>最高可疑度</h5>
+                            <h3 class="display-6 text-danger">4</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <h6>可疑原因分布</h6>
+                        <canvas id="reasonChart"></canvas>
+                    </div>
+                    <div class="col-md-8">
+                        <h6>可疑交易金额分布趋势</h6>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================== -->
+        <!-- ======   C. 可疑交易列表     ====== -->
+        <!-- =================================== -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-table"></i> 可疑交易列表
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text">筛选:</span>
+                            <select class="form-select">
+                                <option selected>按可疑原因...</option>
+                                <option>金额可疑</option>
+                                <option>时间可疑</option>
+                            </select>
+                            <select class="form-select">
+                                <option selected>按可疑度...</option>
+                                <option>★★★★</option>
+                                <option>★★★</option>
+                            </select>
+                            <input type="text" class="form-control" placeholder="按对手方名称搜索...">
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button class="btn btn-success"><i class="bi bi-file-earmark-excel"></i> 导出为Excel</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="table-light">
+                        <tr>
+                            <th>可疑度</th>
+                            <th>交易日期</th>
+                            <th>支出金额</th>
+                            <th>对手方名称</th>
+                            <th>摘要</th>
+                            <th>可疑原因标签</th>
+                            <th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td><span class="text-danger fw-bold">★★★★</span></td>
+                            <td>2024-03-30 23:15:00</td>
+                            <td>¥499,999.00</td>
+                            <td>上海XX信息咨询有限公司</td>
+                            <td>咨询服务费</td>
+                            <td>
+                                <span class="badge bg-danger status-badge" title="临界金额">金额可疑</span>
+                                <span class="badge bg-warning text-dark status-badge" title="非工作时间交易">时间可疑</span>
+                                <span class="badge bg-info text-dark status-badge" title="对手方疑似空壳公司">对手方可疑</span>
+                            </td>
+                            <td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-warning fw-bold">★★★</span></td>
+                            <td>2024-02-15 09:35:10</td>
+                            <td>¥1,000,000.00</td>
+                            <td>深圳YY科技有限公司</td>
+                            <td>货款</td>
+                            <td>
+                                <span class="badge bg-danger status-badge" title="整数交易">金额可疑</span>
+                                <span class="badge bg-secondary status-badge" title="高频交易">频率可疑</span>
+                            </td>
+                            <td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-warning fw-bold">★★★</span></td>
+                            <td>2024-01-20 19:05:22</td>
+                            <td>¥50,000.00</td>
+                            <td>张三 (个人)</td>
+                            <td>备用金</td>
+                            <td>
+                                <span class="badge bg-warning text-dark status-badge" title="非工作时间交易">时间可疑</span>
+                                <span class="badge bg-info text-dark status-badge" title="公转私">对手方可疑</span>
+                            </td>
+                            <td><a href="#" class="btn btn-primary btn-sm">创建调查任务</a></td>
+                        </tr>
+                        <!-- More rows... -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">下一页</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Simple JavaScript for interaction simulation
+    function startAnalysis() {
+        // 1. Disable config area and show progress
+        document.getElementById('config-fieldset').disabled = true;
+        document.getElementById('analyze-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 分析中...';
+        document.getElementById('analyze-btn').disabled = true;
+        document.getElementById('analysis-progress').style.display = 'block';
+
+        // 2. Simulate progress
+        let progress = 0;
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const interval = setInterval(() => {
+            progress += 10;
+            progressBar.style.width = progress + '%';
+            progressBar.innerText = progress + '%';
+
+            if (progress === 30) progressText.innerText = '正在扫描流水...';
+            if (progress === 70) progressText.innerText = '正在进行对手方匹配...';
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                // 3. Hide progress and show results
+                document.getElementById('analysis-progress').style.display = 'none';
+                document.getElementById('result-area').style.display = 'block';
+                // 4. Draw charts
+                drawCharts();
+            }
+        }, 300);
+    }
+
+    function resetConfig() {
+        // In a real app, this would reset the form to its default state.
+        // For this demo, we just re-enable the form.
+        document.getElementById('config-fieldset').disabled = false;
+        document.getElementById('analyze-btn').innerHTML = '<i class="bi bi-play-circle"></i> 执行分析';
+        document.getElementById('analyze-btn').disabled = false;
+        document.getElementById('result-area').style.display = 'none';
+    }
+
+    function drawCharts() {
+        // Chart 1: Reason Distribution
+        const reasonCtx = document.getElementById('reasonChart').getContext('2d');
+        new Chart(reasonCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['金额可疑', '时间可疑', '对手方可疑', '频率可疑'],
+                datasets: [{
+                    label: '可疑原因分布',
+                    data: [40, 25, 30, 5],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                }
+            }
+        });
+
+        // Chart 2: Trend
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: ['1月', '2月', '3月上半月', '3月下半月'],
+                datasets: [{
+                    label: '可疑交易金额 (万元)',
+                    data: [1200, 850, 560, 1957],
+                    backgroundColor: 'rgba(23, 162, 184, 0.6)',
+                    borderColor: 'rgba(23, 162, 184, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -37,6 +37,7 @@ type Env struct {
 var _env *Env
 
 func SetEnv(env *Env) {
+
 	_env = env
 	if env != nil {
 		SetEnvName(env.Name)

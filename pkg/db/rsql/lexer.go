@@ -39,6 +39,7 @@ const (
 	EndToken             = TokenType("EndToken")
 	EOFToken             = TokenType("EOFToken")
 	FuncToken            = TokenType("FuncToken")
+	ModToken             = TokenType("ModToken") // Mod 取模，取余
 )
 
 type Token struct {
@@ -332,6 +333,8 @@ func (t *Lexer) processReserved() *Token {
 		return t.generateToken(StartToken, idx+7)
 	} else if t.isString(idx, "=end=") {
 		return t.generateToken(EndToken, idx+5)
+	} else if t.isString(idx, "=mod=") {
+		return t.generateToken(ModToken, idx+5)
 	}
 	return unknownToken()
 }

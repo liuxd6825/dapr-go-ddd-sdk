@@ -1,0 +1,71 @@
+@startuml
+
+title Golang百万级流水数据综合优化处理流程 - 时序图
+
+actor "用户/API" as User
+participant "分析服务 (Analyze Func)" as Service
+participant "任务管道 (Jobs Channel)" as JobsCh
+participant "Worker Pool (Goroutines)" as Workers
+participant "结果管道 (Results Channel)" as ResultsCh
+participant "聚合器 (Aggregator)" as Aggregator
+database "数据库 (DB)" as DB
+
+autonumber "<b>[00]"
+
+User -> Service: 发起分析请求 (含规则参数)
+activate Service
+
+Service -> DB: <b>并发地</b>加载维表 (对手方, 关联方等)
+activate DB
+DB --> Service: 返回维表数据
+deactivate DB
+Service -> Service: 将维表存入内存Map
+
+Service -> JobsCh: 创建任务管道
+Service -> ResultsCh: 创建结果管道
+Service -> Aggregator: <b>[async]</b> 启动聚合器Goroutine
+activate Aggregator
+Service -> Workers: <b>[async]</b> 启动Worker Pool (N个Goroutines)
+activate Workers
+
+Service -> Service: 启动生产者(Producer) Goroutine
+Service -> DB: <b>[Streaming]</b> 发起流式查询获取交易流水
+activate DB
+
+loop 数据流读取
+    DB --> Service: 返回一批(batch)交易数据
+    Service -> JobsCh: 发送数据批次到管道
+end
+
+DB --> Service: 流水数据读取完毕
+deactivate DB
+Service -> JobsCh: close(Jobs Channel)
+deactivate Service
+
+Workers -> JobsCh: 接收数据批次
+loop 对每个批次
+    Workers -> Workers: <b>[并发]</b> 执行复杂规则分析\n(利用内存中的维表Map)
+    Workers -> ResultsCh: 发送分析结果(可疑交易)
+end
+deactivate Workers
+
+Aggregator -> ResultsCh: 接收分析结果
+loop 结果聚合
+    Aggregator -> Aggregator: 暂存结果到内存缓冲区
+    alt 缓冲区满 或 超时
+        Aggregator -> DB: <b>批量写入</b>可疑交易结果
+        activate DB
+        DB --> Aggregator: 写入成功
+        deactivate DB
+        Aggregator -> Aggregator: 清空缓冲区
+    end
+end
+deactivate Aggregator
+
+' 最终完成信号（可以用WaitGroup等机制）
+' 此处简化表示
+note over Service, Aggregator
+    通过 WaitGroup 等待所有Workers和Aggregator完成
+end note
+
+@enduml

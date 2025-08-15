@@ -1,0 +1,210 @@
+@startuml
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam roundcorner 10
+skinparam shadowing true
+
+' ===================================
+' ======    风格与图例定义     ======
+' ===================================
+skinparam package {
+    BackgroundColor #EFEFEF
+    BorderColor #999999
+    FontColor #222222
+    StereotypeFontColor #555555
+}
+skinparam class {
+    BackgroundColor #D1E8FF
+    ArrowColor #003366
+    BorderColor #003366
+}
+skinparam enum {
+    BackgroundColor #D4F0D4
+    BorderColor #006400
+}
+skinparam note {
+    BackgroundColor #FFFFE0
+    BorderColor #BDB76B
+}
+hide empty members
+
+title 资金流水异常交易分析系统 - 详细概念与数据模型 (V2)
+
+' ===================================
+' ======        枚举类型        ======
+' ===================================
+package "枚举定义 (Enums)" <<Cloud>> {
+    enum AnalysisStatus as "分析任务状态" {
+        Pending : 待执行
+        Running : 运行中
+        Completed : 已完成
+        Failed : 失败
+    }
+    enum AmountSuspicionType as "金额可疑类型" {
+        LargeValue : 大额交易
+        RoundNumber : 整数交易
+        ThresholdAdjacent : 临界金额
+        WashTrade : 对敲交易
+    }
+    enum TimeSuspicionType as "时间可疑类型" {
+        NonWorkingHours : 非工作时间
+        FastInFastOut : 快进快出
+        ConcentratedPayment : 集中支付
+        SignificantDate : 重大日期
+    }
+    enum FrequencySuspicionType as "频率可疑类型" {
+        HighFrequency : 高频交易
+        AbnormalRegularity : 异常规律
+        DormantAccountActivated : 休眠账户激活
+    }
+    enum CounterpartySuspicionType as "对手方可疑类型" {
+        RelatedParty : 关联方
+        PersonalAccount : 个人账户
+        HighRiskEntity : 高风险实体
+        BusinessMismatch : 业务不匹配
+        FundConcentration : 资金集中
+    }
+    enum TaskStatus as "调查任务状态" {
+        New : 新建
+        InProgress : 进行中
+        PendingInfo : 等待信息
+        Completed : 已完成
+        Closed : 已关闭
+    }
+    enum ConclusionType as "审计结论" {
+        Explained_NoAbnormality : 已解释/无异常
+        InternalControlDeficiency : 内部控制缺陷
+        SuspectedFraudOrViolation : 疑似违规/舞弊
+    }
+    enum EvidenceType as "证据类型" {
+        AccountingVoucher : 会计凭证
+        Contract : 合同
+        Invoice : 发票
+        WarehouseReceipt : 入库单
+        ConfirmationLetter : 询证函回函
+        InterviewRecord : 访谈记录
+        PublicInfoScreenshot : 公示信息截图
+    }
+    enum VerificationStatus as "证据核对状态" {
+        VerifiedConsistent : 核对一致
+        Inconsistent : 不一致
+        Missing : 缺失
+        ForgedSuspected : 疑似伪造
+    }
+    enum ActivityType as "验证活动类型" {
+        Confirmation : 发函询证
+        Interview : 约谈
+    }
+}
+
+' ===================================
+' ======  第二阶段: 特征识别模型  ======
+' ===================================
+package "第二阶段: 特征识别" <<Node>> {
+    ' --- 新增的核心概念 ---
+    class AnalysisTask as "异常交易分析任务" {
+      <<PK>> AnalysisTaskID: BIGINT | 分析任务唯一ID
+      TaskName: VARCHAR | 任务名称 (如 '2024-Q1审计')
+      -- 任务参数 --
+      AuditStartDate: DATE | 审计开始日期
+      AuditEndDate: DATE | 审计结束日期
+      RuleConfiguration: JSON | 本次分析使用的规则配置
+      -- 任务状态与元数据 --
+      Status: AnalysisStatus | 任务执行状态
+      ExecutedBy: VARCHAR | 执行人
+      StartTime: DATETIME | 开始时间
+      EndTime: DATETIME | 完成时间
+    }
+
+    class Transactions as "交易流水总表 (Transaction)" {
+        <<PK>> TransactionID: BIGINT | 交易唯一ID
+        -- 核心交易数据 --
+        TransactionDateTime: DATETIME | 交易时间
+        DebitAmount: DECIMAL | 支出金额
+        CreditAmount: DECIMAL | 收入金额
+        CounterpartyName: VARCHAR | 对手方名称
+    }
+
+    class SuspicionDetail as "可疑特征详情" {
+        <<PK>> DetailID: BIGINT | 详情唯一ID
+        <<FK>> TransactionID: BIGINT | 关联的交易ID
+        <<FK>> AnalysisTaskID: BIGINT | 发现此疑点的分析任务ID
+        SuspicionType: VARCHAR | 可疑的具体类型
+        AnalysisNotes: VARCHAR | 系统分析备注
+    }
+}
+
+' ===================================
+' ======  第三阶段: 深入调查模型  ======
+' ===================================
+package "第三阶段: 深入调查" <<Database>> {
+    class InvestigationTask as "调查任务 (Workpaper)" {
+        <<PK>> TaskID: BIGINT | 任务唯一ID
+        <<FK>> TransactionID: BIGINT | 待调查的交易ID
+        <<FK>> AnalysisTaskID: BIGINT | 发现此交易的分析任务ID
+        -- 任务管理 --
+        AssignedTo: VARCHAR | 指派审计员
+        Status: TaskStatus | 当前状态
+        -- 审计结论 --
+        Conclusion: ConclusionType | 最终审计结论
+    }
+
+    class Evidence as "证据 (Evidence)" {
+        <<PK>> EvidenceID: BIGINT | 证据唯一ID
+        <<FK>> TaskID: BIGINT | 关联的调查任务ID
+        Type: EvidenceType | 证据类型
+        Status: VerificationStatus | 核对结果
+    }
+
+    class VerificationActivity as "验证活动 (Activity)" {
+        <<PK>> ActivityID: BIGINT | 活动唯一ID
+        <<FK>> TaskID: BIGINT | 关联的调查任务ID
+        Type: ActivityType | 活动类型
+    }
+}
+
+' ===================================
+' ======        关系定义        ======
+' ===================================
+' 第二阶段关系
+AnalysisTask "1" ..> "0..*" Transactions : 处理 (processes)
+AnalysisTask "1" *-- "0..*" SuspicionDetail : 生成 (generates)
+SuspicionDetail "1" --> "1" Transactions : 指向 (points to)
+
+' 第三阶段关系
+InvestigationTask "1" *-- "0..*" Evidence : 收集 (collects)
+InvestigationTask "1" *-- "0..*" VerificationActivity : 执行 (performs)
+
+' 跨阶段关系 (核心追溯链)
+AnalysisTask "1" --> "0..*" InvestigationTask : 引发 (leads to)
+Transactions "1" --> "0..*" InvestigationTask : 触发 (triggers)
+
+' 枚举关联
+AnalysisTask::Status --> AnalysisStatus
+InvestigationTask::Status --> TaskStatus
+Evidence::Type --> EvidenceType
+Evidence::Status --> VerificationStatus
+VerificationActivity::Type --> ActivityType
+InvestigationTask::Conclusion --> ConclusionType
+
+' ===================================
+' ======        注释说明        ======
+' ===================================
+note top of AnalysisTask
+  <b>分析过程的载体</b>
+  记录了每一次分析的完整上下文：
+  范围、规则、执行者和状态。
+  它是所有可疑详情的“父级”。
+end note
+
+note right of InvestigationTask
+  <b>审计工作底稿</b>
+  现在增加了对<b>分析任务</b>的追溯，
+  可以回答“这个疑点是在哪次
+  分析中被发现的？”这一关键问题。
+end note
+
+@enduml```
+
+### PlantUML 最终版类图 (V2)

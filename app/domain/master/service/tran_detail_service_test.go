@@ -19,9 +19,9 @@ func Test_CreateManyTranDetail(t *testing.T) {
 		return
 	}
 
-	details := make([]*model.TranDetail, len(records))
+	details := make([]*model.Tran, len(records))
 	for i, record := range records {
-		details[i] = model.NewTranDetailFromRecord(record)
+		details[i] = model.NewTranFromRecord(record)
 	}
 
 	err = tranDetailService.CreateMany(ctx, details)

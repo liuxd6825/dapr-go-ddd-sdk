@@ -49,9 +49,9 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, eve
 	if err != nil {
 		return err
 	}
-	var details []*model.TranDetail
+	var details []*model.Tran
 	for _, record := range records {
-		details = append(details, model.NewTranDetailFromRecord(record))
+		details = append(details, model.NewTranFromRecord(record))
 	}
 
 	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {

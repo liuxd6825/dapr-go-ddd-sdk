@@ -1,0 +1,83 @@
+@startuml
+
+skinparam actorStyle awesome
+left to right direction
+
+title 资金流水异常交易分析系统 - 用例图
+
+' ===================================
+' ======         参与者         ======
+' ===================================
+actor "财务审计人员" as Auditor
+actor "系统管理员" as Admin
+actor "管理层/治理层" as Management
+actor "银行数据接口" as DataSource <<system>>
+
+' ===================================
+' ======        系统边界        ======
+' ===================================
+rectangle "资金流水分析系统" {
+
+    ' ----- 核心用例：数据准备与分析 -----
+    package "数据准备与分析" {
+        usecase "导入并标准化流水数据" as UC_Import
+        usecase "配置分析规则" as UC_ConfigureRules
+        usecase "执行异常交易分析" as UC_Analyze
+        usecase "查看可疑交易列表" as UC_ViewSuspicious
+    }
+
+    ' ----- 核心用例：深入调查 -----
+    package "深入调查" {
+        usecase "调查可疑交易" as UC_Investigate
+        usecase "追溯会计凭证" as UC_TraceVoucher
+        usecase "核对原始单据" as UC_VerifyDocuments
+        usecase "执行函证" as UC_Confirmation
+        usecase "执行访谈" as UC_Interview
+        usecase "记录调查结论与底稿" as UC_RecordConclusion
+    }
+
+    ' ----- 核心用例：报告与产出 -----
+    package "报告与产出" {
+        usecase "生成审计报告" as UC_GenerateReport
+        usecase "查看审计报告" as UC_ViewReport
+    }
+
+    ' ----- 核心用例：系统管理 -----
+    package "系统管理" {
+        usecase "用户管理" as UC_ManageUsers
+        usecase "配置系统参数" as UC_ConfigureSystem
+    }
+}
+
+' ===================================
+' ======       关系定义        ======
+' ===================================
+
+' 财务审计人员的核心职责
+Auditor --> UC_Import
+Auditor --> UC_ConfigureRules
+Auditor --> UC_Analyze
+Auditor --> UC_ViewSuspicious
+Auditor --> UC_Investigate
+Auditor --> UC_RecordConclusion
+Auditor --> UC_GenerateReport
+
+' 管理层/治理层的职责 (只读)
+Management --> UC_ViewReport
+
+' 系统管理员的职责
+Admin --> UC_ManageUsers
+Admin --> UC_ConfigureSystem
+
+' 外部系统的交互
+DataSource -->> UC_Import : (提供原始流水)
+
+' 用例之间的关系 (include/extend)
+UC_Analyze ..> UC_ViewSuspicious : <<include>> ' 分析完必须能查看结果
+UC_Investigate <. UC_Confirmation : <<extend>> ' 调查时，可选择执行函证
+UC_Investigate <. UC_Interview : <<extend>>   ' 调查时，可选择执行访谈
+UC_Investigate .> UC_TraceVoucher : <<include>> ' 调查必须追溯凭证
+UC_Investigate .> UC_VerifyDocuments : <<include>> ' 调查必须核对单据
+UC_RecordConclusion <.. UC_Investigate : (follows) ' 调查完成后记录结论
+
+@enduml

@@ -78,3 +78,7 @@ func AsTimestamp(t *time.Time) *timestamppb.Timestamp {
 func ToPTime(t time.Time) *time.Time {
 	return &t
 }
+
+func NewDate(year, month, day int) time.Time {
+	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
+}

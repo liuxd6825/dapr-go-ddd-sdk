@@ -192,3 +192,7 @@ func (e EnvConfig) GetHServerSrcPath() string {
 func (e EnvConfig) GetHServerEnable() bool {
 	return false
 }
+
+func init() {
+	InitTimeZone()
+}

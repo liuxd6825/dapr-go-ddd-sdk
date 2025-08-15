@@ -10,7 +10,7 @@ func CreateTables(dbKey string) {
 	ctx := context.Background()
 	tables := []idao.Table{
 		NewRecordDao(dbKey).Table(),
-		NewTranDetailDao(dbKey).Table(),
+		NewTranDao(dbKey).Table(),
 	}
 	dao.CreateTables(ctx, tables)
 }

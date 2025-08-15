@@ -137,33 +137,38 @@ func (p *Process) OnNotContains(name string, value interface{}, rValue rsql.Valu
 
 func (p *Process) OnFnProcess(expr rsql.Expression, fn *rsql.FuncValue) rsql.Value {
 	if fn.Name == "sub" {
-		iden, ok := expr.(rsql.GetIdentifier)
-		if !ok {
-			panic(errors.New("fn expression must implement GetIdentifier"))
-		}
-
-		foreignField := rsql.AsFieldName(fn.Args["field"])
-		table := fn.Args["table"]
-		tableAs := table + "_as"
-		localField := iden.GetIdentifier().Val
-		if localField == "id" {
-			localField = "_id"
-		}
-		np := newProcess(p.tenantId)
-		np.asTableName = tableAs
-		np.current = p.current
-		err := rsql.ParseProcess(fn.RSQL(), np)
-		if err != nil {
-			panic(err)
-		}
-
-		p.lookup = append(p.lookup, &Lookup{
-			From:         table,
-			LocalField:   localField,
-			ForeignField: foreignField,
-			As:           tableAs,
-		})
+		return p.sub(expr, fn)
 	}
+	return nil
+}
+
+func (p *Process) sub(expr rsql.Expression, fn *rsql.FuncValue) rsql.Value {
+	iden, ok := expr.(rsql.GetIdentifier)
+	if !ok {
+		panic(errors.New("fn expression must implement GetIdentifier"))
+	}
+
+	foreignField := rsql.AsFieldName(fn.Args["field"])
+	table := fn.Args["table"]
+	tableAs := table + "_as"
+	localField := iden.GetIdentifier().Val
+	if localField == "id" {
+		localField = "_id"
+	}
+	np := newProcess(p.tenantId)
+	np.asTableName = tableAs
+	np.current = p.current
+	err := rsql.ParseProcess(fn.RSQL(), np)
+	if err != nil {
+		panic(err)
+	}
+
+	p.lookup = append(p.lookup, &Lookup{
+		From:         table,
+		LocalField:   localField,
+		ForeignField: foreignField,
+		As:           tableAs,
+	})
 	return nil
 }
 
@@ -181,6 +186,10 @@ func (p *Process) OnStart(name string, value interface{}, rValue rsql.Value) {
 
 func (p *Process) OnEnd(name string, value interface{}, rValue rsql.Value) {
 	p.current.addChildItem(p.getFieldName(name), bson.D{{"$ne", nil}})
+}
+
+func (p *Process) OnMod(name string, value interface{}, rValue rsql.Value) {
+	p.current.addChildItem(p.getFieldName(name), bson.D{{"$mod", value}})
 }
 
 func (p *Process) addChildItem(name string, value interface{}) {

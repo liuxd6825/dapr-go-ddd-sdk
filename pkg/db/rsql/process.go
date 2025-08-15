@@ -33,7 +33,6 @@ type Process interface {
 	OnNotIsNull(name string, value interface{}, rValue Value)
 	OnStart(name string, value interface{}, rValue Value)
 	OnEnd(name string, value interface{}, rValue Value)
-
 	OnFnProcess(expr Expression, fn *FuncValue) Value
 	GetSQL() string
 	GetFilter() any
@@ -183,6 +182,11 @@ func parseProcess(expr Expression, process Process) error {
 		process.OnStart(name, value, ex.Comparison.Val)
 	case *EndComparison:
 		ex, _ := expr.(*EndComparison)
+		name := ex.Comparison.Identifier.Val
+		value := getValue(ex.Comparison.Val)
+		process.OnEnd(name, value, ex.Comparison.Val)
+	case *ModComparison:
+		ex, _ := expr.(*ModComparison)
 		name := ex.Comparison.Identifier.Val
 		value := getValue(ex.Comparison.Val)
 		process.OnEnd(name, value, ex.Comparison.Val)

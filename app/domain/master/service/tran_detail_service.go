@@ -12,7 +12,7 @@ import (
 )
 
 type TranDetailService struct {
-	dao *dao.TranDetailDao
+	dao *dao.TranDao
 }
 
 var _tranDetailService *TranDetailService
@@ -21,17 +21,17 @@ var _tranDetailServiceOnce sync.Once
 func NewTranDetailService() *TranDetailService {
 	_tranDetailServiceOnce.Do(func() {
 		_tranDetailService = &TranDetailService{
-			dao: dao.NewTranDetailDao(config.DBKey),
+			dao: dao.NewTranDao(config.DBKey),
 		}
 	})
 	return _tranDetailService
 }
 
-func (r *TranDetailService) CreateMany(ctx context.Context, v []*model.TranDetail, opts ...idao.CallOptions) error {
+func (r *TranDetailService) CreateMany(ctx context.Context, v []*model.Tran, opts ...idao.CallOptions) error {
 	return r.dao.CreateMany(ctx, v, opts...).GetError()
 }
 
-func (r *TranDetailService) FindThresholdQuery(ctx context.Context, qry *query.TranDetailFindThresholdQuery, opts ...idao.CallOptions) ([]*model.TranDetail, error) {
+func (r *TranDetailService) FindThresholdQuery(ctx context.Context, qry *query.TranDetailFindThresholdQuery, opts ...idao.CallOptions) ([]*model.Tran, error) {
 	build := rsql.NewBuilder().And(
 		rsql.Or(
 			rsql.Eq("name", qry.Name),

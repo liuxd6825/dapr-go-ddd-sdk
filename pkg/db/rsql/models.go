@@ -169,3 +169,7 @@ func (c *EndComparison) ExpressionName() string { return "=end=" }
 type FuncComparison struct{ Comparison }
 
 func (c *FuncComparison) ExpressionName() string { return "=func=" }
+
+type ModComparison struct{ Comparison }
+
+func (c *ModComparison) ExpressionName() string { return "=mod=" }

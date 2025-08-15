@@ -14,9 +14,9 @@ const (
 	CashType_Cash CashType = true  // 现金
 )
 
-type AcctType string
+type AccountType string
 
 const (
-	AcctType_Personal AcctType = "个人"
-	AcctType_Company  AcctType = "公司"
+	AccountType_Personal AccountType = "个人"
+	AccountType_Company  AccountType = "公司"
 )

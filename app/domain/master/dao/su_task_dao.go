@@ -7,19 +7,19 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 )
 
-type TranDetailDao struct {
-	idao.Dao[*model.TranDetail]
+type SuTaskDao struct {
+	idao.Dao[*model.SuTask]
 }
 
-func NewTranDetailDao(dbKey string) *TranDetailDao {
-	tableName := "master_tran_detail"
-	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.TranDetail{}, tableName)
+func NewSuTaskDao(dbKey string) *SuTaskDao {
+	tableName := "analyse_task"
+	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.SuTask{}, tableName)
 	newCfg := &dao.DaoConfig{
 		DBKey:     dbKey,
 		TableName: tableName,
 		DBSchema:  dbSch,
 	}
-	baseDao := dao.NewDao[*model.TranDetail](newCfg)
-	daoVal := &TranDetailDao{Dao: baseDao}
+	baseDao := dao.NewDao[*model.SuTask](newCfg)
+	daoVal := &SuTaskDao{Dao: baseDao}
 	return daoVal
 }

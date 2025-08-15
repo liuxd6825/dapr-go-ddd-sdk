@@ -214,6 +214,8 @@ func comparison(tokens *iterator) (Expression, error) {
 		return &EndComparison{Comparison{id, args}}, nil
 	case FuncToken:
 		return &FuncComparison{Comparison{id, args}}, nil
+	case ModToken:
+		return &ModComparison{Comparison{id, args}}, nil
 	}
 
 	return nil, fmt.Errorf("'comparator not managed for expression")
