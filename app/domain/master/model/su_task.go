@@ -8,61 +8,53 @@ import (
 // SuTask 可疑分析任务
 type SuTask struct {
 	xbase.BaseModel `bson:",inline"`
-	SuTaskRule      `json:"rule" gorm:"rule" bson:"rule" title:"规则"`
+	Rules           SuTaskRule   `json:"rules" gorm:"rules" bson:"rules" title:"规则"` // 规则
 	Name            string       `json:"taskName" gorm:"task_name" bson:"task_name" title:"任务名称"`
 	StartTime       *time.Time   `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"`
 	EndTime         *time.Time   `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
 	Status          SuTaskStatus `json:"status" gorm:"status"  bson:"status" title:"状态"`
-	OwnerName       string       `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"操作人"`
-	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"操作人ID"`
+	OwnerName       string       `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"任务负责人"`
+	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"任务负责人ID"`
+	MasterId        string       `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
+	MasterName      string       `json:"masterName" gorm:"master_name" bson:"master_name" title:"主数据名称"`
+	MasterType      string       `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
 }
 
 // SuTaskRule 审计规则
 type SuTaskRule struct {
-	SuReasonDetail `bson:",inline"`
-	AmountRule     SuAmountRule `json:"amountRule" gorm:"amount_rule,json" bson:"amount_rule" title:"金额特征"`
-	TimeRule       SuTimeRule   `json:"timeRule" gorm:"time_rule,json" bson:"time_rule" title:"时间特征"`
+	AmountLarge  AmountLargeRule  `json:"amountLarge" bson:"amountLarge" bson:"amount_large" title:"大额"`
+	AmountCollar AmountCollarRule `json:"amountCollar" gorm:"amount_collar" bson:"amount_collar" title:"对敲"`
+	AmountNear   AmountNearRule   `json:"amountNear" gorm:"amount_near,json" bson:"amount_near" title:"近似金额特征"`
+	AmountNumber AmountNumberRule `json:"amountNumber" gorm:"amount_number" bson:"amount_number" title:"整数金额"`
+
+	FreqSleep    FreqSleepRule    `json:"freqSleep" gorm:"freq_sleep" bson:"freq_sleep" title:"休眠账号"`
+	FreqAbnormal FreqAbnormalRule `json:"freqAbnormal" gorm:"freq_abnormal" bson:"freq_abnormal" title:"异常规律性支付"`
+	FreqHigh     FreqHighRule     `json:"freqHigh" gorm:"freq_high" bson:"freq_high" title:""`
+
+	PartAggregate PartAggregateRule     `json:"partAggregate" gorm:"part_aggregate" bson:"part_aggregate" title:""`
+	PartPrivate   PartPrivateRule       `json:"partPrivate" gorm:"part_private" bson:"part_private" title:""`
+	PartHighRisk  PartHighRiskRule      `json:"partHighRisk" gorm:"part_high_risk" bson:"part_high_risk" title:""`
+	PartRelation  PartRelationPartyRule `json:"partRelation" gorm:"part_relation" bson:"part_relation" title:""`
+
+	TimeConcentratedPayments TimeConcentratedPaymentsRule `json:"timeConcentratedPayments" gorm:"time_concentrated_payments"  bson:"time_concentrated_payments"  title:""`
+	TimeFastInOut            TimeFastInOutRule            `json:"timeFastInOut"  gorm:"time_fast_in_out" bson:"time_fast_in_out"  title:""`
+	TimeNonWorkingHours      TimeNonWorkingHoursRule      `json:"timeNonWorkingHours" gorm:"time_non_working_hours" bson:"time_non_working_hours" title:""`
+	TimeSignificantDate      TimeSignificantDateRule      `json:"timeSignificantDate" gorm:"time_significant_date" bson:"time_significant_date" title:""`
 }
 
-type SuAmountRule struct {
-	LargeValue  float64 `json:"largeValue" gorm:"large_value" bson:"large_value" title:"大额金额"`
-	IntValue    float64 `json:"intValue" gorm:"int_value" bson:"int_value" title:"整数倍数"`
-	NearPercent float64 `json:"nearPercent" gorm:"near_percent" bson:"near_percent" title:"临界百分比"`
-	NearMin     float64 `json:"nearMin" gorm:"near_min" bson:"near_min" title:"临界最小值"`
-	NearMax     float64 `json:"nearMax" gorm:"near_max" bson:"near_max" title:"临界最大值"`
-	CollarDays  int     `json:"collarDays" gorm:"collar_days" bson:"collar_days" title:"对敲天数"`
-}
-
-type SuTimeRule struct {
-	FastInOutHours     float64 `json:"fastInOutHours" gorm:"fast_in_out_hours" bson:"fast_in_out_hours" title:"对敲天数"`
-	IsNonWorkingSunday bool    `json:"isNonWorkingSunday" gorm:"is_non_working_sunday" bson:"is_non_working_sunday" title:"是否检查非工作日"`
-	IsNonWorkingHours  bool    `json:"isNonWorkingHours" gorm:"is_non_working_hours" bson:"is_non_working_hours" title:"是否检查工作日非工时"`
-	NonWorkingHoursMin int     `json:"nonWorkingHoursMin" gorm:"non_working_hours_min" bson:"non_working_hours_min" title:"非工作日最小时长"`
-	NonWorkingHoursMax int     `json:"nonWorkingHoursMax" gorm:"non_working_hours_max" bson:"non_working_hours_max" title:"非工作日最长时间"`
-}
-
-// SuReasonDetail 审计规则
-type SuReasonDetail struct {
-	// 金额可疑
-	IsAmountLarge  bool `json:"isAmountLarge"  gorm:"is_amount_large" bson:"is_amount_large"  title:"大额可疑" `
-	IsAmountInt    bool `json:"isAmountInt"  gorm:"is_amount_int" bson:"is_amount_int" title:"整数可疑" `
-	IsAmountCollar bool `json:"isAmountCollar" gorm:"is_amount_collar"  bson:"is_amount_collar" title:"对敲可疑" `
-	IsAmountNear   bool `json:"isAmountNear"  gorm:"is_amount_near" bson:"is_amount_near"  title:"临界可疑" `
-	// 时间可疑
-	IsTimeNonWorkingHours bool `json:"isNonWorkingHours" gorm:"is_non_working_hours" bson:"is_non_working_hours" title:"非工作时间"`
-	IsTimeFastInOut       bool `json:"isFastInFastOut" gorm:"is_fast_inout" bson:"is_fast_inout" title:"快速进快出"`
-	IsTimePayment         bool `json:"isTimePayment" gorm:"is_time_payment" bson:"is_time_payment" title:"集中支付"`
-	IsTimeSignificantDate bool `json:"isTimeSignificantDate" gorm:"is_time_significant_date" bson:"is_time_significant_date" title:"重大日期"`
-	// 频率可疑
-	IsFreqHigh     bool `json:"isFreqHigh" gorm:"is_freq_high" bson:"is_freq_high" title:"高频交易"`
-	IsFreqAbnormal bool `json:"isFreqAbnormal" gorm:"is_freq_abnormal" bson:"is_freq_abnormal" title:"异常频率"`
-	IsFreqSleep    bool `json:"isFreqSleep" gorm:"is_freq_sleep" bson:"is_freq_sleep" title:"休眠账户激活"`
-	// 对手方可疑
-	IsOppRelatedParty    bool `json:"IsOppRelatedParty" gorm:"is_opp_related_party" bson:"is_opp_related_party" title:"关联方"`
-	IsOppPersonalAccount bool `json:"IsOppPersonalAccount" gorm:"is_opp_personal_account" bson:"is_opp_personal_account" title:"个人账户"`
-	IsOppHighRiskEntity  bool `json:"IsOppHighRiskEntity" gorm:"is_opp_high_risk_entity" bson:"is_opp_high_risk_entity" title:"高风险实体"`
-	IsOppBusiness        bool `json:"IsOppBusiness" gorm:"is_opp_business" bson:"is_opp_business" title:"业务不匹配"`
-	IsOppConc            bool `json:"IsOppConc" gorm:"is_opp_conc" bson:"is_opp_conc" title:"资金集中"`
+type SuFreqRule struct {
+	// 高频率
+	HighThreshold int              // e.g., 10 (交易次数阈值)
+	HighPeriod    SuFreqHighPeriod // "Month", "Quarter", "Year" (统计周期)
+	// 非正常
+	AbnormalPeriodDays      int     // 30 (周期天数)
+	AbnormalDayTolerance    int     // 2  (周期容差 ± 天数)
+	AbnormalAmountTolerance float64 // 5.0 (金额容差百分比 %)
+	AbnormalMinOccurrences  int     // 3  (最小发生次数)
+	// 休眠
+	SleepHibernationPeriodDays int // 180 (休眠期天数)
+	SleepActivationPeriodDays  int // 30  (激活期天数)
+	SleepActivationTxThreshold int // 3   (激活期内交易次数阈值)
 }
 
 // SuTaskAccount 分析的账户
@@ -77,7 +69,6 @@ type SuTaskAccount struct {
 
 type SuTran struct {
 	xbase.BaseModel `bson:",inline"`
-	SuReasonDetail  `bson:",inline"`
 	TaskId          string      `json:"taskId" gorm:"task_id" bson:"task_id" title:"可疑任务ID" `
 	TranId          string      `json:"tranId" gorm:"tran_id" bson:"tran_id" title:"交易id"`
 	Name            string      `json:"name" gorm:"name"  bson:"name" title:"我方名称"`
@@ -104,62 +95,26 @@ type SuTran struct {
 type SuTaskResult struct {
 	TaskId  string
 	Account string
-	Items   map[string]*SuTaskItem
+	Records map[string]*SuRecord
+	Batchs  []Batch
 }
 
-func NewSuTaskResult(taskId string, account string) *SuTaskResult {
-	return &SuTaskResult{
-		TaskId:  taskId,
-		Account: account,
-		Items:   make(map[string]*SuTaskItem),
-	}
+type Batch struct {
+	xbase.BaseModel `bson:",inline"`
+	Name            string `json:"name" gorm:"name" bson:"name"`
+	TaskId          string `json:"taskId" gorm:"task_id" bson:"task_id"`
 }
 
-func (s *SuTaskItemReason) AddAmountCollar(tx *Tran) {
-	s.AmountCollarItems = append(s.AmountCollarItems, tx)
+type BatchRecord struct {
+	xbase.BaseModel `bson:",inline"`
+	Name            string `json:"name" gorm:"name" bson:"name"`
+	TaskId          string `json:"taskId" gorm:"task_id" bson:"task_id"`
+	RecordId        string `json:"recordId" gorm:"record_id" bson:"record_id"`
 }
 
-func (s *SuTaskResult) AddItem(tx *Tran, suType SuType, reason string) *SuTaskItemReason {
-	reasonItem := SuTaskItemReason{TranId: tx.Id, Account: tx.Acct, Reason: reason, Timestamp: tx.Date, AmountCollarItems: make([]*Tran, 0)}
-	var item *SuTaskItem
-	if val, ok := s.Items[tx.Id]; ok {
-		item = val
-		item.Reasons = append(item.Reasons, reasonItem)
-	} else {
-		item = &SuTaskItem{
-			Tran:    *tx,
-			TaskId:  s.TaskId,
-			Reasons: []SuTaskItemReason{reasonItem},
-		}
-		s.Items[tx.Id] = item
-	}
-	switch suType {
-	case SuType_AmountLarge:
-		item.IsAmountLarge = true
-	case SuType_AmountRoundNumber:
-		item.IsAmountInt = true
-	case SuType_AmountCollar:
-		item.IsAmountCollar = true
-	case SuType_AmountNear:
-		item.IsAmountNear = true
-	case SuType_TimeNonWorkingHours:
-		item.IsTimeNonWorkingHours = true
-	}
-	return &reasonItem
-}
-
-// SuTaskItem 可疑交易项
-type SuTaskItem struct {
-	Tran           `bson:",inline"`
-	SuReasonDetail `bson:",inline"`
-	TaskId         string             `json:"taskId" gorm:"task_id" bson:"task_id" title:"任务ID"`
-	Reasons        []SuTaskItemReason `title:"可疑原因"`
-}
-
-type SuTaskItemReason struct {
-	TranId            string
-	Account           string
-	Reason            string
-	Timestamp         time.Time
-	AmountCollarItems []*Tran
+// AccountRecords is the unit of work for our workers.
+type AccountRecords struct {
+	OwnerName string    `bson:"owner_name" json:"owner_name" bson:"owner_name" title:"账号拥有者"`
+	Account   string    `bson:"account" json:"account" bson:"account" title:"账号"`
+	Records   []*Record `bson:"records" json:"records" bson:"records" title:"交易流水"`
 }

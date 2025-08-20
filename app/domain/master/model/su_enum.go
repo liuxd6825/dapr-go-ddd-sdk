@@ -4,35 +4,34 @@ package model
 type SuType string
 
 const (
-	SuType_AmountLarge       SuType = "大额交易"
-	SuType_AmountRoundNumber SuType = "整数交易"
-	SuType_AmountNear        SuType = "临界金额"
-	SuType_AmountCollar      SuType = "对敲交易"
+	SuType_AmountLarge  SuType = "大额交易"
+	SuType_AmountNumber SuType = "整数交易"
+	SuType_AmountNear   SuType = "临界金额"
+	SuType_AmountCollar SuType = "对敲交易"
 )
 
 const (
-	SuType_TimeNonWorkingHours     SuType = "非工作时间"
-	SuType_TimeFastInFastOut       SuType = "快进快出"
+	SuType_TimeNonWorking          SuType = "非工作时间"
+	SuType_TimeFastInOut           SuType = "快进快出"
 	SuType_TimeConcentratedPayment SuType = "集中支付"
 	SuType_TimeSignificantDate     SuType = "重大日期"
 )
 
 // SuType 频率可疑类型
-
 const (
-	SuType_Highuency               SuType = "高频交易"
-	SuType_AbnormalRegularity      SuType = "异常规律"
-	SuType_DormantAccountActivated SuType = "休眠账户激活"
+	SuType_FreqHigh     SuType = "高频交易"
+	SuType_FreqAbnormal SuType = "异常规律"
+	SuType_FreqSleep    SuType = "休眠账户激活"
 )
 
 // SuType 对手方可疑类型
 
 const (
-	SuType_RelatedParty      SuType = "关联方"
-	SuType_PersonalAccount   SuType = "个人账户"
-	SuType_HighRiskEntity    SuType = "高风险实体"
-	SuType_BusinessMismatch  SuType = "业务不匹配"
-	SuType_FundConcentration SuType = "资金集中"
+	SuType_PartyRelated   SuType = "关联方"
+	SuType_PartyPrivate   SuType = "个人账户"
+	SuType_PartyHighRisk  SuType = "高风险实体"
+	SuType_PartyBusiness  SuType = "业务不匹配"
+	SuType_PartyAggregate SuType = "资金集中"
 )
 
 // SuTaskStatus 调查任务状态
@@ -84,4 +83,12 @@ type SuActivityType string
 const (
 	SuActivityType_Confirmation SuActivityType = "发函询证"
 	SuActivityType_Interview    SuActivityType = "约谈"
+)
+
+type SuFreqHighPeriod string
+
+const (
+	SuFreqHighPeriod_Month   SuFreqHighPeriod = "month"
+	SuFreqHighPeriod_Quarter SuFreqHighPeriod = "quarter"
+	SuFreqHighPeriod_Year    SuFreqHighPeriod = "year"
 )

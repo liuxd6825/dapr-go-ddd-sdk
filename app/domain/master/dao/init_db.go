@@ -11,6 +11,13 @@ func CreateTables(dbKey string) {
 	tables := []idao.Table{
 		NewRecordDao(dbKey).Table(),
 		NewTranDao(dbKey).Table(),
+		NewTagRelationDao(dbKey).Table(),
+
+		NewSuBatchDao(dbKey).Table(),
+		NewSuBatchItemDao(dbKey).Table(),
+		NewSuRecordDao(dbKey).Table(),
+		NewSuTaskAccountDao(dbKey).Table(),
+		NewSuTaskDao(dbKey).Table(),
 	}
 	dao.CreateTables(ctx, tables)
 }

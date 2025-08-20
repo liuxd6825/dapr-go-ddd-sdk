@@ -43,7 +43,7 @@ func NewTranFromRecord(record *Record) *Tran {
 	oppAcctType := record.OppAcctType
 	oppBankName := record.OppBankName
 
-	if record.Payout != nil {
+	if record.Payout != 0 {
 		acct = record.OppAcct
 		name = record.OppName
 		acctType = record.OppAcctType
@@ -66,8 +66,8 @@ func NewTranFromRecord(record *Record) *Tran {
 		OppAcctType: oppAcctType,
 		OppBankName: oppBankName,
 		Cash:        record.Cash,
-		Amount:      *record.Amount,
-		Date:        *record.Date,
+		Amount:      record.Amount,
+		Date:        record.Date,
 		Ccy:         record.Ccy,
 		Place:       record.Place,
 		Summary:     record.Summary,

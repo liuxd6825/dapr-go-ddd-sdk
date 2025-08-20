@@ -7,19 +7,19 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 )
 
-type SuTaskDao struct {
-	idao.Dao[*model.SuTask]
+type SuBatchDao struct {
+	idao.Dao[*model.SuBatch]
 }
 
-func NewSuTaskDao(dbKey string) *SuTaskDao {
-	tableName := "su_task"
-	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.SuTask{}, tableName)
+func NewSuBatchDao(dbKey string) *SuBatchDao {
+	tableName := "su_batch"
+	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.SuBatch{}, tableName)
 	newCfg := &dao.DaoConfig{
 		DBKey:     dbKey,
 		TableName: tableName,
 		DBSchema:  dbSch,
 	}
-	baseDao := dao.NewDao[*model.SuTask](newCfg)
-	daoVal := &SuTaskDao{Dao: baseDao}
+	baseDao := dao.NewDao[*model.SuBatch](newCfg)
+	daoVal := &SuBatchDao{Dao: baseDao}
 	return daoVal
 }

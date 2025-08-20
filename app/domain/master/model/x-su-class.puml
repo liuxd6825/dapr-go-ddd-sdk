@@ -1,0 +1,31 @@
+@startuml
+
+class "主数据" as Master {
+}
+class "交易记录" as Record {
+}
+class "可疑分析任务" as SuTask  {
+}
+class "可疑分析规则" as SuRule  {
+}
+class "可疑批量结果" as SuBatch  {
+  可疑说明
+  可疑类型
+}
+class "可疑批量交易" as SuBatchItem  {
+
+}
+class "可疑交易" as SuRecord  {
+    可疑级别 int
+}
+
+Master "1" --{ "*" SuTask : 包含 >
+SuTask "1" --{ "*" SuRecord : 包含 >
+SuTask   "1" --{ "*"  SuBatch : 包含 >
+SuTask   "1" -- "1" SuRule : 包含 >
+SuBatch   "1" --{ "*" SuBatchItem : 包含 >
+SuBatchItem "1" -- "1" SuRecord : 引用 >
+Record "1" --{ SuBatchItem
+Record "1" --{ SuRecord
+
+@enduml

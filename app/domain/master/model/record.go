@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ type Record struct {
 	DocId           string      `json:"docId" gorm:"doc_id" bson:"doc_id" index:"" title:"文档id"`
 	FileId          string      `json:"fileId"  gorm:"file_id" bson:"file_id" index:"" title:"文件id"`
 	SheetId         string      `json:"sheetId" gorm:"sheet_id" bson:"sheet_id" index:"" title:"工作表ID"`
+	MasterId        string      `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
+	MasterType      string      `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
 	RowNum          int64       `json:"rowNum"  gorm:"row_num" bson:"row_num" index:"" title:"行号"`
 	TaskId          string      `json:"taskId" gorm:"task_id"  bson:"task_id" index:""  title:"任务id"`
 	Name            string      `json:"name"   gorm:"name"  bson:"name"  index:"" validate:"-" title:"我方名称"`                             // 名称
@@ -26,12 +29,12 @@ type Record struct {
 	OppAcctType     AccountType `json:"oppAcctType"  gorm:"opp_acct_type"   bson:"opp_acct_type"  validate:"-" title:"对方账号类型"`           // 对方账号类型
 	OppBankName     string      `json:"oppBankName"  gorm:"opp_bank_name"  bson:"opp_bank_name"  index:""   validate:"-" title:"对方开户银行"` // 对方开户银行
 	Serial          string      `json:"serial"  gorm:"serial"   bson:"serial"  index:""   validate:"-" title:"流水号"`                      // 流水号
-	Payout          *float64    `json:"payout"  gorm:"payout"   bson:"payout"  index:""   validate:"-" title:"支出金额"`                     // 借方发生额（支出）
-	Income          *float64    `json:"income"  gorm:"income"  bson:"income"   index:""  validate:"-" title:"收入金额"`
+	Payout          float64     `json:"payout"  gorm:"payout"   bson:"payout"  index:""   validate:"-" title:"支出金额"`                     // 借方发生额（支出）
+	Income          float64     `json:"income"  gorm:"income"  bson:"income"   index:""  validate:"-" title:"收入金额"`
 	Cash            CashType    `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金标识"`
 	Io              IOType      `json:"io" gorm:"io" bson:"io" index:"" title:"收付标志"`
-	Amount          *float64    `json:"amount"   gorm:"amount"  bson:"amount"  index:""  validate:"-" title:"交易金额"`  // 交易金额
-	Date            *time.Time  `json:"date"   gorm:"date"  bson:"date"  index:""  validate:"-" title:"交易时间"`        // 交易时间
+	Amount          float64     `json:"amount"   gorm:"amount"  bson:"amount"  index:""  validate:"-" title:"交易金额"`  // 交易金额
+	Date            time.Time   `json:"date"   gorm:"date"  bson:"date"  index:""  validate:"-" title:"交易时间"`        // 交易时间
 	Ccy             string      `json:"ccy"  gorm:"ccy"  bson:"ccy"  index:""  validate:"-" title:"交易币种" `           // 交易币种
 	Place           string      `json:"place"   gorm:"place"  bson:"place"  index:""  validate:"-" title:"地点"`       // 交易地点
 	Summary         string      `json:"summary"  gorm:"summary"   bson:"summary" index:""   validate:"-" title:"摘要"` // 摘要
@@ -42,13 +45,24 @@ func NewRecord() *Record {
 	return &Record{}
 }
 
+func (r *Record) GetPayout() float64 {
+	return math.Abs(r.Payout)
+}
+
+func (r *Record) GetIO() IOType {
+	if r.Payout != 0 {
+		return IOType_Out
+	}
+	return IOType_In
+}
+
 func NewTranId(record *Record) string {
 	acct := strings.ToLower(record.Acct)
 	oppAcct := strings.ToLower(record.OppAcct)
 	date := fmt.Sprintf("%04d%02d%02d-%02d%02d%02d", record.Date.Year(), record.Date.Month(), record.Date.Day(), record.Date.Hour(), record.Date.Minute(), record.Date.Second())
-	amount := strconv.FormatFloat(*record.Amount, 'f', -1, 64)
+	amount := strconv.FormatFloat(record.Amount, 'f', -1, 64)
 	amount = strings.Replace(amount, ".", "_", -1)
-	if record.Payout != nil {
+	if record.Payout != 0 {
 		x := oppAcct
 		oppAcct = acct
 		acct = x

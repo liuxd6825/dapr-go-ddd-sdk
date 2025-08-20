@@ -17,6 +17,8 @@ type Progress struct {
 
 type Task struct {
 	Base       `bson:",inline"`
+	MasterId   string           `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
+	MasterType string           `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
 	DocId      string           `json:"docId,omitempty" gorm:"doc_id" bson:"doc_id" index:"" title:"文档id"`
 	FileId     string           `json:"fileId,omitempty" gorm:"file_id" bson:"file_id" index:"" title:"文件id"`
 	FileName   string           `json:"fileName,omitempty" gorm:"file_name"  bson:"file_name" index:""  title:"文件名称"`

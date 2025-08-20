@@ -14,7 +14,7 @@ type SuTaskAccountDao struct {
 }
 
 func NewSuTaskAccountDao(dbKey string) *SuTaskAccountDao {
-	tableName := "analyse_task_account"
+	tableName := "su_account"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.SuTaskAccount{}, tableName)
 	newCfg := &dao.DaoConfig{
 		DBKey:     dbKey,

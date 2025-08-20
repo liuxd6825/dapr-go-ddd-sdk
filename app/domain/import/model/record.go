@@ -34,6 +34,9 @@ func NewAcctType(v string) AcctType {
 type RecordIe struct {
 	xbase.BaseModel `bson:",inline"`
 
+	MasterId   string `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
+	MasterType string `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
+
 	RowNum  int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
 	TaskId  string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  title:"任务id"`
 	DocId   string `json:"docId" gorm:"doc_id" bson:"doc_id" index:""  title:"文档id"`
