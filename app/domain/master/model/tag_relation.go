@@ -1,6 +1,8 @@
 package model
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+)
 
 type TagRelation struct {
 	xbase.BaseModel `bson:",inline"`

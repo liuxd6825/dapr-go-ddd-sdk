@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task_pkg "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
+	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -261,7 +261,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 }
 
 func (s *RecordService) PublishImportRecordToMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) (err error) {
-	return xbase.PublishEvent(ctx, config.ImportAppId, event, nil)
+	return xbase2.PublishEvent(ctx, config.ImportAppId, event, nil)
 }
 
 func NewContext(ctx context.Context, task *TaskOptions) context.Context {
@@ -282,7 +282,7 @@ func newRecord(ctx context.Context, row *readexcel.DataRow, temp *readexcel.Temp
 		return nil, errors.New("task is nil")
 	}
 	record := &task_pkg.RecordIe{
-		BaseModel: xbase.BaseModel{
+		BaseModel: xbase2.BaseModel{
 			Id:       uuid.NewString(),
 			TenantId: task.TenantId,
 			CaseId:   task.CaseId,

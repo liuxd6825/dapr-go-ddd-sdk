@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 

@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"math"
 	"strconv"
 	"strings"

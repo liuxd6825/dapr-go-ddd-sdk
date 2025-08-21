@@ -10,9 +10,12 @@ const (
 	MongoReplicaSet = "mongors"
 	MongoUser       = "super_admin"
 	MongoPassword   = "123456"
+	AuthMechanism   = "SCRAM-SHA-256"
 )
 
 type MongoOptions struct {
+	DBKey      *string
+	Host       *string
 	DBName     *string
 	ReplicaSet *string
 	User       *string
@@ -22,6 +25,12 @@ type MongoOptions struct {
 func NewMongoOptions(opts ...*MongoOptions) *MongoOptions {
 	o := &MongoOptions{}
 	for _, item := range opts {
+		if item.DBKey != nil {
+			o.DBKey = item.DBKey
+		}
+		if item.Host != nil {
+			o.Host = item.Host
+		}
 		if item.DBName != nil {
 			o.DBName = item.DBName
 		}
@@ -38,11 +47,25 @@ func NewMongoOptions(opts ...*MongoOptions) *MongoOptions {
 	return o
 }
 
+func (o *MongoOptions) GetDBKey() string {
+	if o.DBKey != nil {
+		return *o.DBKey
+	}
+	return ""
+}
+
+func (o *MongoOptions) GetHost() string {
+	if o.Host != nil {
+		return *o.Host
+	}
+	return ""
+}
+
 func (o *MongoOptions) GetDBName() string {
 	if o.DBName != nil {
 		return *o.DBName
 	}
-	return MongoDBName
+	return ""
 }
 
 func (o *MongoOptions) GetReplicaSet() string {
@@ -53,17 +76,17 @@ func (o *MongoOptions) GetReplicaSet() string {
 }
 
 func (o *MongoOptions) GetUser() string {
-	if o.ReplicaSet != nil {
+	if o.User != nil {
 		return *o.User
 	}
-	return MongoUser
+	return ""
 }
 
 func (o *MongoOptions) GetPwd() string {
-	if o.ReplicaSet != nil {
-		return *o.User
+	if o.Pwd != nil {
+		return *o.Pwd
 	}
-	return MongoPassword
+	return ""
 }
 
 func (o *MongoOptions) SetDBName(s string) *MongoOptions {
@@ -74,12 +97,14 @@ func (o *MongoOptions) SetDBName(s string) *MongoOptions {
 func GetMongoEnv_Remote(opts ...*MongoOptions) *env.Mongo {
 	opt := NewMongoOptions(opts...)
 	return &env.Mongo{
-		DbKey:      MongoDBKey,
-		Host:       MongoHostRemote,
-		ReplicaSet: getStr(opt.GetReplicaSet(), MongoReplicaSet),
-		DbName:     getStr(opt.GetDBName(), MongoDBName),
-		User:       getStr(opt.GetUser(), MongoUser),
-		Pwd:        getStr(opt.GetPwd(), MongoPassword),
+		DbKey:         getStr(opt.GetDBKey(), MongoDBKey),
+		Host:          getStr(opt.GetHost(), MongoHostRemote),
+		ReplicaSet:    getStr(opt.GetReplicaSet(), MongoReplicaSet),
+		DbName:        getStr(opt.GetDBName(), MongoDBName),
+		User:          getStr(opt.GetUser(), MongoUser),
+		Pwd:           getStr(opt.GetPwd(), MongoPassword),
+		AuthMechanism: AuthMechanism,
+		AutoSource:    "admin",
 	}
 }
 

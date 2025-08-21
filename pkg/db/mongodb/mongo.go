@@ -153,7 +153,7 @@ func (m *MongoDB) init(config *Config, optionsFunc InitOptionsFunc) error {
 	}
 
 	if err = client.Ping(context.Background(), nil); err != nil {
-		return fmt.Errorf("error in connecting to mongodb, Host: %s error: %s", config.Host, err)
+		return fmt.Errorf("error in connecting to mongodb, Host: %s error: %s", config.Host, err.Error())
 	}
 
 	m.client = client

@@ -1,7 +1,6 @@
 package xtest
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/iris-contrib/httpexpect/v2"
@@ -39,54 +38,6 @@ func NewOption(options ...*Option) *Option {
 		}
 	}
 	return o
-}
-
-func InitQuery(options ...*Option) error {
-	o := NewOption(options...)
-	if o.fileName == nil {
-		o.SetFileName("query-config.yaml")
-	}
-	if o.envName == nil {
-		o.SetEnvName(EnvName)
-	}
-	ctx := context.Background()
-	return Init(ctx, o.FileName(), o.EnvName(), o.EventTypes())
-}
-
-func InitCommand(options ...*Option) error {
-	o := NewOption(options...)
-	if o.fileName == nil {
-		o.SetFileName("cmd-config.yaml")
-	}
-	if o.envName == nil {
-		o.SetEnvName(EnvName)
-	}
-	ctx := context.Background()
-	return Init(ctx, o.FileName(), o.EnvName(), o.EventTypes())
-}
-
-// Init
-// @Description: 初始化QueryService测试环境
-func Init(ctx context.Context, fileName string, envName string, eventTypes []restapp2.RegisterEventType) error {
-	if fileName == "" {
-		return errors.New("fileName is null")
-	}
-	if envName == "" {
-		return errors.New("envName is null")
-	}
-	// 加载配置文件
-	config, err := restapp2.NewConfigByFile("${search}/config/" + fileName)
-	if err != nil {
-		return err
-	}
-
-	// 读取指定环境下的配置信息
-	env, err := config.GetEnvConfig(envName)
-	if err != nil {
-		return err
-	}
-
-	return restapp2.InitApplication(ctx, env, eventTypes, true, nil)
 }
 
 // GetResponseData

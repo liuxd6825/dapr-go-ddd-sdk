@@ -5,12 +5,12 @@ import (
 	"fmt"
 	docfile "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
+	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -49,10 +49,10 @@ func (s *RecordService) addFieldError(data map[string][]string, field string, me
 }
 
 func (s *RecordService) Create(ctx context.Context, cmd *command.RecordCreateCommand) error {
-	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+	return xbase2.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		dr := cmd.Data.Record
 		record := &model.RecordIe{
-			BaseModel: xbase.BaseModel{},
+			BaseModel: xbase2.BaseModel{},
 
 			DocId:   cmd.Data.DocId,
 			FileId:  cmd.Data.FileId,
@@ -105,7 +105,7 @@ func (s *RecordService) CreateMany(ctx context.Context, list []*model.RecordIe) 
 }
 
 func (s *RecordService) Update(ctx context.Context, cmd *command.RecordUpdateCommand) (recordIe *model.RecordIe, err error) {
-	err = xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+	err = xbase2.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		data, err := maputils.NewMapWithOptions(cmd.Data, cmd.UpdateMask, false)
 		if err != nil {
 			return err
@@ -135,7 +135,7 @@ func (s *RecordService) UpdateField(ctx context.Context, cmd *command.RecordUpda
 }
 
 func (s *RecordService) UpdateByFilter(ctx context.Context, cmd *command.RecordUpdateFilterCommand) error {
-	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+	return xbase2.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		filter := fmt.Sprintf("taskId=='%s'", cmd.Data.TaskId)
 		if len(cmd.Data.Filter) > 0 {
 			filter = fmt.Sprintf("%s and %s", filter, cmd.Data.Filter)

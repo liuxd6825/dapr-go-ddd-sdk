@@ -2,10 +2,10 @@ package suspicious
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
@@ -14,7 +14,7 @@ import (
 const account = "6235822099004087593"
 
 func init() {
-	xtest.InitEnv_MongoRemoteTest(xtest.NewMongoOptions().SetDBName("master"))
+	xtest.Init(xtest.TestType_MongoLocal)
 }
 
 func Test_FastInOutHours(t *testing.T) {
