@@ -6,6 +6,7 @@ import (
 
 type SuBatch struct {
 	xbase.BaseModel `bson:",inline"`
+	TaskId          string  `json:"taskId" gorm:"task_id" bson:"task_id" title:"任务ID"`
 	Name            string  `json:"name" gorm:"name" bson:"name" title:"名称"`
 	Type            SuType  `json:"type" gorm:"type" bson:"type" title:"类型"`
 	Count           int     `json:"count" gorm:"count" bson:"count" title:"交易数量"`

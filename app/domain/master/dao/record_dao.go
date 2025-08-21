@@ -28,7 +28,7 @@ func NewRecordDao(dbKey string) *RecordDao {
 	return daoVal
 }
 
-func (s *RecordDao) FindByAccountOppAccount(ctx context.Context, account string, startDate, endDate *time.Time) ([]*model.Record, error) {
+func (s *RecordDao) FindByAccountOppAccount(ctx context.Context, account string, startDate, endDate time.Time) ([]*model.Record, error) {
 
 	builder := rsql.NewBuilder().And(
 		rsql.Or(

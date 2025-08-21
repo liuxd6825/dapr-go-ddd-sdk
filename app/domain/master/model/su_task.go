@@ -8,7 +8,7 @@ import (
 // SuTask 可疑分析任务
 type SuTask struct {
 	xbase.BaseModel `bson:",inline"`
-	Rules           SuTaskRule   `json:"rules" gorm:"rules" bson:"rules" title:"规则"` // 规则
+	Rules           SuTaskRule   `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
 	Name            string       `json:"taskName" gorm:"task_name" bson:"task_name" title:"任务名称"`
 	StartTime       *time.Time   `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"`
 	EndTime         *time.Time   `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
@@ -18,43 +18,6 @@ type SuTask struct {
 	MasterId        string       `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
 	MasterName      string       `json:"masterName" gorm:"master_name" bson:"master_name" title:"主数据名称"`
 	MasterType      string       `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
-}
-
-// SuTaskRule 审计规则
-type SuTaskRule struct {
-	AmountLarge  AmountLargeRule  `json:"amountLarge" bson:"amountLarge" bson:"amount_large" title:"大额"`
-	AmountCollar AmountCollarRule `json:"amountCollar" gorm:"amount_collar" bson:"amount_collar" title:"对敲"`
-	AmountNear   AmountNearRule   `json:"amountNear" gorm:"amount_near,json" bson:"amount_near" title:"近似金额特征"`
-	AmountNumber AmountNumberRule `json:"amountNumber" gorm:"amount_number" bson:"amount_number" title:"整数金额"`
-
-	FreqSleep    FreqSleepRule    `json:"freqSleep" gorm:"freq_sleep" bson:"freq_sleep" title:"休眠账号"`
-	FreqAbnormal FreqAbnormalRule `json:"freqAbnormal" gorm:"freq_abnormal" bson:"freq_abnormal" title:"异常规律性支付"`
-	FreqHigh     FreqHighRule     `json:"freqHigh" gorm:"freq_high" bson:"freq_high" title:""`
-
-	PartAggregate PartAggregateRule     `json:"partAggregate" gorm:"part_aggregate" bson:"part_aggregate" title:""`
-	PartPrivate   PartPrivateRule       `json:"partPrivate" gorm:"part_private" bson:"part_private" title:""`
-	PartHighRisk  PartHighRiskRule      `json:"partHighRisk" gorm:"part_high_risk" bson:"part_high_risk" title:""`
-	PartRelation  PartRelationPartyRule `json:"partRelation" gorm:"part_relation" bson:"part_relation" title:""`
-
-	TimeConcentratedPayments TimeConcentratedPaymentsRule `json:"timeConcentratedPayments" gorm:"time_concentrated_payments"  bson:"time_concentrated_payments"  title:""`
-	TimeFastInOut            TimeFastInOutRule            `json:"timeFastInOut"  gorm:"time_fast_in_out" bson:"time_fast_in_out"  title:""`
-	TimeNonWorkingHours      TimeNonWorkingHoursRule      `json:"timeNonWorkingHours" gorm:"time_non_working_hours" bson:"time_non_working_hours" title:""`
-	TimeSignificantDate      TimeSignificantDateRule      `json:"timeSignificantDate" gorm:"time_significant_date" bson:"time_significant_date" title:""`
-}
-
-type SuFreqRule struct {
-	// 高频率
-	HighThreshold int              // e.g., 10 (交易次数阈值)
-	HighPeriod    SuFreqHighPeriod // "Month", "Quarter", "Year" (统计周期)
-	// 非正常
-	AbnormalPeriodDays      int     // 30 (周期天数)
-	AbnormalDayTolerance    int     // 2  (周期容差 ± 天数)
-	AbnormalAmountTolerance float64 // 5.0 (金额容差百分比 %)
-	AbnormalMinOccurrences  int     // 3  (最小发生次数)
-	// 休眠
-	SleepHibernationPeriodDays int // 180 (休眠期天数)
-	SleepActivationPeriodDays  int // 30  (激活期天数)
-	SleepActivationTxThreshold int // 3   (激活期内交易次数阈值)
 }
 
 // SuTaskAccount 分析的账户
@@ -92,29 +55,9 @@ type SuTran struct {
 	SuRisk          int         `json:"suRisk" gorm:"su_risk" bson:"su_risk"  title:"风险数" `
 }
 
-type SuTaskResult struct {
-	TaskId  string
-	Account string
-	Records map[string]*SuRecord
-	Batchs  []Batch
-}
-
-type Batch struct {
-	xbase.BaseModel `bson:",inline"`
-	Name            string `json:"name" gorm:"name" bson:"name"`
-	TaskId          string `json:"taskId" gorm:"task_id" bson:"task_id"`
-}
-
-type BatchRecord struct {
-	xbase.BaseModel `bson:",inline"`
-	Name            string `json:"name" gorm:"name" bson:"name"`
-	TaskId          string `json:"taskId" gorm:"task_id" bson:"task_id"`
-	RecordId        string `json:"recordId" gorm:"record_id" bson:"record_id"`
-}
-
 // AccountRecords is the unit of work for our workers.
 type AccountRecords struct {
 	OwnerName string    `bson:"owner_name" json:"owner_name" bson:"owner_name" title:"账号拥有者"`
 	Account   string    `bson:"account" json:"account" bson:"account" title:"账号"`
-	Records   []*Record `bson:"records" json:"records" bson:"records" title:"交易流水"`
+	Records   []*Record `bson:"records" json:"records;type:json" bson:"records" title:"交易流水"`
 }

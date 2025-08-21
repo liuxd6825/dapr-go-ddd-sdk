@@ -168,7 +168,7 @@ func newAccountRecords(t *testing.T, ctx context.Context, account string) *model
 	recordDao := dao.NewRecordDao(config.DBKey)
 	startTime := timeutils.NewDate(2018, 1, 1)
 	endTime := timeutils.NewDate(2024, 1, 1)
-	records, err := recordDao.FindByAccountOppAccount(ctx, account, &startTime, &endTime)
+	records, err := recordDao.FindByAccountOppAccount(ctx, account, startTime, endTime)
 	if err != nil {
 		t.Fatal(err)
 	}

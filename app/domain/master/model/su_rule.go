@@ -1,5 +1,27 @@
 package model
 
+// SuTaskRule 审计规则
+type SuTaskRule struct {
+	AmountLarge  AmountLargeRule  `json:"amountLarge" gorm:"amount_large,json" bson:"amount_large" title:"大额"`
+	AmountCollar AmountCollarRule `json:"amountCollar" gorm:"amount_collar,json" bson:"amount_collar" title:"对敲"`
+	AmountNear   AmountNearRule   `json:"amountNear" gorm:"amount_near,json" bson:"amount_near" title:"近似金额特征"`
+	AmountNumber AmountNumberRule `json:"amountNumber" gorm:"amount_number,json" bson:"amount_number" title:"整数金额"`
+
+	FreqSleep    FreqSleepRule    `json:"freqSleep" gorm:"freq_sleep,json" bson:"freq_sleep" title:"休眠账号"`
+	FreqAbnormal FreqAbnormalRule `json:"freqAbnormal" gorm:"freq_abnormal,json" bson:"freq_abnormal" title:"异常规律性支付"`
+	FreqHigh     FreqHighRule     `json:"freqHigh" gorm:"freq_high,json" bson:"freq_high" title:"高频率交易"`
+
+	PartAggregate PartAggregateRule     `json:"partAggregate" gorm:"part_aggregate,json" bson:"part_aggregate" title:"集中支付"`
+	PartPrivate   PartPrivateRule       `json:"partPrivate" gorm:"part_private,json" bson:"part_private" title:"对私交易"`
+	PartHighRisk  PartHighRiskRule      `json:"partHighRisk" gorm:"part_high_risk,json" bson:"part_high_risk" title:"高风险对手方"`
+	PartRelation  PartRelationPartyRule `json:"partRelation" gorm:"part_relation,json" bson:"part_relation" title:"相关方交易"`
+
+	TimeConcentratedPayments TimeConcentratedPaymentsRule `json:"timeConcentratedPayments" gorm:"time_concentrated_payments,json"  bson:"time_concentrated_payments"  title:""`
+	TimeFastInOut            TimeFastInOutRule            `json:"timeFastInOut"  gorm:"time_fast_in_out,json" bson:"time_fast_in_out"  title:""`
+	TimeNonWorkingHours      TimeNonWorkingHoursRule      `json:"timeNonWorkingHours" gorm:"time_non_working_hours,json" bson:"time_non_working_hours" title:""`
+	TimeSignificantDate      TimeSignificantDateRule      `json:"timeSignificantDate" gorm:"time_significant_date,json" bson:"time_significant_date" title:""`
+}
+
 type AmountCollarRule struct {
 	IsEnable   bool    `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
 	CollarDays int     `json:"collarDays" gorm:"collar_days" bson:"collar_days" title:"对敲天数"`

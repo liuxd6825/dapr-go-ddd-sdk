@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action/party"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"runtime"
 	"sync"
@@ -71,7 +72,7 @@ func NewAnalyse(task *model.SuTask, accounts []*model.SuTaskAccount, repo action
 // 4. ORCHESTRATOR (Grouping Producer Model)
 // =============================================================================
 
-func (s *Analyse) DoAction(ctx context.Context) (int, time.Duration) {
+func (s *Analyse) DoAction(ctx context.Context) ([]*action.AnalyseResult, time.Duration, error) {
 	startTime := time.Now()
 
 	// --- 1. Pre-load dimension data ---
@@ -84,10 +85,13 @@ func (s *Analyse) DoAction(ctx context.Context) (int, time.Duration) {
 
 	fmt.Println("\n[Orchestrator] Starting data grouping phase...")
 
+	// --- CHANGE 1: 声明一个切片用于收集所有结果 ---
+	var allResults []*action.AnalyseResult
+
 	// --- 3. Setup concurrent pipeline ---
 	numWorkers := runtime.NumCPU()
 	jobs := make(chan model.AccountRecords, numWorkers)
-	results := make(chan action.AnalyseResult, 100)
+	results := make(chan *action.AnalyseResult, 100)
 
 	var workersWg sync.WaitGroup
 	var aggregatorWg sync.WaitGroup
@@ -99,6 +103,7 @@ func (s *Analyse) DoAction(ctx context.Context) (int, time.Duration) {
 		defer aggregatorWg.Done()
 		for res := range results {
 			suspiciousCount++
+			allResults = append(allResults, res)
 			if suspiciousCount <= 10 { // Print first few findings
 				fmt.Printf("  -> Suspicious Finding: Account %s", res.Account)
 			}
@@ -113,7 +118,7 @@ func (s *Analyse) DoAction(ctx context.Context) (int, time.Duration) {
 			defer workersWg.Done()
 			for accountTxs := range jobs {
 				taskResult := s.applyRulesToAccount(ctx, &accountTxs)
-				results <- *taskResult
+				results <- taskResult
 			}
 		}()
 	}
@@ -131,14 +136,12 @@ func (s *Analyse) DoAction(ctx context.Context) (int, time.Duration) {
 	// --- 7. Wait for shutdown ---
 	workersWg.Wait()
 	fmt.Println("[Orchestrator] All workers have finished.")
+
 	close(results)
 	aggregatorWg.Wait()
 	fmt.Println("[Aggregator] All results have been processed.")
 
-	for result := range results {
-		s.results = append(s.results, &result)
-	}
-	return suspiciousCount, time.Since(startTime)
+	return allResults, time.Since(startTime), nil
 }
 
 func (s *Analyse) GetResults() []*action.AnalyseResult {
@@ -169,8 +172,17 @@ func (s *Analyse) applyRulesToAccount(ctx context.Context, accTxs *model.Account
 
 func (s *Analyse) getAccountTrans(ctx context.Context) ([]*model.AccountRecords, error) {
 	res := []*model.AccountRecords{}
+	startTime := s.task.StartTime
+	endTime := s.task.EndTime
+	if startTime == nil {
+		return res, errors.New("Start time is empty")
+	}
+	if endTime == nil {
+		return res, errors.New("End time is empty")
+	}
+
 	for _, account := range s.accounts {
-		txs, err := s.recordDao.FindByAccountOppAccount(ctx, account.Account, s.task.StartTime, s.task.EndTime)
+		txs, err := s.recordDao.FindByAccountOppAccount(ctx, account.Account, *startTime, *endTime)
 		if err != nil {
 			return nil, err
 		}

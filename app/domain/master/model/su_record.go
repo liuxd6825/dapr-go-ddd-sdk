@@ -21,7 +21,7 @@ type SuRecord struct {
 	PartyBusiness           bool             `json:"partyBusiness" gorm:"party_business" bson:"party_business"  title:"业务不匹配"`
 	PartyAggregate          bool             `json:"partyAggregate" gorm:"party_aggregate" bson:"party_aggregate"  title:"资金集中"`
 	Risk                    int              `json:"risk" gorm:"risk" bson:"risk"  title:"风险数" `
-	Reasons                 []SuRecordReason `json:"reasons" gorm:"reasons" bson:"reasons" title:"原因"`
+	Reasons                 []SuRecordReason `json:"reasons" gorm:"reasons;type:json" bson:"reasons" title:"原因"`
 }
 
 type SuRecordReason struct {

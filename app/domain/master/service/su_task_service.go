@@ -9,7 +9,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 type SuTaskService struct {
@@ -37,30 +39,47 @@ func (s *SuTaskService) Analyse(ctx context.Context, taskId string) error {
 	if err != nil {
 		return err
 	}
-	if task == nil {
-		return errors.New("task not found " + taskId)
-	}
-	accounts, err := s.accountDao.FindByTaskId(ctx, taskId)
+
+	taskAccounts, err := s.accountDao.FindByTaskId(ctx, task.Id)
 	if err != nil {
 		return err
 	}
-	analyse := suspicious.NewAnalyse(task, accounts, newDataRepo(s))
-	analyse.DoAction(ctx)
-	results := analyse.GetResults()
 
-	records := make([]*model.SuRecord, 0)
-	batches := make([]*model.SuBatch, 0)
-	batchItems := make([]*model.SuBatchItem, 0)
+	return s.analyse(ctx, task, taskAccounts)
+}
+
+func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAccounts []*model.SuTaskAccount) error {
+	if task == nil {
+		return errors.New("task is null ")
+	}
+	if len(taskAccounts) == 0 {
+		return errors.New("taskAccounts is length 0 ")
+	}
+
+	analyse := suspicious.NewAnalyse(task, taskAccounts, newDataRepo(s))
+	results, useTime, err := analyse.DoAction(ctx)
+
+	logs.Infofmt(ctx, "用时：%s", useTime.String())
+
+	if err != nil {
+		return err
+	}
 
 	for _, result := range results {
+		records := make([]*model.SuRecord, 0)
+		batches := make([]*model.SuBatch, 0)
+		batchItems := make([]*model.SuBatchItem, 0)
+
 		for _, record := range result.Records {
 			records = append(records, record)
 			record.RecordId = record.Id
+			record.TaskId = task.Id
 			record.Id = getSuRecordId(task.Id, record.Id)
 		}
 		for _, item := range result.Batches {
 			batch := &model.SuBatch{
 				BaseModel: xbase.BaseModel{},
+				TaskId:    task.Id,
 				Name:      item.Name,
 				Type:      item.Type,
 				Count:     len(item.Records),
@@ -70,18 +89,32 @@ func (s *SuTaskService) Analyse(ctx context.Context, taskId string) error {
 			batches = append(batches, batch)
 			for _, record := range item.Records {
 				batchItems = append(batchItems, &model.SuBatchItem{
+					TaskId:     task.Id,
 					BatchId:    batch.Id,
 					SuRecordId: getSuRecordId(task.Id, record.Id),
 					RecordId:   record.Id,
 				})
 			}
 		}
+		s.suBatchDao.CreateMany(ctx, batches)
+		s.suBatchItemDao.CreateMany(ctx, batchItems)
+		s.suRecordDao.CreateMany(ctx, records)
 	}
+	return nil
+}
 
-	s.suBatchDao.CreateMany(ctx, batches)
-	s.suBatchItemDao.CreateMany(ctx, batchItems)
-	s.suRecordDao.CreateMany(ctx, records)
-
+func (s *SuTaskService) ClearAnalyseResults(ctx context.Context, taskId string) error {
+	builder := rsql.NewBuilder().And(rsql.Eq("task_id", taskId))
+	where := builder.Build()
+	if err := s.suRecordDao.DeleteByRSQL(ctx, where).GetError(); err != nil {
+		return err
+	}
+	if err := s.suBatchDao.DeleteByRSQL(ctx, where).GetError(); err != nil {
+		return err
+	}
+	if err := s.suBatchItemDao.DeleteByRSQL(ctx, where).GetError(); err != nil {
+		return err
+	}
 	return nil
 }
 
