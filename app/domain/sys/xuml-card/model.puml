@@ -15,6 +15,8 @@ class "组" as groupView {
     位置 int
 }
 class "卡片" as cardView {
+    卡片定义Id string
+    组Id string
     卡片类型 卡片类型
     位置 int
     内容 html
