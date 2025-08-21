@@ -37,5 +37,6 @@ pageView "1" --{ "*" groupView : "拥有" >
 groupView "1"  --{ "*" cardView :  "拥有" >
 cardType "1" --{ "*" cardView
 cardFile "1" --{ "*" cardView
+domain "1" --{ "*" domain : "拥有子" >
 
 @enduml
