@@ -8,17 +8,19 @@ actor "开发者" as dev
 usecase "打开启始页" as openPageUC
 usecase "编辑启始页" as editPageUC
 usecase "查询应用卡片" as findAppCard
+usecase "添加链接到\n启始页" as collect
 
 user -- openPageUC
 user -- editPageUC
 editPageUC -- findAppCard
-admin -- (保存为\n系统默认)
+editPageUC -- collect
 
 usecase "编辑卡片" as editCard
 dev -- (注册卡片)
 dev -- editCard
 dev -- (删除卡片)
 admin -- user
+admin -- (保存为\n系统默认)
 
 note right of editCard: 是否更新"卡片.内容"?
 note right of openPageUC: 用户需要输入用户名和密码才能登录?
