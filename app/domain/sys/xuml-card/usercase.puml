@@ -1,0 +1,16 @@
+@startuml
+actor "用户" as  user
+actor "管理员" as admin
+actor "开发者" as dev
+
+user -- (打开启始页)
+user -- (编辑启始页)
+
+admin -- (保存为\n系统默认)
+
+dev -- (注册卡片)
+dev -- (编辑卡片)
+dev -- (删除卡片)
+admin -- user
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml
+class "应用系统" as app {
+}
+class "功能领域" as domain {
+}
+class "卡片定义" as cardFile {
+    内容 html
+}
+class "自定义页" as pageView {
+    案件Id string
+    用户Id string
+}
+class "组" as groupView {
+    名称 string
+    位置 int
+}
+class "卡片" as cardView {
+    卡片类型 卡片类型
+    位置 int
+    内容 html
+}
+class "案件" as case {
+}
+class "用户" as user {
+}
+enum "卡片类型" as cardType {
+    "用户级"
+    "应用级"
+}
+app "1" --{ "*" domain : "拥有" >
+domain "1" --{ "*" cardFile : "拥有" >
+user "*" }--{ "*" case
+case "1" --{ "*" pageView
+user "1" --{ "*" pageView
+
+pageView "1" --{ "*" groupView : "拥有" >
+groupView "1"  --{ "*" cardView :  "拥有" >
+cardType "1" --{ "*" cardView
+cardFile "1" --{ "*" cardView
+
+@enduml
