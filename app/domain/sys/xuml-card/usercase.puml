@@ -8,7 +8,7 @@ actor "开发者" as dev
 usecase "打开启始页" as openPageUC
 usecase "编辑启始页" as editPageUC
 usecase "查询应用卡片" as findAppCard
-usecase "添加链接到\n启始页" as collect
+usecase "添加链接卡片" as collect
 
 user -- openPageUC
 user -- editPageUC

@@ -17,7 +17,8 @@ class "组" as groupView {
 class "卡片" as cardView {
     卡片定义Id string
     组Id string
-    卡片类型 卡片类型
+    卡片级别 卡片级别
+    卡片类名 string
     位置 int
     内容 html
 }
@@ -25,7 +26,7 @@ class "案件" as case {
 }
 class "用户" as user {
 }
-enum "卡片类型" as cardType {
+enum "卡片级别" as cardType {
     "用户级"
     "应用级"
 }
@@ -40,5 +41,7 @@ groupView "1"  --{ "*" cardView :  "拥有" >
 cardType "1" --{ "*" cardView : "引用" <
 cardFile "0..1" --{ "*" cardView : "引用" <
 domain "1" --{ "*" domain : "拥有子" >
+
+note right of cardView:  '卡片类名：在编辑链接卡片时指定编辑窗口样式'
 
 @enduml
