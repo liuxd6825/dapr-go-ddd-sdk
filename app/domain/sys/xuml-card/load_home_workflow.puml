@@ -1,27 +1,27 @@
 @startuml
 actor 用户 as user
-boundary CaseUI as caseui
-boundary HomeUI as homeui
-control HomeUC as homeuc
+boundary CaseUI as caseUI
+boundary HomeUI as homeUI
+control HomeUC as homeUC
 entity Home as home
 entity Group as group
 entity Card as card
 entity Case as case
 
-user -> caseui : 双击项目列表(caseId, userId, code)
-activate caseui
+user -> caseUI : 双击项目列表(caseId, userId, code)
+activate caseUI
 
-caseui -> homeui : 打开首页
-activate homeui
+caseUI -> homeUI : 打开首页
+activate homeUI
 
-homeui -> homeuc : 检查项目是否存在(caseId)
-activate homeuc
+homeUI -> homeUC : 检查项目是否存在(caseId)
+activate homeUC
 
-homeuc -> case : 检查项目是否存在(caseId)
-homeuc -> homeuc : [项目不存在]返回空白页面并提示用户
-activate homeuc
+homeUC -> case : 检查项目是否存在(caseId)
+homeUC -> homeUC : [项目不存在]返回空白页面并提示用户
+activate homeUC
 
-homeuc -> home : [项目存在]加载用户首页数据(caseId, userId, code)
+homeUC -> home : [项目存在]加载用户首页数据(caseId, userId, code)
 activate home
 
 home -> home : [用户首页不存在]加载系统默认首页数据
@@ -30,7 +30,7 @@ activate home
 home -> group : 加载组数据
 home -> card : 加载卡片数据
 
-note right of homeui: 当检查项目不存在时：显示空白页面，并提醒用户项目不存在。 \n当项目存在时：通过项目Id、用户Id、首页Code三个参数加载用户首页数据。\n当查询用户首页不存在时：通过是否默认=true查询默认首页数据加载默认首页。\n如果存在用户首页则直接加载用户首页数据。\n通过首页Id查询首页分组数据和分组卡片数据并返回。
+note right of homeUI: 当检查项目不存在时：显示空白页面，并提醒用户项目不存在。 \n当项目存在时：通过项目Id、用户Id、首页Code三个参数加载用户首页数据。\n当查询用户首页不存在时：通过是否默认=true查询默认首页数据加载默认首页。\n如果存在用户首页则直接加载用户首页数据。\n通过首页Id查询首页分组数据和分组卡片数据并返回。
 
 
 @enduml
