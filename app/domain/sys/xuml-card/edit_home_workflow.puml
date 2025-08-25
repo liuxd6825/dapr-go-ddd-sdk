@@ -27,7 +27,7 @@ user -> selectui : [选择系统卡片]打开系统卡片选择页面
 activate selectui
 selectui -> selectuc : 加载系统卡片数据
 activate selectuc
-selectuc -> cardFile : 加载系统卡片定义数据【卡片类型=系统卡片】
+selectuc -> cardFile : 加载系统卡片定义数据【卡片定义数据】
 deactivate selectui
 deactivate selectuc
 
@@ -40,6 +40,16 @@ user -> customui : [选择自定义卡片]打开自定义卡片添加页面
 user -> customui : 用户填写自定义卡片信息【标题、副标题、链接地址、打开方式、图标】
 activate customui
 customui -> customuc : 添加卡片【数据暂存】
+deactivate customui
 
+user -> homeui : 点击结束编辑
+activate homeui
+homeui -> homeuc : 保存首页编辑后的所有数据【新增、更新、删除】
+activate homeuc
+homeuc -> home : 检查用户首页数据是否存在
+activate home
+home -> home : [用户首页不存在]新增用户首页
+home -> group : 保存组信息【新增、更新、删除】
+home -> card : 保存卡片信息【新增、更新、删除】
 
 @enduml
