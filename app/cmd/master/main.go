@@ -9,6 +9,7 @@ import (
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
+	card "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
@@ -51,6 +52,7 @@ func main() {
 				doc.RegisterAllApi(app, baseUrl, env)
 				tag.RegisterAllApi(app, baseUrl, env)
 				excelImport.RegisterAllApi(app, baseUrl, env)
+				card.RegisterAllApi(app, baseUrl, env)
 				return nil
 			})
 			return err
