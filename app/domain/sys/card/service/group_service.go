@@ -52,16 +52,27 @@ func (t *GroupService) Update(ctx context.Context, cmd *command.GroupUpdateComma
 }
 
 func (t *GroupService) CreateMany(ctx context.Context, groups []*model.Group) (int64, error) {
+	if len(groups) == 0 {
+		return 0, nil
+	}
 	res := t.dao.CreateMany(ctx, groups)
 	return res.GetRowsAffected(), res.GetError()
 }
 
 func (t *GroupService) UpdateMany(ctx context.Context, groups []*model.Group) (int64, error) {
-	res := t.dao.UpdateMany(ctx, groups)
+	if len(groups) == 0 {
+		return 0, nil
+	}
+	opts := idao.NewCallOptions()
+	opts.SetUpdateFields([]string{"name", "order_num", "is_hide"})
+	res := t.dao.UpdateMany(ctx, groups, opts)
 	return res.GetRowsAffected(), res.GetError()
 }
 
 func (t *GroupService) DeleteMany(ctx context.Context, listId []string) (int64, error) {
+	if len(listId) == 0 {
+		return 0, nil
+	}
 	res := t.dao.DeleteByIds(ctx, listId)
 	return res.GetRowsAffected(), res.GetError()
 }

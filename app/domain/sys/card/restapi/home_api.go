@@ -123,9 +123,6 @@ func (s *HomeAPI) FindUserHomeByCode(ctx context.Context, qry *query.FindByCodeQ
 	if err != nil {
 		return nil, err
 	}
-	if len(groups) == 0 {
-		return nil, errors.New("没有分组数据")
-	}
 
 	cards, err := s.cardService.FindByHomeId(ctx, home.Id)
 	if err != nil {

@@ -52,16 +52,27 @@ func (t *CardService) Update(ctx context.Context, cmd *command.CardUpdateCommand
 }
 
 func (t *CardService) CreateMany(ctx context.Context, cards []*model.Card) (int64, error) {
+	if len(cards) == 0 {
+		return 0, nil
+	}
 	res := t.dao.CreateMany(ctx, cards)
 	return res.GetRowsAffected(), res.GetError()
 }
 
 func (t *CardService) UpdateMany(ctx context.Context, cards []*model.Card) (int64, error) {
-	res := t.dao.UpdateMany(ctx, cards)
+	if len(cards) == 0 {
+		return 0, nil
+	}
+	opts := idao.NewCallOptions()
+	opts.SetUpdateFields([]string{"group_id", "title_text", "subtitle_text", "icon", "url", "opened_target", "width", "height", "order_num", "card_level", "card_class", "card_mode", "card_html", "link_html"})
+	res := t.dao.UpdateMany(ctx, cards, opts)
 	return res.GetRowsAffected(), res.GetError()
 }
 
 func (t *CardService) DeleteMany(ctx context.Context, listId []string) (int64, error) {
+	if len(listId) == 0 {
+		return 0, nil
+	}
 	res := t.dao.DeleteByIds(ctx, listId)
 	return res.GetRowsAffected(), res.GetError()
 }
@@ -92,5 +103,10 @@ func (t *CardService) FindPaging(ctx context.Context, caseId string, qry store.F
 
 func (t *CardService) FindByHomeId(ctx context.Context, homeId string) ([]*model.Card, error) {
 	rsql := fmt.Sprintf("home_id=='%s'", homeId)
+	return t.dao.FindByRSQL(ctx, rsql)
+}
+
+func (t *CardService) FindByGroupId(ctx context.Context, groupId string) ([]*model.Card, error) {
+	rsql := fmt.Sprintf("group_id=='%s'", groupId)
 	return t.dao.FindByRSQL(ctx, rsql)
 }

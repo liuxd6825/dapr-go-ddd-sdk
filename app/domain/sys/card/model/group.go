@@ -16,3 +16,8 @@ type Group struct {
 func NewGroup() (*Group, error) {
 	return &Group{}, nil
 }
+
+type GroupView struct {
+	Group *Group  `json:"group"`
+	Cards []*Card `json:"cards"`
+}
