@@ -10,6 +10,9 @@ func CreateTables(dbKey string) {
 	ctx := context.Background()
 	tables := []idao.Table{
 		NewHomeDao(dbKey).Table(),
+		NewGroupDao(dbKey).Table(),
+		NewCardDao(dbKey).Table(),
+		NewCardFileDao(dbKey).Table(),
 	}
 	dao.CreateTables(ctx, tables)
 }

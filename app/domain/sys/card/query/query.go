@@ -22,3 +22,8 @@ type FindByCodeQuery struct {
 	CaseId string `json:"caseId" param:"caseId" required:"-"`
 	UserId string `json:"userId" param:"userId" required:"-"`
 }
+
+type FindCardFilesQuery struct {
+	AppId string `json:"appId" param:"appId" required:"true"`
+	FunId string `json:"funId" param:"funId" required:"-"`
+}

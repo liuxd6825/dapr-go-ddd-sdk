@@ -9,6 +9,7 @@ type Card struct {
 	xbase.BaseModel `bson:",inline"`
 	HomeId          string            `json:"homeId" gorm:"home_id" bson:"home_id"`
 	GroupId         string            `json:"groupId" gorm:"group_id" bson:"group_id"`
+	CardId          string            `json:"cardId" gorm:"card_id" bson:"card_id"`
 	TitleText       string            `json:"titleText" gorm:"title_text" bson:"title_text"`          //标题
 	SubtitleText    string            `json:"subtitleText" gorm:"subtitle_text" bson:"subtitle_text"` //子标题
 	Icon            string            `json:"icon" gorm:"icon" bson:"icon"`                           //图标
