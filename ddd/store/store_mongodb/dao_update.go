@@ -86,6 +86,7 @@ func (r *Dao[T]) UpdateMany(ctx context.Context, tenantId string, entities []T, 
 		}
 		var list []mongo.WriteModel
 		for _, entity := range entities {
+			r.eb.SetTenantId(entity, tenantId)
 			r.eb.SetUpdatedInfo(ctx, entity)
 			item := r.entity2db(entity)
 			setData := bson.M{"$set": item}

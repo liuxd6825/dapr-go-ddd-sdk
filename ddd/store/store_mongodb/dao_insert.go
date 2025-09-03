@@ -98,13 +98,9 @@ func (r *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 		if entities == nil || len(entities) == 0 {
 			return errors.New("entities is nil")
 		}
+		var docs []any
 		for _, e := range entities {
-			if err := assert2.NotEmpty(r.GetTenantId(e), assert2.NewOptions("tenantId is empty")); err != nil {
-				return err
-			}
-		}
-		var docs []interface{}
-		for _, e := range entities {
+			r.eb.SetTenantId(e, tenantId)
 			doc := r.getInsertData(ctx, tenantId, e)
 			docs = append(docs, doc)
 		}
