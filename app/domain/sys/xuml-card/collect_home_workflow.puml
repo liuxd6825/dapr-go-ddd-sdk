@@ -1,0 +1,40 @@
+@startuml
+actor 用户 as user
+boundary 业务UI as busUI
+control 业务UC as busUC
+boundary 分组选择UI as groupSelectUI
+control 分组选择UC as groupSelectUC
+entity Home as home
+entity Group as group
+entity Card as card
+entity 业务实体 as bus
+
+user -> busUI : 点击添加收藏
+activate busUI
+busUI -> busUC : 打开添加收藏输入框
+activate busUC
+busUC -> home : 检查用户首页是否存在
+activate home
+home -> home : [不存在]查找系统默认首页
+home -> group : 加载分组(首页Id)
+deactivate busUI
+deactivate busUC
+deactivate home
+
+user -> busUI : 输入【选择首页分组/添加新分组、标题、副标题、图标、打开方式】
+activate busUI
+busUI -> busUC : 提交收藏
+activate busUC
+busUC -> home : 保存收藏数据
+activate home
+home -> home : [不存在用户首页]通过加载系统默认首页生成用户首页
+activate home
+deactivate home
+home -> group : 更新/新增分组
+home -> card : 分组添加自定义类型卡片
+deactivate home
+
+busUC -> bus : 更新业务数据已收藏
+
+note right of busUC : 添加收藏输入页面中的首页分组可输入可选择\n链接地址默认生成，无需填写\n卡片与编辑首页中的自定义卡片是一个
+@enduml

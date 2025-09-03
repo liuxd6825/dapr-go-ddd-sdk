@@ -1,0 +1,24 @@
+@startuml
+
+actor 开发者 as user
+boundary 卡片定义UI as ui
+control 卡片定义UC as uc
+entity 卡片定义 as cardFile
+entity 卡片 as card
+
+user -> ui : 双击一条卡片定义数据
+activate ui
+ui -> uc : 打开卡片定义编辑页面
+deactivate ui
+
+user -> ui : 编辑卡片定义数据
+activate ui
+ui -> uc : 保存卡片定义数据
+activate uc
+uc -> cardFile : 保存卡片定义
+activate cardFile
+cardFile -> card : 更新卡片数据【CDC】
+
+note right of card : 编辑卡片定义数据时使用CDC更新首页卡片数据\n删除卡片定义时不删除首页卡片数据，避免造成首页卡片丢失假象
+
+@enduml

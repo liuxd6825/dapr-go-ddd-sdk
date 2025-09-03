@@ -1,0 +1,59 @@
+@startuml
+actor 用户 as user
+boundary HomeUI as homeUI
+control HomeUC as homeUC
+boundary 卡片选择UI as selectUI
+control 卡片选择UC as selectUC
+boundary 自定义卡片UI as customUI
+control 自定义卡片UC as customUC
+entity Home as home
+entity Group as group
+entity Card as card
+entity 卡片定义 as cardFile
+
+
+user -> homeUI : 点击编辑首页
+activate homeUI
+
+homeUI -> homeUC : 切换编辑模式
+deactivate homeUI
+
+user -> homeUI : 点击添加卡片
+activate homeUI
+homeUI -> homeUC : 打开选择卡片菜单【系统卡片、自定义卡片】
+deactivate
+
+user -> selectUI : [选择系统卡片]打开系统卡片选择页面
+activate selectUI
+selectUI -> selectUC : 加载系统卡片数据
+activate selectUC
+selectUC -> cardFile : 加载系统卡片定义数据【卡片定义数据】
+deactivate selectUI
+deactivate selectUC
+
+user -> selectUI : 勾选卡片进行添加
+activate selectUI
+selectUI -> selectUC : 添加卡片【数据暂存】
+deactivate selectUI
+
+user -> customUI : [选择自定义卡片]打开自定义卡片添加页面
+user -> customUI : 用户填写自定义卡片信息【标题、副标题、链接地址、打开方式、图标】
+activate customUI
+customUI -> customUC : 添加卡片【数据暂存】
+deactivate customUI
+
+user -> homeUI : 点击结束编辑
+activate homeUI
+homeUI -> homeUC : 保存首页编辑后的所有数据【新增、更新、删除】
+activate homeUC
+homeUC -> home : 检查用户首页数据是否存在
+activate home
+home -> home : [用户首页不存在]新增用户首页
+activate home
+deactivate
+home -> group : 保存组信息【新增、更新、删除】
+home -> card : 保存卡片信息【新增、更新、删除】
+
+note right of homeUC : 编辑首页所有功能点：\n分组：\n1、添加分组\n2、重命名\n3、重置分组\n4、删除分组\n5、隐藏分组\n6、移动分组\n卡片：\n1、添加卡片\n2、编辑信息\n3、移动卡片\n4、切换链接/卡片\n5、删除卡片
+
+@enduml
