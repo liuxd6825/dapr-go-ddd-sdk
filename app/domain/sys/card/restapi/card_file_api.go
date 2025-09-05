@@ -35,7 +35,7 @@ func (s *CardFileAPI) InitController(app *iris.Application) error {
 	ctl.Delete("/card-file", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/card-file/{id}", "FindById")
 	ctl.GetPaging("/card-file", "FindPaging")
-	ctl.GetPaging("/card-file:app-fun", "FindCards")
+	ctl.GetData("/card-file:app-fun", "FindCards")
 	return nil
 }
 

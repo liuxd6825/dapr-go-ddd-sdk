@@ -27,3 +27,7 @@ type FindCardFilesQuery struct {
 	AppId string `json:"appId" param:"appId" required:"true"`
 	FunId string `json:"funId" param:"funId" required:"-"`
 }
+
+type FindByAppIdQuery struct {
+	AppId string `json:"appId" param:"appId" required:"true"`
+}

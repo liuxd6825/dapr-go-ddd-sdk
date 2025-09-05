@@ -38,6 +38,7 @@ func (s *AppAPI) InitController(app *iris.Application) error {
 	ctl.GetOne("/app/{id}", "FindById")
 	ctl.GetPaging("/app", "FindPaging")
 	ctl.GetData("/app:tree", "FindTree")
+	ctl.GetData("/app:all", "FindAll")
 	return nil
 }
 
@@ -59,6 +60,10 @@ func (s *AppAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model
 
 func (s *AppAPI) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.App], error) {
 	return s.appService.FindPaging(ctx, qry)
+}
+
+func (s *AppAPI) FindAll(ctx context.Context) ([]*model.App, error) {
+	return s.appService.FindAll(ctx)
 }
 
 func (s *AppAPI) FindTree(ctx context.Context) ([]*model.AppTree, error) {

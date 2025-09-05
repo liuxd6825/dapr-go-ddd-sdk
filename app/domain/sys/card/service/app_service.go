@@ -69,27 +69,24 @@ func (t *AppService) TransformTree(ctx context.Context, apps []*model.App, funs 
 		m := &model.AppTree{
 			Id:       app.Id,
 			Name:     app.Name,
-			Children: t.transformFuns(true, app.Id, funs),
+			Children: []*model.AppTree{},
 		}
+		t.transformFuns(true, app.Id, funs, &m.Children)
 		arr = append(arr, m)
 	}
 	return arr
 }
 
-func (t *AppService) transformFuns(isApp bool, parentId string, funs []*model.Fun) []*model.AppTree {
-	arr := make([]*model.AppTree, 0)
-
+func (t *AppService) transformFuns(isApp bool, parentId string, funs []*model.Fun, arr *[]*model.AppTree) {
 	for _, fun := range funs {
-		if (isApp && parentId == fun.AppId) || (!isApp && parentId == fun.ParentId) {
+		if (isApp && parentId == fun.AppId && len(fun.ParentId) == 0) || (!isApp && parentId == fun.ParentId) {
 			m := &model.AppTree{
 				Id:       fun.Id,
 				Name:     fun.Name,
-				Children: t.transformFuns(false, fun.Id, funs),
+				Children: []*model.AppTree{},
 			}
-
-			arr = append(arr, m)
+			t.transformFuns(false, fun.Id, funs, &m.Children)
+			*arr = append(*arr, m)
 		}
 	}
-
-	return arr
 }

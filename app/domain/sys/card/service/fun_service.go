@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
@@ -61,4 +62,57 @@ func (t *FunService) FindPaging(ctx context.Context, qry store.FindPagingQuery) 
 
 func (t *FunService) FindAll(ctx context.Context) ([]*model.Fun, error) {
 	return t.dao.FindByRSQL(ctx, "")
+}
+
+func (t *FunService) FindByAppId(ctx context.Context, appId string) ([]*model.Fun, error) {
+	rsql := fmt.Sprintf("app_id=='%s'", appId)
+	return t.dao.FindByRSQL(ctx, rsql)
+}
+
+func (t *FunService) FindViewByAppId(ctx context.Context, appId string) ([]*model.FunView, error) {
+	arrFun, err := t.FindByAppId(ctx, appId)
+	if err != nil {
+		return nil, err
+	}
+
+	arrLeafFun := make([]*model.Fun, 0)
+	for _, v := range arrFun {
+		if t.isLeaf(v, arrFun) {
+			arrLeafFun = append(arrLeafFun, v)
+		}
+	}
+
+	arrFunPath := make([]*model.FunView, 0)
+	for _, v := range arrLeafFun {
+		fp := &model.FunView{}
+		path := make([]string, 0)
+		t.buildFunPath(v, arrFun, &path)
+		fp.Id = v.Id
+		fp.AppId = v.AppId
+		fp.Name = v.Name
+		fp.Path = path
+		fp.Cards = []*model.CardFile{}
+		arrFunPath = append(arrFunPath, fp)
+	}
+	return arrFunPath, nil
+}
+
+func (t *FunService) buildFunPath(fun *model.Fun, arr []*model.Fun, path *[]string) {
+	*path = append([]string{fun.Name}, *path...)
+	if len(fun.ParentId) > 0 {
+		for _, v := range arr {
+			if v.Id == fun.ParentId {
+				t.buildFunPath(v, arr, path)
+			}
+		}
+	}
+}
+
+func (t *FunService) isLeaf(fun *model.Fun, arr []*model.Fun) bool {
+	for _, f := range arr {
+		if fun.Id == f.ParentId {
+			return false
+		}
+	}
+	return true
 }

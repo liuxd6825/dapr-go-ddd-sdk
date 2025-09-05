@@ -15,3 +15,11 @@ type Fun struct {
 func NewFun() (*Fun, error) {
 	return &Fun{}, nil
 }
+
+type FunView struct {
+	xbase.BaseModel `bson:",inline"`
+	AppId           string      `json:"appId" gorm:"app_id" bson:"app_id"`
+	Name            string      `json:"name" gorm:"name" bson:"name"`
+	Path            []string    `json:"path" gorm:"path" bson:"path"`
+	Cards           []*CardFile `json:"cards" gorm:"cards" bson:"cards"`
+}
