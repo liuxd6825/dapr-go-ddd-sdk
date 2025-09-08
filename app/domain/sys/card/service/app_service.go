@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"sort"
 	"sync"
 )
 
@@ -78,8 +79,15 @@ func (t *AppService) TransformTree(ctx context.Context, apps []*model.App, funs 
 }
 
 func (t *AppService) transformFuns(isApp bool, parentId string, funs []*model.Fun, arr *[]*model.AppTree) {
+	arrFuns := make([]*model.Fun, 0)
 	for _, fun := range funs {
 		if (isApp && parentId == fun.AppId && len(fun.ParentId) == 0) || (!isApp && parentId == fun.ParentId) {
+			arrFuns = append(arrFuns, fun)
+		}
+	}
+	if len(arrFuns) > 0 {
+		sort.Slice(arrFuns, func(i, j int) bool { return arrFuns[i].OrderNum < arrFuns[j].OrderNum })
+		for _, fun := range arrFuns {
 			m := &model.AppTree{
 				Id:       fun.Id,
 				Name:     fun.Name,

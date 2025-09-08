@@ -10,6 +10,7 @@ type Fun struct {
 	ParentId        string `json:"parentId" gorm:"parent_id" bson:"parent_id"`
 	Name            string `json:"name" gorm:"name" bson:"name"`
 	Code            string `json:"code" gorm:"code"  bson:"code"`
+	OrderNum        int64  `json:"orderNum" gorm:"order_num"  bson:"order_num"`
 }
 
 func NewFun() (*Fun, error) {
@@ -22,4 +23,5 @@ type FunView struct {
 	Name            string      `json:"name" gorm:"name" bson:"name"`
 	Path            []string    `json:"path" gorm:"path" bson:"path"`
 	Cards           []*CardFile `json:"cards" gorm:"cards" bson:"cards"`
+	OrderNum        float64     `json:"orderNum" gorm:"order_num"  bson:"order_num"`
 }

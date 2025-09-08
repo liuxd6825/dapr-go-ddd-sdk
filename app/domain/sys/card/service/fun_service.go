@@ -86,23 +86,27 @@ func (t *FunService) FindViewByAppId(ctx context.Context, appId string) ([]*mode
 	for _, v := range arrLeafFun {
 		fp := &model.FunView{}
 		path := make([]string, 0)
-		t.buildFunPath(v, arrFun, &path)
+		multiple := int64(100)
+		t.buildFunPath(v, arrFun, &path, &v.OrderNum, &multiple)
 		fp.Id = v.Id
 		fp.AppId = v.AppId
 		fp.Name = v.Name
 		fp.Path = path
+		fp.OrderNum = float64(v.OrderNum) / float64(multiple)
 		fp.Cards = []*model.CardFile{}
 		arrFunPath = append(arrFunPath, fp)
 	}
 	return arrFunPath, nil
 }
 
-func (t *FunService) buildFunPath(fun *model.Fun, arr []*model.Fun, path *[]string) {
+func (t *FunService) buildFunPath(fun *model.Fun, arr []*model.Fun, path *[]string, orderNum *int64, multiple *int64) {
 	*path = append([]string{fun.Name}, *path...)
 	if len(fun.ParentId) > 0 {
 		for _, v := range arr {
 			if v.Id == fun.ParentId {
-				t.buildFunPath(v, arr, path)
+				*orderNum = (*multiple)*v.OrderNum + (*orderNum)
+				*multiple = *multiple * 100
+				t.buildFunPath(v, arr, path, orderNum, multiple)
 			}
 		}
 	}
