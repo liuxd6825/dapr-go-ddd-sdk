@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
@@ -157,6 +158,7 @@ func (r *TaskService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) 
 }
 
 func (r *TaskService) FindPagingByCaseId(ctx context.Context, qry idao.FindPagingByCaseIdQuery) (idao.FindPagingResult[*model.Task], error) {
+	qry.SetMustFilter(fmt.Sprintf("case_id=='%s'", qry.GetCaseId()))
 	res := r.dao.FindPaging(ctx, qry)
 	return res, res.GetError()
 }
