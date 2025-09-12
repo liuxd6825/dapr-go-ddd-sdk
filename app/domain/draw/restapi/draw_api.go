@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi/request"
@@ -103,7 +104,8 @@ func (s *DrawAPI) DeleteByIds(ctx context.Context, cmd *command.DeleteByIdsComma
 	return s.drawDao.DeleteByIds(ctx, cmd.Data).Error
 }
 
-func (s *DrawAPI) FindPaging(ctx context.Context, query *restapi.FindPagingRequest) any {
+func (s *DrawAPI) FindPaging(ctx context.Context, query *restapi.FindPagingByCaseIdRequest) any {
+	query.SetMustFilter(fmt.Sprintf("case_id=='%s'", query.GetCaseId()))
 	return s.drawDao.FindPaging(ctx, query)
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"sort"
 	"sync"
 )
 
@@ -69,27 +70,31 @@ func (t *AppService) TransformTree(ctx context.Context, apps []*model.App, funs 
 		m := &model.AppTree{
 			Id:       app.Id,
 			Name:     app.Name,
-			Children: t.transformFuns(true, app.Id, funs),
+			Children: []*model.AppTree{},
 		}
+		t.transformFuns(true, app.Id, funs, &m.Children)
 		arr = append(arr, m)
 	}
 	return arr
 }
 
-func (t *AppService) transformFuns(isApp bool, parentId string, funs []*model.Fun) []*model.AppTree {
-	arr := make([]*model.AppTree, 0)
-
+func (t *AppService) transformFuns(isApp bool, parentId string, funs []*model.Fun, arr *[]*model.AppTree) {
+	arrFuns := make([]*model.Fun, 0)
 	for _, fun := range funs {
-		if (isApp && parentId == fun.AppId) || (!isApp && parentId == fun.ParentId) {
+		if (isApp && parentId == fun.AppId && len(fun.ParentId) == 0) || (!isApp && parentId == fun.ParentId) {
+			arrFuns = append(arrFuns, fun)
+		}
+	}
+	if len(arrFuns) > 0 {
+		sort.Slice(arrFuns, func(i, j int) bool { return arrFuns[i].OrderNum < arrFuns[j].OrderNum })
+		for _, fun := range arrFuns {
 			m := &model.AppTree{
 				Id:       fun.Id,
 				Name:     fun.Name,
-				Children: t.transformFuns(false, fun.Id, funs),
+				Children: []*model.AppTree{},
 			}
-
-			arr = append(arr, m)
+			t.transformFuns(false, fun.Id, funs, &m.Children)
+			*arr = append(*arr, m)
 		}
 	}
-
-	return arr
 }

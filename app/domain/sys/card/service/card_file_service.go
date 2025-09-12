@@ -73,7 +73,7 @@ func (t *CardFileService) FindByFunId(ctx context.Context, funId string) ([]*mod
 func (t *CardFileService) FindCards(ctx context.Context, qry *query.FindCardFilesQuery) ([]*model.CardFile, error) {
 	rsql := fmt.Sprintf("app_id=='%s'", qry.AppId)
 	if len(qry.FunId) > 0 {
-		rsql = rsql + fmt.Sprintf(" and fun_id=='%s'", qry.FunId)
+		rsql = rsql + fmt.Sprintf(" and fun_id=in=(%s)", qry.FunId)
 	}
 	return t.dao.FindByRSQL(ctx, rsql)
 }

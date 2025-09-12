@@ -53,6 +53,6 @@ func (s *TaskAPI) FindById(ctx context.Context, qry *query.TaskFindByIdQuery) (*
 	return s.taskService.FindById(ctx, qry.Id)
 }
 
-func (s *TaskAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.Task], error) {
-	return s.taskService.FindPaging(ctx, qry)
+func (s *TaskAPI) FindPaging(ctx context.Context, qry *idao.FindPagingByCaseIdQueryRequest) (idao.FindPagingResult[*model.Task], error) {
+	return s.taskService.FindPagingByCaseId(ctx, qry)
 }
