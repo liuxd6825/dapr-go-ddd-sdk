@@ -37,16 +37,13 @@ func RegisterCardAPI(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterAppAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewAppAPI(env, baseUrl)
-	restapi.RegisterController(app, api)
+	restapi.RegisterController(app, NewAppAPI(env, baseUrl))
 }
 
 func RegisterFunAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewFunAPI(env, baseUrl)
-	restapi.RegisterController(app, api)
+	restapi.RegisterController(app, NewFunAPI(env, baseUrl))
 }
 
 func RegisterCardFileAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewCardFileAPI(env, baseUrl)
-	restapi.RegisterController(app, api)
+	restapi.RegisterController(app, NewCardFileAPI(env, baseUrl))
 }

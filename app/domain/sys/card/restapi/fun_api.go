@@ -29,16 +29,16 @@ func NewFunAPI(env *env.Env, rootPath string) *FunAPI {
 	}
 }
 
-func (s *FunAPI) InitController(app *iris.Application) error {
+func (s *FunAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.funService = service.NewFunService()
-	ctl := restapi.NewController(app, s.rootPath+"/card", s)
+	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.NewFunAPI", s)
 	ctl.Post("/fun", "Create")
 	ctl.Put("/fun", "Update")
 	ctl.Delete("/fun", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/fun/{id}", "FindById")
 	ctl.GetPaging("/fun", "FindPaging")
 	ctl.GetData("/fun:view", "FindViewByAppId")
-	return nil
+	return ctl
 }
 
 func (s *FunAPI) Create(ctx context.Context, cmd *command.FunCreateCommand) error {
