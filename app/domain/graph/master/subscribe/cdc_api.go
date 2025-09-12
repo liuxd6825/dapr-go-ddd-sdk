@@ -27,11 +27,11 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 	}
 }
 
-func (s *CdcAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath, s)
+func (s *CdcAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath, "CdcAPI", s)
 	ctl.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
 	ctl.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
-	return nil
+	return ctl
 }
 
 func (s *CdcAPI) DaprOptions(ctx context.Context) error {

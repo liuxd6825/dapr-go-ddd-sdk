@@ -53,6 +53,7 @@ func main() {
 				tag.RegisterAllApi(app, baseUrl, env)
 				excelImport.RegisterAllApi(app, baseUrl, env)
 				card.RegisterAllApi(app, baseUrl, env)
+
 				return nil
 			})
 			return err

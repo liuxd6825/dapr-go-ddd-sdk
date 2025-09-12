@@ -14,17 +14,17 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterRagApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.InitController(app, NewRagAPI(env, baseUrl))
+	restapi.RegisterController(app, NewRagAPI(env, baseUrl))
 }
 
 func RegisterMessageApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.InitController(app, NewMessageAPI(env, baseUrl))
+	restapi.RegisterController(app, NewMessageAPI(env, baseUrl))
 }
 
 func RegisterChatApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.InitController(app, NewChatAPI(env, baseUrl))
+	restapi.RegisterController(app, NewChatAPI(env, baseUrl))
 }
 
 func RegisterDocumentApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.InitController(app, NewDocumentAPI(env, baseUrl))
+	restapi.RegisterController(app, NewDocumentAPI(env, baseUrl))
 }

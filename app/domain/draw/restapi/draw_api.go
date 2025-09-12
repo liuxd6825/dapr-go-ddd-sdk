@@ -50,8 +50,8 @@ func (s *DrawAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/draw/{id}/file", "ReadFile")
 }
 
-func (s *DrawAPI) InitController(app *iris.Application) error {
-	controller := restapi.NewController(app, s.rootPath, s)
+func (s *DrawAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	controller := restapi.NewController(app, s.rootPath, "draw.DrawAPI", s)
 	controller.Post("/draw", "Create")
 	controller.Put("/draw", "Update")
 	controller.Delete("/draw:deleteBatch", "DeleteByIds")
@@ -60,7 +60,7 @@ func (s *DrawAPI) InitController(app *iris.Application) error {
 	controller.GetPaging("/draw", "FindPaging")
 	controller.Post("/draw/{id}/file", "SaveFile")
 	controller.GetData("/draw/{id}/file", "ReadFile")
-	return nil
+	return controller
 }
 
 func (s *DrawAPI) Create(ctx context.Context, ictx iris.Context, cmd *command.CreateCommand) error {

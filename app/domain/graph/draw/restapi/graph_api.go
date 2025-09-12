@@ -29,10 +29,10 @@ func (s *GraphAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/case/{caseId}/draw/{drawId}/graph", "FindByDrawId")
 }
 
-func (s *GraphAPI) InitController(app *iris.Application) error {
-	controller := restapi.NewController(app, s.rootPath, s)
+func (s *GraphAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	controller := restapi.NewController(app, s.rootPath, "graph.draw.GraphAPI", s)
 	controller.GetOne("/case/{caseId}/draw/{drawId}/graph", "FindByDrawId")
-	return nil
+	return controller
 }
 
 type FindByDrawIdParams struct {

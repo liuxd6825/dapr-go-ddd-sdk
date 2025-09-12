@@ -9,6 +9,7 @@ import (
 	"github.com/kataras/iris/v12"
 	engine2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler/engine"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/utils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -26,23 +27,23 @@ type Config struct {
 }
 
 type Handler struct {
-	cfg       *Config             // 配置
-	pageCache *types.CMap[bool]   // 页面缓存
-	app       *iris.Application   // iris APP对象
-	vData     map[string]any      // view模板数据
-	prodMode  bool                // 是生产模式
-	webCfg    *WebConfig          //
-	htmlJs    *types.CMap[string] // 将html中的<script>import * </script>转为js代码文件的内容
+	cfg          *Config             // 配置
+	pageCache    *types.CMap[bool]   // 页面缓存
+	app          *iris.Application   // iris APP对象
+	globalValues map[string]any      // 全局view模板数据
+	prodMode     bool                // 是生产模式
+	webCfg       *WebConfig          //
+	htmlJs       *types.CMap[string] // 将html中的<script>import * </script>转为js代码文件的内容
 }
 
-func NewHandler(app *iris.Application, data map[string]any, cfg *Config) *Handler {
+func NewHandler(app *iris.Application, globalValues map[string]any, cfg *Config) *Handler {
 	f := &Handler{
-		app:       app,
-		cfg:       cfg,
-		pageCache: types.NewCMap[bool](),
-		vData:     data,
-		prodMode:  env.GetEnv().GetProdMode(),
-		htmlJs:    types.NewCMap[string](),
+		app:          app,
+		cfg:          cfg,
+		pageCache:    types.NewCMap[bool](),
+		globalValues: globalValues,
+		prodMode:     env.GetEnv().GetProdMode(),
+		htmlJs:       types.NewCMap[string](),
 	}
 	ctx := context.Background()
 	if err := f.preloadDynamicPages(ctx, nil, "/"); err != nil {
@@ -105,7 +106,7 @@ func (h *Handler) Handle(ictx iris.Context) {
 			utils.SetError(ictx, err)
 		}
 	}()
-	ctx := context.Background()
+
 	// 获取文件路径
 	fileName := "/" + ictx.Params().Get("file")
 	if fileName == "" || fileName == "/" {
@@ -113,36 +114,43 @@ func (h *Handler) Handle(ictx iris.Context) {
 	} else if !strings.Contains(fileName, ".") {
 		fileName = fileName + ".html"
 	}
+	ctx := appctx.NewWebContext(context.Background(), ictx)
 	logs.Infofmt(ctx, "file handle %s", fileName)
+	_ = h.RenderView(ctx, ictx, fileName)
+}
 
+func (h *Handler) RenderView(ctx context.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error {
+	if fileName == "" {
+		fileName = ictx.Request().URL.Path
+	}
 	// 检查目录中存在文件
 	fs, _, isFound, err := h.isFileExist(fileName)
 	if err != nil {
-		return
+		return err
 	}
 	// 对js和ts文件进行转换
 	if !isFound {
 		fs, fileName, isFound, err = h.GetJsTsFile(fileName)
 	}
 	if err != nil {
-		return
+		return err
 	}
 
 	if !isFound {
 		ictx.StatusCode(iris.StatusNotFound)
 		_, err = ictx.WriteString("404 Not Found")
-		return
+		return err
 	}
 
 	// 不设置 Content-Type，浏览器将自动推断 MIME 类型
 	setContentType(ictx, fileName)
 
-	err = h.render(ctx, ictx, fs, fileName)
+	err = h.render(ctx, ictx, fs, fileName, viewData...)
 	if err != nil {
 		ictx.StatusCode(iris.StatusInternalServerError)
 		ictx.SetErr(err)
 	}
-
+	return err
 }
 
 func (h *Handler) isFileExist(fileName string) (fs afero.Fs, resFileName string, exist bool, err error) {
@@ -173,7 +181,16 @@ func (h *Handler) GetJsTsFile(fileName string) (fs afero.Fs, resFileName string,
 	return fs, resFileName, exist, err
 }
 
-func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fileName string) error {
+// render
+// @Description: 渲染HTML
+// @receiver h
+// @param ctx 上下文
+// @param ictx Web上下文
+// @param fs 文件系统
+// @param fileName 文件名称
+// @param viewData 数据
+// @return error
+func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fileName string, viewData ...map[string]any) error {
 	var err error
 	isRender := false
 	isHtml := strings.HasSuffix(fileName, ".html")
@@ -214,14 +231,20 @@ func (h *Handler) render(ctx context.Context, ictx iris.Context, fs afero.Fs, fi
 		}
 
 		if isRender {
-			vdata := make(map[string]interface{})
-			for k, v := range h.vData {
-				vdata[k] = v
+			vData := make(map[string]interface{})
+			for k, v := range h.globalValues {
+				vData[k] = v
 			}
+			for _, dataMap := range viewData {
+				for k, v := range dataMap {
+					vData[k] = v
+				}
+			}
+			vData["ctx"] = ctx
 			if fsData != nil {
-				vdata["templateData"] = fsData
+				vData["templateData"] = fsData
 			}
-			err = ictx.View(fileName, vdata)
+			err = ictx.View(fileName, vData)
 			return err
 		}
 	}

@@ -16,12 +16,25 @@ type SuTaskRule struct {
 	PartHighRisk  PartHighRiskRule      `json:"partHighRisk" gorm:"part_high_risk,json" bson:"part_high_risk" title:"高风险对手方"`
 	PartRelation  PartRelationPartyRule `json:"partRelation" gorm:"part_relation,json" bson:"part_relation" title:"相关方交易"`
 
-	TimeConcentratedPayments TimeConcentratedPaymentsRule `json:"timeConcentratedPayments" gorm:"time_concentrated_payments,json"  bson:"time_concentrated_payments"  title:""`
-	TimeFastInOut            TimeFastInOutRule            `json:"timeFastInOut"  gorm:"time_fast_in_out,json" bson:"time_fast_in_out"  title:""`
-	TimeNonWorkingHours      TimeNonWorkingHoursRule      `json:"timeNonWorkingHours" gorm:"time_non_working_hours,json" bson:"time_non_working_hours" title:""`
-	TimeSignificantDate      TimeSignificantDateRule      `json:"timeSignificantDate" gorm:"time_significant_date,json" bson:"time_significant_date" title:""`
+	TimeConcentratedPayments TimeConcentratedPaymentsRule `json:"timeConcentratedPayments" gorm:"time_concentrated_payments,json"  bson:"time_concentrated_payments"  title:"集中支付"`
+	TimeFastInOut            TimeFastInOutRule            `json:"timeFastInOut"  gorm:"time_fast_in_out,json" bson:"time_fast_in_out"  title:"快进快出"`
+	TimeNonWorkingHours      TimeNonWorkingHoursRule      `json:"timeNonWorkingHours" gorm:"time_non_working_hours,json" bson:"time_non_working_hours" title:"非工作时"`
+	TimeSignificantDate      TimeSignificantDateRule      `json:"timeSignificantDate" gorm:"time_significant_date,json" bson:"time_significant_date" title:"重大日期"`
 }
 
+// AmountLargeRule 大额
+type AmountLargeRule struct {
+	IsEnable   bool    `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
+	LargeValue float64 `json:"largeValue" gorm:"large_value" bson:"large_value" title:"大额金额"`
+}
+
+// AmountNumberRule 整数金额
+type AmountNumberRule struct {
+	IsEnable    bool `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
+	NumberValue int  `json:"number" gorm:"number" bson:"number" title:"整数倍数"`
+}
+
+// AmountCollarRule 对敲
 type AmountCollarRule struct {
 	IsEnable   bool    `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
 	CollarDays int     `json:"collarDays" gorm:"collar_days" bson:"collar_days" title:"对敲天数"`
@@ -29,20 +42,11 @@ type AmountCollarRule struct {
 	Percent    float64 `json:"nearPercent" gorm:"near_percent" bson:"near_percent" title:"兼容度"`
 }
 
-type AmountLargeRule struct {
-	IsEnable   bool    `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
-	LargeValue float64 `json:"largeValue" gorm:"large_value" bson:"large_value" title:"大额金额"`
-}
-
+// AmountNearRule 近似金额特征
 type AmountNearRule struct {
 	IsEnable    bool    `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
 	NearAmount  float64 `json:"nearAmount" gorm:"near_amount" bson:"near_amount" title:"临界额度"`
 	NearPercent float64 `json:"nearPercent" gorm:"near_percent" bson:"near_percent" title:"临界百分比"`
-}
-
-type AmountNumberRule struct {
-	IsEnable    bool `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
-	NumberValue int  `json:"number" gorm:"number" bson:"number" title:"整数倍数"`
 }
 
 type FreqAbnormalRule struct {
@@ -59,6 +63,7 @@ type FreqHighRule struct {
 	HighPeriod    SuFreqHighPeriod `json:"HighPeriod" gorm:"high_period" bson:"high_period" title:"统计周期" `             // month, quarter, year"
 }
 
+// FreqSleepRule 休眠账号
 type FreqSleepRule struct {
 	IsEnable              bool `json:"isEnable" gorm:"is_enable" bson:"is_enable" title:"是否启用"`
 	HibernationPeriodDays int  // 180 (休眠期天数)

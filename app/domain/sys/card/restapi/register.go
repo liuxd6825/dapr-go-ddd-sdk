@@ -24,31 +24,29 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterHomeAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewHomeAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, NewHomeAPI(env, baseUrl))
 }
 
 func RegisterGroupAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewGroupAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, NewGroupAPI(env, baseUrl))
 }
 
 func RegisterCardAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewCardAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterAppAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewAppAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterFunAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewFunAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterCardFileAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewCardFileAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }

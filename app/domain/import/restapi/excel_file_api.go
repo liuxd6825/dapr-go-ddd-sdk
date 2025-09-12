@@ -27,15 +27,15 @@ func NewExcelFileApi(env *env.Env, rootPath string) *ExcelFileApi {
 	}
 }
 
-func (s *ExcelFileApi) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+func (s *ExcelFileApi) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/import", "ExcelFileApi", s)
 	ctl.Post("file", "Create")
 	ctl.Put("file", "Update")
 	ctl.Delete("file", "Delete")
 	ctl.GetPaging("file", "FindPaging")
 	ctl.GetOne("file/{id}", "FindById")
 	ctl.GetOne("file:doc-file-id", "FindByDocFileId")
-	return nil
+	return ctl
 }
 
 func (s *ExcelFileApi) Create(ctx context.Context, cmd *command.ExcelFileCreateCommand) (*model.ExcelFile, error) {

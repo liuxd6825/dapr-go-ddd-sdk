@@ -26,15 +26,15 @@ func NewTaskAPI(env *env.Env, rootPath string) *TaskAPI {
 	}
 }
 
-func (s *TaskAPI) InitController(app *iris.Application) error {
+func (s *TaskAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.taskService = service.NewTaskService()
-	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+	ctl := restapi.NewController(app, s.rootPath+"/import", "TaskAPI", s)
 	ctl.Post("/task", "Create")
 	ctl.Put("/task", "Update")
 	ctl.Delete("/task", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/task/{id}", "FindById")
 	ctl.GetPaging("/task", "FindPaging")
-	return nil
+	return ctl
 }
 
 func (s *TaskAPI) Create(ctx context.Context, cmd *command.TaskCreateCommand) error {

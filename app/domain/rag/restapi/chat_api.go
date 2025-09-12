@@ -41,14 +41,14 @@ func (s *ChatAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodGet, "/rag/chat", "FindPaging")
 }
 
-func (s *ChatAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+func (s *ChatAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", "rag.ChatAPI", s)
 	ctl.Post("chat", "Create")
 	ctl.Put("chat", "Update")
 	ctl.Put("chat:rename", "Rename")
 	ctl.Delete("chat", "Delete")
 	ctl.GetPaging("chat", "FindPaging")
-	return nil
+	return ctl
 }
 
 func (s *ChatAPI) Create(ctx context.Context, cmd *command.ChatCreateCommand) error {

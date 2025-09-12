@@ -8,16 +8,23 @@ import (
 // SuTask 可疑分析任务
 type SuTask struct {
 	xbase.BaseModel `bson:",inline"`
-	Rules           SuTaskRule   `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
+	Code            string       `json:"code" bson:"code" required:"true"`
 	Name            string       `json:"taskName" gorm:"task_name" bson:"task_name" title:"任务名称"`
+	Rules           SuTaskRule   `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
 	StartTime       *time.Time   `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"`
 	EndTime         *time.Time   `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
 	Status          SuTaskStatus `json:"status" gorm:"status"  bson:"status" title:"状态"`
-	OwnerName       string       `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"任务负责人"`
-	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"任务负责人ID"`
-	MasterId        string       `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
-	MasterName      string       `json:"masterName" gorm:"master_name" bson:"master_name" title:"主数据名称"`
-	MasterType      string       `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
+	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID"`
+	OwnerName       string       `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"负责人名称"`
+	TargetId        string       `json:"targetId" gorm:"target_id" bson:"target_id" title:"目标ID"`
+	TargetName      string       `json:"targetName" gorm:"target_name" bson:"target_name" title:"目标名称"`
+	TargetType      string       `json:"targetType" gorm:"target_type" bson:"target_type" title:"目标类型"`
+}
+
+func NewSuTask() *SuTask {
+	return &SuTask{
+		Status: SuTaskStatus_New,
+	}
 }
 
 // SuTaskAccount 分析的账户

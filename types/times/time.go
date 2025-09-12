@@ -4,6 +4,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"strings"
 	"time"
 )
 
@@ -64,7 +65,7 @@ func GetTimeJSONFormat() string {
 	return timeJSONFormat
 }
 
-/*func (t *Time) UnmarshalJSON(data []byte) (err error) {
+func (t *Time) UnmarshalJSON(data []byte) (err error) {
 	str := string(data)
 	format := timeJSONFormat
 	if strings.Contains(str, "T") && strings.Contains(str, "+") {
@@ -92,7 +93,6 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	b = append(b, '"')
 	return b, nil
 }
-*/
 
 // MarshalBSONValue 实现bson自定义序列化
 func (t Time) MarshalBSONValue() (bsontype.Type, []byte, error) {

@@ -17,17 +17,17 @@ func NotFoundError() error {
 }
 
 type WebError struct {
-	Error      any        `json:"error"`
-	LogId      string     `json:"logId"`
-	Time       times.Time `json:"time"`
-	StatusCode int        `json:"statusCode"`
+	Error      any         `json:"error"`
+	LogId      string      `json:"logId"`
+	Time       *times.Time `json:"time"`
+	StatusCode int         `json:"statusCode"`
 }
 
 type VerifyError struct {
-	Error      any        `json:"error"`
-	LogId      string     `json:"logId"`
-	Time       times.Time `json:"time"`
-	StatusCode int        `json:"statusCode"`
+	Error      any         `json:"error"`
+	LogId      string      `json:"logId"`
+	Time       *times.Time `json:"time"`
+	StatusCode int         `json:"statusCode"`
 }
 
 func NewWebError(ictx iris.Context, logId string, err error, statusCode int) *WebError {
@@ -35,7 +35,7 @@ func NewWebError(ictx iris.Context, logId string, err error, statusCode int) *We
 	return &WebError{
 		Error:      err.Error(),
 		LogId:      logId,
-		Time:       times.Now(),
+		Time:       times.PNow(),
 		StatusCode: statusCode,
 	}
 }

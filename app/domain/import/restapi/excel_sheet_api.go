@@ -26,15 +26,15 @@ func NewExcelSheetApi(env *env.Env, rootPath string) *ExcelSheetApi {
 	}
 }
 
-func (s *ExcelSheetApi) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+func (s *ExcelSheetApi) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/import", "ExcelSheetApi", s)
 	ctl.Post("sheet", "Create")
 	ctl.Put("sheet", "Update")
 	ctl.GetOne("sheet/{id}", "FindById")
 	ctl.GetPaging("sheet", "FindPaging")
 	ctl.GetData("sheet:file-id", "FindByFileId")
 	ctl.GetData("sheet:doc-file-id", "FindByDocFileId")
-	return nil
+	return ctl
 }
 
 func (s *ExcelSheetApi) Create(ctx context.Context, cmd *command.ExcelSheetCreateCommand) error {

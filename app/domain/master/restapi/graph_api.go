@@ -24,11 +24,11 @@ func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
 	}
 }
 
-func (s *GraphAPI) InitController(app *iris.Application) error {
-	controller := restapi.NewController(app, s.rootPath, s)
+func (s *GraphAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	controller := restapi.NewController(app, s.rootPath, "master.GraphAPI", s)
 	controller.GetOne("/case/{caseId}/master/graph?id={id}", "FindById")
 	controller.GetList("/case/{caseId}/master/graph", "FindByCaseId")
-	return nil
+	return controller
 }
 
 type FindByCaseIdParams struct {

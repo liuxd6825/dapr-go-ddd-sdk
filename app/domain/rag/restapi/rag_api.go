@@ -44,12 +44,12 @@ func (s *RagAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/rag/create-case", "CreateCase")
 }
 
-func (s *RagAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+func (s *RagAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", "rag.RagAPI", s)
 	ctl.Post("query", "Query")
 	ctl.Post("create-tenant", "CreateTenant")
 	ctl.Post("create-case", "CreateCase")
-	return nil
+	return ctl
 }
 
 // CreateTenant 加载租户知识库数据

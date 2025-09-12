@@ -19,6 +19,5 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env) {
-	drawioAPI := NewDrawIoAPI(env, baseUrl)
-	restapi.InitController(app, drawioAPI)
+	restapi.RegisterController(app, NewDrawIoAPI(env, baseUrl))
 }

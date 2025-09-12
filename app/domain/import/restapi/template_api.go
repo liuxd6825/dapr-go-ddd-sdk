@@ -26,15 +26,15 @@ func NewTemplateAPI(env *env.Env, rootPath string) *TemplateAPI {
 	}
 }
 
-func (s *TemplateAPI) InitController(app *iris.Application) error {
+func (s *TemplateAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.templateService = service.NewTemplateService()
-	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+	ctl := restapi.NewController(app, s.rootPath+"/import", "TemplateAPI", s)
 	ctl.Post("/template", "Create")
 	ctl.Put("/template", "Update")
 	ctl.Delete("/template", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/template/{id}", "FindById")
 	ctl.GetPaging("/template", "FindPaging")
-	return nil
+	return ctl
 }
 
 func (s *TemplateAPI) Create(ctx context.Context, cmd *command.TempCreateCommand) error {

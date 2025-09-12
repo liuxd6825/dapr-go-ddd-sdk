@@ -20,5 +20,5 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterDrawGraphApi(app *iris.Application, baseUrl string, env *env.Env) {
 	graphApi := NewGraphAPI(env, baseUrl)
-	restapi.InitController(app, graphApi)
+	restapi.RegisterController(app, graphApi)
 }

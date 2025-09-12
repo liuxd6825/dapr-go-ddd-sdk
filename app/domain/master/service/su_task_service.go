@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -32,6 +36,42 @@ func NewSuTaskService() *SuTaskService {
 		suBatchDao:     dao.NewSuBatchDao(config.DBKey),
 		suBatchItemDao: dao.NewSuBatchItemDao(config.DBKey),
 	}
+}
+
+// Create
+//
+//	@Description:
+//	@receiver s
+//	@param ctx
+//	@param v
+//	@param opts
+//	@return error
+func (s *SuTaskService) Create(ctx context.Context, v *model.SuTask, opts ...idao.CallOptions) error {
+	return s.taskDao.Create(ctx, v, opts...).GetError()
+}
+
+func (s *SuTaskService) CreateMany(ctx context.Context, v []*model.SuTask, opts ...idao.CallOptions) error {
+	return s.taskDao.CreateMany(ctx, v, opts...).GetError()
+}
+
+func (s *SuTaskService) Update(ctx context.Context, v *model.SuTask, opts ...idao.CallOptions) error {
+	return s.taskDao.Update(ctx, v, opts...).GetError()
+}
+
+func (s *SuTaskService) UpdateMany(ctx context.Context, v []*model.SuTask, opts ...idao.CallOptions) error {
+	return s.taskDao.UpdateMany(ctx, v, opts...).GetError()
+}
+
+func (s *SuTaskService) DeleteById(ctx context.Context, id string, opts ...idao.CallOptions) error {
+	return s.taskDao.DeleteById(ctx, id, opts...).GetError()
+}
+
+func (s *SuTaskService) FindById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTask, error) {
+	return s.taskDao.FindById(ctx, qry.Id, opts...)
+}
+
+func (s *SuTaskService) FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.SuTask] {
+	return s.taskDao.FindPaging(ctx, qry, opts...)
 }
 
 func (s *SuTaskService) Analyse(ctx context.Context, taskId string) error {

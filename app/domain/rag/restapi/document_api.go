@@ -33,14 +33,14 @@ func (s *DocumentAPI) BeforeActivation(b mvc.BeforeActivation) {
 	b.Handle(iris.MethodPost, "/rag/document:scan", "Scan")
 }
 
-func (s *DocumentAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+func (s *DocumentAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", "rag.DocumentAPI", s)
 	ctl.GetPaging("document", "FindPaging")
 	ctl.Post("document", "Create")
 	ctl.Put("document", "Update")
 	ctl.Delete("document", "Delete")
 	ctl.Post("document:scan", "Scan")
-	return nil
+	return ctl
 }
 
 func (s *DocumentAPI) FindPaging(ictx iris.Context) {

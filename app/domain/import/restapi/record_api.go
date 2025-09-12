@@ -28,8 +28,8 @@ func NewRecordAPI(env *env.Env, rootPath string) *RecordAPI {
 	}
 }
 
-func (s *RecordAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+func (s *RecordAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/import", "RecordAPI", s)
 	ctl.Post("record", "Create")
 	ctl.Post("record:generate-record", "GenerateRecord")
 	ctl.Post("record:import2master", "Import2Master")
@@ -44,8 +44,7 @@ func (s *RecordAPI) InitController(app *iris.Application) error {
 	ctl.GetPaging("record:by-task", "FindPagingByTaskId")
 	ctl.GetData("record:record-count", "CountRecordIeByTaskId")
 	ctl.GetData("record:error-count", "CountErrorByTaskId")
-
-	return nil
+	return ctl
 }
 
 func (s *RecordAPI) Create(ctx context.Context, cmd *command.RecordCreateCommand) error {

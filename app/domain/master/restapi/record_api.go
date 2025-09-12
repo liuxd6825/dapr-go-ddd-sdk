@@ -23,11 +23,11 @@ func NewRecordAPI(rootPath string) *RecordAPI {
 	}
 }
 
-func (s *RecordAPI) InitController(app *iris.Application) error {
-	controller := restapi.NewController(app, s.rootPath+"/master", s)
-	controller.GetOne("/record?id={id}", "FindById")
+func (s *RecordAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	controller := restapi.NewController(app, s.rootPath+"/master", "master.RecordAPI", s)
+	controller.GetOne("/record/{id}", "FindById")
 	controller.GetPaging("/record", "FindPaging")
-	return nil
+	return controller
 }
 
 func (s *RecordAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQuery) (any, error) {

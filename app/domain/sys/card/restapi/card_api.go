@@ -26,15 +26,15 @@ func NewCardAPI(env *env.Env, rootPath string) *CardAPI {
 	}
 }
 
-func (s *CardAPI) InitController(app *iris.Application) error {
+func (s *CardAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.cardService = service.NewCardService()
-	ctl := restapi.NewController(app, s.rootPath+"/card", s)
+	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.CardAPI", s)
 	ctl.Post("/card", "Create")
 	ctl.Put("/card", "Update")
 	ctl.Delete("/card", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/card/{id}", "FindById")
 	ctl.GetPaging("/card", "FindPaging")
-	return nil
+	return ctl
 }
 
 func (s *CardAPI) Create(ctx context.Context, cmd *command.CardCreateCommand) error {

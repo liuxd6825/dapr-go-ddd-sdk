@@ -31,9 +31,9 @@ func NewHomeAPI(env *env.Env, rootPath string) *HomeAPI {
 	}
 }
 
-func (s *HomeAPI) InitController(app *iris.Application) error {
+func (s *HomeAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.homeService = service.NewHomeService()
-	ctl := restapi.NewController(app, s.rootPath+"/card", s)
+	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.HomeAPI", s)
 	ctl.Post("/home", "Create")
 	ctl.Post("/home:submit", "Submit")
 	ctl.Put("/home", "Update")
@@ -41,7 +41,7 @@ func (s *HomeAPI) InitController(app *iris.Application) error {
 	ctl.GetOne("/home/{id}", "FindById")
 	ctl.GetPaging("/home", "FindPaging")
 	ctl.GetData("/home:user-home", "FindUserHomeByCode")
-	return nil
+	return ctl
 }
 
 func (s *HomeAPI) Create(ctx context.Context, cmd *command.HomeCreateCommand) error {

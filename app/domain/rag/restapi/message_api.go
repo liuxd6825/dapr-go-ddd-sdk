@@ -24,12 +24,12 @@ func NewMessageAPI(env *env.Env, rootPath string) *MessageAPI {
 	}
 }
 
-func (s *MessageAPI) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/rag", s)
+func (s *MessageAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/rag", "rag.MessageAPI", s)
 	ctl.Post("message", "Create")
 	ctl.Put("message", "Update")
 	ctl.GetPaging("/{chatId}/messages", "GetByChatId")
-	return nil
+	return ctl
 }
 
 func (s *MessageAPI) Create(ctx context.Context, cmd *command.MessageCreateCommand) error {

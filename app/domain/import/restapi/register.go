@@ -25,30 +25,29 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterExcelRowApi(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewExcelRowApi(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterExcelFileApi(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewExcelFileApi(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterExcelSheetApi(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewExcelSheetApi(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterTaskApi(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewTaskAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterRecordAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	api := NewRecordAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, api)
 }
 
 func RegisterTemplateAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewTemplateAPI(env, baseUrl)
-	restapi.InitController(app, api)
+	restapi.RegisterController(app, NewTemplateAPI(env, baseUrl))
 }

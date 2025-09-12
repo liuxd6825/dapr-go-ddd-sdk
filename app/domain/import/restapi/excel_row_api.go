@@ -26,15 +26,15 @@ func NewExcelRowApi(env *env.Env, rootPath string) *ExcelRowApi {
 	}
 }
 
-func (s *ExcelRowApi) InitController(app *iris.Application) error {
-	ctl := restapi.NewController(app, s.rootPath+"/import", s)
+func (s *ExcelRowApi) NewAPIController(app *iris.Application) *restapi.ApiController {
+	ctl := restapi.NewController(app, s.rootPath+"/import", "ExcelRowApi", s)
 	ctl.Post("row", "Create")
 	ctl.Put("row", "Update")
 	ctl.Delete("row", "Delete")
 	ctl.GetPaging("row", "FindPaging")
 	ctl.GetOne("row/{id}", "FindById")
 	ctl.GetData("row:rows", "FindRows")
-	return nil
+	return ctl
 }
 
 func (s *ExcelRowApi) Create(ctx context.Context, cmd *command.ExcelRowCreateCommand) error {

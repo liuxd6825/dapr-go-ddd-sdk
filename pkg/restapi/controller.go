@@ -2,6 +2,7 @@ package restapi
 
 import (
 	context2 "context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
@@ -10,8 +11,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+
 	"reflect"
 	"strings"
 )
@@ -20,14 +23,17 @@ type ApiController struct {
 	app      *iris.Application
 	rootPath string
 	routes   []*router.Route
-	ctl      any
+	apiName  string
+	apiCtl   any
 }
 
 type ApiFunc func(ctx context2.Context, ictx *context.Context, params any) (any, error)
 
-type Controller interface {
-	InitController(app *iris.Application) error
+type APIController interface {
+	NewAPIController(app *iris.Application) *ApiController
 }
+
+type RenderViewFunc func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error
 
 type CallOptions struct {
 	ParamsInBody  *bool // 强制要求参数入HttpBody中获取
@@ -35,6 +41,19 @@ type CallOptions struct {
 	GetFieldValue func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
 	Before        func(ictx *context.Context, params any) (any, context2.Context, error)
 	After         func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
+}
+
+var apis = types.NewCMap[any]()
+
+var View RenderViewFunc = func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error {
+	if fileName == "" {
+		fileName = ictx.Request().URL.Path
+	}
+	vData := make([]any, len(viewData))
+	for i, data := range viewData {
+		vData[i] = data
+	}
+	return ictx.View(fileName, vData...)
 }
 
 func NewCallOptions(opts ...CallOptions) CallOptions {
@@ -65,14 +84,30 @@ func WithParamsInBody(paramsInBody bool) CallOptions {
 	}
 }
 
-func InitController(app *iris.Application, controller Controller) {
-	if err := controller.InitController(app); err != nil {
-		panic(err)
+func RegisterController(app *iris.Application, api APIController) {
+	apiCtl := api.NewAPIController(app)
+	if apiCtl == nil {
+		panic("api controller is nil")
 	}
+	apiName := apiCtl.apiName
+	if apis.Has(apiName) {
+		panic(fmt.Sprintf("ApiName %s has already been initialized", apiName))
+	}
+	apis.Add(apiName, api)
 }
 
-func NewController(app *iris.Application, rootPath string, ctl any) *ApiController {
-	return &ApiController{app: app, rootPath: rootPath, ctl: ctl, routes: make([]*router.Route, 0)}
+func GetAPI(apiName string) (any, bool) {
+	return apis.Get(apiName)
+}
+
+func NewController(app *iris.Application, rootPath string, apiName string, apiController any) *ApiController {
+	return &ApiController{
+		app:      app,
+		rootPath: rootPath,
+		apiName:  apiName,
+		apiCtl:   apiController,
+		routes:   make([]*router.Route, 0),
+	}
 }
 
 func (c *ApiController) getPath(path string) string {
@@ -91,10 +126,10 @@ func (c *ApiController) addRouter(router *router.Route) {
 }
 
 func (c *ApiController) newCallMethod(handlerName string) (callMethod *CallMethod, err error) {
-	if c.ctl == nil {
+	if c.apiCtl == nil {
 		return nil, errors.New("controller is nil")
 	}
-	method, err := NewCallMethod(c.ctl, handlerName)
+	method, err := NewCallMethod(c.apiCtl, handlerName)
 	if err != nil {
 		return nil, errors.New("get api func error: %s ", err.Error())
 	}
@@ -196,6 +231,10 @@ func (c *ApiController) Handle(method string, path string, handlerName string, o
 	return r
 }
 
+func (c *ApiController) View(path string, handlerName string, opts ...CallOptions) *router.Route {
+	return c.callMethod2(iris.MethodGet, path, handlerName, false, true, opts...)
+}
+
 func (c *ApiController) call(method string, path string, handlerName string, opts ...CallOptions) *router.Route {
 	return c.callMethod(method, path, handlerName, false, opts...)
 }
@@ -205,9 +244,17 @@ func (c *ApiController) callEventHandle(path string, handlerName string, opts ..
 }
 
 func (c *ApiController) callMethod(method string, path string, handlerName string, isEventHandle bool, opts ...CallOptions) *router.Route {
+	return c.callMethod2(method, path, handlerName, isEventHandle, false, opts...)
+}
+
+func (c *ApiController) callView(method string, path string, handlerName string, isEventHandle bool, opts ...CallOptions) *router.Route {
+	return c.callMethod2(method, path, handlerName, isEventHandle, true, opts...)
+}
+
+func (c *ApiController) callMethod2(method string, path string, handlerName string, isEventHandle bool, isViewHandle bool, opts ...CallOptions) *router.Route {
 	callMethod, err := c.newCallMethod(handlerName)
 	if err != nil {
-		ctlType := reflect.TypeOf(c.ctl)
+		ctlType := reflect.TypeOf(c.apiCtl)
 		if ctlType.Kind() == reflect.Ptr {
 			ctlType = ctlType.Elem()
 		}
@@ -216,7 +263,11 @@ func (c *ApiController) callMethod(method string, path string, handlerName strin
 		err = errors.New("%s %s.%s() func error: %s ", pkgPath, typeName, handlerName, err.Error())
 		panic(err)
 	}
-	path = c.getPath(path)
+
+	if !isViewHandle {
+		path = c.getPath(path)
+	}
+
 	r := c.app.Handle(method, path, func(ictx *context.Context) {
 		gp.Try(func() error {
 			params, ctx, err := c.getParams(ictx, callMethod, isEventHandle, opts...)

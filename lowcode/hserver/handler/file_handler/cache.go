@@ -6,7 +6,8 @@ import (
 )
 
 var cache sync.Map // 全局文件缓存
-// 定义缓存结构
+// FileCache
+// @Description:
 type FileCache struct {
 	Content    []byte    // 文件内容
 	IsDynamic  bool      // 是否为动态页面

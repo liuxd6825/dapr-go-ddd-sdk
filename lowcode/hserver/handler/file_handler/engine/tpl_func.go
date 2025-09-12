@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	sch "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/liuxd6825/jsonschema/v6"
 	"strings"
 )
@@ -132,4 +133,18 @@ func PropValue(field string, props []*Property) *Property {
 		}
 	}
 	return nil
+}
+
+var globalValues *types.CMap[any] = types.NewCMap[any]()
+
+func GetGlobal(name string) any {
+	val, ok := globalValues.Get(name)
+	if ok {
+		return val
+	}
+	return nil
+}
+
+func SetGlobal(name string, val any) {
+	globalValues.Set(name, val)
 }

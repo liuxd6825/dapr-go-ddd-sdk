@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -73,6 +74,7 @@ func InitHServer(httpServer *restapp2.HttpServer, fileName string, srcFsName str
 		}
 		fileHandler := file_handler.NewHandler(irisApp, vData, cfg)
 		httpServer.App().Get("/{file:path}", fileHandler.Handle)
+		restapi.View = fileHandler.RenderView
 	}
 	if srcFs != nil && autoRestart {
 		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {

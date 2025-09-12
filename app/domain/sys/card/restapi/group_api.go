@@ -28,9 +28,9 @@ func NewGroupAPI(env *env.Env, rootPath string) *GroupAPI {
 	}
 }
 
-func (s *GroupAPI) InitController(app *iris.Application) error {
+func (s *GroupAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.groupService = service.NewGroupService()
-	ctl := restapi.NewController(app, s.rootPath+"/card", s)
+	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.GroupAPI", s)
 	ctl.Post("/group", "Create")
 	ctl.Put("/group", "Update")
 	ctl.Delete("/group", "Delete", restapi.WithParamsInBody(true))
@@ -38,7 +38,7 @@ func (s *GroupAPI) InitController(app *iris.Application) error {
 	ctl.GetPaging("/group", "FindPaging")
 	ctl.GetData("/group:view", "FindGroupViewById")
 	ctl.GetData("/group:home-id", "FindByHomeId")
-	return nil
+	return ctl
 }
 
 func (s *GroupAPI) Create(ctx context.Context, cmd *command.GroupCreateCommand) error {
