@@ -31,7 +31,7 @@ func NewAppAPI(env *env.Env, rootPath string) *AppAPI {
 
 func (s *AppAPI) InitController(app *iris.Application) error {
 	s.appService = service.NewAppService()
-	ctl := restapi.NewController(app, s.rootPath+"/card", s)
+	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.AppAPI", s)
 	ctl.Post("/app", "Create")
 	ctl.Put("/app", "Update")
 	ctl.Delete("/app", "Delete", restapi.WithParamsInBody(true))
