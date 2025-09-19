@@ -18,7 +18,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		RegisterCdcToNeo4j(app, baseUrl, env)
 		RegisterSub(app, baseUrl, env)
 		RegisterRecord(app, baseUrl, env)
-		RegisterSu(app, baseUrl, env)
+
 		return nil
 	})
 	if err != nil {
@@ -51,8 +51,4 @@ func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterSub(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, sub_import.NewRecordEventHandler(env, baseUrl))
-}
-
-func RegisterSu(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewSuTaskApi(env, baseUrl))
 }

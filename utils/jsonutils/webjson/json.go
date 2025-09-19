@@ -18,19 +18,18 @@ func init() {
 	/*
 		tEncoder := &timeEncoder{}
 		jsoniter.RegisterTypeEncoder("time.Time", tEncoder)
-		jsoniter.RegisterTypeDecoder("time.Time", tEncoder)
+		//jsoniter.RegisterTypeDecoder("time.Time", tEncoder)
 
 		ptEncoder := &pointerTime{}
 		jsoniter.RegisterTypeEncoder("*time.Time", ptEncoder)
-		jsoniter.RegisterTypeDecoder("*time.Time", ptEncoder)
-	*/
+		jsoniter.RegisterTypeDecoder("time.Time", ptEncoder)
 
-	/*	typeEncoder := &typesTimeEncoder{}
-		jsoniter.RegisterTypeEncoder("times.Time", typeEncoder)
-		jsoniter.RegisterTypeDecoder("times.Time", typeEncoder)
+		typeEncoder := &typesTimeEncoder{}
+			jsoniter.RegisterTypeEncoder("times.Time", typeEncoder)
+			jsoniter.RegisterTypeDecoder("times.Time", typeEncoder)
 
-		jsoniter.RegisterTypeEncoder("times.Date", typeEncoder)
-		jsoniter.RegisterTypeDecoder("times.Date", typeEncoder)
+			jsoniter.RegisterTypeEncoder("times.Date", typeEncoder)
+			jsoniter.RegisterTypeDecoder("times.Date", typeEncoder)
 	*/
 
 	// JSON 是我们导出的预先配置好的 JSON API 实例
@@ -43,7 +42,7 @@ func init() {
 	}.Froze()
 	// 在此基础上，为 time.Time 类型注册我们自定义的“默认”编码器
 	// 这个编码器会在没有 time_format 标签时被调用
-	JSON.RegisterExtension(&timeFormatExtension{})
+	JSON.RegisterExtension(NewTimeFormatExtension())
 	JSON.RegisterExtension(&mapExtension{})
 
 }

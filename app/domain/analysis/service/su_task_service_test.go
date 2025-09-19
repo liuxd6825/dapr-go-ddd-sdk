@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
@@ -29,15 +29,15 @@ func Test_analyse(t *testing.T) {
 
 	ctx := xtest.NewContext()
 	service := NewSuTaskService()
-	task := &model.SuTask{
-		Rules: model.SuTaskRule{
-			AmountCollar: model.AmountCollarRule{
-				IsEnable:   true,
-				CollarDays: 5,
-				TxAmount:   10,
-				Percent:    90.0,
+	task := &model2.SuTask{
+		Rules: model2.SuTaskRule{
+			AmountCollar: model2.AmountCollarRule{
+				IsEnable: true,
+				Days:     5,
+				Amount:   10,
+				Percent:  90.0,
 			},
-			AmountLarge: model.AmountLargeRule{
+			AmountLarge: model2.AmountLargeRule{
 				IsEnable:   true,
 				LargeValue: 100000,
 			},
@@ -52,8 +52,8 @@ func Test_analyse(t *testing.T) {
 		return
 	}
 
-	var taskAccounts []*model.SuTaskAccount
-	taskAccounts = append(taskAccounts, &model.SuTaskAccount{
+	var taskAccounts []*model2.SuTaskAccount
+	taskAccounts = append(taskAccounts, &model2.SuTaskAccount{
 		TaskId:  task.Id,
 		Account: account,
 	})

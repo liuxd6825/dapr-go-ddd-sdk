@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	analyse "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/restapi"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
@@ -46,6 +47,7 @@ func main() {
 				app := server.App()
 				env := server.EnvConfig()
 				master.RegisterAllApi(app, baseUrl, env)
+				analyse.RegisterAllApi(app, baseUrl, env)
 				drawio.RegisterAllApi(app, baseUrl, env)
 				graph.RegisterAllApi(app, baseUrl, env)
 				rag.RegisterAllApi(app, baseUrl, env)
@@ -53,7 +55,6 @@ func main() {
 				tag.RegisterAllApi(app, baseUrl, env)
 				excelImport.RegisterAllApi(app, baseUrl, env)
 				card.RegisterAllApi(app, baseUrl, env)
-
 				return nil
 			})
 			return err

@@ -3,6 +3,7 @@ package frequency
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"sort"
@@ -29,11 +30,11 @@ import (
 // 频率：异常规律性支付 (固定周期、固定金额支付给个人或非供应商)
 // 识别向同一个非员工、非供应商的个人或单位，进行固定周期（如每周、每十天）、固定金额的支付。这可能是未入账的借款利息或回扣
 type Abnormal struct {
-	rule    model.FreqAbnormalRule
+	rule    model2.FreqAbnormalRule
 	txsByCp map[string][]*model.Record
 }
 
-func NewAbnormal(rule model.FreqAbnormalRule) *Abnormal {
+func NewAbnormal(rule model2.FreqAbnormalRule) *Abnormal {
 	return &Abnormal{
 		rule:    rule,
 		txsByCp: make(map[string][]*model.Record),
@@ -44,7 +45,7 @@ func (s *Abnormal) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-func (s *Abnormal) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Abnormal) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	// Exclude core partners
 	if tx.Name == "BigCorp Inc." {
 		return
@@ -73,7 +74,7 @@ func (s *Abnormal) groupTxsByCounterparty(allTxs []*model.Record) map[string][]*
 
 // Done “异常规律性支付”的核心算法
 // 输入的txs是属于同一个对手方的、按时间排序的所有支出交易
-func (s *Abnormal) Done(accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Abnormal) Done(accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	txsByCp := s.groupTxsByCounterparty(accTxs.Records)
 	for _, tx := range txsByCp {
 		s.findAbnormalRegularity(tx, result)
@@ -123,7 +124,7 @@ func (s *Abnormal) findAbnormalRegularity(counterpartyTxs []*model.Record, resul
 			if len(currentSequence) >= s.rule.MinOccurrences {
 				// 序列中断，且长度达标，记录结果
 				reason := fmt.Sprintf("异常规律性支付: 发现%d笔连续支付, 周期约%d天", len(currentSequence), s.rule.PeriodDays)
-				result.AddBatch(reason, model.SuType_FreqAbnormal, currentSequence...)
+				result.AddBatch(reason, model2.SuType_FreqAbnormal, currentSequence...)
 			}
 			// 重置状态机
 			currentSequence = nil
@@ -133,6 +134,6 @@ func (s *Abnormal) findAbnormalRegularity(counterpartyTxs []*model.Record, resul
 	// --- 步骤4: 循环结束后，检查最后一个序列 ---
 	if len(currentSequence) >= s.rule.MinOccurrences {
 		reason := fmt.Sprintf("异常规律性支付: 发现%d笔连续支付, 周期约%d天", len(currentSequence), s.rule.PeriodDays)
-		result.AddBatch(reason, model.SuType_FreqAbnormal, currentSequence...)
+		result.AddBatch(reason, model2.SuType_FreqAbnormal, currentSequence...)
 	}
 }

@@ -2,17 +2,18 @@ package action
 
 import (
 	"context"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"time"
 )
 
 type Action interface {
 	IsEnable() bool
-	DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *AnalyseResult)
+	DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *AnalyseResult)
 }
 
 type ActionDone interface {
-	Done(accTxs *model.AccountRecords, result *AnalyseResult)
+	Done(accTxs *model2.AccountRecords, result *AnalyseResult)
 }
 
 type EntityType string

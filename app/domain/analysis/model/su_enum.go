@@ -39,8 +39,8 @@ type SuTaskStatus string
 
 const (
 	SuTaskStatus_New         SuTaskStatus = "新建"
-	SuTaskStatus_InProgress  SuTaskStatus = "进行中"
-	SuTaskStatus_PendingInfo SuTaskStatus = "等待信息"
+	SuTaskStatus_InProgress  SuTaskStatus = "处理中"
+	SuTaskStatus_PendingInfo SuTaskStatus = "计算中"
 	SuTaskStatus_Completed   SuTaskStatus = "已完成"
 	SuTaskStatus_Closed      SuTaskStatus = "已关闭"
 )
@@ -83,6 +83,14 @@ type SuActivityType string
 const (
 	SuActivityType_Confirmation SuActivityType = "发函询证"
 	SuActivityType_Interview    SuActivityType = "约谈"
+)
+
+type FreqAbnormalPeriod string
+
+const (
+	FreqAbnormalPeriod_Day   FreqAbnormalPeriod = "day"
+	FreqAbnormalPeriod_Month FreqAbnormalPeriod = "month"
+	FreqAbnormalPeriod_Year  FreqAbnormalPeriod = "year"
 )
 
 type SuFreqHighPeriod string

@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
 )
@@ -11,7 +11,7 @@ func Test_Insert(t *testing.T) {
 	ctx := xtest.NewContext()
 	dao := NewSuTaskDao("db")
 
-	suTask := model.NewSuTask()
+	suTask := model2.NewSuTask()
 	suTask.Id = "0001"
 	suTask.Name = "测试"
 	suTask.Code = "0001"
@@ -19,7 +19,7 @@ func Test_Insert(t *testing.T) {
 	suTask.OwnerId = "admin"
 	suTask.TargetId = "c001"
 	suTask.TargetName = "北京XX科技公司"
-	suTask.Status = model.SuTaskStatus_New
+	suTask.Status = model2.SuTaskStatus_New
 
 	if result := dao.Create(ctx, suTask); result.Error != nil {
 		t.Error(result.Error.Error())

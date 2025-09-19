@@ -2,6 +2,7 @@ package suspicious
 
 import (
 	"context"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
@@ -18,7 +19,7 @@ func init() {
 }
 
 func Test_FastInOutHours(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeFastInOut.IsEnable = true
 		task.Rules.TimeFastInOut.FastInOutHours = 24 * 5
 		task.Rules.TimeFastInOut.Percent = 80.0
@@ -28,7 +29,7 @@ func Test_FastInOutHours(t *testing.T) {
 }
 
 func Test_TimeSignificantDate(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeSignificantDate.IsEnable = true
 		task.Rules.TimeSignificantDate.CheckYearEnd = true
 		task.Rules.TimeSignificantDate.CheckQuarterEnd = true
@@ -41,7 +42,7 @@ func Test_TimeSignificantDate(t *testing.T) {
 }
 
 func Test_TimeConcentratedPayments(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeConcentratedPayments.IsEnable = true
 		task.Rules.TimeConcentratedPayments.TxAmount = 1000
 		task.Rules.TimeConcentratedPayments.StartTime = 18
@@ -52,7 +53,7 @@ func Test_TimeConcentratedPayments(t *testing.T) {
 }
 
 func Test_TimeNonWorkingHours(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeNonWorkingHours.IsEnable = true
 		task.Rules.TimeNonWorkingHours.TxAmount = 1000
 		task.Rules.TimeNonWorkingHours.NonWorkingHoursMax = 18
@@ -64,7 +65,7 @@ func Test_TimeNonWorkingHours(t *testing.T) {
 }
 
 func Test_AmountNear(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.AmountNear.IsEnable = true
 		task.Rules.AmountNear.NearAmount = 100000
 		task.Rules.AmountNear.NearPercent = 85.5
@@ -73,7 +74,7 @@ func Test_AmountNear(t *testing.T) {
 }
 
 func Test_AmountLarge(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.AmountLarge.IsEnable = true
 		task.Rules.AmountLarge.LargeValue = 100000
 		return nil
@@ -81,7 +82,7 @@ func Test_AmountLarge(t *testing.T) {
 }
 
 func Test_AmountCollar(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.AmountCollar.IsEnable = true
 		task.Rules.AmountCollar.CollarDays = 5
 		task.Rules.AmountCollar.TxAmount = 100
@@ -91,7 +92,7 @@ func Test_AmountCollar(t *testing.T) {
 }
 
 func Test_AmountNumber(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.AmountNumber.IsEnable = true
 		task.Rules.AmountNumber.NumberValue = 10000
 		return nil
@@ -99,7 +100,7 @@ func Test_AmountNumber(t *testing.T) {
 }
 
 func Test_FreqAbnormal(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.FreqAbnormal.IsEnable = true
 		task.Rules.FreqAbnormal.DayTolerance = 2
 		task.Rules.FreqAbnormal.MinOccurrences = 3
@@ -110,16 +111,16 @@ func Test_FreqAbnormal(t *testing.T) {
 }
 
 func Test_FreqHigh(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.FreqHigh.IsEnable = true
 		task.Rules.FreqHigh.HighThreshold = 2
-		task.Rules.FreqHigh.HighPeriod = model.SuFreqHighPeriod_Month
+		task.Rules.FreqHigh.HighPeriod = model2.SuFreqHighPeriod_Month
 		return nil
 	})
 }
 
 func Test_FreqSleep(t *testing.T) {
-	_, _ = doAnalyse(t, account, func(task *model.SuTask) error {
+	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.FreqSleep.IsEnable = true
 		task.Rules.FreqSleep.ActivationTxThreshold = 3
 		task.Rules.FreqSleep.HibernationPeriodDays = 180
@@ -128,9 +129,9 @@ func Test_FreqSleep(t *testing.T) {
 	})
 }
 
-func doAnalyse(t *testing.T, account string, do func(task *model.SuTask) error) (*action.AnalyseResult, error) {
+func doAnalyse(t *testing.T, account string, do func(task *model2.SuTask) error) (*action.AnalyseResult, error) {
 	ctx := xtest.NewContext()
-	task := &model.SuTask{}
+	task := &model2.SuTask{}
 	task.Id = "001"
 	err := do(task)
 	if err != nil {
@@ -150,10 +151,10 @@ func doAnalyse(t *testing.T, account string, do func(task *model.SuTask) error) 
 	return result, nil
 }
 
-func newTaskAccounts(t *testing.T, ctx context.Context, accounts ...string) []*model.SuTaskAccount {
-	var res []*model.SuTaskAccount
+func newTaskAccounts(t *testing.T, ctx context.Context, accounts ...string) []*model2.SuTaskAccount {
+	var res []*model2.SuTaskAccount
 	for _, account := range accounts {
-		res = append(res, &model.SuTaskAccount{
+		res = append(res, &model2.SuTaskAccount{
 			Account:     account,
 			TaskId:      "01",
 			AccountType: model.AccountType_Company,
@@ -164,7 +165,7 @@ func newTaskAccounts(t *testing.T, ctx context.Context, accounts ...string) []*m
 	return res
 }
 
-func newAccountRecords(t *testing.T, ctx context.Context, account string) *model.AccountRecords {
+func newAccountRecords(t *testing.T, ctx context.Context, account string) *model2.AccountRecords {
 	recordDao := dao.NewRecordDao(config.DBKey)
 	startTime := timeutils.NewDate(2018, 1, 1)
 	endTime := timeutils.NewDate(2024, 1, 1)
@@ -172,7 +173,7 @@ func newAccountRecords(t *testing.T, ctx context.Context, account string) *model
 	if err != nil {
 		t.Fatal(err)
 	}
-	accRecord := &model.AccountRecords{
+	accRecord := &model2.AccountRecords{
 		Account: account,
 		Records: records,
 	}

@@ -3,6 +3,7 @@ package times
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"time"
@@ -12,10 +13,10 @@ import (
 // 实现了“重大日期交易”的核心审计逻辑。
 // 这是一个行级规则，但其判断逻辑依赖于复杂的日期计算。
 type SignificantDate struct {
-	rule model.TimeSignificantDateRule
+	rule model2.TimeSignificantDateRule
 }
 
-func NewSignificantDate(rule model.TimeSignificantDateRule) *SignificantDate {
+func NewSignificantDate(rule model2.TimeSignificantDateRule) *SignificantDate {
 	return &SignificantDate{
 		rule: rule,
 	}
@@ -25,7 +26,7 @@ func (s *SignificantDate) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-func (s *SignificantDate) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *SignificantDate) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	if !s.rule.IsEnable {
 		return
 	}
@@ -36,7 +37,7 @@ func (s *SignificantDate) DoAction(ctx context.Context, tx *model.Record, txInde
 		amount = tx.Income
 	}
 
-	if amount < s.rule.TxAmount {
+	if amount < s.rule.Amount {
 		return
 	}
 
@@ -50,11 +51,11 @@ func (s *SignificantDate) DoAction(ctx context.Context, tx *model.Record, txInde
 	isTargetDateType := false
 	month := lastDayOfMonth.Month()
 	timeRule := s.rule
-	if timeRule.CheckYearEnd && month == time.December {
+	if timeRule.CheckYear && month == time.December {
 		isTargetDateType = true
-	} else if timeRule.CheckQuarterEnd && (month == time.March || month == time.June || month == time.September || month == time.December) {
+	} else if timeRule.CheckQuarter && (month == time.March || month == time.June || month == time.September || month == time.December) {
 		isTargetDateType = true
-	} else if timeRule.CheckMonthEnd {
+	} else if timeRule.CheckMonth {
 		isTargetDateType = true
 	}
 
@@ -68,12 +69,12 @@ func (s *SignificantDate) DoAction(ctx context.Context, tx *model.Record, txInde
 	// Case A: 交易在重大日期之前 (daysDiff will be negative)
 	if daysDiff <= 0 && daysDiff >= float64(-timeRule.DaysBefore) {
 		reason := fmt.Sprintf("重大日期交易: 临近 %s (%.0f天前)", lastDayOfMonth.Format("2006-01-02"), -daysDiff)
-		result.AddRecord(tx, model.SuType_TimeConcentratedPayment, reason)
+		result.AddRecord(tx, model2.SuType_TimeConcentratedPayment, reason)
 	}
 
 	// Case B: 交易在重大日期之后 (daysDiff will be positive)
 	if daysDiff > 0 && daysDiff <= float64(timeRule.DaysAfter) {
 		reason := fmt.Sprintf("重大日期交易: 临近 %s (%.0f天后)", lastDayOfMonth.Format("2006-01-02"), daysDiff)
-		result.AddRecord(tx, model.SuType_TimeConcentratedPayment, reason)
+		result.AddRecord(tx, model2.SuType_TimeConcentratedPayment, reason)
 	}
 }

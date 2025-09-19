@@ -3,15 +3,16 @@ package amount
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 )
 
 type AmountNumber struct {
-	rule model.AmountNumberRule
+	rule model2.AmountNumberRule
 }
 
-func NewAmountNumber(rule model.AmountNumberRule) *AmountNumber {
+func NewAmountNumber(rule model2.AmountNumberRule) *AmountNumber {
 	return &AmountNumber{
 		rule: rule,
 	}
@@ -22,8 +23,8 @@ func (s *AmountNumber) IsEnable() bool {
 }
 
 // DoAction 整数交易
-func (s *AmountNumber) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
-	if int(tx.Amount)%s.rule.NumberValue == 0 {
-		result.AddRecord(tx, model.SuType_AmountNumber, fmt.Sprintf("整数交易: 金额 %.2f", tx.Amount))
+func (s *AmountNumber) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
+	if int(tx.Amount)%s.rule.Number == 0 {
+		result.AddRecord(tx, model2.SuType_AmountNumber, fmt.Sprintf("整数交易: 金额 %.2f", tx.Amount))
 	}
 }

@@ -3,6 +3,7 @@ package party
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"sort"
@@ -12,14 +13,14 @@ import (
 // Aggregate
 // 资金集中度分析： 分析资金支付是否高度集中于少数几个非核心供应商。
 type Aggregate struct {
-	rule             model.PartAggregateRule
+	rule             model2.PartAggregateRule
 	coreSuppliersMap map[string]bool
 	frequencyCounter *sync.Map
 	// NEW: Concurrent map for concentration analysis
 	paymentAggregator *sync.Map // Key: counterpartyName, Value: *atomic.Float64
 }
 
-func NewAggregate(rule model.PartAggregateRule) *Aggregate {
+func NewAggregate(rule model2.PartAggregateRule) *Aggregate {
 	return &Aggregate{
 		rule:              rule,
 		paymentAggregator: &sync.Map{},
@@ -31,7 +32,7 @@ func (s *Aggregate) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-func (s *Aggregate) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Aggregate) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	if tx.Payout > 0 {
 		if _, isCore := s.coreSuppliersMap[tx.OppName]; isCore {
 			return
@@ -43,7 +44,7 @@ func (s *Aggregate) DoAction(ctx context.Context, tx *model.Record, txIndex int,
 	}
 }
 
-func (s *Aggregate) Done(accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Aggregate) Done(accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	// --- High Frequency Check (as before) ---
 	// ...
 
@@ -89,7 +90,7 @@ func (s *Aggregate) Done(accTxs *model.AccountRecords, result *action.AnalyseRes
 			for i := 0; i < topN; i++ {
 				item := paymentStats[i]
 				reason := fmt.Sprintf("资金高度集中: Top %d 位非核心供应商 %s, 金额：%.0f", i+1, item.CounterpartyName, item.RecordList.TotalAmount)
-				result.AddBatch(reason, model.SuType_PartyAggregate, item.RecordList.Records...)
+				result.AddBatch(reason, model2.SuType_PartyAggregate, item.RecordList.Records...)
 			}
 		}
 	}

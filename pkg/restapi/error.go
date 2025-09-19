@@ -81,6 +81,7 @@ func SetOKJsonData(ictx iris.Context, data any) error {
 	if err != nil {
 		return err
 	}
+	ictx.ContentType("application/json")
 	_, err = ictx.WriteString(jsonStr)
 	return err
 }

@@ -3,6 +3,7 @@ package party
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 )
@@ -10,11 +11,11 @@ import (
 // Private
 // 个人账户筛选： 筛选出所有与个人账户之间的大额交易（公转私或私转公）。
 type Private struct {
-	rule model.PartPrivateRule
+	rule model2.PartPrivateRule
 	repo action.DataRepo
 }
 
-func NewPrivate(rule model.PartPrivateRule, repo action.DataRepo) *Private {
+func NewPrivate(rule model2.PartPrivateRule, repo action.DataRepo) *Private {
 	return &Private{
 		rule: rule,
 		repo: repo,
@@ -25,10 +26,10 @@ func (s *Private) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-func (s *Private) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Private) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	isSuspicious, reason := s.isLargePrivateTransaction(tx)
 	if isSuspicious {
-		result.AddRecord(tx, model.SuType_PartyPrivate, reason)
+		result.AddRecord(tx, model2.SuType_PartyPrivate, reason)
 	}
 }
 

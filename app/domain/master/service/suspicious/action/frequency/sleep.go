@@ -3,6 +3,7 @@ package frequency
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"sync"
@@ -11,11 +12,11 @@ import (
 // Sleep
 // 休眠账户交易
 type Sleep struct {
-	rule             model.FreqSleepRule
+	rule             model2.FreqSleepRule
 	frequencyCounter *sync.Map // Key: string (e.g., "CounterpartyName#YYYY-MM"), Value: *atomic.Int64
 }
 
-func NewSleep(rule model.FreqSleepRule) *Sleep {
+func NewSleep(rule model2.FreqSleepRule) *Sleep {
 	return &Sleep{
 		rule:             rule,
 		frequencyCounter: &sync.Map{},
@@ -26,15 +27,15 @@ func (s *Sleep) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-func (s *Sleep) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Sleep) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 
 }
 
 // Done is called after all workers are done.
-func (s *Sleep) Done(accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Sleep) Done(accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	txs := accTxs.Records
 	// 如果总交易数都不足以触发激活阈值，则直接返回
-	if len(accTxs.Records) < s.rule.ActivationTxThreshold {
+	if len(accTxs.Records) < s.rule.ActivateThreshold {
 		return
 	}
 
@@ -48,11 +49,11 @@ func (s *Sleep) Done(accTxs *model.AccountRecords, result *action.AnalyseResult)
 		hibernationDays := currTx.Date.Sub(prevTx.Date).Hours() / 24
 
 		// 如果间隔大于用户定义的“休眠期”，我们就找到了一个潜在的激活事件
-		if hibernationDays > float64(s.rule.HibernationPeriodDays) {
+		if hibernationDays > float64(s.rule.SleepDays) {
 
 			// --- 步骤 2: 验证“激活期”内的交易频率 ---
 			// 定义激活期的截止时间
-			activationWindowEnd := currTx.Date.AddDate(0, 0, s.rule.ActivationPeriodDays)
+			activationWindowEnd := currTx.Date.AddDate(0, 0, s.rule.ActivateDays)
 
 			var activationRecords []*model.Record
 			// 从“激活点”开始，向后统计在激活窗口内的所有交易
@@ -68,12 +69,12 @@ func (s *Sleep) Done(accTxs *model.AccountRecords, result *action.AnalyseResult)
 			}
 
 			// --- 步骤 3: 检查交易频率是否达到阈值并记录结果 ---
-			if len(activationRecords) >= s.rule.ActivationTxThreshold {
+			if len(activationRecords) >= s.rule.ActivateThreshold {
 				reason := fmt.Sprintf("休眠账户激活: 在休眠%.0f天后, 于%d天内发生%d笔交易",
-					hibernationDays, s.rule.ActivationPeriodDays, len(activationRecords))
+					hibernationDays, s.rule.ActivateDays, len(activationRecords))
 
 				// 将激活期内的所有交易都标记为可疑
-				result.AddBatch(reason, model.SuType_FreqAbnormal, activationRecords...)
+				result.AddBatch(reason, model2.SuType_FreqAbnormal, activationRecords...)
 				// [性能优化]：一旦发现并记录了一段激活期，我们可以跳过这段已分析的交易，
 				// 从激活期的最后一笔交易之后开始寻找下一个休眠期。
 				// i = i + len(activationTransactions) - 1

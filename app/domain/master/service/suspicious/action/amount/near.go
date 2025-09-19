@@ -3,6 +3,7 @@ package amount
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"math"
@@ -18,11 +19,11 @@ type NearMatchResult struct {
 }
 
 type AmountNear struct {
-	rule    model.AmountNearRule
+	rule    model2.AmountNearRule
 	percent float64
 }
 
-func NewAmountNear(rule model.AmountNearRule) *AmountNear {
+func NewAmountNear(rule model2.AmountNearRule) *AmountNear {
 	return &AmountNear{
 		rule:    rule,
 		percent: rule.NearPercent / 100,
@@ -34,10 +35,10 @@ func (s *AmountNear) IsEnable() bool {
 }
 
 // DoAction 整数交易
-func (s *AmountNear) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *AmountNear) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	isNear, res := isNearMultiple(tx.Amount, s.rule.NearAmount, s.percent)
 	if isNear {
-		result.AddRecord(tx, model.SuType_AmountNear, fmt.Sprintf("大额交易: 目标金额 %.2f, 差额 %.2f, 差额率 %.2f%%", res.TargetAmount, res.Difference, res.DifferencePercent))
+		result.AddRecord(tx, model2.SuType_AmountNear, fmt.Sprintf("大额交易: 目标金额 %.2f, 差额 %.2f, 差额率 %.2f%%", res.TargetAmount, res.Difference, res.DifferencePercent))
 	}
 }
 

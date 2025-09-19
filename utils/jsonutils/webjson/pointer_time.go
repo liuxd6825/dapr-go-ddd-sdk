@@ -30,6 +30,7 @@ func (pte *pointerTime) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	}
 	stream.WriteString(t.Format(GlobalDefaultTimeFormat))
 }
+
 func (pte *pointerTime) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	if iter.ReadNil() {
 		// 如果是 null, 将 Go 的 *time.Time 指针设置为 nil
@@ -41,10 +42,20 @@ func (pte *pointerTime) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 		*(**time.Time)(ptr) = nil
 		return
 	}
+	if len(val) <= 10 {
+		t, err := time.Parse(GlobalDefaultDataFormat, val)
+		if err != nil {
+			iter.Error = fmt.Errorf("pointerTimeDecoder: failed to parse time string '%s' with format '%s': %w", val, GlobalDefaultDataFormat, err)
+			return
+		}
+		// 将解析出的 time.Time 的地址赋给指针
+		*(**time.Time)(ptr) = &t
+		return
+	}
 	t, err := time.Parse(GlobalDefaultTimeFormat, val)
 	if err != nil {
 		iter.Error = fmt.Errorf("pointerTimeDecoder: failed to parse time string '%s' with format '%s': %w", val, GlobalDefaultTimeFormat, err)
-		return
+
 	}
 	// 将解析出的 time.Time 的地址赋给指针
 	*(**time.Time)(ptr) = &t

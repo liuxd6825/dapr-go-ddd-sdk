@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
@@ -13,11 +14,11 @@ func CreateTables(dbKey string) {
 		NewTranDao(dbKey).Table(),
 		NewTagRelationDao(dbKey).Table(),
 
-		NewSuBatchDao(dbKey).Table(),
-		NewSuBatchItemDao(dbKey).Table(),
-		NewSuRecordDao(dbKey).Table(),
-		NewSuTaskAccountDao(dbKey).Table(),
-		NewSuTaskDao(dbKey).Table(),
+		dao2.NewSuBatchDao(dbKey).Table(),
+		dao2.NewSuBatchItemDao(dbKey).Table(),
+		dao2.NewSuRecordDao(dbKey).Table(),
+		dao2.NewSuAccountDao(dbKey).Table(),
+		dao2.NewSuTaskDao(dbKey).Table(),
 	}
 	dao.CreateTables(ctx, tables)
 }

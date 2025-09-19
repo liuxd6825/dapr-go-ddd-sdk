@@ -3,6 +3,7 @@ package party
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 )
@@ -11,14 +12,14 @@ import (
 // 关联方筛选：
 // 将交易对手方与公司提供的股东、高管、关键员工及其近亲属名单，以及子公司、联营企业名单进行比对，筛选出所有关联方交易。
 type Relation struct {
-	rule            model.PartRelationPartyRule
+	rule            model2.PartRelationPartyRule
 	repo            action.DataRepo
 	nameMap         map[string]string // Key: Name, Value: RelationType
 	accountMap      map[string]string // Key: AccountNumber, Value: RelationType
 	counterpartyMap map[string]action.Counterparty
 }
 
-func NewRelationParty(rule model.PartRelationPartyRule) *Relation {
+func NewRelationParty(rule model2.PartRelationPartyRule) *Relation {
 	return &Relation{
 		rule:       rule,
 		nameMap:    map[string]string{},
@@ -30,7 +31,7 @@ func (s *Relation) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-func (s *Relation) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *Relation) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 
 }
 

@@ -3,16 +3,17 @@ package times
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"time"
 )
 
 type FastInOutHours struct {
-	rule model.TimeFastInOutRule
+	rule model2.TimeFastInOutRule
 }
 
-func NewFastInOutHours(rule model.TimeFastInOutRule) *FastInOutHours {
+func NewFastInOutHours(rule model2.TimeFastInOutRule) *FastInOutHours {
 	return &FastInOutHours{
 		rule: rule,
 	}
@@ -23,14 +24,14 @@ func (s *FastInOutHours) IsEnable() bool {
 }
 
 // DoAction 快进快出
-func (s *FastInOutHours) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model.AccountRecords, result *action.AnalyseResult) {
+func (s *FastInOutHours) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 
 	// --- 步骤 1: 寻找“进” (Credit) ---
 	inTx := tx
 	if inTx.Name == inTx.OppName {
 		return
 	}
-	if inTx.Income < s.rule.TxAmount {
+	if inTx.Income < s.rule.Amount {
 		// 如果当前交易不是收入，则跳过，继续寻找下一个可能的“进”
 		return
 	}
@@ -58,7 +59,7 @@ func (s *FastInOutHours) DoAction(ctx context.Context, tx *model.Record, txIndex
 			inDate := inTx.Date.Format(time.DateTime)
 			outDate := outTx.Date.Format(time.DateTime)
 			reason := fmt.Sprintf("快进快出(进): %s收入%.2f后%s支出%.2f，时隔:%.2f小时", inDate, inTx.Income, outDate, outTx.GetPayout(), duration.Hours())
-			result.AddBatch(reason, model.SuType_TimeFastInOut, inTx, outTx)
+			result.AddBatch(reason, model2.SuType_TimeFastInOut, inTx, outTx)
 			// 找到了一个匹配的“出”，通常就可以结束本次对“进”的搜索
 			// 因为一笔钱通常只会被转走一次。
 			break

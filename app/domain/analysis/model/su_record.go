@@ -1,7 +1,9 @@
 package model
 
+import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+
 type SuRecord struct {
-	Record                  `bson:",inline"`
+	model.Record            `bson:",inline"`
 	RecordId                string           `json:"recordId" gorm:"record_id" bson:"record_id" title:"交易ID" `
 	TaskId                  string           `json:"taskId" gorm:"task_id" bson:"task_id" title:"可疑任务ID" `
 	AmountLarge             bool             `json:"amountLarge" gorm:"amount_large" bson:"amount_large"  `

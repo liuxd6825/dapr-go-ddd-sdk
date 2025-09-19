@@ -3,9 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
+	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
@@ -19,9 +21,9 @@ import (
 )
 
 type SuTaskService struct {
-	tranDao        *dao.TranDao
+	tranDao        *dao2.TranDao
 	taskDao        *dao.SuTaskDao
-	accountDao     *dao.SuTaskAccountDao
+	accountDao     *dao.SuAccountDao
 	suRecordDao    *dao.SuRecordDao
 	suBatchDao     *dao.SuBatchDao
 	suBatchItemDao *dao.SuBatchItemDao
@@ -29,10 +31,10 @@ type SuTaskService struct {
 
 func NewSuTaskService() *SuTaskService {
 	return &SuTaskService{
-		tranDao:        dao.NewTranDao(config.DBKey),
+		tranDao:        dao2.NewTranDao(config.DBKey),
 		taskDao:        dao.NewSuTaskDao(config.DBKey),
 		suRecordDao:    dao.NewSuRecordDao(config.DBKey),
-		accountDao:     dao.NewSuTaskAccountDao(config.DBKey),
+		accountDao:     dao.NewSuAccountDao(config.DBKey),
 		suBatchDao:     dao.NewSuBatchDao(config.DBKey),
 		suBatchItemDao: dao.NewSuBatchItemDao(config.DBKey),
 	}
@@ -70,22 +72,65 @@ func (s *SuTaskService) FindById(ctx context.Context, qry *query.SuTaskFindByIdQ
 	return s.taskDao.FindById(ctx, qry.Id, opts...)
 }
 
+func (s *SuTaskService) FindBillById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTaskBillView, error) {
+	task, err := s.FindById(ctx, qry, opts...)
+	if err != nil {
+		return nil, err
+	}
+	accounts, err := s.accountDao.FindByTaskId(ctx, qry.Id)
+	if err != nil {
+		return nil, err
+	}
+	taskView := &model.SuTaskBillView{
+		Task:     task,
+		Accounts: accounts,
+	}
+	return taskView, nil
+}
+
 func (s *SuTaskService) FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.SuTask] {
 	return s.taskDao.FindPaging(ctx, qry, opts...)
 }
 
-func (s *SuTaskService) Analyse(ctx context.Context, taskId string) error {
+func (s *SuTaskService) Start(ctx context.Context, taskId string) error {
 	task, err := s.taskDao.FindById(ctx, taskId)
 	if err != nil {
 		return err
 	}
-
+	if task.Status != model.SuTaskStatus_New {
+		err := errors.NewVerifyError()
+		err.AppendField("status", "当前任务状态不是“新建”")
+		return err.GetError()
+	}
 	taskAccounts, err := s.accountDao.FindByTaskId(ctx, task.Id)
 	if err != nil {
 		return err
 	}
+	if len(taskAccounts) == 0 {
+		return errors.New("taskAccounts is length 0 ")
+	}
 
-	return s.analyse(ctx, task, taskAccounts)
+	if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_PendingInfo); err != nil {
+		return err
+	}
+	if err = s.analyse(ctx, task, taskAccounts); err != nil {
+		if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_New); err != nil {
+			return err
+		}
+		return err
+	}
+	if err = s.UpdateStatus(ctx, taskId, model.SuTaskStatus_InProgress); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *SuTaskService) UpdateStatus(ctx context.Context, taskId string, status model.SuTaskStatus) error {
+	return s.taskDao.UpdateStatus(ctx, taskId, status)
+}
+
+func (s *SuTaskService) UpdateInfo(ctx context.Context, taskId string, info dao.SuTaskUpdateInfo) error {
+	return s.taskDao.UpdateInfo(ctx, taskId, info)
 }
 
 func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAccounts []*model.SuTaskAccount) error {
@@ -180,8 +225,8 @@ func (d *dataRepo) LoadCounterparties() (map[string]action.Counterparty, error) 
 	return map[string]action.Counterparty{}, nil
 }
 
-func (d *dataRepo) GetAllTransactionsGroupedByAccount() (map[string][]*model.Tran, error) {
-	return map[string][]*model.Tran{}, nil
+func (d *dataRepo) GetAllTransactionsGroupedByAccount() (map[string][]*model2.Tran, error) {
+	return map[string][]*model2.Tran{}, nil
 }
 
 func (d *dataRepo) LoadRelatedParties() ([]action.RelatedParty, error) {

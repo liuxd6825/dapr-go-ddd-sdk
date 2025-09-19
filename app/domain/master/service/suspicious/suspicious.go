@@ -3,8 +3,8 @@ package suspicious
 import (
 	"context"
 	"fmt"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action/amount"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action/frequency"
@@ -28,15 +28,15 @@ type Counterparty struct {
 }
 
 type Analyse struct {
-	task      *model.SuTask
-	rule      *model.SuTaskRule
+	task      *model2.SuTask
+	rule      *model2.SuTaskRule
 	recordDao *dao.RecordDao
-	accounts  []*model.SuTaskAccount
+	accounts  []*model2.SuTaskAccount
 	actions   []action.Action
 	results   []*action.AnalyseResult
 }
 
-func NewAnalyse(task *model.SuTask, accounts []*model.SuTaskAccount, repo action.DataRepo) *Analyse {
+func NewAnalyse(task *model2.SuTask, accounts []*model2.SuTaskAccount, repo action.DataRepo) *Analyse {
 	rules := &task.Rules
 	actions := []action.Action{
 		amount.NewCollar(rules.AmountCollar),
@@ -90,7 +90,7 @@ func (s *Analyse) DoAction(ctx context.Context) ([]*action.AnalyseResult, time.D
 
 	// --- 3. Setup concurrent pipeline ---
 	numWorkers := runtime.NumCPU()
-	jobs := make(chan model.AccountRecords, numWorkers)
+	jobs := make(chan model2.AccountRecords, numWorkers)
 	results := make(chan *action.AnalyseResult, 100)
 
 	var workersWg sync.WaitGroup
@@ -150,7 +150,7 @@ func (s *Analyse) GetResults() []*action.AnalyseResult {
 
 // applyRulesToAccount 执行分析规则
 // It can access `sta.params` and `sta.counterpartyMap` directly.
-func (s *Analyse) applyRulesToAccount(ctx context.Context, accTxs *model.AccountRecords) (result *action.AnalyseResult) {
+func (s *Analyse) applyRulesToAccount(ctx context.Context, accTxs *model2.AccountRecords) (result *action.AnalyseResult) {
 	txs := accTxs.Records
 	result = action.NewAnalyseResult(s.task.Id, accTxs.Account)
 	for i, tx := range txs {
@@ -170,8 +170,8 @@ func (s *Analyse) applyRulesToAccount(ctx context.Context, accTxs *model.Account
 	return result
 }
 
-func (s *Analyse) getAccountTrans(ctx context.Context) ([]*model.AccountRecords, error) {
-	res := []*model.AccountRecords{}
+func (s *Analyse) getAccountTrans(ctx context.Context) ([]*model2.AccountRecords, error) {
+	res := []*model2.AccountRecords{}
 	startTime := s.task.StartTime
 	endTime := s.task.EndTime
 	if startTime == nil {
@@ -186,7 +186,7 @@ func (s *Analyse) getAccountTrans(ctx context.Context) ([]*model.AccountRecords,
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, &model.AccountRecords{
+		res = append(res, &model2.AccountRecords{
 			Account: account.Account,
 			Records: txs,
 		})
