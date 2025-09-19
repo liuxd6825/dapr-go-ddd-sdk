@@ -29,9 +29,9 @@ func NewAppAPI(env *env.Env, rootPath string) *AppAPI {
 	}
 }
 
-func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+func (s *AppAPI) InitController(app *iris.Application) error {
 	s.appService = service.NewAppService()
-	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.AppAPI", s)
+	ctl := restapi.NewController(app, s.rootPath+"/card", s)
 	ctl.Post("/app", "Create")
 	ctl.Put("/app", "Update")
 	ctl.Delete("/app", "Delete", restapi.WithParamsInBody(true))
@@ -39,7 +39,7 @@ func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController 
 	ctl.GetPaging("/app", "FindPaging")
 	ctl.GetData("/app:tree", "FindTree")
 	ctl.GetData("/app:all", "FindAll")
-	return ctl
+	return nil
 }
 
 func (s *AppAPI) Create(ctx context.Context, cmd *command.AppCreateCommand) error {
@@ -58,7 +58,7 @@ func (s *AppAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model
 	return s.appService.FindById(ctx, qry)
 }
 
-func (s *AppAPI) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.App], error) {
+func (s *AppAPI) FindPaging(ctx context.Context, qry *store.FindPagingQueryRequest) (idao.FindPagingResult[*model.App], error) {
 	return s.appService.FindPaging(ctx, qry)
 }
 
