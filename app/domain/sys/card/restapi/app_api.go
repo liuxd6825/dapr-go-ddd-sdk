@@ -20,6 +20,19 @@ type AppAPI struct {
 	rootPath   string
 }
 
+func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	s.appService = service.NewAppService()
+	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.AppAPI", s)
+	ctl.Post("/app", "Create")
+	ctl.Put("/app", "Update")
+	ctl.Delete("/app", "Delete", restapi.WithParamsInBody(true))
+	ctl.GetOne("/app/{id}", "FindById")
+	ctl.GetPaging("/app", "FindPaging")
+	ctl.GetData("/app:tree", "FindTree")
+	ctl.GetData("/app:all", "FindAll")
+	return ctl
+}
+
 func NewAppAPI(env *env.Env, rootPath string) *AppAPI {
 	return &AppAPI{
 		env:        env,
