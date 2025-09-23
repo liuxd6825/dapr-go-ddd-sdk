@@ -184,8 +184,6 @@ func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions .
 		}
 	}()
 
-	runCfg.EnvConfig.Temporal
-
 	opt := NewRunOptions(runOptions...)
 
 	level := runCfg.LogLevel

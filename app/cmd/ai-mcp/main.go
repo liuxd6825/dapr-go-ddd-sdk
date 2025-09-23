@@ -1,5 +1,6 @@
 package main
 
+/*
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/mcp/neo4j_mcp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/mcp/neo4j_mcp/server"
@@ -22,3 +23,4 @@ func main() {
 		log.Fatalln(err)
 	}
 }
+*/

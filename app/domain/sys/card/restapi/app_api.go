@@ -33,15 +33,7 @@ func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController 
 	return ctl
 }
 
-func NewAppAPI(env *env.Env, rootPath string) *AppAPI {
-	return &AppAPI{
-		env:        env,
-		appService: service.NewAppService(),
-		funService: service.NewFunService(),
-		rootPath:   rootPath,
-	}
-}
-
+/*
 func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.appService = service.NewAppService()
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.AppAPI", s)
@@ -53,6 +45,15 @@ func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController 
 	ctl.GetData("/app:tree", "FindTree")
 	ctl.GetData("/app:all", "FindAll")
 	return ctl
+}*/
+
+func NewAppAPI(env *env.Env, rootPath string) *AppAPI {
+	return &AppAPI{
+		env:        env,
+		appService: service.NewAppService(),
+		funService: service.NewFunService(),
+		rootPath:   rootPath,
+	}
 }
 
 func (s *AppAPI) Create(ctx context.Context, cmd *command.AppCreateCommand) error {

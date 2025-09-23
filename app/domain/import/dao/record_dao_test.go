@@ -2,7 +2,7 @@ package dao
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
@@ -22,7 +22,7 @@ func Test_Record_Insert(t *testing.T) {
 	recordDao := NewRecordDao(xtest.MongoDBKey)
 	randomutils.RangeRand(2012, 2014)
 
-	var list []*model.Record
+	var list []*model.RecordIe
 	for i := 0; i < 2000; i++ {
 		accIndex := randomutils.Int64Max(count)
 		oppIndex := randomutils.Int64Max(count)
@@ -42,22 +42,22 @@ func Test_Record_Insert(t *testing.T) {
 			income = amount
 		}
 
-		record := &model.Record{
-			Base: xbase.Base{
+		record := &model.RecordIe{
+			BaseModel: xbase.BaseModel{
 				Id:       randomutils.NewId(),
 				TenantId: xtest.TenantId,
 				CaseId:   "1001",
 				Remark:   randomutils.String(10),
 			},
-			RowNum:      int64(i),
-			TaskId:      "taskId",
-			DocId:       "docId",
-			FileId:      "fieldId",
-			Iden:        "001",
-			Date:        &date,
-			Year:        date.Year(),
-			Month:       int(date.Month()),
-			Day:         date.Day(),
+			RowNum: int64(i),
+			TaskId: "taskId",
+			DocId:  "docId",
+			FileId: "fieldId",
+			Iden:   "001",
+			Date:   &date,
+			/*			Year:        date.Year(),
+						Month:       int(date.Month()),
+						Day:         date.Day(),*/
 			Name:        acc.Name,
 			Acct:        acc.Account,
 			AcctType:    acc.AccountType,

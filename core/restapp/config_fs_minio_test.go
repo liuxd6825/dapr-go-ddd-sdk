@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/readexcel"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/minio/minio-go/v7"
 	"os"
 	"testing"
@@ -52,11 +52,11 @@ func TestInitMinio(t *testing.T) {
 		t.Error(err)
 		return
 	} else {
-		if data, err := readexcel.ReadBytesToMap(butter.Bytes(), "", 100); err != nil {
+		if data, err := readexcel.ReadBytesToMap(butter.Bytes(), 100); err != nil {
 			t.Error(err)
 			return
 		} else {
-			t.Log("data.items.length:", len(data.Items))
+			t.Log("data.items.length:", len(data.Sheets))
 		}
 	}
 }
