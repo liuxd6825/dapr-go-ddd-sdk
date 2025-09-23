@@ -9,8 +9,51 @@ import (
 type SuTaskCreateCommand struct {
 	xbase.Command[SuTaskCreateData]
 }
+
+func (s *SuTaskCreateCommand) NewTask() *model.SuTask {
+	task := &model.SuTask{
+		BaseModel:   s.Data.BaseModel,
+		Code:        s.Data.Code,
+		Name:        s.Data.Name,
+		StartTime:   s.Data.StartTime,
+		EndTime:     s.Data.EndTime,
+		Status:      model.SuTaskStatus_New,
+		Rules:       s.Data.Rules,
+		TargetName:  s.Data.TargetName,
+		TargetId:    s.Data.TargetId,
+		OwnerId:     s.Data.OwnerId,
+		OwnerName:   s.Data.OwnerName,
+		SuCount:     0,
+		SuHighCount: 0,
+		RecordCount: 0,
+		TotalAmount: 0,
+	}
+	return task
+}
+
 type SuTaskUpdateCommand struct {
 	xbase.Command[SuTaskCreateData]
+}
+
+func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
+	task := &model.SuTask{
+		BaseModel:   s.Data.BaseModel,
+		Code:        s.Data.Code,
+		Name:        s.Data.Name,
+		StartTime:   s.Data.StartTime,
+		EndTime:     s.Data.EndTime,
+		Status:      model.SuTaskStatus_New,
+		Rules:       s.Data.Rules,
+		TargetName:  s.Data.TargetName,
+		TargetId:    s.Data.TargetId,
+		OwnerId:     s.Data.OwnerId,
+		OwnerName:   s.Data.OwnerName,
+		SuCount:     0,
+		SuHighCount: 0,
+		RecordCount: 0,
+		TotalAmount: 0,
+	}
+	return task
 }
 
 // SuTaskCreateData 可疑分析任务
@@ -28,11 +71,11 @@ type SuTaskCreateData struct {
 	TargetType      string           `json:"targetType" gorm:"target_type" bson:"target_type" title:"目标类型"`
 }
 
-type SuTaskStartCommand struct {
-	xbase.Command[SuTaskStartData]
+type SuTaskAnalysisCommand struct {
+	xbase.Command[SuTaskStartAnalysis]
 }
 
-// SuTaskStartData 可疑分析任务
-type SuTaskStartData struct {
+// SuTaskStartAnalysis 可疑分析任务
+type SuTaskStartAnalysis struct {
 	Id string `json:"id" bson:"id"  validate:"required" title:"任务ID"`
 }

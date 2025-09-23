@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -35,44 +36,34 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 	controller.GetPaging("/analysis/su-task", "FindPaging")
 	controller.Post("/analysis/su-task", "Create")
 	controller.Put("/analysis/su-task", "Update")
-	controller.Put("/analysis/su-task:start", "Start")
+	controller.Put("/analysis/su-task:analysis", "Analysis")
 	controller.View("/analysis/su-task/bill.html", "GetBillView")
 	controller.GetOne("/analysis/su-task:bill/{id}", "FindBill")
 	return controller
 }
 
 func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) error {
-	task := &model2.SuTask{
-		BaseModel:   cmd.Data.BaseModel,
-		Code:        cmd.Data.Code,
-		Name:        cmd.Data.Name,
-		StartTime:   cmd.Data.StartTime,
-		EndTime:     cmd.Data.EndTime,
-		Status:      model2.SuTaskStatus_New,
-		Rules:       cmd.Data.Rules,
-		SuCount:     0,
-		SuHighCount: 0,
-	}
+	task := cmd.NewTask()
 	return s.taskService.Create(ctx, task)
 }
 
-func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskCreateCommand) error {
-	task := &model2.SuTask{
-		BaseModel:   cmd.Data.BaseModel,
-		Code:        cmd.Data.Code,
-		Name:        cmd.Data.Name,
-		StartTime:   cmd.Data.StartTime,
-		EndTime:     cmd.Data.EndTime,
-		Status:      model2.SuTaskStatus_New,
-		Rules:       cmd.Data.Rules,
-		SuCount:     0,
-		SuHighCount: 0,
+func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand) error {
+	t, err := s.taskService.FindById(ctx, cmd.Data.Id)
+	if err != nil {
+		return err
 	}
+	if t == nil {
+		return errors.ErrorOf("没有找到要更新的任务。")
+	}
+	if t.Status != model2.SuTaskStatus_New {
+		return errors.ErrorOf("已在“%s”状态,不可以更新。", t.Name)
+	}
+	task := cmd.NewTask()
 	return s.taskService.Update(ctx, task)
 }
 
-func (s *SuTaskApi) Start(ctx context.Context, cmd *command.SuTaskStartCommand) error {
-	return s.taskService.Start(ctx, cmd.Data.Id)
+func (s *SuTaskApi) Analysis(ctx context.Context, cmd *command.SuTaskAnalysisCommand) error {
+	return s.taskService.Analysis(ctx, cmd.Data.Id)
 }
 
 func (s *SuTaskApi) Delete(ctx context.Context, task *model2.SuTask) error {
@@ -80,17 +71,17 @@ func (s *SuTaskApi) Delete(ctx context.Context, task *model2.SuTask) error {
 }
 
 func (s *SuTaskApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (store.FindPagingResult[*model2.SuTask], error) {
-	res := s.taskService.FindPaging(ctx, qry)
+	res := s.taskService.QueryPaging(ctx, qry)
 	return res, res.GetError()
 }
 
 func (s *SuTaskApi) FindById(ctx context.Context, qry *query.SuTaskFindByIdQuery) (*model2.SuTask, error) {
-	task, err := s.taskService.FindById(ctx, qry)
+	task, err := s.taskService.QueryById(ctx, qry)
 	return task, err
 }
 
 func (s *SuTaskApi) FindBill(ctx context.Context, qry *query.SuTaskFindByIdQuery) (*model2.SuTaskBillView, error) {
-	task, err := s.taskService.FindBillById(ctx, qry)
+	task, err := s.taskService.QueryBillById(ctx, qry)
 	return task, err
 }
 

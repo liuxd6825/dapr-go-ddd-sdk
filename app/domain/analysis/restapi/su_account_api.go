@@ -73,11 +73,11 @@ func (s *SuTaskAccountApi) Delete(ctx context.Context, task *model2.SuTask) erro
 }
 
 func (s *SuTaskAccountApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (store.FindPagingResult[*model2.SuTask], error) {
-	res := s.taskService.FindPaging(ctx, qry)
+	res := s.taskService.QueryPaging(ctx, qry)
 	return res, res.GetError()
 }
 
 func (s *SuTaskAccountApi) FindById(ctx context.Context, qry *query.SuTaskFindByIdQuery) (*model2.SuTask, error) {
-	task, err := s.taskService.FindById(ctx, qry)
+	task, err := s.taskService.QueryById(ctx, qry)
 	return task, err
 }

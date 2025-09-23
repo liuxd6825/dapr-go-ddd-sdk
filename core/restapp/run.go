@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
 )
 
 type RunConfig struct {
@@ -133,6 +134,17 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 		eventType = cfg.EventTypes()
 	}
 
+	if envConfig.Temporal != nil {
+		t := envConfig.Temporal
+		tCfg := tasks.ConnectConfig{
+			HostPort:  fmt.Sprintf("%s:%d", t.Host, t.Port),
+			Namespace: t.Namespace,
+			TaskQueue: t.TaskQueue,
+		}
+		if err := tasks.Connect(tCfg); err != nil {
+			return nil, errors.ErrorOf("connection temporal server error:%s", err.Error())
+		}
+	}
 	// 初始化应用
 	if err = InitApplication(context.Background(), envConfig, eventType, false, nil); err != nil {
 		return nil, err
@@ -171,6 +183,9 @@ func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions .
 			logs.Errorf(context.Background(), nil, "exit error %s", err.Error())
 		}
 	}()
+
+	runCfg.EnvConfig.Temporal
+
 	opt := NewRunOptions(runOptions...)
 
 	level := runCfg.LogLevel

@@ -40,6 +40,14 @@ func (dao *SuTaskDao) UpdateStatus(ctx context.Context, id string, status model.
 	return dao.UpdateMap(ctx, id, data).GetError()
 }
 
+func (dao *SuTaskDao) UpdateWorkflowIdStatus(ctx context.Context, id string, workflowId string, status model.SuTaskStatus) error {
+	data := map[string]any{
+		"workflow_id": workflowId,
+		"status":      status,
+	}
+	return dao.UpdateMap(ctx, id, data).GetError()
+}
+
 func (dao *SuTaskDao) UpdateInfo(ctx context.Context, id string, info SuTaskUpdateInfo) error {
 	data := map[string]any{}
 	if info.RecordCount != nil {

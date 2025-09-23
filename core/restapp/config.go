@@ -29,6 +29,7 @@ type EnvConfig struct {
 	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
 	Fs        []map[string]any           `yaml:"fs" json:"fs"`
 	Auth      *AuthConfig                `yaml:"auth" json:"auth"`
+	Temporal  *TemporalConfig            `yaml:"temporal" json:"temporal"`
 }
 
 func NewEnvConfig(name string) *EnvConfig {
@@ -45,6 +46,7 @@ func NewEnvConfig(name string) *EnvConfig {
 		Redis:     map[string]*RedisConfig{},
 		Fs:        []map[string]any{},
 		Auth:      &AuthConfig{},
+		Temporal:  &TemporalConfig{},
 	}
 }
 
@@ -110,8 +112,8 @@ type HServer struct {
 	BasePath     string         `yaml:"basePath" json:"basePath"`         // 脚本文件路径
 	Reload       bool           `yaml:"reload" json:"reload"`             // 是否自动加载脚本
 	WatchRestart bool           `yaml:"watchRestart" json:"watchRestart"` // 检查文件变化，重新启动
-	Meta         map[string]any `yaml:"meta" json:"meta"`
-	Npm          Npm            `yaml:"npm" json:"npm"`
+	Meta         map[string]any `yaml:"meta" json:"meta"`                 // 扩展信息
+	Npm          Npm            `yaml:"npm" json:"npm"`                   // 前端npm环境配置
 }
 type Npm struct {
 	Links []*NpmLink `yaml:"links" json:"links"`

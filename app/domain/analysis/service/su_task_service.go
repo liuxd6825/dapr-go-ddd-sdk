@@ -18,6 +18,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"go.temporal.io/sdk/client"
 )
 
 type SuTaskService struct {
@@ -68,12 +71,16 @@ func (s *SuTaskService) DeleteById(ctx context.Context, id string, opts ...idao.
 	return s.taskDao.DeleteById(ctx, id, opts...).GetError()
 }
 
-func (s *SuTaskService) FindById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTask, error) {
+func (s *SuTaskService) QueryById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTask, error) {
 	return s.taskDao.FindById(ctx, qry.Id, opts...)
 }
 
-func (s *SuTaskService) FindBillById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTaskBillView, error) {
-	task, err := s.FindById(ctx, qry, opts...)
+func (s *SuTaskService) FindById(ctx context.Context, id string, opts ...idao.CallOptions) (*model.SuTask, error) {
+	return s.taskDao.FindById(ctx, id, opts...)
+}
+
+func (s *SuTaskService) QueryBillById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTaskBillView, error) {
+	task, err := s.QueryById(ctx, qry, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,11 +95,25 @@ func (s *SuTaskService) FindBillById(ctx context.Context, qry *query.SuTaskFindB
 	return taskView, nil
 }
 
-func (s *SuTaskService) FindPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.SuTask] {
+func (s *SuTaskService) QueryPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.SuTask] {
 	return s.taskDao.FindPaging(ctx, qry, opts...)
 }
 
-func (s *SuTaskService) Start(ctx context.Context, taskId string) error {
+func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
+	// 配置工作流选项
+	workflowId := idutils.NewId()
+	workflowOptions := client.StartWorkflowOptions{
+		ID:        workflowId,       // 工作流的唯一ID
+		TaskQueue: "greeting-tasks", // 必须与 Worker 监听的任务队列名称一致
+	}
+	_, err := tasks.ExecuteWorkflow(ctx, workflowOptions, TaskAnalysisWorkflow, taskId, workflowId)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (s *SuTaskService) analysis(ctx context.Context, taskId string, workflowId string) error {
 	task, err := s.taskDao.FindById(ctx, taskId)
 	if err != nil {
 		return err
@@ -107,10 +128,12 @@ func (s *SuTaskService) Start(ctx context.Context, taskId string) error {
 		return err
 	}
 	if len(taskAccounts) == 0 {
-		return errors.New("taskAccounts is length 0 ")
+		err := errors.NewVerifyError()
+		err.AppendField("account", "分析“账号”信息不能为空")
+		return err.GetError()
 	}
 
-	if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_PendingInfo); err != nil {
+	if err := s.UpdateWorkflowIdStatus(ctx, taskId, workflowId, model.SuTaskStatus_PendingInfo); err != nil {
 		return err
 	}
 	if err = s.analyse(ctx, task, taskAccounts); err != nil {
@@ -123,6 +146,10 @@ func (s *SuTaskService) Start(ctx context.Context, taskId string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *SuTaskService) UpdateWorkflowIdStatus(ctx context.Context, taskId string, workflowId string, status model.SuTaskStatus) error {
+	return s.taskDao.UpdateWorkflowIdStatus(ctx, taskId, workflowId, status)
 }
 
 func (s *SuTaskService) UpdateStatus(ctx context.Context, taskId string, status model.SuTaskStatus) error {

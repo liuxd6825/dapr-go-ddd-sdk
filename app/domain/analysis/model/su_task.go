@@ -24,6 +24,7 @@ type SuTask struct {
 	TotalAmount     float64      `json:"totalAmount" gorm:"total_amount" bson:"total_amount" title:"可疑总金额"`
 	SuCount         int64        `json:"suCount" gorm:"su_count" bson:"su_count" title:"可疑交易数"`
 	SuHighCount     int64        `json:"suHighCount" gorm:"su_high_count" bson:"su_high_count" title:"高可疑交易数"`
+	WorkflowId      string       `json:"workflowId" gorm:"workflow_id" bson:"workflow_id" title:"后台流程ID"`
 }
 
 type SuTaskBillView struct {

@@ -1,29 +1,20 @@
 package restapi
 
 import (
-	"context"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/subscribe"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/subscribe/sub_import"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "master"}, func() error {
-		RegisterSchema(app, baseUrl, env)
-		RegisterHtml(app, baseUrl, env)
-		RegisterCdcToNeo4j(app, baseUrl, env)
-		RegisterSub(app, baseUrl, env)
-		RegisterRecord(app, baseUrl, env)
-
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
+func Init(app *iris.Application, baseUrl string, env *env.Env) {
+	RegisterSchema(app, baseUrl, env)
+	RegisterHtml(app, baseUrl, env)
+	RegisterCdcToNeo4j(app, baseUrl, env)
+	RegisterSub(app, baseUrl, env)
+	RegisterRecord(app, baseUrl, env)
 }
 
 func RegisterSchema(app *iris.Application, baseUrl string, env *env.Env) {

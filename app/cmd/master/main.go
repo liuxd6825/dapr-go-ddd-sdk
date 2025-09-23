@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	analyse "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph"
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
-	master "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	card "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
@@ -46,8 +46,8 @@ func main() {
 				baseUrl := "/api/v1.0"
 				app := server.App()
 				env := server.EnvConfig()
-				master.RegisterAllApi(app, baseUrl, env)
-				analyse.RegisterAllApi(app, baseUrl, env)
+				master.Init(app, baseUrl, env)
+				analysis.Init(app, baseUrl, env)
 				drawio.RegisterAllApi(app, baseUrl, env)
 				graph.RegisterAllApi(app, baseUrl, env)
 				rag.RegisterAllApi(app, baseUrl, env)
