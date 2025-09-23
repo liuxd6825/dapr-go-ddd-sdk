@@ -10,7 +10,7 @@ import (
 type SuTask struct {
 	xbase.BaseModel `bson:",inline"`
 	Code            string       `json:"code" bson:"code" required:"true"`
-	Name            string       `json:"taskName" gorm:"task_name" bson:"task_name" title:"任务名称"`
+	Name            string       `json:"name" gorm:"name" bson:"name" title:"任务名称"`
 	Rules           SuTaskRule   `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
 	StartTime       *time.Time   `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"`
 	EndTime         *time.Time   `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
@@ -65,7 +65,7 @@ type SuTran struct {
 
 // AccountRecords is the unit of work for our workers.
 type AccountRecords struct {
-	OwnerName string          `bson:"owner_name" json:"owner_name" bson:"owner_name" title:"账号拥有者"`
+	OwnerName string          `bson:"owner_name" json:"ownerName" bson:"owner_name" title:"账号拥有者"`
 	Account   string          `bson:"account" json:"account" bson:"account" title:"账号"`
 	Records   []*model.Record `bson:"records" json:"records;type:json" bson:"records" title:"交易流水"`
 }

@@ -41,6 +41,10 @@ func (s *SuAccountService) DeleteById(ctx context.Context, id string, opts ...id
 	return s.dao.DeleteById(ctx, id, opts...).GetError()
 }
 
+func (s *SuAccountService) DeleteByIds(ctx context.Context, listId []string, opts ...idao.CallOptions) error {
+	return s.dao.DeleteByIds(ctx, listId, opts...).GetError()
+}
+
 func (s *SuAccountService) FindById(ctx context.Context, qry *query.SuTaskAccountFindByIdQuery, opts ...idao.CallOptions) (*model.SuTaskAccount, error) {
 	return s.dao.FindById(ctx, qry.Id, opts...)
 }
