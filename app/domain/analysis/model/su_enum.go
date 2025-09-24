@@ -39,6 +39,7 @@ type SuTaskStatus string
 
 const (
 	SuTaskStatus_New         SuTaskStatus = "新建"
+	SuTaskStatus_TaskQueuing SuTaskStatus = "排队中"
 	SuTaskStatus_InProgress  SuTaskStatus = "处理中"
 	SuTaskStatus_PendingInfo SuTaskStatus = "计算中"
 	SuTaskStatus_Completed   SuTaskStatus = "已完成"

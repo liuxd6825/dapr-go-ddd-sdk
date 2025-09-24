@@ -136,7 +136,7 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 
 	if envConfig.Temporal != nil {
 		t := envConfig.Temporal
-		tCfg := tasks.ConnectConfig{
+		tCfg := tasks.Config{
 			HostPort:  fmt.Sprintf("%s:%d", t.Host, t.Port),
 			Namespace: t.Namespace,
 			TaskQueue: t.TaskQueue,
@@ -159,6 +159,18 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 		DaprClient: daprClient,
 		EnvConfig:  env,
 		FsManager:  env.Fsm,
+	}
+
+	if envConfig.Temporal != nil {
+		temp := envConfig.Temporal
+		cfg := tasks.Config{
+			HostPort:  fmt.Sprintf("%s:%d", temp.Host, temp.Port),
+			Namespace: temp.Namespace,
+			TaskQueue: temp.TaskQueue,
+		}
+		if err := tasks.Connect(cfg); err != nil {
+			return nil, errors.ErrorOf("connect temporal server error:%s", err.Error())
+		}
 	}
 
 	return run(runCfg, envConfig.App.RootUrl, cfg, options...)

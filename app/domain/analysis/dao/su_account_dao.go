@@ -32,3 +32,10 @@ func (s *SuAccountDao) FindByTaskId(ctx context.Context, taskId string) ([]*mode
 	)
 	return s.FindByRSQL(ctx, builder.Build())
 }
+
+func (s *SuAccountDao) CountByTaskId(ctx context.Context, taskId string) (int64, error) {
+	builder := rsql.NewBuilder().And(
+		rsql.Eq("su_task_id", taskId),
+	)
+	return s.CountByRSQL(ctx, builder.Build())
+}

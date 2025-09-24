@@ -16,6 +16,7 @@ import (
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
@@ -55,6 +56,8 @@ func main() {
 				tag.RegisterAllApi(app, baseUrl, env)
 				excelImport.RegisterAllApi(app, baseUrl, env)
 				card.RegisterAllApi(app, baseUrl, env)
+
+				tasks.RunWorker()
 				return nil
 			})
 			return err

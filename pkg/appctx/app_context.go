@@ -19,6 +19,10 @@ type app struct {
 
 var appCtxKey = appKey{}
 
+func NewAppContext(ctx context.Context, appId, appName string) context.Context {
+	return newAppContext(ctx, appId, appName)
+}
+
 func newAppContext(parent context.Context, appId, appName string) context.Context {
 	newCtx := context.WithValue(parent, appCtxKey, &app{
 		appId:   appId,

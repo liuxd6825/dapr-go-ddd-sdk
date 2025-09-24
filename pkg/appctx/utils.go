@@ -2,6 +2,7 @@ package appctx
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kataras/iris/v12"
 	"strings"
@@ -61,6 +62,36 @@ func getAuthorization(token string, header map[string][]string) string {
 		}
 	}
 	return ""
+}
+
+func NewMapWithContext(ctx context.Context) map[string]any {
+	data := make(map[string]any)
+	if authToken, ok := GetAuthToken(ctx); ok {
+		if bytes, err := json.Marshal(authToken); err == nil {
+			data["authToken"] = string(bytes)
+		}
+	}
+	if app, ok := GetAppInfo(ctx); ok {
+		data["appId"] = app.GetAppId()
+		data["appName"] = app.GetAppName()
+	}
+	return data
+}
+
+func NewContextWithMap(parent context.Context, data map[string]any) (ctx context.Context, err error) {
+	ctx = parent
+	if token, ok := data["authToken"]; ok {
+		var authToken AuthTokenEntity
+		bytes := []byte(token.(string))
+		if err = json.Unmarshal(bytes, &authToken); err == nil {
+			ctx = NewContextWidthAuthToken(ctx, authToken.GetUser().GetTenantId(), &authToken, map[string][]string{})
+		}
+	}
+	if appId, ok := data["appId"]; ok {
+		appName := data["appName"]
+		ctx = newAppContext(ctx, appId.(string), appName.(string))
+	}
+	return ctx, err
 }
 
 func GetMessage(ctx context.Context) (res []string) {

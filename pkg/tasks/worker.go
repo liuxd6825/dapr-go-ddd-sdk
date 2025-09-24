@@ -2,54 +2,70 @@ package tasks
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.temporal.io/sdk/activity"
 	tclient "go.temporal.io/sdk/client"
 	tworker "go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 )
 
-var client tclient.Client
-var worker tworker.Worker
+var _client tclient.Client
+var _worker tworker.Worker
+var _cfg Config
 
-type ConnectConfig struct {
-	HostPort  string
-	Namespace string
-	TaskQueue string
+func GetTaskQueue() string {
+	return _cfg.TaskQueue
 }
 
-func Connect(cfg ConnectConfig) error {
+func Connect(cfg Config) error {
+	if cfg.HostPort == "" {
+		return errors.New("temporal no hostport specified")
+	}
+	if cfg.Namespace == "" {
+		return errors.New("temporal no namespace specified")
+	}
+	if cfg.TaskQueue == "" {
+		return errors.New("temporal no task queue specified")
+	}
+	_cfg = cfg
+
 	var err error
-	client, err = tclient.NewLazyClient(tclient.Options{
+	_client, err = tclient.NewLazyClient(tclient.Options{
 		Namespace: cfg.Namespace,
 		HostPort:  cfg.HostPort,
 	})
 	if err != nil {
 		return err
 	}
-	worker = tworker.New(client, cfg.TaskQueue, tworker.Options{})
+	_worker = tworker.New(_client, _cfg.TaskQueue, tworker.Options{})
 	return nil
 }
 
+func RunWorker() {
+	if _client == nil {
+		return
+	}
+	go func() {
+		_worker.Run(tworker.InterruptCh())
+	}()
+}
+
 func ExecuteWorkflow(ctx context.Context, options tclient.StartWorkflowOptions, workflow any, args ...any) (tclient.WorkflowRun, error) {
-	return client.ExecuteWorkflow(ctx, options, workflow, args...)
+	return _client.ExecuteWorkflow(ctx, options, workflow, args...)
 }
 
-func RegisterWorkflow(w any) {
-	worker.RegisterWorkflow(w)
+func RegisterWorkflow(ctx context.Context, w any) {
+	_worker.RegisterWorkflow(w)
 }
 
-func RegisterWorkflowWithOptions(workflow any, options workflow.RegisterOptions) {
-	worker.RegisterWorkflowWithOptions(workflow, options)
+func RegisterWorkflowWithOptions(ctx context.Context, workflow any, options workflow.RegisterOptions) {
+	_worker.RegisterWorkflowWithOptions(workflow, options)
 }
 
-func RegisterActivity(activity any) {
-	worker.RegisterActivity(activity)
+func RegisterActivity(ctx context.Context, activity any) {
+	_worker.RegisterActivity(activity)
 }
 
-func RegisterActivityWithOptions(activity any, options activity.RegisterOptions) {
-	worker.RegisterActivityWithOptions(activity, options)
-}
-
-func Run() error {
-	return worker.Run(tworker.InterruptCh())
+func RegisterActivityWithOptions(ctx context.Context, activity any, options activity.RegisterOptions) {
+	_worker.RegisterActivityWithOptions(activity, options)
 }

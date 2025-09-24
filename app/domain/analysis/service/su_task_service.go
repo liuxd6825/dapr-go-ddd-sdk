@@ -14,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -100,25 +101,57 @@ func (s *SuTaskService) QueryPaging(ctx context.Context, qry *ddd_query.FindPagi
 }
 
 func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
+	task, err := s.taskDao.FindById(ctx, taskId)
+	if err != nil {
+		return err
+	}
+
+	vErr := errors.NewVerifyError()
+	if task.Status != model.SuTaskStatus_New {
+		vErr.AppendField("status", "当前任务状态不是“新建”")
+
+	}
+	if task.WorkflowId != "" {
+		vErr.AppendField("workflowId", "当前任务已经在执行中")
+	}
+	if vErr.HasError() {
+		return vErr
+	}
+
+	accountsCount, err := s.accountDao.CountByTaskId(ctx, task.Id)
+	if err != nil {
+		return err
+	}
+	if accountsCount == 0 {
+		err := errors.NewVerifyError()
+		err.AppendField("account", "分析“账号”信息不能为空")
+		return err.GetError()
+	}
+
+	if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_TaskQueuing); err != nil {
+		return err
+	}
+
 	// 配置工作流选项
 	workflowId := idutils.NewId()
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        workflowId,       // 工作流的唯一ID
-		TaskQueue: "greeting-tasks", // 必须与 Worker 监听的任务队列名称一致
+		ID:        workflowId,           // 工作流的唯一ID
+		TaskQueue: tasks.GetTaskQueue(), // 必须与 Worker 监听的任务队列名称一致
 	}
-	_, err := tasks.ExecuteWorkflow(ctx, workflowOptions, TaskAnalysisWorkflow, taskId, workflowId)
+	ctxMap := appctx.NewMapWithContext(ctx)
+	_, err = tasks.ExecuteWorkflow(ctx, workflowOptions, TaskAnalysisWorkflow, taskId, workflowId, ctxMap)
 	if err != nil {
 		return err
 	}
 	return err
 }
 
-func (s *SuTaskService) analysis(ctx context.Context, taskId string, workflowId string) error {
+func (s *SuTaskService) analysisTask(ctx context.Context, taskId string, workflowId string) error {
 	task, err := s.taskDao.FindById(ctx, taskId)
 	if err != nil {
 		return err
 	}
-	if task.Status != model.SuTaskStatus_New {
+	if task.Status != model.SuTaskStatus_TaskQueuing {
 		err := errors.NewVerifyError()
 		err.AppendField("status", "当前任务状态不是“新建”")
 		return err.GetError()

@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
@@ -358,14 +359,27 @@ func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type,
 }
 
 func (c *ApiController) GetCtx(ictx *context.Context) (context2.Context, error) {
-	ctx, err := c.newContext(ictx)
+	ctx, err := c.newContext(context2.Background(), ictx)
 	if err != nil {
 		return nil, err
 	}
 	return ctx, nil
 }
 
-func (c *ApiController) newContext(ictx *context.Context) (context2.Context, error) {
-	ctx, err := restapp.NewTestContext(context2.Background())
-	return ctx, err
+func (c *ApiController) newContext(parent context2.Context, ictx *context.Context) (ctx context2.Context, err error) {
+	ctx = parent
+	app := env.GetEnv().App
+	appId := app.AppId
+	appName := app.AppName
+	if app.ProdMode {
+		ctx = appctx.NewWebContext(ctx, ictx)
+	} else {
+		ctx, err = restapp.NewTestContext(context2.Background())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	ctx = appctx.NewAppContext(ctx, appId, appName)
+	return ctx, nil
 }
