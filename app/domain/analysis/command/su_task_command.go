@@ -21,6 +21,7 @@ func (s *SuTaskCreateCommand) NewTask() *model.SuTask {
 		Rules:       s.Data.Rules,
 		TargetName:  s.Data.TargetName,
 		TargetId:    s.Data.TargetId,
+		TargetType:  s.Data.TargetType,
 		OwnerId:     s.Data.OwnerId,
 		OwnerName:   s.Data.OwnerName,
 		SuCount:     0,
@@ -46,6 +47,7 @@ func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
 		Rules:       s.Data.Rules,
 		TargetName:  s.Data.TargetName,
 		TargetId:    s.Data.TargetId,
+		TargetType:  s.Data.TargetType,
 		OwnerId:     s.Data.OwnerId,
 		OwnerName:   s.Data.OwnerName,
 		SuCount:     0,
@@ -60,7 +62,7 @@ func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
 type SuTaskCreateData struct {
 	xbase.BaseModel `bson:",inline"`
 	Code            string           `json:"code" gorm:"code" bson:"code" title:"编号" validate:"required" `
-	Name            string           `json:"taskName" gorm:"task_name" bson:"task_name" title:"任务名称"  `
+	Name            string           `json:"name" gorm:"name" bson:"name" title:"任务名称"  `
 	Rules           model.SuTaskRule `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
 	StartTime       *time.Time       `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"  `
 	EndTime         *time.Time       `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`

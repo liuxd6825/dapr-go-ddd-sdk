@@ -11,3 +11,9 @@ type SuTaskAccountCreateCommand struct {
 type SuTaskAccountUpdateCommand struct {
 	xbase.Command[model.SuTaskAccount]
 }
+type SuTaskAccountBatchCreateCommand struct {
+	xbase.Command[[]*model.SuTaskAccount]
+}
+type SuTaskAccountBatchDeleteCommand struct {
+	xbase.Command[[]string]
+}
