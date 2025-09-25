@@ -7,7 +7,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
@@ -34,7 +33,7 @@ func (s *RecordAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQuery
 	return s.service.FindById(ctx, qry)
 }
 
-func (s *RecordAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (store.FindPagingResult[*model.Record], error) {
-	res := s.service.FindPaging(ctx, qry)
+func (s *RecordAPI) FindPaging(ctx context.Context, qry *query.RecordFindByCaseIdQuery) (store.FindPagingResult[*model.Record], error) {
+	res := s.service.FindPagingByCaseId(ctx, qry)
 	return res, res.GetError()
 }

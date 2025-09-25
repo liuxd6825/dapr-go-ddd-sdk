@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
@@ -78,9 +79,9 @@ func (r *RecordService) FindPaging(ctx context.Context, qry *ddd_query.FindPagin
 	return r.dao.FindPaging(ctx, qry, opts...)
 }
 
-func (r *RecordService) FindPagingByCaseId(ctx context.Context, qry *query.RecordFindByCaseIdQuery, opts ...idao.CallOptions) (*idao.FindPagingResult[*model.Record], error) {
-	//TODO implement me
-	panic("implement me")
+func (r *RecordService) FindPagingByCaseId(ctx context.Context, qry *query.RecordFindByCaseIdQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.Record] {
+	qry.SetMustFilter(fmt.Sprintf("case_id=='%s'", qry.CaseId))
+	return r.dao.FindPaging(ctx, qry, opts...)
 }
 
 func (r *RecordService) FindByDocId(ctx context.Context, qry *query.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*model.Record, error) {
