@@ -72,13 +72,13 @@ func NewAnalyse(task *model2.SuTask, accounts []*model2.SuTaskAccount, repo acti
 // 4. ORCHESTRATOR (Grouping Producer Model)
 // =============================================================================
 
-func (s *Analyse) DoAction(ctx context.Context) ([]*action.AnalyseResult, time.Duration, error) {
+func (s *Analyse) DoAction(ctx context.Context) (allResults []*action.AnalyseResult, useTime time.Duration, recordCount int64, err error) {
 	startTime := time.Now()
 
 	// --- 1. Pre-load dimension data ---
 
 	// --- 2. [CORE CHANGE] Group all transactions by Account first ---
-	txsByAccount, err := s.getAccountTrans(ctx)
+	txsByAccount, recordCount, err := s.getAccountTrans(ctx)
 	if err != nil {
 		logs.Errorfmt(ctx, "Failed to load transactions: %v", err)
 	}
@@ -86,7 +86,7 @@ func (s *Analyse) DoAction(ctx context.Context) ([]*action.AnalyseResult, time.D
 	fmt.Println("\n[Orchestrator] Starting data grouping phase...")
 
 	// --- CHANGE 1: 声明一个切片用于收集所有结果 ---
-	var allResults []*action.AnalyseResult
+	//var allResults []*action.AnalyseResult
 
 	// --- 3. Setup concurrent pipeline ---
 	numWorkers := runtime.NumCPU()
@@ -141,7 +141,7 @@ func (s *Analyse) DoAction(ctx context.Context) ([]*action.AnalyseResult, time.D
 	aggregatorWg.Wait()
 	fmt.Println("[Aggregator] All results have been processed.")
 
-	return allResults, time.Since(startTime), nil
+	return allResults, time.Since(startTime), recordCount, nil
 }
 
 func (s *Analyse) GetResults() []*action.AnalyseResult {
@@ -170,26 +170,27 @@ func (s *Analyse) applyRulesToAccount(ctx context.Context, accTxs *model2.Accoun
 	return result
 }
 
-func (s *Analyse) getAccountTrans(ctx context.Context) ([]*model2.AccountRecords, error) {
-	res := []*model2.AccountRecords{}
+func (s *Analyse) getAccountTrans(ctx context.Context) (res []*model2.AccountRecords, recordCount int64, err error) {
+	res = []*model2.AccountRecords{}
 	startTime := s.task.StartTime
 	endTime := s.task.EndTime
 	if startTime == nil {
-		return res, errors.New("Start time is empty")
+		return res, 0, errors.New("Start time is empty")
 	}
 	if endTime == nil {
-		return res, errors.New("End time is empty")
+		return res, 0, errors.New("End time is empty")
 	}
 
 	for _, account := range s.accounts {
 		txs, err := s.recordDao.FindByAccountOppAccount(ctx, account.Account, *startTime, *endTime)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
+		recordCount += int64(len(txs))
 		res = append(res, &model2.AccountRecords{
 			Account: account.Account,
 			Records: txs,
 		})
 	}
-	return res, nil
+	return res, recordCount, nil
 }

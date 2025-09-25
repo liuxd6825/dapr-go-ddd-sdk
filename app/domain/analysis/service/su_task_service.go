@@ -111,11 +111,13 @@ func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 	}
 
 	if task.Status != model.SuTaskStatus_New {
-		verifyError.AppendField("status", "当前任务状态不是“新建”")
+		verifyError.AppendField("status", fmt.Sprintf("当前任务状态不是“%s”", model.SuTaskStatus_New))
 	}
-	if task.WorkflowId != "" {
-		verifyError.AppendField("workflowId", "当前任务已经在执行中")
-	}
+	/*
+		if task.WorkflowId != "" {
+			verifyError.AppendField("workflowId", "当前任务已经在执行中")
+		}
+	*/
 
 	accountsCount, err := s.accountDao.CountByTaskId(ctx, task.Id)
 	if err != nil {
@@ -179,12 +181,11 @@ func (s *SuTaskService) analysisTask(ctx context.Context, taskId string, workflo
 		if err := s.UpdateWorkflowIdStatus(ctx, taskId, workflowId, model.SuTaskStatus_InProgress); err != nil {
 			return err
 		}
-		if err = s.analyse(ctx, task, taskAccounts); err != nil {
+		recordCount, err := s.analyse(ctx, task, taskAccounts)
+		if err != nil {
 			return err
 		}
-		if err = s.UpdateStatus(ctx, taskId, model.SuTaskStatus_Inspect); err != nil {
-			return err
-		}
+		err = s.updateInspect(ctx, task, recordCount)
 		return err
 	}).Catch(func(e error) {
 		index := int64(1)
@@ -198,6 +199,39 @@ func (s *SuTaskService) analysisTask(ctx context.Context, taskId string, workflo
 	return nil
 }
 
+// updateInspect
+// @Description: 更新统计后的任务信息
+// @receiver s
+// @param ctx
+// @param task
+// @param recordCount
+// @return err
+func (s *SuTaskService) updateInspect(ctx context.Context, task *model.SuTask, recordCount int64) (err error) {
+	suRecordCount, err := s.suRecordDao.CountByTaskId(ctx, task.Id)
+	if err != nil {
+		return err
+	}
+	suHighCount, err := s.suRecordDao.CountByTaskIdHighRisk(ctx, task.Id)
+	if err != nil {
+		return err
+	}
+	suRecordSum, err := s.suRecordDao.SumByTaskId(ctx, task.Id)
+	if err != nil {
+		return err
+	}
+	status := model.SuTaskStatus_Inspect
+	fields := dao.SuTaskFields{
+		RecordCount: &recordCount,
+		SuCount:     &suRecordCount,
+		TotalAmount: &suRecordSum,
+		SuHighCount: &suHighCount,
+		Status:      &status,
+	}
+
+	err = s.UpdateFields(ctx, task.Id, fields)
+	return err
+}
+
 func (s *SuTaskService) UpdateWorkflowIdStatus(ctx context.Context, taskId string, workflowId string, status model.SuTaskStatus) error {
 	return s.taskDao.UpdateWorkflowIdStatus(ctx, taskId, workflowId, status)
 }
@@ -206,33 +240,31 @@ func (s *SuTaskService) UpdateStatus(ctx context.Context, taskId string, status 
 	return s.taskDao.UpdateStatus(ctx, taskId, status)
 }
 
-func (s *SuTaskService) UpdateInfo(ctx context.Context, taskId string, info dao.SuTaskUpdateInfo) error {
-	return s.taskDao.UpdateInfo(ctx, taskId, info)
+func (s *SuTaskService) UpdateFields(ctx context.Context, taskId string, info dao.SuTaskFields) error {
+	return s.taskDao.UpdateFields(ctx, taskId, info)
 }
 
-func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAccounts []*model.SuTaskAccount) error {
+func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAccounts []*model.SuTaskAccount) (recordCount int64, err error) {
 	if task == nil {
-		return errors.New("task is null ")
+		return 0, errors.New("task is null ")
 	}
 	if len(taskAccounts) == 0 {
-		return errors.New("taskAccounts is length 0 ")
+		return 0, errors.New("taskAccounts is length 0 ")
 	}
 
 	analyse := suspicious.NewAnalyse(task, taskAccounts, newDataRepo(s))
-	results, useTime, err := analyse.DoAction(ctx)
+	results, useTime, recordCount, err := analyse.DoAction(ctx)
 
 	logs.Infofmt(ctx, "用时：%s", useTime.String())
 
 	if err != nil {
-		return err
+		return 0, err
 	}
-
 	for _, result := range results {
 		records := make([]*model.SuRecord, 0)
 		batches := make([]*model.SuBatch, 0)
 		batchItems := make([]*model.SuBatchItem, 0)
-
-		for _, record := range result.Records {
+		for _, record := range result.SuRecords {
 			records = append(records, record)
 			record.RecordId = record.Id
 			record.TaskId = task.Id
@@ -258,11 +290,12 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 				})
 			}
 		}
+
 		s.suBatchDao.CreateMany(ctx, batches)
 		s.suBatchItemDao.CreateMany(ctx, batchItems)
 		s.suRecordDao.CreateMany(ctx, records)
 	}
-	return nil
+	return recordCount, nil
 }
 
 func (s *SuTaskService) ClearAnalyseResults(ctx context.Context, taskId string) error {

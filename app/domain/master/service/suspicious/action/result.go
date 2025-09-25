@@ -7,9 +7,10 @@ import (
 )
 
 type AnalyseResult struct {
-	Account string
-	Records map[string]*model2.SuRecord
-	Batches []*AnalyseBatch
+	Account     string
+	SuRecords   map[string]*model2.SuRecord // 可疑数据
+	Batches     []*AnalyseBatch
+	RecordCount int64 // 流水记录总数量
 }
 
 type AnalyseBatch struct {
@@ -20,9 +21,9 @@ type AnalyseBatch struct {
 
 func NewAnalyseResult(taskId string, account string) *AnalyseResult {
 	return &AnalyseResult{
-		Account: account,
-		Records: make(map[string]*model2.SuRecord),
-		Batches: []*AnalyseBatch{},
+		Account:   account,
+		SuRecords: make(map[string]*model2.SuRecord),
+		Batches:   []*AnalyseBatch{},
 	}
 }
 
@@ -41,13 +42,13 @@ func (s *AnalyseResult) AddBatch(name string, suType model2.SuType, records ...*
 
 func (s *AnalyseResult) AddRecord(tx *model.Record, suType model2.SuType, reason string) *model2.SuRecord {
 	var item *model2.SuRecord
-	if val, ok := s.Records[tx.Id]; ok {
+	if val, ok := s.SuRecords[tx.Id]; ok {
 		item = val
 	} else {
 		item = &model2.SuRecord{
 			Record: *tx,
 		}
-		s.Records[tx.Id] = item
+		s.SuRecords[tx.Id] = item
 	}
 	switch suType {
 	case model2.SuType_AmountLarge:

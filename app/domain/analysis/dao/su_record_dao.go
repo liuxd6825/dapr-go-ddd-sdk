@@ -1,10 +1,13 @@
 package dao
 
 import (
+	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 )
 
 type SuRecordDao struct {
@@ -22,4 +25,29 @@ func NewSuRecordDao(dbKey string) *SuRecordDao {
 	baseDao := dao.NewDao[*model.SuRecord](newCfg)
 	daoVal := &SuRecordDao{Dao: baseDao}
 	return daoVal
+}
+
+func (dao *SuRecordDao) CountByTaskId(ctx context.Context, taskId string) (int64, error) {
+	sql := rsql.NewBuilder().Eq("task_id", taskId).Build()
+	suRecordCount, err := dao.CountByRSQL(ctx, sql)
+	return suRecordCount, err
+}
+
+func (dao *SuRecordDao) CountByTaskIdHighRisk(ctx context.Context, taskId string) (int64, error) {
+	sql := rsql.NewBuilder().And(rsql.Eq("task_id", taskId), rsql.Eq("risk", 5)).Build()
+	suRecordCount, err := dao.CountByRSQL(ctx, sql)
+	return suRecordCount, err
+}
+
+func (dao *SuRecordDao) SumByTaskId(ctx context.Context, taskId string) (float64, error) {
+	sql := rsql.NewBuilder().Eq("task_id", taskId).Build()
+	fields := []*store.ValueCol{
+		{AggFunc: "sum", Field: "amount"},
+	}
+	sumFields, err := dao.SumByRSQL(ctx, sql, fields)
+	if err != nil {
+		return 0, err
+	}
+	amount := sumFields["amount"].(float64)
+	return amount, err
 }

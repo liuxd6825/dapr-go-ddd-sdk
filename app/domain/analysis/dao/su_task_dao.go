@@ -12,12 +12,13 @@ type SuTaskDao struct {
 	idao.Dao[*model.SuTask]
 }
 
-type SuTaskUpdateInfo struct {
+type SuTaskFields struct {
 	RecordCount *int64              `json:"recordCount"  title:"流水总数"`
 	TotalAmount *float64            `json:"totalAmount"  title:"可疑总金额"`
 	SuCount     *int64              `json:"suCount"  title:"可疑交易数"`
 	SuHighCount *int64              `json:"suHighCount"  title:"高可疑交易数"`
 	Status      *model.SuTaskStatus `json:"status" title:"状态"`
+	WorkflowId  *string             `json:"workflowId" title:"工作流Id"`
 }
 
 func NewSuTaskDao(dbKey string) *SuTaskDao {
@@ -48,22 +49,25 @@ func (dao *SuTaskDao) UpdateWorkflowIdStatus(ctx context.Context, id string, wor
 	return dao.UpdateMap(ctx, id, data).GetError()
 }
 
-func (dao *SuTaskDao) UpdateInfo(ctx context.Context, id string, info SuTaskUpdateInfo) error {
+func (dao *SuTaskDao) UpdateFields(ctx context.Context, id string, fields SuTaskFields) error {
 	data := map[string]any{}
-	if info.RecordCount != nil {
-		data["record_count"] = *info.RecordCount
+	if fields.RecordCount != nil {
+		data["record_count"] = *fields.RecordCount
 	}
-	if info.TotalAmount != nil {
-		data["total_amount"] = *info.TotalAmount
+	if fields.TotalAmount != nil {
+		data["total_amount"] = *fields.TotalAmount
 	}
-	if info.SuCount != nil {
-		data["su_count"] = *info.SuCount
+	if fields.SuCount != nil {
+		data["su_count"] = *fields.SuCount
 	}
-	if info.SuHighCount != nil {
-		data["su_high_count"] = *info.SuHighCount
+	if fields.SuHighCount != nil {
+		data["su_high_count"] = *fields.SuHighCount
 	}
-	if info.Status != nil {
-		data["status"] = *info.Status
+	if fields.Status != nil {
+		data["status"] = *fields.Status
+	}
+	if fields.WorkflowId != nil {
+		data["workflow_id"] = *fields.WorkflowId
 	}
 	// SuTask 可疑分析任务
 	return dao.UpdateMap(ctx, id, data).GetError()
