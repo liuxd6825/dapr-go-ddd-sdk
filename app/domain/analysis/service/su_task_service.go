@@ -20,6 +20,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"go.temporal.io/sdk/client"
 )
@@ -31,6 +32,7 @@ type SuTaskService struct {
 	suRecordDao    *dao.SuRecordDao
 	suBatchDao     *dao.SuBatchDao
 	suBatchItemDao *dao.SuBatchItemDao
+	taskLogDao     *dao.SuTaskLogDao
 }
 
 func NewSuTaskService() *SuTaskService {
@@ -41,6 +43,7 @@ func NewSuTaskService() *SuTaskService {
 		accountDao:     dao.NewSuAccountDao(config.DBKey),
 		suBatchDao:     dao.NewSuBatchDao(config.DBKey),
 		suBatchItemDao: dao.NewSuBatchItemDao(config.DBKey),
+		taskLogDao:     dao.NewSuTaskLogDao(config.DBKey),
 	}
 }
 
@@ -101,21 +104,17 @@ func (s *SuTaskService) QueryPaging(ctx context.Context, qry *ddd_query.FindPagi
 }
 
 func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
+	verifyError := errors.NewVerifyError()
 	task, err := s.taskDao.FindById(ctx, taskId)
 	if err != nil {
 		return err
 	}
 
-	vErr := errors.NewVerifyError()
 	if task.Status != model.SuTaskStatus_New {
-		vErr.AppendField("status", "当前任务状态不是“新建”")
-
+		verifyError.AppendField("status", "当前任务状态不是“新建”")
 	}
 	if task.WorkflowId != "" {
-		vErr.AppendField("workflowId", "当前任务已经在执行中")
-	}
-	if vErr.HasError() {
-		return vErr
+		verifyError.AppendField("workflowId", "当前任务已经在执行中")
 	}
 
 	accountsCount, err := s.accountDao.CountByTaskId(ctx, task.Id)
@@ -123,9 +122,11 @@ func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 		return err
 	}
 	if accountsCount == 0 {
-		err := errors.NewVerifyError()
-		err.AppendField("account", "分析“账号”信息不能为空")
-		return err.GetError()
+		verifyError.AppendField("account", "分析“账号”信息不能为空")
+	}
+
+	if verifyError.HasError() {
+		return verifyError
 	}
 
 	if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_TaskQueuing); err != nil {
@@ -146,38 +147,54 @@ func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 	return err
 }
 
-func (s *SuTaskService) analysisTask(ctx context.Context, taskId string, workflowId string) error {
+// analysisTask
+// @Description: 执行数据分析，在Temporal工作流中执行。
+// @receiver s
+// @param ctx
+// @param taskId
+// @param workflowId
+// @return err
+func (s *SuTaskService) analysisTask(ctx context.Context, taskId string, workflowId string) (err error) {
+	verr := errors.NewVerifyError()
 	task, err := s.taskDao.FindById(ctx, taskId)
 	if err != nil {
 		return err
 	}
 	if task.Status != model.SuTaskStatus_TaskQueuing {
-		err := errors.NewVerifyError()
-		err.AppendField("status", "当前任务状态不是“新建”")
-		return err.GetError()
+		verr.AppendField("status", fmt.Sprintf("当前任务状态为“%s”，应为“新建”", task.Status))
 	}
 	taskAccounts, err := s.accountDao.FindByTaskId(ctx, task.Id)
 	if err != nil {
 		return err
 	}
 	if len(taskAccounts) == 0 {
-		err := errors.NewVerifyError()
-		err.AppendField("account", "分析“账号”信息不能为空")
-		return err.GetError()
+		verr.AppendField("account", "分析“账号”信息不能为空")
 	}
 
-	if err := s.UpdateWorkflowIdStatus(ctx, taskId, workflowId, model.SuTaskStatus_PendingInfo); err != nil {
-		return err
-	}
-	if err = s.analyse(ctx, task, taskAccounts); err != nil {
-		if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_New); err != nil {
+	// 当执行错误是，不可以返回error， 否则任务会重复执行。
+	gp.Try(func() error {
+		if verr.HasError() {
+			return verr.GetError()
+		}
+		if err := s.UpdateWorkflowIdStatus(ctx, taskId, workflowId, model.SuTaskStatus_InProgress); err != nil {
+			return err
+		}
+		if err = s.analyse(ctx, task, taskAccounts); err != nil {
+			return err
+		}
+		if err = s.UpdateStatus(ctx, taskId, model.SuTaskStatus_Inspect); err != nil {
 			return err
 		}
 		return err
-	}
-	if err = s.UpdateStatus(ctx, taskId, model.SuTaskStatus_InProgress); err != nil {
-		return err
-	}
+	}).Catch(func(e error) {
+		index := int64(1)
+		msg := fmt.Sprintf("分析可疑任务是出错, error:%s", e.Error())
+		s.taskLogDao.Create(ctx, model.NewTaskLog(taskId, index, msg))
+		if e1 := s.UpdateWorkflowIdStatus(ctx, taskId, "", model.SuTaskStatus_New); e1 != nil {
+			msg = fmt.Sprintf("分析可疑任务是出错后, 恢复状态时出错:%s", e.Error())
+			s.taskLogDao.Create(ctx, model.NewTaskLog(taskId, index+1, msg))
+		}
+	})
 	return nil
 }
 

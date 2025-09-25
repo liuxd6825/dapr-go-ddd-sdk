@@ -5,6 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
+	"time"
 )
 
 const account = "6235822099004087593"
@@ -24,8 +25,8 @@ func Test_ClearAnalyseResults(t *testing.T) {
 }
 
 func Test_analyse(t *testing.T) {
-	startTime := timeutils.NewDate(2018, 1, 1)
-	endTime := timeutils.NewDate(2024, 1, 1)
+	startTime := timeutils.NewDate(2018, 1, 1).Add(9 * time.Hour)
+	endTime := timeutils.NewDate(2024, 1, 1).Add(9 * time.Hour)
 
 	ctx := xtest.NewContext()
 	service := NewSuTaskService()

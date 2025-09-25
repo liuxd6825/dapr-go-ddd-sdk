@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const formatDate = "2006-01-02T15:04:05"
+
 // Condition 接口定义查询条件
 type Condition interface {
 	Build() string
@@ -89,7 +91,8 @@ func (b *Builder) formatValue(value interface{}) string {
 	return formatValue(value)
 }
 
-const LocalDateFormat = "2006-01-02"
+const DateFormat = "2006-01-02"
+const TimeFormat = "2006-01-02T15:04:05"
 
 // formatValue 处理不同数据类型的值格式化
 func formatValue(value interface{}) string {
@@ -109,9 +112,9 @@ func formatValue(value interface{}) string {
 		return fmt.Sprintf("%v", v)
 	case time.Time:
 		if v.Hour() == 0 && v.Minute() == 0 && v.Second() == 0 {
-			return fmt.Sprintf(`%s`, v.Format(LocalDateFormat))
+			return fmt.Sprintf(`%s`, v.Format(DateFormat))
 		}
-		return fmt.Sprintf(`%s`, v.Format(time.DateTime))
+		return fmt.Sprintf(`%s`, v.Format(TimeFormat))
 	default:
 		val := reflect.ValueOf(value)
 		if val.Kind() == reflect.Ptr {

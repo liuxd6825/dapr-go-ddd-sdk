@@ -38,12 +38,12 @@ const (
 type SuTaskStatus string
 
 const (
-	SuTaskStatus_New         SuTaskStatus = "新建"
-	SuTaskStatus_TaskQueuing SuTaskStatus = "排队中"
-	SuTaskStatus_InProgress  SuTaskStatus = "处理中"
-	SuTaskStatus_PendingInfo SuTaskStatus = "计算中"
-	SuTaskStatus_Completed   SuTaskStatus = "已完成"
-	SuTaskStatus_Closed      SuTaskStatus = "已关闭"
+	SuTaskStatus_New         SuTaskStatus = "任务新建"
+	SuTaskStatus_TaskQueuing SuTaskStatus = "任务排队"
+	SuTaskStatus_InProgress  SuTaskStatus = "系统计算" //系统
+	SuTaskStatus_Inspect     SuTaskStatus = "流水调查"
+	SuTaskStatus_Completed   SuTaskStatus = "任务完成"
+	SuTaskStatus_Closed      SuTaskStatus = "任务关闭"
 )
 
 // SuConclusionType 审计结论
