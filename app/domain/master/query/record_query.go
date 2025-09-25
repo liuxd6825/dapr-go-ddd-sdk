@@ -20,7 +20,7 @@ type RecordFindAllQuery struct {
 // RecordFindByCaseIdQuery 按聚合根ID查询命令
 type RecordFindByCaseIdQuery struct {
 	ddd_query.FindPagingQuery
-	CaseId string `json:"caseId"`
+	CaseId string `json:"caseId" query:"case-id"`
 }
 
 // RecordFindByDocIdQuery 按聚合根ID查询命令
