@@ -56,97 +56,81 @@ func (s *AnalyseResult) AddRecord(tx *model.Record, suType model2.SuType, reason
 			item.AmountLarge = true
 			item.Risk++
 		}
-
 	case model2.SuType_AmountNumber:
 		if !item.AmountNumber {
 			item.AmountNumber = true
 			item.Risk++
 		}
-
 	case model2.SuType_AmountCollar:
 		if !item.AmountCollar {
 			item.AmountCollar = true
 			item.Risk++
 		}
-
 	case model2.SuType_AmountNear:
 		if !item.AmountNear {
 			item.AmountNear = true
 			item.Risk++
 		}
-
 	case model2.SuType_TimeNonWorking:
 		if !item.TimeNonWorking {
 			item.TimeNonWorking = true
 			item.Risk++
 		}
-
 	case model2.SuType_TimeConcentratedPayment:
 		if !item.TimeConcentratedPayment {
 			item.TimeConcentratedPayment = true
 			item.Risk++
 		}
-
 	case model2.SuType_TimeFastInOut:
 		if !item.TimeFastInOut {
 			item.TimeFastInOut = true
 			item.Risk++
 		}
-
 	case model2.SuType_TimeSignificantDate:
 		if !item.TimeSignificantDate {
 			item.TimeSignificantDate = true
 			item.Risk++
 		}
-
 	case model2.SuType_FreqAbnormal:
 		if !item.FreqAbnormal {
 			item.FreqAbnormal = true
 			item.Risk++
 		}
-
 	case model2.SuType_FreqHigh:
 		if !item.FreqHigh {
 			item.FreqHigh = true
 			item.Risk++
 		}
-
 	case model2.SuType_FreqSleep:
 		if !item.FreqSleep {
 			item.FreqSleep = true
 			item.Risk++
 		}
-
 	case model2.SuType_PartyBusiness:
 		if !item.PartyBusiness {
 			item.PartyBusiness = true
 			item.Risk++
 		}
-
 	case model2.SuType_PartyAggregate:
 		if !item.PartyAggregate {
 			item.PartyAggregate = true
 			item.Risk++
 		}
-
 	case model2.SuType_PartyPrivate:
 		if !item.PartyPrivate {
 			item.PartyPrivate = true
 			item.Risk++
 		}
-
 	case model2.SuType_PartyHighRisk:
 		if !item.PartyHighRisk {
 			item.PartyHighRisk = true
 			item.Risk++
 		}
-
 	case model2.SuType_PartyRelated:
 		if !item.PartyRelated {
 			item.PartyRelated = true
 			item.Risk++
 		}
-
 	}
 	item.Reasons = append(item.Reasons, model2.SuRecordReason{
 		Reason: reason,

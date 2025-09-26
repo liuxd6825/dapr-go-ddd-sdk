@@ -15,6 +15,7 @@ type SuTask struct {
 	StartTime       *time.Time   `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"`
 	EndTime         *time.Time   `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
 	Status          SuTaskStatus `json:"status" gorm:"status"  bson:"status" title:"状态"`
+	StatusName      string       `json:"statusName" gorm:"status_name"  bson:"status_name" title:"状态名称"`
 	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID"`
 	OwnerName       string       `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"负责人名称"`
 	TargetId        string       `json:"targetId" gorm:"target_id" bson:"target_id" title:"目标ID"`

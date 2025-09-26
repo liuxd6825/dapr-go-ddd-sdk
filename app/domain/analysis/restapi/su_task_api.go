@@ -101,7 +101,7 @@ func (s *SuTaskApi) GetBillView(ctx context.Context, ictx iris.Context, qry *que
 
 	isEditRule := false
 	switch task.Status {
-	case model2.SuTaskStatus_New, "":
+	case model2.SuTaskStatus_New:
 		isEditRule = true
 	default:
 		isEditRule = false

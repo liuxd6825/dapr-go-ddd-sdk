@@ -35,16 +35,35 @@ const (
 )
 
 // SuTaskStatus 调查任务状态
-type SuTaskStatus string
+type SuTaskStatus int
 
 const (
-	SuTaskStatus_New         SuTaskStatus = "任务新建"
-	SuTaskStatus_TaskQueuing SuTaskStatus = "任务排队"
-	SuTaskStatus_InProgress  SuTaskStatus = "系统计算" //系统
-	SuTaskStatus_Inspect     SuTaskStatus = "流水调查"
-	SuTaskStatus_Completed   SuTaskStatus = "任务完成"
-	SuTaskStatus_Closed      SuTaskStatus = "任务关闭"
+	SuTaskStatus_New         SuTaskStatus = iota // 任务新建
+	SuTaskStatus_TaskQueuing                     // 任务排队
+	SuTaskStatus_InProgress                      // 系统计算
+	SuTaskStatus_Inspect                         // 流水调查
+	SuTaskStatus_Completed                       // 任务完成
+	SuTaskStatus_Closed                          // 任务关闭
 )
+
+func (s SuTaskStatus) String() string {
+	switch s {
+	case SuTaskStatus_New:
+		return "任务新建"
+	case SuTaskStatus_TaskQueuing:
+		return "任务排队"
+	case SuTaskStatus_InProgress:
+		return "系统计算"
+	case SuTaskStatus_Inspect:
+		return "流水调查"
+	case SuTaskStatus_Completed:
+		return "任务完成"
+	case SuTaskStatus_Closed:
+		return "任务关闭"
+	default:
+		return "未知状态"
+	}
+}
 
 // SuConclusionType 审计结论
 type SuConclusionType string

@@ -6,10 +6,10 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
@@ -56,18 +56,26 @@ func NewSuTaskService() *SuTaskService {
 //	@param opts
 //	@return error
 func (s *SuTaskService) Create(ctx context.Context, v *model.SuTask, opts ...idao.CallOptions) error {
+	v.StatusName = v.Status.String()
 	return s.taskDao.Create(ctx, v, opts...).GetError()
 }
 
 func (s *SuTaskService) CreateMany(ctx context.Context, v []*model.SuTask, opts ...idao.CallOptions) error {
+	for _, task := range v {
+		task.StatusName = task.Status.String()
+	}
 	return s.taskDao.CreateMany(ctx, v, opts...).GetError()
 }
 
 func (s *SuTaskService) Update(ctx context.Context, v *model.SuTask, opts ...idao.CallOptions) error {
+	v.StatusName = v.Status.String()
 	return s.taskDao.Update(ctx, v, opts...).GetError()
 }
 
 func (s *SuTaskService) UpdateMany(ctx context.Context, v []*model.SuTask, opts ...idao.CallOptions) error {
+	for _, task := range v {
+		task.StatusName = task.Status.String()
+	}
 	return s.taskDao.UpdateMany(ctx, v, opts...).GetError()
 }
 
@@ -290,7 +298,6 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 				})
 			}
 		}
-
 		s.suBatchDao.CreateMany(ctx, batches)
 		s.suBatchItemDao.CreateMany(ctx, batchItems)
 		s.suRecordDao.CreateMany(ctx, records)

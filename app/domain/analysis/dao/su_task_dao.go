@@ -42,11 +42,8 @@ func (dao *SuTaskDao) UpdateStatus(ctx context.Context, id string, status model.
 }
 
 func (dao *SuTaskDao) UpdateWorkflowIdStatus(ctx context.Context, id string, workflowId string, status model.SuTaskStatus) error {
-	data := map[string]any{
-		"workflow_id": workflowId,
-		"status":      status,
-	}
-	return dao.UpdateMap(ctx, id, data).GetError()
+	values := NewSuTaskFields().SetWorkflowId(workflowId).SetStatus(status)
+	return dao.UpdateFields(ctx, id, *values)
 }
 
 func (dao *SuTaskDao) UpdateFields(ctx context.Context, id string, fields SuTaskFields) error {
@@ -65,10 +62,45 @@ func (dao *SuTaskDao) UpdateFields(ctx context.Context, id string, fields SuTask
 	}
 	if fields.Status != nil {
 		data["status"] = *fields.Status
+		data["status_name"] = fields.Status.String()
 	}
 	if fields.WorkflowId != nil {
 		data["workflow_id"] = *fields.WorkflowId
 	}
 	// SuTask 可疑分析任务
 	return dao.UpdateMap(ctx, id, data).GetError()
+}
+
+func NewSuTaskFields() *SuTaskFields {
+	return &SuTaskFields{}
+}
+
+func (f *SuTaskFields) SetRecordCount(recordCount int64) *SuTaskFields {
+	f.RecordCount = &recordCount
+	return f
+}
+
+func (f *SuTaskFields) SetTotalAmount(totalAmount float64) *SuTaskFields {
+	f.TotalAmount = &totalAmount
+	return f
+}
+
+func (f *SuTaskFields) SetSuCount(suCount int64) *SuTaskFields {
+	f.SuCount = &suCount
+	return f
+}
+
+func (f *SuTaskFields) SetSuHighCount(suHighCount int64) *SuTaskFields {
+	f.SuHighCount = &suHighCount
+	return f
+}
+
+func (f *SuTaskFields) SetStatus(status model.SuTaskStatus) *SuTaskFields {
+	f.Status = &status
+	return f
+}
+
+func (f *SuTaskFields) SetWorkflowId(workflowId string) *SuTaskFields {
+	f.WorkflowId = &workflowId
+	return f
 }
