@@ -23,6 +23,10 @@ type SuRecord struct {
 	PartyBusiness           bool             `json:"partyBusiness" gorm:"party_business" bson:"party_business"  title:"业务不匹配"`
 	PartyAggregate          bool             `json:"partyAggregate" gorm:"party_aggregate" bson:"party_aggregate"  title:"资金集中"`
 	Risk                    int              `json:"risk" gorm:"risk" bson:"risk"  title:"风险数" `
+	AmountTag               bool             `json:"amountTag" gorm:"amount_tag" bson:"amount_tag"  title:"金额标签" `
+	TimeTag                 bool             `json:"timeTag" gorm:"time_tag" bson:"time_tag"  title:"时间标签"`
+	FreqTag                 bool             `json:"freqTag" gorm:"freq_tag" bson:"freq_tag"  title:"频率标签"`
+	PartyTag                bool             `json:"partyTag" gorm:"party_tag" bson:"party_tag"  title:"对手方标签"`
 	Reasons                 []SuRecordReason `json:"reasons" gorm:"reasons;type:json" bson:"reasons" title:"原因"`
 }
 
