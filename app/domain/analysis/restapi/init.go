@@ -9,4 +9,5 @@ import (
 func Register(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewSuTaskApi(env, baseUrl))
 	restapi.RegisterController(app, NewSuTaskAccountApi(env, baseUrl))
+	restapi.RegisterController(app, NewSuTaskRecordApi(env, baseUrl))
 }
