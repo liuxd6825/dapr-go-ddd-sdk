@@ -92,7 +92,7 @@ func (s *SuTaskService) FindById(ctx context.Context, id string, opts ...idao.Ca
 }
 
 func (s *SuTaskService) FindByCaseId(ctx context.Context, caseId string, opts ...idao.CallOptions) ([]*model.SuTask, error) {
-	return s.taskDao.FindByRSQL(ctx, fmt.Sprintf("case_id=='%s'", caseId), opts...)
+	return s.taskDao.FindByRSQL(ctx, fmt.Sprintf("case_id=='%s' and status>=3", caseId), opts...)
 }
 
 func (s *SuTaskService) QueryBillById(ctx context.Context, qry *query.SuTaskFindByIdQuery, opts ...idao.CallOptions) (*model.SuTaskBillView, error) {
