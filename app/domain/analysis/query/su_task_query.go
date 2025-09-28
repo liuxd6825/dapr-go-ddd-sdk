@@ -4,3 +4,7 @@ package query
 type SuTaskFindByIdQuery struct {
 	Id string `json:"id" param:"id"`
 }
+
+type SuTaskFindByCaseIdQuery struct {
+	CaseId string `json:"caseId" query:"case-id"`
+}

@@ -39,6 +39,7 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 	controller.Put("/analysis/su-task:analysis", "Analysis")
 	controller.View("/analysis/su-task/bill.html", "GetBillView")
 	controller.GetOne("/analysis/su-task:bill/{id}", "FindBill")
+	controller.GetData("/analysis/su-task:by-case", "FindByCaseId")
 	return controller
 }
 
@@ -78,6 +79,11 @@ func (s *SuTaskApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryReq
 func (s *SuTaskApi) FindById(ctx context.Context, qry *query.SuTaskFindByIdQuery) (*model2.SuTask, error) {
 	task, err := s.taskService.QueryById(ctx, qry)
 	return task, err
+}
+
+func (s *SuTaskApi) FindByCaseId(ctx context.Context, qry *query.SuTaskFindByCaseIdQuery) ([]*model2.SuTask, error) {
+	tasks, err := s.taskService.FindByCaseId(ctx, qry.CaseId)
+	return tasks, err
 }
 
 func (s *SuTaskApi) FindBill(ctx context.Context, qry *query.SuTaskFindByIdQuery) (*model2.SuTaskBillView, error) {
