@@ -92,6 +92,8 @@ func (s *SuTaskApi) GetBillView(ctx context.Context, ictx iris.Context, qry *que
 		task, err = s.FindById(ctx, qry)
 		if err != nil {
 			return err
+		} else if task == nil {
+			return iris.ErrNotFound
 		}
 	} else {
 		task = model2.NewSuTask()
