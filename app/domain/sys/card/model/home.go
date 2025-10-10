@@ -11,6 +11,7 @@ type Home struct {
 	Code            string        `json:"code" gorm:"code"  bson:"code"`
 	HomeType        enum.HomeType `json:"homeType" gorm:"home_type"  bson:"home_type"`
 	IsDefault       bool          `json:"isDefault" gorm:"is_default" bson:"is_default"`
+	UserId          string        `json:"userId"  gorm:"user_id" bson:"user_id"`
 }
 
 func NewHome() (*Home, error) {
