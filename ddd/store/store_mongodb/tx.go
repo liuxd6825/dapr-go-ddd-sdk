@@ -3,8 +3,11 @@ package store_mongodb
 import (
 	ctx "context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongo_options "go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	writeconcern "go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"golang.org/x/net/context"
 )
 
@@ -15,46 +18,50 @@ func NewContext(parentCtx ctx.Context, sessionCtx mongo.SessionContext, dbKey st
 }
 
 func getSessionContext(ctx ctx.Context, dbKey string) mongo.SessionContext {
-	db, ok := ctx.Value(txMongoContextKey(dbKey)).(mongo.SessionContext)
-	if !ok {
-		return nil
+	if sCtx, ok := ctx.(mongo.SessionContext); ok {
+		return sCtx
 	}
-	return db
+	if sCtx, ok := ctx.Value(txMongoContextKey(dbKey)).(mongo.SessionContext); ok {
+		return sCtx
+	}
+	return nil
 }
 
 func StartTx(ctx context.Context, mongodb IMongoDB, dbKey string, txFun store.TxFunc, opts ...*store.SessionOptions) error {
-	sOpts := &mongo_options.SessionOptions{}
+	//serverCount := mongodb.GetServerCount()
 	client := mongodb.GetClient()
-	serverCount := mongodb.GetServerCount()
-
-	sessionCtx := getSessionContext(ctx, dbKey)
-	if sessionCtx != nil {
-		return txFun(sessionCtx, opts...)
+	// 是否已经在事务中
+	if sCtx := getSessionContext(ctx, dbKey); sCtx != nil {
+		return txFun(sCtx, opts...)
 	}
-	// 事务处理
-	err := client.UseSessionWithOptions(ctx, sOpts, func(txCtx mongo.SessionContext) error {
-		var tranErr error
-		newCtx := NewContext(ctx, txCtx, dbKey)
-		if serverCount == 1 {
-			return txFun(sessionCtx, opts...)
-		}
 
-		err := txCtx.StartTransaction()
-		// 开启事务
-		if err != nil {
-			return err
-		}
+	// 定义事务选项
+	wc := writeconcern.New(writeconcern.WMajority())
+	rc := readconcern.Snapshot() // Snapshot 或更高隔离级别
+	//sOpts := mongo_options.Session().SetDefaultReadConcern(rc).SetDefaultWriteConcern(wc)
+	tOpts := mongo_options.Transaction().SetWriteConcern(wc).SetReadConcern(rc)
 
-		// 执行业务
-		if err = txFun(newCtx, opts...); err != nil {
-			tranErr = txCtx.AbortTransaction(ctx)
-		} else {
-			tranErr = txCtx.CommitTransaction(ctx)
-		}
-		if err != nil {
-			return err
-		}
-		return tranErr
+	session, _ := client.StartSession()
+	defer session.EndSession(ctx)
+
+	if err := session.StartTransaction(tOpts); err != nil {
+		return err
+	}
+
+	err := mongo.WithSession(ctx, session, func(txCtx mongo.SessionContext) (err error) {
+		defer func() {
+			err = errors.GetRecoverError(err, recover())
+			if err != nil {
+				_ = txCtx.AbortTransaction(ctx)
+			} else {
+				_ = txCtx.CommitTransaction(ctx)
+			}
+		}()
+
+		err = txFun(txCtx, opts...)
+		return err
 	})
+
 	return err
+
 }

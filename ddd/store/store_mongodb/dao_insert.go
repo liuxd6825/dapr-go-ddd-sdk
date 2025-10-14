@@ -48,9 +48,9 @@ func (r *Dao[T]) Insert(ctx context.Context, entity T, opts ...store.Options) *s
 		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
-		doc := r.getInsertData(ctx, tenantId, entity)
-		ctx := r.getSessionCtx(ctx)
-		mRes, err := r.getCollection(ctx).InsertOne(ctx, doc, getInsertOneOptions(opts...))
+		sCtx := r.getSessionCtx(ctx)
+		doc := r.getInsertData(sCtx, tenantId, entity)
+		mRes, err := r.getCollection(sCtx).InsertOne(sCtx, doc, getInsertOneOptions(opts...))
 		if err != nil {
 			return err
 		}
@@ -78,9 +78,10 @@ func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
-		doc := r.getInsertData(ctx, tenantId, data)
-		ctx := r.getSessionCtx(ctx)
-		inRes, err := r.getCollection(ctx).InsertOne(ctx, doc, getInsertOneOptions(opts...))
+		sCtx := r.getSessionCtx(ctx)
+		doc := r.getInsertData(sCtx, tenantId, data)
+
+		inRes, err := r.getCollection(sCtx).InsertOne(sCtx, doc, getInsertOneOptions(opts...))
 		if inRes != nil && inRes.InsertedID != nil {
 			res.SetRowsAffected(1)
 		}
@@ -94,18 +95,18 @@ func (r *Dao[T]) InsertMap(ctx context.Context, tenantId string, data map[string
 func (r *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, opts ...store.Options) *store.SetResult[T] {
 	res := store.NewSetResultEmpty[T]()
 	gp.Try(func() error {
-		ctx := r.getSessionCtx(ctx)
+		sCtx := r.getSessionCtx(ctx)
 		if entities == nil || len(entities) == 0 {
 			return errors.New("entities is nil")
 		}
 		var docs []any
 		for _, e := range entities {
 			r.eb.SetTenantId(e, tenantId)
-			doc := r.getInsertData(ctx, tenantId, e)
+			doc := r.getInsertData(sCtx, tenantId, e)
 			docs = append(docs, doc)
 		}
 
-		mRes, err := r.getCollection(ctx).InsertMany(ctx, docs, getInsertManyOptions(opts...))
+		mRes, err := r.getCollection(sCtx).InsertMany(sCtx, docs, getInsertManyOptions(opts...))
 		if err == nil && mRes != nil {
 			count := int64(len(mRes.InsertedIDs))
 			res.SetRowsAffected(count)
