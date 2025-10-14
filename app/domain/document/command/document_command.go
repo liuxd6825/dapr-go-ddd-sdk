@@ -1,28 +1,26 @@
 package command
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+)
 
 type DocumentCreateCommand struct {
-	CommandId string         `json:"commandId"`
-	Data      model.Document `json:"data"`
+	xbase.Command[model.Document]
 }
 
 type DocumentUpdateCommand struct {
-	CommandId string         `json:"commandId"`
-	Data      model.Document `json:"data"`
+	xbase.Command[model.Document]
 }
 
 type DocumentDeleteCommand struct {
-	CommandId string               `json:"commandId"`
-	Data      model.DeleteDocument `json:"data"`
+	xbase.Command[model.DeleteDocument]
 }
 
 type DocumentRenameCommand struct {
-	CommandId string               `json:"commandId"`
-	Data      model.RenameDocument `json:"data"`
+	xbase.Command[model.RenameDocument]
 }
 
 type DocumentMoveCommand struct {
-	CommandId string             `json:"commandId"`
-	Data      model.MoveDocument `json:"data"`
+	xbase.Command[model.MoveDocument]
 }

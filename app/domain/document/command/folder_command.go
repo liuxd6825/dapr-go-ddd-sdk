@@ -1,28 +1,26 @@
 package command
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+)
 
 type FolderCreateCommand struct {
-	CommandId string       `json:"commandId"`
-	Data      model.Folder `json:"data"`
+	xbase.Command[model.Folder]
 }
 
 type FolderUpdateCommand struct {
-	CommandId string       `json:"commandId"`
-	Data      model.Folder `json:"data"`
+	xbase.Command[model.Folder]
 }
 
 type FolderDeleteCommand struct {
-	CommandId string       `json:"commandId"`
-	Data      model.Folder `json:"data"`
+	xbase.Command[model.Folder]
 }
 
 type FolderRenameCommand struct {
-	CommandId string             `json:"commandId"`
-	Data      model.RenameFolder `json:"data"`
+	xbase.Command[model.RenameFolder]
 }
 
 type FolderMoveCommand struct {
-	CommandId string           `json:"commandId"`
-	Data      model.MoveFolder `json:"data"`
+	xbase.Command[model.MoveFolder]
 }

@@ -2,25 +2,33 @@ package service
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
 const DBKey string = "$db"
 
 type FolderService struct {
-	*dao.FolderDao
+	dao *dao.FolderDao
 }
 
 func NewFolderService() *FolderService {
 	return &FolderService{
-		FolderDao: dao.NewFolderDao(DBKey),
+		dao: dao.NewFolderDao(DBKey),
 	}
 }
 
 func (s *FolderService) HasChildren(ctx context.Context, parentId string) (bool, error) {
-	count, err := s.CountByRSQL(ctx, "parent_id=='"+parentId+"'")
+	count, err := s.dao.CountByRSQL(ctx, "parent_id=='"+parentId+"'")
 	return count > 0, err
+}
+
+func (s *FolderService) GetConfig() *idao.DaoConfig {
+	return s.dao.GetConfig()
 }
 
 func (s *FolderService) TranslateTreeData(data []*model.Folder) []model.FolderTree {
@@ -72,4 +80,41 @@ func (s *FolderService) FolderToFolderTree(folder *model.Folder) model.FolderTre
 	ft.IsDeleted = folder.IsDeleted
 	ft.Children = make([]model.FolderTree, 0)
 	return ft
+}
+
+func (t *FolderService) Create(ctx context.Context, cmd *command.FolderCreateCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+		return t.dao.Create(ctx, &cmd.Data).GetError()
+	})
+}
+
+func (t *FolderService) Delete(ctx context.Context, cmd *command.FolderDeleteCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+		return t.dao.DeleteById(ctx, cmd.Data.Id).GetError()
+	})
+}
+
+func (t *FolderService) DeleteById(ctx context.Context, id string) *idao.Result {
+	return t.dao.DeleteById(ctx, id)
+}
+
+func (t *FolderService) Update(ctx context.Context, data *model.Folder, opts ...idao.CallOptions) error {
+	return t.dao.Update(ctx, data, opts...).GetError()
+}
+
+func (t *FolderService) UpdateMany(ctx context.Context, entities []*model.Folder, opts ...idao.CallOptions) error {
+	return t.dao.UpdateMany(ctx, entities, opts...).GetError()
+}
+
+func (t *FolderService) FindById(ctx context.Context, id string) (*model.Folder, error) {
+	return t.dao.FindById(ctx, id)
+}
+
+func (t *FolderService) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.Folder], error) {
+	res := t.dao.FindPaging(ctx, qry)
+	return res, res.GetError()
+}
+
+func (t *FolderService) FindByRSQL(ctx context.Context, rsql string) ([]*model.Folder, error) {
+	return t.dao.FindByRSQL(ctx, rsql)
 }
