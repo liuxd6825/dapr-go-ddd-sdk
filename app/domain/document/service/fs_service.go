@@ -23,6 +23,8 @@ const DocumentFsName = "documentIoStore"
 var _fsService *FsService
 var _fsServiceOnce sync.Once
 
+const FilePerm = os.ModePerm
+
 func NewFsService() *FsService {
 	_fsServiceOnce.Do(func() {
 		_fsService = newFsService()
@@ -58,7 +60,7 @@ func (s *FsService) Rename(oldName, newName string) error {
 }
 
 func (s *FsService) MkdirAll(path string) {
-	s.docFs.MkdirAll(path, 0666)
+	s.docFs.MkdirAll(path, FilePerm)
 }
 
 func (s *FsService) RemoveFile(filename string) {
@@ -69,7 +71,7 @@ func (s *FsService) RemoveAll(name string) {
 }
 
 func (s *FsService) WriteAt(fileName string, data []byte, chunkIndex string, chunkSize string) error {
-	writeFile, err := s.docFs.Open(fileName, os.O_WRONLY, 0666)
+	writeFile, err := s.docFs.Open(fileName, os.O_WRONLY, FilePerm)
 	if err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func (s *FsService) MoveDir(source string, target string) error {
 
 func (s *FsService) ReadFile(folderPath string, objectName string) ([]byte, error) {
 	fileName := fmt.Sprintf("%s/%s", folderPath, objectName)
-	readFile, err := s.docFs.Open(fileName, os.O_RDONLY, 0666)
+	readFile, err := s.docFs.Open(fileName, os.O_RDONLY, FilePerm)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +123,7 @@ func (s *FsService) ReadFile(folderPath string, objectName string) ([]byte, erro
 
 // Download 下载文件取Web  objectName:带路径的文件完整名称  saveFileName:保存到本地时的文件名称
 func (s *FsService) Download(ictx iris.Context, fullFileName string, saveFileName string) error {
-	readFile, err := s.docFs.Open(fullFileName, os.O_RDONLY, 0666)
+	readFile, err := s.docFs.Open(fullFileName, os.O_RDONLY, FilePerm)
 
 	if err != nil {
 		return err
