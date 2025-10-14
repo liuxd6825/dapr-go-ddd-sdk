@@ -2,20 +2,24 @@ package service
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
 type FileService struct {
-	*dao.FileDao
+	dao           *dao.FileDao
 	folderService *FolderService
 	fsService     *FsService
 }
 
 func NewFileService() *FileService {
 	return &FileService{
-		FileDao:       dao.NewFileDao(DBKey),
+		dao:           dao.NewFileDao(DBKey),
 		folderService: NewFolderService(),
 		fsService:     NewFsService(),
 	}
@@ -76,7 +80,7 @@ func (s *FileService) ReadByteByFile(ctx context.Context, file *model.File) ([]b
 //   - error: 如果在查找文件或读取过程中发生错误，则返回相应的错误信息。
 func (s *FileService) ReadByteByFileId(ctx context.Context, fileId string) ([]byte, error) {
 	// 通过文件ID调用DAO层获取文件对象
-	file, err := s.Dao.FindById(ctx, fileId)
+	file, err := s.dao.FindById(ctx, fileId)
 	if err != nil {
 		return nil, err
 	}
@@ -87,4 +91,47 @@ func (s *FileService) ReadByteByFileId(ctx context.Context, fileId string) ([]by
 
 	// 调用ReadByteByFile方法实际读取文件内容
 	return s.ReadByteByFile(ctx, file)
+}
+
+func (s *FileService) GetConfig() *idao.DaoConfig {
+	return s.dao.GetConfig()
+}
+
+func (t *FileService) Create(ctx context.Context, data *model.File) error {
+	return t.dao.Create(ctx, data).GetError()
+}
+
+func (t *FileService) Delete(ctx context.Context, cmd *command.FileDeleteCommand) error {
+	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+		return t.dao.DeleteById(ctx, cmd.Data.Id).GetError()
+	})
+}
+
+func (t *FileService) DeleteById(ctx context.Context, id string) *idao.Result {
+	return t.dao.DeleteById(ctx, id)
+}
+
+func (t *FileService) DeleteByRSQL(ctx context.Context, rsql string) *idao.Result {
+	return t.dao.DeleteByRSQL(ctx, rsql)
+}
+
+func (t *FileService) Update(ctx context.Context, data *model.File, opts ...idao.CallOptions) error {
+	return t.dao.Update(ctx, data, opts...).GetError()
+}
+
+func (t *FileService) UpdateMany(ctx context.Context, entities []*model.File, opts ...idao.CallOptions) error {
+	return t.dao.UpdateMany(ctx, entities, opts...).GetError()
+}
+
+func (t *FileService) FindById(ctx context.Context, id string) (*model.File, error) {
+	return t.dao.FindById(ctx, id)
+}
+
+func (t *FileService) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.File], error) {
+	res := t.dao.FindPaging(ctx, qry)
+	return res, res.GetError()
+}
+
+func (t *FileService) FindByRSQL(ctx context.Context, rsql string) ([]*model.File, error) {
+	return t.dao.FindByRSQL(ctx, rsql)
 }
