@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
@@ -12,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
+	"strings"
 )
 
 type RecordAPI struct {
@@ -61,7 +63,31 @@ func (s *RecordAPI) UpdateField(ctx context.Context, cmd *command.RecordUpdateFi
 }
 
 func (s *RecordAPI) UpdateByFilter(ctx context.Context, cmd *command.RecordUpdateFilterCommand) error {
+	cmd.Data.Filter = s.getFilter(cmd.Data.Filter)
 	return s.recordService.UpdateByFilter(ctx, cmd)
+}
+
+// getFilter
+// @Description: 前端在表格过滤中不支持查询空字符串，
+// @receiver s
+// @param filter
+// @return string
+func (s *RecordAPI) getFilter(filter string) string {
+	fields := []string{
+		"rowNum", "date", "acct", "name", "acctType", "bankName",
+		"oppAcct", "oppName", "category", "oppCategory", "oppIden",
+		"oppAcctType", "oppBankName", "payout", "income", "amount",
+		"balance", "serial", "ccy", "place", "type", "summary", "notes",
+	}
+
+	for _, field := range fields {
+		str := fmt.Sprintf("(%s=null='null')", field)
+		if strings.Contains(filter, str) {
+			newStr := fmt.Sprintf("(%s=null='null' or %s=='' )", field, field)
+			filter = strings.ReplaceAll(filter, str, newStr)
+		}
+	}
+	return filter
 }
 
 func (s *RecordAPI) Delete(ctx context.Context, cmd *command.RecordDeleteCommand) error {
@@ -108,6 +134,7 @@ func (s *RecordAPI) FindById(ctx context.Context, qry *query.RecordFindByIdQuery
 }
 
 func (s *RecordAPI) FindPagingByTaskId(ctx context.Context, qry *query.RecordIeFindPagingByTaskIdQuery) (store.FindPagingResult[*model.RecordIe], error) {
+	qry.Filter = s.getFilter(qry.Filter)
 	res := s.recordService.FindPagingByTaskId(ctx, qry)
 	return res, res.GetError()
 }
