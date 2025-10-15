@@ -34,7 +34,7 @@ func (s *ExcelFileApi) NewAPIController(app *iris.Application) *restapi.ApiContr
 	ctl.Delete("file", "Delete")
 	ctl.GetPaging("file", "FindPaging")
 	ctl.GetOne("file/{id}", "FindById")
-	ctl.GetOne("file:doc-file-id", "FindByDocFileId")
+	ctl.GetData("file:doc-file-id", "FindByDocFileId")
 	return ctl
 }
 

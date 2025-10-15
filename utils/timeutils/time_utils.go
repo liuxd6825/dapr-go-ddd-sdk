@@ -342,6 +342,27 @@ func split(val string) (string, string) {
 //	@return error
 func fmtTimeStr(str string) (string, error) {
 	str = strings.ReplaceAll(str, " ", "")
+
+	// 处理不规则时间部分 如： 13.32,27; 13.3227; 1332.27
+	str = strings.ReplaceAll(str, ".", ":")
+	str = strings.ReplaceAll(str, ",", ":")
+	str = strings.ReplaceAll(str, "。", ":")
+	str = strings.ReplaceAll(str, "，", ":")
+	if strings.Contains(str, ":") {
+		mList := strings.Split(str, ":")
+		var rList []string
+		for _, m := range mList {
+			mLen := len(m)
+			if mLen == 4 {
+				rList = append(rList, m[0:2])
+				rList = append(rList, m[2:4])
+			} else {
+				rList = append(rList, m)
+			}
+		}
+		str = strings.Join(rList, ":")
+	}
+
 	if len(str) == 4 {
 		ok := true
 		for _, sp := range splitsTime {
@@ -355,9 +376,7 @@ func fmtTimeStr(str string) (string, error) {
 			m := str[2:4]
 			return fmt.Sprintf("%s:%s:00", y, m), nil
 		}
-	}
-
-	if len(str) == 6 {
+	} else if len(str) == 6 {
 		ok := true
 		for _, sp := range splitsTime {
 			if strings.Contains(str, sp) {
@@ -371,8 +390,8 @@ func fmtTimeStr(str string) (string, error) {
 			d := str[4:6]
 			return fmt.Sprintf("%s:%s:%s", y, m, d), nil
 		}
-
 	}
+
 	str = strings.ReplaceAll(str, "时", ":")
 	str = strings.ReplaceAll(str, "分", ":")
 	str = strings.ReplaceAll(str, "秒", ":")

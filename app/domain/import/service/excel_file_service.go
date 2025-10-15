@@ -102,7 +102,9 @@ func (s *ExcelFileService) Delete(ctx context.Context, m *command.ExcelFileDelet
 
 func (s *ExcelFileService) DeleteById(ctx context.Context, m *command.ExcelFileDeleteByIdCommand) error {
 	return xbase.DoCommand(ctx, m, func(ctx context.Context) error {
-		s.sheetService.DeleteByFileId(ctx, m.Data.Id)
+		if err := s.sheetService.DeleteByFileId(ctx, m.Data.Id); err != nil {
+			return err
+		}
 		return s.dao.DeleteById(ctx, m.Data.Id).GetError()
 	})
 }

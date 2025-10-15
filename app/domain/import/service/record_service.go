@@ -17,9 +17,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"math"
 	"strings"
+	"time"
 )
 
 type RecordService struct {
@@ -122,14 +124,25 @@ func (s *RecordService) Update(ctx context.Context, cmd *command.RecordUpdateCom
 
 func (s *RecordService) UpdateField(ctx context.Context, cmd *command.RecordUpdateFieldCommand) (*model.RecordIe, bool, error) {
 	var err error
-	s.dao.UpdateMap(ctx, cmd.Data.Id, cmd.Data.Values)
+	if val, ok := cmd.Data.Values["date"]; ok && val != nil {
+		date, err := timeutils.AsTime(val)
+		if err != nil {
+			return nil, false, err
+		}
+		cmd.Data.Values["date"] = date.Format(time.DateTime)
+	}
+
+	if res := s.dao.UpdateMap(ctx, cmd.Data.Id, cmd.Data.Values); res.Error != nil {
+		return nil, false, res.Error
+	}
+
 	res, err := s.dao.FindById(ctx, cmd.Data.Id)
 	if err != nil {
 		return nil, false, err
-	}
-	if res == nil {
+	} else if res == nil {
 		return nil, false, nil
 	}
+
 	res.Errors, err = s.Check(ctx, res)
 	return res, true, err
 }
@@ -213,7 +226,8 @@ func (s *RecordService) Check(ctx context.Context, r *model.RecordIe) (map[strin
 		return nil, errors.New("检查的【流水记录】不能为空。")
 	}
 	data := map[string][]string{}
-	if r.Date.IsZero() {
+
+	if r.Date == nil || r.Date.IsZero() {
 		s.addFieldError(data, "date", "不能为空")
 	}
 
