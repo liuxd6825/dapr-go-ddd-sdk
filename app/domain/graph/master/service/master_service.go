@@ -19,6 +19,8 @@ import (
 	"time"
 )
 
+// MasterService
+// @Description: 主数据关系图
 type MasterService struct {
 	nodeDaoMap *types.CMap[*dao.MasterNodeDao]
 	relDaoMap  *types.CMap[*dao.BusRelationDao]

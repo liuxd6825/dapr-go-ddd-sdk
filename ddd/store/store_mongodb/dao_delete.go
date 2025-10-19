@@ -61,6 +61,15 @@ func (r *Dao[T]) DeleteAll(ctx context.Context, tenantId string, opts ...store.O
 	return r.DeleteByMap(ctx, tenantId, data)
 }
 
+func (r *Dao[T]) DeleteMany(ctx context.Context, tenantId string, entities []T, opts ...store.Options) *store.SetResult[T] {
+	var ids []string
+	for _, e := range entities {
+		id := r.GetId(e)
+		ids = append(ids, id)
+	}
+	return r.DeleteByIds(ctx, tenantId, ids, opts...)
+}
+
 func (r *Dao[T]) DeleteByMap(ctx context.Context, tenantId string, filterMap map[string]any, opts ...store.Options) *store.SetResult[T] {
 	return r.deleteByAny(ctx, tenantId, filterMap, opts...)
 }

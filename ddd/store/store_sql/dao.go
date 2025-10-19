@@ -18,6 +18,15 @@ import (
 	"strings"
 )
 
+type NewConfig struct {
+	DbKey      string
+	TableName  string
+	Db         *gorm.DB
+	DbType     string
+	DBSchema   *store.DBSchema
+	GormSchema *gormschema.Schema
+}
+
 type Dao[T any] struct {
 	options      *Options[T]
 	eb           store.EntityBuilder[T] // 实体构造器
@@ -29,6 +38,7 @@ type Dao[T any] struct {
 	gormSchema   *gormschema.Schema
 	createFields []string
 	updateFields []string
+	dbType       string
 }
 
 const (
@@ -47,7 +57,9 @@ func NewDaoWithDbKey[T any](cfg *NewConfig) store.IStore[T] {
 		panic(errors.New(fmt.Sprintf("db key %s not found", dbKey)))
 	}
 	db := cfg.Db
+
 	if db == nil {
+		cfg.DbType = item.GetDBType().String()
 		switch item.GetDBType() {
 		case env.DBType_Postgres:
 			db = item.GetGormDB()
@@ -65,14 +77,6 @@ func NewDaoWithDbKey[T any](cfg *NewConfig) store.IStore[T] {
 	}
 	cfg.Db = db
 	return NewDao[T](cfg)
-}
-
-type NewConfig struct {
-	DbKey      string
-	TableName  string
-	Db         *gorm.DB
-	DBSchema   *store.DBSchema
-	GormSchema *gormschema.Schema
 }
 
 func (c *NewConfig) Check() error {
@@ -134,6 +138,7 @@ func newDao[T any](cfg *NewConfig) *Dao[T] {
 		gormSchema:   gormSch,
 		createFields: createFields,
 		updateFields: updateFields,
+		dbType:       cfg.DbType,
 	}
 }
 
@@ -155,6 +160,10 @@ func getUpdateFields(dbSchema *gormschema.Schema) []string {
 		}
 	}
 	return fields
+}
+
+func (d *Dao[T]) GetDbType() string {
+	return d.dbType
 }
 
 func (d *Dao[T]) getIds(entities []T) []string {
@@ -464,6 +473,14 @@ func (d *Dao[T]) DeleteById(ctx context.Context, tenantId string, id string, opt
 	table := d.table(ctx, opts...)
 	db := table.Where("tenant_id=? and id=?", tenantId, id).Delete(id)
 	return store.NewSetResult[T]().SetError(db.Error).SetRowsAffected(db.RowsAffected)
+}
+
+func (d *Dao[T]) DeleteMany(ctx context.Context, tenantId string, entities []T, opts ...store.Options) *store.SetResult[T] {
+	var ids []string
+	for _, e := range entities {
+		ids = append(ids, d.GetId(e))
+	}
+	return d.DeleteByIds(ctx, tenantId, ids, opts...)
 }
 
 func (d *Dao[T]) DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...store.Options) *store.SetResult[T] {

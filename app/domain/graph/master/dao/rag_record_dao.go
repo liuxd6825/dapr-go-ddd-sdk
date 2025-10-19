@@ -11,22 +11,22 @@ import (
 	"sync"
 )
 
-type RecordDao struct {
+type RagRecordDao struct {
 	*Base[*model.Record]
 	labels []string
 }
 
-var _recordDao *RecordDao
+var _recordDao *RagRecordDao
 var _recordOnce sync.Once
 
-func NewRecordDao(dbKey string) *RecordDao {
+func NewRagRecordDao(dbKey string) *RagRecordDao {
 	_recordOnce.Do(func() {
 		_recordDao = newRecordDao(dbKey, "record")
 	})
 	return _recordDao
 }
 
-func newRecordDao(dbKey string, labels ...string) *RecordDao {
+func newRecordDao(dbKey string, labels ...string) *RagRecordDao {
 	dbSch := dbschema.NewDBSchemaWithStruct("record", &model.Record{}, "record")
 	nodeCfg := &dao.DaoConfig{
 		DBKey:              dbKey,
@@ -36,13 +36,13 @@ func newRecordDao(dbKey string, labels ...string) *RecordDao {
 		IsCancelSoftDelete: true,
 	}
 	newDao := dao.NewDao[*model.Record](nodeCfg)
-	return &RecordDao{
+	return &RagRecordDao{
 		labels: labels,
 		Base:   &Base[*model.Record]{DBSchema: dbSch, Dao: newDao},
 	}
 }
 
-func (d *RecordDao) Create(ctx context.Context, record *model.Record) error {
+func (d *RagRecordDao) Create(ctx context.Context, record *model.Record) error {
 	storeDao := d.GetStore()
 	props, dataMap, err := storeDao.Cypher.GetCreateProperties(ctx, record)
 	if err != nil {
@@ -98,16 +98,16 @@ func (d *RecordDao) Create(ctx context.Context, record *model.Record) error {
 	return err
 }
 
-func (d *RecordDao) GetDescription(ctx context.Context, node *model.Record) string {
+func (d *RagRecordDao) GetDescription(ctx context.Context, node *model.Record) string {
 	date := node.Date.Format("2006-01-02 15:04:05")
 	return fmt.Sprintf("%s于%s通过账号%s向%s的%s账号汇入%s%d", date, node.Name, node.Acct, node.OppName, node.OppAcct, node.Ccy, node.Amount)
 }
 
-func (d *RecordDao) GetLabels(ctx context.Context, record *model.Record) string {
+func (d *RagRecordDao) GetLabels(ctx context.Context, record *model.Record) string {
 	return fmt.Sprintf(":tenant_%s:case_%s:file_%s", record.TenantId, record.CaseId, record.FileId)
 }
 
-func (d *RecordDao) Update(ctx context.Context, record *model.Record) error {
+func (d *RagRecordDao) Update(ctx context.Context, record *model.Record) error {
 	storeDao := d.GetStore()
 	props, dataMap, err := storeDao.Cypher.GetUpdateProperties(ctx, record, "r")
 	if err != nil {
@@ -164,7 +164,7 @@ func (d *RecordDao) Update(ctx context.Context, record *model.Record) error {
 	return err
 }
 
-func (d *RecordDao) Delete(ctx context.Context, record *model.Record) (err error) {
+func (d *RagRecordDao) Delete(ctx context.Context, record *model.Record) (err error) {
 	storeDao := d.GetStore()
 	c := storeDao.Cypher
 	labels := c.GetLabels(ctx, record)

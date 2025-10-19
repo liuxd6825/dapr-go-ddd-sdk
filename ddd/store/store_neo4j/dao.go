@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -245,6 +246,14 @@ func (d *Dao[T]) Query(ctx context.Context, cypher string, params map[string]int
 		return nil, err
 	})
 	return resultData, err
+}
+
+func (d *Dao[T]) DeleteMany(ctx context.Context, tenantId string, entity []T, opts ...idao.CallOptions) *store.SetResult[T] {
+	return store.NewSetResult[T]()
+}
+
+func (d *Dao[T]) GetDbType() string {
+	return "neo4j"
 }
 
 func GetLabels(labels ...string) string {

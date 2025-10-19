@@ -7,6 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/factory"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/view"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
@@ -15,20 +16,22 @@ import (
 )
 
 type RecordEventSubHandler struct {
-	rootPath          string
-	env               *env.Env
-	factory           *factory.RecordFactory
-	recordService     *service.RecordService
-	tranDetailService *service.TranDetailService
+	rootPath             string
+	env                  *env.Env
+	factory              *factory.RecordFactory
+	recordService        *service.RecordService
+	recordDayViewService *service.RecordDayViewService
+	tranDetailService    *service.TranDetailService
 }
 
 func NewRecordEventHandler(env *env.Env, baseUrl string) *RecordEventSubHandler {
 	return &RecordEventSubHandler{
-		rootPath:          baseUrl,
-		env:               env,
-		factory:           factory.NewRecordFactory(),
-		recordService:     service.NewRecordService(),
-		tranDetailService: service.NewTranDetailService(),
+		rootPath:             baseUrl,
+		env:                  env,
+		factory:              factory.NewRecordFactory(),
+		recordService:        service.NewRecordService(),
+		recordDayViewService: service.NewRecordDayViewService(),
+		tranDetailService:    service.NewTranDetailService(),
 	}
 }
 
@@ -50,8 +53,17 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, eve
 		return err
 	}
 	var details []*model.Tran
+	var recordDays []*view.RecordDayView
 	for _, record := range records {
-		details = append(details, model.NewTranFromRecord(record))
+		tran := model.NewTranFromRecord(record)
+		details = append(details, tran)
+
+		d1, d2, err := view.NewRecordDayView(record)
+		if err != nil {
+			return err
+		}
+		recordDays = append(recordDays, d1)
+		recordDays = append(recordDays, d2)
 	}
 
 	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
@@ -59,7 +71,34 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, eve
 		if err != nil {
 			return err
 		}
+		err = s.recordDayViewService.IncAmountMany(ctx, recordDays)
+		if err != nil {
+			return err
+		}
 		return s.tranDetailService.CreateMany(ctx, details)
 	})
 
+}
+
+func (s *RecordEventSubHandler) newRecordDayView(tran *model.Tran, record *model.Record) *view.RecordDayView {
+	v := &view.RecordDayView{
+		Id:         tran.Id,
+		MasterType: tran.MasterType,
+		MasterId:   tran.MasterId,
+		TenantId:   tran.TenantId,
+		CaseId:     tran.CaseId,
+		Name:       tran.Name,
+		Acct:       tran.Acct,
+		OppName:    tran.OppName,
+		OppAcct:    tran.OppAcct,
+		Date:       tran.Date,
+		Year:       tran.Year,
+		Month:      tran.Month,
+		Day:        tran.Day,
+		Ccy:        tran.Ccy,
+		Payout:     record.Payout,
+		Income:     record.Income,
+		Amount:     tran.Amount,
+	}
+	return v
 }

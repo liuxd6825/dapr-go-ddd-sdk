@@ -43,7 +43,7 @@ func (s *TranDao) FindByAccountOppAccount(ctx context.Context, account string, s
 	qry.SetMustFilter(builder.Build())
 	qry.SetSort("date:asc")
 	qry.SetIsTotalRows(false)
-	qry.SetPageSize(100000000000)
+	qry.SetPageSize(store.PagingMaxPageSize)
 
 	res := s.FindPaging(ctx, qry)
 	return res.GetData(), res.GetError()

@@ -44,6 +44,15 @@ func (d *DaoBase[T]) DeleteByIds(ctx context.Context, ids []string, opts ...idao
 	return idao.NewResult(res)
 }
 
+func (d *DaoBase[T]) DeleteMany(ctx context.Context, entities []T, opts ...idao.CallOptions) *idao.Result {
+	tenantId := d.GetTenantId(ctx)
+	res := d.store.DeleteMany(ctx, tenantId, entities)
+	if res.Error != nil {
+		panic(res.Error)
+	}
+	return idao.NewResult(res)
+}
+
 func (d *DaoBase[T]) DeleteAll(ctx context.Context, opts ...idao.CallOptions) *idao.Result {
 	tenantId := d.GetTenantId(ctx)
 	res := d.store.DeleteAll(ctx, tenantId, idao.NewCallOptions(opts...))

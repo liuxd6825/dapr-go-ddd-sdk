@@ -14,7 +14,7 @@ type CdcAPI struct {
 	rootPath      string
 	masterService *service.MasterService
 	queryService  *service.QueryService
-	recordService *service.RecordService
+	recordService *service.RagRecordService
 }
 
 func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
@@ -38,9 +38,9 @@ func (s *CdcAPI) DaprOptions(ctx context.Context) error {
 	return nil
 }
 
-func (s *CdcAPI) DataChange(ctx context.Context, record *model.CDCRecord) error {
-	if record.Table == "record" {
-		return s.recordService.DataChange(ctx, record)
+func (s *CdcAPI) DataChange(ctx context.Context, cdc *model.CDCRecord) error {
+	if cdc.Table == "record" {
+		return s.recordService.DataChange(ctx, cdc)
 	}
-	return s.masterService.DataChange(ctx, record)
+	return s.masterService.DataChange(ctx, cdc)
 }

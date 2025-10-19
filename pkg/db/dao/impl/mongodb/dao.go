@@ -102,3 +102,7 @@ func (d *Dao[T]) GetTableName() string {
 func (d *Dao[T]) GetConfig() *idao.DaoConfig {
 	return d.cfg
 }
+
+func (d *Dao[T]) GetDbType() string {
+	return "mongodb"
+}

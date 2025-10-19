@@ -5,8 +5,16 @@ import (
 	"time"
 )
 
+// Tran
+// @Description: 对Record进行去重后的交易数据。将流水双向（收入支出）转换为单向（支出）。
 type Tran struct {
 	xbase.BaseModel `bson:",inline"`
+	DocId           string `json:"docId" gorm:"doc_id" bson:"doc_id" index:"" title:"文档id"`
+	FileId          string `json:"fileId"  gorm:"file_id" bson:"file_id" index:"" title:"文件id"`
+	SheetId         string `json:"sheetId" gorm:"sheet_id" bson:"sheet_id" index:"" title:"工作表ID"`
+
+	MasterId   string `json:"masterId" bson:"master_id"`
+	MasterType string `json:"masterType" bson:"master_type"`
 	//	TranId          string      `json:"tranId" gorm:"tran_id" bson:"tran_id" index:"" title:"交易id"`
 	Name        string      `json:"name"   gorm:"name"  bson:"name"  index:"" validate:"-" title:"我方名称"`                             // 名称
 	Acct        string      `json:"acct"   gorm:"acct"  bson:"acct"  index:""  validate:"-" title:"我方账号"`                            // 账号
@@ -16,7 +24,7 @@ type Tran struct {
 	OppAcct     string      `json:"oppAcct"   gorm:"opp_acct"  bson:"opp_acct"  index:""   validate:"-" title:"对方账号"`                // 对方账号
 	OppAcctType AccountType `json:"oppAcctType"  gorm:"opp_acct_type"   bson:"opp_acct_type"  validate:"-" title:"对方账号类型"`           // 对方账号类型
 	OppBankName string      `json:"oppBankName"  gorm:"opp_bank_name"  bson:"opp_bank_name"  index:""   validate:"-" title:"对方开户银行"` // 对方开户银行
-	Cash        CashType    `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金"`
+	Cash        CashType    `json:"cash" gorm:"cash" bson:"cash" index:"" title:"是否现金"`
 	Amount      float64     `json:"amount"   gorm:"amount"  bson:"amount"  index:""  validate:"-" title:"交易金额"`  // 交易金额
 	Date        time.Time   `json:"date"   gorm:"date"  bson:"date"  index:""  validate:"-" title:"交易时间"`        // 交易时间
 	Ccy         string      `json:"ccy"  gorm:"ccy"  bson:"ccy"  index:""  validate:"-" title:"交易币种" `           // 交易币种
@@ -55,9 +63,11 @@ func NewTranFromRecord(record *Record) *Tran {
 		oppBankName = record.BankName
 	}
 
-	res := &Tran{
+	tran := &Tran{
 		BaseModel:   record.BaseModel,
 		Name:        name,
+		MasterType:  record.MasterType,
+		MasterId:    record.MasterId,
 		Acct:        acct,
 		AcctType:    acctType,
 		BankName:    bankName,
@@ -76,6 +86,6 @@ func NewTranFromRecord(record *Record) *Tran {
 		Month:       int(record.Date.Month()),
 		Day:         record.Date.Day(),
 	}
-	res.Id = record.TranId
-	return res
+	tran.Id = record.TranId
+	return tran
 }

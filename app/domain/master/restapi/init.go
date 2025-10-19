@@ -15,6 +15,7 @@ func Init(app *iris.Application, baseUrl string, env *env.Env) {
 	RegisterCdcToNeo4j(app, baseUrl, env)
 	RegisterSub(app, baseUrl, env)
 	RegisterRecord(app, baseUrl, env)
+	RegisterRecordDay(app, baseUrl, env)
 }
 
 func RegisterSchema(app *iris.Application, baseUrl string, env *env.Env) {
@@ -33,6 +34,10 @@ func RegisterHtml(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterRecord(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewRecordAPI(baseUrl))
+}
+
+func RegisterRecordDay(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.RegisterController(app, NewRecordDayViewApi(baseUrl))
 }
 
 func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env) {

@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
@@ -16,9 +17,10 @@ const caseId = "1001"
 
 func Test_DeleteById(t *testing.T) {
 	ctx := xtest.NewContext()
-	env.SetEnv(xtest.NewEnvConfig_Neo4j())
+	envInv := xtest.NewEnvConfigNeo4j()
+	env.SetEnv(envInv)
 	nodeDao := dao.NewMasterNodeDao([]string{"company_test"}, nil)
-	nodeDao.GetConfig().Env = xtest.NewEnvConfig_Neo4j()
+	nodeDao.GetConfig().Env = envInv
 
 	gp.Try(func() error {
 		node := &model2.MasterNode{
@@ -37,7 +39,8 @@ func Test_DeleteById(t *testing.T) {
 
 func Test_Case1(t *testing.T) {
 	gp.Try(func() error {
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		envInv := xtest.NewEnvConfigNeo4j()
+		env.SetEnv(envInv)
 
 		ctx := xtest.NewContext()
 		service := newService()
@@ -79,12 +82,18 @@ func Test_Case1(t *testing.T) {
 }
 
 func newService() *MasterService {
-	env.SetEnv(xtest.NewEnvConfig_Neo4j())
+	env.SetEnv(xtest.NewEnvConfigNeo4j())
+
 	companySch := xtest.GetCompanySchema()
+	companyJsonSch := dbschema.NewDBSchemaWithJsonSchema(companySch)
+
 	companyCompanySch := xtest.GetCompanyCompanySchema()
+	companyCompanyJsonSch := dbschema.NewDBSchemaWithJsonSchema(companyCompanySch)
+
 	service := NewMasterService()
-	service.AddDao(companySch)
-	service.AddDao(companyCompanySch)
+	service.AddDao(companySch, companyJsonSch)
+	service.AddDao(companyCompanySch, companyCompanyJsonSch)
+
 	return service
 }
 

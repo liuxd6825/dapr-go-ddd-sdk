@@ -122,3 +122,7 @@ func (d *DaoBase[T]) NewFindPagingQuery(ctx context.Context, findPagingMap any) 
 	}
 	return qry
 }
+
+func (d *DaoBase[T]) GetDbType() string {
+	return d.store.GetDbType()
+}

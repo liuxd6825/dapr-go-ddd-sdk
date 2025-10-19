@@ -14,6 +14,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -205,45 +207,52 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 		logs.Debugf(ctx, nil, "createMany() context=%v", func() any {
 			return appctx.GetMessage(ctx)
 		})
+		return tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			for {
+				// 取得批量数据
+				qry := query.NewRecordIeFindPagingByTaskIdQuery(appcmd.Data.TaskId, false)
+				qry.SetPageNum(pageNum)
+				qry.SetPageSize(pageSize)
 
-		for {
-			// 取得批量数据
-			qry := query.NewRecordIeFindPagingByTaskIdQuery(appcmd.Data.TaskId, false)
-			qry.SetPageNum(pageNum)
-			qry.SetPageSize(pageSize)
+				res := s.FindPagingByTaskId(ctx, qry)
+				if err != nil {
+					return err
+				}
+				if res.GetDataLength() == 0 {
+					return nil
+				}
+				// 如果没有数据
+				if res.GetPageNum() > pageNum {
+					return nil
+				}
 
-			res := s.FindPagingByTaskId(ctx, qry)
-			if err != nil {
-				return err
-			}
-			if res.GetDataLength() == 0 {
-				return nil
-			}
-			// 如果没有数据
-			if res.GetPageNum() > pageNum {
-				return nil
-			}
-
-			// 调用服务导入到主数据
-			create, err := newRecordCreateManyFromExcelCommand(appcmd, res.GetData())
-			if err != nil {
-				return err
-			}
-			if pageNum > 0 {
-				create.Data.IsAddItems = true
-			}
-			if err := s.PublishImportRecordToMasterEvent(ctx, create); err != nil {
-				return err
+				// 通过领域事件，导入流水到主数据
+				// 生成领域事件
+				create, err := newRecordCreateManyFromExcelCommand(appcmd, res.GetData())
+				if err != nil {
+					return err
+				}
+				if pageNum > 0 {
+					create.Data.IsAddItems = true
+				}
+				// 发布领域事件
+				if err := s.PublishImportRecordToMasterEvent(ctx, create); err != nil {
+					return err
+				}
+				recordCount += int64(len(res.GetData()))
+				pageNum++
 			}
 
-			recordCount += int64(len(res.GetData()))
-			pageNum++
-		}
+		})
 	}
+
+	// 执行导入
 	gp.Try(func() error {
 		startTime := times.PNow()
+		// 批量导入数据
 		err = createMany(ctx, appcmd)
 		if err == nil {
+			// 更新任务状态
 			cmd := command.NewTaskUpdateProgressCommand(appcmd.CommandId, taskId)
 			cmd.Data.Complete = recordCount
 			cmd.Data.StartTime = startTime

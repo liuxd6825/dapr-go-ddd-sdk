@@ -38,6 +38,7 @@ type IStore[T any] interface {
 	// 删除
 
 	Delete(ctx context.Context, entity T, opts ...Options) *SetResult[T]
+	DeleteMany(ctx context.Context, tenantId string, entity []T, opts ...Options) *SetResult[T]
 	DeleteByRSQL(ctx context.Context, tenantId, filter string, opts ...Options) *SetResult[T]
 	DeleteById(ctx context.Context, tenantId string, id string, opts ...Options) *SetResult[T]
 	DeleteByIds(ctx context.Context, tenantId string, ids []string, opts ...Options) *SetResult[T]
@@ -74,4 +75,5 @@ type IStore[T any] interface {
 		AddMetadata(key string, val any)
 	*/
 	GetSchema() *DBSchema
+	GetDbType() string
 }

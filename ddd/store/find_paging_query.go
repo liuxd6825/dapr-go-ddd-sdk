@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const PagingMaxPageSize = 100000000000
+
 type FindPagingQuery interface {
 	GetFields() string
 	SetFields(string)
@@ -75,6 +77,11 @@ type FindPagingQueryRequest struct {
 	GroupCols   []*GroupCol `json:"groupCols" query:"group-cols"`
 	GroupKeys   []any       `json:"groupKeys" query:"group-keys"`
 	ValueCols   []*ValueCol `json:"valueCols" query:"value-cols"`
+}
+
+type FindByCaseIdQuery struct {
+	FindPagingQueryRequest
+	CaseId string `json:"caseId" query:"case-id"`
 }
 
 func NewFindPagingQueryRequest() *FindPagingQueryRequest {

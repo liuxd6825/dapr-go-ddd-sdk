@@ -23,6 +23,7 @@ type Dao[T any] interface {
 	UpdateMapByRSQL(ctx context.Context, rsql string, data map[string]any, opts ...CallOptions) *Result
 
 	Delete(ctx context.Context, entity T, opts ...CallOptions) *Result
+	DeleteMany(ctx context.Context, entity []T, opts ...CallOptions) *Result
 	DeleteById(ctx context.Context, id string, opts ...CallOptions) *Result
 	DeleteByIds(ctx context.Context, ids []string, opts ...CallOptions) *Result
 	DeleteAll(ctx context.Context, opts ...CallOptions) *Result
@@ -46,6 +47,7 @@ type Dao[T any] interface {
 	Table() Table
 
 	GetStore() store.IStore[T]
+	GetDbType() string
 	//GetFilterMap(tenantId string, rSql string) map[string]any
 }
 

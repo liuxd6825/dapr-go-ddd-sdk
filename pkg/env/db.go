@@ -48,6 +48,10 @@ const (
 	DBType_Oracle   DBType = "oracle"
 )
 
+func (d DBType) String() string {
+	return string(d)
+}
+
 func (d *dbItem) GetDB() any {
 	switch d.dbType {
 	case DBType_Postgres:
