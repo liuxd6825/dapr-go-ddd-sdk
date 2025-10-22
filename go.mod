@@ -30,7 +30,7 @@ require (
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.mongodb.org/mongo-driver v1.17.4
 	gopkg.in/yaml.v3 v3.0.1
@@ -67,7 +67,6 @@ require (
 )
 
 require (
-	github.com/Lofanmi/chinese-calendar-golang v0.0.0-20250312143717-353343ff62ba
 	github.com/antchfx/xmlquery v1.4.4
 	github.com/carmel/gooxml v0.0.0-20220216072414-40ff56130850
 	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250612061754-5a3deb091dc5
@@ -80,13 +79,14 @@ require (
 	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2
 	github.com/milvus-io/milvus/client/v2 v2.5.4
 	github.com/oklog/ulid/v2 v2.1.1
-	github.com/shopspring/decimal v1.4.0
 	github.com/tiktoken-go/tokenizer v0.6.2
 	github.com/tmc/langchaingo v0.1.13
 	go.temporal.io/sdk v1.36.0
 	golang.org/x/net v0.40.0
 	gorm.io/driver/sqlite v1.5.7
 )
+
+require github.com/ory/client-go v1.22.6 // indirect
 
 require (
 	github.com/antchfx/xpath v1.3.3 // indirect
@@ -148,7 +148,7 @@ require (
 	github.com/meguminnnnnnnnn/go-openai v0.0.0-20250523041550-e202cd57070c // indirect
 	github.com/microsoft/go-mssqldb v1.6.0 // indirect
 	github.com/milvus-io/milvus-proto/go-api/v2 v2.5.13 // indirect
-	github.com/milvus-io/milvus/pkg/v2 v2.5.7 // indirect
+	github.com/milvus-io/milvus/pkg/v2 v2.5.13 // indirect
 	github.com/minio/crc64nvme v1.0.1 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
@@ -158,6 +158,8 @@ require (
 	github.com/ollama/ollama v0.6.1 // indirect
 	github.com/onsi/gomega v1.33.1 // indirect
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
+	//github.com/ory/client-go v1.22.6 // indirect
+	github.com/ory/kratos-client-go v1.3.8 // indirect
 	github.com/panjf2000/ants/v2 v2.11.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
@@ -214,6 +216,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/arch v0.11.0 // indirect
+	golang.org/x/oauth2 v0.32.0 // indirect
 	google.golang.org/genproto v0.0.0-20250324211829-b45e905df463 // indirect
 	google.golang.org/grpc/examples v0.0.0-20250414223150-f0676ea45d60 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -376,8 +379,14 @@ replace github.com/dapr/components-contrib => ../dapr-components-contrib
 
 replace github.com/liuxd6825/k6server => ../../k6server
 
-replace github.com/dop251/goja => ../../../liuxd6825/goja
+replace github.com/dop251/goja => ../../goja
 
-replace gorm.io/gorm => ../../../liuxd6825/gorm
+replace gorm.io/gorm => ../../gorm
 
 replace github.com/mark3labs/mcp-go v0.31.0 => ../../mcp-go
+
+replace (
+	github.com/apache/rocketmq-client-go v1.2.5 => github.com/apache/rocketmq-client-go v1.2.4
+	nhooyr.io/websocket v1.8.11 => github.com/coder/websocket v1.8.11
+	nhooyr.io/websocket v1.8.7 => github.com/coder/websocket v1.8.7
+)
