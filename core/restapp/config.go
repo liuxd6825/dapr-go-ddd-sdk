@@ -115,8 +115,12 @@ type HServer struct {
 	Meta         map[string]any `yaml:"meta" json:"meta"`                 // 扩展信息
 	Npm          Npm            `yaml:"npm" json:"npm"`                   // 前端npm环境配置
 }
+
+// Npm
+// @Description:  前端npm的link包配置，解决vite在开发模式下的js文件引用问题。
 type Npm struct {
-	Links []*NpmLink `yaml:"links" json:"links"`
+	Enabled bool       `yaml:"enabled" json:"enabled"`
+	Links   []*NpmLink `yaml:"links" json:"links"`
 }
 
 type NpmLink struct {
