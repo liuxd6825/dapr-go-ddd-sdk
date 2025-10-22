@@ -16,7 +16,8 @@ type HServer struct {
 }
 
 type Npm struct {
-	Links []*NpmLink `yaml:"links" json:"links"`
+	Enabled bool       `yaml:"enabled" json:"enabled"`
+	Links   []*NpmLink `yaml:"links" json:"links"`
 }
 
 type NpmLink struct {

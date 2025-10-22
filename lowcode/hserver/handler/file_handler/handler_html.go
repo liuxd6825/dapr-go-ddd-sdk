@@ -71,9 +71,11 @@ func (h *Handler) isDynamicPage(ctx context.Context, ictx iris.Context, fs afero
 }
 
 func parserHtml(doc *goquery.Document, envNpm *env.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) ([]byte, error) {
-	doc.Find("script").Each(func(i int, s *goquery.Selection) {
-		parserImport(s, envNpm, importFileFun)
-	})
+	if envNpm != nil && envNpm.Enabled {
+		doc.Find("script").Each(func(i int, s *goquery.Selection) {
+			parserImport(s, envNpm, importFileFun)
+		})
+	}
 	html, err := doc.Html()
 	if err != nil {
 		return nil, err
