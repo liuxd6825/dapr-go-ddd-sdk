@@ -65,7 +65,16 @@ type Options interface {
 	GetTenantId() string
 	GetTenantId2(ctx context.Context) string
 
+	SetUser(user User) Options
+	GetUser() User
+	GetUser2(ctx context.Context) User
+
 	Merge(opts ...Options) Options
+}
+
+type User interface {
+	GetId() string
+	GetName() string
 }
 
 type RepositoryOptions struct {
@@ -81,6 +90,73 @@ type RepositoryOptions struct {
 	nullNotUpdate *bool // 空值是否更新
 
 	tenantId *string
+	user     User
+}
+
+func NewOptions(o ...Options) Options {
+	res := &RepositoryOptions{}
+	for _, item := range o {
+		if item.GetUpdateCancel() != nil {
+			res.updateCancel = item.GetUpdateCancel()
+		}
+		if item.GetTimeout() != nil {
+			res.timeout = item.GetTimeout()
+		}
+		if item.GetUpsert() != nil {
+			res.upsert = item.GetUpsert()
+		}
+		if item.GetSort() != nil {
+			res.sort = item.GetSort()
+		}
+		if item.GetUpdateFields() != nil {
+			res.updateFields = item.GetUpdateFields()
+		}
+		if item.GetEventType() != nil {
+			res.eventType = item.GetEventType()
+		}
+		if item.GetEventVer() != nil {
+			res.eventVer = item.GetEventVer()
+		}
+		if item.GetCommandId() != nil {
+			res.commandId = item.GetCommandId()
+		}
+		if item.GetTenantId() != "" {
+			tenantId := item.GetTenantId()
+			res.tenantId = &tenantId
+		}
+		if item.GetUser() != nil {
+			res.user = item.GetUser()
+		}
+	}
+	return res
+}
+
+func GetOptions(opts ...Options) Options {
+	if opts == nil {
+		return NewOptions()
+	}
+	if len(opts) == 1 && opts[0] != nil {
+		return opts[0]
+	}
+	return NewOptions(opts...)
+}
+
+func (o *RepositoryOptions) GetUser() User {
+	return o.user
+}
+
+func (o *RepositoryOptions) GetUser2(ctx context.Context) User {
+	if o.user == nil {
+		if user, ok := appctx.GetAuthUser(ctx); ok {
+			return user
+		}
+	}
+	return o.user
+}
+
+func (o *RepositoryOptions) SetUser(user User) Options {
+	o.user = user
+	return o
 }
 
 func (o *RepositoryOptions) SetTenantId(v string) Options {
@@ -127,41 +203,6 @@ func (o *RepositoryOptions) GetCommandId() *string {
 func (o *RepositoryOptions) SetCommandId(v *string) Options {
 	o.commandId = v
 	return o
-}
-
-func NewOptions(o ...Options) Options {
-	res := &RepositoryOptions{}
-	for _, item := range o {
-		if item.GetUpdateCancel() != nil {
-			res.updateCancel = item.GetUpdateCancel()
-		}
-		if item.GetTimeout() != nil {
-			res.timeout = item.GetTimeout()
-		}
-		if item.GetUpsert() != nil {
-			res.upsert = item.GetUpsert()
-		}
-		if item.GetSort() != nil {
-			res.sort = item.GetSort()
-		}
-		if item.GetUpdateFields() != nil {
-			res.updateFields = item.GetUpdateFields()
-		}
-		if item.GetEventType() != nil {
-			res.eventType = item.GetEventType()
-		}
-		if item.GetEventVer() != nil {
-			res.eventVer = item.GetEventVer()
-		}
-		if item.GetCommandId() != nil {
-			res.commandId = item.GetCommandId()
-		}
-		if item.GetTenantId() != "" {
-			tenantId := item.GetTenantId()
-			res.tenantId = &tenantId
-		}
-	}
-	return res
 }
 
 func (o *RepositoryOptions) GetNullUpdate() bool {
