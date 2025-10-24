@@ -1,6 +1,10 @@
 package store
 
-import "time"
+import (
+	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"time"
+)
 
 type Options interface {
 	GetEventType() *string
@@ -57,6 +61,10 @@ type Options interface {
 	GetNullUpdate() bool
 	SetNullUpdate(val bool) Options
 
+	SetTenantId(v string) Options
+	GetTenantId() string
+	GetTenantId2(ctx context.Context) string
+
 	Merge(opts ...Options) Options
 }
 
@@ -71,6 +79,27 @@ type RepositoryOptions struct {
 	updateCancel  []string
 	upsert        *bool
 	nullNotUpdate *bool // 空值是否更新
+
+	tenantId *string
+}
+
+func (o *RepositoryOptions) SetTenantId(v string) Options {
+	o.tenantId = &v
+	return o
+}
+
+func (o *RepositoryOptions) GetTenantId() string {
+	if o.tenantId == nil {
+		return ""
+	}
+	return *o.tenantId
+}
+
+func (o *RepositoryOptions) GetTenantId2(ctx context.Context) string {
+	if o.tenantId == nil {
+		return appctx.GetTenantId2(ctx)
+	}
+	return *o.tenantId
 }
 
 func (o *RepositoryOptions) GetEventType() *string {
@@ -126,6 +155,10 @@ func NewOptions(o ...Options) Options {
 		}
 		if item.GetCommandId() != nil {
 			res.commandId = item.GetCommandId()
+		}
+		if item.GetTenantId() == "" {
+			tenantId := item.GetTenantId()
+			res.tenantId = &tenantId
 		}
 	}
 	return res
