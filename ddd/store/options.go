@@ -156,7 +156,7 @@ func NewOptions(o ...Options) Options {
 		if item.GetCommandId() != nil {
 			res.commandId = item.GetCommandId()
 		}
-		if item.GetTenantId() == "" {
+		if item.GetTenantId() != "" {
 			tenantId := item.GetTenantId()
 			res.tenantId = &tenantId
 		}
