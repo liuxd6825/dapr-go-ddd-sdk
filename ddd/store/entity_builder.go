@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
@@ -24,11 +23,11 @@ type EntityBuilder[T any] interface {
 
 	GetAggId(entity T) string
 
-	SetCreatedInfo(ctx context.Context, entity any)
-	SetUpdatedInfo(ctx context.Context, entity any)
-	SetDeletedInfo(ctx context.Context, entity any)
+	SetCreatedInfo(ctx context.Context, entity any, opts ...Options)
+	SetUpdatedInfo(ctx context.Context, entity any, opts ...Options)
+	SetDeletedInfo(ctx context.Context, entity any, opts ...Options)
 
-	GetAuthUser(ctx context.Context) appctx.AuthUser
+	GetAuthUser(ctx context.Context, opts ...Options) User
 
 	GetConfig() *EntityBuilderConfig
 	GetLabels(e T) []string
@@ -147,7 +146,7 @@ func (b *AnyEntityBuilder[T]) GetAggId(entity T) string {
 	return reflectutils.GetFieldString(entity, b.cfg.AggIdField)
 }
 
-func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
+func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any, opts ...Options) {
 	e := any(entity)
 	if e == nil {
 		return
@@ -171,7 +170,7 @@ func (b *AnyEntityBuilder[T]) SetCreatedInfo(ctx context.Context, entity any) {
 
 }
 
-func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
+func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any, opts ...Options) {
 	e := any(entity)
 	if e == nil {
 		return
@@ -179,7 +178,7 @@ func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 	if b.cfg.IsCancelModified {
 		return
 	}
-	authUser := b.GetAuthUser(ctx)
+	authUser := b.GetAuthUser(ctx, opts...)
 	timeNow := times.Now()
 
 	b.setField(entity, fields.UpdatedTime, &timeNow)
@@ -187,12 +186,13 @@ func (b *AnyEntityBuilder[T]) SetUpdatedInfo(ctx context.Context, entity any) {
 	b.setField(entity, fields.UpdaterId, authUser.GetId())
 }
 
-func (b *AnyEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any) {
+func (b *AnyEntityBuilder[T]) SetDeletedInfo(ctx context.Context, entity any, opts ...Options) {
 
 }
 
-func (b *AnyEntityBuilder[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
-	if user, ok := appctx.GetAuthUser(ctx); ok {
+func (b *AnyEntityBuilder[T]) GetAuthUser(ctx context.Context, opts ...Options) User {
+	opt := GetOptions(opts...)
+	if user := opt.GetUser2(ctx); user != nil {
 		return user
 	}
 	panic("token is error")
