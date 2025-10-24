@@ -94,11 +94,9 @@ func (d *DaoBase[T]) GetAggId(entity T, opts idao.CallOptions) (string, error) {
 	return aggId, nil
 }
 
-func (d *DaoBase[T]) GetTenantId(ctx context.Context) string {
-	if tenantId, ok := appctx.GetTenantId(ctx); ok {
-		return tenantId
-	}
-	panic("token is error")
+func (d *DaoBase[T]) GetTenantId(ctx context.Context, opts ...idao.CallOptions) string {
+	opt := idao.NewCallOptions(opts...)
+	return opt.GetTenantId2(ctx)
 }
 
 func (d *DaoBase[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {

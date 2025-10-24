@@ -38,7 +38,6 @@ type Dao[T any] interface {
 	FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...CallOptions) store.FindPagingResult[T]
 	FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...CallOptions) store.FindPagingResult[T]
 
-	//SumByRSQL(ctx context.Context, rSql string, valueCols []*ddd_repository.ValueCol, opts ...CallOptions) T
 	SumByRSQL(ctx context.Context, rSql string, valueCols []*store.ValueCol, opts ...CallOptions) (map[string]any, error)
 	SumEntity(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) ([]T, error)
 	SumByQuery(ctx context.Context, qry store.FindPagingQuery, opts ...CallOptions) (map[string]any, error)

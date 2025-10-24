@@ -48,7 +48,7 @@ func (d *DaoBase[T]) PublishBatchEvent(ctx context.Context, opeType idao.AccessT
 			"eventType":   event.EventType,
 			"commandId":   event.CommandId,
 			"aggregateId": event.AggregateId,
-			"tenantId":    d.GetTenantId(ctx),
+			"tenantId":    d.GetTenantId(ctx, opts...),
 		})
 		switch opeType {
 		case db.AccessTypeCreate:

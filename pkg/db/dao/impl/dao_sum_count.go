@@ -10,7 +10,7 @@ import (
 func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*idao.CallOptions) int64 {
 	opt := idao.NewCallOptions(opts...)
 
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	count, err := d.dao.CountByMap(ctx, tenantId, filterData, opt)
 	if err != nil {
 		panic(err)
@@ -20,7 +20,7 @@ func (d *DaoBase) CountByMap(ctx context.Context, filterData any, opts ...*idao.
 
 func (d *DaoBase[T]) CountByRSQL(ctx context.Context, rSQL string, opts ...idao.CallOptions) (int64, error) {
 	opt := idao.NewCallOptions(opts...)
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	count, err := d.store.CountByRSQL(ctx, tenantId, rSQL, opt)
 	return count, err
 }
@@ -48,7 +48,7 @@ func (d *DaoBase[T]) SumByQuery(ctx context.Context, qry store.FindPagingQuery, 
 
 func (d *DaoBase[T]) SumByRSQL(ctx context.Context, rSQL string, valueCols []*store.ValueCol, opts ...idao.CallOptions) (map[string]any, error) {
 	opt := idao.NewCallOptions(opts...)
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	data := d.store.SumByRSQL(ctx, tenantId, rSQL, valueCols, opt)
 	return data, nil
 }

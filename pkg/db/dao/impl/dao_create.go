@@ -13,7 +13,7 @@ func (d *DaoBase[T]) Create(ctx context.Context, entity T, opts ...idao.CallOpti
 	if d.IsNil(entity) {
 		panic(fmt.Errorf("Dao.Create() entity is nil"))
 	}
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	d.store.SetTenantId(entity, tenantId)
 
 	res := d.store.Insert(ctx, entity, idao.NewCallOptions(opts...))
@@ -36,7 +36,7 @@ func (d *DaoBase[T]) CreateMany(ctx context.Context, list []T, opts ...idao.Call
 	if len(list) == 0 {
 		return idao.NewResult(&nilRowsAffected{})
 	}
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	for _, entity := range list {
 		d.store.SetTenantId(entity, tenantId)
 	}
@@ -48,14 +48,14 @@ func (d *DaoBase[T]) CreateMany(ctx context.Context, list []T, opts ...idao.Call
 }
 
 func (d *DaoBase[T]) CreateUpdate(ctx context.Context, entity T, opts ...idao.CallOptions) *idao.Result {
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	d.store.SetTenantId(entity, tenantId)
 	res := d.store.InsertOrUpdate(ctx, entity, idao.NewCallOptions(opts...))
 	return idao.NewResult(res)
 }
 
 func (d *DaoBase[T]) Merge(ctx context.Context, entity T, fields map[string]string, opts ...idao.CallOptions) *idao.Result {
-	tenantId := d.GetTenantId(ctx)
+	tenantId := d.GetTenantId(ctx, opts...)
 	d.store.SetTenantId(entity, tenantId)
 	res := d.store.Merge(ctx, entity, fields, idao.NewCallOptions(opts...))
 	return idao.NewResult(res)
