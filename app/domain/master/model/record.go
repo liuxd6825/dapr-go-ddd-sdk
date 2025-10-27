@@ -37,8 +37,11 @@ type Record struct {
 	Income      float64     `json:"income"  gorm:"income"  bson:"income"   index:""  validate:"-" title:"收入金额"`
 	Cash        CashType    `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金标识"`
 	Io          IOType      `json:"io" gorm:"io" bson:"io" index:"" title:"收付标志"`
-	Amount      float64     `json:"amount"   gorm:"amount"  bson:"amount"  index:""  validate:"-" title:"交易金额"`  // 交易金额
-	Date        time.Time   `json:"date"   gorm:"date"  bson:"date"  index:""  validate:"-" title:"交易时间"`        // 交易时间
+	Amount      float64     `json:"amount"   gorm:"amount"  bson:"amount"  index:""  validate:"-" title:"交易金额"` // 交易金额
+	Date        time.Time   `json:"date"   gorm:"date"  bson:"date"  index:""  validate:"-" title:"交易时间"`       // 交易时间
+	Year        int         `json:"year" gorm:"year" bson:"year" index:"" title:"年份"`
+	Month       int         `json:"month" gorm:"month" bson:"month" title:"月份"`
+	Day         int         `json:"day" gorm:"day" bson:"day" title:"日期"`
 	Ccy         string      `json:"ccy"  gorm:"ccy"  bson:"ccy"  index:""  validate:"-" title:"交易币种" `           // 交易币种
 	Place       string      `json:"place"   gorm:"place"  bson:"place"  index:""  validate:"-" title:"地点"`       // 交易地点
 	Summary     string      `json:"summary"  gorm:"summary"   bson:"summary" index:""   validate:"-" title:"摘要"` // 摘要

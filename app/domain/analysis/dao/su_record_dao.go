@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
@@ -50,4 +51,11 @@ func (dao *SuRecordDao) SumByTaskId(ctx context.Context, taskId string) (float64
 	}
 	amount := sumFields["amount"].(float64)
 	return amount, err
+}
+
+func (dao *SuTaskDao) SumAmount(ctx context.Context, taskId string) (map[string]any, error) {
+	data, err := dao.SumByRSQL(ctx, fmt.Sprintf("task_id==%s", taskId), []*store.ValueCol{
+		{AggFunc: "sum", Field: "amount"},
+	})
+	return data, err
 }

@@ -37,11 +37,12 @@ type APIController interface {
 type RenderViewFunc func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error
 
 type CallOptions struct {
-	ParamsInBody  *bool // 强制要求参数入HttpBody中获取
-	InitMethod    func(callMethod *CallMethod)
-	GetFieldValue func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
-	Before        func(ictx *context.Context, params any) (any, context2.Context, error)
-	After         func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
+	IsAuthentication *bool                        // 是否进行身份认证
+	ParamsInBody     *bool                        // 强制要求参数入HttpBody中获取
+	InitMethod       func(callMethod *CallMethod) // 初始化函数
+	GetFieldValue    func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
+	Before           func(ictx *context.Context, params any) (any, context2.Context, error)
+	After            func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
 }
 
 var apis = types.NewCMap[any]()
@@ -75,8 +76,18 @@ func NewCallOptions(opts ...CallOptions) CallOptions {
 		if i.ParamsInBody != nil {
 			o.ParamsInBody = i.ParamsInBody
 		}
+		if i.IsAuthentication != nil {
+			o.IsAuthentication = i.IsAuthentication
+		}
 	}
 	return o
+}
+
+func (o *CallOptions) GetIsAuthentication() bool {
+	if o.IsAuthentication == nil {
+		return false
+	}
+	return *o.IsAuthentication
 }
 
 func WithParamsInBody(paramsInBody bool) CallOptions {
@@ -253,6 +264,7 @@ func (c *ApiController) callView(method string, path string, handlerName string,
 }
 
 func (c *ApiController) callMethod2(method string, path string, handlerName string, isEventHandle bool, isViewHandle bool, opts ...CallOptions) *router.Route {
+	backCtx := context2.Background()
 	callMethod, err := c.newCallMethod(handlerName)
 	if err != nil {
 		ctlType := reflect.TypeOf(c.apiCtl)
@@ -279,6 +291,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 				}
 				return err
 			}
+			logs.Info(backCtx, logs.Fields{"method": method, "path": path, "params": params})
 			data, err := callMethod.Call(ctx, ictx, params)
 			for _, opt := range opts {
 				if opt.After != nil {
@@ -286,11 +299,13 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 				}
 			}
 			if err == nil && callMethod.OutData >= 0 {
+				//logs.Info(backCtx, logs.Fields{"method": method, "path": path, "handlerName": handlerName, "data": data})
 				err = SetOKJsonData(ictx, data)
 			}
 			return err
 		}).Catch(func(err error) {
 			SetError(ictx, err)
+			logs.Error(backCtx, logs.Fields{"method": method, "path": path, "error": err})
 		})
 	})
 	c.addRouter(r)

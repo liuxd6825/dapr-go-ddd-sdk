@@ -9,16 +9,16 @@ type RecordDayFindByIdQuery = ddd_query.FindByIdQuery
 type RecordDayFindByCaseIdQuery = ddd_query.FindPagingByCaseIdQuery
 
 type RecordDayFindBySumChartQuery struct {
-	CaseId      string `json:"caseId"  param:"caseId" validate:"required" title:"项目ID"`
-	SummaryType string `json:"summaryType"  param:"summaryType" validate:"required" title:"汇总方式"`
+	CaseId      string `json:"caseId"  param:"case-id" validate:"required" title:"项目ID"`
+	SummaryType string `json:"summaryType"  param:"summary-type" validate:"required" title:"汇总方式"`
 	Filter      string `json:"filter"  param:"filter" validate:"" title:"过滤条件"`
 }
 
 type RecordDayFindBySumTableQuery struct {
-	CaseId      string `json:"caseId"  param:"caseId" validate:"required" title:"项目ID"`
+	CaseId      string `json:"caseId"  param:"case-id" validate:"required" title:"项目ID"`
 	Filter      string `json:"filter"  param:"filter" validate:"" title:"过滤条件"`
-	GroupFilter string `json:"groupFilter"  param:"groupFilter"  validate:"" title:"分组条件"`
+	GroupFilter string `json:"groupFilter"  param:"group-filter"  validate:"" title:"分组条件"`
 	Sort        string `json:"sort"  param:"sort"  validate:"" title:"排序"`
-	PageSize    int64  `json:"pageSize"  param:"pageSize"  validate:"required" title:"分页大小"`
-	PageNum     int64  `json:"pageNum"  param:"pageNum"  validate:""  title:"分页页号"`
+	PageSize    int64  `json:"pageSize"  param:"page-size"  validate:"required" title:"分页大小"`
+	PageNum     int64  `json:"pageNum"  param:"page-num"  validate:""  title:"分页页号"`
 }
