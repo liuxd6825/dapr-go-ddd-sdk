@@ -210,7 +210,7 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 }
 
 func (r *Dao[T]) getInsertData(ctx context.Context, tenantId string, data any, opts ...store.Options) any {
-	r.eb.SetCreatedInfo(ctx, data)
+	r.eb.SetCreatedInfo(ctx, data, opts...)
 	doc := r.entity2db(data)
 	for _, field := range r.schema.Fields {
 		if !field.Creatable {

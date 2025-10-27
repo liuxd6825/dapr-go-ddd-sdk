@@ -3,6 +3,7 @@ package store_mongodb
 import (
 	"context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
@@ -100,9 +101,10 @@ func (r *Dao[T]) InsertMany(ctx context.Context, tenantId string, entities []T, 
 			return errors.New("entities is nil")
 		}
 		var docs []any
+		opt := idao.NewCallOptions(opts...)
 		for _, e := range entities {
 			r.eb.SetTenantId(e, tenantId)
-			doc := r.getInsertData(sCtx, tenantId, e)
+			doc := r.getInsertData(sCtx, tenantId, e, opt)
 			docs = append(docs, doc)
 		}
 
