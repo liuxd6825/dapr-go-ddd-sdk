@@ -39,7 +39,7 @@ func appInit(app *iris.Application) {
 }
 
 func humanMap_handler(app *iris.Application) {
-	humanDao := dao.NewDao[map[string]any](&dao.NewConfig{
+	humanDao := dao.NewDao[map[string]any](&dao.DaoConfig{
 		DBSchema: dbschema.NewDBSchemaWithJsonSchemaText("humanMap.json", xtest.HumanSchema),
 	})
 	humanDao.Table().AutoMigrate(context.Background())
@@ -69,7 +69,7 @@ func humanMap_handler(app *iris.Application) {
 }
 
 func human_handler(app *iris.Application) {
-	humanDao := dao.NewDao[*xtest.Human](&dao.NewConfig{})
+	humanDao := dao.NewDao[*xtest.Human](&dao.DaoConfig{})
 	humanDao.Table().AutoMigrate(context.Background())
 
 	app.Get("/api/v1/human:create", func(ictx *icontext.Context) {

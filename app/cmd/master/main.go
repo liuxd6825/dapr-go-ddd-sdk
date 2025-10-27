@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph"
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	card "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
@@ -28,7 +29,7 @@ var (
 
 func main() {
 	appcmd.StartApp(&appcmd.AppStartOptions{
-		AppTitle:  "drawio服务器",
+		AppTitle:  "master服务器",
 		Version:   Version,
 		BuildTime: BuildTime,
 		GitHead:   GitHead,
@@ -56,7 +57,7 @@ func main() {
 				tag.RegisterAllApi(app, baseUrl, env)
 				excelImport.RegisterAllApi(app, baseUrl, env)
 				card.RegisterAllApi(app, baseUrl, env)
-
+				metrics.RegisterAllApi(app, baseUrl, env)
 				tasks.RunWorker()
 				return nil
 			})
