@@ -32,3 +32,7 @@ func (t *AuthService) CreateLoginFlow(ctx context.Context) (*client.LoginFlow, e
 func (t *AuthService) Login(ctx context.Context, flowId string, body client.UpdateLoginFlowBody) (*client.SuccessfulNativeLogin, error) {
 	return t.ory.UpdateLoginFlow(ctx, flowId, body)
 }
+
+func (t *AuthService) Logout(ctx context.Context, flowId string, body client.UpdateLoginFlowBody) (*client.SuccessfulNativeLogin, error) {
+	return t.ory.UpdateLoginFlow(ctx, flowId, body)
+}

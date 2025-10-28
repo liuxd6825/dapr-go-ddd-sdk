@@ -15,9 +15,12 @@ import (
 	"sync"
 )
 
+const SystemTenantId = "sys"
+
 type UserService struct {
 	dao *dao.UserDao
 	xbase.Service
+	tenantOpt idao.CallOptions
 }
 
 var (
@@ -28,7 +31,8 @@ var (
 func NewUserService() *UserService {
 	_userOnce.Do(func() {
 		_userDomainService = &UserService{
-			dao: dao.NewUserDao(config.DBKey),
+			tenantOpt: idao.NewCallOptions().SetTenantId(SystemTenantId),
+			dao:       dao.NewUserDao(config.DBKey),
 		}
 	})
 	return _userDomainService
@@ -40,37 +44,37 @@ func (t *UserService) GetConfig() *idao.DaoConfig {
 
 func (t *UserService) Create(ctx context.Context, cmd *command.UserCreateCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return t.dao.Create(ctx, &cmd.Data).GetError()
+		return t.dao.Create(ctx, &cmd.Data, t.tenantOpt).GetError()
 	})
 }
 
 func (t *UserService) Delete(ctx context.Context, cmd *command.UserDeleteCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return t.dao.DeleteById(ctx, cmd.Data.Id).GetError()
+		return t.dao.DeleteById(ctx, cmd.Data.Id, t.tenantOpt).GetError()
 	})
 }
 
 func (t *UserService) Update(ctx context.Context, cmd *command.UserUpdateCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return t.dao.Update(ctx, &cmd.Data, idao.NewCallOptions().SetUpdateFields(cmd.UpdateMask)).GetError()
+		return t.dao.Update(ctx, &cmd.Data, idao.NewCallOptions(t.tenantOpt, idao.NewCallOptions().SetUpdateFields(cmd.UpdateMask))).GetError()
 	})
 }
 
 func (t *UserService) UpdateData(ctx context.Context, data *model.User, opts ...idao.CallOptions) error {
-	return t.dao.Update(ctx, data, opts...).GetError()
+	return t.dao.Update(ctx, data, idao.NewCallOptions(t.tenantOpt, idao.NewCallOptions(opts...))).GetError()
 }
 
 func (t *UserService) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model.User, error) {
-	return t.dao.FindById(ctx, qry.Id)
+	return t.dao.FindById(ctx, qry.Id, t.tenantOpt)
 }
 
 func (t *UserService) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.User], error) {
-	res := t.dao.FindPaging(ctx, qry)
+	res := t.dao.FindPaging(ctx, qry, t.tenantOpt)
 	return res, res.GetError()
 }
 
 func (t *UserService) FindByAccount(ctx context.Context, account string) (*model.User, error) {
-	arr, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("account=='%s'", account))
+	arr, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("account=='%s'", account), t.tenantOpt)
 	if err != nil {
 		return nil, err
 	}

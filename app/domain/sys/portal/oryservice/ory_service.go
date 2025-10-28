@@ -98,6 +98,14 @@ func (t *OryService) DeleteIdentity(ctx context.Context, id string) error {
 	return nil
 }
 
+func (t *OryService) CreateNativeSettingsFlow(ctx context.Context) (*client.SettingsFlow, error) {
+	flow, _, err := t.ory.FrontendAPI.CreateNativeSettingsFlow(ctx).Execute()
+	if err != nil {
+		return nil, err
+	}
+	return flow, nil
+}
+
 func (t *OryService) UpdateSettingsFlow(ctx context.Context, flowId string, updateSettingsFlowBody client.UpdateSettingsFlowBody) (*client.SettingsFlow, error) {
 	flow, _, err := t.ory.FrontendAPI.UpdateSettingsFlow(ctx).Flow(flowId).UpdateSettingsFlowBody(updateSettingsFlowBody).Execute()
 	if err != nil {
