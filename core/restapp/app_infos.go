@@ -12,7 +12,7 @@ import (
 var (
 	noExtExeName = "" //当前应用的名称(无扩展名)
 	exeName      = "" //当前应用的名称
-	pathName     = "" // 当前应用路径
+	exePath      = "" // 当前应用路径
 	pid          = "" // 当前进程PID
 	envName      = ""
 	workPath     = ""
@@ -32,13 +32,14 @@ func init() {
 	pid = strconv.FormatInt(val, 10)
 
 	path, _ := os.Executable()
-	pathName, exeName = filepath.Split(path)
+	exePath, exeName = filepath.Split(path)
 	SetExeName(exeName)
 
 	exeFullName = path
 
 	sysPaths = types.NewCMap[string]()
 	sysPaths.Set("ExeName", exeName)
+	sysPaths.Set("ExePath", exePath)
 
 	wPath, err := os.Getwd()
 	if err != nil {
@@ -47,14 +48,15 @@ func init() {
 	workPath = wPath
 	startPath = wPath
 	sysPaths.Set("WorkPath", workPath)
+	sysPaths.Set("PID", GetPID())
 }
 
 func GetSysPaths() *types.CMap[string] {
 	return sysPaths
 }
 
-func GetPathName() string {
-	return pathName
+func GetExcPath() string {
+	return exePath
 }
 
 func GetEnvName() string {
@@ -116,20 +118,7 @@ func SetExeName(name string) {
 //	@param val
 //	@return string
 func AbsFileName(filename string) string {
-	if filename == "" {
-		return ""
-	}
-	filename = strings.ReplaceAll(filename, "${ExeName}", GetExeName())
-	filename = strings.ReplaceAll(filename, "${PID}", GetPID())
-	filename = strings.ReplaceAll(filename, "${EnvName}", GetEnvName())
-	for _, k := range sysPaths.Keys() {
-		if v, ok := sysPaths.Get(k); ok {
-			key := fmt.Sprintf("${%s}", k)
-			filename = strings.ReplaceAll(filename, key, v)
-		}
-	}
-	filename, _ = filepath.Abs(filename)
-	return filename
+	return replaceValues(filename)
 }
 
 // ReplaceSysValues
@@ -138,17 +127,18 @@ func AbsFileName(filename string) string {
 //	@param val
 //	@return string
 func ReplaceSysValues(filename string) string {
-	if filename == "" {
+	return replaceValues(filename)
+}
+
+func replaceValues(str string) string {
+	if str == "" {
 		return ""
 	}
-	filename = strings.ReplaceAll(filename, "${ExeName}", GetExeName())
-	filename = strings.ReplaceAll(filename, "${PID}", GetPID())
-	filename = strings.ReplaceAll(filename, "${EnvName}", GetEnvName())
 	for _, k := range sysPaths.Keys() {
 		if v, ok := sysPaths.Get(k); ok {
 			key := fmt.Sprintf("${%s}", k)
-			filename = strings.ReplaceAll(filename, key, v)
+			str = strings.ReplaceAll(str, key, v)
 		}
 	}
-	return filename
+	return str
 }

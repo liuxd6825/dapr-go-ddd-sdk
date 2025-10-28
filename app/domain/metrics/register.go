@@ -19,7 +19,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterMetricsAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	app.Handle("", "/metrics", func(ctx iris.Context) {
+	app.Get("/metrics", func(ctx iris.Context) {
 		promhttp.Handler().ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 	})
 }

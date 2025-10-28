@@ -1,6 +1,13 @@
 # dapr-go-ddd-sdk
 
+### 编译
+```shell
+make build GOOS=linux    GOARCH=amd64  REL_VERSION=v1.15-251027
+```
+
 ### 启动
+
+
 
 ```shell
 main.go start 

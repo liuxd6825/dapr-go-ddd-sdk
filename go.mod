@@ -79,6 +79,7 @@ require (
 	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2
 	github.com/milvus-io/milvus/client/v2 v2.5.4
 	github.com/oklog/ulid/v2 v2.1.1
+	github.com/shopspring/decimal v1.2.0
 	github.com/tiktoken-go/tokenizer v0.6.2
 	github.com/tmc/langchaingo v0.1.13
 	go.temporal.io/sdk v1.36.0
@@ -86,10 +87,7 @@ require (
 	gorm.io/driver/sqlite v1.5.7
 )
 
-require (
-	github.com/ory/client-go v1.22.6 // indirect
-	go.yaml.in/yaml/v2 v2.4.2 // indirect
-)
+require go.yaml.in/yaml/v2 v2.4.2 // indirect
 
 require (
 	github.com/antchfx/xpath v1.3.3 // indirect
@@ -162,13 +160,13 @@ require (
 	github.com/onsi/gomega v1.33.1 // indirect
 	github.com/opencontainers/runtime-spec v1.0.2 // indirect
 	//github.com/ory/client-go v1.22.6 // indirect
-	github.com/ory/kratos-client-go v1.3.8 // indirect
+	github.com/ory/kratos-client-go v1.3.8
 	github.com/panjf2000/ants/v2 v2.11.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/perimeterx/marshmallow v1.1.4 // indirect
 	github.com/pkoukk/tiktoken-go v0.1.6 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/prometheus/client_golang v1.23.2 // indirect
+	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect

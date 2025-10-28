@@ -3,9 +3,9 @@ package suspicious
 import (
 	"context"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
@@ -23,7 +23,7 @@ func Test_FastInOutHours(t *testing.T) {
 		task.Rules.TimeFastInOut.IsEnable = true
 		task.Rules.TimeFastInOut.FastInOutHours = 24 * 5
 		task.Rules.TimeFastInOut.Percent = 80.0
-		task.Rules.TimeFastInOut.TxAmount = 1000
+		task.Rules.TimeFastInOut.Amount = 1000
 		return nil
 	})
 }
@@ -31,10 +31,10 @@ func Test_FastInOutHours(t *testing.T) {
 func Test_TimeSignificantDate(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeSignificantDate.IsEnable = true
-		task.Rules.TimeSignificantDate.CheckYearEnd = true
-		task.Rules.TimeSignificantDate.CheckQuarterEnd = true
-		task.Rules.TimeSignificantDate.CheckMonthEnd = true
-		task.Rules.TimeSignificantDate.TxAmount = 1000
+		task.Rules.TimeSignificantDate.CheckYear = true
+		task.Rules.TimeSignificantDate.CheckQuarter = true
+		task.Rules.TimeSignificantDate.CheckMonth = true
+		task.Rules.TimeSignificantDate.Amount = 1000
 		task.Rules.TimeSignificantDate.DaysBefore = 3
 		task.Rules.TimeSignificantDate.DaysAfter = 2
 		return nil
@@ -44,10 +44,10 @@ func Test_TimeSignificantDate(t *testing.T) {
 func Test_TimeConcentratedPayments(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeConcentratedPayments.IsEnable = true
-		task.Rules.TimeConcentratedPayments.TxAmount = 1000
+		task.Rules.TimeConcentratedPayments.Amount = 1000
 		task.Rules.TimeConcentratedPayments.StartTime = 18
 		task.Rules.TimeConcentratedPayments.EndTime = 8
-		task.Rules.TimeConcentratedPayments.TxCount = 10
+		task.Rules.TimeConcentratedPayments.Count = 10
 		return nil
 	})
 }
@@ -55,9 +55,9 @@ func Test_TimeConcentratedPayments(t *testing.T) {
 func Test_TimeNonWorkingHours(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.TimeNonWorkingHours.IsEnable = true
-		task.Rules.TimeNonWorkingHours.TxAmount = 1000
-		task.Rules.TimeNonWorkingHours.NonWorkingHoursMax = 18
-		task.Rules.TimeNonWorkingHours.NonWorkingHoursMin = 8
+		task.Rules.TimeNonWorkingHours.Amount = 1000
+		task.Rules.TimeNonWorkingHours.HoursMax = 18
+		task.Rules.TimeNonWorkingHours.HoursMin = 8
 		task.Rules.TimeNonWorkingHours.IsNonWorkingHours = true
 		task.Rules.TimeNonWorkingHours.IsNonWorkingSunday = true
 		return nil
@@ -84,8 +84,8 @@ func Test_AmountLarge(t *testing.T) {
 func Test_AmountCollar(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.AmountCollar.IsEnable = true
-		task.Rules.AmountCollar.CollarDays = 5
-		task.Rules.AmountCollar.TxAmount = 100
+		task.Rules.AmountCollar.Days = 5
+		task.Rules.AmountCollar.Amount = 100
 		task.Rules.AmountCollar.Percent = 90.0
 		return nil
 	})
@@ -94,7 +94,7 @@ func Test_AmountCollar(t *testing.T) {
 func Test_AmountNumber(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.AmountNumber.IsEnable = true
-		task.Rules.AmountNumber.NumberValue = 10000
+		task.Rules.AmountNumber.Number = 10000
 		return nil
 	})
 }
@@ -113,8 +113,8 @@ func Test_FreqAbnormal(t *testing.T) {
 func Test_FreqHigh(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.FreqHigh.IsEnable = true
-		task.Rules.FreqHigh.HighThreshold = 2
-		task.Rules.FreqHigh.HighPeriod = model2.SuFreqHighPeriod_Month
+		task.Rules.FreqHigh.Threshold = 2
+		task.Rules.FreqHigh.Period = model2.SuFreqHighPeriod_Month
 		return nil
 	})
 }
@@ -122,9 +122,9 @@ func Test_FreqHigh(t *testing.T) {
 func Test_FreqSleep(t *testing.T) {
 	_, _ = doAnalyse(t, account, func(task *model2.SuTask) error {
 		task.Rules.FreqSleep.IsEnable = true
-		task.Rules.FreqSleep.ActivationTxThreshold = 3
-		task.Rules.FreqSleep.HibernationPeriodDays = 180
-		task.Rules.FreqSleep.ActivationPeriodDays = 30
+		task.Rules.FreqSleep.ActivateThreshold = 3
+		task.Rules.FreqSleep.SleepDays = 180
+		task.Rules.FreqSleep.ActivateDays = 30
 		return nil
 	})
 }
@@ -145,7 +145,7 @@ func doAnalyse(t *testing.T, account string, do func(task *model2.SuTask) error)
 	analyes := NewAnalyse(task, taskRecords, newDataRepo())
 	result := analyes.applyRulesToAccount(ctx, accRecords)
 	if result != nil {
-		t.Log("records count: ", len(result.Records))
+		t.Log("suRecords count: ", len(result.SuRecords))
 		t.Log("batches count: ", len(result.Batches))
 	}
 	return result, nil

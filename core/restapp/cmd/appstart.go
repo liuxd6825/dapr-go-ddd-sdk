@@ -46,7 +46,7 @@ func StartApp(opts *AppStartOptions) {
 		runOpts.AddOnStartEvent(opts.OnStartEvent)
 		runOpts.AddOnInitEvent(opts.OnInitEvent)
 
-		restapp2.GetSysPaths().Set("HomePath", flag.HomePath)
+		restapp2.GetSysPaths().Set("WebPath", flag.HomePath)
 		runCfg := &restapp2.RunConfig{
 			Subs:        opts.Subs,
 			Controllers: opts.Controllers,
