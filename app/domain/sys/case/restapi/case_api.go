@@ -55,6 +55,8 @@ func (s *CaseAPI) Create(ctx context.Context, cmd *command.CaseCreateCommand) er
 
 		folder, _ := model2.NewFolder()
 		folder.Id = cmd.Data.TenantId + "_case_" + cmd.Data.Id
+		folder.BusId = "case"
+		folder.EntityId = cmd.Data.Id
 		folder.RootId = cmd.Data.TenantId + "_case_" + cmd.Data.Id
 		folder.RootPath = "/" + cmd.Data.TenantId + "/case/" + cmd.Data.Id
 		folder.FolderPath = "/" + cmd.Data.TenantId + "/case/" + cmd.Data.Id
