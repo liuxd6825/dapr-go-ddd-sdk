@@ -16,6 +16,10 @@ type Folder struct {
 	Color           string `gorm:"color" json:"color,omitempty" bson:"color"`                  //目录颜色
 }
 
+func NewFolder() (*Folder, error) {
+	return &Folder{}, nil
+}
+
 type FolderTree struct {
 	xbase.BaseModel `bson:",inline"`
 	BusId           string       `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`

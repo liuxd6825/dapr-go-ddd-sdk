@@ -88,6 +88,10 @@ func (t *FolderService) Create(ctx context.Context, cmd *command.FolderCreateCom
 	})
 }
 
+func (t *FolderService) CreateData(ctx context.Context, data *model.Folder) error {
+	return t.dao.Create(ctx, data).GetError()
+}
+
 func (t *FolderService) Delete(ctx context.Context, cmd *command.FolderDeleteCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		return t.dao.DeleteById(ctx, cmd.Data.Id).GetError()

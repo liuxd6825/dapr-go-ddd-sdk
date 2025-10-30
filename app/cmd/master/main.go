@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	card "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
+	cases "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/restapi"
 	dict "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/restapi"
 	portal "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
@@ -61,6 +62,7 @@ func main() {
 				card.RegisterAllApi(app, baseUrl, env)
 				portal.RegisterAllApi(app, baseUrl, env)
 				dict.RegisterAllApi(app, baseUrl, env)
+				cases.RegisterAllApi(app, baseUrl, env)
 				metrics.RegisterAllApi(app, baseUrl, env)
 				tasks.RunWorker()
 				return nil
