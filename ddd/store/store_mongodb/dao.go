@@ -3,6 +3,8 @@ package store_mongodb
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -18,7 +20,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongo_options "go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 const (
@@ -53,8 +54,7 @@ func (i ObjectId) String() string {
 }
 
 type Dao[T any] struct {
-	eb         store.EntityBuilder[T] // 实体构造器
-	decoder    Decoder[T]             // mongo数据解码器
+	decoder    Decoder[T] // mongo数据解码器
 	collection *mongo.Collection
 	mongodb    IMongoDB
 	null       T
@@ -62,7 +62,8 @@ type Dao[T any] struct {
 	initFun    func(ctx context.Context) (mongodb IMongoDB, collection *mongo.Collection) // 初始化
 	options    *Options[T]
 	metadata   map[string]any
-	schema     *store.DBSchema
+	base       *store.BaseDao[T]
+	eb         store.EntityBuilder[T]
 }
 
 func NewDao[T any](dbSch *store.DBSchema, initFun func(ctx context.Context) (mongodb IMongoDB, collection *mongo.Collection), opts ...*Options[T]) store.IStore[T] {
@@ -78,22 +79,23 @@ func NewMongoDao[T any](dbSch *store.DBSchema, initFun func(ctx context.Context)
 	}
 	r := &Dao[T]{
 		metadata: make(map[string]any),
-		schema:   dbSch,
 	}
 
 	r.initFun = initFun
 	r.options = NewOptions[T](opts...)
-	if r.options.entityBuilder == nil {
-		r.options.entityBuilder = store.NewAnyEntityBuilder[T](dbSch)
-		r.decoder = NewStructDecoder[T]()
+	eb := r.options.entityBuilder
+	if eb == nil {
+		eb = store.NewAnyEntityBuilder[T](dbSch)
 	}
-	r.eb = r.options.entityBuilder
-
-	if r.eb.GetConfig().IsMap {
+	if eb.GetConfig().IsMap {
 		r.decoder = NewStructDecoder[T]()
 	} else {
 		r.decoder = NewMapDecoder[T]()
 	}
+	base := store.NewBaseDao(eb, dbSch)
+	r.base = base
+	r.eb = base.GetEb()
+
 	ctx := context.Background()
 	mongodb, coll := initFun(ctx)
 	if err := r.Init(ctx, mongodb, coll); err != nil {
@@ -119,35 +121,35 @@ func (r *Dao[T]) AddMetadata(key string, val any) {
 }
 
 func (r *Dao[T]) GetSchema() *store.DBSchema {
-	return r.schema
+	return r.base.GetSchema()
 }
 
 func (r *Dao[T]) NewEntity() T {
-	return r.eb.NewEntity()
+	return r.base.NewEntity()
 }
 
 func (r *Dao[T]) NewEntityList() []T {
-	return r.eb.NewEntityList()
+	return r.base.NewEntityList()
 }
 
 func (r *Dao[T]) GetTenantId(entity T) string {
-	return r.eb.GetTenantId(entity)
+	return r.base.GetTenantId(entity)
 }
 
 func (r *Dao[T]) SetTenantId(entity T, tenantId string) {
-	r.eb.SetTenantId(entity, tenantId)
+	r.base.SetTenantId(entity, tenantId)
 }
 
 func (r *Dao[T]) GetId(entity T) string {
-	return r.eb.GetId(entity)
+	return r.base.GetId(entity)
 }
 
 func (r *Dao[T]) SetId(entity T, id string) {
-	r.eb.SetId(entity, id)
+	r.base.SetId(entity, id)
 }
 
 func (r *Dao[T]) GetAggId(entity T) string {
-	return r.eb.GetAggId(entity)
+	return r.base.GetAggId(entity)
 }
 
 func (r *Dao[T]) Init(ctx context.Context, mongodb IMongoDB, collection *mongo.Collection) error {
@@ -159,7 +161,7 @@ func (r *Dao[T]) Init(ctx context.Context, mongodb IMongoDB, collection *mongo.C
 
 func (r *Dao[T]) CreateCollection(ctx context.Context) error {
 	if r.options.GetAutoCreateCollection() {
-		find, err := r.mongodb.ExistCollection(ctx, r.schema.TableName)
+		find, err := r.mongodb.ExistCollection(ctx, r.GetSchema().TableName)
 		if err != nil {
 			return err
 		}
@@ -169,7 +171,7 @@ func (r *Dao[T]) CreateCollection(ctx context.Context) error {
 			opts := &mongo_options.CreateCollectionOptions{
 				Validator: validator,
 			}
-			if err := r.mongodb.CreateCollection(r.schema.TableName, opts); err != nil {
+			if err := r.mongodb.CreateCollection(r.GetSchema().TableName, opts); err != nil {
 				return err
 			}
 
@@ -187,7 +189,7 @@ func (r *Dao[T]) CreateValidator(ctx context.Context) bson.M {
 	// 定义 JSON Schema 验证规则
 	var required []string
 	properties := bson.M{}
-	for _, field := range r.schema.Fields {
+	for _, field := range r.GetSchema().Fields {
 		if field.NotNull {
 			required = append(required, field.DBName)
 		}
@@ -227,7 +229,7 @@ func (r *Dao[T]) CreateValidator(ctx context.Context) bson.M {
 func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
 
 	var models []mongo.IndexModel
-	for _, field := range r.schema.Fields {
+	for _, field := range r.GetSchema().Fields {
 		if field.PrimaryKey {
 			// 为业务ID创建唯一索引
 			indexModel := mongo.IndexModel{
@@ -412,7 +414,7 @@ func (r *Dao[T]) UpdateManyMaskById(ctx context.Context, entities []T, mask []st
 }
 func (r *Dao[T]) getDbMap(m map[string]any) map[string]any {
 	data := map[string]any{}
-	for _, field := range r.schema.Fields {
+	for _, field := range r.GetSchema().Fields {
 		data[field.DBName] = m[field.Name]
 	}
 	return data
@@ -467,10 +469,14 @@ func AsFieldName(name string) string {
 	return stringutils.SnakeString(name)
 }
 
-// entity2db
 func (r *Dao[T]) entity2db(entity any) map[string]any {
+	return r.base.Entity2DB(entity)
+}
+
+/*// entity2db2
+func (r *Dao[T]) entity2db2(entity any) map[string]any {
 	data := map[string]any{}
-	entityIsMap := r.eb.GetConfig().IsMap
+	entityIsMap := r.base.GetEb().GetConfig().IsMap
 	eMap, isMap := entity.(map[string]any)
 	if entityIsMap {
 		if !isMap {
@@ -480,7 +486,7 @@ func (r *Dao[T]) entity2db(entity any) map[string]any {
 
 	if isMap {
 		if entityIsMap {
-			for _, field := range r.schema.Fields {
+			for _, field := range r.GetSchema().Fields {
 				fieldValue, ok := eMap[field.Name]
 				if !ok && field.Name != field.DBName {
 					fieldValue, ok = eMap[field.DBName]
@@ -488,12 +494,17 @@ func (r *Dao[T]) entity2db(entity any) map[string]any {
 				if !ok {
 					//fieldValue = field.DefaultValueInterface
 				}
-				data[field.DBName] = fieldValue
+
+				val, err := store.ConvertValue(field.DataType, fieldValue)
+				if err != nil {
+					panic(fmt.Sprintf("Dao.ConvertValue() fileName:%s, dataType:%s, error:%s", field.Name, store.DataTypeToString(field.DataType), err.Error()))
+				}
+				data[field.DBName] = val
 			}
 		} else {
 			newMap := map[string]any{}
 			for key, val := range eMap {
-				field := r.schema.LookedField(key)
+				field := r.GetSchema().LookedField(key)
 				if field != nil {
 					newMap[field.DBName] = val
 				}
@@ -501,24 +512,28 @@ func (r *Dao[T]) entity2db(entity any) map[string]any {
 			return newMap
 		}
 	} else {
-		for _, field := range r.schema.Fields {
+		for _, field := range r.GetSchema().Fields {
 			val := reflectutils.GetField(entity, field.Name)
 			data[field.DBName] = val
 		}
 	}
 	return data
+}*/
+
+func (r *Dao[T]) GetConfig() *store.EntityBuilderConfig {
+	return r.eb.GetConfig()
 }
 
-func (r *Dao[T]) db2entity(data map[string]any) T {
+func (r *Dao[T]) db2entity222(data map[string]any) T {
 	entity := r.NewEntity()
-	isMap := r.eb.GetConfig().IsMap
+	isMap := r.GetConfig().IsMap
 	if isMap {
 		eAny := any(entity)
 		eMap, isMap := eAny.(map[string]any)
 		if !isMap {
 			panic("store_mongodb.dao entity is not a map")
 		}
-		for _, field := range r.schema.Fields {
+		for _, field := range r.GetSchema().Fields {
 			val := data[field.DBName]
 			if field.DataType == store.DataType_Date || field.DataType == store.DataType_Time {
 				if pDate, ok := val.(primitive.DateTime); ok {
@@ -536,7 +551,7 @@ func (r *Dao[T]) db2entity(data map[string]any) T {
 	} else {
 		var errFieldName string
 		gp.Try(func() error {
-			for _, field := range r.schema.Fields {
+			for _, field := range r.GetSchema().Fields {
 				errFieldName = field.Name
 				val := data[field.DBName]
 				if field.DataType == store.DataType_Date || field.DataType == store.DataType_Time {

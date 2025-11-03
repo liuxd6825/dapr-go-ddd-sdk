@@ -2,14 +2,15 @@ package maputils
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/convert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"go.mongodb.org/mongo-driver/bson"
-	"reflect"
-	"strconv"
-	"time"
 )
 
 type JsonTime interface {
@@ -73,7 +74,7 @@ func GetString(m map[string]interface{}, key string, result *string, def string)
 func GetString(m map[string]interface{}, key string, def string) (string, error) {
 	res := def
 	if v, ok := m[key]; ok {
-		return convert.ConvertString(v)
+		return convert.ToString(v)
 	}
 	return res, nil
 }
@@ -123,7 +124,7 @@ func GetMap(m map[string]interface{}, key string, def map[string]any) (map[strin
 func GetBool(m map[string]interface{}, key string, def bool) (bool, error) {
 	res := def
 	if v, ok := m[key]; ok {
-		return convert.ConvertBool(v)
+		return convert.ToBool(v)
 	}
 	return res, nil
 }
@@ -145,7 +146,7 @@ func GetInt64(m map[string]interface{}, key string, def int64) (int64, error) {
 				res = num
 			}
 		}
-		return convert.ConvertInt(v)
+		return convert.ToInt(v)
 	}
 	return res, nil
 }

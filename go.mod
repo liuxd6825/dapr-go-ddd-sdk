@@ -1,8 +1,6 @@
 module github.com/liuxd6825/dapr-go-ddd-sdk
 
-go 1.24.2
-
-toolchain go1.24.4
+go 1.24.9
 
 // ai
 require (
@@ -74,6 +72,7 @@ require (
 	github.com/cloudwego/eino-ext/components/tool/browseruse v0.0.0-20250610035057-2c4e7c8488a5
 	github.com/cloudwego/eino-ext/components/tool/mcp v0.0.3
 	github.com/extrame/xls v0.0.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/invopop/jsonschema v0.13.0
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2

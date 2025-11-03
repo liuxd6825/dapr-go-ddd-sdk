@@ -3,6 +3,8 @@ package store_sql
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -15,7 +17,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"gorm.io/gorm"
 	gormschema "gorm.io/gorm/schema"
-	"strings"
 )
 
 type NewConfig struct {

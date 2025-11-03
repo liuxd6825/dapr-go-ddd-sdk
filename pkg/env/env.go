@@ -3,13 +3,14 @@ package env
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
-	"strings"
 )
 
 type Config struct {
@@ -29,9 +30,9 @@ type Env struct {
 	Minio     map[string]*Minio    `yaml:"minio" json:"minio"`
 	Redis     map[string]*Redis    `yaml:"redis" json:"redis"`
 	Fs        []map[string]any     `yaml:"fs" json:"fs"`
-	Auth      *Auth                `yaml:"auth" json:"auth"`
-	Fsm       *fsm.Manager         `yaml:"-" json:"-"`
-	dbs       map[string]DBItem
+	//Auth      *Auth                `yaml:"auth" json:"auth"`
+	Fsm *fsm.Manager `yaml:"-" json:"-"`
+	dbs map[string]DBItem
 }
 
 var _env *Env
@@ -65,9 +66,9 @@ func NewEnv() *Env {
 		Minio:     map[string]*Minio{},
 		Redis:     map[string]*Redis{},
 		Fs:        []map[string]any{},
-		Auth:      &Auth{},
-		Fsm:       fsm.NewManager(),
-		dbs:       map[string]DBItem{},
+		//Auth:      &Auth{},
+		Fsm: fsm.NewManager(),
+		dbs: map[string]DBItem{},
 	}
 }
 

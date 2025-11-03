@@ -3,13 +3,14 @@ package store_mongodb
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	assert2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"strings"
 )
 
 func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...store.Options) *store.SetResult[T] {
@@ -181,7 +182,7 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 	doc := r.entity2db(data)
 	opt := store.NewOptions(opts...)
 
-	for _, field := range r.schema.Fields {
+	for _, field := range r.GetSchema().Fields {
 		if !field.Updatable || field.PrimaryKey {
 			delete(doc, field.DBName)
 			delete(doc, field.Name)
@@ -190,7 +191,7 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 
 	updateFields := opt.GetUpdateFields()
 	if len(updateFields) > 0 {
-		for _, field := range r.schema.Fields {
+		for _, field := range r.GetSchema().Fields {
 			if IncludeField(field, updateFields) {
 				continue
 			}
@@ -200,7 +201,7 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 
 	cancelFields := opt.GetUpdateCancel()
 	if len(cancelFields) > 0 {
-		for _, field := range r.schema.Fields {
+		for _, field := range r.GetSchema().Fields {
 			if IncludeField(field, cancelFields) {
 				delete(doc, field.DBName)
 			}
@@ -212,7 +213,7 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 func (r *Dao[T]) getInsertData(ctx context.Context, tenantId string, data any, opts ...store.Options) any {
 	r.eb.SetCreatedInfo(ctx, data, opts...)
 	doc := r.entity2db(data)
-	for _, field := range r.schema.Fields {
+	for _, field := range r.GetSchema().Fields {
 		if !field.Creatable {
 			delete(doc, field.DBName)
 		}

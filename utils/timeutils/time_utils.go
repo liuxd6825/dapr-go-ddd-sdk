@@ -3,13 +3,14 @@ package timeutils
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const LocalDateFormatLine = "2006-01-02"
@@ -68,6 +69,18 @@ func (u *TimeUtils) AnyToTime(data any, defVal time.Time) (res time.Time, err er
 		return defVal, nil
 	}
 	switch data.(type) {
+	case times.Time:
+		val := data.(times.Time)
+		res = val.Time()
+	case times.Date:
+		val := data.(times.Date)
+		res = val.Time()
+	case *times.Time:
+		val := data.(*times.Time)
+		res = val.Time()
+	case *times.Date:
+		val := data.(*times.Date)
+		res = val.Time()
 	case time.Time:
 		res = data.(time.Time)
 	case *time.Time:

@@ -3,6 +3,8 @@ package store_mongodb
 import (
 	"context"
 	"encoding/json"
+	"strings"
+
 	"github.com/dapr/components-contrib/liuxd/common/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -17,7 +19,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongo_options "go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
 )
 
 func (r *Dao[T]) FindOneAndUpdateById(ctx context.Context, tenantId string, id string, data map[string]any, opts ...store.Options) (T, error) {
@@ -81,7 +82,7 @@ func (r *Dao[T]) mFindList(ctx context.Context, filter any, opts ...*mongo_optio
 	if r.eb.GetConfig().IsMap {
 		for i, item := range list {
 			if eMap, ok := any(item).(map[string]any); ok {
-				e := r.db2entity(eMap)
+				e := r.base.DB2Entity(eMap)
 				list[i] = e
 			}
 		}
@@ -112,7 +113,7 @@ func (r *Dao[T]) mFindOne(ctx context.Context, filter any, opts ...*mongo_option
 
 	if r.eb.GetConfig().IsMap {
 		if eMap, ok := any(entity).(map[string]any); ok {
-			entity = r.db2entity(eMap)
+			entity = r.base.DB2Entity(eMap)
 		}
 	}
 	return entity, any(entity) != nil, err

@@ -2,6 +2,8 @@ package sub_import
 
 import (
 	"context"
+	"time"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/factory"
@@ -12,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
@@ -48,6 +51,7 @@ func (s *RecordEventSubHandler) Check(ctx context.Context) error {
 }
 
 func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) error {
+	logs.Infofmt(ctx, "record-import-master-event eventId:%s; occurredOn:%s; ", event.EventId, event.Event.OccurredOn.Format(time.DateTime))
 	records, err := s.factory.NewByRecordImportMasterEvent(ctx, event)
 	if err != nil {
 		return err

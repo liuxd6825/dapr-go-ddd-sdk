@@ -3,11 +3,12 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	"reflect"
-	"time"
 )
 
 type ConvertType string
@@ -29,30 +30,30 @@ const (
 func Convert(convType ConvertType, value any) (any, error) {
 	switch convType {
 	case ConvertTypeNumber, ConvertTypeInt:
-		return ConvertInt(value)
+		return ToInt(value)
 	case ConvertTypeFloat:
-		return ConvertFloat(value)
+		return ToFloat64(value)
 	case ConvertTypeString,
 		ConvertTypeNone:
-		return ConvertString(value)
+		return ToString(value)
 	case ConvertTypeBool:
-		return ConvertBool(value)
+		return ToBool(value)
 	case ConvertTypeDateTime:
-		return ConvertDateTime(value)
+		return ToDateTime(value)
 	case ConvertTypeTime:
-		return ConvertTime(value)
+		return ToTime(value)
 	default:
 		typeName := reflect.ValueOf(value).Type().String()
 		return nil, errors.New(fmt.Sprintf("unknown convert type: %s , %s", convType, typeName))
 	}
 }
 
-func ConvertString(value any) (string, error) {
+func ToString(value any) (string, error) {
 	v := convertor.ToString(value)
 	return v, nil
 }
 
-func ConvertInt(value any) (res int64, err error) {
+func ToInt(value any) (res int64, err error) {
 	if value == nil {
 		return 0, nil
 	}
@@ -79,7 +80,7 @@ func ConvertInt(value any) (res int64, err error) {
 	return res, err
 }
 
-func ConvertFloat(value any) (float64, error) {
+func ToFloat64(value any) (float64, error) {
 	v, err := convertor.ToFloat(value)
 	if err != nil {
 		return 0, errors.New("%v is not float64", value)
@@ -87,7 +88,7 @@ func ConvertFloat(value any) (float64, error) {
 	return v, nil
 }
 
-func ConvertBool(value any) (bool, error) {
+func ToBool(value any) (bool, error) {
 	var val any
 	if value == nil || value == "" {
 		val = "false"
@@ -97,10 +98,10 @@ func ConvertBool(value any) (bool, error) {
 	return convertor.ToBool(fmt.Sprintf("%v", val))
 }
 
-func ConvertDateTime(value any) (time.Time, error) {
+func ToDateTime(value any) (time.Time, error) {
 	return timeutils.AsTime(value)
 }
 
-func ConvertTime(value any) (time.Time, error) {
+func ToTime(value any) (time.Time, error) {
 	return timeutils.AsTime(value)
 }

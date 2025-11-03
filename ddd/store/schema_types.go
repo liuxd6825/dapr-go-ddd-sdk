@@ -30,3 +30,31 @@ const (
 	DataType_Json   = gormschema.Json
 	DataType_Array  = gormschema.Array
 )
+
+func DataTypeToString(dataType DataType) string {
+	switch dataType {
+	case DataType_Bool:
+		return "bool"
+	case DataType_Int:
+		return "int"
+	case DataType_Uint:
+		return "uint"
+	case DataType_Float:
+		return "float"
+	case DataType_String:
+		return "string"
+	case DataType_Date:
+		return "date"
+	case DataType_Time:
+		return "time"
+	case DataType_Bytes:
+		return "bytes"
+	case DataType_Json:
+		return "json"
+	case DataType_Array:
+		return "array"
+	default:
+		return "unknown"
+	}
+	return "unknown"
+}

@@ -3,10 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	client "github.com/ory/kratos-client-go"
-	"sync"
 )
 
 type OryService struct {
@@ -24,7 +25,7 @@ func (t *OryService) loadConfig() {
 	oryMeta := e.App.Meta["ory"]
 	var err error
 	if oryMeta == nil {
-		panic("ory not found in env.app")
+		panic("ory not found in env.app ")
 	}
 
 	t.oryCfg, err = config.ReadOryConfig(oryMeta)

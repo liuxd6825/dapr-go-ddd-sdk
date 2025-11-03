@@ -2,6 +2,7 @@ package restapp
 
 import (
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
@@ -16,7 +17,7 @@ func NewEnv(cfg *EnvConfig) *env.Env {
 	env.Fsm = NewFsm(cfg.Fs, cfg.App.HServer.SrcName)
 	env.Log = NewLog(cfg.Log)
 	env.Dapr = NewDapr(cfg.Dapr)
-	env.Auth = NewAuth(cfg.Auth)
+	//env.Auth = NewAuth(cfg.Auth)
 	env.Mysql = NewMySQL(cfg.Mysql)
 	env.Mongo = NewMongo(cfg.Mongo)
 	env.Neo4j = NewNeo4j(cfg.Neo4j)
@@ -81,11 +82,13 @@ func NewDapr(cfg *DaprConfig) *env.Dapr {
 	return dapr
 }
 
+/*
 func NewAuth(cfg *AuthConfig) *env.Auth {
 	auth := env.NewAuth()
 	copy(cfg, auth)
 	return auth
 }
+*/
 
 func NewApp(cfg *AppConfig) *env.App {
 	app := env.NewApp()

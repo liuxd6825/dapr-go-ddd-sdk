@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
@@ -35,10 +36,12 @@ type Log struct {
 	LogLevel   logs.Level
 }
 
+/*
 type Auth struct {
 	StoreDbKey string `json:"storeDbKey"`
 	Enable     *bool  `json:"enable"`
 }
+*/
 
 // LogOutputType 日志输出类型
 type LogOutputType string
@@ -123,6 +126,8 @@ func initLog(e *Env) {
 
 }
 
+/*
 func NewAuth() *Auth {
 	return &Auth{}
 }
+*/

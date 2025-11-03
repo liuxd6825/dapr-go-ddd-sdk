@@ -107,72 +107,72 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 	for key, value := range values {
 		switch key {
 		case "notField":
-			if val, err := convert.ConvertBool(value); err != nil {
+			if val, err := convert.ToBool(value); err != nil {
 				db.NotField = val
 			}
 		case "primaryKey":
-			if val, err := convert.ConvertBool(value); err != nil {
+			if val, err := convert.ToBool(value); err != nil {
 				db.PrimaryKey = val
 			}
 		case "creatable":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.Creatable = val
 			}
 		case "size":
-			if val, err := convert.ConvertInt(value); err == nil {
+			if val, err := convert.ToInt(value); err == nil {
 				db.Size = val
 			}
 		case "name":
-			if val, err := convert.ConvertString(value); err == nil {
+			if val, err := convert.ToString(value); err == nil {
 				db.Name = val
 			}
 		case "notNull":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.NotNull = val
 			}
 		case "unique":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.Unique = val
 			}
 		case "updatable":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.Updatable = val
 			}
 		case "readable":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.Readable = val
 			}
 		case "sortType":
-			if val, err := convert.ConvertString(value); err == nil {
+			if val, err := convert.ToString(value); err == nil {
 				db.SortType = DBSortType(val)
 			}
 		case "indexName":
-			if val, err := convert.ConvertString(value); err == nil {
+			if val, err := convert.ToString(value); err == nil {
 				db.IndexName = val
 			}
 		case "indexType":
-			if val, err := convert.ConvertString(value); err == nil {
+			if val, err := convert.ToString(value); err == nil {
 				db.IndexType = DBIndexType(val)
 			}
 
 		case "relStartId":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.RelStartId = val
 			}
 		case "relEndId":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.RelEndId = val
 			}
 		case "relType":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.RelType = val
 			}
 		case "nodeLabel":
-			if val, err := convert.ConvertBool(value); err == nil {
+			if val, err := convert.ToBool(value); err == nil {
 				db.NodeLabel = val
 			}
 		case "nodeLabelFormat":
-			if val, err := convert.ConvertString(value); err == nil {
+			if val, err := convert.ToString(value); err == nil {
 				db.NodeLabelFormat = val
 			}
 		}

@@ -2,10 +2,11 @@ package store
 
 import (
 	"context"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"strings"
 )
 
 func NewIds[T ddd.Entity](ctx context.Context, list []T) ([]string, error) {

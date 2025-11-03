@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
 	engine2 "github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/handler/file_handler/engine"
@@ -15,8 +18,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"github.com/spf13/afero"
-	"path/filepath"
-	"strings"
 )
 
 type Config struct {
@@ -122,6 +123,9 @@ func (h *Handler) Handle(ictx iris.Context) {
 func (h *Handler) RenderView(ctx context.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error {
 	if fileName == "" {
 		fileName = ictx.Request().URL.Path
+	}
+	if strings.HasSuffix(fileName, "login.ts") {
+		logs.Infofmt(ctx, "file handle %s", fileName)
 	}
 	// 检查目录中存在文件
 	fs, _, isFound, err := h.isFileExist(fileName)

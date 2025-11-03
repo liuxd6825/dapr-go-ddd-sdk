@@ -23,7 +23,7 @@ func (p *DDD) init(ctx *jsonschema.CompilerContext, values map[string]any) error
 		case "aggType":
 			p.AggType = v.(string)
 		case "isPubEvent":
-			if val, err := convert.ConvertBool(v); err == nil {
+			if val, err := convert.ToBool(v); err == nil {
 				p.IsPubEvent = val
 			} else {
 				return err
