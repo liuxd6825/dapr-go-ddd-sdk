@@ -62,7 +62,7 @@ func (s *FileService) Save(ctx context.Context, caseId, fileName string, content
 	pathName := filepath.Dir(fileName)
 	exists := s.drawFs.Exists(pathName)
 	if !exists && pathName != "." {
-		s.drawFs.Mkdir(pathName, os.ModePerm)
+		s.drawFs.MkdirAll(pathName, os.ModePerm)
 	}
 	s.drawFs.WriteFile(fileName, content)
 	return nil
