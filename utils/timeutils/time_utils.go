@@ -116,6 +116,21 @@ func (u *TimeUtils) AsTime(data any) (time.Time, error) {
 	return u.AnyToTime(data, time.Time{})
 }
 
+// HasHMS
+// @Description: 是否有时分秒部分
+// @receiver u
+// @param val
+// @return bool
+func HasHMS(val time.Time) bool {
+	if val.IsZero() {
+		return false
+	}
+	if val.Hour() == 0 && val.Minute() == 0 && val.Second() == 0 {
+		return false
+	}
+	return true
+}
+
 // 20180313114933
 // 20221001 11:09:22
 

@@ -2,10 +2,12 @@ package subscribe
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
@@ -16,6 +18,8 @@ type CdcAPI struct {
 	queryService  *service.QueryService
 	recordService *service.RagRecordService
 }
+
+var dataChangeURL = "/subscribe/graph/master/cdc/data-change"
 
 func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 	masterService := service.NewMasterService().Init()
@@ -28,17 +32,19 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 }
 
 func (s *CdcAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	ctl := restapi.NewController(app, s.rootPath, "CdcAPI", s)
-	ctl.Handle(iris.MethodPost, "/master-cdc-graph", "DataChange")
-	ctl.Handle(iris.MethodOptions, "/master-cdc-graph", "DaprOptions")
+	ctl := restapi.NewController(app, "", "CdcAPI", s)
+	ctl.Handle(iris.MethodPost, dataChangeURL, "DataChange")
+	ctl.Handle(iris.MethodOptions, dataChangeURL, "DaprOptions")
 	return ctl
 }
 
 func (s *CdcAPI) DaprOptions(ctx context.Context) error {
+	logs.Infofmt(ctx, "dapr subscribe %s ", dataChangeURL)
 	return nil
 }
 
 func (s *CdcAPI) DataChange(ctx context.Context, cdc *model.CDCRecord) error {
+	logs.Infofmt(ctx, "%s CdcAPI.DataChange(CDCRecord) table:%s", dataChangeURL, cdc.Table)
 	if cdc.Table == "record" {
 		return s.recordService.DataChange(ctx, cdc)
 	}

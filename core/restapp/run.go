@@ -3,6 +3,7 @@ package restapp
 import (
 	"context"
 	"fmt"
+
 	"github.com/dapr/go-sdk/actor"
 	"github.com/dapr/go-sdk/service/common"
 	"github.com/kataras/iris/v12"
@@ -119,7 +120,7 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 	//
 
 	//初始化日志
-	if err = initLogs(envConfig.Log.level, envConfig.Log.SaveDays, envConfig.Log.SplitHour, envConfig.Log.LogFile, envConfig.Log.OutputType); err != nil {
+	if err = initLogs(envConfig, envConfig.Log.level, envConfig.Log.SaveDays, envConfig.Log.SplitHour, envConfig.Log.LogFile, envConfig.Log.OutputType); err != nil {
 		fmt.Println(fmt.Sprintf("初始化日志文件时出错，错误:%s", err.Error()))
 		return nil, err
 	}

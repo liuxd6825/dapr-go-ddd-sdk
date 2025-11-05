@@ -2,6 +2,7 @@ package restapp
 
 import (
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/processutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 
@@ -131,7 +132,7 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	}
 	if env.Dapr.StartArgs != nil {
 		for k, v := range env.Dapr.StartArgs {
-			arg := getDaprArg(k, v)
+			arg := getDaprArg(k, v, env)
 			args = append(args, arg)
 		}
 	}
@@ -144,11 +145,11 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	return p
 }
 
-func getDaprArg(argName string, argValue string) string {
+func getDaprArg(argName string, argValue string, env *EnvConfig) string {
 	argName = stringutils.ToKebabCase(argName)
 	if strings.HasPrefix(argValue, "./") || strings.HasPrefix(argValue, "../") {
-		argValue = AbsFileName(argValue)
+		argValue = AbsFileName(argValue, env)
 	}
-	argValue = ReplaceSysValues(argValue)
+	argValue = ReplaceSysValues(argValue, env)
 	return fmt.Sprintf("-%s=%s", argName, argValue)
 }

@@ -5,10 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"github.com/tealeg/xlsx"
-	"strings"
 
 	"io"
 	"os"
@@ -317,7 +319,19 @@ func ReadBytesToMap(bytes []byte, maxRows int64) (*Review, error) {
 			for cIdx := 0; cIdx < len(row.Cells); cIdx++ {
 				key := GetCellLabel(cIdx + 1)
 				if cell := row.Cells[cIdx]; cell != nil {
-					item[key] = row.Cells[cIdx].String()
+					item[key] = cell.Value
+					if cell.Value == "" {
+						continue
+					}
+					if cell.Type() == xlsx.CellTypeNumeric && cellIsDateFmt(cell.NumFmt) {
+						if val, err := cell.GetTime(f.Date1904); err == nil {
+							if timeutils.HasHMS(val) {
+								item[key] = val.Format(time.DateTime)
+							} else {
+								item[key] = val.Format(time.DateOnly)
+							}
+						}
+					}
 				}
 			}
 			sheet.AddItems(item)
@@ -328,4 +342,18 @@ func ReadBytesToMap(bytes []byte, maxRows int64) (*Review, error) {
 	}
 	return review, nil
 
+}
+
+// cellIsDateFmt
+// @Description: 判断单元格的数据格式是否为日期类型
+// @param numFmt
+// @return bool
+func cellIsDateFmt(numFmt string) bool {
+	if numFmt == "" {
+		return false
+	}
+	if strings.Contains(numFmt, "y") && strings.Contains(numFmt, "m") && strings.Contains(numFmt, "d") {
+		return true
+	}
+	return false
 }

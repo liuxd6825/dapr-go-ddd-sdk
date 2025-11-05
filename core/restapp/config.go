@@ -2,13 +2,14 @@ package restapp
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -220,7 +221,7 @@ func NewConfigByFile(fileName string) (*Config, error) {
 			return nil, err
 		}
 		if !ok {
-			return nil, errors.New(fileName)
+			return nil, errors.New("fileName:%s", fileName)
 		}
 		filename = v
 	}
@@ -250,7 +251,7 @@ func (e *EnvConfig) Init(name string) error {
 	for _, m := range e.Fs {
 		for k, v := range m {
 			if s, ok := v.(string); ok {
-				m[k] = ReplaceSysValues(s)
+				m[k] = ReplaceSysValues(s, e)
 			}
 		}
 	}
@@ -289,7 +290,7 @@ func (e *EnvConfig) Init(name string) error {
 func (c *Config) GetEnvConfig(env string) (*EnvConfig, error) {
 	envConfig, ok := c.Envs[env]
 	if !ok {
-		return nil, errors.New("not found env: " + env)
+		return nil, errors.New("not found env: %s ", env)
 	}
 
 	if envConfig != nil {

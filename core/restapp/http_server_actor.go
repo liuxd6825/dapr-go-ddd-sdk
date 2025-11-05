@@ -1,6 +1,8 @@
 package restapp
 
 import (
+	"net/http"
+
 	"github.com/dapr/go-sdk/actor"
 	"github.com/dapr/go-sdk/actor/config"
 	actorError "github.com/dapr/go-sdk/actor/error"
@@ -8,7 +10,6 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"net/http"
 )
 
 // Deprecated: Use RegisterActorImplFactoryContext instead.
@@ -231,7 +232,7 @@ func ActorErrToError(actorErr actorError.ActorErr) error {
 	if len(msg) == 0 {
 		return nil
 	}
-	return errors.New(msg)
+	return errors.New("%s", msg)
 }
 
 func newActorFieldError(funLog, actorType, actorId, methodName string, err error) logs.Fields {

@@ -2,11 +2,12 @@ package restapp
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 )
 
 var (
@@ -117,8 +118,8 @@ func SetExeName(name string) {
 //	@Description: 取绝对路径
 //	@param val
 //	@return string
-func AbsFileName(filename string) string {
-	return replaceValues(filename)
+func AbsFileName(filename string, env *EnvConfig) string {
+	return replaceValues(filename, env)
 }
 
 // ReplaceSysValues
@@ -126,11 +127,11 @@ func AbsFileName(filename string) string {
 //	@Description: 取绝对路径
 //	@param val
 //	@return string
-func ReplaceSysValues(filename string) string {
-	return replaceValues(filename)
+func ReplaceSysValues(filename string, env *EnvConfig) string {
+	return replaceValues(filename, env)
 }
 
-func replaceValues(str string) string {
+func replaceValues(str string, env *EnvConfig) string {
 	if str == "" {
 		return ""
 	}
@@ -140,5 +141,6 @@ func replaceValues(str string) string {
 			str = strings.ReplaceAll(str, key, v)
 		}
 	}
+	str = strings.ReplaceAll(str, "${EnvName}", env.Name)
 	return str
 }

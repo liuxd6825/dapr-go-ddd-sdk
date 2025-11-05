@@ -18,6 +18,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
+// RecordEventSubHandler
+// @Description: 处理数据导入事件
 type RecordEventSubHandler struct {
 	rootPath             string
 	env                  *env.Env
@@ -39,14 +41,14 @@ func NewRecordEventHandler(env *env.Env, baseUrl string) *RecordEventSubHandler 
 }
 
 func (s *RecordEventSubHandler) NewAPIController(app *iris.Application) *restapi.ApiController {
-	ctl := restapi.NewController(app, "/subscribe/import", "RecordEventSubHandler", s)
+	ctl := restapi.NewController(app, "subscribe/master/event", "RecordEventSubHandler", s)
 	ctl.EventHandle("record-import-master-event", "RecordImportMasterEvent")
 	ctl.Handle(iris.MethodOptions, "record-import-master-event", "Check")
 	return ctl
 }
 
 func (s *RecordEventSubHandler) Check(ctx context.Context) error {
-	println("subscribe/import/record-import-master-event:check")
+	logs.Infofmt(ctx, "graph/master/subscribe/import/record-import-master-event:check")
 	return nil
 }
 

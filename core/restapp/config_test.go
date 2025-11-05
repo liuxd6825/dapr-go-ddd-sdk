@@ -14,15 +14,7 @@ func Test_NewConfigByFile(t *testing.T) {
 		return
 	}
 	t.Log("env.fs", env.Fs)
-	t.Log("env.App.RsServer", env.App.RsServer)
+	t.Log("env.App.HServer", env.App.HServer)
 	t.Log("env.App.Template", env.App.Template)
 
-	fsm, err := env.GetFsManager()
-	if err != nil {
-		t.Fatal(err)
-	} else {
-		for id, fs := range fsm.Map() {
-			t.Logf("env.fsManager[%s] = %s", id, fs.Name())
-		}
-	}
 }

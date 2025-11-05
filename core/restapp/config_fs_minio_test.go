@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
-	"github.com/minio/minio-go/v7"
+	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
+	"github.com/minio/minio-go/v7"
 )
 
 func TestInitMinio(t *testing.T) {
@@ -58,6 +60,21 @@ func TestInitMinio(t *testing.T) {
 		} else {
 			t.Log("data.items.length:", len(data.Sheets))
 		}
+	}
+}
+
+func TestReadBytesToMap(t *testing.T) {
+	// 打开 XLSX 文件
+	fileData, err := ioutil.ReadFile("./test_files/民生银行.xlsx")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if data, err := readexcel.ReadBytesToMap(fileData, 100); err != nil {
+		t.Error(err)
+		return
+	} else {
+		t.Log("data.items.length:", len(data.Sheets))
 	}
 }
 

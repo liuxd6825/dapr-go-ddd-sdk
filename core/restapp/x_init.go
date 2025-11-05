@@ -3,6 +3,10 @@ package restapp
 import (
 	"context"
 	"fmt"
+	"runtime"
+	"runtime/debug"
+	"strings"
+
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -11,9 +15,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs/userlog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"runtime"
-	"runtime/debug"
-	"strings"
 )
 
 const SystemTenantId = "system"
@@ -56,7 +57,7 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 	// 注册领域事件类型
 	for _, t := range eventTypes {
 		if err := ddd.RegisterEventType(t.EventType, t.Version, t.NewFunc); err != nil {
-			return errors.New(fmt.Sprintf("RegisterEventType() error:\"%s\" , EventType=\"%s\", Version=\"%s\"", err.Error(), t.EventType, t.Version))
+			return errors.New("RegisterEventType() error:\"%s\" , EventType=\"%s\", Version=\"%s\"", err.Error(), t.EventType, t.Version)
 		}
 	}
 
@@ -72,12 +73,12 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 	return err
 }
 
-func initLogs(level logs2.Level, saveDays int, rotationHour int, logFile string, outputType string) error {
+func initLogs(envConfig *EnvConfig, level logs2.Level, saveDays int, rotationHour int, logFile string, outputType string) error {
 	outType, err := logs2.ParseOutputType(outputType)
 	if err != nil {
 		return err
 	}
-	logs2.Init(AbsFileName(logFile), level, saveDays, rotationHour, outType)
+	logs2.Init(AbsFileName(logFile, envConfig), level, saveDays, rotationHour, outType)
 	return nil
 }
 
