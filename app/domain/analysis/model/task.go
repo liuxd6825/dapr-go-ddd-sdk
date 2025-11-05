@@ -1,9 +1,10 @@
 package model
 
 import (
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"time"
 )
 
 // SuTask 可疑分析任务
@@ -18,14 +19,16 @@ type SuTask struct {
 	StatusName      string       `json:"statusName" gorm:"status_name"  bson:"status_name" title:"状态名称"`
 	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID"`
 	OwnerName       string       `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"负责人名称"`
-	TargetId        string       `json:"targetId" gorm:"target_id" bson:"target_id" title:"目标ID"`
-	TargetName      string       `json:"targetName" gorm:"target_name" bson:"target_name" title:"目标名称"`
-	TargetType      string       `json:"targetType" gorm:"target_type" bson:"target_type" title:"目标类型"`
-	RecordCount     int64        `json:"recordCount" gorm:"record_count" bson:"record_count" title:"流水总数"`
-	TotalAmount     float64      `json:"totalAmount" gorm:"total_amount" bson:"total_amount" title:"可疑总金额"`
-	SuCount         int64        `json:"suCount" gorm:"su_count" bson:"su_count" title:"可疑交易数"`
-	SuHighCount     int64        `json:"suHighCount" gorm:"su_high_count" bson:"su_high_count" title:"高可疑交易数"`
-	WorkflowId      string       `json:"workflowId" gorm:"workflow_id" bson:"workflow_id" title:"后台流程ID"`
+
+	MasterId   string `json:"masterId" gorm:"master_id" bson:"master_id" title:"目标ID"`
+	MasterName string `json:"masterName" gorm:"master_name" bson:"master_name" title:"目标名称"`
+	MasterType string `json:"masterType" gorm:"master_type" bson:"master_type" title:"目标类型"`
+
+	RecordCount int64   `json:"recordCount" gorm:"record_count" bson:"record_count" title:"流水总数"`
+	TotalAmount float64 `json:"totalAmount" gorm:"total_amount" bson:"total_amount" title:"可疑总金额"`
+	SuCount     int64   `json:"suCount" gorm:"su_count" bson:"su_count" title:"可疑交易数"`
+	SuHighCount int64   `json:"suHighCount" gorm:"su_high_count" bson:"su_high_count" title:"高可疑交易数"`
+	WorkflowId  string  `json:"workflowId" gorm:"workflow_id" bson:"workflow_id" title:"后台流程ID"`
 }
 
 type SuTaskBillView struct {

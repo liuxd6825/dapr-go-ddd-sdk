@@ -1,9 +1,10 @@
 package command
 
 import (
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"time"
 )
 
 type SuTaskCreateCommand struct {
@@ -19,9 +20,9 @@ func (s *SuTaskCreateCommand) NewTask() *model.SuTask {
 		EndTime:     s.Data.EndTime,
 		Status:      model.SuTaskStatus_New,
 		Rules:       s.Data.Rules,
-		TargetName:  s.Data.TargetName,
-		TargetId:    s.Data.TargetId,
-		TargetType:  s.Data.TargetType,
+		MasterName:  s.Data.MasterName,
+		MasterId:    s.Data.MasterId,
+		MasterType:  s.Data.MasterType,
 		OwnerId:     s.Data.OwnerId,
 		OwnerName:   s.Data.OwnerName,
 		SuCount:     0,
@@ -45,9 +46,9 @@ func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
 		EndTime:     s.Data.EndTime,
 		Status:      model.SuTaskStatus_New,
 		Rules:       s.Data.Rules,
-		TargetName:  s.Data.TargetName,
-		TargetId:    s.Data.TargetId,
-		TargetType:  s.Data.TargetType,
+		MasterName:  s.Data.MasterName,
+		MasterId:    s.Data.MasterId,
+		MasterType:  s.Data.MasterType,
 		OwnerId:     s.Data.OwnerId,
 		OwnerName:   s.Data.OwnerName,
 		SuCount:     0,
@@ -68,9 +69,9 @@ type SuTaskCreateData struct {
 	EndTime         *time.Time       `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
 	OwnerId         string           `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID" `
 	OwnerName       string           `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"负责人名称"  `
-	TargetId        string           `json:"targetId" gorm:"target_id" bson:"target_id" title:"目标ID" `
-	TargetName      string           `json:"targetName" gorm:"target_name" bson:"target_name" title:"目标名称"`
-	TargetType      string           `json:"targetType" gorm:"target_type" bson:"target_type" title:"目标类型"`
+	MasterId        string           `json:"masterId" gorm:"master_id" bson:"master_id" title:"目标ID" `
+	MasterName      string           `json:"masterName" gorm:"master_name" bson:"master_name" title:"目标名称"`
+	MasterType      string           `json:"masterType" gorm:"master_type" bson:"master_type" title:"目标类型"`
 }
 
 type SuTaskAnalysisCommand struct {
