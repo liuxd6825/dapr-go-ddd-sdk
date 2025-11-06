@@ -2,11 +2,12 @@ package dao
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 )
@@ -27,8 +28,8 @@ func NewExcelSheetDao(dbKey string) *ExcelSheetDao {
 	return daoVal
 }
 
-func (f *ExcelSheetDao) FindByName(ctx context.Context, qry *query.ExcelSheetFindByNameQuery) store.FindPagingResult[*model.ExcelSheet] {
-	q := store.NewFindPagingQueryRequest()
+func (f *ExcelSheetDao) FindByName(ctx context.Context, qry *query.ExcelSheetFindByNameQuery) store2.FindPagingResult[*model.ExcelSheet] {
+	q := store2.NewFindPagingQueryRequest()
 	build := rsql.NewBuilder().And(
 		rsql.Eq("file_id", qry.FileId),
 		rsql.Eq("name", qry.Name),

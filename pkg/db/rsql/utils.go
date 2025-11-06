@@ -2,9 +2,10 @@ package rsql
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 func GetValue(value Value) interface{} {

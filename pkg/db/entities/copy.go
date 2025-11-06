@@ -2,7 +2,7 @@ package entities
 
 import (
 	"github.com/jinzhu/copier"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 )
 
 func Copy[T any](src any, opts ...*copier.Option) T {

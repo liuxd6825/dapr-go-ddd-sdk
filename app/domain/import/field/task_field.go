@@ -2,7 +2,7 @@ package field
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 )
 
 type MapHead model.MapHead

@@ -2,9 +2,9 @@ package dao
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_neo4j"
 )
 
 type RelationDao struct {

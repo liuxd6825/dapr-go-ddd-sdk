@@ -1,0 +1,62 @@
+package dapr
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
+)
+
+func NewMap() map[string]interface{} {
+	return make(map[string]interface{})
+}
+
+func IsEmpty(v string, field string) error {
+	if len(v) == 0 {
+		return errors.New(fmt.Sprintf("%s  cannot be empty.", field))
+	}
+	return nil
+}
+
+func NewMapInterface(jsonText string) (map[string]interface{}, error) {
+	data := make(map[string]interface{})
+	err := json.Unmarshal([]byte(jsonText), &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func NewMapString(jsonText string) (map[string]string, error) {
+	data := make(map[string]string)
+	err := json.Unmarshal([]byte(jsonText), &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func ToJson(data interface{}) (string, error) {
+	if data == nil {
+		return "", nil
+	}
+	bs, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	return string(bs), nil
+}
+
+func NewAppError(appID string, err error) error {
+	msg := fmt.Sprintf("appId is %s , %s", appID, err.Error())
+	return errors.New(msg)
+}
+
+func GetTopic(event any) string {
+	system, typeName, _ := reflectutils.GetTypeDetails(event)
+	res := fmt.Sprintf("%s/%s", system, typeName)
+	res = stringutils.MidlineString(res)
+	return res
+}

@@ -3,7 +3,7 @@ package runtime
 import (
 	"github.com/dop251/goja"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 // Pool 封装 goja 的池

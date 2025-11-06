@@ -3,14 +3,15 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"sync"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 )
 
 type RecordService struct {

@@ -2,18 +2,19 @@ package sql
 
 import (
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_sql"
-	idao "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
-	"gorm.io/gorm"
-	gormschema "gorm.io/gorm/schema"
 	"sync"
 	"time"
+
+	idao "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_sql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
+	"gorm.io/gorm"
+	gormschema "gorm.io/gorm/schema"
 )
 
 type Dao[T any] struct {
@@ -115,17 +116,17 @@ func init() {
 				panic(err)
 			}
 		} else if field.DataType == gormschema.Time {
-			if val, ok := value.(times.IDate); ok {
+			if val, ok := value.(times2.IDate); ok {
 				return val.Date(), true
-			} else if val, ok := value.(times.ITime); ok {
+			} else if val, ok := value.(times2.ITime); ok {
 				return val.Time(), true
 			} else {
 				return value, false
 			}
 		} else if field.DataType == gormschema.Date {
-			if val, ok := value.(times.IDate); ok {
+			if val, ok := value.(times2.IDate); ok {
 				return val.Date(), true
-			} else if val, ok := value.(times.ITime); ok {
+			} else if val, ok := value.(times2.ITime); ok {
 				return val.Time(), true
 			} else {
 				return value, false
@@ -157,16 +158,16 @@ func init() {
 	}
 }
 
-func newDate(value any) *times.Date {
+func newDate(value any) *times2.Date {
 	if value != nil {
 		if val, ok := value.(**time.Time); ok {
-			return times.GetDate(*val)
+			return times2.GetDate(*val)
 		} else if val, ok := value.(time.Time); ok {
-			return times.GetDate(&val)
+			return times2.GetDate(&val)
 		} else if val, ok := value.(*time.Time); ok {
-			return times.GetDate(val)
+			return times2.GetDate(val)
 		} else if val, ok := value.(string); ok {
-			if tVal, err := times.NewDateWithString(val); err == nil {
+			if tVal, err := times2.NewDateWithString(val); err == nil {
 				return tVal
 			} else {
 				panic(err)
@@ -176,16 +177,16 @@ func newDate(value any) *times.Date {
 	return nil
 }
 
-func newTime(value any) *times.Time {
+func newTime(value any) *times2.Time {
 	if value != nil {
 		if val, ok := value.(**time.Time); ok {
-			return times.GetTime(*val)
+			return times2.GetTime(*val)
 		} else if val, ok := value.(time.Time); ok {
-			return times.GetTime(&val)
+			return times2.GetTime(&val)
 		} else if val, ok := value.(*time.Time); ok {
-			return times.GetTime(val)
+			return times2.GetTime(val)
 		} else if val, ok := value.(string); ok {
-			if tVal, err := times.NewTimeWithString(val); err == nil {
+			if tVal, err := times2.NewTimeWithString(val); err == nil {
 				return tVal
 			} else {
 				panic(err)

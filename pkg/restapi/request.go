@@ -2,7 +2,7 @@ package restapi
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
 
 type FindByIdRequest struct {
@@ -13,10 +13,10 @@ type FindByIdsRequest struct {
 	Ids []string `json:"ids" path:"ids" required:"true"` // 聚合根Id列表
 }
 
-type FindPagingRequest = store.FindPagingQueryRequest
-type FindDistinctRequest = store.FindDistinctQueryRequest
-type FindAutoCompleteRequest = store.FindAutoCompleteQueryRequest
-type FindPagingByCaseIdRequest = store.FindPagingByCaseIdQueryRequest
+type FindPagingRequest = store2.FindPagingQueryRequest
+type FindDistinctRequest = store2.FindDistinctQueryRequest
+type FindAutoCompleteRequest = store2.FindAutoCompleteQueryRequest
+type FindPagingByCaseIdRequest = store2.FindPagingByCaseIdQueryRequest
 
 var restAssembler = RestAssembler{}
 

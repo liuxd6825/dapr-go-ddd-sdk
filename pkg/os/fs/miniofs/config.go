@@ -1,6 +1,8 @@
 package miniofs
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils/mapstructure"
+)
 
 type Config struct {
 	Name     string   `yaml:"name"`

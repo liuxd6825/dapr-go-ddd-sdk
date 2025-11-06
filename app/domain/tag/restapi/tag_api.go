@@ -3,13 +3,14 @@ package restapi
 import (
 	"context"
 	"fmt"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -39,7 +40,7 @@ func (s *TagAPI) BeforeActivation(b mvc.BeforeActivation) {
 
 func (s *TagAPI) Create(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
-		err := tx.StartTx(ctx, []string{s.tagService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		err := tx.StartTx(ctx, []string{s.tagService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 			var cmd *command.TagCreateCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
@@ -55,7 +56,7 @@ func (s *TagAPI) Create(ictx iris.Context) {
 
 func (s *TagAPI) Update(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
-		err := tx.StartTx(ctx, []string{s.tagService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		err := tx.StartTx(ctx, []string{s.tagService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 			var cmd *command.TagUpdateCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
@@ -89,7 +90,7 @@ func (s *TagAPI) Update(ictx iris.Context) {
 
 func (s *TagAPI) Delete(ictx iris.Context) {
 	restapi.Try(ictx, func(ctx context.Context) error {
-		err := tx.StartTx(ctx, []string{s.tagService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		err := tx.StartTx(ctx, []string{s.tagService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 			var cmd *command.TagDeleteCommand
 			if err := ictx.ReadJSON(&cmd); err != nil {
 				return err
@@ -123,7 +124,7 @@ func (s *TagAPI) FindPaging(ictx iris.Context) {
 			filter = fmt.Sprintf("tenant_id=='%s' and ((case_id=='%s' and is_e_tag==%s) or is_e_tag==%s)", tenantId, caseId, etag, "true")
 		}
 
-		qry := store.NewFindPagingQueryRequest()
+		qry := store2.NewFindPagingQueryRequest()
 		qry.PageNum = 0
 		qry.PageSize = 99999999999999
 		qry.Filter = filter

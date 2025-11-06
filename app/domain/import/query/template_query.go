@@ -2,8 +2,8 @@ package query
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 

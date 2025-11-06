@@ -2,8 +2,9 @@ package tx
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
+
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 )
 
 type TxCfg struct {
@@ -21,6 +22,6 @@ func NewTxCfg(dbKeys ...string) TxCfg {
 	}
 }
 
-func StartTx(ctx context.Context, cfg TxCfg, txFunc store.TxFunc, options ...*store.SessionOptions) (err error) {
+func StartTx(ctx context.Context, cfg TxCfg, txFunc store2.TxFunc, options ...*store2.SessionOptions) (err error) {
 	return tx.StartTx(ctx, cfg.DBKeys, txFunc, options...)
 }

@@ -1,0 +1,169 @@
+package mapperutils
+
+import (
+	"encoding/json"
+	"errors"
+	"testing"
+	"time"
+
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+)
+
+type UserCreateRequest struct {
+	CommandId   string                `json:"commandId"`
+	IsValidOnly bool                  `json:"isValidOnly"`
+	Data        UserCreateRequestData `json:"data"`
+}
+
+type UserCreateRequestData struct {
+	UserRequestData
+}
+
+type UserRequestData struct {
+	Id        string `json:"id" validate:"gt=0" minLength:"16" maxLength:"16" example:"random string"`
+	TenantId  string `json:"tenantId" validate:"gt=0" minLength:"16" maxLength:"16" example:"random string"`
+	UserCode  string `json:"userCode" validate:"gt=0"  minLength:"16" maxLength:"16" example:"random string"`
+	UserName  string `json:"userName" validate:"gt=0"  minLength:"16" maxLength:"16" example:"random string"`
+	Email     string `json:"email" validate:"gt=0"    example:"xxx@163.com"`
+	Telephone string `json:"telephone" validate:"gt=0"  length:"11" example:"18867766829"`
+	Address   string `json:"address" validate:"gt=0"`
+}
+
+type UserCreateAppCommand struct {
+	UserCreateCommand
+}
+
+type UserCreateCommand struct {
+	CommandId   string     `json:"commandId"  validate:"gt=0"`
+	IsValidOnly bool       `json:"isValidOnly"`
+	Data        UserFields `json:"data"`
+}
+
+type UserFields struct {
+	Id        string `json:"id" validate:"gt=0"`
+	TenantId  string `json:"tenantId" validate:"gt=0"`
+	UserCode  string `json:"userCode" validate:"gt=0"`
+	UserName  string `json:"userName" validate:"gt=0"`
+	Email     string `json:"email" validate:"gt=0"`
+	Telephone string `json:"telephone" validate:"gt=0"`
+	Address   string `json:"address" validate:"gt=0"`
+}
+
+func TestAutoMapper(t *testing.T) {
+	request := UserCreateRequest{
+		CommandId:   "000",
+		IsValidOnly: true,
+		Data: UserCreateRequestData{
+			UserRequestData: UserRequestData{
+				Id:        "1111",
+				Telephone: "1112222",
+				Address:   "address",
+			},
+		},
+	}
+	var command UserCreateAppCommand
+	if err := Mapper(&request, &command); err != nil {
+		t.Error(err)
+		return
+	}
+	jsonByte, _ := json.Marshal(command)
+	print(string(jsonByte))
+	if command.Data.Id == "" {
+		t.Error("command.data.id is error")
+	}
+
+}
+
+type DateRequest struct {
+	Date *times2.Date
+	Time *times2.Time
+}
+
+type DateCommand struct {
+	Date time.Time
+	Time time.Time
+}
+
+func Test_Mapper_Date(t *testing.T) {
+	dateValue := times2.Date(time.Now())
+	timeValue := times2.Time(time.Now())
+	// dateValue := types.DateString("2019-10-10")
+	// dateValue := time.Now()
+	req := DateRequest{
+		Date: &dateValue,
+		Time: &timeValue,
+	}
+	cmd := DateCommand{}
+	if err := Mapper(&req, &cmd); err != nil {
+		t.Error(err)
+	}
+	if cmd.Date.IsZero() {
+		t.Error(errors.New(" date mapper error"))
+	}
+	if cmd.Time.IsZero() {
+		t.Error(errors.New(" time mapper error"))
+	}
+	println(cmd.Date.String())
+	println(cmd.Time.String())
+}
+
+func Test_MaskMapper(t *testing.T) {
+	from := UserFields{
+		Id:       "0001",
+		TenantId: "tenantId",
+		UserName: "userName",
+	}
+	to := UserFields{UserName: "userName___"}
+	mask := []string{
+		"Id",
+		"TenantId",
+	}
+	if err := MaskMapper(&from, &to, mask); err != nil {
+		t.Error(err)
+	}
+	if to.UserName != "" {
+		t.Error(errors.New("to.User is not null"))
+	}
+	if to.Id == "" {
+		t.Error(errors.New("to.Id is null"))
+	}
+}
+
+func Test_MaskMapperType(t *testing.T) {
+	from := UserFields{
+		Id:       "0001",
+		TenantId: "tenantId",
+		UserName: "userName",
+	}
+	to := UserFields{UserName: ""}
+	mask := []string{"User"}
+	if err := MaskMapperType(&from, &to, mask, MaskTypeExclude); err != nil {
+		t.Error(err)
+	}
+	if to.UserName != "" {
+		t.Error(errors.New("to.User is not null"))
+	}
+	if to.Id == "" {
+		t.Error(errors.New("to.Id is null"))
+	}
+}
+
+func Test_MaskMapperTypeRemove(t *testing.T) {
+	from := UserFields{
+		Id:       "0001",
+		TenantId: "tenantId",
+		UserName: "userName",
+	}
+	to := UserFields{UserName: ""}
+	mask := []string{"User"}
+	remove := []string{"User"}
+	if err := MaskMapperRemove(&from, &to, mask, MaskTypeContain, remove); err != nil {
+		t.Error(err)
+	}
+	if to.UserName != "" {
+		t.Error(errors.New("to.User is not null"))
+	}
+	if to.Id != "" {
+		t.Error(errors.New("to.Id is not null"))
+	}
+}

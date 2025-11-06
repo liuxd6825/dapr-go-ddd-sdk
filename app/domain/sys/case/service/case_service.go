@@ -2,15 +2,16 @@ package service
 
 import (
 	"context"
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"sync"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
 
 type CaseService struct {

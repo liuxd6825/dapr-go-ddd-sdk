@@ -2,10 +2,11 @@ package restapi
 
 import (
 	"context"
-	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/stretchr/testify/assert"
 )
 
 type api struct {

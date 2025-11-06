@@ -1,14 +1,15 @@
 package validator
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	zh_translations "github.com/go-playground/validator/v10/translations/zh"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"reflect"
-	"strings"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 var (

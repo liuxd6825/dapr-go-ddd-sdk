@@ -2,9 +2,10 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"reflect"
+
+	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 type Proxy[T any] struct {

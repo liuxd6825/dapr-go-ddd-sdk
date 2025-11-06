@@ -1,14 +1,15 @@
 package service
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_FindById(t *testing.T) {
-	xtest.InitEnv_MongoRemoteMaster()
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster()
+	ctx := xtest2.NewContext()
 
 	service := NewFileService()
 	file, err := service.FindById(ctx, "FtzV5g8WKbJWXInZtbL9YxJ2t")

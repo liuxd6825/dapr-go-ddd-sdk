@@ -2,10 +2,11 @@ package rsql_neo4j
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"strings"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 type Process struct {

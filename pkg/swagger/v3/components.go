@@ -1,6 +1,8 @@
 package swagger3
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+)
 
 var components = map[string]*Schema{
 	"string":     &Schema{Type: []string{TypeString}},

@@ -1,6 +1,6 @@
 package rsql_mongo
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_utils"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_utils"
 
 type Item struct {
 	parent *Item

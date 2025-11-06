@@ -1,9 +1,10 @@
 package fsopts
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/fileutils"
-	"github.com/spf13/afero"
 	"strings"
+
+	fileutils2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/fileutils"
+	"github.com/spf13/afero"
 )
 
 type Options struct {
@@ -62,11 +63,11 @@ func ParseFileName(filename, defaultFsName string, init func(fsName, fileName st
 
 func GetAbsPath(filename string, opts ...*Options) string {
 	opt := newOpts(opts...)
-	return fileutils.AbsPath(filename, opt)
+	return fileutils2.AbsPath(filename, opt)
 }
 
-func newOpts(opts ...*Options) *fileutils.ReadOptions {
-	opt := &fileutils.ReadOptions{}
+func newOpts(opts ...*Options) *fileutils2.ReadOptions {
+	opt := &fileutils2.ReadOptions{}
 	for _, o := range opts {
 		opt.RootPath = o.RootPath
 		opt.WorkPath = o.WorkPath

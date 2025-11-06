@@ -1,13 +1,14 @@
 package sql
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gormschema "gorm.io/gorm/schema"
-	"testing"
 )
 
 func Test_CreateTable(t *testing.T) {

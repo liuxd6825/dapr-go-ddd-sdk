@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mapperutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/mapperutils"
 )
 
 // RagRecordService

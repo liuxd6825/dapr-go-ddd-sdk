@@ -2,23 +2,24 @@ package impl
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 type DaoBase[T any] struct {
 	cfg         *idao.DaoConfig
-	dbKey       string          // 配置中的数据库Key
-	tableName   string          // 表名
-	appId       string          // 应用ID
-	aggField    string          // 聚合根字段
-	aggType     string          // 聚合根类型名称
-	eventPrefix string          // 事件前缀
-	store       store.IStore[T] // 数据访问
-	env         *env.Env        // 环境变量
+	dbKey       string           // 配置中的数据库Key
+	tableName   string           // 表名
+	appId       string           // 应用ID
+	aggField    string           // 聚合根字段
+	aggType     string           // 聚合根类型名称
+	eventPrefix string           // 事件前缀
+	store       store2.IStore[T] // 数据访问
+	env         *env.Env         // 环境变量
 }
 
 const (
@@ -36,7 +37,7 @@ const (
 	Id          = "id"
 )
 
-func NewDaoBase[T any](store store.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
+func NewDaoBase[T any](store store2.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
 	if cfg == nil {
 		panic("dao base config is nil")
 	}
@@ -81,11 +82,11 @@ func (d *DaoBase[T]) GetEventPrefix() string {
 	return d.eventPrefix
 }
 
-func (d *DaoBase[T]) GetSchema() *store.DBSchema {
+func (d *DaoBase[T]) GetSchema() *store2.DBSchema {
 	return d.cfg.DBSchema
 }
 
-func (d *DaoBase[T]) GetStore() store.IStore[T] {
+func (d *DaoBase[T]) GetStore() store2.IStore[T] {
 	return d.store
 }
 
@@ -106,14 +107,14 @@ func (d *DaoBase[T]) GetAuthUser(ctx context.Context) appctx.AuthUser {
 	panic("token is error")
 }
 
-func (d *DaoBase[T]) NewFindPagingQuery(ctx context.Context, findPagingMap any) store.FindPagingQuery {
-	var qry store.FindPagingQuery
-	if v, ok := findPagingMap.(store.FindPagingQuery); ok {
+func (d *DaoBase[T]) NewFindPagingQuery(ctx context.Context, findPagingMap any) store2.FindPagingQuery {
+	var qry store2.FindPagingQuery
+	if v, ok := findPagingMap.(store2.FindPagingQuery); ok {
 		qry = v
 	} else if mapData, ok := findPagingMap.(map[string]any); ok {
-		builder := store.NewFindPagingQueryBuilder()
+		builder := store2.NewFindPagingQueryBuilder()
 		qry = builder.SetMapToQuery(mapData).Build()
-	} else if query, ok := findPagingMap.(store.FindPagingQuery); ok {
+	} else if query, ok := findPagingMap.(store2.FindPagingQuery); ok {
 		qry = query
 	} else {
 		panic("FindPaging(findPagingMap:any) findPagingMap is map[string]any or ddd_repository.FindPagingQuery ")

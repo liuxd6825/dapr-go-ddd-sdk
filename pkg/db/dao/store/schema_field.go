@@ -1,0 +1,95 @@
+package store
+
+import (
+	"context"
+	"reflect"
+	"time"
+
+	gormschema "gorm.io/gorm/schema"
+)
+
+// special types' reflect type
+var (
+	TimeReflectType    = reflect.TypeOf(time.Time{})
+	TimePtrReflectType = reflect.TypeOf(&time.Time{})
+	ByteReflectType    = reflect.TypeOf(uint8(0))
+)
+
+type OrderType string
+
+const (
+	OrderType_None = ""
+	OrderType_Asc  = "asc"
+	OrderType_Desc = "desc"
+)
+
+type Field struct {
+	Title             string            // 标题
+	Name              string            // 属性名
+	DBName            string            // 数据库字段名
+	DataType          DataType          // 数据类型
+	PrimaryKey        bool              // 是主键
+	NotNull           bool              // 不能为空
+	Unique            bool              // 唯一键值
+	OrderType         OrderType         // 排序类型
+	Comment           string            // 字段说明
+	Size              int               // 字段大小
+	Creatable         bool              // 是否可创建
+	Updatable         bool              // 是否可更新
+	Readable          bool              // 可读取的字段
+	IsAggRoot         bool              // 是聚合根字段
+	TagSettings       map[string]string // 标签
+	FieldType         reflect.Type
+	IndirectFieldType reflect.Type
+	StructField       reflect.StructField
+	Tag                    reflect.StructTag
+	Serializer             gormschema.SerializerInterface
+	BindNames              []string
+	EmbeddedBindNames []string
+	GORMDataType      DataType
+	AutoIncrement     bool
+	AutoIncrementIncrement int64
+	HasDefaultValue        bool
+	DefaultValue           string
+	DefaultValueInterface  interface{}
+	Precision              int
+	Scale                  int
+	RelStartId             bool   // 是图关系中的开始节点字段
+	RelEndId               bool   // 是图关系中的结束节点字段
+	RelType                bool   // 是图关系中的类型字段
+	NodeLabelFormat        string // 是图节点的标签
+	NodeLabel              bool   // 是图节点的标签
+	AutoCreateTime         gormschema.TimeType
+	AutoUpdateTime         gormschema.TimeType
+	ReflectValueOf         func(context.Context, reflect.Value) reflect.Value
+	ValueOf                func(context.Context, reflect.Value) (value interface{}, zero bool) // 转换实体属性到数据库字段
+	Set                    func(context.Context, reflect.Value, interface{}) error             // 转换数据库值到实体属性类型
+}
+
+func NewField() *Field {
+	return &Field{
+		Creatable: true,
+		Updatable: true,
+		Readable:  true,
+	}
+}
+
+func (field *Field) SetName(val string) *Field {
+	field.Name = val
+	return field
+}
+
+func (field *Field) SetDbName(val string) *Field {
+	field.DBName = val
+	return field
+}
+
+func (field *Field) SetDataType(val DataType) *Field {
+	field.DataType = val
+	return field
+}
+
+func (field *Field) SetSize(val int) *Field {
+	field.Size = val
+	return field
+}

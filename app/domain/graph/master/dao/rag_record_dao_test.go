@@ -1,35 +1,36 @@
 package dao
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRecordDao_Create(t *testing.T) {
-	xtest.InitEnv_Neo4j(xtest.Neo4jRemoveOption)
+	xtest2.InitEnv_Neo4j(xtest2.Neo4jRemoveOption)
 	dao := NewRecordDao()
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	record := newRecord("1")
 	err := dao.Create(ctx, record)
 	assert.Nil(t, err)
 }
 
 func TestRecordDao_Delete(t *testing.T) {
-	xtest.InitEnv_Neo4j(xtest.Neo4jRemoveOption)
+	xtest2.InitEnv_Neo4j(xtest2.Neo4jRemoveOption)
 	dao := NewRecordDao()
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	record := newRecord("1")
 	err := dao.Delete(ctx, record)
 	assert.Nil(t, err)
 }
 
 func TestRecordDao_Update(t *testing.T) {
-	xtest.InitEnv_Neo4j(xtest.Neo4jRemoveOption)
+	xtest2.InitEnv_Neo4j(xtest2.Neo4jRemoveOption)
 	dao := NewRecordDao()
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	amount := 120.0
 	record := newRecord("1")
 	record.Amount = &amount
@@ -59,7 +60,7 @@ func newRecord(id string) *model.Record {
 		Notes:       "notes",
 	}
 	record.Id = id
-	record.TenantId = xtest.TenantId
-	record.CaseId = xtest.CaseId
+	record.TenantId = xtest2.TenantId
+	record.CaseId = xtest2.CaseId
 	return record
 }

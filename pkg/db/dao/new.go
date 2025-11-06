@@ -2,17 +2,18 @@ package dao
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/sql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 type DaoConfig struct {

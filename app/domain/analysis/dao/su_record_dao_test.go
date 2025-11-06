@@ -1,13 +1,14 @@
 package dao
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
+
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func Test_Record(t *testing.T) {
-	xtest.InitEnv_MongoRemoteMaster()
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster()
+	ctx := xtest2.NewContext()
 	dao := NewSuRecordDao("db")
 	taskId := "0001"
 	if count, err := dao.CountByTaskId(ctx, taskId); err != nil {

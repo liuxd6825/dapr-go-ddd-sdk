@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
@@ -12,16 +13,16 @@ import (
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"go.temporal.io/sdk/client"
 )
 

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
@@ -14,15 +16,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"time"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	gp2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 type ctxKey struct {
@@ -49,7 +50,7 @@ func (s *RecordService) Preview(ctx context.Context, task *task_pkg.Task, temp *
 	}
 
 	buffer := bytes.NewBuffer(fileByte)
-	gp.Try(func() error {
+	gp2.Try(func() error {
 		// 读取缓存数据
 		res, err = s.readExcel(ctx, task, temp, buffer, true, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
 			records = list
@@ -141,7 +142,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 	}
 	buffer := bytes.NewBuffer(fileByte)
 
-	gp.Try(func() error {
+	gp2.Try(func() error {
 		// 读取缓存数据
 		res, err = s.readExcel(ctx, task, cmd.Data.Template, buffer, false, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
 			fields := logs.Fields{
@@ -200,7 +201,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 
 	pageNum := int64(0)
 	recordCount := int64(0)
-	pageSize := gp.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
+	pageSize := gp2.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
 
 	// 批量导入数据
 	createMany := func(ctx context.Context, appcmd *command.RecordImport2MasterCommand) error {
@@ -247,7 +248,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 	}
 
 	// 执行导入
-	gp.Try(func() error {
+	gp2.Try(func() error {
 		startTime := times.PNow()
 		// 批量导入数据
 		err = createMany(ctx, appcmd)

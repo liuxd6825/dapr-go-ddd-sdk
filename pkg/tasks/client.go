@@ -1,10 +1,11 @@
 package tasks
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"sync"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	tclient "go.temporal.io/sdk/client"
 	tworker "go.temporal.io/sdk/worker"
-	"sync"
 )
 
 type ClientProvider struct {

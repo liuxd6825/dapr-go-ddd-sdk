@@ -1,6 +1,8 @@
 package vis_network
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/graph"
+)
 
 type Edge struct {
 	graph.Edge

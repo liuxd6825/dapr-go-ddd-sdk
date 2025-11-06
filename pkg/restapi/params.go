@@ -1,15 +1,16 @@
 package restapi
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/validator"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils/webjson"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kataras/iris/v12"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/jsonutils/webjson"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/validator"
 )
 
 const (
@@ -174,13 +175,13 @@ func setFieldValue(field *reflect.Value, value string) error {
 
 // 判断是否为 time.Time 或 times.Time 及其别名类型
 func isTimeType(t reflect.Type) bool {
-	if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(times.Time{}) {
+	if t == reflect.TypeOf(time.Time{}) || t == reflect.TypeOf(times2.Time{}) {
 		return true
 	}
-	if t == reflect.TypeOf(times.Time{}) || t == reflect.TypeOf(times.Time{}) {
+	if t == reflect.TypeOf(times2.Time{}) || t == reflect.TypeOf(times2.Time{}) {
 		return true
 	}
-	if t == reflect.TypeOf(times.Date{}) || t == reflect.TypeOf(times.Date{}) {
+	if t == reflect.TypeOf(times2.Date{}) || t == reflect.TypeOf(times2.Date{}) {
 		return true
 	}
 	return false
@@ -188,13 +189,13 @@ func isTimeType(t reflect.Type) bool {
 
 // 判断是否为 *time.Time 或 *times.Time 及其别名类型
 func isTimePtrType(t reflect.Type) bool {
-	if t == reflect.TypeOf(&time.Time{}) || t == reflect.TypeOf(&times.Time{}) {
+	if t == reflect.TypeOf(&time.Time{}) || t == reflect.TypeOf(&times2.Time{}) {
 		return true
 	}
-	if t == reflect.TypeOf(&times.Time{}) || t == reflect.TypeOf(&times.Time{}) {
+	if t == reflect.TypeOf(&times2.Time{}) || t == reflect.TypeOf(&times2.Time{}) {
 		return true
 	}
-	if t == reflect.TypeOf(&times.Date{}) || t == reflect.TypeOf(&times.Date{}) {
+	if t == reflect.TypeOf(&times2.Date{}) || t == reflect.TypeOf(&times2.Date{}) {
 		return true
 	}
 	return false
@@ -208,11 +209,11 @@ func isZeroTime(v reflect.Value) bool {
 	if v.Type() == reflect.TypeOf(time.Time{}) {
 		return v.Interface().(time.Time).IsZero()
 	}
-	if v.Type() == reflect.TypeOf(times.Time{}) {
-		return v.Interface().(times.Time) == times.Time{}
+	if v.Type() == reflect.TypeOf(times2.Time{}) {
+		return v.Interface().(times2.Time) == times2.Time{}
 	}
-	if v.Type() == reflect.TypeOf(times.Date{}) {
-		return v.Interface().(times.Date) == times.Date{}
+	if v.Type() == reflect.TypeOf(times2.Date{}) {
+		return v.Interface().(times2.Date) == times2.Date{}
 	}
 	return true
 }

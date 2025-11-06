@@ -2,9 +2,10 @@ package view
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 )
 
 type GraphDataView struct {

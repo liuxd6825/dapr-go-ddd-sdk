@@ -3,25 +3,26 @@ package sql
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
+	"testing"
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"testing"
-	"time"
 )
 
 type Human struct {
@@ -44,7 +45,7 @@ func Test_DaoStruct(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	dao := newDaoByStruct[*Human](ctx, "human_struct")
 	dao.DeleteAll(ctx)
 
@@ -57,7 +58,7 @@ func Test_DaoStruct(t *testing.T) {
 
 func Test_Transaction(t *testing.T) {
 
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	dao := newDao[map[string]any](ctx, "human")
 	humanName := randomutils.NameCN()
 
@@ -76,10 +77,10 @@ func Test_Transaction(t *testing.T) {
 	txDb := tx.TxDB{}
 	txDb = append(txDb, tx.TxDBItem{DBKey: "sql", DB: db, DBType: env.DBType_Sqlite})
 
-	_ = tx.Start(ctx, txDb, func(ctx context.Context, options ...*store.SessionOptions) error {
+	_ = tx.Start(ctx, txDb, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		iCount := dao.Create(ctx, human).RowsAffected
 		human["name"] = humanName + "2"
-		human["birthday"] = times.NewDate()
+		human["birthday"] = times2.NewDate()
 		uCount := dao.Update(ctx, human).RowsAffected
 		if uCount == iCount {
 			return errors.New("test error")
@@ -93,7 +94,7 @@ func Test_Transaction(t *testing.T) {
 }
 
 func Test_Update(t *testing.T) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	dao := newDao[map[string]any](ctx, "human")
 	humanName := randomutils.NameCN()
 
@@ -122,11 +123,11 @@ func Test_Update(t *testing.T) {
 	t.Run("dao.Update", func(t *testing.T) {
 		gp.Try(func() error {
 			human["name"] = humanName + "2"
-			human["birthday"] = times.NewDate()
+			human["birthday"] = times2.NewDate()
 			count := dao.Update(ctx, human)
 			assert.Equal(t, int64(1), count.RowsAffected)
 
-			human["birthday"] = times.NewTime()
+			human["birthday"] = times2.NewTime()
 			count = dao.Update(ctx, human)
 			assert.Equal(t, int64(1), count.RowsAffected)
 
@@ -139,7 +140,7 @@ func Test_Update(t *testing.T) {
 }
 
 func Test_Dao(t *testing.T) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	dao := newDao[map[string]any](ctx, "human")
 	humanName := randomutils.NameCN()
 	newCount := int64(10)
@@ -209,11 +210,11 @@ func Test_Dao(t *testing.T) {
 	t.Run("dao.Update", func(t *testing.T) {
 		gp.Try(func() error {
 			human["name"] = humanName + "2"
-			human["birthday"] = times.NewDate()
+			human["birthday"] = times2.NewDate()
 			count := dao.Update(ctx, human)
 			assert.Equal(t, int64(1), count.RowsAffected)
 
-			human["birthday"] = times.NewTime()
+			human["birthday"] = times2.NewTime()
 			count = dao.Update(ctx, human)
 			assert.Equal(t, int64(1), count.RowsAffected)
 
@@ -246,7 +247,7 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.FindPaging", func(t *testing.T) {
 		gp.Try(func() error {
-			paging := store.NewFindPagingQueryRequest()
+			paging := store2.NewFindPagingQueryRequest()
 			paging.PageSize = 2
 			paging.IsTotalRows = true
 			paging.Filter = fmt.Sprintf("creatorName=='%s'", "test")
@@ -313,8 +314,8 @@ func Test_Dao(t *testing.T) {
 
 	t.Run("dao.SumByRSQL", func(t *testing.T) {
 		gp.Try(func() error {
-			var vals []*store.ValueCol
-			vals = append(vals, &store.ValueCol{
+			var vals []*store2.ValueCol
+			vals = append(vals, &store2.ValueCol{
 				AggFunc: "sum",
 				Field:   "age",
 			})
@@ -364,7 +365,7 @@ func Test_Dao(t *testing.T) {
 }
 
 func TestDao_Sum(t *testing.T) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	dao := newDao[map[string]any](ctx, "human_sum")
 	if dao == nil {
 		return
@@ -391,11 +392,11 @@ func TestDao_Sum(t *testing.T) {
 	}
 
 	t.Run("sum", func(t *testing.T) {
-		valueCols := make([]*store.ValueCol, 0)
-		valueCols = append(valueCols, &store.ValueCol{
+		valueCols := make([]*store2.ValueCol, 0)
+		valueCols = append(valueCols, &store2.ValueCol{
 			AggFunc: "sum", Field: "age",
 		})
-		qry := store.NewFindPagingQueryRequest()
+		qry := store2.NewFindPagingQueryRequest()
 		qry.SetTenantId("test")
 		qry.SetPageSize(2)
 		qry.SetValueCols(valueCols)
@@ -405,19 +406,19 @@ func TestDao_Sum(t *testing.T) {
 	})
 
 	t.Run("group", func(t *testing.T) {
-		valueCols := make([]*store.ValueCol, 0)
-		valueCols = append(valueCols, &store.ValueCol{
+		valueCols := make([]*store2.ValueCol, 0)
+		valueCols = append(valueCols, &store2.ValueCol{
 			AggFunc: "sum", Field: "age",
 		})
 
-		groupCols := make([]*store.GroupCol, 0)
-		groupCols = append(groupCols, &store.GroupCol{
+		groupCols := make([]*store2.GroupCol, 0)
+		groupCols = append(groupCols, &store2.GroupCol{
 			Field: "gender", DataType: "string",
 		})
 
 		groupKeys := make([]any, 0)
 
-		qry := store.NewFindPagingQueryRequest()
+		qry := store2.NewFindPagingQueryRequest()
 		qry.SetTenantId("test")
 		qry.SetPageSize(2)
 		qry.SetValueCols(valueCols)
@@ -432,7 +433,7 @@ func TestDao_Sum(t *testing.T) {
 }
 
 func TestDao_Find(t *testing.T) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	dao := newDao[map[string]any](ctx, "human_sum")
 
 	dao.DeleteAll(ctx)
@@ -493,7 +494,7 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 		DB:         database,
 		DbKey:      "sql",
 		DBSchema:   dbSch,
-		Env:        xtest.NewEnvConfig(),
+		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
@@ -504,9 +505,9 @@ func newDaoByStruct[T any](ctx context.Context, tableName string) idao.Dao[T] {
 }
 
 func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
-	db = xtest.NewSqlite()
+	db = xtest2.NewSqlite()
 	//humanName := randomutils.NameCN()
-	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
+	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 
 	dbSch := dbschema.NewDBSchemaWithJsonSchema(humanSchema)
 	dbSch.TableName = tableName
@@ -515,7 +516,7 @@ func newDao[T any](ctx context.Context, tableName string) idao.Dao[T] {
 		DB:         db,
 		DbKey:      "sql",
 		DBSchema:   dbSch,
-		Env:        xtest.NewEnvConfig(),
+		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 

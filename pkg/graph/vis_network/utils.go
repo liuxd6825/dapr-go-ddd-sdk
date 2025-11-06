@@ -2,11 +2,12 @@ package vis_network
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/graph/view"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/graph/view"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 )
 
 func getMinMaxTime(value any, minTime time.Time, maxTime time.Time) (time.Time, time.Time) {

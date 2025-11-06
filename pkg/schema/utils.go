@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/reflectutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 

@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -29,11 +29,11 @@ var DateFormat = &jsonschema.Format{
 	},
 }
 
-func ParseDateTime(v any) (*times.Date, error) {
-	return times.AsDate(v)
+func ParseDateTime(v any) (*times2.Date, error) {
+	return times2.AsDate(v)
 }
 
-func ParseDate(v any) (*times.Time, error) {
-	date, err := times.AsTime(v)
+func ParseDate(v any) (*times2.Time, error) {
+	date, err := times2.AsTime(v)
 	return date, err
 }

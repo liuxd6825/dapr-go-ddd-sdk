@@ -1,11 +1,12 @@
 package runtime
 
 import (
-	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"reflect"
 	"strings"
+
+	"github.com/dop251/goja"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 type Runtime struct {

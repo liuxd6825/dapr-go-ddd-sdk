@@ -2,11 +2,12 @@ package mongodb
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongo_options "go.mongodb.org/mongo-driver/mongo/options"
@@ -14,15 +15,15 @@ import (
 
 type Table struct {
 	tableName string
-	schema    *store.DBSchema
+	schema    *store2.DBSchema
 	db        store_mongodb.IMongoDB
 }
 
-func NewTable(db store_mongodb.IMongoDB, schema *store.DBSchema) idao.Table {
+func NewTable(db store_mongodb.IMongoDB, schema *store2.DBSchema) idao.Table {
 	return newTable(db, schema)
 }
 
-func newTable(db store_mongodb.IMongoDB, schema *store.DBSchema) *Table {
+func newTable(db store_mongodb.IMongoDB, schema *store2.DBSchema) *Table {
 	tableName := stringutils.AsFieldName(schema.Name)
 	return &Table{db: db, tableName: tableName, schema: schema}
 }
@@ -31,7 +32,7 @@ func (t *Table) GetTableName() string {
 	return t.tableName
 }
 
-func (t *Table) GetSchema() *store.DBSchema {
+func (t *Table) GetSchema() *store2.DBSchema {
 	return t.schema
 }
 
@@ -151,9 +152,9 @@ func (t *Table) CreateIndexes(ctx context.Context) error {
 
 		var order int32 = 0 // 排序规则 -1:降序； 1:升序
 		switch field.OrderType {
-		case store.OrderType_Asc:
+		case store2.OrderType_Asc:
 			order = 1
-		case store.OrderType_Desc:
+		case store2.OrderType_Desc:
 			order = -1
 		}
 		if order != 0 {
@@ -247,21 +248,21 @@ bsonType 值	说明
 "minKey"	最小键（内部排序用）
 "maxKey"	最大键（内部排序用）
 */
-func (t *Table) getBsonType(field *store.Field) (string, error) {
+func (t *Table) getBsonType(field *store2.Field) (string, error) {
 	switch field.DataType {
-	case store.DataType_Array:
+	case store2.DataType_Array:
 		return "array", nil
-	case store.DataType_Bool, store.DataType_String, store.DataType_Date:
+	case store2.DataType_Bool, store2.DataType_String, store2.DataType_Date:
 		return string(field.DataType), nil
-	case store.DataType_Bytes:
+	case store2.DataType_Bytes:
 		return "binData", nil
-	case store.DataType_Time:
+	case store2.DataType_Time:
 		return "date", nil
-	case store.DataType_Float:
+	case store2.DataType_Float:
 		return "double", nil
-	case store.DataType_Int, store.DataType_Uint:
+	case store2.DataType_Int, store2.DataType_Uint:
 		return "long", nil
-	case store.DataType_Json:
+	case store2.DataType_Json:
 		return "object", nil
 	default:
 		return "", errors.ErrorOf("Table.getBsonType(dataType) invalid data type error:%s", string(field.DataType))

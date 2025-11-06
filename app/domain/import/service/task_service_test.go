@@ -1,14 +1,15 @@
 package service
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSetImportProgress(t *testing.T) {
@@ -16,8 +17,8 @@ func TestSetImportProgress(t *testing.T) {
 }
 
 func TestTaskDomainCmdService_Create(t *testing.T) {
-	xtest.InitEnv_MongoRemoteTest()
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteTest()
+	ctx := xtest2.NewContext()
 	// 更新导入进度
 	id := idutils.NewId()
 	cmd := &command.TaskCreateCommand{}

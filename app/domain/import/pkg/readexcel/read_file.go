@@ -9,7 +9,7 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel/script"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 	"github.com/tealeg/xlsx"
 
 	"io"

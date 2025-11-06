@@ -1,16 +1,17 @@
 package markdown
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func Test_Build(t *testing.T) {
 	b := NewBuilder()
-	sch := xtest.GetHumanSchema()
+	sch := xtest2.GetHumanSchema()
 	humanName := randomutils.NameCN()
-	humanMap := xtest.NewHumanMap(humanName)
+	humanMap := xtest2.NewHumanMap(humanName)
 	sb, err := b.Build(humanMap, sch)
 	if err != nil {
 		t.Error(err)
@@ -20,11 +21,11 @@ func Test_Build(t *testing.T) {
 
 func Test_BuildList(t *testing.T) {
 	b := NewBuilder()
-	sch := xtest.GetHumanSchema()
+	sch := xtest2.GetHumanSchema()
 	var humanMapList []map[string]any
 	for i := 0; i < 10; i++ {
 		humanName := randomutils.NameCN()
-		humanMap := xtest.NewHumanMap(humanName)
+		humanMap := xtest2.NewHumanMap(humanName)
 		humanMapList = append(humanMapList, humanMap)
 	}
 

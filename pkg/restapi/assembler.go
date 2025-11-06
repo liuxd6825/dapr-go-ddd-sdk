@@ -2,11 +2,12 @@ package restapi
 
 import (
 	"errors"
-	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"strconv"
 	"time"
+
+	"github.com/kataras/iris/v12"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 )
 
 type RestAssembler struct {
@@ -52,7 +53,7 @@ func (a *RestAssembler) AsFindAutoCompleteRequest(ictx iris.Context) (*FindAutoC
 
 func (a *RestAssembler) AsDistinctRequest(ictx iris.Context) (*FindDistinctRequest, error) {
 	var err error
-	dto := store.NewFindDistinctQueryDTO()
+	dto := store2.NewFindDistinctQueryDTO()
 
 	dto.CaseId = ictx.URLParamDefault("caseId", "")
 	dto.PageNum = ictx.URLParamInt64Default("page-num", 0)
@@ -87,7 +88,7 @@ func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*FindPagingRequ
 	valueCols := ictx.URLParamDefault("value-cols", "")
 	mustFilter := ictx.URLParamDefault("must-filter", "")
 
-	req := store.FindPagingQueryDTO{
+	req := store2.FindPagingQueryDTO{
 		PageNum:     pageNum,
 		PageSize:    pageSize,
 		Filter:      filter,
@@ -103,7 +104,7 @@ func (a *RestAssembler) assFindPagingRequest(ictx iris.Context) (*FindPagingRequ
 	return req.NewFindPagingQueryRequest(), nil
 }
 
-func (a *RestAssembler) AsFindPagingByCaseIdRequest(ictx iris.Context) (*store.FindPagingByCaseIdQueryRequest, error) {
+func (a *RestAssembler) AsFindPagingByCaseIdRequest(ictx iris.Context) (*store2.FindPagingByCaseIdQueryRequest, error) {
 	paging, err := a.assFindPagingRequest(ictx)
 	if err != nil {
 		return nil, err

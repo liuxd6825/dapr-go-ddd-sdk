@@ -4,10 +4,10 @@ import (
 	graphapi "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	masterapi "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
+	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 var (

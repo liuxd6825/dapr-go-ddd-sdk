@@ -1,18 +1,20 @@
 package idao
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+import (
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+)
 
-type FindPagingQuery = store.FindPagingQuery
-type FindPagingQueryBuilder = store.FindPagingQueryBuilder
-type FindPagingQueryRequest = store.FindPagingQueryRequest
-type FindPagingByCaseIdQuery = store.FindPagingByCaseIdQuery
-type FindPagingByCaseIdQueryRequest = store.FindPagingByCaseIdQueryRequest
-type FindByIdQueryRequest = store.FindByIdQueryRequest
+type FindPagingQuery = store2.FindPagingQuery
+type FindPagingQueryBuilder = store2.FindPagingQueryBuilder
+type FindPagingQueryRequest = store2.FindPagingQueryRequest
+type FindPagingByCaseIdQuery = store2.FindPagingByCaseIdQuery
+type FindPagingByCaseIdQueryRequest = store2.FindPagingByCaseIdQueryRequest
+type FindByIdQueryRequest = store2.FindByIdQueryRequest
 
 func NewFindPagingQueryBuilder() FindPagingQueryBuilder {
-	return store.NewFindPagingQueryBuilder()
+	return store2.NewFindPagingQueryBuilder()
 }
 
 func NewFindPagingQuery() FindPagingQuery {
-	return store.NewFindPagingQuery()
+	return store2.NewFindPagingQuery()
 }

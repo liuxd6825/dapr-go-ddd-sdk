@@ -1,22 +1,23 @@
 package service
 
 import (
-	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
 	"time"
+
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 const account = "6235822099004087593"
 const taskId = "01"
 
 func init() {
-	xtest.Init(xtest.TestType_MongoLocal)
+	xtest2.Init(xtest2.TestType_MongoLocal)
 }
 
 func Test_ClearAnalyseResults(t *testing.T) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	service := NewSuTaskService()
 	if err := service.ClearAnalyseResults(ctx, taskId); err != nil {
 		t.Error(err)
@@ -28,7 +29,7 @@ func Test_analyse(t *testing.T) {
 	startTime := timeutils.NewDate(2018, 1, 1).Add(9 * time.Hour)
 	endTime := timeutils.NewDate(2024, 1, 1).Add(9 * time.Hour)
 
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	service := NewSuTaskService()
 	task := &model2.SuTask{
 		Rules: model2.SuTaskRule{

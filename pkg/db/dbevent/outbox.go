@@ -1,6 +1,8 @@
 package dbevent
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+)
 
 /*
 type Outbox struct {

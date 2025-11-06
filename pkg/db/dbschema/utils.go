@@ -3,13 +3,14 @@ package dbschema
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"gorm.io/gorm/clause"
-	"gorm.io/gorm/utils"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
+	"gorm.io/gorm/clause"
+	"gorm.io/gorm/utils"
 )
 
 var embeddedCacheKey = "embedded_cache_store"

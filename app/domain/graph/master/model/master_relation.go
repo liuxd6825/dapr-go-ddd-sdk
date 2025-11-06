@@ -2,9 +2,10 @@ package model
 
 import (
 	"errors"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 )
 
 type MasterRelation struct {

@@ -2,23 +2,24 @@ package service
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
-	"time"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 var recordService *RecordService
 var ctx context.Context
 
 func init() {
-	xtest.InitEnv_MongoRemoteMaster()
-	ctx = xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster()
+	ctx = xtest2.NewContext()
 	recordService = NewRecordService()
 }
 

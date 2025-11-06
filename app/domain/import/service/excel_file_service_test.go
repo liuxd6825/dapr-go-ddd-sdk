@@ -1,10 +1,11 @@
 package service
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
+	"github.com/stretchr/testify/assert"
 )
 
 const fileId = "FIcuNxpulmMopISDYhPdHyrAK"
@@ -14,8 +15,8 @@ const taskId = "FIcuNxpulmMopISDYhPdHyrAK"
 const fileName = "赵蕾流水汇总.xlsx"
 
 func Test_CreateFile(t *testing.T) {
-	xtest.InitEnv_MongoRemoteMaster()
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster()
+	ctx := xtest2.NewContext()
 	cmd := &command.ExcelFileCreateCommand{}
 	cmd.CommandId = "FIcuNxpulmMopISDYhPdHyrAK"
 	cmd.Data = command.ExcelCreateByFileCommandData{

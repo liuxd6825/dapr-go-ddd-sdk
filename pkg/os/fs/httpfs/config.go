@@ -2,8 +2,9 @@ package httpfs
 
 import (
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils/mapstructure"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils/mapstructure"
 )
 
 type Config struct {

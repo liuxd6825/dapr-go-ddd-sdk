@@ -2,20 +2,21 @@ package suspicious
 
 import (
 	"context"
+	"testing"
+
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 const account = "6235822099004087593"
 
 func init() {
-	xtest.Init(xtest.TestType_MongoLocal)
+	xtest2.Init(xtest2.TestType_MongoLocal)
 }
 
 func Test_FastInOutHours(t *testing.T) {
@@ -130,7 +131,7 @@ func Test_FreqSleep(t *testing.T) {
 }
 
 func doAnalyse(t *testing.T, account string, do func(task *model2.SuTask) error) (*action.AnalyseResult, error) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	task := &model2.SuTask{}
 	task.Id = "001"
 	err := do(task)

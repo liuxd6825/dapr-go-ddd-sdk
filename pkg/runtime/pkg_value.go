@@ -2,8 +2,9 @@ package runtime
 
 import (
 	"fmt"
+
 	"github.com/dop251/goja"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 type PkgValue struct {

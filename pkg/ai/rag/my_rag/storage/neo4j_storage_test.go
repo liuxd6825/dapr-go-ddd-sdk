@@ -1,12 +1,14 @@
 package storage
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/sirupsen/logrus"
-	"testing"
 )
 
 var (
@@ -17,7 +19,7 @@ var (
 
 func Test_FindNodes(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
@@ -46,7 +48,7 @@ func Test_FindNodes(t *testing.T) {
 
 func Test_DeleteDoc(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
@@ -60,7 +62,7 @@ func Test_DeleteDoc(t *testing.T) {
 
 func Test_GraphEntity(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
@@ -80,7 +82,7 @@ func Test_GraphEntity(t *testing.T) {
 
 func Test_GraphRelationship(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
@@ -100,7 +102,7 @@ func Test_GraphRelationship(t *testing.T) {
 
 func Test_graphSaveDocEntities(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		store := NewNeo4jGraphStorage("neo4j", logger)

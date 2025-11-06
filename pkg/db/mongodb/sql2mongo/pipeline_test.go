@@ -1,8 +1,9 @@
 package sql2mongo
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
 	"testing"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 )
 
 func Test_Pipeline(t *testing.T) {

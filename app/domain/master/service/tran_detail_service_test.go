@@ -1,16 +1,17 @@
 package service
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func Test_CreateManyTranDetail(t *testing.T) {
-	xtest.InitEnv_MongoRemoteMaster(xtest.NewMongoOptions().SetDBName("master"))
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster(xtest2.NewMongoOptions().SetDBName("master"))
+	ctx := xtest2.NewContext()
 	tranDetailService := NewTranDetailService()
 	recordService := NewRecordService()
 	records, err := recordService.FindAll(ctx, &query.RecordFindAllQuery{TenantId: "test"})
@@ -32,8 +33,8 @@ func Test_CreateManyTranDetail(t *testing.T) {
 }
 
 func Test_FindThresholdQuery(t *testing.T) {
-	xtest.InitEnv_MongoRemoteMaster(xtest.NewMongoOptions().SetDBName("master"))
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster(xtest2.NewMongoOptions().SetDBName("master"))
+	ctx := xtest2.NewContext()
 	tranDetailService := NewTranDetailService()
 	qry := &query.TranDetailFindThresholdQuery{}
 	qry.Name = "赵蕾"

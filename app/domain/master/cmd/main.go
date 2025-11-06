@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
+	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
 )
 
 var (

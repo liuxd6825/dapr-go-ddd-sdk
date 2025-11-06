@@ -3,31 +3,32 @@ package neo4j
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"testing"
+	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func Test_NodeDao(t *testing.T) {
 	humanName := randomutils.NameCN()
-	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
+	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
 		DB:         driver,
 		DbKey:      "neo4j",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema),
-		Env:        xtest.NewEnvConfig(),
+		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "node",
 	}

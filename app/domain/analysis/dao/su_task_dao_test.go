@@ -1,14 +1,15 @@
 package dao
 
 import (
-	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"testing"
+
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func Test_Insert(t *testing.T) {
-	xtest.InitEnv_MongoRemoteMaster()
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoRemoteMaster()
+	ctx := xtest2.NewContext()
 	dao := NewSuTaskDao("db")
 
 	suTask := model2.NewSuTask()

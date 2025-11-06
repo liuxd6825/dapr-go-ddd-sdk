@@ -3,40 +3,41 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"testing"
+	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 type Human struct {
-	xtest.Base `bson:",inline"`
-	Name       string    `gorm:"name" bson:"name"`
-	Age        int64     `gorm:"age" bson:"age"`
-	Analyse    string    `gorm:"analyse" bson:"analyse"`
-	Birthday   time.Time `gorm:"birthday" bson:"birthday"`
-	PeopleType []string  `gorm:"people_type;type:text[]" bson:"people_type"`
-	Tags       []string  `gorm:"tags;type:text[]" bson:"tags"`
-	Remark     string    `gorm:"remark;type:text" bson:"remark"`
+	xtest2.Base `bson:",inline"`
+	Name        string    `gorm:"name" bson:"name"`
+	Age         int64     `gorm:"age" bson:"age"`
+	Analyse     string    `gorm:"analyse" bson:"analyse"`
+	Birthday    time.Time `gorm:"birthday" bson:"birthday"`
+	PeopleType  []string  `gorm:"people_type;type:text[]" bson:"people_type"`
+	Tags        []string  `gorm:"tags;type:text[]" bson:"tags"`
+	Remark      string    `gorm:"remark;type:text" bson:"remark"`
 }
 
 var DB_NAME = "test"
 
 func Test_Dao(t *testing.T) {
-	xtest.InitEnv_MongoLocal()
+	xtest2.InitEnv_MongoLocal()
 
 	humanName := randomutils.NameCN()
-	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
+	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
 		DBKey:      "db",
@@ -70,8 +71,8 @@ func Test_Dao(t *testing.T) {
 		entity := map[string]any{
 			"id":          randomutils.NewId(),
 			"name":        humanName,
-			"tenantId":    xtest.TenantId,
-			"creatorName": xtest.CaseId,
+			"tenantId":    xtest2.TenantId,
+			"creatorName": xtest2.CaseId,
 			"analyse":     "",
 			"age":         randomutils.Int64Max(100),
 			"birthday":    randomutils.Date(),
@@ -296,7 +297,7 @@ func Test_Dao(t *testing.T) {
 }
 
 func Test_DaoStruct(t *testing.T) {
-	xtest.InitEnv_MongoLocal()
+	xtest2.InitEnv_MongoLocal()
 
 	humanName := randomutils.NameCN()
 	//humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
@@ -320,10 +321,10 @@ func Test_DaoStruct(t *testing.T) {
 
 	for i := int64(0); i < newCount; i++ {
 		entity := &Human{
-			Base: xtest.Base{
+			Base: xtest2.Base{
 				Id:       randomutils.NewId(),
-				TenantId: xtest.TenantId,
-				CaseId:   xtest.CaseId,
+				TenantId: xtest2.TenantId,
+				CaseId:   xtest2.CaseId,
 			},
 			Name:       humanName,
 			Analyse:    "",
@@ -369,10 +370,10 @@ func Test_DaoStruct(t *testing.T) {
 
 	id := idutils.NewId()
 	human := &Human{
-		Base: xtest.Base{
+		Base: xtest2.Base{
 			Id:       randomutils.NewId(),
-			TenantId: xtest.TenantId,
-			CaseId:   xtest.CaseId,
+			TenantId: xtest2.TenantId,
+			CaseId:   xtest2.CaseId,
 		},
 		Analyse:    "",
 		Birthday:   time.Now(),
@@ -551,7 +552,7 @@ func Test_DaoStruct(t *testing.T) {
 }
 
 func newHumanDao() idao.Dao[*Human] {
-	xtest.InitEnv_MongoLocal()
+	xtest2.InitEnv_MongoLocal()
 	daoCfg := &idao.DaoConfig{
 		DBKey:      "db",
 		DBSchema:   dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
@@ -572,10 +573,10 @@ func Test_DaoStruct_Update(t *testing.T) {
 	humanName := "updateName"
 	id := idutils.NewId()
 	human := &Human{
-		Base: xtest.Base{
+		Base: xtest2.Base{
 			Id:       randomutils.NewId(),
-			TenantId: xtest.TenantId,
-			CaseId:   xtest.CaseId,
+			TenantId: xtest2.TenantId,
+			CaseId:   xtest2.CaseId,
 		},
 		Analyse:    "",
 		Birthday:   time.Now(),

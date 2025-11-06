@@ -1,6 +1,8 @@
 package idao
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+)
 
 type Result struct {
 	RowsAffected int64 `json:"rowsAffected"`    // 影响行数

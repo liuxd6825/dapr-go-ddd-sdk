@@ -2,16 +2,17 @@ package dbschema
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/jsonschema/v6"
-	gormschema "gorm.io/gorm/schema"
 	"reflect"
 	"time"
+
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/jsonschema/v6"
+	gormschema "gorm.io/gorm/schema"
 )
 
-type DBSchema = store.DBSchema
+type DBSchema = store2.DBSchema
 
 func NewDBSchemaWithJsonSchemaBytes(fileName string, jsonBytes []byte) *DBSchema {
 	jsSchema := schema.NewJsonSchemaWithBytes(fileName, jsonBytes)
@@ -24,7 +25,7 @@ func NewDBSchemaWithJsonSchemaText(fileName string, jsonText string) *DBSchema {
 }
 
 func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
-	s := store.NewDBSchema()
+	s := store2.NewDBSchema()
 	s.JsonSchema = sch
 	s.TableName = schema.GetTableName(sch)
 	s.Name = sch.Name()
@@ -36,7 +37,7 @@ func NewDBSchemaWithJsonSchema(sch *jsonschema.Schema) *DBSchema {
 			continue
 		}
 		dataType := getDataType(prop)
-		field := &store.Field{
+		field := &store2.Field{
 			Title:                 prop.Title,
 			Name:                  prop.Name(),
 			DBName:                AsFieldName(prop.Name()),
@@ -93,7 +94,7 @@ func getSize(dataType DataType, size int64) int {
 	}
 }
 
-func initField(field *store.Field) {
+func initField(field *store2.Field) {
 	if field.DataType == gormschema.Time || field.DataType == gormschema.Date {
 		field.Set = func(ctx context.Context, value reflect.Value, i interface{}) error {
 			value.Set(reflect.ValueOf(i))
@@ -108,13 +109,13 @@ func initField(field *store.Field) {
 				return v.UTC(), false
 			} else if v, ok := val.(time.Time); ok {
 				return v.UTC(), false
-			} else if v, ok := val.(*times.Date); ok {
+			} else if v, ok := val.(*times2.Date); ok {
 				return v.PTime().UTC(), false
-			} else if v, ok := val.(times.Date); ok {
+			} else if v, ok := val.(times2.Date); ok {
 				return v.PTime().UTC(), false
-			} else if v, ok := val.(times.Time); ok {
+			} else if v, ok := val.(times2.Time); ok {
 				return v.PTime().UTC(), false
-			} else if v, ok := val.(*times.Time); ok {
+			} else if v, ok := val.(*times2.Time); ok {
 				return v.PTime().UTC(), false
 			}
 			panic("neither time nor timezone was set")

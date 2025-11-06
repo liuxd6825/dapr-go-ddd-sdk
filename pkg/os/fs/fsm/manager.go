@@ -2,6 +2,10 @@ package fsm
 
 import (
 	"fmt"
+	"io/fs"
+	iofs "io/fs"
+	"os"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	fs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
@@ -9,12 +13,9 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/httpfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/localfs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/memoryfs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	"github.com/orcaman/concurrent-map"
 	"github.com/spf13/afero"
-	"io/fs"
-	iofs "io/fs"
-	"os"
 )
 
 //	Manager

@@ -2,8 +2,9 @@ package impl
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
@@ -38,7 +39,7 @@ func (d *DaoBase[T]) FindByRSQL(ctx context.Context, rsql string, opts ...idao.C
 	return res.GetData(), res.GetError()
 }
 
-func (d *DaoBase[T]) FindAll(ctx context.Context, opts ...idao.CallOptions) *store.FindListResult[T] {
+func (d *DaoBase[T]) FindAll(ctx context.Context, opts ...idao.CallOptions) *store2.FindListResult[T] {
 	tenantId := d.GetTenantId(ctx, opts...)
 	res := d.store.FindAll(ctx, tenantId, idao.NewCallOptions(opts...))
 	if res.GetError() != nil {
@@ -58,7 +59,7 @@ func (d *DaoBase) FindListByMap(ctx context.Context, filterMap map[string]interf
 }
 */
 
-func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging store.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[T] {
+func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging store2.FindPagingQuery, opts ...idao.CallOptions) store2.FindPagingResult[T] {
 	findQuery := d.NewFindPagingQuery(ctx, findPaging)
 	res := d.store.FindPaging(ctx, findQuery, idao.NewCallOptions(opts...))
 	if res.GetError() != nil {
@@ -67,7 +68,7 @@ func (d *DaoBase[T]) FindPaging(ctx context.Context, findPaging store.FindPaging
 	return res
 }
 
-func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCompleteQuery, opts ...idao.CallOptions) store.FindPagingResult[T] {
+func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry store2.FindAutoCompleteQuery, opts ...idao.CallOptions) store2.FindPagingResult[T] {
 	if qry == nil {
 		panic(errors.New("FindAutoComplete query is nil"))
 	}
@@ -80,7 +81,7 @@ func (d *DaoBase[T]) FindAutoComplete(ctx context.Context, qry store.FindAutoCom
 	return res
 }
 
-func (d *DaoBase[T]) FindDistinct(ctx context.Context, qry store.FindDistinctQuery, opts ...idao.CallOptions) store.FindPagingResult[T] {
+func (d *DaoBase[T]) FindDistinct(ctx context.Context, qry store2.FindDistinctQuery, opts ...idao.CallOptions) store2.FindPagingResult[T] {
 	if qry == nil {
 		panic(errors.New("FindDistinctQueryRequest query is nil"))
 	}

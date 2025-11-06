@@ -3,11 +3,12 @@ package env
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/intutils"
 	"os"
 	"strconv"
+
+	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/intutils"
 )
 
 type Dapr struct {
@@ -25,7 +26,7 @@ type Dapr struct {
 	StartArgs           map[string]any             `yaml:"startArgs" json:"startArgs"`
 	//Enable              bool                       `yaml:"enable" json:"enable"`
 	ApiVersion string `yaml:"apiVersion" json:"apiVersion"`
-	client     dapr.DaprClient
+	client     dapr2.DaprClient
 }
 
 // DaprServer dapr服务端参数
@@ -79,22 +80,22 @@ func initDapr(e *Env) {
 	}
 
 	if c.MaxCallRecvMsgSize <= 0 {
-		val := dapr.GetMaxCallRecvMsgSize()
+		val := dapr2.GetMaxCallRecvMsgSize()
 		c.MaxCallRecvMsgSize = val
 	}
 
 	if c.MaxIdleConnsPerHost <= 0 {
-		val := dapr.DefaultMaxIdleConnsPerHost
+		val := dapr2.DefaultMaxIdleConnsPerHost
 		c.MaxIdleConns = val
 	}
 
 	if c.IdleConnTimeout <= 0 {
-		val := dapr.DefaultIdleConnTimeout
+		val := dapr2.DefaultIdleConnTimeout
 		c.IdleConnTimeout = val
 	}
 
 	if c.MaxIdleConns <= 0 {
-		val := dapr.DefaultMaxIdleConns
+		val := dapr2.DefaultMaxIdleConns
 		c.MaxIdleConnsPerHost = val
 	}
 
@@ -112,21 +113,21 @@ func initDapr(e *Env) {
 
 	e.Dapr.Actor.init()
 
-	var client dapr.DaprClient
+	var client dapr2.DaprClient
 	var err error
 	var ctx = context.Background()
 	if e.Dapr.IsEnable() {
 		// 启动服务，创建dapr客户端
-		client, err = dapr.NewDaprClient(ctx, e.Dapr.GetHost(), e.Dapr.GetHttpPort(), e.Dapr.GetGrpcPort(), func(ops *dapr.DaprHttpOptions) {
-			ops.MaxCallRecvMsgSize = intutils.P2IntDefault(&e.Dapr.MaxCallRecvMsgSize, dapr.GetMaxCallRecvMsgSize())
-			ops.MaxIdleConns = intutils.P2IntDefault(&e.Dapr.MaxIdleConns, dapr.DefaultMaxIdleConns)
-			ops.MaxIdleConnsPerHost = intutils.P2IntDefault(&e.Dapr.MaxIdleConnsPerHost, dapr.DefaultMaxIdleConnsPerHost)
-			ops.IdleConnTimeout = intutils.P2IntDefault(&e.Dapr.IdleConnTimeout, dapr.DefaultIdleConnTimeout)
+		client, err = dapr2.NewDaprClient(ctx, e.Dapr.GetHost(), e.Dapr.GetHttpPort(), e.Dapr.GetGrpcPort(), func(ops *dapr2.DaprHttpOptions) {
+			ops.MaxCallRecvMsgSize = intutils.P2IntDefault(&e.Dapr.MaxCallRecvMsgSize, dapr2.GetMaxCallRecvMsgSize())
+			ops.MaxIdleConns = intutils.P2IntDefault(&e.Dapr.MaxIdleConns, dapr2.DefaultMaxIdleConns)
+			ops.MaxIdleConnsPerHost = intutils.P2IntDefault(&e.Dapr.MaxIdleConnsPerHost, dapr2.DefaultMaxIdleConnsPerHost)
+			ops.IdleConnTimeout = intutils.P2IntDefault(&e.Dapr.IdleConnTimeout, dapr2.DefaultIdleConnTimeout)
 		})
 		if err != nil {
 			panic(err)
 		}
-		dapr.SetDaprClient(client)
+		dapr2.SetDaprClient(client)
 		e.Dapr.client = client
 	}
 }
@@ -147,7 +148,7 @@ func (c *Dapr) GetGrpcPort() int64 {
 	return c.GrpcPort
 }
 
-func (c *Dapr) GetClient() dapr.DaprClient {
+func (c *Dapr) GetClient() dapr2.DaprClient {
 	return c.client
 }
 

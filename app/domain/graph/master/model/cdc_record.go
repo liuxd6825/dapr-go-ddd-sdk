@@ -1,11 +1,12 @@
 package model
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"strings"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 type CDCRecord struct {

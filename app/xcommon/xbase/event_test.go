@@ -1,9 +1,10 @@
 package xbase
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
+	"github.com/stretchr/testify/assert"
 )
 
 type RecordImportMasterEvent struct {
@@ -16,8 +17,8 @@ type TestCommandData struct {
 }
 
 func Test_PublishEvent(t *testing.T) {
-	xtest.InitEnv_MongoLocal(xtest.NewMongoOptions().SetDBName("master"))
-	ctx := xtest.NewContext()
+	xtest2.InitEnv_MongoLocal(xtest2.NewMongoOptions().SetDBName("master"))
+	ctx := xtest2.NewContext()
 	cmd := &RecordImportMasterEvent{}
 	cmd.SetData(&TestCommandData{
 		Id:   "1",

@@ -3,7 +3,8 @@ package appctx
 import (
 	"context"
 	"errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 )
 
 type authKey struct {

@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/graph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/graph"
 )
 
 type QueryService struct {

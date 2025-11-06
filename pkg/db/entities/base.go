@@ -1,6 +1,8 @@
 package entities
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+)
 
 type Base struct {
 	Id          string      `gorm:"primary_key" json:"id" jsonschema:"required"`

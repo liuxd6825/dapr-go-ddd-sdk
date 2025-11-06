@@ -2,13 +2,15 @@ package service
 
 import (
 	_ "embed"
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
 )
 
 const tenantId = "test"
@@ -34,7 +36,7 @@ var addObjectJson string
 
 func Test_AddObject(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 
 		diff := mxgraph.NewFileDiff(addObjectJson)
@@ -59,7 +61,7 @@ var updateLabelJson string
 
 func Test_UpdateLabel(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 		diff := mxgraph.NewFileDiff(updateLabelJson)
 		if diff == nil {
@@ -82,7 +84,7 @@ var allJson string
 
 func Test_AllJson(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		env.SetEnv(xtest.NewEnvConfig_Neo4j())
 
 		diff := mxgraph.NewFileDiff(allJson)

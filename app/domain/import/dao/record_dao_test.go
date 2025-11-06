@@ -1,12 +1,13 @@
 package dao
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func Test_Record_Insert(t *testing.T) {
@@ -14,12 +15,12 @@ func Test_Record_Insert(t *testing.T) {
 		opts := &xtest.MongoOptions{DBName: stringutils.PStr("master")}
 		xtest.InitEnv_MongoRemote(opts)
 	*/
-	opts := &xtest.MongoOptions{DBName: stringutils.PStr("test")}
-	xtest.InitEnv_MongoLocal(opts)
+	opts := &xtest2.MongoOptions{DBName: stringutils.PStr("test")}
+	xtest2.InitEnv_MongoLocal(opts)
 
 	count := int64(10)
 	accounts := getAccounts(int(count))
-	recordDao := NewRecordDao(xtest.MongoDBKey)
+	recordDao := NewRecordDao(xtest2.MongoDBKey)
 	randomutils.RangeRand(2012, 2014)
 
 	var list []*model.RecordIe
@@ -45,7 +46,7 @@ func Test_Record_Insert(t *testing.T) {
 		record := &model.RecordIe{
 			BaseModel: xbase.BaseModel{
 				Id:       randomutils.NewId(),
-				TenantId: xtest.TenantId,
+				TenantId: xtest2.TenantId,
 				CaseId:   "1001",
 				Remark:   randomutils.String(10),
 			},
@@ -72,7 +73,7 @@ func Test_Record_Insert(t *testing.T) {
 		list = append(list, record)
 	}
 
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	recordDao.CreateMany(ctx, list)
 }
 

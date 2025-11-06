@@ -2,7 +2,7 @@ package query
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 

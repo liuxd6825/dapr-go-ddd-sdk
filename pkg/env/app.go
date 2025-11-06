@@ -3,7 +3,7 @@ package env
 import (
 	"fmt"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 

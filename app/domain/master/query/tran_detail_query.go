@@ -1,8 +1,9 @@
 package query
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
 
 // TranDetailFindThresholdQuery 查询阈值交易

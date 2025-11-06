@@ -3,8 +3,9 @@ package appctx
 import (
 	"encoding/base64"
 	"errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/jsonutils"
 )
 
 type AuthToken interface {

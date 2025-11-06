@@ -2,10 +2,11 @@ package factory
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/mapperutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/mapperutils"
 )
 
 type RecordFactory struct {

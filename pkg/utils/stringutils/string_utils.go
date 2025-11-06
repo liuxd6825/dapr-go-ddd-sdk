@@ -1,0 +1,358 @@
+package stringutils
+
+import (
+	"errors"
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/inflection"
+)
+
+const LocalDateFormatLine = "2006-01-02"
+const LocalTimeFormatLine = "2006-01-02 15:04:05"
+const LocalMsTimeFormatLine = "2006-01-02 15:04:05.000000"
+
+// Int64ToString
+// @Description:
+// @param v
+// @return string
+func Int64ToString(v int64) string {
+	return strconv.FormatInt(v, 10)
+}
+
+func ToInt64(v string) (int64, error) {
+	return strconv.ParseInt(v, 10, 64)
+}
+
+func IsEmptyStr(v string) bool {
+	if len(v) == 0 {
+		return true
+	}
+	return false
+}
+
+func ValidEmptyStr(v string, msg string) error {
+	if IsEmptyStr(v) {
+		return errors.New(msg)
+	}
+	return nil
+}
+
+// ToKebabCase 将驼峰式命名转换为kebab-case（以'-'分隔的小写字符串）
+func ToKebabCase(input string) string {
+	// 使用正则表达式查找大写字母，并在其前面插入"-"
+	re := regexp.MustCompile(`([a-z0-9])([A-Z])`)
+	result := re.ReplaceAllString(input, `${1}-${2}`)
+	// 将字符串转为小写
+	return strings.ToLower(result)
+}
+
+func AsFieldName(s string) string {
+	res := strings.Replace(s, " ", "", -1)
+	res = SnakeString(res)
+	res = strings.Replace(res, "._", ".", -1)
+	if strings.HasSuffix(res, "_") {
+		res = res[1:]
+	}
+	return res
+}
+
+func MongoFieldAsJsonName(fieldName string) string {
+	key := fieldName
+	if key == "_id" {
+		key = "id"
+	} else {
+		key = CamelString(key)
+	}
+	if strings.HasPrefix(key, "_") {
+		key = key[1:]
+	}
+	return FirstLower(key)
+}
+
+func Relpace(s string, old string, new string) string {
+	return strings.Replace(s, "._", ".", -1)
+}
+
+// ReplacePlaceholders 使用 map 中的值替换字符串中的占位符
+func ReplacePlaceholders(template string, values map[string]any) string {
+	re := regexp.MustCompile(`\{(\w+)\}`) // 匹配 {key} 格式
+
+	return re.ReplaceAllStringFunc(template, func(placeholder string) string {
+		// 去掉 { 和 } 得到键名
+		key := strings.Trim(placeholder, "{}")
+		if value, exists := values[key]; exists {
+			return fmt.Sprintf("%s", value)
+		}
+		// 如果 map 中没有对应的键，保持原样
+		return placeholder
+	})
+}
+func RelpaceValues(s string, values map[string]any) string {
+	res := s
+	for key, value := range values {
+		strings.ReplaceAll(res, "{"+key+"}", fmt.Sprintf("%s", value))
+	}
+	return res
+}
+
+// FirstUpper
+// @Description: 字符串首字母大写
+// @param s
+// @return string
+func FirstUpper(s string) string {
+	if s == "" {
+		return ""
+	}
+	v := strings.ToUpper(s[:1]) + s[1:]
+	if v == "" {
+		println(v)
+	}
+	return v
+}
+
+// FirstLower
+// @Description: 字符串首字母小写
+// @param s
+// @return string
+func FirstLower(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
+}
+
+// ToUpper
+// @Description: 大写
+// @param s
+// @return string
+func ToUpper(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToUpper(s)
+}
+
+// ToLower
+// @Description: 小写
+// @param s
+// @return string
+func ToLower(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s)
+}
+
+// SnakeString
+// @Description: 驼峰转蛇形
+// @param s 要转换的字符串
+// @return string
+func SnakeString(s string) string {
+	data := make([]byte, 0, len(s)*2)
+	j := false
+	num := len(s)
+	for i := 0; i < num; i++ {
+		d := s[i]
+		// or通过ASCII码进行大小写的转化
+		// 65-90（A-Z），97-122（a-z）
+		//判断如果字母为大写的A-Z就在前面拼接一个_
+		if i > 0 && d >= 'A' && d <= 'Z' && j {
+			data = append(data, '_')
+		}
+		if d != '_' {
+			j = true
+		}
+		data = append(data, d)
+	}
+	//ToLower把大写字母统一转小写
+	res := strings.ToLower(string(data[:]))
+	if strings.HasPrefix(res, "_") {
+		return res[1:]
+	}
+	return res
+}
+
+// EqualFold
+// @Description: 可以检查两个字符串是否相等,同时忽略大小写
+// @param s
+// @param t
+// @return bool
+func EqualFold(s, t string) bool {
+	return strings.EqualFold(s, t)
+}
+
+// MidlineString
+// @Description: 驼峰转中线
+// @param s 要转换的字符串
+// @return string
+func MidlineString(s string) string {
+	data := make([]byte, 0, len(s)*2)
+	j := false
+	num := len(s)
+	for i := 0; i < num; i++ {
+		d := s[i]
+		// or通过ASCII码进行大小写的转化
+		// 65-90（A-Z），97-122（a-z）
+		//判断如果字母为大写的A-Z就在前面拼接一个_
+		if i > 0 && d >= 'A' && d <= 'Z' && j {
+			data = append(data, '-')
+		}
+		if d != '_' {
+			j = true
+		}
+		data = append(data, d)
+	}
+	//ToLower把大写字母统一转小写
+	res := strings.ToLower(string(data[:]))
+	if strings.HasPrefix(res, "-") {
+		return res[1:]
+	}
+	return res
+}
+
+// CamelString 蛇形转驼峰
+// @Description:
+// @param s 要转换的字符串
+// @return string
+func CamelString(s string) string {
+	data := make([]byte, 0, len(s))
+	j := false
+	k := false
+	num := len(s) - 1
+	for i := 0; i <= num; i++ {
+		d := s[i]
+		if k == false && d >= 'A' && d <= 'Z' {
+			k = true
+		}
+		if d >= 'a' && d <= 'z' && (j || k == false) {
+			d = d - 32
+			j = false
+			k = true
+		}
+		if k && d == '_' && num > i && s[i+1] >= 'a' && s[i+1] <= 'z' {
+			j = true
+			continue
+		}
+		data = append(data, d)
+	}
+	return string(data[:])
+}
+
+// FirstLowerCamelString 蛇形转首字母驼峰
+// @Description:
+// @param s 要转换的字符串
+// @return string
+func FirstLowerCamelString(s string) string {
+	data := make([]byte, 0, len(s))
+	j := false
+	k := false
+	num := len(s) - 1
+	for i := 0; i <= num; i++ {
+		d := s[i]
+		if k == false && d >= 'A' && d <= 'Z' {
+			k = true
+		}
+		if d >= 'a' && d <= 'z' && (j || k == false) {
+			d = d - 32
+			j = false
+			k = true
+		}
+		if k && d == '_' && num > i && s[i+1] >= 'a' && s[i+1] <= 'z' {
+			j = true
+			continue
+		}
+		data = append(data, d)
+	}
+	return strings.ToLower(string(data[:1])) + string(data[1:])
+}
+
+// Plural
+// @Description: 将单词的单数形式转换为复数形式
+// @param str 单数
+// @return string 复数
+func Plural(str string) string {
+	return inflection.Plural(MidlineString(str))
+}
+
+// Singular
+// @Description: 复数转单数
+// @param str 复数
+// @return string 单数
+func Singular(str string) string {
+	return inflection.Singular(MidlineString(str))
+}
+
+func PStrList(s ...string) *[]string {
+	var res []string
+	for _, item := range s {
+		res = append(res, item)
+	}
+	return &res
+}
+
+func P2Str(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
+}
+
+func PStr(s string) *string {
+	return &s
+}
+
+func AnyToString(v any) string {
+	if v == nil {
+		return ""
+	}
+	if s, ok := v.(string); ok {
+		return s
+	}
+	if s, ok := v.(*string); ok {
+		return *s
+	}
+
+	if t, ok := v.(time.Time); ok {
+		return t.Format(LocalMsTimeFormatLine)
+	}
+	if t, ok := v.(*time.Time); ok {
+		return t.Format(LocalMsTimeFormatLine)
+	}
+
+	return fmt.Sprintf("%v", v)
+}
+
+// Join val要连接的字符串，
+func Join(val []string, front, suffix, sep string) string {
+	sb := strings.Builder{}
+	count := len(val)
+	for i, v := range val {
+		sb.WriteString(fmt.Sprintf("%s%s%s", front, v, suffix))
+		if i < count-1 {
+			sb.WriteString(sep)
+		}
+	}
+	return sb.String()
+}
+
+// Include 检查字符串是否在列表中
+func Include(str string, list []string, ignoreCase bool) bool {
+	if ignoreCase {
+		for _, item := range list {
+			if strings.EqualFold(str, item) {
+				return true
+			}
+		}
+	} else {
+		for _, item := range list {
+			if str == item {
+				return true
+			}
+		}
+	}
+	return false
+}

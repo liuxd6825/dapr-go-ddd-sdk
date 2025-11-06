@@ -1,7 +1,7 @@
 package xbase
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 )
 
 // BaseView

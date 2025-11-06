@@ -3,30 +3,31 @@ package neo4j
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
+	"testing"
+	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	idao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func Test_RelDao(t *testing.T) {
 	humanName := randomutils.NameCN()
 
-	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
+	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest2.HumanRelSchema)
 	relCfg := &idao2.DaoConfig{
 		DB:         driver,
 		DbKey:      "neo4j",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema),
-		Env:        xtest.NewEnvConfig(),
+		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
 	}
 
@@ -118,12 +119,12 @@ func Test_RelDao(t *testing.T) {
 
 func TestRelDao_Many(t *testing.T) {
 	humanName := randomutils.NameCN()
-	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest.HumanRelSchema)
+	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest2.HumanRelSchema)
 	relCfg := &idao2.DaoConfig{
 		DB:         driver,
 		DbKey:      "neo4j",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema),
-		Env:        xtest.NewEnvConfig(),
+		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "rel",
 	}
@@ -288,12 +289,12 @@ func TestRelDao_Many(t *testing.T) {
 }
 
 func newNodeDao(t *testing.T) idao2.Dao[map[string]any] {
-	nodeSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
+	nodeSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 	nodeCfg := &idao2.DaoConfig{
 		DB:         driver,
 		DbKey:      "neo4j",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(nodeSchema),
-		Env:        xtest.NewEnvConfig(),
+		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
 		DaoType:    "node",
 	}

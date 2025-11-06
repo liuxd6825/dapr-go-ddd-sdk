@@ -2,18 +2,19 @@ package dbschema
 
 import (
 	"fmt"
-	"github.com/jinzhu/now"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	gormschema "gorm.io/gorm/schema"
 	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jinzhu/now"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	gormschema "gorm.io/gorm/schema"
 )
 
-func NewDBSchema(name string, tableName string) *store.DBSchema {
+func NewDBSchema(name string, tableName string) *store2.DBSchema {
 	var err error = nil
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
@@ -21,13 +22,13 @@ func NewDBSchema(name string, tableName string) *store.DBSchema {
 			panic(fmt.Errorf("tableName:%s; %s", tableName, err.Error()))
 		}
 	}()
-	dbSch := store.NewDBSchema()
+	dbSch := store2.NewDBSchema()
 	dbSch.SetTableName(tableName)
 	dbSch.SetName(name)
 	return dbSch
 }
 
-func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSchema {
+func NewDBSchemaWithStruct(name string, data any, tableName string) *store2.DBSchema {
 	var err error = nil
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
@@ -39,7 +40,7 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 	if err != nil {
 		panic(fmt.Sprintf("NewDBSchemaWithStruct() error: %s", err.Error()))
 	}
-	dbSch := store.NewDBSchema()
+	dbSch := store2.NewDBSchema()
 	for _, f := range gSch.Fields {
 		field, err := newField(f)
 		if err != nil {
@@ -54,11 +55,11 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store.DBSch
 	return dbSch
 }
 
-func newField(f *gormschema.Field) (field *store.Field, err error) {
+func newField(f *gormschema.Field) (field *store2.Field, err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
-	field = store.NewField()
+	field = store2.NewField()
 	if title, ok := f.TagSettings["TITLE"]; ok {
 		field.Title = title
 	} else {
@@ -86,7 +87,7 @@ func newField(f *gormschema.Field) (field *store.Field, err error) {
 	return field, err
 }
 
-func NewGormSchema(dbSch *store.DBSchema) *gormschema.Schema {
+func NewGormSchema(dbSch *store2.DBSchema) *gormschema.Schema {
 	var err error = nil
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
@@ -126,13 +127,13 @@ func NewGormSchema(dbSch *store.DBSchema) *gormschema.Schema {
 	return gSch
 }
 
-func getFieldsByValue(refVal reflect.Value) []*store.Field {
+func getFieldsByValue(refVal reflect.Value) []*store2.Field {
 	// 如果传入的是指针，解引用
 	if refVal.Kind() == reflect.Ptr {
 		refVal = refVal.Elem()
 	}
 
-	fields := make([]*store.Field, 0)
+	fields := make([]*store2.Field, 0)
 	for i := 0; i < refVal.NumField(); i++ {
 		rField := refVal.Type().Field(i)
 		rVal := refVal.Field(i)
@@ -146,7 +147,7 @@ func getFieldsByValue(refVal reflect.Value) []*store.Field {
 		if rField.Anonymous {
 			fields = append(fields, getFieldsByValue(rVal)...)
 		}
-		field := &store.Field{
+		field := &store2.Field{
 			DBName:            rField.Name,
 			Name:              rField.Name,
 			FieldType:         rField.Type,
@@ -162,7 +163,7 @@ func getFieldsByValue(refVal reflect.Value) []*store.Field {
 	return fields
 }
 
-func setFieldByReflect(fieldValue reflect.Value, field *store.Field) {
+func setFieldByReflect(fieldValue reflect.Value, field *store2.Field) {
 	var err error
 	skipParseDefaultValue := strings.Contains(field.DefaultValue, "(") &&
 		strings.Contains(field.DefaultValue, ")") || strings.ToLower(field.DefaultValue) == "null" || field.DefaultValue == ""
@@ -206,9 +207,9 @@ func setFieldByReflect(fieldValue reflect.Value, field *store.Field) {
 	case reflect.Struct:
 		if _, ok := fieldValue.Interface().(*time.Time); ok {
 			field.DataType = gormschema.Time
-		} else if fieldValue.Type().ConvertibleTo(store.TimeReflectType) {
+		} else if fieldValue.Type().ConvertibleTo(store2.TimeReflectType) {
 			field.DataType = gormschema.Time
-		} else if fieldValue.Type().ConvertibleTo(store.TimePtrReflectType) {
+		} else if fieldValue.Type().ConvertibleTo(store2.TimePtrReflectType) {
 			field.DataType = gormschema.Time
 		}
 		if field.HasDefaultValue && !skipParseDefaultValue && (field.DataType == gormschema.Time || field.DataType == gormschema.Date) {
@@ -217,7 +218,7 @@ func setFieldByReflect(fieldValue reflect.Value, field *store.Field) {
 			}
 		}
 	case reflect.Array, reflect.Slice:
-		if reflect.Indirect(fieldValue).Type().Elem() == store.ByteReflectType && field.DataType == "" {
+		if reflect.Indirect(fieldValue).Type().Elem() == store2.ByteReflectType && field.DataType == "" {
 			field.DataType = gormschema.Bytes
 		} else {
 			field.DataType = gormschema.Json

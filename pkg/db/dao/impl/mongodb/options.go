@@ -1,7 +1,7 @@
 package mongodb
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_mongodb"
 )
 
 type RepositoryOptions struct {

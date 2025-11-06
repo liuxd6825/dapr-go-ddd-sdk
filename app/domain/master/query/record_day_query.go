@@ -1,6 +1,6 @@
 package query
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/ddd/ddd_query"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 
 // RecordDayFindByIdQuery 按ID查询命令
 type RecordDayFindByIdQuery = ddd_query.FindByIdQuery

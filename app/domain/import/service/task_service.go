@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
@@ -11,8 +12,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/timeutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/singleutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 )
 
 type TaskService struct {

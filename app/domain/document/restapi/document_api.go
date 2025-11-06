@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
@@ -11,14 +14,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	tagModel "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	tagSvc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
-	"io"
-	"strings"
-
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -129,7 +129,7 @@ func (s *DocumentAPI) Download(ctx context.Context, ictx iris.Context, query *qu
 }
 
 func (s *DocumentAPI) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
-	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		err := s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
 		if err != nil {
 			return err
@@ -144,7 +144,7 @@ func (s *DocumentAPI) Create(ctx context.Context, cmd *command.DocumentCreateCom
 }
 
 func (s *DocumentAPI) Rename(ctx context.Context, cmd *command.DocumentRenameCommand) error {
-	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		opts := idao.NewCallOptions()
 		opts.SetUpdateFields([]string{"name", "object_name"})
 
@@ -177,7 +177,7 @@ func (s *DocumentAPI) Rename(ctx context.Context, cmd *command.DocumentRenameCom
 }
 
 func (s *DocumentAPI) Move(ctx context.Context, cmd *command.DocumentMoveCommand) error {
-	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		files, err := s.fileService.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
 		if err != nil {
 			return err
@@ -219,7 +219,7 @@ func (s *DocumentAPI) Move(ctx context.Context, cmd *command.DocumentMoveCommand
 }
 
 func (s *DocumentAPI) UpdateTags(ctx context.Context, cmd *command.DocumentUpdateCommand) error {
-	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		res := s.tagRelationSvc.DeleteByRSQL(ctx, fmt.Sprintf("bus_id=='%s'", cmd.Data.Id))
 		if res.Error != nil {
 			return res.Error
@@ -260,7 +260,7 @@ func (s *DocumentAPI) UpdateTags(ctx context.Context, cmd *command.DocumentUpdat
 }
 
 func (s *DocumentAPI) Update(ctx context.Context, cmd *command.DocumentUpdateCommand) error {
-	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		files, err := s.fileService.FindByRSQL(ctx, "document_id=='"+cmd.Data.Id+"'")
 		if err != nil {
 			return err
@@ -292,7 +292,7 @@ func (s *DocumentAPI) Update(ctx context.Context, cmd *command.DocumentUpdateCom
 }
 
 func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCommand) error {
-	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		res := s.tagRelationSvc.DeleteByRSQL(ctx, fmt.Sprintf("bus_id=='%s'", cmd.Data.Id))
 		if res.Error != nil {
 			return res.Error
@@ -315,7 +315,7 @@ func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCom
 }
 
 func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderAndFilter) (idao.FindPagingResult[*model.Document], error) {
-	qry := store.NewFindPagingQueryRequest()
+	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
 	qry.Filter = "folder_id=='" + query.FolderId + "'"
@@ -332,7 +332,7 @@ func (s *DocumentAPI) FindById(ctx context.Context, query *query.FindByIdQuery) 
 }
 
 func (s *DocumentAPI) FindByTagId(ctx context.Context, query *query.FindByTagAndCase) (idao.FindPagingResult[*model.Document], error) {
-	qry := store.NewFindPagingQueryRequest()
+	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
 	qry.Filter = fmt.Sprintf("case_id=='%s' and tag_id=contains='%s'", query.CaseId, query.TagId)

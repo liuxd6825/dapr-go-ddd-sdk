@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/maputils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -22,10 +23,10 @@ type MasterNodeDao struct {
 }
 
 type IStore[T any] interface {
-	GetStore() store.IStore[T]
+	GetStore() store2.IStore[T]
 }
 
-func NewMasterNodeDao(labels []string, dbSch *store.DBSchema) *MasterNodeDao {
+func NewMasterNodeDao(labels []string, dbSch *store2.DBSchema) *MasterNodeDao {
 	nodeCfg := &dao.DaoConfig{
 		DBKey:              "neo4j",
 		GraphType:          idao.GraphType_Node,

@@ -3,19 +3,20 @@ package restapi
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
-	"strings"
 )
 
 type FolderAPI struct {
@@ -59,7 +60,7 @@ func (s *FolderAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 }
 
 func (s *FolderAPI) CreateRoot(ctx context.Context, cmd *command.FolderCreateCommand) error {
-	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 
 		vErr := errors.NewVerifyError()
 		if cmd.Data.TenantId == "" {
@@ -92,7 +93,7 @@ func (s *FolderAPI) CreateRoot(ctx context.Context, cmd *command.FolderCreateCom
 }
 
 func (s *FolderAPI) Create(ctx context.Context, cmd *command.FolderCreateCommand) error {
-	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 
 		vErr := errors.NewVerifyError()
 		if cmd.Data.TenantId == "" {
@@ -121,7 +122,7 @@ func (s *FolderAPI) Create(ctx context.Context, cmd *command.FolderCreateCommand
 }
 
 func (s *FolderAPI) Rename(ctx context.Context, cmd *command.FolderRenameCommand) error {
-	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		tenantId := appctx.GetTenantId2(ctx)
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", tenantId, cmd.Data.BusId, cmd.Data.EntityId))
 		if err != nil {
@@ -176,7 +177,7 @@ func (s *FolderAPI) SetColor(ctx context.Context, cmd *command.FolderUpdateComma
 }
 
 func (s *FolderAPI) Move(ctx context.Context, cmd *command.FolderMoveCommand) error {
-	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
 		if err != nil {
@@ -227,7 +228,7 @@ func (s *FolderAPI) Update(ctx context.Context, cmd *command.FolderUpdateCommand
 }
 
 func (s *FolderAPI) Delete(ctx context.Context, cmd *command.FolderDeleteCommand) error {
-	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
 		if err != nil {
@@ -261,7 +262,7 @@ func (s *FolderAPI) Delete(ctx context.Context, cmd *command.FolderDeleteCommand
 }
 
 func (s *FolderAPI) FindPaging(ctx context.Context, query *query.FindFolderByFolderIdQuery) (idao.FindPagingResult[*model.Folder], error) {
-	qry := store.NewFindPagingQueryRequest()
+	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
 	qry.Filter = "parent_id=='" + query.FolderId + "'"
@@ -271,7 +272,7 @@ func (s *FolderAPI) FindPaging(ctx context.Context, query *query.FindFolderByFol
 }
 
 func (s *FolderAPI) FindTree(ctx context.Context, query *query.FindTreeByParamQuery) []model.FolderTree {
-	qry := store.NewFindPagingQueryRequest()
+	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
 	qry.Filter = fmt.Sprintf("tenant_id=='%s' and bus_id=='%s' and entity_id=='%s'", query.TenantId, query.BusId, query.EntityId)

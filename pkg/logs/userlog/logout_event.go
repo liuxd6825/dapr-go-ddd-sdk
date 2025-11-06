@@ -1,8 +1,9 @@
 package userlog
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/idutils"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 type LogoutEvent struct {

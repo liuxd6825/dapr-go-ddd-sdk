@@ -3,7 +3,7 @@ package entity
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/example/sys/pkg/xinfra/enums"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/entities"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 )
 
 type User struct {

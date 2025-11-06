@@ -3,8 +3,9 @@ package dbevent
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
 )
 
 func ApplyEvent(ctx context.Context, agg *Aggregate, event *Event, opts ...*ddd.ApplyEventOptions) *dapr.ApplyEventResponse {

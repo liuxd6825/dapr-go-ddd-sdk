@@ -3,10 +3,11 @@ package gocsv
 import (
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/stringutils"
 	"io"
 	"reflect"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 var (

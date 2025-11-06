@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
@@ -16,12 +17,12 @@ import (
 	dict "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/restapi"
 	portal "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp"
-	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/core/restapp/cmd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/lowcode/hserver/element"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
+	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 var (

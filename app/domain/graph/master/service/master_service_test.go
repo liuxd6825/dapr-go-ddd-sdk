@@ -1,13 +1,14 @@
 package service
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 var records = &Records{}
@@ -16,8 +17,8 @@ const tenantId = "test"
 const caseId = "1001"
 
 func Test_DeleteById(t *testing.T) {
-	ctx := xtest.NewContext()
-	envInv := xtest.NewEnvConfigNeo4j()
+	ctx := xtest2.NewContext()
+	envInv := xtest2.NewEnvConfigNeo4j()
 	env.SetEnv(envInv)
 	nodeDao := dao.NewMasterNodeDao([]string{"company_test"}, nil)
 	nodeDao.GetConfig().Env = envInv
@@ -39,10 +40,10 @@ func Test_DeleteById(t *testing.T) {
 
 func Test_Case1(t *testing.T) {
 	gp.Try(func() error {
-		envInv := xtest.NewEnvConfigNeo4j()
+		envInv := xtest2.NewEnvConfigNeo4j()
 		env.SetEnv(envInv)
 
-		ctx := xtest.NewContext()
+		ctx := xtest2.NewContext()
 		service := newService()
 		service.clearAll(ctx)
 
@@ -82,12 +83,12 @@ func Test_Case1(t *testing.T) {
 }
 
 func newService() *MasterService {
-	env.SetEnv(xtest.NewEnvConfigNeo4j())
+	env.SetEnv(xtest2.NewEnvConfigNeo4j())
 
-	companySch := xtest.GetCompanySchema()
+	companySch := xtest2.GetCompanySchema()
 	companyJsonSch := dbschema.NewDBSchemaWithJsonSchema(companySch)
 
-	companyCompanySch := xtest.GetCompanyCompanySchema()
+	companyCompanySch := xtest2.GetCompanyCompanySchema()
 	companyCompanyJsonSch := dbschema.NewDBSchemaWithJsonSchema(companyCompanySch)
 
 	service := NewMasterService()

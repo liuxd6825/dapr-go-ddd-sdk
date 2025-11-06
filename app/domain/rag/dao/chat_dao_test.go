@@ -1,16 +1,18 @@
 package dao
 
 import (
+	"testing"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/randomutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
-	"testing"
 )
 
 func Test_ChatDao_Insert(t *testing.T) {
-	ctx := xtest.NewContext()
+	ctx := xtest2.NewContext()
 	e := xtest.NewEnvConfig_Mongo("db", "test")
 	env.SetEnv(e)
 	dao := NewChatDao("db")

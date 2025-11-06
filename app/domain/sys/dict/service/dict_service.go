@@ -3,15 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"sync"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
 
 type DictService struct {

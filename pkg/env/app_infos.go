@@ -2,11 +2,12 @@ package env
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 var (

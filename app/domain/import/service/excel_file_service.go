@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
@@ -9,11 +10,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/ddd/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	db "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/singleutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/singleutils"
 )
 
 // ExcelFileService excel文件服务 从文档中心导入的文件
@@ -62,7 +63,7 @@ func (s *ExcelFileService) Create(ctx context.Context, cmd *command.ExcelFileCre
 		}
 
 		// 需要开启事物
-		err = db.StartTx(ctx, db.NewTxCfg(config.DBKey), func(txCtx context.Context, options ...*store.SessionOptions) error {
+		err = db.StartTx(ctx, db.NewTxCfg(config.DBKey), func(txCtx context.Context, options ...*store2.SessionOptions) error {
 			res := s.dao.Create(ctx, file)
 			if res.Error != nil {
 				return res.Error
@@ -126,7 +127,7 @@ func (s *ExcelFileService) FindByDocFileId(ctx context.Context, docFileId string
 	return s.dao.FindOneByRSQL(ctx, build.Build())
 }
 
-func (s *ExcelFileService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store.FindPagingResult[*model.ExcelFile] {
+func (s *ExcelFileService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store2.FindPagingResult[*model.ExcelFile] {
 	return s.dao.FindPaging(ctx, qry)
 }
 

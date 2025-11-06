@@ -2,12 +2,13 @@ package restapi
 
 import (
 	errors2 "errors"
+	"strings"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/types/times"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/utils/jsonutils/webjson"
-	"strings"
+	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/jsonutils/webjson"
 )
 
 var notFoundError = errors2.New("Not Found")
@@ -17,17 +18,17 @@ func NotFoundError() error {
 }
 
 type WebError struct {
-	Error      any         `json:"error"`
-	LogId      string      `json:"logId"`
-	Time       *times.Time `json:"time"`
-	StatusCode int         `json:"statusCode"`
+	Error      any          `json:"error"`
+	LogId      string       `json:"logId"`
+	Time       *times2.Time `json:"time"`
+	StatusCode int          `json:"statusCode"`
 }
 
 type VerifyError struct {
-	Error      any         `json:"error"`
-	LogId      string      `json:"logId"`
-	Time       *times.Time `json:"time"`
-	StatusCode int         `json:"statusCode"`
+	Error      any          `json:"error"`
+	LogId      string       `json:"logId"`
+	Time       *times2.Time `json:"time"`
+	StatusCode int          `json:"statusCode"`
 }
 
 func NewWebError(ictx iris.Context, logId string, err error, statusCode int) *WebError {
@@ -35,7 +36,7 @@ func NewWebError(ictx iris.Context, logId string, err error, statusCode int) *We
 	return &WebError{
 		Error:      err.Error(),
 		LogId:      logId,
-		Time:       times.PNow(),
+		Time:       times2.PNow(),
 		StatusCode: statusCode,
 	}
 }

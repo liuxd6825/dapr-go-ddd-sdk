@@ -2,10 +2,11 @@ package fspkg
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"os"
 	"testing"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func TestFs_LoadFile(t *testing.T) {
