@@ -138,10 +138,14 @@ func newDaprProcess(env *EnvConfig) processutils.Process {
 	}
 
 	//ctx := context.Background()
-
 	//line := strings.Join(args, " ")
 	//logs.InfoMsg(ctx, "", "daprd "+line)
-	p := processutils.NewProcess("daprd", args, "app-id="+appId, "app-port="+appHttpPort)
+
+	commandLine := "daprd"
+	if env.Dapr.Command != nil && len(*env.Dapr.Command) != 0 {
+		commandLine = *env.Dapr.Command
+	}
+	p := processutils.NewProcess(commandLine, args, "app-id="+appId, "app-port="+appHttpPort)
 	return p
 }
 

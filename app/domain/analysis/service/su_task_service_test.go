@@ -60,8 +60,9 @@ func Test_analyse(t *testing.T) {
 		Account: account,
 	})
 
-	err := service.analyse(ctx, task, taskAccounts)
+	recordCount, err := service.analyse(ctx, task, taskAccounts)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Log(recordCount)
 }

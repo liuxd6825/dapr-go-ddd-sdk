@@ -155,6 +155,7 @@ type ResourceConfig struct {
 
 type Metadata map[string]string
 type DaprConfig struct {
+	Command             *string                `yaml:"command" json:"command"`
 	Host                *string                `yaml:"host" json:"host"`
 	HttpPort            *int64                 `yaml:"httpPort" json:"httpPort"`
 	GrpcPort            *int64                 `yaml:"grpcPort" json:"grpcPort"`
