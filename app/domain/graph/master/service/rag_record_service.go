@@ -6,6 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/mapperutils"
 )
 
@@ -21,19 +22,19 @@ func NewRecordService() *RagRecordService {
 	}
 }
 
-func (s *RagRecordService) DataChange(ctx context.Context, cdcRecord *model.CDCRecord) error {
+func (s *RagRecordService) DataChange(ctx context.Context, cdcRecord *restapi.CDCRecord) error {
 	record, err := s.NewRecord(ctx, cdcRecord)
 	if err != nil {
 		return err
 	}
 	switch cdcRecord.OpType {
-	case model.OpTypeRead:
+	case restapi.OpTypeRead:
 		break
-	case model.OpTypeCreate:
+	case restapi.OpTypeCreate:
 		return s.Create(ctx, record)
-	case model.OpTypeUpdate:
+	case restapi.OpTypeUpdate:
 		return s.Update(ctx, record)
-	case model.OpTypeDelete:
+	case restapi.OpTypeDelete:
 		return s.Delete(ctx, record)
 	}
 	return nil
@@ -50,15 +51,15 @@ func (s *RagRecordService) Update(ctx context.Context, record *model.Record) err
 func (s *RagRecordService) Delete(ctx context.Context, record *model.Record) error {
 	return s.recordDao.Delete(ctx, record)
 }
-func (s *RagRecordService) NewRecord(ctx context.Context, cdcRecord *model.CDCRecord) (record *model.Record, err error) {
+func (s *RagRecordService) NewRecord(ctx context.Context, cdcRecord *restapi.CDCRecord) (record *model.Record, err error) {
 	switch cdcRecord.OpType {
-	case model.OpTypeRead:
+	case restapi.OpTypeRead:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
-	case model.OpTypeCreate:
+	case restapi.OpTypeCreate:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
-	case model.OpTypeUpdate:
+	case restapi.OpTypeUpdate:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
-	case model.OpTypeDelete:
+	case restapi.OpTypeDelete:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
 	}
 	return record, err

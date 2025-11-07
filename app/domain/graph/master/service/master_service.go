@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/fs_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -37,7 +38,32 @@ func NewMasterService() *MasterService {
 	return ser
 }
 
-func (s *MasterService) DataChange(ctx context.Context, record *model.CDCRecord) error {
+func (s *MasterService) Init() *MasterService {
+	srcFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "src")
+	if err != nil {
+		panic("src fs not exist")
+	}
+	fileInfos := srcFs.ReadAllPath("/definition/db/master")
+	start := time.Now()
+	for _, fileInfo := range fileInfos {
+		if fileInfo.IsDir {
+			continue
+		}
+		fileName := fileInfo.Path + "/" + fileInfo.Name
+		data := srcFs.ReadFile(fileName)
+		jsonSch := schema.NewJsonSchemaWithBytes(fileName, data)
+		dbSch := dbschema.NewDBSchemaWithJsonSchema(jsonSch)
+		if dbSch != nil && dbSch.TableName != "" {
+			s.dbSchMap.Add(dbSch.TableName, dbSch)
+		}
+		s.AddDao(jsonSch, dbSch)
+	}
+	elapsed := time.Since(start)
+	fmt.Printf("CDC初始化耗时: %v\n", elapsed)
+	return s
+}
+
+func (s *MasterService) DataChange(ctx context.Context, record *restapi.CDCRecord) error {
 	logs.InfoMsg(ctx, "record", " opType=", record.OpType, " table=", record.Table)
 
 	dbSch := s.GetDBSchema(record.Table)
@@ -66,7 +92,7 @@ func (s *MasterService) GetDBSchema(tableName string) *dbschema.DBSchema {
 	return dbSch
 }
 
-func (s *MasterService) Create(record *model.CDCRecord) {
+func (s *MasterService) Create(record *restapi.CDCRecord) {
 	ctx := s.newCtx(record)
 	gp.Try(func() error {
 		tableName := record.Table
@@ -94,7 +120,7 @@ func (s *MasterService) Create(record *model.CDCRecord) {
 	})
 }
 
-func (s *MasterService) Update(record *model.CDCRecord) {
+func (s *MasterService) Update(record *restapi.CDCRecord) {
 	nodeDao := s.getNodeDao(record.Table)
 	if nodeDao == nil {
 		return
@@ -111,7 +137,7 @@ func (s *MasterService) Update(record *model.CDCRecord) {
 	}
 }
 
-func (s *MasterService) Delete(record *model.CDCRecord) {
+func (s *MasterService) Delete(record *restapi.CDCRecord) {
 	tableName := record.Table
 	nodeDao := s.getNodeDao(tableName)
 	if nodeDao == nil {
@@ -125,32 +151,7 @@ func (s *MasterService) Delete(record *model.CDCRecord) {
 	}
 }
 
-func (s *MasterService) Init() *MasterService {
-	srcFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "src")
-	if err != nil {
-		panic("src fs not exist")
-	}
-	fileInfos := srcFs.ReadAllPath("/definition/db/master")
-	start := time.Now()
-	for _, fileInfo := range fileInfos {
-		if fileInfo.IsDir {
-			continue
-		}
-		fileName := fileInfo.Path + "/" + fileInfo.Name
-		data := srcFs.ReadFile(fileName)
-		jsonSch := schema.NewJsonSchemaWithBytes(fileName, data)
-		dbSch := dbschema.NewDBSchemaWithJsonSchema(jsonSch)
-		if dbSch != nil && dbSch.TableName != "" {
-			s.dbSchMap.Add(dbSch.TableName, dbSch)
-		}
-		s.AddDao(jsonSch, dbSch)
-	}
-	elapsed := time.Since(start)
-	fmt.Printf("CDC初始化耗时: %v\n", elapsed)
-	return s
-}
-
-func (s *MasterService) newCtx(record *model.CDCRecord) context.Context {
+func (s *MasterService) newCtx(record *restapi.CDCRecord) context.Context {
 	parent := context.Background()
 	tenantId, _ := maputils.GetString(record.After, "tenant_id", "")
 	userName, _ := maputils.GetString(record.After, "updater_name", "")
@@ -172,7 +173,7 @@ func (s *MasterService) getNodeDao(tableName string) *dao.MasterNodeDao {
 	return get
 }
 
-func (s *MasterService) getRelDao(record *model.CDCRecord) *dao.BusRelationDao {
+func (s *MasterService) getRelDao(record *restapi.CDCRecord) *dao.BusRelationDao {
 	get, ok := s.relDaoMap.Get(record.Table)
 	if !ok {
 		return nil

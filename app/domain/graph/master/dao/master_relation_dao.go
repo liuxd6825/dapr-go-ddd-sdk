@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 )
 
@@ -52,7 +53,7 @@ func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model2.Ma
 }
 
 // UpdateRecord 根据关系数据创建图节点与关系
-func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model2.CDCRecord) *model2.MasterNode {
+func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *restapi.CDCRecord) *model2.MasterNode {
 	after := record.AfterMap()
 	node := model2.NewMasterNode(after, record.DBSchema)
 	rel := model2.NewMasterRelation(after, record.DBSchema)
@@ -98,7 +99,7 @@ func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *model2.CDCRec
 	return nil
 }
 
-func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *model2.CDCRecord) {
+func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *restapi.CDCRecord) {
 	storeDao := d.GetStore()
 	after := record.AfterMap()
 

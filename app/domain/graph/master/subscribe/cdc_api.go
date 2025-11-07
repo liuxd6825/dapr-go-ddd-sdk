@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -33,7 +32,7 @@ func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
 
 func (s *CdcAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	ctl := restapi.NewController(app, "", "CdcAPI", s)
-	ctl.Handle(iris.MethodPost, dataChangeURL, "DataChange")
+	ctl.CDCHandle(dataChangeURL, "DataChange")
 	ctl.Handle(iris.MethodOptions, dataChangeURL, "DaprOptions")
 	return ctl
 }
@@ -43,8 +42,8 @@ func (s *CdcAPI) DaprOptions(ctx context.Context) error {
 	return nil
 }
 
-func (s *CdcAPI) DataChange(ctx context.Context, cdc *model.CDCRecord) error {
-	logs.Infofmt(ctx, "%s CdcAPI.DataChange(CDCRecord) table:%s", dataChangeURL, cdc.Table)
+func (s *CdcAPI) DataChange(ctx context.Context, ictx iris.Context, cdc *restapi.CDCRecord) error {
+	logs.Infofmt(ctx, "%s CdcAPI.DataChange(CDCRecord) table:[%s]", dataChangeURL, cdc.Table)
 	if cdc.Table == "record" {
 		return s.recordService.DataChange(ctx, cdc)
 	}

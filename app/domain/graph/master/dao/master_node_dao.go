@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -156,7 +157,7 @@ func (d *MasterNodeDao) UpdateMain(ctx context.Context, node *model.MasterNode) 
 }
 
 // UpdateRelNode 根据关系数据创建图节点与关系
-func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *model.CDCRecord) {
+func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *restapi.CDCRecord) {
 	// 是否改名
 	isRename := record.IsRename()
 	isChangedRelType := record.IsChangedRelType()
@@ -250,7 +251,7 @@ func (d *MasterNodeDao) write(ctx context.Context, fmtStr string, fb *stringutil
 	return err
 }
 
-func (d *MasterNodeDao) DeleteMain(ctx context.Context, record *model.CDCRecord, dbSch *dbschema.DBSchema) {
+func (d *MasterNodeDao) DeleteMain(ctx context.Context, record *restapi.CDCRecord, dbSch *dbschema.DBSchema) {
 	nodeStore := d.GetStore()
 	before := record.BeforeMap()
 	node := model.NewMasterNode(before, record.DBSchema)
@@ -265,7 +266,7 @@ func (d *MasterNodeDao) DeleteMain(ctx context.Context, record *model.CDCRecord,
 	}
 }
 
-func (d *MasterNodeDao) DeleteRelNode(ctx context.Context, record *model.CDCRecord) {
+func (d *MasterNodeDao) DeleteRelNode(ctx context.Context, record *restapi.CDCRecord) {
 	before := record.BeforeMap()
 	rel := model.NewMasterRelation(before, record.DBSchema)
 	labels := d.getLabels(rel.CaseId, rel.TenantId)

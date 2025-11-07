@@ -1,10 +1,15 @@
-package model
+package restapi
 
 import (
+	"context"
 	"strings"
 	"time"
 
+	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/jsonutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
@@ -27,6 +32,50 @@ const (
 	OpTypeUpdate OpType = "u"
 	OpTypeDelete OpType = "d"
 )
+
+func GetCDCParams(ictx iris.Context) (res any, ctx context.Context, err error) {
+	request := ictx.Request()
+	if request.Method != iris.MethodPost {
+		return nil, nil, errors.New("request body is null")
+	}
+
+	if request.ContentLength == 0 {
+		return nil, nil, errors.New("request body is null")
+	}
+	cdcRecord, err := NewCDCRecordWithIris(ictx)
+	if err != nil {
+		return nil, nil, err
+	}
+	ctx = context.Background()
+	return cdcRecord, ctx, err
+}
+
+func NewCDCRecordWithIris(ictx iris.Context) (*CDCRecord, error) {
+	request := ictx.Request()
+	if request.Method != iris.MethodPost {
+		return nil, errors.New("request body is null")
+	}
+
+	if request.ContentLength == 0 {
+		return nil, errors.New("request body is null")
+	}
+	var cloudEvent events.CloudEvent
+	err := ictx.ReadJSON(&cloudEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	dataJson, err := cloudEvent.GetData()
+	if err != nil {
+		return nil, err
+	}
+	var cdcRecord CDCRecord
+	data := []byte(dataJson)
+	if err = jsonutils.Unmarshal(data, &cdcRecord); err != nil {
+		return nil, err
+	}
+	return &cdcRecord, nil
+}
 
 // IsMaster 是主数据
 func (r *CDCRecord) IsMaster() bool {
