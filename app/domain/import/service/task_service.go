@@ -45,6 +45,9 @@ func (r *TaskService) Create(ctx context.Context, cmd *command.TaskCreateCommand
 		entity.SchemaName = cmd.Data.SchemaName
 		entity.MapHeads = cmd.Data.MapHeads
 		entity.Fields = cmd.Data.Fields
+		entity.MasterType = cmd.Data.MasterType
+		entity.MasterId = cmd.Data.MasterId
+		entity.MasterName = cmd.Data.MasterName
 		return r.dao.Create(ctx, entity).GetError()
 	})
 }
@@ -61,6 +64,9 @@ func (r *TaskService) Update(ctx context.Context, cmd *command.TaskUpdateCommand
 		entity.Remark = cmd.Data.Remark
 		entity.MapHeads = cmd.Data.MapHeads
 		entity.Fields = cmd.Data.Fields
+		entity.MasterType = cmd.Data.MasterType
+		entity.MasterId = cmd.Data.MasterId
+		entity.MasterName = cmd.Data.MasterName
 
 		return r.dao.Update(ctx, entity, idao.NewCallOptions().SetUpdateFields(cmd.UpdateMask)).GetError()
 	})

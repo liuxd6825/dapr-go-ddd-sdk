@@ -29,4 +29,5 @@ type LoginUser struct {
 type LoginResult struct {
 	LoginSession *client.SuccessfulNativeLogin `json:"loginSession" bson:"login_session"`
 	LoginJwt     string                        `json:"loginJwt" bson:"login_jwt"`
+	LoginUser    LoginUser                     `json:"loginUser" bson:"login_user"`
 }

@@ -83,5 +83,5 @@ func (s *AuthAPI) Login(ctx context.Context, cmd *command.LoginCommand) (*model.
 	}
 	jwt, err := s.jwtService.Generate(&login.Session, loginUser)
 
-	return &model.LoginResult{LoginSession: login, LoginJwt: jwt}, nil
+	return &model.LoginResult{LoginSession: login, LoginJwt: jwt, LoginUser: *loginUser}, nil
 }

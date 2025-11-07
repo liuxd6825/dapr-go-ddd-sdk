@@ -14,6 +14,9 @@ type TemplateField model.TemplateField
 type TaskCreateFields struct {
 	Id         string                 `json:"id" validate:"required"`
 	CaseId     string                 `json:"caseId" validate:"required"`
+	MasterId   string                 `json:"masterId" validate:"required"`
+	MasterName string                 `json:"masterName" validate:"required"`
+	MasterType string                 `json:"masterType" validate:"required"`
 	Name       string                 `json:"name" validate:"required"`
 	SheetName  string                 `json:"sheetName" validate:"required"`
 	SheetId    string                 `json:"sheetId" validate:"required"`
@@ -61,6 +64,9 @@ type TaskUpdateFields struct {
 	Id         string                 `json:"id" validate:"required"   title:"Id"`
 	CaseId     string                 `json:"caseId" validate:"required"  title:"案件Id" `
 	DocId      string                 `json:"docId" validate:"required"  title:"文档Id"`
+	MasterId   string                 `json:"masterId" validate:"required"`
+	MasterName string                 `json:"masterName" validate:"required"`
+	MasterType string                 `json:"masterType" validate:"required"`
 	FileId     string                 `json:"fileId" validate:"required"  title:"文件Id"`
 	FileName   string                 `json:"fileName"  validate:"required" title:"文件名称"`
 	SheetId    string                 `json:"sheetId" validate:"required"`
