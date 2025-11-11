@@ -62,7 +62,7 @@ func (d *MasterNodeDao) CreateMain(ctx context.Context, node *model.MasterNode) 
 	labels := c.GetLabels(ctx, node)
 	fmtStr := `
 	CREATE (n$<labels>{$<props>}) WITH n 
-	MERGE (m$<labels>:same {id:$<name>,name:$<name>}) WITH n,m
+	MERGE (m$<labels>:same{name:$<name>}) WITH n,m
 	MERGE (n)-[:same]->(m)`
 
 	fb := stringutils.NewFmtBuilder()
@@ -170,7 +170,7 @@ func (d *MasterNodeDao) UpdateMain(ctx context.Context, node *model.MasterNode) 
 func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRecord) {
 	// 是否改名
 	isRename := d.IsRename(record)
-	isChangedRelType := d.isChangedBusFields(record)
+	isChangedRelType := d.IsChangedRelType(record)
 
 	//before := record.BeforeMap()
 	after := record.AfterMap()
@@ -184,8 +184,8 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 
 	if isChangedRelType {
 		fmtStr := `
-			MATCH (n$<labels>)-[r{id:$<id>}]->(m$<labels>) DELETE r 
-		`
+				MATCH (n$<labels>)-[r{id:$<id>}]->(m$<labels>) DELETE r
+			`
 		fb := stringutils.NewFmtBuilder()
 		fb.String("labels", labels)
 		fb.String("relType", rel.RelType)
@@ -204,11 +204,12 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 			panic(err)
 		}
 		fmtStr = `
-			MATCH (n1$<labels>{id:$<source>}), (m1$<labels>{id:$<target>}) WITH n1,m1
-			CREATE (n1)-[r1:$<relType>{id:$<id>,case_id:$<caseId>,tenant_id:$<tenantId>,source:$<source>,table:$<table>,
-				target:$<target>,source_ids:$<id>,source_type:$<sourceType>,keywords:$<keywords>,description:$<description>
-			}]->(m1)
-		`
+				MATCH (n1$<labels>{id:$<source>}), (m1$<labels>{id:$<target>}) WITH n1,m1
+				CREATE
+					(n1)-[r1:$<relType>{id:$<id>,case_id:$<caseId>,tenant_id:$<tenantId>,source:$<source>,table:$<table>,
+					target:$<target>,source_ids:$<id>,source_type:$<sourceType>,keywords:$<keywords>,description:$<description>
+				}]->(m1)
+			`
 		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
 			panic(err)
 		}
@@ -216,10 +217,10 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 
 	if isRename {
 		fmtStr := `
-		MATCH (n$<labels>{id:$<id>}) SET n.name=$<name> WITH n
-		MERGE (m$<labels>:same{name:$<name>}) WITH n, m
-		MERGE (n)-[r:same]->(m) WITH n
-		MATCH (n)-[rd:same]->(md) WHERE md.name<>$<name> DELETE rd`
+			MATCH (n$<labels>{id:$<id>}) SET n.name=$<name> WITH n
+			MERGE (m$<labels>:same{name:$<name>}) WITH n, m
+			MERGE (n)-[r:same]->(m) WITH n
+			MATCH (n)-[rd:same]->(md) WHERE md.name<>$<name> DELETE rd`
 
 		fb := stringutils.NewFmtBuilder()
 		fb.String("labels", labels)
@@ -351,8 +352,12 @@ func (d *MasterNodeDao) GetStore() *store_neo4j.Dao[*model.MasterNode] {
 // IsRename 是否数据更新
 func (d *MasterNodeDao) IsRename(r *dbevent.CDCRecord) bool {
 	if r.OpType == dbevent.OpTypeUpdate {
-		newName, _ := maputils.GetString(r.After, d.graphMeta.Name, "")
-		oldName, _ := maputils.GetString(r.Before, d.graphMeta.Name, "")
+		name := d.graphMeta.Name
+		if name == "" {
+			name = "name"
+		}
+		newName, _ := maputils.GetString(r.After, name, "")
+		oldName, _ := maputils.GetString(r.Before, name, "")
 		if newName != oldName {
 			return true
 		}
@@ -383,11 +388,12 @@ func (d *MasterNodeDao) isChangedBusFields(record *dbevent.CDCRecord) bool {
 		refType := graphMeta.GetRelTypeField()
 		if record.OpType == dbevent.OpTypeUpdate {
 			for k, _ := range record.After {
-				if k != refType && k != graphMeta.Name {
+				if k != refType {
 					return true
 				}
 			}
 		}
+		return false
 	}
-	return false
+	return true
 }

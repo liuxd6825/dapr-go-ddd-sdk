@@ -60,7 +60,7 @@ func InitDBMongo(env *Env) {
 		config := NewStoreMongoConfig(c)
 
 		db, err := mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
-			logs.Infofmt(context.Background(), "", "config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
+			logs.Infofmt(context.Background(), "config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
 				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
 				opts.Hosts, opts.Auth.Username, getPStr(opts.ReplicaSet), getPInt(opts.MaxPoolSize), config.ConnectTimeout,
 				config.SocketTimeout, config.ServerSelectionTimeout, config.MaxConnIdleTime, config.OperationTimeout, config.SocketTimeout)

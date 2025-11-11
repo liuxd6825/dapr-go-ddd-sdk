@@ -1,9 +1,12 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 type MasterNode struct {
@@ -25,6 +28,16 @@ func NewMasterNode(data map[string]any, dbSch *dbschema.DBSchema) *MasterNode {
 	id, _ := maputils.GetString(data, "id", "")
 	desc := utils.GetDescription(data, dbSch)
 	typeName := utils.GetNodeType(dbSch)
+	if list := stringutils.MacroValues(typeName); len(list) > 0 {
+		for _, key := range list {
+			dbField := stringutils.AsFieldName(key)
+			value, err := maputils.GetString(data, dbField, "")
+			if err != nil {
+				continue
+			}
+			typeName = strings.Replace(typeName, "${"+key+"}", value, 1)
+		}
+	}
 	return &MasterNode{
 		//Kid:         kid,
 		Id:          id,
