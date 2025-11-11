@@ -59,13 +59,11 @@ func (c *nodeCypher[T]) GetLabels(ctx context.Context, data T, labels ...string)
 	if tenantId == "" {
 		tenantId, _ = appctx.GetTenantId(ctx)
 	}
-	var list []string
-	if reflectutils.IsNotEmpty[T](data) {
-		list = c.eb.GetLabels(data)
-	}
+	list := labels
 	list = append(list, c.config.Labels...)
-	list = append(list, labels...)
-	list = append(list, "tenant_"+tenantId)
+	if reflectutils.IsNotEmpty[T](data) {
+		list = c.eb.GetLabels(data, list...)
+	}
 	tags := c.getLabels(list...)
 	return tags
 }

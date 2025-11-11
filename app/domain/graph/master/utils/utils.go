@@ -2,10 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
-	"github.com/liuxd6825/jsonschema/v6"
-	"strings"
 )
 
 func GetNodeType(dbSch *dbschema.DBSchema) string {
@@ -13,24 +13,17 @@ func GetNodeType(dbSch *dbschema.DBSchema) string {
 		return ""
 	}
 	meta := schema.GetMetaExtension(dbSch.JsonSchema)
-	if meta == nil || meta.Attributes == nil {
+	if meta == nil {
 		return ""
 	}
-	attr := getAttributes(dbSch.JsonSchema)
-	if attr == nil {
+	graph := meta.GetGraph()
+	if graph == nil {
 		return ""
 	}
-	if typeVal, ok := attr["title"]; ok {
-		return typeVal.(string)
-	}
-	if labelsVal, ok := attr["labels"]; ok {
-		if list, ok := labelsVal.([]string); ok {
-			return strings.Join(list, ",")
-		}
-	}
-	return ""
+	return strings.Join(graph.Labels, ",")
 }
 
+/*
 func getAttributes(sch *jsonschema.Schema) map[string]any {
 	if sch == nil {
 		return nil
@@ -46,6 +39,7 @@ func getAttributes(sch *jsonschema.Schema) map[string]any {
 	}
 	return nil
 }
+*/
 
 func GetDescription(data map[string]any, dbSch *dbschema.DBSchema) string {
 	if dbSch == nil {

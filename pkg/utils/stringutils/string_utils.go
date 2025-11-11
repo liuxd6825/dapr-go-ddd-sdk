@@ -99,6 +99,29 @@ func RelpaceValues(s string, values map[string]any) string {
 	return res
 }
 
+var macroValuesRegexp *regexp.Regexp
+
+// MacroValues  从字符串中提取所有宏变量。 示例: "${name}, ${sex}" 返回 []string{"name", "sex"}
+// @Description:
+// @param input
+// @return []string
+func MacroValues(input string) []string {
+	if macroValuesRegexp == nil {
+		macroValuesRegexp = regexp.MustCompile(`\$\{(\w+)\}`)
+	}
+
+	// 匹配 ${variable} 模式的正则表达式
+	matches := macroValuesRegexp.FindAllStringSubmatch(input, -1)
+
+	var variables []string
+	for _, match := range matches {
+		if len(match) > 1 {
+			variables = append(variables, match[1])
+		}
+	}
+	return variables
+}
+
 // FirstUpper
 // @Description: 字符串首字母大写
 // @param s

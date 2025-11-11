@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
@@ -31,7 +30,7 @@ type EntityBuilder[T any] interface {
 	GetAuthUser(ctx context.Context, opts ...Options) User
 
 	GetConfig() *EntityBuilderConfig
-	GetLabels(e T) []string
+	GetLabels(e T, labels ...string) []string
 
 	GetDBSchema() *DBSchema
 }
@@ -73,18 +72,8 @@ func NewAnyEntityBuilder[T any](schema *DBSchema) *AnyEntityBuilder[T] {
 	}
 
 }
-func (b *AnyEntityBuilder[T]) GetLabels(entity T) []string {
-	fields := b.schema.GetNodeLabelFields()
-	labels := make([]string, 0)
-	for _, f := range fields {
-		val := reflectutils.GetFieldString(entity, f.Name)
-		if f.NodeLabelFormat != "" {
-			labels = append(labels, fmt.Sprintf(f.NodeLabelFormat, val))
-		} else {
-			labels = append(labels, val)
-		}
-	}
-	return labels
+func (b *AnyEntityBuilder[T]) GetLabels(entity T, values ...string) []string {
+	return GetGraphLabels[T](b.GetDBSchema(), entity, values...)
 }
 
 func (b *AnyEntityBuilder[T]) GetFieldName(field *Field) string {

@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/mapperutils"
 )
 
@@ -22,19 +22,19 @@ func NewRecordService() *RagRecordService {
 	}
 }
 
-func (s *RagRecordService) DataChange(ctx context.Context, cdcRecord *restapi.CDCRecord) error {
+func (s *RagRecordService) DataChange(ctx context.Context, cdcRecord *dbevent.CDCRecord) error {
 	record, err := s.NewRecord(ctx, cdcRecord)
 	if err != nil {
 		return err
 	}
 	switch cdcRecord.OpType {
-	case restapi.OpTypeRead:
+	case dbevent.OpTypeRead:
 		break
-	case restapi.OpTypeCreate:
+	case dbevent.OpTypeCreate:
 		return s.Create(ctx, record)
-	case restapi.OpTypeUpdate:
+	case dbevent.OpTypeUpdate:
 		return s.Update(ctx, record)
-	case restapi.OpTypeDelete:
+	case dbevent.OpTypeDelete:
 		return s.Delete(ctx, record)
 	}
 	return nil
@@ -51,15 +51,15 @@ func (s *RagRecordService) Update(ctx context.Context, record *model.Record) err
 func (s *RagRecordService) Delete(ctx context.Context, record *model.Record) error {
 	return s.recordDao.Delete(ctx, record)
 }
-func (s *RagRecordService) NewRecord(ctx context.Context, cdcRecord *restapi.CDCRecord) (record *model.Record, err error) {
+func (s *RagRecordService) NewRecord(ctx context.Context, cdcRecord *dbevent.CDCRecord) (record *model.Record, err error) {
 	switch cdcRecord.OpType {
-	case restapi.OpTypeRead:
+	case dbevent.OpTypeRead:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
-	case restapi.OpTypeCreate:
+	case dbevent.OpTypeCreate:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
-	case restapi.OpTypeUpdate:
+	case dbevent.OpTypeUpdate:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
-	case restapi.OpTypeDelete:
+	case dbevent.OpTypeDelete:
 		record, err = s.newRecord(ctx, cdcRecord.AfterMap())
 	}
 	return record, err

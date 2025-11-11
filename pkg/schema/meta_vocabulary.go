@@ -2,11 +2,12 @@ package schema
 
 import (
 	"context"
+	"log"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/jsonschema/v6"
-	"log"
-	"strings"
 )
 
 func NewMetaVocabulary() *jsonschema.Vocabulary {
@@ -56,6 +57,10 @@ func metaCompile(ctx *jsonschema.CompilerContext, obj map[string]any) (ext jsons
 		metaMap = v.(map[string]any)
 	}
 	meta := NewMetaExtension()
+
+	if err = meta.InitGraph(ctx, metaMap); err != nil {
+		return nil, err
+	}
 
 	if err = meta.InitDBField(ctx, metaMap); err != nil {
 		return nil, err

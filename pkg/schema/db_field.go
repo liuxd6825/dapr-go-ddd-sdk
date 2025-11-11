@@ -22,34 +22,26 @@ const (
 )
 
 type DBField struct {
-	NotField        bool        `json:"notField"`        // 不是数据库字段
-	Name            string      `json:"name"`            // 字段名称
-	DbType          string      `json:"dbType"`          //数据类型
-	Size            int64       `json:"size"`            // 字段大小
-	PrimaryKey      bool        `json:"primaryKey"`      // 是主健
-	NotNull         bool        `json:"notNull"`         // 不能为空
-	Unique          bool        `json:"unique"`          // 唯一
-	Creatable       bool        `json:"creatable"`       // 可创建
-	Updatable       bool        `json:"updatable"`       // 可更新
-	Readable        bool        `json:"readable"`        // 可读取
-	SortType        DBSortType  `json:"sort"`            // 排序类型
-	IndexType       DBIndexType `json:"indexType"`       // 索引类型
-	IndexName       string      `json:"indexName"`       // 索引类型
-	RelStartId      bool        `json:"relStartId"`      // 是图关系中的开始节点字段
-	RelEndId        bool        `json:"relEndId"`        // 是图关系中的结束节点字段
-	RelType         bool        `json:"relType"`         // 是图关系中的类型字段
-	NodeLabel       bool        `json:"nodeLabel"`       // 是图节点的标签
-	NodeLabelFormat string      `json:"nodeLabelFormat"` // 格式化label
-}
-
-type DBTable struct {
-	Name       string         `json:"name"`
-	DBKey      string         `json:"dbKey"`
-	Properties map[string]any `json:"properties"`
-}
-
-func NewDBTable() *DBTable {
-	return &DBTable{}
+	NotField   bool        `json:"notField"`   // 不是数据库字段
+	Name       string      `json:"name"`       // 字段名称
+	DbType     string      `json:"dbType"`     //数据类型
+	Size       int64       `json:"size"`       // 字段大小
+	PrimaryKey bool        `json:"primaryKey"` // 是主健
+	NotNull    bool        `json:"notNull"`    // 不能为空
+	Unique     bool        `json:"unique"`     // 唯一
+	Creatable  bool        `json:"creatable"`  // 可创建
+	Updatable  bool        `json:"updatable"`  // 可更新
+	Readable   bool        `json:"readable"`   // 可读取
+	SortType   DBSortType  `json:"sort"`       // 排序类型
+	IndexType  DBIndexType `json:"indexType"`  // 索引类型
+	IndexName  string      `json:"indexName"`  // 索引类型
+	/*
+		RelStartId      bool        `json:"relStartId"`      // 是图关系中的开始节点字段
+		RelEndId        bool        `json:"relEndId"`        // 是图关系中的结束节点字段
+		RelType         bool        `json:"relType"`         // 是图关系中的类型字段
+		NodeLabel       bool        `json:"nodeLabel"`       // 是图节点的标签
+		NodeLabelFormat string      `json:"nodeLabelFormat"` // 格式化label
+	*/
 }
 
 func NewDBField() *DBField {
@@ -59,31 +51,11 @@ func NewDBField() *DBField {
 		Updatable:  true,
 		NotNull:    false,
 		PrimaryKey: false,
-		RelStartId: false, // 是图关系中的开始节点字段
-		RelEndId:   false, // 是图关系中的结束节点字段
-		RelType:    false, // 是图关系中的类型字段
-		NodeLabel:  false,
+		/*		RelStartId: false, // 是图关系中的开始节点字段
+				RelEndId:   false, // 是图关系中的结束节点字段
+				RelType:    false, // 是图关系中的类型字段
+				NodeLabel:  false,*/
 	}
-}
-
-func (db *DBTable) init(ctx *jsonschema.CompilerContext, values map[string]any) error {
-	var err error
-	for k, v := range values {
-		switch k {
-		case "name":
-			db.Name = v.(string)
-		case "dbKey":
-			db.DBKey = v.(string)
-		case "properties":
-			{
-				prop, ok := v.(map[string]any)
-				if ok {
-					db.Properties = prop
-				}
-			}
-		}
-	}
-	return err
 }
 
 func (db *DBField) Readonly() bool {
@@ -154,27 +126,28 @@ func (db *DBField) init(ctx *jsonschema.CompilerContext, values map[string]any) 
 			if val, err := convert.ToString(value); err == nil {
 				db.IndexType = DBIndexType(val)
 			}
-
-		case "relStartId":
-			if val, err := convert.ToBool(value); err == nil {
-				db.RelStartId = val
-			}
-		case "relEndId":
-			if val, err := convert.ToBool(value); err == nil {
-				db.RelEndId = val
-			}
-		case "relType":
-			if val, err := convert.ToBool(value); err == nil {
-				db.RelType = val
-			}
-		case "nodeLabel":
-			if val, err := convert.ToBool(value); err == nil {
-				db.NodeLabel = val
-			}
-		case "nodeLabelFormat":
-			if val, err := convert.ToString(value); err == nil {
-				db.NodeLabelFormat = val
-			}
+			/*
+				case "relStartId":
+					if val, err := convert.ToBool(value); err == nil {
+						db.RelStartId = val
+					}
+				case "relEndId":
+					if val, err := convert.ToBool(value); err == nil {
+						db.RelEndId = val
+					}
+				case "relType":
+					if val, err := convert.ToBool(value); err == nil {
+						db.RelType = val
+					}
+				case "nodeLabel":
+					if val, err := convert.ToBool(value); err == nil {
+						db.NodeLabel = val
+					}
+				case "nodeLabelFormat":
+					if val, err := convert.ToString(value); err == nil {
+						db.NodeLabelFormat = val
+					}
+			*/
 		}
 
 		if err != nil {

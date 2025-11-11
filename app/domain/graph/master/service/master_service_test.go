@@ -5,6 +5,7 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -101,8 +102,8 @@ func newService() *MasterService {
 type Records struct {
 }
 
-func (r *Records) GetCreateCompany(id string, name string) *model2.CDCRecord {
-	record := &model2.CDCRecord{
+func (r *Records) GetCreateCompany(id string, name string) *dbevent.CDCRecord {
+	record := &dbevent.CDCRecord{
 		OpType: "c",
 		DB:     "master",
 		Table:  "company",
@@ -116,8 +117,8 @@ func (r *Records) GetCreateCompany(id string, name string) *model2.CDCRecord {
 	return record
 }
 
-func (r *Records) GetUpdateCompany(id, newName, oldName string) *model2.CDCRecord {
-	record := &model2.CDCRecord{
+func (r *Records) GetUpdateCompany(id, newName, oldName string) *dbevent.CDCRecord {
+	record := &dbevent.CDCRecord{
 		OpType: "u",
 		DB:     "master",
 		Table:  "company",
@@ -137,8 +138,8 @@ func (r *Records) GetUpdateCompany(id, newName, oldName string) *model2.CDCRecor
 	return record
 }
 
-func (r *Records) GetCreateCompanyCompany(id, startId, relType, name string) *model2.CDCRecord {
-	record := &model2.CDCRecord{
+func (r *Records) GetCreateCompanyCompany(id, startId, relType, name string) *dbevent.CDCRecord {
+	record := &dbevent.CDCRecord{
 		OpType: "c",
 		DB:     "master",
 		Table:  "company_company",
@@ -154,8 +155,8 @@ func (r *Records) GetCreateCompanyCompany(id, startId, relType, name string) *mo
 	return record
 }
 
-func (r *Records) GetUpdateCompanyCompany(id, startId, newRelType, oldRelType, newName, oldName string) *model2.CDCRecord {
-	record := &model2.CDCRecord{
+func (r *Records) GetUpdateCompanyCompany(id, startId, newRelType, oldRelType, newName, oldName string) *dbevent.CDCRecord {
+	record := &dbevent.CDCRecord{
 		OpType: "u",
 		DB:     "master",
 		Table:  "company_company",

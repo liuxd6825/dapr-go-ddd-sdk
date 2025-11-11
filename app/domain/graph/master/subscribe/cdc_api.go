@@ -5,6 +5,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
@@ -42,7 +43,7 @@ func (s *CdcAPI) DaprOptions(ctx context.Context) error {
 	return nil
 }
 
-func (s *CdcAPI) DataChange(ctx context.Context, ictx iris.Context, cdc *restapi.CDCRecord) error {
+func (s *CdcAPI) DataChange(ctx context.Context, ictx iris.Context, cdc *dbevent.CDCRecord) error {
 	logs.Infofmt(ctx, "%s CdcAPI.DataChange(CDCRecord) table:[%s]", dataChangeURL, cdc.Table)
 	if cdc.Table == "record" {
 		return s.recordService.DataChange(ctx, cdc)

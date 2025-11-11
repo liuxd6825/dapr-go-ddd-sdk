@@ -33,7 +33,7 @@ const (
 	OpTypeDelete OpType = "d"
 )
 
-func GetCDCParams(ictx iris.Context) (res any, ctx context.Context, err error) {
+func GetCDCParams(ictx iris.Context, params any) (res any, ctx context.Context, err error) {
 	request := ictx.Request()
 	if request.Method != iris.MethodPost {
 		return nil, nil, errors.New("request body is null")
@@ -42,7 +42,7 @@ func GetCDCParams(ictx iris.Context) (res any, ctx context.Context, err error) {
 	if request.ContentLength == 0 {
 		return nil, nil, errors.New("request body is null")
 	}
-	cdcRecord, err := NewCDCRecordWithIris(ictx)
+	cdcRecord, err := NewCDCRecordWithIris(ictx, params)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -50,7 +50,7 @@ func GetCDCParams(ictx iris.Context) (res any, ctx context.Context, err error) {
 	return cdcRecord, ctx, err
 }
 
-func NewCDCRecordWithIris(ictx iris.Context) (*CDCRecord, error) {
+func NewCDCRecordWithIris(ictx iris.Context, params any) (any, error) {
 	request := ictx.Request()
 	if request.Method != iris.MethodPost {
 		return nil, errors.New("request body is null")
@@ -69,12 +69,12 @@ func NewCDCRecordWithIris(ictx iris.Context) (*CDCRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	var cdcRecord CDCRecord
+
 	data := []byte(dataJson)
-	if err = jsonutils.Unmarshal(data, &cdcRecord); err != nil {
+	if err = jsonutils.Unmarshal(data, params); err != nil {
 		return nil, err
 	}
-	return &cdcRecord, nil
+	return params, nil
 }
 
 // IsMaster 是主数据

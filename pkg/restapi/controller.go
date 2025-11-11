@@ -375,7 +375,7 @@ func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type,
 		params, rctx, err = GetEventParams(ictx, params)
 		return params, rctx, err
 	} else if handleType == HandleType_CDC {
-		params, rctx, err = GetCDCParams(ictx)
+		params, rctx, err = GetCDCParams(ictx, params)
 		return params, rctx, err
 	}
 	if paramType != nil {

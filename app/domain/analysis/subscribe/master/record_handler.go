@@ -2,8 +2,9 @@ package master
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/cdc"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -33,7 +34,7 @@ func (s *RecordHandler) DaprOptions(ctx context.Context) error {
 	return nil
 }
 
-func (s *RecordHandler) DataChange(ctx context.Context, cdc *cdc.CDCRecord) error {
+func (s *RecordHandler) DataChange(ctx context.Context, cdc *dbevent.CDCRecord) error {
 	if cdc == nil {
 		return nil
 	}

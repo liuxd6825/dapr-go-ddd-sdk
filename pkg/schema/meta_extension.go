@@ -2,10 +2,12 @@ package schema
 
 import (
 	_ "embed"
+
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
 type MetaExtension struct {
+	Graph      *Graph             `json:"graph,omitempty"`
 	DBField    *DBField           `json:"dbField,omitempty"`
 	DBTable    *DBTable           `json:"dbTable,omitempty"`
 	Form       *Form              `json:"form,omitempty"`
@@ -26,6 +28,7 @@ const META_TAG_NAME = "meta"
 
 func NewMetaExtension() *MetaExtension {
 	return &MetaExtension{
+		Graph:      NewGraph(),
 		DBField:    NewDBField(),
 		DBTable:    NewDBTable(),
 		Form:       NewForm(),
@@ -37,6 +40,14 @@ func NewMetaExtension() *MetaExtension {
 		DDD:        NewDDD(),
 		Attributes: make(map[string]any),
 	}
+}
+
+func (m *MetaExtension) GetGraph() *Graph {
+	return m.Graph
+}
+
+func (m *MetaExtension) Valid() error {
+	return nil
 }
 
 func (m *MetaExtension) TagName() string {
@@ -55,6 +66,11 @@ func (m *MetaExtension) InitDBField(ctx *jsonschema.CompilerContext, meta map[st
 func (m *MetaExtension) InitDBTable(ctx *jsonschema.CompilerContext, meta map[string]any) error {
 	values := getMapItem(meta, "dbTable")
 	return m.DBTable.init(ctx, values)
+}
+
+func (m *MetaExtension) InitGraph(ctx *jsonschema.CompilerContext, meta map[string]any) error {
+	values := getMapItem(meta, "graph")
+	return m.Graph.init(ctx, values)
 }
 
 func (m *MetaExtension) InitForm(ctx *jsonschema.CompilerContext, meta map[string]any) error {

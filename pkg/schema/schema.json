@@ -15,6 +15,35 @@
         "control": {
           "type": "object"
         },
+        "graph": {
+          "type": "object",
+          "patternProperties": {
+            "isEnable": {
+              "type": "boolean"
+            },
+            "relStart": {
+              "type": "string"
+            },
+            "relEnd": {
+              "type": "string"
+            },
+            "relType": {
+              "type": "string"
+            },
+            "labels": {
+              "type": ["array", "string"],
+              "items": {
+                "type": "string"
+              }
+            },
+            "graphType": {
+              "type": ["array","string"],
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
         "dbTable": {
           "type": "object",
           "patternProperties": {

@@ -8,12 +8,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/fs_pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -63,7 +62,7 @@ func (s *MasterService) Init() *MasterService {
 	return s
 }
 
-func (s *MasterService) DataChange(ctx context.Context, record *restapi.CDCRecord) error {
+func (s *MasterService) DataChange(ctx context.Context, record *dbevent.CDCRecord) error {
 	logs.InfoMsg(ctx, "record", " opType=", record.OpType, " table=", record.Table)
 
 	dbSch := s.GetDBSchema(record.Table)
@@ -92,7 +91,7 @@ func (s *MasterService) GetDBSchema(tableName string) *dbschema.DBSchema {
 	return dbSch
 }
 
-func (s *MasterService) Create(record *restapi.CDCRecord) {
+func (s *MasterService) Create(record *dbevent.CDCRecord) {
 	ctx := s.newCtx(record)
 	gp.Try(func() error {
 		tableName := record.Table
@@ -120,7 +119,7 @@ func (s *MasterService) Create(record *restapi.CDCRecord) {
 	})
 }
 
-func (s *MasterService) Update(record *restapi.CDCRecord) {
+func (s *MasterService) Update(record *dbevent.CDCRecord) {
 	nodeDao := s.getNodeDao(record.Table)
 	if nodeDao == nil {
 		return
@@ -137,7 +136,7 @@ func (s *MasterService) Update(record *restapi.CDCRecord) {
 	}
 }
 
-func (s *MasterService) Delete(record *restapi.CDCRecord) {
+func (s *MasterService) Delete(record *dbevent.CDCRecord) {
 	tableName := record.Table
 	nodeDao := s.getNodeDao(tableName)
 	if nodeDao == nil {
@@ -151,7 +150,7 @@ func (s *MasterService) Delete(record *restapi.CDCRecord) {
 	}
 }
 
-func (s *MasterService) newCtx(record *restapi.CDCRecord) context.Context {
+func (s *MasterService) newCtx(record *dbevent.CDCRecord) context.Context {
 	parent := context.Background()
 	tenantId, _ := maputils.GetString(record.After, "tenant_id", "")
 	userName, _ := maputils.GetString(record.After, "updater_name", "")
@@ -173,7 +172,7 @@ func (s *MasterService) getNodeDao(tableName string) *dao.MasterNodeDao {
 	return get
 }
 
-func (s *MasterService) getRelDao(record *restapi.CDCRecord) *dao.BusRelationDao {
+func (s *MasterService) getRelDao(record *dbevent.CDCRecord) *dao.BusRelationDao {
 	get, ok := s.relDaoMap.Get(record.Table)
 	if !ok {
 		return nil
@@ -183,33 +182,25 @@ func (s *MasterService) getRelDao(record *restapi.CDCRecord) *dao.BusRelationDao
 
 func (s *MasterService) AddDao(jsonSch *jsonschema.Schema, dbSchema *dbschema.DBSchema) {
 	meta := schema.GetMetaExtension(jsonSch)
+	if meta == nil {
+		return
+	}
 	tableName := meta.DBTable.Name
 
 	if _, ok := s.nodeDaoMap.Get(tableName); ok {
 		return
 	}
-	cfg, err := maputils.GetMap(meta.Attributes, "neo4j", nil)
-	if err != nil {
-		panic(err)
-	}
-	if cfg == nil {
-		return
-	}
-
-	graphTypes, _ := maputils.GetStrings(cfg, "type", nil)
-	if len(graphTypes) == 0 {
+	cfg := meta.GetGraph()
+	if cfg == nil || !cfg.IsEnable {
 		return
 	}
 
 	var nodeDao *dao.MasterNodeDao
-	if isNode := idao.IsGraphType(graphTypes, idao.GraphType_Node); isNode {
-		labels, _ := maputils.GetStrings(cfg, "labels", []string{tableName})
-		labels = append(labels, "master")
-		nodeDao = dao.NewMasterNodeDao(labels, dbSchema)
+	if cfg.IsNodeType() {
+		nodeDao = dao.NewMasterNodeDao(cfg.Labels, dbSchema)
 		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
-
-	if isRel := idao.IsGraphType(graphTypes, idao.GraphType_Rel); isRel {
+	if cfg.IsRelType() {
 		relDao := dao.NewBusRelationDao(dbSchema, nodeDao)
 		s.relDaoMap.Add(tableName, relDao)
 	}

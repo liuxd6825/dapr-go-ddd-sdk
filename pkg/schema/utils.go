@@ -1,6 +1,9 @@
 package schema
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
@@ -130,4 +133,20 @@ func ApplyDefaultsToArray(sch *jsonschema.Schema, data []interface{}) []interfac
 		}
 	}
 	return data
+}
+
+func GetStrings(v any) ([]string, error) {
+	var result []string
+	if val, ok := v.(string); ok {
+		result = []string{val}
+	} else if val, ok := v.([]string); ok {
+		result = val
+	} else if list, ok := v.([]any); ok {
+		for _, item := range list {
+			result = append(result, fmt.Sprintf("%v", item))
+		}
+	} else {
+		return nil, errors.New("value is not string")
+	}
+	return result, nil
 }

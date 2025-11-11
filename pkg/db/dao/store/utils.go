@@ -2,10 +2,12 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
@@ -59,4 +61,54 @@ func RSqlKeyValueToList(s string) []KeyValue {
 		}
 	}
 	return res
+}
+
+func GetGraphLabels[T any](dbSch *DBSchema, entity T, values ...string) []string {
+	if dbSch == nil {
+		return []string{}
+	}
+	var labels []string
+	keys := map[string]string{}
+
+	addLabel := func(key string) {
+		if _, ok := keys[key]; ok {
+			return
+		}
+		keys[key] = key
+		labels = append(labels, key)
+	}
+
+	fields := dbSch.GetNodeLabelFields()
+	for _, field := range fields {
+		if field != nil && field.NodeLabel {
+			label := reflectutils.GetFieldString(entity, field.Name)
+			if field.NodeLabelFormat != "" {
+				key := fmt.Sprintf(field.NodeLabelFormat, label)
+				addLabel(key)
+			} else {
+				addLabel(label)
+			}
+		}
+	}
+
+	if len(values) > 0 {
+		for _, value := range values {
+			if strings.Contains(value, "${") {
+				names := stringutils.MacroValues(value)
+				for _, name := range names {
+					fieldName := stringutils.FirstUpper(name)
+					field := dbSch.GormSchema.LookUpField(fieldName)
+					if field != nil {
+						propVal := reflectutils.GetFieldString(entity, name)
+						value = strings.ReplaceAll(value, fmt.Sprintf("${%s}", name), propVal)
+						addLabel(value)
+					}
+				}
+			} else {
+				addLabel(value)
+			}
+		}
+	}
+
+	return labels
 }
