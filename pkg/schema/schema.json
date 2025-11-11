@@ -18,6 +18,9 @@
         "graph": {
           "type": "object",
           "patternProperties": {
+            "name": {
+              "type": "string"
+            },
             "isEnable": {
               "type": "boolean"
             },

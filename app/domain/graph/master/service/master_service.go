@@ -23,16 +23,18 @@ import (
 // MasterService
 // @Description: 主数据关系图
 type MasterService struct {
-	nodeDaoMap *types.CMap[*dao.MasterNodeDao]
-	relDaoMap  *types.CMap[*dao.BusRelationDao]
-	dbSchMap   *types.CMap[*dbschema.DBSchema]
+	nodeDaoMap   *types.CMap[*dao.MasterNodeDao]
+	relDaoMap    *types.CMap[*dao.BusRelationDao]
+	dbSchMap     *types.CMap[*dbschema.DBSchema]
+	graphMetaMap *types.CMap[*schema.Graph]
 }
 
 func NewMasterService() *MasterService {
 	ser := &MasterService{
-		nodeDaoMap: types.NewCMap[*dao.MasterNodeDao](),
-		relDaoMap:  types.NewCMap[*dao.BusRelationDao](),
-		dbSchMap:   types.NewCMap[*dbschema.DBSchema](),
+		nodeDaoMap:   types.NewCMap[*dao.MasterNodeDao](),
+		relDaoMap:    types.NewCMap[*dao.BusRelationDao](),
+		dbSchMap:     types.NewCMap[*dbschema.DBSchema](),
+		graphMetaMap: types.NewCMap[*schema.Graph](),
 	}
 	return ser
 }
@@ -51,11 +53,15 @@ func (s *MasterService) Init() *MasterService {
 		fileName := fileInfo.Path + "/" + fileInfo.Name
 		data := srcFs.ReadFile(fileName)
 		jsonSch := schema.NewJsonSchemaWithBytes(fileName, data)
-		dbSch := dbschema.NewDBSchemaWithJsonSchema(jsonSch)
-		if dbSch != nil && dbSch.TableName != "" {
-			s.dbSchMap.Add(dbSch.TableName, dbSch)
+		// 查找是否启用graph配置项
+		metaExt, graphMeta := s.getGraphMetaWithSchema(jsonSch)
+		if graphMeta != nil {
+			dbSch := dbschema.NewDBSchemaWithJsonSchema(jsonSch)
+			if dbSch != nil && dbSch.TableName != "" {
+				s.dbSchMap.Add(dbSch.TableName, dbSch)
+			}
+			s.AddDao(jsonSch, dbSch, metaExt, graphMeta)
 		}
-		s.AddDao(jsonSch, dbSch)
 	}
 	elapsed := time.Since(start)
 	fmt.Printf("CDC初始化耗时: %v\n", elapsed)
@@ -102,9 +108,9 @@ func (s *MasterService) Create(record *dbevent.CDCRecord) {
 
 		afterData := record.AfterMap()
 		node := model.NewMasterNode(afterData, record.DBSchema)
-		if record.IsMaster() {
+		if s.isMaster(record) {
 			nodeDao.CreateMain(ctx, node)
-		} else if record.IsRelation() {
+		} else if s.isRelation(record) {
 			// 是关系数据
 			relDao := s.getRelDao(record)
 			if relDao == nil {
@@ -119,6 +125,22 @@ func (s *MasterService) Create(record *dbevent.CDCRecord) {
 	})
 }
 
+func (s *MasterService) isMaster(record *dbevent.CDCRecord) bool {
+	if graphMeta, ok := s.graphMetaMap.Get(record.Table); ok {
+		if graphMeta.IsNodeType() && !graphMeta.IsRelType() {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *MasterService) isRelation(record *dbevent.CDCRecord) bool {
+	if graphMeta, ok := s.graphMetaMap.Get(record.Table); ok {
+		return graphMeta.IsRelType()
+	}
+	return false
+}
+
 func (s *MasterService) Update(record *dbevent.CDCRecord) {
 	nodeDao := s.getNodeDao(record.Table)
 	if nodeDao == nil {
@@ -127,7 +149,7 @@ func (s *MasterService) Update(record *dbevent.CDCRecord) {
 	ctx := s.newCtx(record)
 	afterMap := record.AfterMap()
 	afterNode := model.NewMasterNode(afterMap, record.DBSchema)
-	if record.IsMaster() {
+	if s.isMaster(record) {
 		// 是主数据表
 		nodeDao.UpdateMain(ctx, afterNode)
 	} else {
@@ -143,7 +165,7 @@ func (s *MasterService) Delete(record *dbevent.CDCRecord) {
 		return
 	}
 	ctx := s.newCtx(record)
-	if record.IsMaster() {
+	if s.isMaster(record) {
 		nodeDao.DeleteMain(ctx, record, nodeDao.GetSchema())
 	} else {
 		nodeDao.DeleteRelNode(ctx, record)
@@ -180,30 +202,18 @@ func (s *MasterService) getRelDao(record *dbevent.CDCRecord) *dao.BusRelationDao
 	return get
 }
 
-func (s *MasterService) AddDao(jsonSch *jsonschema.Schema, dbSchema *dbschema.DBSchema) {
-	meta := schema.GetMetaExtension(jsonSch)
-	if meta == nil {
-		return
-	}
-	tableName := meta.DBTable.Name
-
-	if _, ok := s.nodeDaoMap.Get(tableName); ok {
-		return
-	}
-	cfg := meta.GetGraph()
-	if cfg == nil || !cfg.IsEnable {
-		return
-	}
-
+func (s *MasterService) AddDao(jsonSch *jsonschema.Schema, dbSchema *dbschema.DBSchema, metaExt *schema.MetaExtension, graphMeta *schema.Graph) {
+	tableName := metaExt.DBTable.Name
 	var nodeDao *dao.MasterNodeDao
-	if cfg.IsNodeType() {
-		nodeDao = dao.NewMasterNodeDao(cfg.Labels, dbSchema)
+	if graphMeta.IsNodeType() {
+		nodeDao = dao.NewMasterNodeDao(graphMeta.Labels, dbSchema, graphMeta)
 		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
-	if cfg.IsRelType() {
-		relDao := dao.NewBusRelationDao(dbSchema, nodeDao)
+	if graphMeta.IsRelType() {
+		relDao := dao.NewBusRelationDao(dbSchema, nodeDao, graphMeta)
 		s.relDaoMap.Add(tableName, relDao)
 	}
+	s.graphMetaMap.Add(tableName, graphMeta)
 }
 
 func (s *MasterService) clearAll(ctx context.Context) {
@@ -213,4 +223,26 @@ func (s *MasterService) clearAll(ctx context.Context) {
 		break
 	}
 	nodeDao.ClearAll(ctx)
+}
+
+// getGraphMeta
+// @Description: 查找是否有图配置项
+// @receiver s
+// @param jsonSch
+// @return *schema.MetaExtension
+// @return *schema.Graph
+func (s *MasterService) getGraphMetaWithSchema(jsonSch *jsonschema.Schema) (*schema.MetaExtension, *schema.Graph) {
+	metaExt := schema.GetMetaExtension(jsonSch)
+	if metaExt == nil {
+		return nil, nil
+	}
+	graphMeta := metaExt.GetGraph()
+	if graphMeta == nil || !graphMeta.IsEnable {
+		return nil, nil
+	}
+	return metaExt, graphMeta
+}
+
+func (s *MasterService) getGraphMeta(record *dbevent.CDCRecord) (*schema.Graph, bool) {
+	return s.graphMetaMap.Get(record.Table)
 }

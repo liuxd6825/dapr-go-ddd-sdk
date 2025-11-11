@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -20,14 +21,16 @@ import (
 
 type MasterNodeDao struct {
 	*Base[*model.MasterNode]
-	labels []string
+	labels    []string
+	graphMeta *schema.Graph
+	relType   string
 }
 
 type IStore[T any] interface {
 	GetStore() store2.IStore[T]
 }
 
-func NewMasterNodeDao(labels []string, dbSch *store2.DBSchema) *MasterNodeDao {
+func NewMasterNodeDao(labels []string, dbSch *store2.DBSchema, graphMeta *schema.Graph) *MasterNodeDao {
 	nodeCfg := &dao.DaoConfig{
 		DBKey:              "neo4j",
 		GraphType:          idao.GraphType_Node,
@@ -35,11 +38,18 @@ func NewMasterNodeDao(labels []string, dbSch *store2.DBSchema) *MasterNodeDao {
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,
 	}
+
+	stringutils.MacroValues(graphMeta.RelType)
 	newDao := dao.NewDao[*model.MasterNode](nodeCfg)
 	return &MasterNodeDao{
-		labels: labels,
-		Base:   &Base[*model.MasterNode]{DBSchema: dbSch, Dao: newDao},
+		graphMeta: graphMeta,
+		labels:    labels,
+		Base:      &Base[*model.MasterNode]{DBSchema: dbSch, Dao: newDao},
 	}
+}
+
+func (d *MasterNodeDao) GraphMeta() *schema.Graph {
+	return d.graphMeta
 }
 
 func (d *MasterNodeDao) CreateMain(ctx context.Context, node *model.MasterNode) {
@@ -159,8 +169,8 @@ func (d *MasterNodeDao) UpdateMain(ctx context.Context, node *model.MasterNode) 
 // UpdateRelNode 根据关系数据创建图节点与关系
 func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRecord) {
 	// 是否改名
-	isRename := record.IsRename()
-	isChangedRelType := record.IsChangedRelType()
+	isRename := d.IsRename(record)
+	isChangedRelType := d.isChangedBusFields(record)
 
 	//before := record.BeforeMap()
 	after := record.AfterMap()
@@ -220,7 +230,7 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 		}
 	}
 
-	if record.IsChangedBusFields() {
+	if d.isChangedBusFields(record) {
 		fmtStr := `MATCH (n$<labels>{id:$<id>}) SET n.description=$<description>`
 		fb := stringutils.NewFmtBuilder()
 		fb.String("labels", labels)
@@ -336,4 +346,48 @@ func (d *MasterNodeDao) GetStore() *store_neo4j.Dao[*model.MasterNode] {
 		panic("neo4j store does not implement neo4j.Dao")
 	}
 	return nodeStoreDao
+}
+
+// IsRename 是否数据更新
+func (d *MasterNodeDao) IsRename(r *dbevent.CDCRecord) bool {
+	if r.OpType == dbevent.OpTypeUpdate {
+		newName, _ := maputils.GetString(r.After, d.graphMeta.Name, "")
+		oldName, _ := maputils.GetString(r.Before, d.graphMeta.Name, "")
+		if newName != oldName {
+			return true
+		}
+	}
+	return false
+}
+
+// IsChangedRelType 是否数据更新
+func (d *MasterNodeDao) IsChangedRelType(r *dbevent.CDCRecord) bool {
+	graphMeta := d.graphMeta
+	if graphMeta.IsRelTypeField() {
+		if r.OpType == "u" {
+			refType := graphMeta.GetRelTypeField()
+			newType, _ := maputils.GetString(r.After, refType, "")
+			oldType, _ := maputils.GetString(r.Before, refType, "")
+			if newType != oldType {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// IsChangedBusFields 是否更新业务字段
+func (d *MasterNodeDao) isChangedBusFields(record *dbevent.CDCRecord) bool {
+	graphMeta := d.graphMeta
+	if graphMeta.IsRelTypeField() {
+		refType := graphMeta.GetRelTypeField()
+		if record.OpType == dbevent.OpTypeUpdate {
+			for k, _ := range record.After {
+				if k != refType && k != graphMeta.Name {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

@@ -1,7 +1,6 @@
 package dbevent
 
 import (
-	"strings"
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -28,6 +27,10 @@ const (
 	OpTypeDelete OpType = "d"
 )
 
+/*var relationTypeField = "relation_type"
+var nameField = "name"*/
+
+/*
 // IsMaster 是主数据
 func (r *CDCRecord) IsMaster() bool {
 	return !strings.Contains(r.Table, "_")
@@ -40,39 +43,48 @@ func (r *CDCRecord) IsRelation() bool {
 
 // IsRename 是否数据更新
 func (r *CDCRecord) IsRename() bool {
-	if r.OpType == "u" {
-		newName, _ := maputils.GetString(r.After, "name", "")
-		oldName, _ := maputils.GetString(r.Before, "name", "")
+	if r.OpType == OpTypeUpdate {
+		newName, _ := maputils.GetString(r.After, nameField, "")
+		oldName, _ := maputils.GetString(r.Before, nameField, "")
 		if newName != oldName {
 			return true
 		}
 	}
 	return false
 }
-
+*/
+/*
 // IsChangedRelType 是否数据更新
 func (r *CDCRecord) IsChangedRelType() bool {
-	if r.OpType == "u" {
-		newType, _ := maputils.GetString(r.After, "relation_type", "")
-		oldType, _ := maputils.GetString(r.Before, "relation_type", "")
-		if newType != oldType {
-			return true
-		}
-	}
+	// 使用own固定的关系类型。
 	return false
-}
 
+
+		if r.OpType == "u" {
+			newType, _ := maputils.GetString(r.After, "relation_type", "")
+			oldType, _ := maputils.GetString(r.Before, "relation_type", "")
+			if newType != oldType {
+				return true
+			}
+		}
+		return false
+
+}
+*/
+
+/*
 // IsChangedBusFields 是否更新业务字段
 func (r *CDCRecord) IsChangedBusFields() bool {
-	if r.OpType == "u" {
+	if r.OpType == OpTypeUpdate {
 		for k, _ := range r.After {
-			if k != "relation_type" && k != "name" {
+			if k != relationTypeField && k != nameField {
 				return true
 			}
 		}
 	}
 	return false
 }
+*/
 
 func (r *CDCRecord) AfterMap() map[string]any {
 	return r.After

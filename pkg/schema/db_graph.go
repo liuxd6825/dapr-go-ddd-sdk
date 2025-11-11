@@ -1,7 +1,10 @@
 package schema
 
 import (
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
 
@@ -12,7 +15,7 @@ type Graph struct {
 	RelEnd    string   `json:"relEnd"`    // 是图关系中的结束节点字段
 	RelType   string   `json:"relType"`   // 是图关系中的类型字段
 	Labels    []string `json:"labels"`    // 是图节点的标签
-	Title     string   `json:"title"`
+	Name      string   `json:"name"`      // 名称字段名
 }
 
 type GraphType string
@@ -37,6 +40,9 @@ func (g *Graph) Valid() error {
 		if len(g.Labels) == 0 {
 			err.AppendField("labels", "must have labels")
 		}
+		if len(g.Name) == 0 {
+			err.AppendField("Name", "must have name")
+		}
 	}
 	if g.IsRelType() {
 		if len(g.RelEnd) == 0 {
@@ -45,12 +51,28 @@ func (g *Graph) Valid() error {
 		if len(g.RelStart) == 0 {
 			err.AppendField("relStart", "must have relStart")
 		}
-		if len(g.Title) == 0 {
-			err.AppendField("title", "must have title")
-		}
 	}
-
 	return nil
+}
+
+func (g *Graph) IsRelTypeField() bool {
+	return strings.Contains(g.RelType, "${")
+}
+
+func (g *Graph) GetRelTypeField() string {
+	list := stringutils.MacroValues(g.RelType)
+	if len(list) > 0 {
+		return list[0]
+	}
+	panic("invalid graph relType")
+}
+
+func (g *Graph) IsRelStartField() bool {
+	return strings.Contains(g.RelStart, "${")
+}
+
+func (g *Graph) IsRelEndField() bool {
+	return strings.Contains(g.RelEnd, "${")
 }
 
 func (g *Graph) IsNodeType() bool {
@@ -76,8 +98,8 @@ func (g *Graph) init(ctx *jsonschema.CompilerContext, values map[string]any) err
 		switch k {
 		case "isEnable":
 			g.IsEnable = v.(bool)
-		case "title":
-			g.Title = v.(string)
+		case "name":
+			g.Name = v.(string)
 		case "relStart":
 			g.RelStart = v.(string)
 		case "relEnd":

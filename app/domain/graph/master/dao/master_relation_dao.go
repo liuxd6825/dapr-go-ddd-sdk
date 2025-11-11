@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 )
 
@@ -20,9 +21,10 @@ type BusRelationDao struct {
 	idao.Dao[*model2.MasterRelation]
 	nodeDao *MasterNodeDao
 	*Base[*model2.MasterRelation]
+	graphMeta *schema.Graph
 }
 
-func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *MasterNodeDao) *BusRelationDao {
+func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *MasterNodeDao, graphMeta *schema.Graph) *BusRelationDao {
 	relCfg := &dao.DaoConfig{
 		DBKey:              "neo4j",
 		GraphType:          idao.GraphType_Rel,
@@ -31,10 +33,15 @@ func NewBusRelationDao(dbSch *store.DBSchema, nodeDao *MasterNodeDao) *BusRelati
 	}
 	relDao := dao.NewDao[*model2.MasterRelation](relCfg)
 	return &BusRelationDao{
-		Dao:     relDao,
-		nodeDao: nodeDao,
-		Base:    &Base[*model2.MasterRelation]{DBSchema: dbSch},
+		graphMeta: graphMeta,
+		Dao:       relDao,
+		nodeDao:   nodeDao,
+		Base:      &Base[*model2.MasterRelation]{DBSchema: dbSch},
 	}
+}
+
+func (d *BusRelationDao) GraphMeta() *schema.Graph {
+	return d.graphMeta
 }
 
 func (d *BusRelationDao) CreateSameName(ctx context.Context, node *model2.MasterNode) {
