@@ -70,12 +70,27 @@ func ToInt(value any) (res int64, err error) {
 		value = s
 	} else if b, ok := value.(json.Number); ok {
 		return b.Int64()
-	}
+	} else if val, ok := value.(bool); ok {
+		if val {
+			return 1, nil
+		}
+		return 0, nil
+	} // 获取 val 的 reflect.Value
 
-	res, err = convertor.ToInt(value)
-	if err != nil {
-		typeName := reflect.ValueOf(value).Type().String()
-		return 0, errors.New("%s v is not int, %s", value, typeName)
+	// 使用 v.Kind() 来判断底层类型
+	switch vTyp.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return int64(vTyp.Int()), nil // 对于有符号整数，直接使用 Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return int64(vTyp.Uint()), nil
+	case reflect.Float32, reflect.Float64:
+		return 0, fmt.Errorf("不支持将浮点数转换为 int，请明确意图")
+	default:
+		res, err = convertor.ToInt(value)
+		if err != nil {
+			typeName := reflect.ValueOf(value).Type().String()
+			return 0, errors.New("%s v is not int, %s", value, typeName)
+		}
 	}
 	return res, err
 }

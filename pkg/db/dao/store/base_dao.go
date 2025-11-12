@@ -47,7 +47,7 @@ func (dao *BaseDao[T]) Entity2DB(entity any) map[string]any {
 
 				val, err := dao.ConvertValue(field.DataType, fieldValue)
 				if err != nil {
-					panic(fmt.Sprintf("Dao.ConvertValue() fileName:%s, dataType:%s, error:%s", field.Name, DataTypeToString(field.DataType), err.Error()))
+					panic(fmt.Sprintf("Dao.ConvertValue() fieldName:%s, dataType:%s, value: %v, error:%s", field.Name, DataTypeToString(field.DataType), fieldValue, err.Error()))
 				}
 				data[field.DBName] = val
 			}
@@ -58,7 +58,7 @@ func (dao *BaseDao[T]) Entity2DB(entity any) map[string]any {
 				if field != nil {
 					val, err := dao.ConvertValue(field.DataType, fieldValue)
 					if err != nil {
-						panic(fmt.Sprintf("Dao.ConvertValue() fileName:%s, dataType:%s, error:%s", field.Name, DataTypeToString(field.DataType), err.Error()))
+						panic(fmt.Sprintf("Dao.ConvertValue() fieldName:%s, dataType:%s, value: %v, error:%s", field.Name, DataTypeToString(field.DataType), fieldValue, err.Error()))
 					}
 					newMap[field.DBName] = val
 				}
