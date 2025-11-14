@@ -65,6 +65,7 @@ func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string
 	engine.AddFunc("include", include.Render)
 	engine.AddFunc("ifElse", IfElse)
 	engine.AddFunc("toJsonString", ToJsonString)
+	engine.AddFunc("toAnyString", ToAnyString)
 	engine.AddFunc("nullQuery", NullQuery)
 	engine.AddFunc("nullForm", NullForm)
 	engine.AddFunc("formValue", FormValue)
