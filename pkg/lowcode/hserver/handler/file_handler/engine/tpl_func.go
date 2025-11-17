@@ -28,6 +28,17 @@ func ToJsonString(sch *jsonschema.Schema) string {
 	return strings.ReplaceAll(buf.String(), "${", "&#36;{")
 }
 
+func ToAnyString(params any) string {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(true) // 禁用HTML转义
+	err := encoder.Encode(params)
+	if err != nil {
+		panic(err)
+	}
+	return strings.ReplaceAll(buf.String(), "${", "&#36;{")
+}
+
 func NullQuery(query *sch.Query) bool {
 	if query == nil {
 		return true
