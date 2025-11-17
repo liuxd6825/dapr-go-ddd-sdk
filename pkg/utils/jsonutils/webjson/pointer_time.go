@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 )
 
 // !!! 新增部分：*time.Time 的编码器和解码器 !!!
@@ -44,7 +45,7 @@ func (pte *pointerTime) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 		return
 	}
 	if len(val) <= 10 {
-		t, err := time.Parse(GlobalDefaultDataFormat, val)
+		t, err := timeutils.AsTime(val)
 		if err != nil {
 			iter.Error = fmt.Errorf("pointerTimeDecoder: failed to parse time string '%s' with format '%s': %w", val, GlobalDefaultDataFormat, err)
 			return
@@ -53,7 +54,7 @@ func (pte *pointerTime) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 		*(**time.Time)(ptr) = &t
 		return
 	}
-	t, err := time.Parse(GlobalDefaultTimeFormat, val)
+	t, err := timeutils.AsTime(val)
 	if err != nil {
 		iter.Error = fmt.Errorf("pointerTimeDecoder: failed to parse time string '%s' with format '%s': %w", val, GlobalDefaultTimeFormat, err)
 
