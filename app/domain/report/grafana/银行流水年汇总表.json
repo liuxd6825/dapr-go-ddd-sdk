@@ -1,0 +1,171 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 0,
+  "links": [],
+  "panels": [
+    {
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# 流水年汇总表\n",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.2.1",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "marcusolsson-json-datasource",
+        "uid": "af3znc8vl1edce"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 2,
+      "options": {
+        "baidu": {
+          "callback": "bmapReady",
+          "key": ""
+        },
+        "editor": {
+          "format": "auto"
+        },
+        "editorMode": "code",
+        "gaode": {
+          "key": "",
+          "plugin": "AMap.Scale,AMap.ToolBar"
+        },
+        "getOption": "// 1. 先做安全检查\nif (!context.panel.data.series || context.panel.data.series.length === 0) {\n  return {};\n}\n\nconsole.log(\"context.panel.data=\", context.panel.data)\n\n// 2. 获取第一个查询的结果\nconst series = context.panel.data.series[0];\n\n// 3. 找到时间和数值字段\n// 我们可以通过字段名来查找，这样更稳健\nconst timeField = series.fields.find(field => field.name === 'time');\nconst amountField = series.fields.find(field => field.name === 'amount');\nconst recordField = series.fields.find(field => field.name === 'recordCount');\nconst oppField = series.fields.find(field => field.name === 'oppCount');\n\n// 4. \"解包\" 并转换数据\n// .values 不是一个标准的 JS 数组，需要用 .toArray() 来转换\nconst timeData = timeField.values.toArray();\nconst amountData = amountField.values.toArray();\nconst recordData = recordField.values.toArray();\nconst oppData = oppField.values.toArray();\n\n\n\nconst colors = ['#5470C6', '#91CC75', '#EE6666'];\n\nconst amountLineStyle = {\n  color: colors[0]\n};\nconst recordLineStyle = {\n  color: colors[1]\n};\nconst oppLineStyle = {\n  color: colors[2]\n};\n\n/**\n * Enable Data Zoom by default\n */\nsetTimeout(() => context.panel.chart.dispatchAction({\n  type: 'takeGlobalCursor',\n  key: 'dataZoomSelect',\n  dataZoomSelectActive: true,\n}), 500);\n\n/**\n * Update Time Range on Zoom\n */\ncontext.panel.chart.on('datazoom', function (params) {\n  const startValue = params.batch[0]?.startValue;\n  const endValue = params.batch[0]?.endValue;\n  locationService.partial({ from: startValue, to: endValue });\n});\n\n\nconst amountFormatter = function (value) {\n  if ((value / (100000000)) > 1) {\n    return (value / (100000000)).toFixed(2) + \" 亿\";\n  } else if ((value / (10000000)) > 1) {\n    return (value / (10000000)).toFixed(2) + \" 千万\"\n  } else if ((value / (1000000)) > 1) {\n    return (value / (1000000)).toFixed(2) + \" 百万\";\n  } else if ((value / (100000)) > 1) {\n    return (value / (100000)).toFixed(2) + \" 十万\";\n  } else if ((value / (10000)) > 1) {\n    return (value / (10000)).toFixed(2) + \" 万\";\n  } else {\n    return value + \" 元\";\n  }\n}\n\n\nconst amountFormatter2 = function (value) {\n  if ((value / (100000000)) > 1) {\n    return (value / (100000000)) + \" 亿\";\n  } else if ((value / (10000000)) > 1) {\n    return (value / (10000000)) + \" 千万\"\n  } else if ((value / (1000000)) > 1) {\n    return (value / (1000000)) + \" 百万\";\n  } else if ((value / (100000)) > 1) {\n    return (value / (100000)) + \" 十万\";\n  } else if ((value / (10000)) > 1) {\n    return (value / (10000)) + \" 万\";\n  } else {\n    return value + \"元\";\n  }\n}\n\nconst yearFormatter = function (value) {\n  let date = new Date(parseInt(value));\n  return date.getFullYear() + \"年\"\n}\n\nreturn {\n  backgroundColor: 'transparent',\n  tooltip: {\n    trigger: 'axis'\n  },\n  legend: {\n    data: ['交易金额', '交易笔数', '对手数量']\n  },\n  toolbox: {\n  },\n  xAxis: {\n    type: 'category',\n    data: timeData,\n    axisLabel: {\n      formatter: yearFormatter\n    },\n    axisPointer: {\n      label: {\n        formatter: params => {\n          return yearFormatter(params.value)  \n        }\n      }\n    },\n    tooltip: {\n      trigger:\"axis\",\n\n    }\n  },\n  yAxis: [{\n    show: true,\n    position: 'left',\n    name: \"交易金额\",\n    axisLine: {\n      show: true,\n      onZero: false,\n      lineStyle: amountLineStyle\n    },\n    axisLabel: {\n      formatter: amountFormatter2\n    }\n  }, {\n    show: true,\n    position: 'right',\n    name: \"交易笔数\",\n    axisLine: {\n      show: true,\n      onZero: false,\n      lineStyle: recordLineStyle\n    }\n  }, {\n    show: true,\n    position: 'right',\n    name: \"对手数量\",\n    offset: 50,\n    axisLine: {\n      show: true,\n      onZero: false,\n      lineStyle: oppLineStyle\n    }\n  }],\n  series: [\n    {\n      type: \"line\",\n      name: \"金额\",\n      data: amountData,\n      yAxisIndex: 0,\n      lineStyle: amountLineStyle,\n      tooltip: {\n        valueFormatter: amountFormatter\n      }\n    },\n    {\n      type: \"line\",\n      name: \"交易\",\n      data: recordData,\n      yAxisIndex: 1,\n      lineStyle: recordLineStyle,\n      tooltip: {\n        valueFormatter: function (value) {\n          return value + ' 笔'\n        }\n      }\n    },\n    {\n      type: \"line\",\n      name: \"对手\",\n      data: oppData,\n      yAxisIndex: 2,\n      lineStyle: oppLineStyle,\n      tooltip: {\n        valueFormatter: function (value) {\n          return value + ' 个'\n        }\n      }\n    }\n  ]\n};",
+        "google": {
+          "callback": "gmapReady",
+          "key": ""
+        },
+        "map": "json",
+        "renderer": "canvas",
+        "themeEditor": {
+          "config": "{}",
+          "name": "default"
+        },
+        "visualEditor": {
+          "code": "return {\n  dataset: context.editor.dataset,\n  series: context.editor.series,\n  xAxis: {\n    type: 'time',\n  },\n  yAxis: {\n    type: 'value',\n    min: 'dataMin',\n  },\n}\n",
+          "dataset": [],
+          "series": []
+        }
+      },
+      "pluginVersion": "7.2.2",
+      "targets": [
+        {
+          "body": "{\n  \"options\":{\n    \"sort\":{\n        \"timeKey\":\"time\", \n        \"timeType\":\"year\"\n    }\n  },\n  \"collection\":\"master_record_day_view\",\n  \"pipeline\":[\n    {\n      \"$match\":{\n          \"case_id\":\"${caseid:json}\"\n      }\n    },\n    {\n      \"$group\": {\n        \"_id\": \"$year\",\n        \"amount\": { \"$sum\": \"$amount\" },\n        \"recordCount\": { \"$sum\": 1 },\n        \"oppCount\": { \"$addToSet\": \"$opp_name\" }\n      }\n    },\n    {\n      \"$addFields\": {\n        \"oppCount\": { \"$size\": \"$oppCount\" },\n        \"time\": {\n          \"$toDate\": {\n            \"$concat\": [ { \"$toString\": \"$_id\" }, \"-01-01\" ]\n          }\n        }\n      }\n    },\n    {\n      \"$project\": {\n        \"_id\": 0,\n        \"year\": \"$_id\",\n        \"time\": 1,\n        \"amount\": 1,\n        \"recordCount\": 1,\n        \"oppCount\": 1\n      }\n    },\n    {\n      \"$sort\": {\n        \"year\": 1\n      }\n    }\n  ]\n}",
+          "cacheDurationSeconds": 300,
+          "datasource": {},
+          "fields": [
+            {
+              "jsonPath": "$[*].time",
+              "type": "time"
+            },
+            {
+              "jsonPath": "$[*].year",
+              "language": "jsonpath",
+              "name": "",
+              "type": "number"
+            },
+            {
+              "jsonPath": "$[*].amount",
+              "language": "jsonpath",
+              "name": ""
+            },
+            {
+              "jsonPath": "$[*].oppCount",
+              "language": "jsonpath",
+              "name": ""
+            },
+            {
+              "jsonPath": "$[*].recordCount",
+              "language": "jsonpath",
+              "name": ""
+            }
+          ],
+          "method": "POST",
+          "queryParams": "",
+          "refId": "A",
+          "urlPath": "/api/v1.0/analysis/aggregate"
+        }
+      ],
+      "title": "",
+      "type": "volkovlabs-echarts-panel"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "1001",
+          "value": "1001"
+        },
+        "hide": 2,
+        "name": "caseid",
+        "options": [],
+        "query": "",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "2025-11-13T04:27:56.657Z",
+    "to": "2025-11-13T10:28:03.785Z"
+  },
+  "timepicker": {
+    "hidden": true,
+    "refresh_intervals": [
+      "1d"
+    ]
+  },
+  "timezone": "browser",
+  "title": "资金流水-年汇总表",
+  "uid": "adn256x",
+  "version": 23
+}
