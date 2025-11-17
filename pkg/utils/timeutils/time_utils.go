@@ -61,7 +61,8 @@ func getShanghaiLocation() *time.Location {
 }
 
 func (u *TimeUtils) Now() time.Time {
-	return time.Now()
+	now := time.Now()
+	return now.In(u.TimeLocal)
 }
 
 func (u *TimeUtils) AnyToTime(data any, defVal time.Time) (res time.Time, err error) {
