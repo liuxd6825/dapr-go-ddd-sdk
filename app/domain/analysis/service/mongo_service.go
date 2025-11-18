@@ -37,7 +37,8 @@ func NewMongoService(env *env.Env, rootPath string) *MongoService {
 	}
 }
 
-func (s *MongoService) Aggregate(ctx context.Context, qry *query.MongoQuery) (any, error) {
+func (s *MongoService) Aggregate(ctx context.Context, qry *query.AggregateQuery) (any, error) {
+	qry.Init()
 
 	// 1. 从请求体中解码聚合管道
 	var pipeline = qry.Pipeline
@@ -46,8 +47,6 @@ func (s *MongoService) Aggregate(ctx context.Context, qry *query.MongoQuery) (an
 		return nil, errors.New("聚合管道不能为空")
 	}
 
-	qry.Init()
-	
 	// 3. 获取集合句柄
 	// 为简单起见，我们硬编码了数据库和集合名称
 	// 在实际应用中，可以考虑从URL路径中动态获取
@@ -77,10 +76,6 @@ func (s *MongoService) Aggregate(ctx context.Context, qry *query.MongoQuery) (an
 	}
 	// 6. 设置响应头并返回JSON结果
 	return results, err
-}
-
-func macth() {
-
 }
 
 // CompleteAndSortData 对数据按指定字段排序并补全时间序列。

@@ -144,7 +144,7 @@ func Test_AggregateQuery_NullRemove2(t *testing.T) {
 			{
 				"$match": map[string]any{
 					"case_id": "1001",
-					"date":    map[string]any{"$gte": "@startYear", "$lt": "@endYear"},
+					"date":    map[string]any{"$gte": "@startYear", "$lte": "@endYear"},
 				},
 			},
 		},

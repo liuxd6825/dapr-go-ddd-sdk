@@ -44,7 +44,6 @@ func (s *MongoQueryAPI) NewAPIController(app *iris.Application) *restapi.ApiCont
 	return controller
 }
 
-func (s *MongoQueryAPI) Aggregate(ctx context.Context, qry *query.MongoQuery) (any, error) {
-
+func (s *MongoQueryAPI) Aggregate(ctx context.Context, qry *query.AggregateQuery) (any, error) {
 	return s.service.Aggregate(ctx, qry)
 }

@@ -16,7 +16,7 @@ type AggregateQuery struct {
 }
 
 type AggregateOptions struct {
-	Sort *MongoQuerySort `json:"sort" title:"汇总排序"`
+	Sort *MongoQuerySort `json:"sort" title:"补齐排序"`
 }
 
 type AggregateParam struct {
