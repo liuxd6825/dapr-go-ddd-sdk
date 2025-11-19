@@ -31,15 +31,15 @@ func (e *FieldError) Error() string {
 	return fmt.Sprintf("field:%s, error:%s", e.Field, e.Msg)
 }
 
-func ReadFile(ctx context.Context, fileName string, sheetName string, temp *Template) (*DataTable, error) {
+func ReadFile(ctx context.Context, fileName string, sheetName string, temp *Template, options *RuntimeOptions) (*DataTable, error) {
 	bs, err := readFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	return ReadBytes(ctx, bytes.NewBuffer(bs), sheetName, temp)
+	return ReadBytes(ctx, bytes.NewBuffer(bs), sheetName, temp, options)
 }
 
-func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template) (*DataTable, error) {
+func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template, options *RuntimeOptions) (*DataTable, error) {
 	if err := temp.Init(); err != nil {
 		return nil, err
 	}
@@ -58,20 +58,20 @@ func ReadBytes(ctx context.Context, buffer *bytes.Buffer, sheetName string, temp
 	}
 
 	rows := NewRowBySheet(sheet)
-	return readBytes(ctx, rows, temp)
+	return readBytes(ctx, rows, temp, options)
 }
 
-func ReadByMap(ctx context.Context, list []map[string]any, temp *Template) (*DataTable, error) {
+func ReadByMap(ctx context.Context, list []map[string]any, temp *Template, options *RuntimeOptions) (*DataTable, error) {
 	if err := temp.Init(); err != nil {
 		return nil, err
 	}
 
 	rows := NewRowByMap(list)
-	return readBytes(ctx, rows, temp)
+	return readBytes(ctx, rows, temp, options)
 }
 
-func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, error) {
-	runtime, err := newRuntime()
+func readBytes(ctx context.Context, rows Rows, temp *Template, options *RuntimeOptions) (*DataTable, error) {
+	runtime, err := newRuntime(*options)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func readBytes(ctx context.Context, rows Rows, temp *Template) (*DataTable, erro
 					}
 				}
 				value = s
-			} else if value, err = script.RunScript(runtime, cellValues, &field.Script); err != nil {
+			} else if value, err = script.RunScript(runtime.GetRuntime(), cellValues, &field.Script); err != nil {
 				dataRow.AddValue(field.Name, err.Error())
 				dataRow.AddError(field.Name, err)
 				fields := logs.Fields{

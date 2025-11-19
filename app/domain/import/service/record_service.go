@@ -13,6 +13,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	bank_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/service"
+	currency_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -26,17 +28,22 @@ import (
 )
 
 type RecordService struct {
-	dao            *dao2.RecordDao
-	docFileService *docfile.FileService
-	taskService    *TaskService
+	dao             *dao2.RecordDao
+	docFileService  *docfile.FileService
+	currencyService *currency_service.CurrencyService
+	bankService     *bank_service.BankService
+	taskService     *TaskService
+	runtimeOptions  readexcel.RuntimeOptions
 }
 
 func NewRecordService() *RecordService {
 	return singleutils.CreateObj[*RecordService](func() *RecordService {
 		return &RecordService{
-			dao:            dao2.NewRecordDao(config.DBKey),
-			docFileService: docfile.NewFileService(),
-			taskService:    NewTaskService(),
+			dao:             dao2.NewRecordDao(config.DBKey),
+			docFileService:  docfile.NewFileService(),
+			taskService:     NewTaskService(),
+			currencyService: currency_service.NewCurrencyService(),
+			bankService:     bank_service.NewBankService(),
 		}
 	})
 }
@@ -283,11 +290,55 @@ func (s *RecordService) readMap(ctx context.Context, task *TaskOptions, temp *mo
 		return nil, err
 	}
 
+	opts, err := s.getRuntimeOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	newCtx := NewContext(ctx, task)
-	_, list, err := readexcel.ReadMapToEntity[*model.RecordIe](newCtx, mapList, tmp, newRecord)
+	_, list, err := readexcel.ReadMapToEntity[*model.RecordIe](newCtx, mapList, tmp, opts, newRecord)
 	if err != nil {
 		return nil, err
 	}
 
 	return list, err
+}
+func (s *RecordService) getRuntimeOptions(ctx context.Context) (*readexcel.RuntimeOptions, error) {
+	banks, err := s.getBankList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	currencies, err := s.getCurrencyList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	opts := &readexcel.RuntimeOptions{
+		BankMap:     banks,
+		CurrencyMap: currencies,
+	}
+	return opts, nil
+}
+
+func (s *RecordService) getBankList(ctx context.Context) (map[string]readexcel.Dictionary, error) {
+	list, err := s.bankService.FindByAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data := make(map[string]readexcel.Dictionary)
+	for _, c := range list {
+		data[c.Name] = c
+	}
+	return data, nil
+}
+
+func (s *RecordService) getCurrencyList(ctx context.Context) (map[string]readexcel.Dictionary, error) {
+	list, err := s.currencyService.FindByAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data := make(map[string]readexcel.Dictionary)
+	for _, c := range list {
+		data[c.Name] = c
+	}
+	return data, nil
 }

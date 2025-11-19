@@ -7,7 +7,7 @@ import (
 // BaseModel
 // @Description: 实体基类
 type BaseModel struct {
-	Id          string     `json:"id" gorm:"primaryKey;title:主键" bson:"id" title:"主键" validate:"required" `                       // 主键
+	Id          string     `json:"id" gorm:"primaryKey;title:主键" bson:"id" index:"unique" title:"主键" validate:"required" `        // 主键
 	TenantId    string     `json:"tenantId" gorm:"index:idx_tenant_id;title:租户ID"  bson:"tenant_id"  title:"租户ID" `               // 租户ID
 	CaseId      string     `json:"caseId" gorm:"index:idx_case_id;title:案件ID"  bson:"case_id" title:"案件ID" validate:"required"`   // 案件ID
 	CreatedTime *time.Time `json:"createdTime" gorm:"created_time;<-:create;title:创建时间" bson:"created_time"`                      // 创建时间

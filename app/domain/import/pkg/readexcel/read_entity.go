@@ -22,23 +22,25 @@ type Batching struct {
 	BatchRecordCount int `json:"batchRecordCount"`
 }
 
-func ReadFileToEntity[T any](ctx context.Context, fileName string, sheetName string, temp *Template, isView bool,
+func ReadFileToEntity[T any](ctx context.Context, fileName string, sheetName string, temp *Template,
+	isView bool, runtimeOptions *RuntimeOptions,
 	newItem func(ctx context.Context, row *DataRow, temp *Template) (T, error),
 	batchFunc func(ctx context.Context, list []T, paging Batching) error, opts ...*Options) (*DataTable, error) {
 	bs, err := readFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	return ReadByteToEntity(ctx, bytes.NewBuffer(bs), sheetName, temp, isView, newItem, batchFunc, opts...)
+	return ReadByteToEntity(ctx, bytes.NewBuffer(bs), sheetName, temp, isView, runtimeOptions, newItem, batchFunc, opts...)
 }
 
-func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template, isPreview bool,
+func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetName string, temp *Template,
+	isPreview bool, runtimeOptions *RuntimeOptions,
 	newItem func(ctx context.Context, row *DataRow, temp *Template) (T, error),
 	batchFunc func(ctx context.Context, list []T, paging Batching) error, opts ...*Options) (*DataTable, error) {
 
 	opt := NewOptions(opts...)
 
-	table, err := ReadBytes(ctx, buffer, sheetName, temp)
+	table, err := ReadBytes(ctx, buffer, sheetName, temp, runtimeOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +85,11 @@ func ReadByteToEntity[T any](ctx context.Context, buffer *bytes.Buffer, sheetNam
 	return table, err
 }
 
-func ReadMapToEntity[T any](ctx context.Context, mapList []map[string]any, temp *Template,
+func ReadMapToEntity[T any](ctx context.Context, mapList []map[string]any, temp *Template, runtimeOptions *RuntimeOptions,
 	newItem func(ctx context.Context, row *DataRow, temp *Template) (T, error),
 	opts ...*Options) (*DataTable, []T, error) {
 
-	table, err := ReadByMap(ctx, mapList, temp)
+	table, err := ReadByMap(ctx, mapList, temp, runtimeOptions)
 	if err != nil {
 		return nil, nil, err
 	}

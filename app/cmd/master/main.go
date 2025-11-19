@@ -12,10 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
-	card "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
-	cases "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/restapi"
-	dict "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/restapi"
-	portal "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
@@ -60,10 +57,7 @@ func main() {
 				doc.RegisterAllApi(app, baseUrl, env)
 				tag.RegisterAllApi(app, baseUrl, env)
 				excelImport.RegisterAllApi(app, baseUrl, env)
-				card.RegisterAllApi(app, baseUrl, env)
-				portal.RegisterAllApi(app, baseUrl, env)
-				dict.RegisterAllApi(app, baseUrl, env)
-				cases.RegisterAllApi(app, baseUrl, env)
+				sys.RegisterAllApi(app, baseUrl, env)
 				metrics.RegisterAllApi(app, baseUrl, env)
 				tasks.RunWorker()
 				return nil

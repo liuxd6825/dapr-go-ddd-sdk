@@ -90,6 +90,11 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 		return nil, err
 	}
 
+	runOpts, err := s.getRuntimeOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	batchFun := func(ctx context.Context, list []*task_pkg.RecordIe, paging readexcel.Batching) error {
 		return batchFunc(ctx, list, paging)
 	}
@@ -101,7 +106,7 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 		FileId:   task.FileId,
 		TaskId:   task.Id,
 	})
-	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isPreview, newRecord, batchFun, &readexcel.Options{BatchSize: 1000})
+	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isPreview, runOpts, newRecord, batchFun, &readexcel.Options{BatchSize: 1000})
 
 	if err != nil {
 		return nil, err
@@ -314,10 +319,12 @@ func newRecord(ctx context.Context, row *readexcel.DataRow, temp *readexcel.Temp
 	record.OppAcctType, _ = temp.ValueToString(task_pkg.FieldName_OppAccountType.String(), row)
 	record.OppBankName, _ = temp.ValueToString(task_pkg.FieldName_OppBankName.String(), row)
 	record.OppCategory, _ = temp.ValueToString(task_pkg.FieldName_OppCategory.String(), row)
+	record.Cash, _ = temp.ValueToString(task_pkg.FieldName_Cash.String(), row)
 
 	record.Type, _ = temp.ValueToString(task_pkg.FieldName_Type.String(), row)
-	if ccy, _ := temp.ValueToString(task_pkg.FieldName_Ccy.String(), row); len(ccy) == 0 {
-		record.Ccy = "CNY"
+	record.Ccy, _ = temp.ValueToString(task_pkg.FieldName_Ccy.String(), row)
+	if len(record.Ccy) == 0 {
+		record.Ccy = "人民币"
 	}
 	record.Summary, _ = temp.ValueToString(task_pkg.FieldName_Summary.String(), row)
 	record.Notes, _ = temp.ValueToString(task_pkg.FieldName_Notes.String(), row)

@@ -15,11 +15,28 @@ import (
 
 const LocalTimeLayoutLine = "2006-01-02 15:04:05"
 
-func newRuntime() (*goja.Runtime, error) {
+type Dictionary interface {
+	GetName() string
+	GetKeywords() string
+}
+
+type Runtime struct {
+	*goja.Runtime
+	options *RuntimeOptions
+}
+
+type RuntimeOptions struct {
+	CurrencyMap map[string]Dictionary // 币种
+	BankMap     map[string]Dictionary // 开户行
+}
+
+func newRuntime(options RuntimeOptions) (*Runtime, error) {
 	vm, err := script.NewRuntime()
 	if err != nil {
 		return nil, err
 	}
+	runtime := &Runtime{Runtime: vm, options: &options}
+
 	setValue(vm, replace, "文字替换", "replace")
 	setValue(vm, toDateTime, "取时间", "toDateTime")
 	setValue(vm, abs, "取绝对值", "abs")
@@ -37,7 +54,44 @@ func newRuntime() (*goja.Runtime, error) {
 	setValue(vm, GetZhiFuBaoOppName, "取支付宝人名", "getZhiFuBaoOppName")
 	setValue(vm, Contains, "包含", "contains")
 	setValue(vm, NotContains, "不包含", "notContains")
-	return vm, nil
+	setValue(vm, IsCash, "是否现金交易", "isCash")
+	setValue(vm, runtime.GetCurrencyType, "取币种", "getCurrencyType")
+	setValue(vm, runtime.GetBankName, "取开户行", "getBankName")
+
+	return runtime, nil
+}
+func (r *Runtime) GetRuntime() *goja.Runtime {
+	return r.Runtime
+}
+
+func (r *Runtime) GetBankName(strList ...string) string {
+	return GetDictionary(r.options.BankMap, "", strList...)
+}
+
+func (r *Runtime) GetCurrencyType(strList ...string) string {
+	return GetDictionary(r.options.CurrencyMap, "人民币", strList...)
+}
+
+func GetDictionary(distMap map[string]Dictionary, defaultVal string, strList ...string) string {
+	for _, str := range strList {
+		if _, ok := distMap[str]; ok {
+			return str
+		}
+	}
+	for _, str := range strList {
+		for _, cur := range distMap {
+			keywords := strings.Split(cur.GetKeywords(), ",")
+			for _, key := range keywords {
+				if key != "" && strings.Contains(str, key) {
+					return cur.GetName()
+				}
+			}
+		}
+	}
+	if strList == nil || len(strList) == 0 {
+		return defaultVal
+	}
+	return strList[0]
 }
 
 func setValue(vm *goja.Runtime, value any, names ...string) {
@@ -286,4 +340,15 @@ func NotContains(txt string, sub ...string) bool {
 		}
 	}
 	return true
+}
+
+func IsCash(keyText string, values ...string) string {
+	text := strings.Join(values, ",")
+	keys := strings.Split(keyText, ",")
+	for _, key := range keys {
+		if strings.Contains(text, key) {
+			return "是"
+		}
+	}
+	return "否"
 }

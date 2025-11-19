@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 )
 
 type CashType bool
@@ -58,7 +59,7 @@ type RecordIe struct {
 	OppCategory string `json:"oppCategory" gorm:"opp_category" bson:"opp_category"  validate:"-" title:"对方类别"`
 	OppBankName string `json:"oppBankName"  gorm:"opp_bank_name" bson:"opp_bank_name"  validate:"-" title:"对方开户银行"`
 
-	Cash    CashType   `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金标识"`
+	Cash    string     `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金标识"`
 	Serial  string     `json:"serial" gorm:"serial" bson:"serial" validate:"-" title:"流水号"`
 	Payout  *float64   `json:"payout" gorm:"payout" bson:"payout" index:""  validate:"-" title:"支出金额"`
 	Income  *float64   `json:"income"  gorm:"income" bson:"income" index:"" validate:"-" title:"收入金额"`
@@ -104,6 +105,7 @@ const (
 	FieldName_OppCategory    FieldName = "oppCategory" // 对方类别
 	FieldName_OppBankName    FieldName = "oppBankName" // 对方开户银行
 
+	FieldName_Cash    FieldName = "cash"    // 是否现金
 	FieldName_Serial  FieldName = "serial"  // 流水号
 	FieldName_Payout  FieldName = "payout"  // 借方发生额（支取）
 	FieldName_Income  FieldName = "income"  // 贷方发生额（收入）
@@ -139,6 +141,7 @@ func NewKeywords() Keyword {
 	keyword["收(付)方分行名"] = FieldName_OppBankName
 	keyword["收(付)方名称"] = FieldName_OppName
 	keyword["收(付)方账号"] = FieldName_OppAccount
+	keyword["是否现金"] = FieldName_Cash
 	return keyword
 }
 

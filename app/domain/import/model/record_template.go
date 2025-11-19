@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
@@ -119,7 +120,7 @@ func (t *RecordTemplate) NewTemplate() (*readexcel.Template, error) {
 		t.OppAcctType,
 		//t.OppCategory,
 		t.OppBankName,
-
+		t.Cash,
 		t.Serial,
 		t.Income,
 		t.Payout,
