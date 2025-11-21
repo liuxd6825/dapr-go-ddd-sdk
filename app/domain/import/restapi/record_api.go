@@ -38,7 +38,7 @@ func (s *RecordAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 	ctl.Post("record:import2master", "Import2Master")
 	ctl.Post("record:preview", "Preview")
 	ctl.Delete("record", "Delete", restapi.WithParamsInBody(true))
-	ctl.Post("record:revoke", "DeleteByTaskId")
+	ctl.Post("record:revoke", "Revoke")
 	ctl.Put("record", "Update")
 	ctl.Put("record:update-field", "UpdateField")
 	ctl.Put("record:update-filter", "UpdateByFilter")
@@ -95,8 +95,8 @@ func (s *RecordAPI) Delete(ctx context.Context, cmd *command.RecordDeleteCommand
 	return s.recordService.Delete(ctx, cmd)
 }
 
-func (s *RecordAPI) DeleteByTaskId(ctx context.Context, cmd *command.RecordDeleteCommand) error {
-	return s.recordService.DeleteByTaskId(ctx, cmd.Data.TaskId)
+func (s *RecordAPI) Revoke(ctx context.Context, cmd *command.RecordRecordCommand) error {
+	return s.recordService.RevokeRecords(ctx, cmd)
 }
 
 func (s *RecordAPI) Preview(ctx context.Context, cmd *command.RecordPreviewCommand) ([]*model.RecordIe, error) {
@@ -107,7 +107,6 @@ func (s *RecordAPI) Preview(ctx context.Context, cmd *command.RecordPreviewComma
 	task.FileId = cmd.Data.FileId
 	task.FileName = cmd.Data.FileName
 	task.SheetName = cmd.Data.SheetName
-
 	res, _, err := s.recordService.Preview(ctx, task, cmd.Data.Template)
 	return res, err
 }

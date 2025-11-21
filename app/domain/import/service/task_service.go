@@ -23,9 +23,10 @@ type TaskService struct {
 
 func NewTaskService() *TaskService {
 	return singleutils.CreateObj[*TaskService](func() *TaskService {
-		return &TaskService{
+		taskService := &TaskService{
 			dao: dao2.NewTaskDao(config.DBKey),
 		}
+		return taskService
 	})
 }
 
@@ -150,8 +151,12 @@ func (r *TaskService) UpdateProgress(ctx context.Context, progress *field.TaskUp
 
 func (r *TaskService) UpdateState(ctx context.Context, cmd *command.TaskUpdateStateCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return r.dao.SetState(ctx, cmd.Data.Id, cmd.Data.State, cmd.Data.Message)
+		return r.SetState(ctx, cmd.Data.Id, cmd.Data.State, cmd.Data.Message)
 	})
+}
+
+func (r *TaskService) SetState(ctx context.Context, taskId string, state model.TaskState, message string) error {
+	return r.dao.SetState(ctx, taskId, state, message)
 }
 
 func (r *TaskService) FindById(ctx context.Context, id string) (*model.Task, error) {

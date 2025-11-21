@@ -46,3 +46,13 @@ type RecordUpdateCommand struct {
 type RecordUpdateFieldCommand struct {
 	xbase.Command[field.RecordIeUpdateFieldFields]
 }
+
+// RecordRecordCommand
+// @Description: 撤销导入任务中的所有流水
+type RecordRecordCommand struct {
+	xbase.Command[RecordRecordCommandData]
+}
+
+type RecordRecordCommandData struct {
+	TaskId string `json:"taskId"`
+}

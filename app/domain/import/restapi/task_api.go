@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
@@ -13,16 +14,18 @@ import (
 )
 
 type TaskAPI struct {
-	env         *env.Env
-	taskService *service.TaskService
-	rootPath    string
+	env           *env.Env
+	taskService   *service.TaskService
+	recordService *service.RecordService
+	rootPath      string
 }
 
 func NewTaskAPI(env *env.Env, rootPath string) *TaskAPI {
 	return &TaskAPI{
-		env:         env,
-		taskService: service.NewTaskService(),
-		rootPath:    rootPath,
+		env:           env,
+		rootPath:      rootPath,
+		taskService:   service.NewTaskService(),
+		recordService: service.NewRecordService(),
 	}
 }
 

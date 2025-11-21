@@ -20,6 +20,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/singleutils"
@@ -171,6 +172,29 @@ func (s *RecordService) FindById(ctx context.Context, id string) (*model.RecordI
 
 func (s *RecordService) FindPaging(ctx context.Context, qry idao.FindPagingQuery) store.FindPagingResult[*model.RecordIe] {
 	return s.dao.FindPaging(ctx, qry)
+}
+
+// RevokeRecords
+// @Description: 撤销流水，更改任务状态。
+// @receiver r
+// @param ctx
+// @param cmd
+// @return error
+func (s *RecordService) RevokeRecords(ctx context.Context, cmd *command.RecordRecordCommand) error {
+	task, err := s.taskService.FindById(ctx, cmd.Data.TaskId)
+	if err != nil {
+		return err
+	}
+	if task.State != model.TaskStateGenerated {
+		return errors.New("不可撤销，当前状态是“%s”。", task.State)
+	}
+	return tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		err = s.taskService.SetState(ctx, cmd.Data.TaskId, model.TaskStateEditing, "生成后撤销")
+		if err != nil {
+			return err
+		}
+		return s.DeleteByTaskId(ctx, cmd.Data.TaskId)
+	})
 }
 
 // FindPagingByTaskId

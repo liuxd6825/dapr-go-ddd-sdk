@@ -50,6 +50,10 @@ type TaskValidateCommand struct {
 	xbase.Command[field.TaskStopFields]
 }
 
+type TaskRecordCommandData struct {
+	TaskId string `json:"taskId"`
+}
+
 func NewTaskUpdateProgressCommand(commandId, taskId string) *TaskUpdateProgressCommand {
 	cmd := &TaskUpdateProgressCommand{}
 	cmd.CommandId = commandId
