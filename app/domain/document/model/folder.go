@@ -4,6 +4,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
 )
 
+// Folder
+// @Description:  目录
 type Folder struct {
 	xbase.BaseModel `bson:",inline"`
 	BusId           string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
@@ -14,10 +16,22 @@ type Folder struct {
 	ParentId        string `gorm:"parent_id" json:"parentId,omitempty" bson:"parent_id"`       //父目录Id
 	Name            string `gorm:"name" json:"name,omitempty" bson:"name"`                     //目录名称
 	Color           string `gorm:"color" json:"color,omitempty" bson:"color"`                  //目录颜色
+
+	Alias string `gorm:"alias" json:"alias,omitempty" bson:"alias"` // 目录别名
 }
 
 func NewFolder() (*Folder, error) {
 	return &Folder{}, nil
+}
+
+// FolderMeta
+// @Description: 目录元数据
+type FolderMeta struct {
+	xbase.BaseModel `bson:",inline"`
+	FolderId        string `bson:"folder_id" json:"folderId,omitempty" bson:"folder_id" title:"来源"`
+	Source          string `bson:"source" json:"source,omitempty" bson:"source" title:"来源"`
+	Name            string `bson:"name" json:"name,omitempty" bson:"name" title:"名称"`
+	Value           string `bson:"value" json:"value,omitempty" bson:"value" title:"值"`
 }
 
 type FolderTree struct {

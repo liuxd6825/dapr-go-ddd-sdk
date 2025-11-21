@@ -6,8 +6,7 @@ import (
 
 type Document struct {
 	xbase.BaseModel `bson:",inline"`
-	BusId           string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
-	EntityId        string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
+	BusId           string `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`                         //用途类型，如项目中的文件，
 	RootId          string `gorm:"root_id" json:"rootId,omitempty" bson:"root_id"`                      //根目录Id    tenant_id_bus_id_entity_id形式拼接
 	RootPath        string `gorm:"root_path" json:"rootPath,omitempty" bson:"root_path"`                //物理根目录
 	FolderId        string `gorm:"folder_id" json:"folderId,omitempty" bson:"folder_id"`                //目录Id
@@ -25,7 +24,18 @@ type Document struct {
 	TagName         string `gorm:"tag_name" json:"tagName,omitempty" bson:"tag_name"`                   //标签名  逗号分隔
 	TagId           string `gorm:"tag_id" json:"tagId,omitempty" bson:"tag_id"`                         //标签Id  逗号分隔
 	TagColor        string `gorm:"tag_color" json:"tagColor,omitempty" bson:"tag_color"`                //标签颜色  逗号分隔
-	FsKey           string `gorm:"fs_key" json:"fsKey,omitempty" bson:"fs_key"`
+	FsKey           string `gorm:"fs_key" json:"fsKey,omitempty" bson:"fs_key"`                         // 文件系统Key
+	EntityId        string `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`                // 关联数据id
+}
+
+// DocumentMeta
+// @Description: 文件元数据
+type DocumentMeta struct {
+	xbase.BaseModel `bson:",inline"`
+	DocumentId      string `bson:"document_id" json:"documentId,omitempty" bson:"document_id" title:"来源"`
+	Source          string `bson:"source" json:"source,omitempty" bson:"source" title:"来源"`
+	Name            string `bson:"name" json:"name,omitempty" bson:"name" title:"名称"`
+	Value           string `bson:"value" json:"value,omitempty" bson:"value" title:"值"`
 }
 
 type RenameDocument struct {
