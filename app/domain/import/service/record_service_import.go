@@ -30,11 +30,13 @@ type ctxKey struct {
 }
 
 type TaskOptions struct {
-	TenantId string
-	CaseId   string
-	DocId    string
-	FileId   string
-	TaskId   string
+	TenantId   string
+	CaseId     string
+	DocId      string
+	FileId     string
+	TaskId     string
+	MasterId   string
+	MasterType string
 }
 
 type Create4ExcelResult struct {
@@ -100,11 +102,13 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 	}
 
 	newCtx := NewContext(ctx, &TaskOptions{
-		TenantId: task.TenantId,
-		CaseId:   task.CaseId,
-		DocId:    task.DocId,
-		FileId:   task.FileId,
-		TaskId:   task.Id,
+		TenantId:   task.TenantId,
+		CaseId:     task.CaseId,
+		DocId:      task.DocId,
+		FileId:     task.FileId,
+		TaskId:     task.Id,
+		MasterId:   task.MasterId,
+		MasterType: task.MasterType,
 	})
 	table, err := readexcel.ReadByteToEntity[*task_pkg.RecordIe](newCtx, buffer, task.SheetName, tmp, isPreview, runOpts, newRecord, batchFun, &readexcel.Options{BatchSize: 1000})
 
@@ -234,15 +238,15 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 
 				// 通过领域事件，导入流水到主数据
 				// 生成领域事件
-				create, err := newRecordCreateManyFromExcelCommand(appcmd, res.GetData())
+				importEvent, err := newRecordCreateManyFromExcelCommand(appcmd, res.GetData())
 				if err != nil {
 					return err
 				}
 				if pageNum > 0 {
-					create.Data.IsAddItems = true
+					importEvent.Data.IsAddItems = true
 				}
 				// 发布领域事件
-				if err := s.PublishImportRecordToMasterEvent(ctx, create); err != nil {
+				if err := s.PublishImportRecordToMasterEvent(ctx, importEvent); err != nil {
 					return err
 				}
 				recordCount += int64(len(res.GetData()))
@@ -307,6 +311,7 @@ func newRecord(ctx context.Context, row *readexcel.DataRow, temp *readexcel.Temp
 		TaskId: task.TaskId,
 		RowNum: row.RowNum,
 	}
+
 	record.Name, _ = temp.ValueToString(task_pkg.FieldName_Name.String(), row)
 	record.Acct, _ = temp.ValueToString(task_pkg.FieldName_Account.String(), row)
 	record.AcctType, _ = temp.ValueToString(task_pkg.FieldName_AccountType.String(), row)
@@ -454,14 +459,16 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 	cmd.EventId = idutils.NewId()
 	cmd.OccurredOn = time.Now()
 	cmd.Data = event.RecordImportMasterEventData{
-		CaseId:    appcmd.Data.CaseId,
-		DocId:     appcmd.Data.DocId,
-		FileName:  appcmd.Data.FileName,
-		FileId:    appcmd.Data.FileId,
-		SheetId:   appcmd.Data.SheetId,
-		SheetName: appcmd.Data.SheetName,
-		TaskId:    appcmd.Data.TaskId,
-		Items:     items,
+		CaseId:     appcmd.Data.CaseId,
+		DocId:      appcmd.Data.DocId,
+		FileName:   appcmd.Data.FileName,
+		FileId:     appcmd.Data.FileId,
+		SheetId:    appcmd.Data.SheetId,
+		SheetName:  appcmd.Data.SheetName,
+		TaskId:     appcmd.Data.TaskId,
+		Items:      items,
+		MasterType: appcmd.Data.MasterType,
+		MasterId:   appcmd.Data.MasterId,
 	}
 
 	return cmd, nil

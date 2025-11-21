@@ -2,9 +2,10 @@ package event
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
-	"time"
 )
 
 // RecordImportMasterEvent
@@ -24,6 +25,8 @@ type RecordImportMasterEventData struct {
 	TaskId     string                `json:"taskId" gorm:"task_id" bson:"task_id"  validate:"required" title:"任务ID" `        // 任务ID
 	Items      []*field.RecordFields `json:"items" gorm:"item" bson:"items" validate:"required"  title:"流水明细"`               // 流水明细
 	IsAddItems bool                  `json:"isAddItems"`
+	MasterType string                `json:"masterType" gorm:"master_type" title:"主数据类型"`
+	MasterId   string                `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据Id"`
 }
 
 func (f RecordImportMasterEventData) Id() string {

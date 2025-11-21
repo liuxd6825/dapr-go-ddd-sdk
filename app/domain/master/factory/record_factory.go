@@ -31,6 +31,8 @@ func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *eve
 		v.FileId = e.Data.FileId
 		v.SheetId = e.Data.SheetId
 		v.RowNum = fields.RowNum
+		v.MasterType = e.Data.MasterType
+		v.MasterId = e.Data.MasterId
 		v.TranId = model.NewTranId(v)
 		list[i] = v
 	}

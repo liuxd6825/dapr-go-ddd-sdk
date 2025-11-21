@@ -43,14 +43,16 @@ type RecordCreate4ExcelCommandFields struct {
 }
 
 type RecordImport2MasterFields struct {
-	TaskId    string `json:"taskId" validate:"required" `
-	CaseId    string `json:"caseId"  validate:"required" `
-	DocId     string `json:"docId"  validate:"required" `
-	FileId    string `json:"fileId"  validate:"required" `
-	FileName  string `json:"fileName" validate:"required" `
-	SheetId   string `json:"sheetId" validate:"required" `
-	SheetName string `json:"sheetName" validate:"required" `
-	PageSize  int64  `json:"pageSize" validate:"required" `
+	TaskId     string `json:"taskId" validate:"required" `
+	CaseId     string `json:"caseId"  validate:"required" `
+	DocId      string `json:"docId"  validate:"required" `
+	FileId     string `json:"fileId"  validate:"required" `
+	FileName   string `json:"fileName" validate:"required" `
+	SheetId    string `json:"sheetId" validate:"required" `
+	SheetName  string `json:"sheetName" validate:"required" `
+	PageSize   int64  `json:"pageSize" validate:"required" `
+	MasterType string `json:"masterType" validate:"required" `
+	MasterId   string `json:"masterId" validate:"required" `
 }
 
 type RecordIeCreateFields struct {
