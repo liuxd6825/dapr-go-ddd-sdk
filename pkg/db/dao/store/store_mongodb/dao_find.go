@@ -527,7 +527,7 @@ func (r *Dao[T]) sum(ctx context.Context, filter *rsql_mongo.Filter, valueCols [
 	}
 
 	pipeline := mongo.Pipeline{}
-	filter.AddPipelines(pipeline)
+	pipeline = filter.AddPipelines(pipeline)
 
 	if summaryMap != nil {
 		pipeline = append(pipeline, bson.D{{"$group", summaryMap}})
