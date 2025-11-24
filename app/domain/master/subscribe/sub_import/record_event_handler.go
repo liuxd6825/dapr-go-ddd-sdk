@@ -47,6 +47,15 @@ func (s *RecordEventSubHandler) NewAPIController(app *iris.Application) *restapi
 	return ctl
 }
 
+func (s *RecordEventSubHandler) newEventMeta() restapi.CallOptions {
+	eventMeta := restapi.WithEventMeta("pubsub", "master-cdc-graph", &restapi.EventMeta{
+		RawPayload: true,
+		QueueName:  "record-import-master-event",
+		RoutingKey: "record-import-master-event",
+	})
+	return eventMeta
+}
+
 func (s *RecordEventSubHandler) Check(ctx context.Context) error {
 	logs.Infofmt(ctx, "graph/master/subscribe/import/record-import-master-event:check")
 	return nil

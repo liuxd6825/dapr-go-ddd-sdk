@@ -96,3 +96,21 @@ func RegisterQueryHandler(subHandler SubscribeHandler, defaultPubsubName string)
 	}
 	return nil
 }
+
+// RegisterSubscribe
+// @Description:  注册事件监听器
+// @param subHandler
+// @return error
+func RegisterSubscribe(subscribe *Subscribe) error {
+	if subscribe == nil {
+		return errors.New("subscribe is nil")
+	}
+	if subscribe.Route == "" {
+		return errors.New("route is nil")
+	}
+	if subscribe.PubsubName == "" {
+		subscribe.PubsubName = subscribe.Route
+	}
+	subscribes = append(subscribes, subscribe)
+	return nil
+}

@@ -14,6 +14,8 @@ type RecordImportMasterEvent struct {
 	events.Event[RecordImportMasterEventData]
 }
 
+const RecordImportMasterEventType = "RecordImportMasterEvent"
+
 type RecordImportMasterEventData struct {
 	Date       *time.Time            `json:"date" gorm:"date" bson:"date" validate:"-" title:"时间"`
 	CaseId     string                `json:"caseId" gorm:"case_id" bson:"case_id" validate:"required"  title:"案件ID"`         // 案件Id

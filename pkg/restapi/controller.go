@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -45,15 +46,6 @@ type APIController interface {
 
 type RenderViewFunc func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error
 
-type CallOptions struct {
-	IsAuthentication *bool                        // 是否进行身份认证
-	ParamsInBody     *bool                        // 强制要求参数入HttpBody中获取
-	InitMethod       func(callMethod *CallMethod) // 初始化函数
-	GetFieldValue    func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
-	Before           func(ictx *context.Context, params any) (any, context2.Context, error)
-	After            func(ctx context2.Context, ictx *context.Context, resData any, err error) (any, error)
-}
-
 var apis = types.NewCMap[any]()
 
 var View RenderViewFunc = func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error {
@@ -65,44 +57,6 @@ var View RenderViewFunc = func(ctx context2.Context, ictx iris.Context, fileName
 		vData[i] = data
 	}
 	return ictx.View(fileName, vData...)
-}
-
-func NewCallOptions(opts ...CallOptions) CallOptions {
-	o := CallOptions{}
-	for _, i := range opts {
-		if i.InitMethod != nil {
-			o.InitMethod = i.InitMethod
-		}
-		if i.GetFieldValue != nil {
-			o.GetFieldValue = i.GetFieldValue
-		}
-		if i.Before != nil {
-			o.Before = i.Before
-		}
-		if i.After != nil {
-			o.After = i.After
-		}
-		if i.ParamsInBody != nil {
-			o.ParamsInBody = i.ParamsInBody
-		}
-		if i.IsAuthentication != nil {
-			o.IsAuthentication = i.IsAuthentication
-		}
-	}
-	return o
-}
-
-func (o *CallOptions) GetIsAuthentication() bool {
-	if o.IsAuthentication == nil {
-		return false
-	}
-	return *o.IsAuthentication
-}
-
-func WithParamsInBody(paramsInBody bool) CallOptions {
-	return CallOptions{
-		ParamsInBody: &paramsInBody,
-	}
 }
 
 func RegisterController(app *iris.Application, api APIController) {
@@ -300,7 +254,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 		path = c.getPath(path)
 	}
 
-	r := c.app.Handle(method, path, func(ictx *context.Context) {
+	handler := func(ictx *context.Context) {
 		gp.Try(func() error {
 			params, ctx, err := c.getParams(ictx, callMethod, handleType, opts...)
 			if err != nil {
@@ -326,7 +280,24 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 			SetError(ictx, err)
 			logs.Error(backCtx, logs.Fields{"method": method, "path": path, "error": err})
 		})
-	})
+	}
+
+	if handleType == HandleType_Event {
+		opt := NewCallOptions(opts...)
+		event := opt.GetEvent()
+		if event != nil {
+			sub := &ddd.Subscribe{
+				PubsubName: event.Pubsub,
+				Topic:      event.Topic,
+				Route:      path,
+			}
+			if err := ddd.RegisterSubscribe(sub); err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	r := c.app.Handle(method, path, handler)
 	c.addRouter(r)
 	return r
 }
