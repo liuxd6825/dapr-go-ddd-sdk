@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_mongo"
@@ -43,6 +44,9 @@ type IMongoDao[T any] interface {
 	BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...store2.Options) (*store2.BulkWriteResult, error)
 	GetFilterMap(tenantId, rsql string) *rsql_mongo.Filter
 	AggregateByPipeline(ctx context.Context, pipeline mongo.Pipeline, data interface{}, opts ...store2.Options) error
+	CreateCollection(ctx context.Context) error
+	GetDatabase(ctx context.Context) *mongo.Database
+	GetCollection(ctx context.Context) *mongo.Collection
 }
 
 type ObjectId string
@@ -105,7 +109,7 @@ func NewMongoDao[T any](dbSch *store2.DBSchema, initFun func(ctx context.Context
 }
 
 func (r *Dao[T]) GetDbType() string {
-	return "mongodb"
+	return idao.DbType_MongoDB.String()
 }
 
 func (r *Dao[T]) SetMetadata(metadata map[string]any) {
@@ -283,6 +287,15 @@ func (r *Dao[T]) CreateIndexes(ctx context.Context) error {
 	_, err = col.Indexes().CreateMany(ctx, models)
 
 	return err
+}
+
+func (r *Dao[T]) GetCollection(ctx context.Context) *mongo.Collection {
+	return r.getCollection(ctx)
+}
+
+func (r *Dao[T]) GetDatabase(ctx context.Context) *mongo.Database {
+	mongodb, _ := r.initFun(ctx)
+	return mongodb.GetDatabase()
 }
 
 func (r *Dao[T]) getCollection(ctx context.Context) *mongo.Collection {
