@@ -1,4 +1,4 @@
-package eventbus_pkg
+package events_pkg
 
 import (
 	"context"

@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/ctx_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/db_pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/eventbus_pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/events_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/feign_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/html_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/json_pkg"
@@ -99,13 +99,15 @@ func (p *pkgSetup) logs() any {
 func (p *pkgSetup) json() any {
 	return json_pkg.New()
 }
+
 func (p *pkgSetup) strings() any {
 	return strings_pkg.New()
 }
+
 func (p *pkgSetup) html() any {
 	return html_pkg.New(p.server)
 }
 
-func (p *pkgSetup) eventbus() any {
-	return eventbus_pkg.New(p.server)
+func (p *pkgSetup) events() any {
+	return events_pkg.New(p.server)
 }
