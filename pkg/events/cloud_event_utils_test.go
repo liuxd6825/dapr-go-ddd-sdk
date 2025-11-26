@@ -18,3 +18,7 @@ func Test_StructToMap(t *testing.T) {
 	}
 	t.Logf("mapData = %v", mapData)
 }
+
+func Test_LoadEvent(t *testing.T) {
+
+}

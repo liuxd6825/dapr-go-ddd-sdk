@@ -29,13 +29,7 @@ type EventPayload struct {
 	Meta        json.RawMessage `json:"meta"`
 	EventType   string          `json:"event_type"`
 	TenantId    string          `json:"tenant_id"`
-}
-
-// Event 事件本体
-type Event[T any] struct {
-	EventId    string    `json:"eventId" bson:"eventId" validate:"required" `
-	OccurredOn time.Time `json:"occurredOn" bson:"occurredOn" validate:"required" `
-	Data       T         `json:"data"  bson:"data" validate:"required"`
+	Version     string          `json:"version"`
 }
 
 const (

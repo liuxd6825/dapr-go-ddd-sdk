@@ -62,7 +62,7 @@ func (s *RecordEventSubHandler) Check(ctx context.Context) error {
 }
 
 func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) error {
-	logs.Infofmt(ctx, "record-import-master-event eventId:%s; occurredOn:%s; ", event.EventId, event.Event.OccurredOn.Format(time.DateTime))
+	logs.Infofmt(ctx, "record-import-master-event eventId:%s; occurredOn:%s; ", event.Id, event.CreatedTime.Format(time.DateTime))
 	records, err := s.factory.NewByRecordImportMasterEvent(ctx, event)
 	if err != nil {
 		return err

@@ -28,7 +28,7 @@ var jsonText = `{
 func Test_Unmarshal(t *testing.T) {
 	date := time.Now()
 	ev := event.RecordImportMasterEvent{
-		Event: events.Event[event.RecordImportMasterEventData]{
+		Event: event.Event[event.RecordImportMasterEventData]{
 			EventId: "111",
 			Data: event.RecordImportMasterEventData{
 				Items: []*field.RecordFields{

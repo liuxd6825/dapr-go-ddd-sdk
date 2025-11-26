@@ -3,13 +3,26 @@ package events
 import (
 	"context"
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"reflect"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
-// GetEventParams 接受事件端取得事件参数
-func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, ctx context.Context, err error) {
+// LoadEvent
+// @Description: 接受事件端取得事件参数
+// @param cloudEvent
+// @param object
+// @return res
+// @return ctx
+// @return err
+func LoadEvent(cloudEvent CloudEvent, object interface{}) (res any, ctx context.Context, err error) {
+	event, ok := object.(IEvent)
+	if !ok {
+		return nil, nil, errors.New("invalid event")
+	}
+
 	cloudData, err := cloudEvent.GetData()
 	if err != nil {
 		return nil, nil, err
@@ -20,26 +33,28 @@ func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, ctx con
 	if err != nil {
 		return nil, nil, err
 	}
-	ctx = context.Background()
+
 	if payload.Data == nil {
-		return target, ctx, nil
+		return nil, nil, errors.New("CloudEvent invalid payload")
 	}
-	err = json.Unmarshal(payload.Data, target)
+	ctx = context.Background()
+	var eventMeta map[string]any
+	var eventData = event.NewData()
+
+	err = json.Unmarshal(payload.Data, &eventData)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if payload.Meta != nil {
-		var meta map[string]any
-		err = json.Unmarshal(payload.Meta, &meta)
+		err = json.Unmarshal(payload.Meta, &eventMeta)
 		if err != nil {
 			return nil, nil, err
 		}
-		if val, ok := meta["autoUser"]; ok {
-			meta[AUTH_USER] = val
+		if val, ok := eventMeta["autoUser"]; ok {
+			eventMeta[AUTH_USER] = val
 		}
-
-		if mapVal, ok := meta[AUTH_USER]; ok {
+		if mapVal, ok := eventMeta[AUTH_USER]; ok {
 			if authUserMap, ok := mapVal.(map[string]any); ok {
 				authUser := appctx.NewAuthUserEntity(authUserMap)
 				ctx, err = appctx.NewAuthUserContext(ctx, authUser)
@@ -49,19 +64,20 @@ func GetEventParams(cloudEvent CloudEvent, target interface{}) (res any, ctx con
 			}
 		}
 
-		if idVal, ok := meta[TENANT_ID]; ok {
+		if idVal, ok := eventMeta[TENANT_ID]; ok {
 			if tenantId, ok := idVal.(string); ok {
 				ctx = appctx.NewTenantContext(ctx, tenantId)
 			}
 		}
 
-		if headerVal, ok := meta[HEADER]; ok {
+		if headerVal, ok := eventMeta[HEADER]; ok {
 			if header, ok := headerVal.(map[string][]string); ok {
 				ctx = appctx.NewHeaderContext(ctx, header)
 			}
 		}
 	}
-	return target, ctx, err
+	event.SetFields(payload.ID, payload.TenantId, payload.AppID, payload.EventType, payload.Version, &payload.CreatedTime, eventData, eventMeta)
+	return event, ctx, err
 }
 
 func newMeta(ctx context.Context, tenantId string, meta map[string]any) (map[string]any, error) {

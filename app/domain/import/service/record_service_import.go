@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task_pkg "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
@@ -23,7 +24,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 	gp2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 type ctxKey struct {
@@ -238,7 +238,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 
 				// 通过领域事件，导入流水到主数据
 				// 生成领域事件
-				importEvent, err := newRecordCreateManyFromExcelCommand(appcmd, res.GetData())
+				importEvent, err := newRecordCreateManyFromExcelCommand(ctx, appcmd, res.GetData())
 				if err != nil {
 					return err
 				}
@@ -280,7 +280,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 }
 
 func (s *RecordService) PublishImportRecordToMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) (err error) {
-	return xbase2.PublishEvent(ctx, config.ImportAppId, event, nil)
+	return xbase2.PublishEvent(ctx, event)
 }
 
 func NewContext(ctx context.Context, task *TaskOptions) context.Context {
@@ -411,7 +411,7 @@ func newCells(mapDataCells map[string]readexcel.DataCells) map[string]task_pkg.R
 // @param list
 // @return *command.RecordCreateManyFromExcelCommand
 // @return error
-func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*event.RecordImportMasterEvent, error) {
+func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*event.RecordImportMasterEvent, error) {
 	items := make([]*field.RecordFields, 0)
 	for _, e := range list {
 		record := &field.RecordFields{
@@ -446,19 +446,10 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 		if len(record.Ccy) == 0 {
 			record.Ccy = enum.CurrencyCNY.String()
 		}
-		/*
-			if _, err := json.Marshal(record); err != nil {
-				fmt.Println(fmt.Sprintf("id:%s", record.Id))
-				return nil, err
-			}
-		*/
 		items = append(items, record)
 	}
 
-	cmd := &event.RecordImportMasterEvent{}
-	cmd.EventId = idutils.NewId()
-	cmd.OccurredOn = time.Now()
-	cmd.Data = event.RecordImportMasterEventData{
+	eventData := &event.RecordImportMasterEventData{
 		CaseId:     appcmd.Data.CaseId,
 		DocId:      appcmd.Data.DocId,
 		FileName:   appcmd.Data.FileName,
@@ -470,6 +461,6 @@ func newRecordCreateManyFromExcelCommand(appcmd *command.RecordImport2MasterComm
 		MasterType: appcmd.Data.MasterType,
 		MasterId:   appcmd.Data.MasterId,
 	}
-
-	return cmd, nil
+	ev := event.NewRecordImportMasterEvent(ctx, config.ImportAppId, eventData)
+	return ev, nil
 }

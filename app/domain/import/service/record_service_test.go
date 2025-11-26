@@ -3,13 +3,12 @@ package service
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
@@ -93,10 +92,7 @@ func TestRecordService_UpdateFilterCommand(t *testing.T) {
 }
 
 func TestRecordService_UpdateByQueryCommand(t *testing.T) {
-	e := &event.RecordImportMasterEvent{}
-	e.EventId = idutils.NewUlid2()
-	e.OccurredOn = time.Now()
-	e.Data = event.RecordImportMasterEventData{
+	eventData := &event.RecordImportMasterEventData{
 		CaseId:   "1001",
 		DocId:    "F3YOfd110hzRCKuT7eZPSHL4k",
 		FileName: "10w.xlsx",
@@ -107,11 +103,6 @@ func TestRecordService_UpdateByQueryCommand(t *testing.T) {
 			},
 		},
 	}
-
-	mapData, err := events.StructToMap(e)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log(mapData)
+	event := event.NewRecordImportMasterEvent(ctx, config.ImportAppId, eventData)
+	t.Log(event)
 }

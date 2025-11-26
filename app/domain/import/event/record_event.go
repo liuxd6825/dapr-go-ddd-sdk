@@ -1,7 +1,7 @@
 package event
 
 import (
-	"fmt"
+	"context"
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
@@ -9,12 +9,23 @@ import (
 )
 
 // RecordImportMasterEvent
-// @Description:
-type RecordImportMasterEvent struct {
-	events.Event[RecordImportMasterEventData]
-}
+// @Description: 流水导入事件
+type RecordImportMasterEvent = events.Event[*RecordImportMasterEventData]
 
+// RecordImportMasterEventType 导入事件类型
 const RecordImportMasterEventType = "RecordImportMasterEvent"
+
+// NewRecordImportMasterEvent
+// @Description: 新建流水导入事件
+// @param ctx
+// @param appId
+// @param data
+// @return *RecordImportMasterEvent
+func NewRecordImportMasterEvent(ctx context.Context, appId string, data *RecordImportMasterEventData) *RecordImportMasterEvent {
+	event := &RecordImportMasterEvent{}
+	event.SetData(ctx, appId, data, &events.EventOptions{EventType: RecordImportMasterEventType})
+	return event
+}
 
 type RecordImportMasterEventData struct {
 	Date       *time.Time            `json:"date" gorm:"date" bson:"date" validate:"-" title:"时间"`
@@ -31,6 +42,8 @@ type RecordImportMasterEventData struct {
 	MasterId   string                `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据Id"`
 }
 
+/*
 func (f RecordImportMasterEventData) Id() string {
 	return fmt.Sprintf("%s:%s:%s:%s", f.TaskId, f.CaseId, f.FileId, f.SheetName)
 }
+*/
