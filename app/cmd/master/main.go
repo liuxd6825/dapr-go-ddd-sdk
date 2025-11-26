@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys"
+	sys_code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
@@ -38,6 +39,7 @@ func main() {
 		OnHServerInitEvent: func(server element.Server) error {
 			drawioPkg := types.NewCMap[any]()
 			drawioPkg.Add("fileService", service.NewFileService())
+			drawioPkg.Add("codeService", sys_code_service.NewCodeService())
 			server.Pkg().Add("drawio", drawioPkg)
 			return nil
 		},

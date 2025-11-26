@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/dao"
@@ -14,11 +15,17 @@ type CodeService struct {
 	seqDAO  *dao.CodeSequenceDao
 }
 
+var codeService *CodeService
+var codeServiceOnce sync.Once
+
 func NewCodeService() *CodeService {
-	return &CodeService{
-		typeDAO: dao.NewCodeTypeDao(config.DBKey),
-		seqDAO:  dao.NewCodeSequenceDao(config.DBKey),
-	}
+	codeServiceOnce.Do(func() {
+		codeService = &CodeService{
+			typeDAO: dao.NewCodeTypeDao(config.DBKey),
+			seqDAO:  dao.NewCodeSequenceDao(config.DBKey),
+		}
+	})
+	return codeService
 }
 
 func (s *CodeService) New(ctx context.Context, typeCode string) (string, error) {
