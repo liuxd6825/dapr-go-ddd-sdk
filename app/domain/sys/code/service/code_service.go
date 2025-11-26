@@ -55,3 +55,11 @@ func (s *CodeService) New(ctx context.Context, typeCode string) (string, error) 
 	fullCode := fmt.Sprintf("%s%s%0*d", codeType.Prefix, dateStr, codeType.SeqLength, seq)
 	return fullCode, nil
 }
+
+func (s *CodeService) NewCode(ctx context.Context, typeCode string) string {
+	fullCode, err := s.New(ctx, typeCode)
+	if err != nil {
+		panic(err)
+	}
+	return fullCode
+}
