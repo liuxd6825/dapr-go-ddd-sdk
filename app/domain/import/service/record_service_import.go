@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task_pkg "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"

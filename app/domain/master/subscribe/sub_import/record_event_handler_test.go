@@ -2,11 +2,12 @@ package sub_import
 
 import (
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/events"
 	"testing"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
+	event2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
 )
 
 var jsonText = `{
@@ -27,10 +28,10 @@ var jsonText = `{
 
 func Test_Unmarshal(t *testing.T) {
 	date := time.Now()
-	ev := event.RecordImportMasterEvent{
-		Event: event.Event[event.RecordImportMasterEventData]{
+	ev := event2.RecordImportMasterEvent{
+		Event: event.Event[event2.RecordImportMasterEventData]{
 			EventId: "111",
-			Data: event.RecordImportMasterEventData{
+			Data: event2.RecordImportMasterEventData{
 				Items: []*field.RecordFields{
 					{
 						Date: &date,
@@ -46,7 +47,7 @@ func Test_Unmarshal(t *testing.T) {
 		return
 	}
 	jText := string(jsonByte)
-	var e *event.RecordImportMasterEvent
+	var e *event2.RecordImportMasterEvent
 	err = json.Unmarshal([]byte(jText), &e)
 	if err != nil {
 		t.Error(err)

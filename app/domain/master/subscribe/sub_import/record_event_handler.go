@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/factory"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
