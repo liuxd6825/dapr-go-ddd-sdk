@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
 	event2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 var jsonText = `{
@@ -28,19 +29,15 @@ var jsonText = `{
 
 func Test_Unmarshal(t *testing.T) {
 	date := time.Now()
-	ev := event2.RecordImportMasterEvent{
-		Event: event.Event[event2.RecordImportMasterEventData]{
-			EventId: "111",
-			Data: event2.RecordImportMasterEventData{
-				Items: []*field.RecordFields{
-					{
-						Date: &date,
-					},
-				},
+	ctx := xtest.NewContext()
+	data := &event.RecordImportMasterEventData{
+		Items: []*field.RecordFields{
+			{
+				Date: &date,
 			},
 		},
 	}
-
+	ev := event.NewRecordImportMasterEvent(ctx, "test", data)
 	jsonByte, err := json.Marshal(ev)
 	if err != nil {
 		t.Error(err)
