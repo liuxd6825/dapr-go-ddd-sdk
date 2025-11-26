@@ -37,6 +37,7 @@ func NewPkgSetup(server *Server) PkgSetup {
 	s.Add("env", s.env)
 	s.Add("html", s.html)
 	s.Add("logs", s.logs)
+	s.Add("events", s.events)
 	return s
 }
 
