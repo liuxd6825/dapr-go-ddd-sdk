@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
+	draw_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph"
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
@@ -37,10 +37,14 @@ func main() {
 		GitHead:   GitHead,
 		Actors:    nil,
 		OnHServerInitEvent: func(server element.Server) error {
-			drawioPkg := types.NewCMap[any]()
-			drawioPkg.Add("fileService", service.NewFileService())
-			drawioPkg.Add("codeService", sys_code_service.NewCodeService())
-			server.Pkg().Add("drawio", drawioPkg)
+			drawPkg := types.NewCMap[any]()
+			drawPkg.Add("fileService", draw_service.NewFileService())
+			server.Pkg().Add("drawio", drawPkg)
+
+			sysPkg := types.NewCMap[any]()
+			sysPkg.Add("codeService", sys_code_service.NewCodeService())
+			server.Pkg().Add("sys", sysPkg)
+
 			return nil
 		},
 		OnInitEvent: func(server *restapp.HttpServer) error {
