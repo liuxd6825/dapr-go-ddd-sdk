@@ -20,7 +20,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 )
 
 var (
@@ -37,12 +36,12 @@ func main() {
 		GitHead:   GitHead,
 		Actors:    nil,
 		OnHServerInitEvent: func(server element.Server) error {
-			drawPkg := types.NewCMap[any]()
-			drawPkg.Add("fileService", draw_service.NewFileService())
+			drawPkg := map[string]any{}
+			drawPkg["fileService"] = draw_service.NewFileService()
 			server.Pkg().Add("drawio", drawPkg)
 
-			sysPkg := types.NewCMap[any]()
-			sysPkg.Add("codeService", sys_code_service.NewCodeService())
+			sysPkg := map[string]any{}
+			sysPkg["codeService"] = sys_code_service.NewCodeService()
 			server.Pkg().Add("sys", sysPkg)
 
 			return nil
