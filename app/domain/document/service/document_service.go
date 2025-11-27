@@ -30,10 +30,14 @@ func (s *DocumentService) HasDocumentByDocument(ctx context.Context, folderId st
 	return count > 0, err
 }
 
-func (t *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
-	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return t.dao.Create(ctx, &cmd.Data).GetError()
-	})
+//func (t *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
+//	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+//		return t.dao.Create(ctx, &cmd.Data).GetError()
+//	})
+//}
+
+func (t *DocumentService) CreateData(ctx context.Context, data *model.Document) error {
+	return t.dao.Create(ctx, data).GetError()
 }
 
 func (t *DocumentService) Delete(ctx context.Context, cmd *command.DocumentDeleteCommand) error {
@@ -69,4 +73,85 @@ func (t *DocumentService) FindPaging(ctx context.Context, qry store.FindPagingQu
 
 func (t *DocumentService) FindByRSQL(ctx context.Context, rsql string) ([]*model.Document, error) {
 	return t.dao.FindByRSQL(ctx, rsql)
+}
+
+func (t *DocumentService) Document2DocumentView(document *model.Document) *model.DocumentView {
+	view := &model.DocumentView{}
+	view.Id = document.Id
+	view.TenantId = document.TenantId
+	view.CaseId = document.CaseId
+	view.CreatedTime = document.CreatedTime
+	view.CreatorId = document.CreatorId
+	view.CreatorName = document.CreatorName
+	view.UpdatedTime = document.UpdatedTime
+	view.UpdaterId = document.UpdaterId
+	view.UpdaterName = document.UpdaterName
+	view.DeletedTime = document.DeletedTime
+	view.DeleterId = document.DeleterId
+	view.DeleterName = document.DeleterName
+	view.IsDeleted = document.IsDeleted
+	view.Remark = document.Remark
+	view.BusId = document.BusId
+	view.EntityId = document.EntityId
+	view.RootId = document.RootId
+	view.RootPath = document.RootPath
+	view.FolderId = document.FolderId
+	view.FileId = document.FileId
+	view.ObjectName = document.ObjectName
+	view.ExtName = document.ExtName
+	view.Size = document.Size
+	view.SizeTitle = document.SizeTitle
+	view.DownloadTotal = document.DownloadTotal
+	view.DownloadUrl = document.DownloadUrl
+	view.PreviewUrl = document.PreviewUrl
+	view.Thumbnail = document.Thumbnail
+	view.Md5 = document.Md5
+	view.TagName = document.TagName
+	view.TagId = document.TagId
+	view.TagColor = document.TagColor
+	view.FsKey = document.FsKey
+	view.Name = document.Name
+
+	return view
+}
+
+func (t *DocumentService) DocumentView2Document(view *model.DocumentView) *model.Document {
+	document := &model.Document{}
+
+	document.Id = view.Id
+	document.TenantId = view.TenantId
+	document.CaseId = view.CaseId
+	document.CreatedTime = view.CreatedTime
+	document.CreatorId = view.CreatorId
+	document.CreatorName = view.CreatorName
+	document.UpdatedTime = view.UpdatedTime
+	document.UpdaterId = view.UpdaterId
+	document.UpdaterName = view.UpdaterName
+	document.DeletedTime = view.DeletedTime
+	document.DeleterId = view.DeleterId
+	document.DeleterName = view.DeleterName
+	document.IsDeleted = view.IsDeleted
+	document.Remark = view.Remark
+	document.BusId = view.BusId
+	document.EntityId = view.EntityId
+	document.RootId = view.RootId
+	document.RootPath = view.RootPath
+	document.FolderId = view.FolderId
+	document.FileId = view.FileId
+	document.ObjectName = view.ObjectName
+	document.ExtName = view.ExtName
+	document.Size = view.Size
+	document.SizeTitle = view.SizeTitle
+	document.DownloadTotal = view.DownloadTotal
+	document.DownloadUrl = view.DownloadUrl
+	document.PreviewUrl = view.PreviewUrl
+	document.Thumbnail = view.Thumbnail
+	document.Md5 = view.Md5
+	document.TagName = view.TagName
+	document.TagId = view.TagId
+	document.TagColor = view.TagColor
+	document.FsKey = view.FsKey
+	document.Name = view.Name
+
+	return document
 }

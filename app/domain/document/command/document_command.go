@@ -6,7 +6,7 @@ import (
 )
 
 type DocumentCreateCommand struct {
-	xbase.Command[model.Document]
+	xbase.Command[model.DocumentView]
 }
 
 type DocumentUpdateCommand struct {
