@@ -24,29 +24,32 @@ import (
 )
 
 type DocumentAPI struct {
-	rootPath        string
-	env             *env.Env
-	documentService *service.DocumentService
-	fileService     *service.FileService
-	fsService       *service.FsService
-	folderService   *service.FolderService
-	tagRelationSvc  *tagSvc.TagRelationService
+	rootPath            string
+	env                 *env.Env
+	documentService     *service.DocumentService
+	documentMetaService *service.DocumentMetaService
+	fileService         *service.FileService
+	fsService           *service.FsService
+	folderService       *service.FolderService
+	tagRelationSvc      *tagSvc.TagRelationService
 }
 
 func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
 	documentService := service.NewDocumentService()
+	documentMetaService := service.NewDocumentMetaService()
 	fileService := service.NewFileService()
 	fsService := service.NewFsService()
 	folderService := service.NewFolderService()
 	tagRelationSvc := tagSvc.NewTagRelationService()
 	return &DocumentAPI{
-		rootPath:        rootPath,
-		env:             env,
-		documentService: documentService,
-		fileService:     fileService,
-		fsService:       fsService,
-		folderService:   folderService,
-		tagRelationSvc:  tagRelationSvc,
+		rootPath:            rootPath,
+		env:                 env,
+		documentService:     documentService,
+		fileService:         fileService,
+		fsService:           fsService,
+		folderService:       folderService,
+		tagRelationSvc:      tagRelationSvc,
+		documentMetaService: documentMetaService,
 	}
 }
 
@@ -130,13 +133,25 @@ func (s *DocumentAPI) Download(ctx context.Context, ictx iris.Context, query *qu
 
 func (s *DocumentAPI) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
 	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
-		err := s.fileService.Create(ctx, s.fileService.GetFile(&cmd.Data))
+
+		document := s.documentService.DocumentView2Document(&cmd.Data)
+
+		err := s.fileService.Create(ctx, s.fileService.GetFile(document))
 		if err != nil {
 			return err
 		}
-		err = s.documentService.Create(ctx, cmd)
+
+		err = s.documentService.CreateData(ctx, document)
 		if err != nil {
 			return err
+		}
+
+		meta := cmd.Data.Meta
+		if meta != nil && len(meta) > 0 {
+			err = s.documentMetaService.CreateMany(ctx, meta)
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -303,6 +318,11 @@ func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCom
 			return res.Error
 		}
 
+		res = s.documentMetaService.DeleteByDocumentId(ctx, cmd.Data.Id)
+		if res.Error != nil {
+			return res.Error
+		}
+
 		res = s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("document_id=='%s'", cmd.Data.Id))
 		if res.Error != nil {
 			return res.Error
@@ -314,7 +334,7 @@ func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCom
 	return err
 }
 
-func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderAndFilter) (idao.FindPagingResult[*model.Document], error) {
+func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderAndFilter) (idao.FindPagingResult[*model.DocumentView], error) {
 	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
@@ -324,11 +344,51 @@ func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderA
 	}
 	qry.Sort = "created_time:desc"
 	qry.IsTotalRows = true
-	return s.documentService.FindPaging(ctx, qry)
+
+	documents, err := s.documentService.FindPaging(ctx, qry)
+	if err != nil {
+		return nil, err
+	}
+	if len(documents.GetData()) == 0 {
+		return store2.NewFindPagingResult([]*model.DocumentView{}, 0, qry, nil), nil
+	}
+
+	dvs := make([]*model.DocumentView, 0)
+	for _, d := range documents.GetData() {
+		dv := s.documentService.Document2DocumentView(d)
+		dv.Meta, err = s.getMetaByDocumentId(ctx, dv.Id)
+		if err != nil {
+			return nil, err
+		}
+		dvs = append(dvs, dv)
+	}
+
+	res := store2.NewFindPagingResult(dvs, int64(len(dvs)), qry, nil)
+
+	return res, nil
 }
 
-func (s *DocumentAPI) FindById(ctx context.Context, query *query.FindByIdQuery) (*model.Document, error) {
-	return s.documentService.FindById(ctx, query.Id)
+func (s *DocumentAPI) getMetaByDocumentId(ctx context.Context, documentId string) ([]*model.DocumentMeta, error) {
+	return s.documentMetaService.FindByDocumentId(ctx, documentId)
+}
+
+func (s *DocumentAPI) FindById(ctx context.Context, query *query.FindByIdQuery) (*model.DocumentView, error) {
+	data, err := s.documentService.FindById(ctx, query.Id)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil
+	}
+	meta, err := s.documentMetaService.FindByDocumentId(ctx, data.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	view := s.documentService.Document2DocumentView(data)
+	view.Meta = meta
+
+	return view, nil
 }
 
 func (s *DocumentAPI) FindByTagId(ctx context.Context, query *query.FindByTagAndCase) (idao.FindPagingResult[*model.Document], error) {

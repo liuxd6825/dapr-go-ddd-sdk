@@ -20,12 +20,14 @@ import (
 )
 
 type FolderAPI struct {
-	env           *env.Env
-	folderService *service.FolderService
-	docService    *service.DocumentService
-	fileService   *service.FileService
-	fsService     *service.FsService
-	rootPath      string
+	env               *env.Env
+	folderService     *service.FolderService
+	docService        *service.DocumentService
+	docMetaService    *service.DocumentMetaService
+	fileService       *service.FileService
+	fsService         *service.FsService
+	folderMetaService *service.FolderMetaService
+	rootPath          string
 }
 
 func NewFolderAPI(env *env.Env, rootPath string) *FolderAPI {
@@ -33,13 +35,17 @@ func NewFolderAPI(env *env.Env, rootPath string) *FolderAPI {
 	docService := service.NewDocumentService()
 	fileService := service.NewFileService()
 	fsService := service.NewFsService()
+	folderMetaService := service.NewFolderMetaService()
+	docMetaService := service.NewDocumentMetaService()
 	return &FolderAPI{
-		rootPath:      rootPath,
-		env:           env,
-		folderService: folderService,
-		docService:    docService,
-		fileService:   fileService,
-		fsService:     fsService,
+		rootPath:          rootPath,
+		env:               env,
+		folderService:     folderService,
+		docService:        docService,
+		fileService:       fileService,
+		fsService:         fsService,
+		folderMetaService: folderMetaService,
+		docMetaService:    docMetaService,
 	}
 }
 
@@ -60,36 +66,37 @@ func (s *FolderAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 }
 
 func (s *FolderAPI) CreateRoot(ctx context.Context, cmd *command.FolderCreateCommand) error {
-	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
-
-		vErr := errors.NewVerifyError()
-		if cmd.Data.TenantId == "" {
-			vErr.AppendField("tenantId", "不能为空", "租户Id")
-		}
-		if cmd.Data.BusId == "" {
-			vErr.AppendField("busId", "不能为空", "业务Id")
-		}
-		if cmd.Data.EntityId == "" {
-			vErr.AppendField("entityId", "不能为空", "实体Id")
-		}
-		if vErr.HasError() {
-			return vErr
-		}
-
-		cmd.Data.Id = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
-		cmd.Data.RootId = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
-		cmd.Data.RootPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
-		cmd.Data.FolderPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
-		cmd.Data.Name = "文件库"
-		err1 := s.folderService.Create(ctx, cmd)
-		if err1 != nil {
-			return err1
-		}
-
-		s.fsService.MkdirAll(cmd.Data.FolderPath)
-		return nil
-	})
-	return err
+	//err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
+	//
+	//	vErr := errors.NewVerifyError()
+	//	if cmd.Data.TenantId == "" {
+	//		vErr.AppendField("tenantId", "不能为空", "租户Id")
+	//	}
+	//	if cmd.Data.BusId == "" {
+	//		vErr.AppendField("busId", "不能为空", "业务Id")
+	//	}
+	//	if cmd.Data.EntityId == "" {
+	//		vErr.AppendField("entityId", "不能为空", "实体Id")
+	//	}
+	//	if vErr.HasError() {
+	//		return vErr
+	//	}
+	//
+	//	cmd.Data.Id = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
+	//	cmd.Data.RootId = cmd.Data.TenantId + "_" + cmd.Data.BusId + "_" + cmd.Data.EntityId
+	//	cmd.Data.RootPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
+	//	cmd.Data.FolderPath = "/" + cmd.Data.TenantId + "/" + cmd.Data.BusId + "/" + cmd.Data.EntityId
+	//	cmd.Data.Name = "文件库"
+	//	err1 := s.folderService.Create(ctx, cmd)
+	//	if err1 != nil {
+	//		return err1
+	//	}
+	//
+	//	s.fsService.MkdirAll(cmd.Data.FolderPath)
+	//	return nil
+	//})
+	//return err
+	return nil
 }
 
 func (s *FolderAPI) Create(ctx context.Context, cmd *command.FolderCreateCommand) error {
@@ -109,9 +116,19 @@ func (s *FolderAPI) Create(ctx context.Context, cmd *command.FolderCreateCommand
 			return vErr
 		}
 
-		err1 := s.folderService.Create(ctx, cmd)
-		if err1 != nil {
-			return err1
+		folder := s.folderService.FolderView2Folder(&cmd.Data)
+
+		err := s.folderService.CreateData(ctx, folder)
+		if err != nil {
+			return err
+		}
+
+		meta := cmd.Data.Meta
+		if meta != nil && len(meta) > 0 {
+			err = s.folderMetaService.CreateMany(ctx, meta)
+			if err != nil {
+				return err
+			}
 		}
 
 		s.fsService.MkdirAll(cmd.Data.FolderPath)
@@ -122,6 +139,13 @@ func (s *FolderAPI) Create(ctx context.Context, cmd *command.FolderCreateCommand
 }
 
 func (s *FolderAPI) Rename(ctx context.Context, cmd *command.FolderRenameCommand) error {
+	if cmd.Data.Alias == "" {
+		return s.renameFolder(ctx, cmd)
+	}
+	return s.updateAlias(ctx, &cmd.Data)
+}
+
+func (s *FolderAPI) renameFolder(ctx context.Context, cmd *command.FolderRenameCommand) error {
 	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		tenantId := appctx.GetTenantId2(ctx)
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", tenantId, cmd.Data.BusId, cmd.Data.EntityId))
@@ -147,7 +171,7 @@ func (s *FolderAPI) Rename(ctx context.Context, cmd *command.FolderRenameCommand
 		}
 
 		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"name", "folder_path"})
+		opts.SetUpdateFields([]string{"name", "alias", "folder_path"})
 
 		folder := model.Folder{}
 		folder.Id = cmd.Data.Id
@@ -166,6 +190,16 @@ func (s *FolderAPI) Rename(ctx context.Context, cmd *command.FolderRenameCommand
 		return nil
 	})
 
+	return err
+}
+
+func (s *FolderAPI) updateAlias(ctx context.Context, folder *model.RenameFolder) error {
+	opts := idao.NewCallOptions()
+	opts.SetUpdateFields([]string{"alias"})
+	newFolder := &model.Folder{}
+	newFolder.Id = folder.Id
+	newFolder.Alias = folder.Alias
+	err := s.folderService.Update(ctx, newFolder, opts)
 	return err
 }
 
@@ -243,12 +277,30 @@ func (s *FolderAPI) Delete(ctx context.Context, cmd *command.FolderDeleteCommand
 					return res.Error
 				}
 
+				data, err := s.docService.FindByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+				if err != nil {
+					return err
+				}
+				if data != nil && len(data) > 0 {
+					for _, d := range data {
+						res = s.docMetaService.DeleteByDocumentId(ctx, d.Id)
+						if res.Error != nil {
+							return res.Error
+						}
+					}
+				}
+
 				res = s.docService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
 				if res.Error != nil {
 					return res.Error
 				}
 
 				res = s.folderService.DeleteById(ctx, f.Id)
+				if res.Error != nil {
+					return res.Error
+				}
+
+				res = s.folderMetaService.DeleteByFolderId(ctx, f.Id)
 				if res.Error != nil {
 					return res.Error
 				}
@@ -261,14 +313,38 @@ func (s *FolderAPI) Delete(ctx context.Context, cmd *command.FolderDeleteCommand
 	return err
 }
 
-func (s *FolderAPI) FindPaging(ctx context.Context, query *query.FindFolderByFolderIdQuery) (idao.FindPagingResult[*model.Folder], error) {
+func (s *FolderAPI) FindPaging(ctx context.Context, query *query.FindFolderByFolderIdQuery) (store2.FindPagingResult[*model.FolderView], error) {
 	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
 	qry.Filter = "parent_id=='" + query.FolderId + "'"
 	qry.Sort = "created_time:desc"
 	qry.IsTotalRows = true
-	return s.folderService.FindPaging(ctx, qry)
+	folders, err := s.folderService.FindPaging(ctx, qry)
+	if err != nil {
+		return nil, err
+	}
+	if len(folders.GetData()) == 0 {
+		return store2.NewFindPagingResult([]*model.FolderView{}, 0, qry, nil), nil
+	}
+
+	fvs := make([]*model.FolderView, 0)
+	for _, f := range folders.GetData() {
+		fv := s.folderService.Folder2FolderView(f)
+		fv.Meta, err = s.getMetaByFolderId(ctx, fv.Id)
+		if err != nil {
+			return nil, err
+		}
+		fvs = append(fvs, fv)
+	}
+
+	res := store2.NewFindPagingResult(fvs, int64(len(fvs)), qry, nil)
+
+	return res, nil
+}
+
+func (s *FolderAPI) getMetaByFolderId(ctx context.Context, folderId string) ([]*model.FolderMeta, error) {
+	return s.folderMetaService.FindByFolderId(ctx, folderId)
 }
 
 func (s *FolderAPI) FindTree(ctx context.Context, query *query.FindTreeByParamQuery) []model.FolderTree {
@@ -282,6 +358,21 @@ func (s *FolderAPI) FindTree(ctx context.Context, query *query.FindTreeByParamQu
 	return s.folderService.TranslateTreeData(res.GetData())
 }
 
-func (s *FolderAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model.Folder, error) {
-	return s.folderService.FindById(ctx, qry.Id)
+func (s *FolderAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model.FolderView, error) {
+	data, err := s.folderService.FindById(ctx, qry.Id)
+	if err != nil {
+		return nil, err
+	}
+	if data == nil {
+		return nil, nil
+	}
+	meta, err := s.folderMetaService.FindByFolderId(ctx, data.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	view := s.folderService.Folder2FolderView(data)
+	view.Meta = meta
+
+	return view, nil
 }

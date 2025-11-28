@@ -67,6 +67,7 @@ func (s *FolderService) FolderToFolderTree(folder *model.Folder) model.FolderTre
 	ft.RootId = folder.RootId
 	ft.ParentId = folder.ParentId
 	ft.Name = folder.Name
+	ft.Alias = folder.Alias
 	ft.FolderPath = folder.FolderPath
 	ft.Color = folder.Color
 	ft.CreatedTime = folder.CreatedTime
@@ -83,11 +84,11 @@ func (s *FolderService) FolderToFolderTree(folder *model.Folder) model.FolderTre
 	return ft
 }
 
-func (t *FolderService) Create(ctx context.Context, cmd *command.FolderCreateCommand) error {
-	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return t.dao.Create(ctx, &cmd.Data).GetError()
-	})
-}
+//func (t *FolderService) Create(ctx context.Context, cmd *command.FolderCreateCommand) error {
+//	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
+//		return t.dao.Create(ctx, &cmd.Data).GetError()
+//	})
+//}
 
 func (t *FolderService) CreateData(ctx context.Context, data *model.Folder) error {
 	return t.dao.Create(ctx, data).GetError()
@@ -122,4 +123,60 @@ func (t *FolderService) FindPaging(ctx context.Context, qry store.FindPagingQuer
 
 func (t *FolderService) FindByRSQL(ctx context.Context, rsql string) ([]*model.Folder, error) {
 	return t.dao.FindByRSQL(ctx, rsql)
+}
+
+func (t *FolderService) Folder2FolderView(folder *model.Folder) *model.FolderView {
+	view := &model.FolderView{}
+	view.Id = folder.Id
+	view.TenantId = folder.TenantId
+	view.CaseId = folder.CaseId
+	view.CreatedTime = folder.CreatedTime
+	view.CreatorId = folder.CreatorId
+	view.CreatorName = folder.CreatorName
+	view.UpdatedTime = folder.UpdatedTime
+	view.UpdaterId = folder.UpdaterId
+	view.UpdaterName = folder.UpdaterName
+	view.DeletedTime = folder.DeletedTime
+	view.DeleterId = folder.DeleterId
+	view.DeleterName = folder.DeleterName
+	view.IsDeleted = folder.IsDeleted
+	view.Remark = folder.Remark
+	view.BusId = folder.BusId
+	view.EntityId = folder.EntityId
+	view.RootId = folder.RootId
+	view.RootPath = folder.RootPath
+	view.FolderPath = folder.FolderPath
+	view.ParentId = folder.ParentId
+	view.Name = folder.Name
+	view.Color = folder.Color
+	view.Alias = folder.Alias
+	return view
+}
+
+func (t *FolderService) FolderView2Folder(folderView *model.FolderView) *model.Folder {
+	folder := &model.Folder{}
+	folder.Id = folderView.Id
+	folder.TenantId = folderView.TenantId
+	folder.CaseId = folderView.CaseId
+	folder.CreatedTime = folderView.CreatedTime
+	folder.CreatorId = folderView.CreatorId
+	folder.CreatorName = folderView.CreatorName
+	folder.UpdatedTime = folderView.UpdatedTime
+	folder.UpdaterId = folderView.UpdaterId
+	folder.UpdaterName = folderView.UpdaterName
+	folder.DeletedTime = folderView.DeletedTime
+	folder.DeleterId = folderView.DeleterId
+	folder.DeleterName = folderView.DeleterName
+	folder.IsDeleted = folderView.IsDeleted
+	folder.Remark = folderView.Remark
+	folder.BusId = folderView.BusId
+	folder.EntityId = folderView.EntityId
+	folder.RootId = folderView.RootId
+	folder.RootPath = folderView.RootPath
+	folder.FolderPath = folderView.FolderPath
+	folder.ParentId = folderView.ParentId
+	folder.Name = folderView.Name
+	folder.Color = folderView.Color
+	folder.Alias = folderView.Alias
+	return folder
 }
