@@ -1,6 +1,8 @@
 package model
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
+)
 
 type CodeType struct {
 	xbase.BaseModel

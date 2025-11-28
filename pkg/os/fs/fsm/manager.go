@@ -34,6 +34,12 @@ const (
 	WriteModelSelfWriteOtherRead WriteModel = 0644 // 当前用户读写，其他用户只读
 )
 
+const (
+	KB = 1 << 10
+	MB = 1 << 20
+	GB = 1 << 30
+)
+
 type File struct {
 	fs afero.Fs
 	afero.File
@@ -45,11 +51,7 @@ func NewFile(fs afero.Fs, fsFile afero.File) *File {
 
 // SizeTitle 格式化文件大小为易读格式
 func (f File) SizeTitle() string {
-	const (
-		KB = 1 << 10
-		MB = 1 << 20
-		GB = 1 << 30
-	)
+
 	fileInfo, _ := f.File.Stat()
 	size := fileInfo.Size()
 	switch {

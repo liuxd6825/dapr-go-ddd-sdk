@@ -64,6 +64,11 @@ func main() {
 				excelImport.RegisterAllApi(app, baseUrl, env)
 				sys.RegisterAllApi(app, baseUrl, env)
 				metrics.RegisterAllApi(app, baseUrl, env)
+				/*
+					if err := lowcode.Run(server); err != nil {
+						return err
+					}
+				*/
 				tasks.RunWorker()
 				return nil
 			})

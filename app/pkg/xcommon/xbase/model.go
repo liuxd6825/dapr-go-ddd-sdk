@@ -16,9 +16,9 @@ type BaseModel struct {
 	UpdatedTime *time.Time `json:"updatedTime"  gorm:"updated_time;title:修改人ID" bson:"updated_time" title:"修改时间"`                 // 修改时间
 	UpdaterId   string     `json:"updaterId"  gorm:"updater_id;title:修改人名称" bson:"updater_id,index:idx_updater_id" title:"修改人ID"` // 修改人ID
 	UpdaterName string     `json:"updaterName"  gorm:"updater_name;title:修改人名称" bson:"updater_name" title:"修改人名称"`                // 修改人名称
-	DeletedTime *time.Time `json:"deletedTime"  gorm:"deleted_time;title:删除时间" bson:"deleted_time" title:"删除时间"`                  // 删除时间
-	DeleterId   string     `json:"deleterId"  gorm:"deleter_id;title:删除人ID" bson:"deleter_id,index:idx_deleter_id" title:"删除人ID"` // 删除人ID
-	DeleterName string     `json:"deleterName"  gorm:"deleter_name;title:删除人名称" bson:"deleter_name" title:"删除人名称"`                // 删除人名称
-	IsDeleted   bool       `json:"isDeleted"  gorm:"is_deleted;title:是否删除" bson:"is_deleted" title:"是否删除"`                        // 是否删除
-	Remark      string     `json:"remark"  gorm:"remark;title:备注" bson:"remark" title:"备注"`                                       // 备注
+	/*	DeletedTime *time.Time `json:"deletedTime"  gorm:"deleted_time;title:删除时间" bson:"deleted_time" title:"删除时间"`                  // 删除时间
+		DeleterId   string     `json:"deleterId"  gorm:"deleter_id;title:删除人ID" bson:"deleter_id,index:idx_deleter_id" title:"删除人ID"` // 删除人ID
+		DeleterName string     `json:"deleterName"  gorm:"deleter_name;title:删除人名称" bson:"deleter_name" title:"删除人名称"`                // 删除人名称
+		IsDeleted   bool       `json:"isDeleted"  gorm:"is_deleted;title:是否删除" bson:"is_deleted" title:"是否删除"`                        // 是否删除*/
+	Remark string `json:"remark"  gorm:"remark;title:备注" bson:"remark" title:"备注"` // 备注
 }

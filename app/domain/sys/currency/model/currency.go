@@ -3,7 +3,7 @@ package model
 import (
 	"fmt"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 )
 
 type Currency struct {

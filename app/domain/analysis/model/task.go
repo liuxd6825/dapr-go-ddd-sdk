@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 )
 
 // SuTask 可疑分析任务

@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/open2b/scriggo v0.60.0
 	github.com/beevik/etree v1.5.0
 	github.com/citilinkru/camunda-client-go/v3 v3.5.0
 	github.com/dapr/components-contrib v1.15.2

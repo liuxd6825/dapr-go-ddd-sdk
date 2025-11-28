@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 )
 
 type CodeService struct {

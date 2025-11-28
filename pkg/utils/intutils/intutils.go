@@ -5,6 +5,13 @@ import (
 	"strconv"
 )
 
+const (
+	KB = 1024
+	MB = KB * 1024
+	GB = MB * 1024
+	TB = GB * 1024
+)
+
 func StrToInt64(val string) (int64, error) {
 	return strconv.ParseInt(val, 10, 64)
 }
@@ -60,12 +67,6 @@ func P2IntDefault(val *int, def int) int {
 
 // GetFileSizeTitle 将文件大小（以字节为单位）转换为用户友好的字符串
 func GetFileSizeTitle(size int64) string {
-	const (
-		KB = 1024
-		MB = KB * 1024
-		GB = MB * 1024
-		TB = GB * 1024
-	)
 
 	switch {
 	case size >= TB:

@@ -2,16 +2,19 @@ package neo4jagent
 
 import (
 	"context"
+
 	"github.com/cloudwego/eino/compose"
 )
 
+const (
+	Text2CypherChatModel = "Text2CypherChatModel"
+	Neo4jMcpToolsNode    = "Neo4jMcpToolsNode"
+	DrawIoChatModel      = "DrawIoChatModel"
+	ChatTemplate1        = "ChatTemplate1"
+)
+
 func BuildGraphAgent(ctx context.Context) (r compose.Runnable[any, any], err error) {
-	const (
-		Text2CypherChatModel = "Text2CypherChatModel"
-		Neo4jMcpToolsNode    = "Neo4jMcpToolsNode"
-		DrawIoChatModel      = "DrawIoChatModel"
-		ChatTemplate1        = "ChatTemplate1"
-	)
+
 	g := compose.NewGraph[any, any]()
 	text2CypherChatModel, err := newText2CypherChatModel(ctx)
 	if err != nil {

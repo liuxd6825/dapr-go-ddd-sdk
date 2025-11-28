@@ -2,7 +2,7 @@ package command
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 )
 
 type BankCreateCommand struct {

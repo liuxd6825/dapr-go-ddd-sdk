@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/enum"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 )
 
 type Card struct {

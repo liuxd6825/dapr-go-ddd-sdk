@@ -10,7 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/view"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -58,30 +58,31 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, eve
 	if err != nil {
 		return err
 	}
-	var details []*model.Tran
-	var recordDays []*view.RecordDayView
-	for _, record := range records {
-		tran := model.NewTranFromRecord(record)
-		details = append(details, tran)
+	/*	var details []*model.Tran
+		var recordDays []*view.RecordDayView
+		for _, record := range records {
+			tran := model.NewTranFromRecord(record)
+			details = append(details, tran)
 
-		d1, d2, err := view.NewRecordDayView(record)
-		if err != nil {
-			return err
+			d1, err := view.NewRecordDayView(record)
+			if err != nil {
+				return err
+			}
+			recordDays = append(recordDays, d1)
+			// recordDays = append(recordDays, d2)
 		}
-		recordDays = append(recordDays, d1)
-		recordDays = append(recordDays, d2)
-	}
+	*/
 
 	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		err = s.recordService.CreateMany(ctx, records)
-		if err != nil {
-			return err
-		}
-		err = s.recordDayViewService.IncAmountMany(ctx, recordDays)
-		if err != nil {
-			return err
-		}
-		return s.tranDetailService.CreateMany(ctx, details)
+		return err
+
+		/*		err = s.recordDayViewService.IncAmountMany(ctx, recordDays)
+				if err != nil {
+					return err
+				}
+				return s.tranDetailService.CreateMany(ctx, details)
+		*/
 	})
 
 }

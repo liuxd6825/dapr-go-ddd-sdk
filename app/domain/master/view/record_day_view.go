@@ -2,10 +2,13 @@ package view
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 )
 
+// RecordDayView
+// @Description: 按年月日+MasterType+MasterId+开户名 汇总
 type RecordDayView struct {
 	Id       string `json:"id"  bson:"_id" validate:"required" desc:"行Id"` // 行Id
 	TenantId string `json:"tenantId" bson:"tenant_id"`
@@ -34,7 +37,7 @@ type RecordDayView struct {
 }
 
 func NewRecordDayViewId(v *RecordDayView) string {
-	return fmt.Sprintf("%s-%s-%d-%d-%d-%s-%s", v.TenantId, v.CaseId, v.Year, v.Month, v.Day, v.Acct, v.OppAcct)
+	return fmt.Sprintf("%s-%s-%s-%s-%d-%d-%d-%s", v.TenantId, v.CaseId, v.MasterType, v.MasterId, v.Year, v.Month, v.Day, v.Name)
 }
 
 func (v *RecordDayView) AutoSetId() {
@@ -63,11 +66,10 @@ func (v *RecordDayView) GetTenantId() string {
 // @return *RecordDayView
 // @return *RecordDayView
 // @return error
-func NewRecordDayView(record *model.Record) (*RecordDayView, *RecordDayView, error) {
-	year := record.Date.Year()
-	month := int(record.Date.Month())
-	day := record.Date.Day()
-
+func NewRecordDayView(record *model.Record) (*RecordDayView, error) {
+	year, month, day := record.Date.Date()
+	// 重新构造时间：时分秒纳秒设为 0，地点(Location)保持不变
+	date := time.Date(year, month, day, 0, 0, 0, 0, record.Date.Location())
 	d1 := &RecordDayView{
 		TenantId: record.TenantId,
 		CaseId:   record.CaseId,
@@ -81,9 +83,9 @@ func NewRecordDayView(record *model.Record) (*RecordDayView, *RecordDayView, err
 		OppAcct: record.OppAcct,
 		OppName: record.OppName,
 
-		Date:  record.Date,
+		Date:  date,
 		Year:  year,
-		Month: month,
+		Month: int(month),
 		Day:   day,
 
 		Payout: record.Payout,
@@ -92,34 +94,34 @@ func NewRecordDayView(record *model.Record) (*RecordDayView, *RecordDayView, err
 		Ccy:    record.Ccy,
 		Count:  1,
 	}
+	/*
+		d2 := &RecordDayView{
+			TenantId: record.TenantId,
+			CaseId:   record.CaseId,
 
-	d2 := &RecordDayView{
-		TenantId: record.TenantId,
-		CaseId:   record.CaseId,
+			MasterType: record.MasterType,
+			MasterId:   record.MasterId,
+			GraphId:    record.GraphId,
 
-		MasterType: record.MasterType,
-		MasterId:   record.MasterId,
-		GraphId:    record.GraphId,
+			Acct:    record.OppAcct,
+			Name:    record.OppName,
+			OppAcct: record.Acct,
+			OppName: record.Name,
 
-		Acct:    record.OppAcct,
-		Name:    record.OppName,
-		OppAcct: record.Acct,
-		OppName: record.Name,
+			Date:  date,
+			Year:  year,
+			Month: int(month),
+			Day:   day,
 
-		Date:  record.Date,
-		Year:  year,
-		Month: month,
-		Day:   day,
-
-		Payout: record.Income,
-		Income: record.Payout,
-		Amount: record.Amount,
-		Ccy:    record.Ccy,
-		Count:  1,
-	}
-
+			Payout: record.Income,
+			Income: record.Payout,
+			Amount: record.Amount,
+			Ccy:    record.Ccy,
+			Count:  1,
+		}
+	*/
 	d1.AutoSetId()
-	d2.AutoSetId()
+	//	d2.AutoSetId()
 
-	return d1, d2, nil
+	return d1, nil
 }

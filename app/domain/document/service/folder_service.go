@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -75,10 +75,10 @@ func (s *FolderService) FolderToFolderTree(folder *model.Folder) model.FolderTre
 	ft.UpdatedTime = folder.UpdatedTime
 	ft.UpdaterId = folder.UpdaterId
 	ft.UpdaterName = folder.UpdaterName
-	ft.DeletedTime = folder.DeletedTime
-	ft.DeleterId = folder.DeleterId
-	ft.DeleterName = folder.DeleterName
-	ft.IsDeleted = folder.IsDeleted
+	/*	ft.DeletedTime = folder.DeletedTime
+		ft.DeleterId = folder.DeleterId
+		ft.DeleterName = folder.DeleterName
+		ft.IsDeleted = folder.IsDeleted*/
 	ft.Children = make([]model.FolderTree, 0)
 	return ft
 }

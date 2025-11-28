@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/xcommon/xbase"
+	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 )
 
 type SuTaskCreateCommand struct {
-	xbase.Command[SuTaskCreateData]
+	xbase2.Command[SuTaskCreateData]
 }
 
 func (s *SuTaskCreateCommand) NewTask() *model.SuTask {
@@ -34,7 +34,7 @@ func (s *SuTaskCreateCommand) NewTask() *model.SuTask {
 }
 
 type SuTaskUpdateCommand struct {
-	xbase.Command[SuTaskCreateData]
+	xbase2.Command[SuTaskCreateData]
 }
 
 func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
@@ -61,8 +61,8 @@ func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
 
 // SuTaskCreateData 可疑分析任务
 type SuTaskCreateData struct {
-	xbase.BaseModel `bson:",inline"`
-	Code            string           `json:"code" gorm:"code" bson:"code" title:"编号" validate:"required" `
+	xbase2.BaseModel `bson:",inline"`
+	Code             string           `json:"code" gorm:"code" bson:"code" title:"编号" validate:"required" `
 	Name            string           `json:"name" gorm:"name" bson:"name" title:"任务名称"  `
 	Rules           model.SuTaskRule `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
 	StartTime       *time.Time       `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"  `
@@ -75,7 +75,7 @@ type SuTaskCreateData struct {
 }
 
 type SuTaskAnalysisCommand struct {
-	xbase.Command[SuTaskStartAnalysis]
+	xbase2.Command[SuTaskStartAnalysis]
 }
 
 // SuTaskStartAnalysis 可疑分析任务
