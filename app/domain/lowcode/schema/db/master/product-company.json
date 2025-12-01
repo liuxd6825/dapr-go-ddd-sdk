@@ -1,0 +1,98 @@
+{
+  "name": "product_company",
+  "type": "object",
+  "description": "产品公司关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "productId",
+      "aggType": "master.product",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "product_company",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "company", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${productId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "productId": {
+      "name": "productId",
+      "title": "产品Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 108,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"销售方\", \"购买方\"]"
+        },
+        "dbField": {
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "公司名称",
+      "order": 2003
+    },
+    "legalPerson": {
+      "name": "legalPerson",
+      "type": ["string", "null"],
+      "title": "法人",
+      "order": 2007
+    },
+    "phone": {
+      "name": "phone",
+      "type": ["string", "null"],
+      "title": "预留电话",
+      "order": 2005
+    },
+    "identNum": {
+      "name": "identNum",
+      "type": ["string", "null"],
+      "title": "纳税人识别号",
+      "order": 2006
+    },
+    "addr": {
+      "name": "addr",
+      "type": ["string", "null"],
+      "title": "注册地址",
+      "order": 2009
+    }
+  }
+}

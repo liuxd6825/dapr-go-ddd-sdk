@@ -1,0 +1,104 @@
+{
+  "description": "人员-资产",
+  "name": "human_capital",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_capital",
+      "dbKey": "$db",
+      "properties": {
+        "neo4j": {
+          "type": "node"
+        }
+      }
+    },
+    "attributes": {
+      "neo4j": {
+        "labels": [
+          "capital"
+        ],
+        "type": [
+          "rel",
+          "node"
+        ],
+        "title": "资产"
+      }
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "capital", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${humanId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "order": 102,
+      "title": "人员Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "order": 108,
+      "title": "名称",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "content": {
+      "name": "content",
+      "order": 107,
+      "title": "内容",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "cost": {
+      "name": "cost",
+      "order": 112,
+      "title": "价值",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

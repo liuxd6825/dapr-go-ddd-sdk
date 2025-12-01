@@ -1,0 +1,105 @@
+{
+  "name": "product_human",
+  "type": "object",
+  "description": "产品人员关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "productId",
+      "aggType": "master.product",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "product_human",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "product", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${productId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "productId": {
+      "name": "productId",
+      "title": "产品Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 2001,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"售卖方\", \"购买方\"]"
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "姓名",
+      "order": 2003
+    },
+    "gender": {
+      "name": "gender",
+      "type": ["string", "null"],
+      "title": "性别",
+      "order": 2007
+    },
+    "age": {
+      "name": "age",
+      "type": ["integer", "null"],
+      "title": "年龄",
+      "order": 2005
+    },
+    "identNum": {
+      "name": "identNum",
+      "type": ["string", "null"],
+      "title": "证件号",
+      "order": 2006
+    },
+    "link": {
+      "name": "link",
+      "type": ["string", "null"],
+      "title": "联系方式",
+      "order": 2008
+    },
+    "addr": {
+      "name": "addr",
+      "type": ["string", "null"],
+      "title": "地址",
+      "order": 2009
+    }
+  }
+}

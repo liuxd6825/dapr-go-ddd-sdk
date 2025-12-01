@@ -1,0 +1,102 @@
+{
+  "name": "human_product",
+  "type": "object",
+  "description": "人员产品关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_product",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "product", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${humanId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "title": "人员Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 108,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"购买人员\", \"销售人员\"]"
+        },
+        "dbField": {
+          "relType": true
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "产品名称",
+      "order": 109
+    },
+    "code": {
+      "name": "code",
+      "type": ["string", "null"],
+      "title": "产品编号",
+      "order": 110
+    },
+    "nature": {
+      "name": "nature",
+      "type": ["string", "null"],
+      "title": "产品性质",
+      "order": 111
+    },
+    "productType": {
+      "name": "productType",
+      "type": ["string", "null"],
+      "title": "产品类型",
+      "order": 112
+    },
+    "seller": {
+      "name": "seller",
+      "type": ["string", "null"],
+      "title": "发售方",
+      "order": 113
+    }
+  }
+}

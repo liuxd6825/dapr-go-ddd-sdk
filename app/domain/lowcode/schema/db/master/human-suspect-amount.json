@@ -1,0 +1,73 @@
+{
+  "name": "human_suspect_amount",
+  "type": "object",
+  "description": "嫌疑人金额",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_suspect_amount",
+       "dbKey": "$db"
+    },
+    "neo4j":{
+      "labels": ["amount"],
+      "type": ["node"],
+      "title": "人员",
+      "id":"human_id"
+    }
+  },
+  "properties": {
+    "humanId": {
+      "name": "humanId",
+      "title": "人员Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "unlawfulAmount": {
+      "name": "unlawfulAmount",
+      "type": ["number", "null"],
+      "title": "非法吸资金额",
+      "order": 2002
+    },
+    "reportAmount": {
+      "name": "reportAmount",
+      "type": ["number", "null"],
+      "title": "报案资金总额",
+      "order": 2003
+    },
+    "returnAmount": {
+      "name": "returnAmount",
+      "type": ["number", "null"],
+      "title": "返还资金总额",
+      "order": 2004
+    }
+  }
+}

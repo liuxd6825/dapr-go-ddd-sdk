@@ -1,0 +1,108 @@
+{
+  "description": "人员-联系方式",
+  "name": "human_link",
+  "type": "object",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_link",
+       "dbKey": "$db"
+    },
+    "attributes": {
+      "neo4j": {
+        "labels": [
+          "link"
+        ],
+        "type": [
+          "rel",
+          "node"
+        ],
+        "title": "联系方式"
+      }
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 101,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "order": 102,
+      "title": "人员Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "linkType": {
+      "name": "linkType",
+      "order": 103,
+      "title": "类型",
+      "type": "string"
+    },
+    "linkContent": {
+      "name": "linkContent",
+      "order": 104,
+      "title": "联系方式",
+      "type": "string"
+    },
+    "startDate": {
+      "name": "startDate",
+      "order": 105,
+      "title": "开始日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "endDate": {
+      "name": "endDate",
+      "order": 106,
+      "title": "结束日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "used": {
+      "name": "used",
+      "order": 107,
+      "title": "是否常用",
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "horizontal": "center"
+        }
+      }
+    }
+  }
+}

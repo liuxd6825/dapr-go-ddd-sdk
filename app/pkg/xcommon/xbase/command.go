@@ -1,10 +1,13 @@
 package xbase
 
-type Command[T any] struct {
+type BaseCommand struct {
 	CommandId   string   `json:"commandId" bson:"commandId" validate:"required" ` // 命令ID
 	IsValidOnly bool     `json:"isValidOnly" bson:"isValidOnly" validate:"-"`     // 是否仅验证，不执行
 	UpdateMask  []string `json:"updateMask" bson:"updateMask" validate:"-"`
-	Data        T        `json:"data"  bson:"data" validate:"required"`
+}
+type Command[T any] struct {
+	BaseCommand
+	Data T `json:"data"  bson:"data" validate:"required"`
 }
 
 type IsValidOnly interface {

@@ -1,0 +1,101 @@
+{
+  "name": "company_company",
+  "type": "object",
+  "description": "合同公司关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "companyId",
+      "aggType": "master.company",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "company_company",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "company", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${companyId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true,
+          "nodeLabelFormat": "case_%s",
+          "nodeLabel": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "companyId": {
+      "name": "companyId",
+      "title": "公司ID",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 108,
+      "title": "关系类型",
+      "type": ["string"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"控股\", \"子公司\", \"分公司\"]"
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "公司名称",
+      "order": 2003
+    },
+    "legalPerson": {
+      "name": "legalPerson",
+      "type": ["string", "null"],
+      "title": "法人",
+      "order": 2007
+    },
+    "phone": {
+      "name": "phone",
+      "type": ["string", "null"],
+      "title": "预留电话",
+      "order": 2005
+    },
+    "identNum": {
+      "name": "identNum",
+      "type": ["string", "null"],
+      "title": "纳税人识别号",
+      "order": 2006
+    },
+    "addr": {
+      "name": "addr",
+      "type": ["string", "null"],
+      "title": "注册地址",
+      "order": 2009
+    }
+  }
+}

@@ -513,7 +513,6 @@ func Packages() native.Packages {
 			"FolderDeleteCommand":   (*pkg14.FolderDeleteCommand)(nil),
 			"FolderRenameCommand":   (*pkg14.FolderRenameCommand)(nil),
 			"FolderMoveCommand":     (*pkg14.FolderMoveCommand)(nil),
-			"RenameFolder":          (*pkg14.RenameFolder)(nil),
 			"DocumentCreateCommand": (*pkg14.DocumentCreateCommand)(nil),
 			"DocumentUpdateCommand": (*pkg14.DocumentUpdateCommand)(nil),
 			"DocumentDeleteCommand": (*pkg14.DocumentDeleteCommand)(nil),

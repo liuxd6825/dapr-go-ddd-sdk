@@ -1,0 +1,100 @@
+{
+  "description": "人员-记录",
+  "name": "human_record",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "type": "object",
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_record",
+       "dbKey": "$db"
+    },
+    "attributes": {
+      "neo4j": {
+        "labels": [
+          "record"
+        ],
+        "type": [
+          "rel",
+          "node"
+        ],
+        "title": "流水"
+      }
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "order": 102,
+      "title": "人员Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "title": {
+      "name": "title",
+      "order": 108,
+      "title": "标题",
+      "type": ["string", "null"]
+    },
+    "content": {
+      "name": "content",
+      "order": 107,
+      "title": "内容",
+      "type": ["string", "null"]
+    },
+    "status": {
+      "name": "status",
+      "order": 112,
+      "title": "分析状态",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recordTime": {
+      "name": "recordTime",
+      "order": 106,
+      "title": "记录时间",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "recorder": {
+      "name": "recorder",
+      "order": 107,
+      "title": "记录人",
+      "type": ["string", "null"]
+    }
+  }
+}

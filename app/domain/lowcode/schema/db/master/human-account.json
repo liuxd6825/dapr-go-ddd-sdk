@@ -1,0 +1,137 @@
+{
+  "description": "人员-账号",
+  "name": "human_account",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_account",
+      "dbKey": "$db",
+      "properties": {
+        "neo4j": {
+          "type": "node"
+        }
+      }
+    },
+    "attributes": {
+      "neo4j":{
+        "labels": ["account"],
+        "type": ["rel","node"],
+        "title": "账号"
+      }
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "account", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${humanId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "type": "object",
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "order": 102,
+      "title": "人员Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 102,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"使用者\", \"拥有者\"]"
+        },
+        "dbField": {
+
+        }
+      }
+    },
+    "orgName": {
+      "name": "orgName",
+      "order": 105,
+      "title": "机构名称",
+      "type": ["string", "null"]
+    },
+    "accountNum": {
+      "name": "accountNum",
+      "order": 103,
+      "title": "账号",
+      "type": ["string", "null"]
+    },
+    "accountNum1": {
+      "name": "accountNum",
+      "order": 104,
+      "title": "账号1",
+      "type": ["string", "null"]
+    },
+    "startDate": {
+      "name": "startDate",
+      "order": 106,
+      "title": "开始日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "endDate": {
+      "name": "endDate",
+      "order": 107,
+      "title": "结束日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "used": {
+      "name": "used",
+      "order": 108,
+      "title": "是否常用",
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "horizontal": "center"
+        }
+      }
+    }
+  }
+}
