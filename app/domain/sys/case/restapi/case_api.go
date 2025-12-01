@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+	service3 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 
 	"github.com/kataras/iris/v12"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
@@ -22,6 +23,7 @@ type CaseAPI struct {
 	caseService   *service.CaseService
 	folderService *service2.FolderService
 	fsService     *service2.FsService
+	codeService   *service3.CodeService
 	rootPath      string
 }
 
@@ -31,6 +33,7 @@ func NewCaseAPI(env *env.Env, rootPath string) *CaseAPI {
 		caseService:   service.NewCaseService(),
 		folderService: service2.NewFolderService(),
 		fsService:     service2.NewFsService(),
+		codeService:   service3.NewCodeService(),
 		rootPath:      rootPath,
 	}
 }
@@ -49,7 +52,15 @@ func (s *CaseAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 
 func (s *CaseAPI) Create(ctx context.Context, cmd *command.CaseCreateCommand) error {
 	err := tx.StartTx(ctx, []string{s.caseService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
-		err := s.caseService.Create(ctx, cmd)
+
+		code, err := s.codeService.New(ctx, "XM")
+		if err != nil {
+			return nil
+		}
+
+		cmd.Data.Code = code
+
+		err = s.caseService.Create(ctx, cmd)
 		if err != nil {
 			return err
 		}

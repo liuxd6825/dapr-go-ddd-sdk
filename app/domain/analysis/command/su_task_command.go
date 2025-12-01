@@ -62,16 +62,16 @@ func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
 // SuTaskCreateData 可疑分析任务
 type SuTaskCreateData struct {
 	xbase2.BaseModel `bson:",inline"`
-	Code             string           `json:"code" gorm:"code" bson:"code" title:"编号" validate:"required" `
-	Name            string           `json:"name" gorm:"name" bson:"name" title:"任务名称"  `
-	Rules           model.SuTaskRule `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
-	StartTime       *time.Time       `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"  `
-	EndTime         *time.Time       `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
-	OwnerId         string           `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID" `
-	OwnerName       string           `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"负责人名称"  `
-	MasterId        string           `json:"masterId" gorm:"master_id" bson:"master_id" title:"目标ID" `
-	MasterName      string           `json:"masterName" gorm:"master_name" bson:"master_name" title:"目标名称"`
-	MasterType      string           `json:"masterType" gorm:"master_type" bson:"master_type" title:"目标类型"`
+	Code             string           `json:"code" gorm:"code" bson:"code" title:"编号" validate:"-" `
+	Name             string           `json:"name" gorm:"name" bson:"name" title:"任务名称"  `
+	Rules            model.SuTaskRule `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
+	StartTime        *time.Time       `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"  `
+	EndTime          *time.Time       `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
+	OwnerId          string           `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID" `
+	OwnerName        string           `json:"ownerName" gorm:"owner_name"  bson:"owner_name" title:"负责人名称"  `
+	MasterId         string           `json:"masterId" gorm:"master_id" bson:"master_id" title:"目标ID" `
+	MasterName       string           `json:"masterName" gorm:"master_name" bson:"master_name" title:"目标名称"`
+	MasterType       string           `json:"masterType" gorm:"master_type" bson:"master_type" title:"目标类型"`
 }
 
 type SuTaskAnalysisCommand struct {
