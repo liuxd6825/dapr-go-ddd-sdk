@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/command"
@@ -18,16 +19,19 @@ import (
 
 type SuTaskApi struct {
 	taskService *service.SuTaskService
+	codeService *service2.CodeService
 	env         *env.Env
 	rootPath    string
 }
 
 func NewSuTaskApi(env *env.Env, rootPath string) *SuTaskApi {
 	taskService := service.NewSuTaskService()
+	codeService := service2.NewCodeService()
 	return &SuTaskApi{
 		env:         env,
 		rootPath:    rootPath,
 		taskService: taskService,
+		codeService: codeService,
 	}
 }
 
@@ -44,9 +48,23 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 	return controller
 }
 
-func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) error {
+func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) (*model2.SuTask, error) {
+
+	code, err := s.codeService.New(ctx, "SU")
+	if err != nil {
+		return nil, err
+	}
+
 	task := cmd.NewTask()
-	return s.taskService.Create(ctx, task)
+
+	task.Code = code
+
+	err = s.taskService.Create(ctx, task)
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
 }
 
 func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand) error {
