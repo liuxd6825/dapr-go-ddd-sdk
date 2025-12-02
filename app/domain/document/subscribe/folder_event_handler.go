@@ -65,6 +65,7 @@ func (s *FolderEventSubHandler) FolderCreateEvent(ctx context.Context, event *ev
 		folder.Name = event.Data.Name
 		folder.Alias = event.Data.Alias
 		folder.ParentId = event.Data.ParentId
+		folder.DisabledFrontEdit = event.Data.DisabledFrontEdit
 
 		err := s.folderService.CreateData(ctx, folder)
 		if err != nil {

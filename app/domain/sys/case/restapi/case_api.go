@@ -2,8 +2,6 @@ package restapi
 
 import (
 	"context"
-	service3 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-
 	"github.com/kataras/iris/v12"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
@@ -11,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/service"
+	service3 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
@@ -65,25 +64,113 @@ func (s *CaseAPI) Create(ctx context.Context, cmd *command.CaseCreateCommand) er
 			return err
 		}
 
-		folder, _ := model2.NewFolder()
-		folder.Id = cmd.Data.TenantId + "_case_" + cmd.Data.Id
-		folder.BusId = "case"
-		folder.EntityId = cmd.Data.Id
-		folder.RootId = cmd.Data.TenantId + "_case_" + cmd.Data.Id
-		folder.RootPath = "/" + cmd.Data.TenantId + "/case/" + cmd.Data.Id
-		folder.FolderPath = "/" + cmd.Data.TenantId + "/case/" + cmd.Data.Id
-		folder.CaseId = cmd.Data.Id
-		folder.Name = "文件库"
-
-		err = s.folderService.CreateData(ctx, folder)
+		_, err = s.createRootFolder(ctx, cmd.Data.TenantId, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
+		_, err = s.createMasterFolder(ctx, cmd.Data.TenantId, cmd.Data.Id)
 		if err != nil {
 			return err
 		}
 
-		s.fsService.MkdirAll(folder.FolderPath)
+		hmFolder, err := s.createMasterTypeFolder(ctx, cmd.Data.TenantId, cmd.Data.Id, "人员")
+		if err != nil {
+			return err
+		}
+		cpFolder, err := s.createMasterTypeFolder(ctx, cmd.Data.TenantId, cmd.Data.Id, "公司")
+		if err != nil {
+			return err
+		}
+		htFolder, err := s.createMasterTypeFolder(ctx, cmd.Data.TenantId, cmd.Data.Id, "合同")
+		if err != nil {
+			return err
+		}
+		pdFolder, err := s.createMasterTypeFolder(ctx, cmd.Data.TenantId, cmd.Data.Id, "产品")
+		if err != nil {
+			return err
+		}
+
+		s.fsService.MkdirAll(hmFolder.FolderPath)
+		s.fsService.MkdirAll(cpFolder.FolderPath)
+		s.fsService.MkdirAll(htFolder.FolderPath)
+		s.fsService.MkdirAll(pdFolder.FolderPath)
 		return nil
 	})
 	return err
+}
+
+func (s *CaseAPI) createRootFolder(ctx context.Context, tenantId, caseId string) (*model2.Folder, error) {
+	folder, _ := model2.NewFolder()
+	folder.Id = tenantId + "_case_" + caseId
+	folder.BusId = "case"
+	folder.EntityId = caseId
+	folder.RootId = tenantId + "_case_" + caseId
+	folder.RootPath = "/" + tenantId + "/case/" + caseId
+	folder.FolderPath = "/" + tenantId + "/case/" + caseId
+	folder.CaseId = caseId
+	folder.Name = "文件库"
+	folder.DisabledFrontEdit = true
+
+	err := s.folderService.CreateData(ctx, folder)
+	if err != nil {
+		return nil, err
+	}
+	return folder, nil
+}
+
+func (s *CaseAPI) createMasterFolder(ctx context.Context, tenantId, caseId string) (*model2.Folder, error) {
+	folder, _ := model2.NewFolder()
+	folder.Id = tenantId + "_case_" + caseId + "_master"
+	folder.BusId = "case"
+	folder.EntityId = caseId
+	folder.RootId = tenantId + "_case_" + caseId
+	folder.RootPath = "/" + tenantId + "/case/" + caseId
+	folder.FolderPath = "/" + tenantId + "/case/" + caseId + "/主数据附件"
+	folder.CaseId = caseId
+	folder.ParentId = tenantId + "_case_" + caseId
+	folder.Name = "主数据附件"
+	folder.DisabledFrontEdit = true
+
+	err := s.folderService.CreateData(ctx, folder)
+	if err != nil {
+		return nil, err
+	}
+	return folder, nil
+}
+
+func (s *CaseAPI) createMasterTypeFolder(ctx context.Context, tenantId, caseId, masterType string) (*model2.Folder, error) {
+	var typeCode string
+	switch masterType {
+	case "人员":
+		typeCode = "human"
+		break
+	case "公司":
+		typeCode = "company"
+		break
+	case "合同":
+		typeCode = "contract"
+		break
+	case "产品":
+		typeCode = "product"
+		break
+	}
+	folder, _ := model2.NewFolder()
+	folder.Id = tenantId + "_case_" + caseId + "_master_" + typeCode
+	folder.BusId = "case"
+	folder.EntityId = caseId
+	folder.RootId = tenantId + "_case_" + caseId
+	folder.RootPath = "/" + tenantId + "/case/" + caseId
+	folder.FolderPath = "/" + tenantId + "/case/" + caseId + "/主数据附件/" + masterType
+	folder.CaseId = caseId
+	folder.ParentId = tenantId + "_case_" + caseId + "_master"
+	folder.Name = masterType
+	folder.DisabledFrontEdit = true
+
+	err := s.folderService.CreateData(ctx, folder)
+	if err != nil {
+		return nil, err
+	}
+	return folder, nil
 }
 
 func (s *CaseAPI) Update(ctx context.Context, cmd *command.CaseUpdateCommand) error {
