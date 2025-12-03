@@ -11,3 +11,29 @@ type CodeType struct {
 	DateFormat string `json:"dateFormat" bson:"date_format" gorm:"date_format"` // e.g., "060102" (YYMMDD)
 	SeqLength  int    `json:"seqLength" bson:"seq_length" json:"seq_length"`    // e.g., 6
 }
+
+type CodeStyle string
+
+const (
+	CodeStyle_Global CodeStyle = ""
+	CodeStyle_Year   CodeStyle = "year"
+	CodeStyle_Month  CodeStyle = "month"
+	CodeStyle_Day    CodeStyle = "day"
+)
+
+func (db CodeStyle) String() string {
+	return string(db)
+}
+
+func (db CodeStyle) DateFormat() string {
+	switch db {
+	case CodeStyle_Year:
+		return "06"
+	case CodeStyle_Month:
+		return "0601"
+	case CodeStyle_Day:
+		return "060102"
+	default:
+		return ""
+	}
+}

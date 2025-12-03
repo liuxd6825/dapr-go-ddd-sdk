@@ -12,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -33,14 +34,14 @@ func NewCodeTypeDao(dbKey string) *CodeTypeDao {
 	return daoVal
 }
 
-func (d *CodeTypeDao) GetByCode(ctx context.Context, code string) (*model.CodeType, error) {
+func (d *CodeTypeDao) GetByCode(ctx context.Context, code string, style model.CodeStyle) (*model.CodeType, error) {
 	if d.GetDbType() == idao.DbType_MongoDB.String() {
-		return d.mongoGetByCode(ctx, code)
+		return d.mongoGetByCode(ctx, code, style)
 	}
 	return nil, errors.New("not found code")
 }
 
-func (d *CodeTypeDao) mongoGetByCode(ctx context.Context, code string) (*model.CodeType, error) {
+func (d *CodeTypeDao) mongoGetByCode(ctx context.Context, code string, style model.CodeStyle) (*model.CodeType, error) {
 	mDao, ok := d.GetStore().(store_mongodb.IMongoDao[*model.CodeType])
 	if !ok {
 		return nil, errors.New("")
@@ -50,16 +51,17 @@ func (d *CodeTypeDao) mongoGetByCode(ctx context.Context, code string) (*model.C
 		"tenant_id": tenantId,
 		"code":      code,
 	}
+	dateFormat := style.DateFormat()
 
-	// 定义默认值：只有在文档是新插入(Insert)的时候，这些字段才会被设置
-	// 如果文档已存在，这些字段会被忽略，保证不会覆盖用户修改过的配置
+	id := idutils.NewId()
 	update := bson.M{
 		"$setOnInsert": bson.M{
+			"id":          id,
 			"tenant_id":   tenantId,
 			"code":        code,
 			"name":        code,       // 默认名称等于Code
 			"prefix":      code + "-", // 默认前缀：比如 "MH" -> "MH-"
-			"date_format": "060102",   // 默认格式：YYMMDD
+			"date_format": dateFormat, // 默认格式：YYMMDD
 			"seq_length":  6,          // 默认长度：6位
 			"created_at":  time.Now(),
 			"updated_at":  time.Now(),

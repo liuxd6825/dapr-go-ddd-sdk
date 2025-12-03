@@ -31,7 +31,7 @@ func (s *CodeAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 }
 
 func (s *CodeAPI) NewCode(ctx context.Context, newCmd *command.CodeNewCommand) (*command.CodeNewCommandResult, error) {
-	code, err := s.codeService.New(ctx, newCmd.Data.Type)
+	code, err := s.codeService.New(ctx, newCmd)
 	if err != nil {
 		return nil, err
 	}
