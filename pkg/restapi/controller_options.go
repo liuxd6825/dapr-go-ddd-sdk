@@ -10,7 +10,8 @@ import (
 type GetFieldValueFunc func(ictx *context.Context, parentObject any, fieldType reflect.StructField, fieldValue reflect.Value) (outFieldValue any, ok bool, err error)
 type BeforeFunc func(ictx *context.Context, params any) (any, context2.Context, error)
 type AfterFunc func(ctx context2.Context, ictx *context.Context, data any, err error) (any, error)
-type CallOptions struct {
+type APIOptions struct {
+	Description      string                       // 说明
 	IsAuthentication *bool                        // 是否进行身份认证
 	ParamsInBody     *bool                        // 强制要求参数入HttpBody中获取
 	InitMethod       func(callMethod *CallMethod) // 初始化函数
@@ -38,17 +39,17 @@ type EventMeta struct {
 	RoutingKey string
 }
 
-func WithEvent(pubsub string, topic string) CallOptions {
+func WithEvent(pubsub string, topic string) APIOptions {
 	event := &EventOption{
 		Pubsub: pubsub,
 		Topic:  topic,
 	}
-	return CallOptions{
+	return APIOptions{
 		Event: event,
 	}
 }
 
-func WithEventMeta(pubsub string, topic string, meta *EventMeta) CallOptions {
+func WithEventMeta(pubsub string, topic string, meta *EventMeta) APIOptions {
 	event := &EventOption{
 		Pubsub: pubsub,
 		Topic:  topic,
@@ -56,7 +57,7 @@ func WithEventMeta(pubsub string, topic string, meta *EventMeta) CallOptions {
 	if meta != nil {
 		event.Meta = *meta
 	}
-	return CallOptions{
+	return APIOptions{
 		Event: event,
 	}
 }
@@ -80,44 +81,44 @@ func (m *EventMeta) SetRoutingKey(value string) *EventMeta {
 	return m
 }
 
-func WithIsAuthentication(val bool) CallOptions {
-	return CallOptions{
+func WithIsAuthentication(val bool) APIOptions {
+	return APIOptions{
 		IsAuthentication: &val,
 	}
 }
 
-func WithParamsInBody(val bool) CallOptions {
-	return CallOptions{
+func WithParamsInBody(val bool) APIOptions {
+	return APIOptions{
 		ParamsInBody: &val,
 	}
 }
 
-func WithInitMethod(method func(callMethod *CallMethod)) CallOptions {
-	return CallOptions{
+func WithInitMethod(method func(callMethod *CallMethod)) APIOptions {
+	return APIOptions{
 		InitMethod: method,
 	}
 }
 
-func WithGetFieldValue(method GetFieldValueFunc) CallOptions {
-	return CallOptions{
+func WithGetFieldValue(method GetFieldValueFunc) APIOptions {
+	return APIOptions{
 		GetFieldValue: method,
 	}
 }
 
-func WithBefore(method BeforeFunc) CallOptions {
-	return CallOptions{
+func WithBefore(method BeforeFunc) APIOptions {
+	return APIOptions{
 		Before: method,
 	}
 }
 
-func WithAfter(method AfterFunc) CallOptions {
-	return CallOptions{
+func WithAfter(method AfterFunc) APIOptions {
+	return APIOptions{
 		After: method,
 	}
 }
 
-func NewCallOptions(opts ...CallOptions) CallOptions {
-	o := CallOptions{}
+func NewAPIOptions(opts ...APIOptions) APIOptions {
+	o := APIOptions{}
 	for _, i := range opts {
 		if i.InitMethod != nil {
 			o.InitMethod = i.InitMethod
@@ -140,18 +141,21 @@ func NewCallOptions(opts ...CallOptions) CallOptions {
 		if i.Event != nil {
 			o.Event = i.Event
 		}
+		if i.Description != "" {
+			o.Description = i.Description
+		}
 	}
 	return o
 }
 
-func (o *CallOptions) GetIsAuthentication() bool {
+func (o *APIOptions) GetIsAuthentication() bool {
 	if o.IsAuthentication == nil {
 		return false
 	}
 	return *o.IsAuthentication
 }
 
-func (o *CallOptions) SetEvent(pubsub string, topic string) *CallOptions {
+func (o *APIOptions) SetEvent(pubsub string, topic string) *APIOptions {
 	if pubsub == "" || topic == "" {
 		panic("pubsub or topic is empty")
 	}
@@ -162,6 +166,15 @@ func (o *CallOptions) SetEvent(pubsub string, topic string) *CallOptions {
 	return o
 }
 
-func (o *CallOptions) GetEvent() *EventOption {
+func (o *APIOptions) GetEvent() *EventOption {
 	return o.Event
+}
+
+func (o *APIOptions) SetDescription(description string) *APIOptions {
+	o.Description = description
+	return o
+}
+
+func (o *APIOptions) GetDescription() string {
+	return o.Description
 }

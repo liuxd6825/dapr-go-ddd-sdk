@@ -111,8 +111,8 @@ func (c *ApiController) newCallMethod(handlerName string) (callMethod *CallMetho
 	return method, nil
 }
 
-func (c *ApiController) GetOne(path string, handlerName string, opts ...CallOptions) *router.Route {
-	opts = append(opts, CallOptions{
+func (c *ApiController) GetOne(path string, handlerName string, opts ...APIOptions) *router.Route {
+	opts = append(opts, APIOptions{
 		After: func(ctx context2.Context, ictx *context.Context, data any, err error) (any, error) {
 			if err != nil {
 				return nil, err
@@ -129,14 +129,14 @@ func (c *ApiController) GetOne(path string, handlerName string, opts ...CallOpti
 	return r
 }
 
-func (c *ApiController) GetData(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) GetData(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.call(iris.MethodGet, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) GetPaging(path string, handlerName string, opts ...CallOptions) *router.Route {
-	opts = append(opts, CallOptions{
+func (c *ApiController) GetPaging(path string, handlerName string, opts ...APIOptions) *router.Route {
+	opts = append(opts, APIOptions{
 		GetFieldValue: func(ictx *context.Context, object any, fieldType reflect.StructField, fieldValue reflect.Value) (outParam any, ok bool, err error) {
 			switch fieldType.Name {
 			case "ValueCols":
@@ -170,73 +170,73 @@ func (c *ApiController) GetPaging(path string, handlerName string, opts ...CallO
 	return r
 }
 
-func (c *ApiController) GetList(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) GetList(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.call(iris.MethodGet, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) Delete(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) Delete(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.call(iris.MethodDelete, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) Put(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) Put(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.call(iris.MethodPut, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) Post(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) Post(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.call(iris.MethodPost, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) EventHandle(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) EventHandle(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.callEventHandle(path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) CDCHandle(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) CDCHandle(path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.callMethod2(iris.MethodPost, path, handlerName, HandleType_CDC, false, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) Handle(method string, path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) Handle(method string, path string, handlerName string, opts ...APIOptions) *router.Route {
 	r := c.call(method, path, handlerName, opts...)
 	c.addRouter(r)
 	return r
 }
 
-func (c *ApiController) View(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) View(path string, handlerName string, opts ...APIOptions) *router.Route {
 	return c.callMethod2(iris.MethodGet, path, handlerName, HandleType_API, true, opts...)
 }
 
-func (c *ApiController) call(method string, path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) call(method string, path string, handlerName string, opts ...APIOptions) *router.Route {
 	return c.callMethod(method, path, handlerName, HandleType_API, opts...)
 }
 
-func (c *ApiController) callEventHandle(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) callEventHandle(path string, handlerName string, opts ...APIOptions) *router.Route {
 	return c.callMethod(iris.MethodPost, path, handlerName, HandleType_Event, opts...)
 }
 
-func (c *ApiController) cdcHandle(path string, handlerName string, opts ...CallOptions) *router.Route {
+func (c *ApiController) cdcHandle(path string, handlerName string, opts ...APIOptions) *router.Route {
 	return c.callMethod(iris.MethodPost, path, handlerName, HandleType_CDC, opts...)
 }
 
-func (c *ApiController) callMethod(method string, path string, handlerName string, handleType HandleType, opts ...CallOptions) *router.Route {
+func (c *ApiController) callMethod(method string, path string, handlerName string, handleType HandleType, opts ...APIOptions) *router.Route {
 	return c.callMethod2(method, path, handlerName, handleType, false, opts...)
 }
 
-func (c *ApiController) callView(method string, path string, handlerName string, handleType HandleType, opts ...CallOptions) *router.Route {
+func (c *ApiController) callView(method string, path string, handlerName string, handleType HandleType, opts ...APIOptions) *router.Route {
 	return c.callMethod2(method, path, handlerName, handleType, true, opts...)
 }
 
-func (c *ApiController) callMethod2(method string, path string, handlerName string, handleType HandleType, isViewHandle bool, opts ...CallOptions) *router.Route {
+func (c *ApiController) callMethod2(method string, path string, handlerName string, handleType HandleType, isViewHandle bool, opts ...APIOptions) *router.Route {
 	backCtx := context2.Background()
 	callMethod, err := c.newCallMethod(handlerName)
 	if err != nil {
@@ -283,7 +283,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 	}
 
 	if handleType == HandleType_Event {
-		opt := NewCallOptions(opts...)
+		opt := NewAPIOptions(opts...)
 		event := opt.GetEvent()
 		if event != nil {
 			sub := &ddd.Subscribe{
@@ -302,7 +302,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 	return r
 }
 
-func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod, handleType HandleType, opts ...CallOptions) (params any, rctx context2.Context, err error) {
+func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod, handleType HandleType, opts ...APIOptions) (params any, rctx context2.Context, err error) {
 	// CallMethod初始化
 	for _, opt := range opts {
 		if opt.InitMethod != nil {
@@ -335,7 +335,7 @@ func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod,
 // ictx: iris请求上下文
 // paramType: 参数类型
 // isEventHandle: 是否是事件处理
-func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type, handleType HandleType, opts ...CallOptions) (params any, rctx context2.Context, err error) {
+func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type, handleType HandleType, opts ...APIOptions) (params any, rctx context2.Context, err error) {
 	paramsValue, err := reflectutils.New(paramType)
 	if err != nil {
 		return nil, nil, errors.New("create params error: %s ", err.Error())

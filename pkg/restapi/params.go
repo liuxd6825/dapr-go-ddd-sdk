@@ -25,8 +25,8 @@ const (
 )
 
 // GetWebParams 将请求参数绑定到目标结构体
-func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, callOpts ...CallOptions) (res any, err error) {
-	opts := NewCallOptions(callOpts...)
+func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, callOpts ...APIOptions) (res any, err error) {
+	opts := NewAPIOptions(callOpts...)
 	// 处理请求体JSON
 	request := ictx.Request()
 	if request.Method == iris.MethodPost || request.Method == iris.MethodPut || (opts.ParamsInBody != nil && *opts.ParamsInBody) {
@@ -126,7 +126,7 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, c
 }
 
 // bindNestedStruct 处理嵌套结构体绑定
-func bindNestedStruct(ctx iris.Context, field *reflect.Value, options ...CallOptions) error {
+func bindNestedStruct(ctx iris.Context, field *reflect.Value, options ...APIOptions) error {
 	nestedPtr := reflect.New(field.Type())
 	param, err := GetWebParams(ctx, nestedPtr.Interface(), nil, options...)
 	if err != nil {
