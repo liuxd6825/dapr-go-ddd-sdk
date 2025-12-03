@@ -150,6 +150,7 @@ func (t *FolderService) Folder2FolderView(folder *model.Folder) *model.FolderVie
 	view.Name = folder.Name
 	view.Color = folder.Color
 	view.Alias = folder.Alias
+	view.DisabledFrontEdit = folder.DisabledFrontEdit
 	return view
 }
 
@@ -178,5 +179,6 @@ func (t *FolderService) FolderView2Folder(folderView *model.FolderView) *model.F
 	folder.Name = folderView.Name
 	folder.Color = folderView.Color
 	folder.Alias = folderView.Alias
+	folder.DisabledFrontEdit = folderView.DisabledFrontEdit
 	return folder
 }

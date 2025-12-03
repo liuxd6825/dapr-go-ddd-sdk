@@ -18,6 +18,8 @@ type Folder struct {
 	Color           string `gorm:"color" json:"color,omitempty" bson:"color"`                  //目录颜色
 
 	Alias string `gorm:"alias" json:"alias,omitempty" bson:"alias"` // 目录别名
+
+	DisabledFrontEdit bool `json:"disabledFrontEdit" bson:"disabled_front_edit" gorm:"disabled_front_edit"`
 }
 
 func NewFolder() (*Folder, error) {
@@ -52,6 +54,8 @@ type FolderView struct {
 	Alias           string `gorm:"alias" json:"alias,omitempty" bson:"alias"`                  // 目录别名
 
 	Meta []*FolderMeta `json:"meta"`
+
+	DisabledFrontEdit bool `json:"disabledFrontEdit" bson:"disabled_front_edit" gorm:"disabled_front_edit"`
 }
 
 type FolderTree struct {

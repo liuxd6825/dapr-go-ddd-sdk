@@ -111,6 +111,7 @@ func (t *DocumentService) Document2DocumentView(document *model.Document) *model
 	view.TagColor = document.TagColor
 	view.FsKey = document.FsKey
 	view.Name = document.Name
+	view.DisabledFrontEdit = document.DisabledFrontEdit
 
 	return view
 }
@@ -152,6 +153,7 @@ func (t *DocumentService) DocumentView2Document(view *model.DocumentView) *model
 	document.TagColor = view.TagColor
 	document.FsKey = view.FsKey
 	document.Name = view.Name
+	document.DisabledFrontEdit = view.DisabledFrontEdit
 
 	return document
 }
