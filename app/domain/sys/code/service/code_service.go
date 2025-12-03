@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	case_dao "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/model"
@@ -19,6 +20,7 @@ import (
 type CodeService struct {
 	typeDAO *dao.CodeTypeDao
 	seqDAO  *dao.CodeSequenceDao
+	caseDao *case_dao.CaseDao
 }
 
 var codeService *CodeService
@@ -29,9 +31,62 @@ func NewCodeService() *CodeService {
 		codeService = &CodeService{
 			typeDAO: dao.NewCodeTypeDao(config.DBKey),
 			seqDAO:  dao.NewCodeSequenceDao(config.DBKey),
+			caseDao: case_dao.NewCaseDao(config.DBKey),
 		}
 	})
 	return codeService
+}
+
+func (s *CodeService) getCase(ctx context.Context, caseId string) (string, error) {
+	vo, err := s.caseDao.FindById(ctx, caseId)
+	if err != nil {
+		return "", err
+	}
+	if vo.Code == "" {
+		return "", errors.New("Case Code Not Found case.id:%s", caseId)
+	}
+	return vo.Code, nil
+}
+
+func (s *CodeService) NewBillCode(ctx context.Context, caseId, billType string) string {
+	caseCode, err := s.getCase(ctx, caseId)
+	if err != nil {
+		panic(err)
+	}
+	return s.NewCode(ctx, fmt.Sprintf("%s-%s-", caseCode, billType))
+}
+
+func (s *CodeService) NewHumanCode(ctx context.Context, caseId string) string {
+	return s.NewBillCode(ctx, caseId, "HM")
+}
+
+func (s *CodeService) NewCompanyCode(ctx context.Context, caseId string) string {
+	return s.NewBillCode(ctx, caseId, "CP")
+}
+
+func (s *CodeService) NewAccountCode(ctx context.Context, caseId string) string {
+	return s.NewBillCode(ctx, caseId, "AC")
+}
+
+func (s *CodeService) NewContractCode(ctx context.Context, caseId string) string {
+	return s.NewBillCode(ctx, caseId, "CT")
+}
+
+func (s *CodeService) NewProductCode(ctx context.Context, caseId string) string {
+	return s.NewBillCode(ctx, caseId, "PR")
+}
+
+func (s *CodeService) NewCaseCode(ctx context.Context) string {
+	cmd := command.NewCodeNewCommand()
+	cmd.Data.Type = "CS"
+	cmd.Data.Style = model.CodeStyle_Global
+	cmd.Data.NoHead = true
+	cmd.Data.Length = 3
+	code, err := s.New(ctx, cmd)
+	if err != nil {
+		panic(err)
+	}
+	return code
 }
 
 func (s *CodeService) NewCode(ctx context.Context, typeCode string) string {
@@ -48,7 +103,7 @@ func (s *CodeService) NewCode(ctx context.Context, typeCode string) string {
 	return fullCode
 }
 
-func (s *CodeService) NewCodeLen(ctx context.Context, typeCode string, codeLen int) string {
+func (s *CodeService) NewCodeLen(ctx context.Context, typeCode string, codeLen int, addHead bool) string {
 	cmd := command.NewCodeNewCommand()
 	cmd.CommandId = idutils.NewId()
 	cmd.Data.Type = typeCode
@@ -96,6 +151,11 @@ func (s *CodeService) New(ctx context.Context, cmd *command.CodeNewCommand) (str
 		num36 = strings.Repeat("0", numLength-len(num36)) + num36
 	}
 
+	if cmd.Data.NoHead && dateStr == "" {
+		return num36, nil
+	} else if cmd.Data.NoHead && dateStr != "" {
+		return fmt.Sprintf("%s%s", dateStr, num36), nil
+	}
 	// 拼接最终编号
 	fullCode := fmt.Sprintf("%s%s%s", typeCode, dateStr, num36)
 	return fullCode, nil

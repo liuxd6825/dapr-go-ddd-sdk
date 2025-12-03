@@ -10,6 +10,10 @@ func Test_NewCode(t *testing.T) {
 	xtest2.InitEnv_MongoRemoteMaster()
 	ctx := xtest2.NewContext()
 	service := NewCodeService()
-	code := service.NewCode(ctx, "MC")
-	t.Log(code)
+
+	humanCode := service.NewHumanCode(ctx, "1001")
+	t.Log(humanCode)
+
+	caseCode := service.NewCaseCode(ctx)
+	t.Log(caseCode)
 }
