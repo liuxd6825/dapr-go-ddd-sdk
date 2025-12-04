@@ -47,17 +47,37 @@ type RecordFindByFileIdQuery struct {
 type RecordFindPagingQuery = ddd_query.FindPagingQuery
 type RecordFindPagingResult = ddd_query.FindPagingResult
 
-type RecordAccountFindByName struct {
+type DistinctAccountByNameQuery struct {
 	CaseId     string `json:"caseId" query:"case-id" validate:"required" title:"案件ID"`
 	Name       string `json:"name" query:"name"  title:"开户人"`
 	MasterType string `json:"masterType" query:"master-type"  title:"主数据类型"`
 	MasterId   string `json:"masterName" query:"master-id" title:"主数据Id"`
 }
 
-type RecordAccountFindByNameResult struct {
+type DistinctAccountResult struct {
 	Account   string `json:"account" title:"账号"`
 	BankName  string `json:"bankName" title:"银行"`
 	OwnerName string `json:"ownerName" title:"开户人"`
+}
+
+type DistinctHumanResult struct {
+	Name string `json:"name" title:"公司名"`
+}
+
+type DistinctCompanyResult struct {
+	Name string `json:"name" title:"公司名"`
+}
+
+type DistinctNameQuery struct {
+	CaseId     string `json:"caseId" query:"case-id" validate:"required" title:"案件ID"`
+	MasterType string `json:"masterType" query:"master-type"  title:"主数据类型"`
+	MasterId   string `json:"masterName" query:"master-id" title:"主数据Id"`
+	MyFilter   string `json:"myFilter" query:"my-filter" title:"账号"`
+	OppFilter  string `json:"oppFilter" query:"opp-filter"  title:"银行"`
+}
+
+type DistinctNameResult struct {
+	Name string `json:"name" title:"公司名"`
 }
 
 func (q *RecordFindByCaseIdQuery) GetMustWhere() (string, error) {

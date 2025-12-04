@@ -86,8 +86,22 @@ func (r *RecordService) FindPagingByCaseId(ctx context.Context, qry *query.Recor
 	return r.dao.FindPaging(ctx, qry, opts...)
 }
 
-func (r *RecordService) AccountFindByName(ctx context.Context, qry *query.RecordAccountFindByName, opts ...idao.CallOptions) ([]*query.RecordAccountFindByNameResult, error) {
-	return r.dao.AccountFindByName(ctx, qry.CaseId, qry.Name, qry.MasterType, qry.MasterId)
+func (r *RecordService) DistinctAccount(ctx context.Context, qry *query.DistinctAccountByNameQuery, opts ...idao.CallOptions) ([]*query.DistinctAccountResult, error) {
+	myFilter := fmt.Sprintf(`name="%s"`, qry.Name)
+	oppFilter := fmt.Sprintf(`opp_name="%s"`, qry.Name)
+	return r.dao.DistinctAccount(ctx, qry.CaseId, qry.MasterType, qry.MasterId, myFilter, oppFilter)
+}
+
+func (r *RecordService) DistinctCompany(ctx context.Context, qry *query.DistinctNameQuery, opts ...idao.CallOptions) ([]*query.DistinctNameResult, error) {
+	return r.dao.DistinctCompany(ctx, qry.CaseId, qry.MasterType, qry.MasterId, qry.MyFilter, qry.OppFilter)
+}
+
+func (r *RecordService) DistinctHuman(ctx context.Context, qry *query.DistinctNameQuery, opts ...idao.CallOptions) ([]*query.DistinctNameResult, error) {
+	return r.dao.DistinctHuman(ctx, qry.CaseId, qry.MasterType, qry.MasterId, qry.MyFilter, qry.OppFilter)
+}
+
+func (r *RecordService) DistinctName(ctx context.Context, qry *query.DistinctNameQuery, opts ...idao.CallOptions) ([]*query.DistinctNameResult, error) {
+	return r.dao.DistinctName(ctx, qry.CaseId, qry.MasterType, qry.MasterId, qry.MyFilter, qry.OppFilter)
 }
 
 func (r *RecordService) FindByDocId(ctx context.Context, qry *query.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*model.Record, error) {

@@ -27,7 +27,10 @@ func (s *RecordAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 	controller := restapi.NewController(app, s.rootPath+"/master", "master.RecordAPI", s)
 	controller.GetOne("/record/{id}", "FindById", restapi.NewAPIOptions())
 	controller.GetPaging("/record", "FindPaging")
-	controller.GetData("/record:account-name", "AccountFindByName")
+	controller.GetData("/record:distinct-account", "DistinctAccount")
+	controller.GetData("/record:distinct-name", "DistinctName")
+	controller.GetData("/record:distinct-company", "DistinctCompany")
+	controller.GetData("/record:distinct-human", "DistinctHuman")
 	return controller
 }
 
@@ -40,6 +43,18 @@ func (s *RecordAPI) FindPaging(ctx context.Context, qry *query.RecordFindByCaseI
 	return res, res.GetError()
 }
 
-func (s *RecordAPI) AccountFindByName(ctx context.Context, qry *query.RecordAccountFindByName) ([]*query.RecordAccountFindByNameResult, error) {
-	return s.service.AccountFindByName(ctx, qry)
+func (s *RecordAPI) DistinctAccount(ctx context.Context, qry *query.DistinctAccountByNameQuery) ([]*query.DistinctAccountResult, error) {
+	return s.service.DistinctAccount(ctx, qry)
+}
+
+func (s *RecordAPI) DistinctName(ctx context.Context, qry *query.DistinctNameQuery) ([]*query.DistinctNameResult, error) {
+	return s.service.DistinctName(ctx, qry)
+}
+
+func (s *RecordAPI) DistinctCompany(ctx context.Context, qry *query.DistinctNameQuery) ([]*query.DistinctNameResult, error) {
+	return s.service.DistinctCompany(ctx, qry)
+}
+
+func (s *RecordAPI) DistinctHuman(ctx context.Context, qry *query.DistinctNameQuery) ([]*query.DistinctNameResult, error) {
+	return s.service.DistinctHuman(ctx, qry)
 }

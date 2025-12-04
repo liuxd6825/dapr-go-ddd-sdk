@@ -31,7 +31,6 @@ func NewRecordDao(dbKey string) *RecordDao {
 }
 
 func (s *RecordDao) FindByAccountOppAccount(ctx context.Context, account string, startDate, endDate time.Time) ([]*model.Record, error) {
-
 	builder := rsql.NewBuilder().And(
 		rsql.Or(
 			rsql.Eq("acct", account),
@@ -51,7 +50,136 @@ func (s *RecordDao) FindByAccountOppAccount(ctx context.Context, account string,
 	return res.GetData(), res.GetError()
 }
 
-// AccountFindByName
+// DistinctHuman
+// @Description: 通过流水数据统计人员
+// @receiver s
+// @param ctx
+// @param caseId
+// @param name
+// @return []*query.RecordAccountFindByNameResult
+// @return error
+func (s *RecordDao) DistinctHuman(ctx context.Context, caseId, masterType, masterId, myFilter, oppFilter string) ([]*query.DistinctNameResult, error) {
+	var res []*query.DistinctNameResult
+	keys := map[string]bool{}
+	err := s.findDistinct(ctx, "name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.Name]; !ok {
+				keys[item.Acct] = true
+				result := &query.DistinctNameResult{
+					Name: item.Name,
+				}
+				res = append(res, result)
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.findDistinct(ctx, "opp_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.OppAcct]; !ok {
+				keys[item.OppAcct] = true
+				record := &query.DistinctNameResult{
+					Name: item.OppName,
+				}
+				res = append(res, record)
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// DistinctName
+// @Description: 通过流水数据统计公司
+// @receiver s
+// @param ctx
+// @param caseId
+// @param name
+// @return []*query.RecordAccountFindByNameResult
+// @return error
+func (s *RecordDao) DistinctName(ctx context.Context, caseId, masterType, masterId, myFilter, oppFilter string) ([]*query.DistinctNameResult, error) {
+	var res []*query.DistinctNameResult
+	keys := map[string]bool{}
+	err := s.findDistinct(ctx, "name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.Name]; !ok {
+				keys[item.Acct] = true
+				result := &query.DistinctNameResult{
+					Name: item.Name,
+				}
+				res = append(res, result)
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.findDistinct(ctx, "opp_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.OppAcct]; !ok {
+				keys[item.OppAcct] = true
+				record := &query.DistinctNameResult{
+					Name: item.OppName,
+				}
+				res = append(res, record)
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// DistinctCompany
+// @Description: 通过流水数据统计公司
+// @receiver s
+// @param ctx
+// @param caseId
+// @param name
+// @return []*query.RecordAccountFindByNameResult
+// @return error
+func (s *RecordDao) DistinctCompany(ctx context.Context, caseId, masterType, masterId, myFilter, oppFilter string) ([]*query.DistinctNameResult, error) {
+	var res []*query.DistinctNameResult
+	keys := map[string]bool{}
+	err := s.findDistinct(ctx, "name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.Name]; !ok {
+				keys[item.Acct] = true
+				result := &query.DistinctNameResult{
+					Name: item.Name,
+				}
+				res = append(res, result)
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.findDistinct(ctx, "opp_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.OppAcct]; !ok {
+				keys[item.OppAcct] = true
+				record := &query.DistinctNameResult{
+					Name: item.OppName,
+				}
+				res = append(res, record)
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// DistinctAccount
 // @Description: 通过流水数据统计银行账号
 // @receiver s
 // @param ctx
@@ -59,75 +187,78 @@ func (s *RecordDao) FindByAccountOppAccount(ctx context.Context, account string,
 // @param name
 // @return []*query.RecordAccountFindByNameResult
 // @return error
-func (s *RecordDao) AccountFindByName(ctx context.Context, caseId, name, masterType, masterId string) ([]*query.RecordAccountFindByNameResult, error) {
-	sql1, sql2, err := s.getAccountFindByNameRSQL(ctx, caseId, name, masterType, masterId)
+func (s *RecordDao) DistinctAccount(ctx context.Context, caseId, masterType, masterId, myFilter, oppFilter string) ([]*query.DistinctAccountResult, error) {
+	var accounts []*query.DistinctAccountResult
+	keys := map[string]bool{}
+	err := s.findDistinct(ctx, "acct, bank_name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.Acct]; !ok {
+				keys[item.Acct] = true
+				result := &query.DistinctAccountResult{
+					Account:   item.Acct,
+					BankName:  item.BankName,
+					OwnerName: item.Name,
+				}
+				accounts = append(accounts, result)
+			}
+		}
+	})
 	if err != nil {
 		return nil, err
 	}
-	qry1 := store.NewFindDistinctQuery()
-	qry1.SetFields("acct, bank_name")
-	qry1.SetFilter(sql1)
-	res1 := s.FindDistinct(ctx, qry1)
-	if res1.GetError() != nil {
-		return nil, res1.GetError()
-	}
 
-	qry2 := store.NewFindDistinctQuery()
-	qry2.SetFields("opp_acct, opp_bank_name")
-	qry2.SetFilter(sql2)
-	res2 := s.FindDistinct(ctx, qry2)
-	if res2.GetError() != nil {
-		return nil, res2.GetError()
-	}
-
-	accounts := []*query.RecordAccountFindByNameResult{}
-	keys := map[string]bool{}
-	for _, item := range res1.GetData() {
-		if _, ok := keys[item.Acct]; !ok {
-			keys[item.Acct] = true
-			result := &query.RecordAccountFindByNameResult{
-				Account:   item.Acct,
-				BankName:  item.BankName,
-				OwnerName: item.Name,
+	err = s.findDistinct(ctx, "opp_acct, opp_bank_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
+		for _, item := range list {
+			if _, ok := keys[item.OppAcct]; !ok {
+				keys[item.OppAcct] = true
+				record := &query.DistinctAccountResult{
+					Account:   item.OppAcct,
+					BankName:  item.OppBankName,
+					OwnerName: item.OppName,
+				}
+				accounts = append(accounts, record)
 			}
-			accounts = append(accounts, result)
 		}
+	})
+	if err != nil {
+		return nil, err
 	}
-	for _, item := range res2.GetData() {
-		if _, ok := keys[item.OppAcct]; !ok {
-			keys[item.OppAcct] = true
-			record := &query.RecordAccountFindByNameResult{
-				Account:   item.OppAcct,
-				BankName:  item.OppBankName,
-				OwnerName: item.OppName,
-			}
-			accounts = append(accounts, record)
-		}
-	}
-
 	return accounts, nil
 }
 
-func (s *RecordDao) getAccountFindByNameRSQL(ctx context.Context, caseId, name, masterType, masterId string) (string, string, error) {
+func (s *RecordDao) findDistinct(ctx context.Context, fields string, caseId, masterType, masterId, filter string, setData func(list []*model.Record)) error {
+	sql, err := s.getDistinctRSQL(ctx, caseId, masterType, masterId, filter)
+	if err != nil {
+		return err
+	}
+	qry := store.NewFindDistinctQuery()
+	qry.SetFields(fields)
+	qry.SetFilter(sql)
+	res := s.FindDistinct(ctx, qry)
+	if res.GetError() != nil {
+		return res.GetError()
+	}
+
+	if setData != nil {
+		setData(res.GetData())
+	}
+	return nil
+}
+
+func (s *RecordDao) getDistinctRSQL(ctx context.Context, caseId, masterType, masterId string, filter string) (string, error) {
 	var ands1 []rsql.Condition
-	var ands2 []rsql.Condition
 	if caseId != "" {
 		ands1 = append(ands1, rsql.Eq("case_id", caseId))
-		ands2 = append(ands2, rsql.Eq("case_id", caseId))
 	}
 	if masterType != "" {
 		ands1 = append(ands1, rsql.Eq("master_type", masterType))
-		ands2 = append(ands2, rsql.Eq("master_type", masterType))
 	}
 	if masterId != "" {
 		ands1 = append(ands1, rsql.Eq("master_id", masterId))
-		ands2 = append(ands2, rsql.Eq("master_id", masterId))
-	}
-	if name != "" {
-		ands1 = append(ands1, rsql.Eq("name", name))
-		ands2 = append(ands2, rsql.Eq("opp_name", name))
 	}
 	str1 := rsql.NewBuilder().And(ands1...).Build()
-	str2 := rsql.NewBuilder().And(ands2...).Build()
-	return str1, str2, nil
+	if filter != "" {
+		str1 = str1 + " AND " + filter
+	}
+	return str1, nil
 }
