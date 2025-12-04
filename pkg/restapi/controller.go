@@ -13,6 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -256,7 +257,8 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 
 	handler := func(ictx *context.Context) {
 		gp.Try(func() error {
-			params, ctx, err := c.getParams(ictx, callMethod, handleType, opts...)
+			options := NewAPIOptions(opts...)
+			params, ctx, err := c.getParams(ictx, callMethod, handleType, options)
 			if err != nil {
 				if handleType == HandleType_Event {
 					logs.Error(context2.Background(), logs.Fields{"type": "event", "urlPath": path, "handlerName": handlerName, "error": err.Error()})
@@ -264,8 +266,18 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 				}
 				return err
 			}
+
+			var data any
 			logs.Info(backCtx, logs.Fields{"method": method, "path": path, "params": params})
-			data, err := callMethod.Call(ctx, ictx, params)
+			if len(options.TranDBKeys) > 0 {
+				err = tx.StartTx(ctx, options.TranDBKeys, func(ctx context2.Context, options ...*store.SessionOptions) error {
+					data, err = callMethod.Call(ctx, ictx, params)
+					return err
+				})
+			} else {
+				data, err = callMethod.Call(ctx, ictx, params)
+			}
+
 			for _, opt := range opts {
 				if opt.After != nil {
 					data, err = opt.After(ctx, ictx, data, err)

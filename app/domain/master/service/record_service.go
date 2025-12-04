@@ -87,8 +87,8 @@ func (r *RecordService) FindPagingByCaseId(ctx context.Context, qry *query.Recor
 }
 
 func (r *RecordService) DistinctAccount(ctx context.Context, qry *query.DistinctAccountByNameQuery, opts ...idao.CallOptions) ([]*query.DistinctAccountResult, error) {
-	myFilter := fmt.Sprintf(`name="%s"`, qry.Name)
-	oppFilter := fmt.Sprintf(`opp_name="%s"`, qry.Name)
+	myFilter := fmt.Sprintf(`name=="%s"`, qry.Name)
+	oppFilter := fmt.Sprintf(`opp_name=="%s"`, qry.Name)
 	return r.dao.DistinctAccount(ctx, qry.CaseId, qry.MasterType, qry.MasterId, myFilter, oppFilter)
 }
 

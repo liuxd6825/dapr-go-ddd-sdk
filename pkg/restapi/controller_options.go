@@ -14,6 +14,7 @@ type APIOptions struct {
 	Description      string                       // 说明
 	IsAuthentication *bool                        // 是否进行身份认证
 	ParamsInBody     *bool                        // 强制要求参数入HttpBody中获取
+	TranDBKeys       []string                     // 数据库事物
 	InitMethod       func(callMethod *CallMethod) // 初始化函数
 	GetFieldValue    GetFieldValueFunc
 	Before           BeforeFunc
@@ -117,6 +118,12 @@ func WithAfter(method AfterFunc) APIOptions {
 	}
 }
 
+func WithTranDbKey(dbKeys ...string) APIOptions {
+	return APIOptions{
+		TranDBKeys: dbKeys,
+	}
+}
+
 func NewAPIOptions(opts ...APIOptions) APIOptions {
 	o := APIOptions{}
 	for _, i := range opts {
@@ -144,6 +151,9 @@ func NewAPIOptions(opts ...APIOptions) APIOptions {
 		if i.Description != "" {
 			o.Description = i.Description
 		}
+		if len(i.TranDBKeys) > 0 {
+			o.TranDBKeys = i.TranDBKeys
+		}
 	}
 	return o
 }
@@ -153,6 +163,15 @@ func (o *APIOptions) GetIsAuthentication() bool {
 		return false
 	}
 	return *o.IsAuthentication
+}
+
+func (o *APIOptions) SetTranDBKeys(dbKeys ...string) *APIOptions {
+	o.TranDBKeys = dbKeys
+	return o
+}
+
+func (o *APIOptions) GetTranDBKeys() []string {
+	return o.TranDBKeys
 }
 
 func (o *APIOptions) SetEvent(pubsub string, topic string) *APIOptions {

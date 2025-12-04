@@ -64,7 +64,7 @@ func (s *RecordDao) DistinctHuman(ctx context.Context, caseId, masterType, maste
 	err := s.findDistinct(ctx, "name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
 		for _, item := range list {
 			if _, ok := keys[item.Name]; !ok {
-				keys[item.Acct] = true
+				keys[item.Name] = true
 				result := &query.DistinctNameResult{
 					Name: item.Name,
 				}
@@ -79,7 +79,7 @@ func (s *RecordDao) DistinctHuman(ctx context.Context, caseId, masterType, maste
 	err = s.findDistinct(ctx, "opp_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
 		for _, item := range list {
 			if _, ok := keys[item.OppAcct]; !ok {
-				keys[item.OppAcct] = true
+				keys[item.OppName] = true
 				record := &query.DistinctNameResult{
 					Name: item.OppName,
 				}
@@ -107,7 +107,7 @@ func (s *RecordDao) DistinctName(ctx context.Context, caseId, masterType, master
 	err := s.findDistinct(ctx, "name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
 		for _, item := range list {
 			if _, ok := keys[item.Name]; !ok {
-				keys[item.Acct] = true
+				keys[item.Name] = true
 				result := &query.DistinctNameResult{
 					Name: item.Name,
 				}
@@ -121,8 +121,8 @@ func (s *RecordDao) DistinctName(ctx context.Context, caseId, masterType, master
 
 	err = s.findDistinct(ctx, "opp_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
 		for _, item := range list {
-			if _, ok := keys[item.OppAcct]; !ok {
-				keys[item.OppAcct] = true
+			if _, ok := keys[item.OppName]; !ok {
+				keys[item.OppName] = true
 				record := &query.DistinctNameResult{
 					Name: item.OppName,
 				}
@@ -150,7 +150,7 @@ func (s *RecordDao) DistinctCompany(ctx context.Context, caseId, masterType, mas
 	err := s.findDistinct(ctx, "name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
 		for _, item := range list {
 			if _, ok := keys[item.Name]; !ok {
-				keys[item.Acct] = true
+				keys[item.Name] = true
 				result := &query.DistinctNameResult{
 					Name: item.Name,
 				}
@@ -164,8 +164,8 @@ func (s *RecordDao) DistinctCompany(ctx context.Context, caseId, masterType, mas
 
 	err = s.findDistinct(ctx, "opp_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
 		for _, item := range list {
-			if _, ok := keys[item.OppAcct]; !ok {
-				keys[item.OppAcct] = true
+			if _, ok := keys[item.OppName]; !ok {
+				keys[item.OppName] = true
 				record := &query.DistinctNameResult{
 					Name: item.OppName,
 				}

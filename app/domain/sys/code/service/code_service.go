@@ -42,6 +42,9 @@ func (s *CodeService) getCase(ctx context.Context, caseId string) (string, error
 	if err != nil {
 		return "", err
 	}
+	if vo == nil {
+		return "", errors.New("case not found, id:'%s'. ", caseId)
+	}
 	if vo.Code == "" {
 		return "", errors.New("Case Code Not Found case.id:%s", caseId)
 	}
