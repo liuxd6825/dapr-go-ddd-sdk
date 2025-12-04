@@ -40,10 +40,9 @@ func Test_Dao(t *testing.T) {
 	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
-		DBKey:      "db",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema),
-		Env:        env.GetEnv(),
-		IsPubEvent: false,
+		DBKey:    "db",
+		DBSchema: dbschema.NewDBSchemaWithJsonSchema(humanSchema),
+		Env:      env.GetEnv(),
 	}
 
 	dao := NewDao[map[string]any](daoCfg)
@@ -303,10 +302,9 @@ func Test_DaoStruct(t *testing.T) {
 	//humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
-		DBKey:      "db",
-		DBSchema:   dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
-		Env:        env.GetEnv(),
-		IsPubEvent: false,
+		DBKey:    "db",
+		DBSchema: dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
+		Env:      env.GetEnv(),
 	}
 
 	dao := NewDao[*Human](daoCfg)
@@ -554,10 +552,9 @@ func Test_DaoStruct(t *testing.T) {
 func newHumanDao() idao.Dao[*Human] {
 	xtest2.InitEnv_MongoLocal()
 	daoCfg := &idao.DaoConfig{
-		DBKey:      "db",
-		DBSchema:   dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
-		Env:        env.GetEnv(),
-		IsPubEvent: false,
+		DBKey:    "db",
+		DBSchema: dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
+		Env:      env.GetEnv(),
 	}
 
 	return NewDao[*Human](daoCfg)

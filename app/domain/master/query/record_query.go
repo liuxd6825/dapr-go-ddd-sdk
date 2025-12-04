@@ -2,6 +2,7 @@ package query
 
 import (
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
@@ -45,6 +46,19 @@ type RecordFindByFileIdQuery struct {
 
 type RecordFindPagingQuery = ddd_query.FindPagingQuery
 type RecordFindPagingResult = ddd_query.FindPagingResult
+
+type RecordAccountFindByName struct {
+	CaseId     string `json:"caseId" query:"case-id" validate:"required" title:"案件ID"`
+	Name       string `json:"name" query:"name"  title:"开户人"`
+	MasterType string `json:"masterType" query:"master-type"  title:"主数据类型"`
+	MasterId   string `json:"masterName" query:"master-id" title:"主数据Id"`
+}
+
+type RecordAccountFindByNameResult struct {
+	Account   string `json:"account" title:"账号"`
+	BankName  string `json:"bankName" title:"银行"`
+	OwnerName string `json:"ownerName" title:"开户人"`
+}
 
 func (q *RecordFindByCaseIdQuery) GetMustWhere() (string, error) {
 	if len(q.CaseId) == 0 {

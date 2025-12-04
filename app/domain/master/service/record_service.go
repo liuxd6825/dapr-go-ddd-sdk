@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 )
 
@@ -85,17 +86,21 @@ func (r *RecordService) FindPagingByCaseId(ctx context.Context, qry *query.Recor
 	return r.dao.FindPaging(ctx, qry, opts...)
 }
 
+func (r *RecordService) AccountFindByName(ctx context.Context, qry *query.RecordAccountFindByName, opts ...idao.CallOptions) ([]*query.RecordAccountFindByNameResult, error) {
+	return r.dao.AccountFindByName(ctx, qry.CaseId, qry.Name, qry.MasterType, qry.MasterId)
+}
+
 func (r *RecordService) FindByDocId(ctx context.Context, qry *query.RecordFindByDocIdQuery, opts ...idao.CallOptions) ([]*model.Record, error) {
-	//TODO implement me
-	panic("implement me")
+	rsqlStr := rsql.NewBuilder().And(rsql.Eq("case_id", qry.CaseId), rsql.Eq("doc_id", qry.DocId)).Build()
+	return r.dao.FindByRSQL(ctx, rsqlStr, opts...)
 }
 
 func (r *RecordService) FindByTaskId(ctx context.Context, qry *query.RecordFindByTaskIdQuery, opts ...idao.CallOptions) ([]*model.Record, error) {
-	//TODO implement me
-	panic("implement me")
+	rsqlStr := rsql.NewBuilder().And(rsql.Eq("case_id", qry.CaseId), rsql.Eq("task_id", qry.TaskId)).Build()
+	return r.dao.FindByRSQL(ctx, rsqlStr, opts...)
 }
 
 func (r *RecordService) FindByFileId(ctx context.Context, qry *query.RecordFindByFileIdQuery, opts ...idao.CallOptions) ([]*model.Record, error) {
-	//TODO implement me
-	panic("implement me")
+	rsqlStr := rsql.NewBuilder().And(rsql.Eq("case_id", qry.CaseId), rsql.Eq("file_id", qry.FileId)).Build()
+	return r.dao.FindByRSQL(ctx, rsqlStr, opts...)
 }

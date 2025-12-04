@@ -2,9 +2,11 @@ package mongodb
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
 const HumanSchema = `
@@ -106,7 +108,12 @@ var client *mongo.Client
 func init() {
 	// 设置MongoDB连接URL
 	clientOptions := options.Client().ApplyURI("mongodb://192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020/?retryWrites=false&replicaSet=mongors&readPreference=primary&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000")
-
+	clientOptions.Auth = &options.Credential{
+		AuthMechanism: "SCRAM-SHA-256",
+		AuthSource:    "admin",
+		Username:      "super_admin",
+		Password:      "123456",
+	}
 	// 连接到MongoDB
 	clientVal, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
@@ -124,4 +131,11 @@ func getCollection(dbName string, collName string) *mongo.Collection {
 	// 选择数据库和集合
 	collection := client.Database(dbName).Collection(collName)
 	return collection
+}
+
+func Test_CreateIdIndex(t *testing.T) {
+	db := client.Database("master")
+	if err := EnsureIDIndexForAllCollections(db); err != nil {
+		t.Fatal(err)
+	}
 }
