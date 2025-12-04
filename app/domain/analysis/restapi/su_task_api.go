@@ -50,15 +50,7 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 }
 
 func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) (*model2.SuTask, error) {
-	code := s.codeService.NewSuCode(ctx, cmd.Data.CaseId)
-	task := cmd.NewTask()
-	task.Code = code
-	err := s.taskService.Create(ctx, task)
-	if err != nil {
-		return nil, err
-	}
-
-	return task, nil
+	return s.taskService.Create(ctx, cmd)
 }
 
 func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand) error {

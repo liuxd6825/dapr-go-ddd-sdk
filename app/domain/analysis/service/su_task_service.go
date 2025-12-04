@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
@@ -11,6 +12,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -34,6 +36,7 @@ type SuTaskService struct {
 	suBatchDao     *dao.SuBatchDao
 	suBatchItemDao *dao.SuBatchItemDao
 	taskLogDao     *dao.SuTaskLogDao
+	codeService    *service.CodeService
 }
 
 func NewSuTaskService() *SuTaskService {
@@ -45,6 +48,7 @@ func NewSuTaskService() *SuTaskService {
 		suBatchDao:     dao.NewSuBatchDao(config.DBKey),
 		suBatchItemDao: dao.NewSuBatchItemDao(config.DBKey),
 		taskLogDao:     dao.NewSuTaskLogDao(config.DBKey),
+		codeService:    service.NewCodeService(),
 	}
 }
 
@@ -56,9 +60,14 @@ func NewSuTaskService() *SuTaskService {
 //	@param v
 //	@param opts
 //	@return error
-func (s *SuTaskService) Create(ctx context.Context, v *model.SuTask, opts ...idao.CallOptions) error {
-	v.StatusName = v.Status.String()
-	return s.taskDao.Create(ctx, v, opts...).GetError()
+func (s *SuTaskService) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) (*model.SuTask, error) {
+	task := cmd.NewTask()
+	if task.Code == "" {
+		task.Code = s.codeService.NewSuCode(ctx, cmd.Data.CaseId)
+	}
+	task.StatusName = task.Status.String()
+	err := s.taskDao.Create(ctx, task).GetError()
+	return task, err
 }
 
 func (s *SuTaskService) CreateMany(ctx context.Context, v []*model.SuTask, opts ...idao.CallOptions) error {
