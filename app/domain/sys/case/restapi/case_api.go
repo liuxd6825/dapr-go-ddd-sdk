@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
@@ -52,14 +53,11 @@ func (s *CaseAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 func (s *CaseAPI) Create(ctx context.Context, cmd *command.CaseCreateCommand) error {
 	err := tx.StartTx(ctx, []string{s.caseService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 
-		code, err := s.codeService.New(ctx, "XM")
-		if err != nil {
-			return nil
-		}
+		code := s.codeService.NewCaseCode(ctx)
 
 		cmd.Data.Code = code
 
-		err = s.caseService.Create(ctx, cmd)
+		err := s.caseService.Create(ctx, cmd)
 		if err != nil {
 			return err
 		}

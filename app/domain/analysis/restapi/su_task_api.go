@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 
 	"github.com/kataras/iris/v12"
@@ -49,17 +50,10 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 }
 
 func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) (*model2.SuTask, error) {
-
-	code, err := s.codeService.New(ctx, "SU")
-	if err != nil {
-		return nil, err
-	}
-
+	code := s.codeService.NewSuCode(ctx, cmd.Data.CaseId)
 	task := cmd.NewTask()
-
 	task.Code = code
-
-	err = s.taskService.Create(ctx, task)
+	err := s.taskService.Create(ctx, task)
 	if err != nil {
 		return nil, err
 	}
