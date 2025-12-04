@@ -119,18 +119,36 @@ func (s *CodeService) NewCode(ctx context.Context, typeCode string) string {
 	return fullCode
 }
 
-func (s *CodeService) NewCodeLen(ctx context.Context, typeCode string, codeLen int, addHead bool) string {
+func (s *CodeService) NewCodeLen(ctx context.Context, typeCode string, codeLen int64, noHead bool) string {
 	cmd := command.NewCodeNewCommand()
 	cmd.CommandId = idutils.NewId()
 	cmd.Data.Type = typeCode
 	cmd.Data.Style = model.CodeStyle_Global
 	cmd.Data.Length = codeLen
+	cmd.Data.NoHead = noHead
 
 	fullCode, err := s.New(ctx, cmd)
 	if err != nil {
 		panic(err)
 	}
 	return fullCode
+}
+
+// New
+// @Description: 生成一个编号
+func (s *CodeService) New(ctx context.Context, cmd *command.CodeNewCommand) (string, error) {
+	codes, err := s.newCode(ctx, cmd)
+	if err != nil {
+		return "", err
+	}
+	return codes[0], nil
+}
+
+// NewManyCode
+// @Description: 生成多个编号
+func (s *CodeService) NewManyCode(ctx context.Context, cmd *command.CodeNewCommand) ([]string, error) {
+	codes, err := s.newCode(ctx, cmd)
+	return codes, err
 }
 
 // New
@@ -142,13 +160,16 @@ func (s *CodeService) NewCodeLen(ctx context.Context, typeCode string, codeLen i
 // @param numLength
 // @return string
 // @return error
-func (s *CodeService) New(ctx context.Context, cmd *command.CodeNewCommand) (string, error) {
+func (s *CodeService) newCode(ctx context.Context, cmd *command.CodeNewCommand) ([]string, error) {
 	if cmd == nil {
-		return "", errors.New("cmd is nil")
+		return nil, errors.New("cmd is nil")
 	}
 	typeCode := cmd.Data.Type
 	style := cmd.Data.Style
 	numLength := cmd.Data.Length
+	if numLength <= 0 {
+		numLength = 4
+	}
 	count := cmd.Data.Count
 	if count <= 0 {
 		count = 1
@@ -163,20 +184,33 @@ func (s *CodeService) New(ctx context.Context, cmd *command.CodeNewCommand) (str
 	// 原子递增获取序号
 	seq, err := s.seqDAO.NextSeq(ctx, typeCode, dateStr, count)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate sequence: %v", err)
+		return nil, fmt.Errorf("failed to generate sequence: %v", err)
 	}
+	codes := getCodeList(seq, count, typeCode, cmd.Data.NoHead, dateStr, numLength)
+	return codes, nil
+}
 
+func getCode(seq int64, numLength int64) string {
 	num36 := intutils.IntToBase36(seq)
-	if len(num36) < numLength {
-		num36 = strings.Repeat("0", numLength-len(num36)) + num36
+	if len(num36) < int(numLength) {
+		num36 = strings.Repeat("0", int(numLength)-len(num36)) + num36
 	}
+	return num36
+}
 
-	if cmd.Data.NoHead && dateStr == "" {
-		return num36, nil
-	} else if cmd.Data.NoHead && dateStr != "" {
-		return fmt.Sprintf("%s%s", dateStr, num36), nil
+func getCodeList(seq, count int64, typeCode string, noHead bool, dateStr string, numLength int64) []string {
+	codeList := make([]string, count)
+	num := seq - count
+	for i := int64(0); i < count; i++ {
+		if noHead && dateStr == "" {
+			codeList[i] = getCode(num+i, numLength)
+		} else if noHead && dateStr != "" {
+			code := getCode(num+i, numLength)
+			codeList[i] = fmt.Sprintf("%s%s", dateStr, code)
+		} else {
+			code := getCode(num+i, numLength)
+			codeList[i] = fmt.Sprintf("%s%s%s", typeCode, dateStr, code)
+		}
 	}
-	// 拼接最终编号
-	fullCode := fmt.Sprintf("%s%s%s", typeCode, dateStr, num36)
-	return fullCode, nil
+	return codeList
 }

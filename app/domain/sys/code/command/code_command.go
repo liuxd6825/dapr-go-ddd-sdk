@@ -11,10 +11,10 @@ type CodeNewCommand struct {
 
 type CodeNewCommandData struct {
 	Type   string          `json:"type" validate:"required"`
-	Length int             `json:"length" validate:"required"`
+	Length int64           `json:"length" validate:"required"`
 	Style  model.CodeStyle `json:"style"`
 	NoHead bool            `json:"noHead"`
-	Count  int             `json:"count"`
+	Count  int64           `json:"count"`
 }
 
 type CodeNewCommandResult struct {
