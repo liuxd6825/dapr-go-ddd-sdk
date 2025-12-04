@@ -18,6 +18,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -77,10 +78,27 @@ func (s *SuTaskService) CreateMany(ctx context.Context, v []*model.SuTask, opts 
 	return s.taskDao.CreateMany(ctx, v, opts...).GetError()
 }
 
+func (s *SuTaskService) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand, opts ...idao.CallOptions) (*model.SuTask, error) {
+	t, err := s.taskDao.FindById(ctx, cmd.Data.Id)
+	if err != nil {
+		return nil, err
+	}
+	if t == nil {
+		return nil, errors.ErrorOf("没有找到要更新的任务。")
+	}
+	if t.Status != model.SuTaskStatus_New {
+		return nil, errors.ErrorOf("已在“%s”状态,不可以更新。", t.Name)
+	}
+	task := cmd.NewTask(t.Status)
+	err = s.taskDao.Update(ctx, task, opts...).GetError()
+	return task, err
+}
+
+/*
 func (s *SuTaskService) Update(ctx context.Context, v *model.SuTask, opts ...idao.CallOptions) error {
 	v.StatusName = v.Status.String()
 	return s.taskDao.Update(ctx, v, opts...).GetError()
-}
+}*/
 
 func (s *SuTaskService) UpdateMany(ctx context.Context, v []*model.SuTask, opts ...idao.CallOptions) error {
 	for _, task := range v {
@@ -124,7 +142,6 @@ func (s *SuTaskService) QueryBillById(ctx context.Context, qry *query.SuTaskFind
 func (s *SuTaskService) QueryPaging(ctx context.Context, qry *ddd_query.FindPagingQuery, opts ...idao.CallOptions) store.FindPagingResult[*model.SuTask] {
 	return s.taskDao.FindPaging(ctx, qry, opts...)
 }
-
 func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 	verifyError := errors.NewVerifyError()
 	task, err := s.taskDao.FindById(ctx, taskId)
@@ -153,10 +170,6 @@ func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 		return verifyError
 	}
 
-	if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_TaskQueuing); err != nil {
-		return err
-	}
-
 	// 配置工作流选项
 	workflowId := idutils.NewId()
 	workflowOptions := client.StartWorkflowOptions{
@@ -164,11 +177,19 @@ func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 		TaskQueue: tasks.GetTaskQueue(), // 必须与 Worker 监听的任务队列名称一致
 	}
 	ctxMap := appctx.NewMapWithContext(ctx)
-	_, err = tasks.ExecuteWorkflow(ctx, workflowOptions, TaskAnalysisWorkflow, taskId, workflowId, ctxMap)
-	if err != nil {
+
+	// 开启事务
+	return tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_TaskQueuing); err != nil {
+			return err
+		}
+		_, err = tasks.ExecuteWorkflow(ctx, workflowOptions, Analysis_SuTaskAnalysisWorkflow, taskId, workflowId, ctxMap)
+		if err != nil {
+			return err
+		}
 		return err
-	}
-	return err
+	})
+
 }
 
 // analysisTask
@@ -312,11 +333,23 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 				})
 			}
 		}
-		s.suBatchDao.CreateMany(ctx, batches)
-		s.suBatchItemDao.CreateMany(ctx, batchItems)
-		s.suRecordDao.CreateMany(ctx, records)
+		err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+			if err = s.ClearAnalyseResults(ctx, task.Id); err != nil {
+				return err
+			}
+			if err = s.suBatchDao.CreateMany(ctx, batches).GetError(); err != nil {
+				return err
+			}
+			if err = s.suBatchItemDao.CreateMany(ctx, batchItems).GetError(); err != nil {
+				return err
+			}
+			if err = s.suRecordDao.CreateMany(ctx, records).GetError(); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
-	return recordCount, nil
+	return recordCount, err
 }
 
 func (s *SuTaskService) ClearAnalyseResults(ctx context.Context, taskId string) error {

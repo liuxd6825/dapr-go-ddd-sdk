@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -18,6 +19,7 @@ type SuTaskFields struct {
 	SuCount     *int64              `json:"suCount"  title:"可疑交易数"`
 	SuHighCount *int64              `json:"suHighCount"  title:"高可疑交易数"`
 	Status      *model.SuTaskStatus `json:"status" title:"状态"`
+	StatusName  *string             `json:"statusName" title:"状态名称"`
 	WorkflowId  *string             `json:"workflowId" title:"工作流Id"`
 }
 
@@ -36,7 +38,8 @@ func NewSuTaskDao(dbKey string) *SuTaskDao {
 
 func (dao *SuTaskDao) UpdateStatus(ctx context.Context, id string, status model.SuTaskStatus) error {
 	data := map[string]any{
-		"status": status,
+		"status":      status,
+		"status_name": status.String(),
 	}
 	return dao.UpdateMap(ctx, id, data).GetError()
 }
@@ -96,7 +99,9 @@ func (f *SuTaskFields) SetSuHighCount(suHighCount int64) *SuTaskFields {
 }
 
 func (f *SuTaskFields) SetStatus(status model.SuTaskStatus) *SuTaskFields {
+	statusName := status.String()
 	f.Status = &status
+	f.StatusName = &statusName
 	return f
 }
 

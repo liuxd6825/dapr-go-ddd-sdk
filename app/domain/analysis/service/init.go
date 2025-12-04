@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
 )
 
@@ -10,6 +11,6 @@ import (
 func RegisterWorkflow() {
 	// 分析工作流
 	ctx := context.Background()
-	tasks.RegisterWorkflow(ctx, TaskAnalysisWorkflow)
-	tasks.RegisterActivity(ctx, TaskAnalysisActivity)
+	tasks.RegisterWorkflow(ctx, Analysis_SuTaskAnalysisWorkflow)
+	tasks.RegisterActivity(ctx, Analysis_SuTaskAnalysisActivity)
 }

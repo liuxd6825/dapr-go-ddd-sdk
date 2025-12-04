@@ -37,14 +37,15 @@ type SuTaskUpdateCommand struct {
 	xbase2.Command[SuTaskCreateData]
 }
 
-func (s *SuTaskUpdateCommand) NewTask() *model.SuTask {
+func (s *SuTaskUpdateCommand) NewTask(status model.SuTaskStatus) *model.SuTask {
 	task := &model.SuTask{
 		BaseModel:   s.Data.BaseModel,
 		Code:        s.Data.Code,
 		Name:        s.Data.Name,
 		StartTime:   s.Data.StartTime,
 		EndTime:     s.Data.EndTime,
-		Status:      model.SuTaskStatus_New,
+		Status:      status,
+		StatusName:  status.String(),
 		Rules:       s.Data.Rules,
 		MasterName:  s.Data.MasterName,
 		MasterId:    s.Data.MasterId,

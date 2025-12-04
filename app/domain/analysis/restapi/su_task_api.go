@@ -4,6 +4,7 @@ import (
 	"context"
 
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/command"
@@ -12,7 +13,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -38,14 +38,18 @@ func NewSuTaskApi(env *env.Env, rootPath string) *SuTaskApi {
 
 func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiController {
 	controller := restapi.NewController(app, s.rootPath, "analysis.SuTaskApi", s)
+
+	controller.Post("/analysis/su-task", "Create", restapi.WithTranDbKey(config.DBKey))
+	controller.Put("/analysis/su-task", "Update", restapi.WithTranDbKey(config.DBKey))
+	controller.Put("/analysis/su-task:analysis", "Analysis", restapi.WithTranDbKey(config.DBKey))
+
 	controller.GetOne("/analysis/su-task/{id}", "FindById")
 	controller.GetPaging("/analysis/su-task", "FindPaging")
-	controller.Post("/analysis/su-task", "Create")
-	controller.Put("/analysis/su-task", "Update")
-	controller.Put("/analysis/su-task:analysis", "Analysis")
-	controller.View("/analysis/su-task/bill.html", "GetBillView")
 	controller.GetOne("/analysis/su-task:bill/{id}", "FindBill")
 	controller.GetData("/analysis/su-task:by-case", "FindByCaseId")
+
+	controller.View("/analysis/su-task/bill.html", "GetBillView")
+
 	return controller
 }
 
@@ -53,19 +57,8 @@ func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand
 	return s.taskService.Create(ctx, cmd)
 }
 
-func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand) error {
-	t, err := s.taskService.FindById(ctx, cmd.Data.Id)
-	if err != nil {
-		return err
-	}
-	if t == nil {
-		return errors.ErrorOf("没有找到要更新的任务。")
-	}
-	if t.Status != model2.SuTaskStatus_New {
-		return errors.ErrorOf("已在“%s”状态,不可以更新。", t.Name)
-	}
-	task := cmd.NewTask()
-	return s.taskService.Update(ctx, task)
+func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand) (*model2.SuTask, error) {
+	return s.taskService.Update(ctx, cmd)
 }
 
 func (s *SuTaskApi) Analysis(ctx context.Context, cmd *command.SuTaskAnalysisCommand) error {
