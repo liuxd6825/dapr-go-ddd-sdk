@@ -56,22 +56,38 @@ func (s *CodeService) NewBillCode(ctx context.Context, caseId, billType string) 
 	return s.NewCode(ctx, fmt.Sprintf("%s-%s-", caseCode, billType))
 }
 
+// NewSuCode
+// @Description: 新建可疑任务编号
+func (s *CodeService) NewSuCode(ctx context.Context, caseId string) string {
+	return s.NewBillCode(ctx, caseId, "SU")
+}
+
+// NewHumanCode
+// @Description: 新建人员编号
 func (s *CodeService) NewHumanCode(ctx context.Context, caseId string) string {
 	return s.NewBillCode(ctx, caseId, "HM")
 }
 
+// NewCompanyCode
+// @Description: 新建公司编号
 func (s *CodeService) NewCompanyCode(ctx context.Context, caseId string) string {
 	return s.NewBillCode(ctx, caseId, "CP")
 }
 
+// NewAccountCode
+// @Description: 新建账号编号
 func (s *CodeService) NewAccountCode(ctx context.Context, caseId string) string {
 	return s.NewBillCode(ctx, caseId, "AC")
 }
 
+// NewContractCode
+// @Description: 新建合同编号
 func (s *CodeService) NewContractCode(ctx context.Context, caseId string) string {
 	return s.NewBillCode(ctx, caseId, "CT")
 }
 
+// NewProductCode
+// @Description: 新建产品编号
 func (s *CodeService) NewProductCode(ctx context.Context, caseId string) string {
 	return s.NewBillCode(ctx, caseId, "PR")
 }
@@ -133,6 +149,10 @@ func (s *CodeService) New(ctx context.Context, cmd *command.CodeNewCommand) (str
 	typeCode := cmd.Data.Type
 	style := cmd.Data.Style
 	numLength := cmd.Data.Length
+	count := cmd.Data.Count
+	if count <= 0 {
+		count = 1
+	}
 
 	dateStr := ""
 	if cmd.Data.Style != model.CodeStyle_Global {
@@ -141,7 +161,7 @@ func (s *CodeService) New(ctx context.Context, cmd *command.CodeNewCommand) (str
 	}
 
 	// 原子递增获取序号
-	seq, err := s.seqDAO.NextSeq(ctx, typeCode, dateStr)
+	seq, err := s.seqDAO.NextSeq(ctx, typeCode, dateStr, count)
 	if err != nil {
 		return "", fmt.Errorf("failed to generate sequence: %v", err)
 	}

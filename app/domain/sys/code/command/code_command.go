@@ -14,6 +14,7 @@ type CodeNewCommandData struct {
 	Length int             `json:"length" validate:"required"`
 	Style  model.CodeStyle `json:"style"`
 	NoHead bool            `json:"noHead"`
+	Count  int             `json:"count"`
 }
 
 type CodeNewCommandResult struct {

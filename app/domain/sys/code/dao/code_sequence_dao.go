@@ -34,9 +34,12 @@ func NewCodeSequenceDao(dbKey string) *CodeSequenceDao {
 
 // NextSeq 获取下一个序列号
 // 如果当天记录不存在，会自动创建并返回 1
-func (d *CodeSequenceDao) NextSeq(ctx context.Context, typeCode, dateStr string) (int64, error) {
+func (d *CodeSequenceDao) NextSeq(ctx context.Context, typeCode, dateStr string, count int) (int64, error) {
+	if count <= 0 {
+		count = 1
+	}
 	if d.Dao.GetDbType() == idao.DbType_MongoDB.String() {
-		return d.mongoNextSeq(ctx, typeCode, dateStr)
+		return d.mongoNextSeq(ctx, typeCode, dateStr, count)
 	} else {
 
 	}
@@ -45,7 +48,7 @@ func (d *CodeSequenceDao) NextSeq(ctx context.Context, typeCode, dateStr string)
 
 // NextSeq 获取下一个序列号
 // 如果当天记录不存在，会自动创建并返回 1
-func (d *CodeSequenceDao) mongoNextSeq(ctx context.Context, typeCode, dateStr string) (int64, error) {
+func (d *CodeSequenceDao) mongoNextSeq(ctx context.Context, typeCode, dateStr string, count int) (int64, error) {
 	mDao, ok := d.Dao.GetStore().(store_mongodb.IMongoDao[*model.CodeSequence])
 	if !ok {
 		return 0, fmt.Errorf("[code_sequence.dao] dao does not implement IMongoDao")
@@ -60,7 +63,7 @@ func (d *CodeSequenceDao) mongoNextSeq(ctx context.Context, typeCode, dateStr st
 	// $inc: 原子递增
 	// $set: 更新修改时间
 	update := bson.M{
-		"$inc": bson.M{"max_seq": 1},
+		"$inc": bson.M{"max_seq": count},
 		"$set": bson.M{"updated_at": time.Now()},
 	}
 
