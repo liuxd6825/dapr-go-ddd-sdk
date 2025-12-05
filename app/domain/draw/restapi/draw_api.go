@@ -101,7 +101,7 @@ func (s *DrawAPI) DeleteById(ctx context.Context, cmd *command.DeleteCommand) er
 }
 
 func (s *DrawAPI) DeleteByIds(ctx context.Context, cmd *command.DeleteByIdsCommand) error {
-	return s.drawDao.DeleteByIds(ctx, cmd.Data).Error
+	return s.drawDao.DeleteByIds(ctx, cmd.Data.Ids).Error
 }
 
 func (s *DrawAPI) FindPaging(ctx context.Context, query *restapi.FindPagingByCaseIdRequest) any {

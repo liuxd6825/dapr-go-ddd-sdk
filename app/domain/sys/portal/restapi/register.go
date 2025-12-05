@@ -13,6 +13,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		RegisterTenantAPI(app, baseUrl, env)
 		RegisterUserAPI(app, baseUrl, env)
 		RegisterAuthAPI(app, baseUrl, env)
+		RegisterTenantUserAPI(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -30,4 +31,8 @@ func RegisterUserAPI(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterAuthAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewAuthAPI(env, baseUrl))
+}
+
+func RegisterTenantUserAPI(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.RegisterController(app, NewTenantUserAPI(env, baseUrl))
 }

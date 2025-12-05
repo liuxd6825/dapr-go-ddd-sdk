@@ -6,8 +6,11 @@ type CreateCommand struct {
 }
 
 type DeleteByIdsCommand struct {
-	CommandId string   `json:"commandId"`
-	Data      []string `json:"data"`
+	CommandId string `json:"commandId"`
+	Data      struct {
+		Ids    []string `json:"ids"`
+		CaseId string   `json:"caseId"`
+	} `json:"data"`
 }
 
 type SubmitCommand struct {

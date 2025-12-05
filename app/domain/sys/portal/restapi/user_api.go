@@ -3,6 +3,7 @@ package restapi
 import (
 	"context"
 	"errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
@@ -19,31 +20,36 @@ import (
 )
 
 type UserAPI struct {
-	env         *env.Env
-	userService *service.UserService
-	oryService  *service2.OryService
-	rootPath    string
+	env               *env.Env
+	userService       *service.UserService
+	oryService        *service2.OryService
+	tenantUserService *service.TenantUserService
+	rootPath          string
 }
 
 func NewUserAPI(env *env.Env, rootPath string) *UserAPI {
 	return &UserAPI{
-		env:         env,
-		userService: service.NewUserService(),
-		oryService:  service2.NewOryService(),
-		rootPath:    rootPath,
+		env:               env,
+		userService:       service.NewUserService(),
+		oryService:        service2.NewOryService(),
+		tenantUserService: service.NewTenantUserService(),
+		rootPath:          rootPath,
 	}
 }
 
 func (s *UserAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.userService = service.NewUserService()
-	ctl := restapi.NewController(app, s.rootPath+"/portal", "sys.UserAPI", s)
+	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.UserAPI", s)
 	ctl.Post("/user", "Create")
 	ctl.Put("/user", "Update")
 	ctl.Put("/user:reset-password", "ResetPassword")
 	ctl.Put("/user:update-password", "UpdatePassword")
 	ctl.Delete("/user", "Delete", restapi.WithParamsInBody(true))
+	ctl.Delete("/user:ident", "DeleteIdentity", restapi.WithParamsInBody(true))
 	ctl.GetOne("/user/{id}", "FindById")
 	ctl.GetPaging("/user", "FindPaging")
+	ctl.GetPaging("/user:view", "FindPagingByTenantId")
+	ctl.GetPaging("/user:out", "FindPagingByNotInTenantUser")
 	return ctl
 }
 
@@ -78,7 +84,7 @@ func (s *UserAPI) Create(ctx context.Context, cmd *command.UserCreateCommand) er
 }
 
 func (s *UserAPI) Update(ctx context.Context, cmd *command.UserUpdateCommand) error {
-	cmd.UpdateMask = []string{"name", "phone", "email", "address", "gender", "work"}
+	cmd.UpdateMask = []string{"name", "phone", "email", "address", "gender", "work", "status"}
 	return s.userService.Update(ctx, cmd)
 }
 
@@ -87,9 +93,12 @@ func (s *UserAPI) UpdatePassword(ctx context.Context, cmd *command.UpdatePasswor
 		if cmd.Data.Password != cmd.Data.ConfirmPassword {
 			return errors.New("密码不一致")
 		}
-		user, err := s.userService.FindByAccount(ctx, cmd.Data.Account)
+		user, err := s.userService.FindUsingByAccount(ctx, cmd.Data.Account)
 		if err != nil {
 			return err
+		}
+		if user == nil {
+			return errors.New("账号已禁用")
 		}
 		password := cmd.Data.Password
 		updateIdentityBody := client.UpdateIdentityBody{
@@ -150,9 +159,17 @@ func (s *UserAPI) Delete(ctx context.Context, cmd *command.UserDeleteCommand) er
 		if err != nil {
 			return err
 		}
+		err = s.tenantUserService.DeleteByUserId(ctx, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
 		return s.userService.Delete(ctx, cmd)
 	})
 	return err
+}
+
+func (s *UserAPI) DeleteIdentity(ctx context.Context, cmd *command.UserDeleteIdentityCommand) error {
+	return s.oryService.DeleteIdentity(ctx, cmd.Data.Id)
 }
 
 func (s *UserAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model.User, error) {
@@ -160,5 +177,25 @@ func (s *UserAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*mode
 }
 
 func (s *UserAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.User], error) {
+	ctx, _ = restapp.NewTestContext(context.Background(), func(option *restapp.ContextOption) {
+		tenantId := service.SystemTenantId
+		option.TenantId = &tenantId
+	})
 	return s.userService.FindPaging(ctx, qry)
+}
+
+func (s *UserAPI) FindPagingByTenantId(ctx context.Context, qry *query.FindPagingByTenantIdRequest) (idao.FindPagingResult[*model.UserView], error) {
+	ctx, _ = restapp.NewTestContext(context.Background(), func(option *restapp.ContextOption) {
+		tenantId := service.SystemTenantId
+		option.TenantId = &tenantId
+	})
+	return s.userService.FindPagingByTenantId(ctx, qry.TenantId, qry)
+}
+
+func (s *UserAPI) FindPagingByNotInTenantUser(ctx context.Context, qry *query.FindPagingByTenantIdRequest) (idao.FindPagingResult[*model.User], error) {
+	ctx, _ = restapp.NewTestContext(context.Background(), func(option *restapp.ContextOption) {
+		tenantId := service.SystemTenantId
+		option.TenantId = &tenantId
+	})
+	return s.userService.FindPagingByNotInTenantUser(ctx, qry.TenantId, qry)
 }
