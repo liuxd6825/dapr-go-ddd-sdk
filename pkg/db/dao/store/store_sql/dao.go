@@ -279,7 +279,7 @@ func (d *Dao[T]) GetUpdateDB(ctx context.Context, entity any, opts ...store2.Opt
 		}
 	}
 	// 是否空值更新
-	if !opt.GetNullUpdate() {
+	if opt.GetNotUpdateNull() {
 		if e, ok := any(entity).(map[string]any); ok {
 			for k, v := range e {
 				if v == nil {
@@ -314,6 +314,12 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store2.Options) *
 		res.SetError(err)
 	})
 	return res
+}
+
+func (d *Dao[T]) UpdateNotNull(ctx context.Context, entity T, opts ...store2.Options) *store2.SetResult[T] {
+	opt := store2.NewOptions(opts...)
+	opt.SetNotUpdateNull(true)
+	return d.Update(ctx, entity, opt)
 }
 
 func (d *Dao[T]) GetUpdateFields(opts ...store2.Options) []string {

@@ -7,6 +7,14 @@ import (
 	xbase2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 )
 
+type SuTaskRenewCommand struct {
+	xbase2.Command[SuTaskRenewData]
+}
+
+type SuTaskRenewData struct {
+	Id string `json:"id" bson:"id"  validate:"required" title:"任务ID"`
+}
+
 type SuTaskCreateCommand struct {
 	xbase2.Command[SuTaskCreateData]
 }
@@ -82,4 +90,35 @@ type SuTaskAnalysisCommand struct {
 // SuTaskStartAnalysis 可疑分析任务
 type SuTaskStartAnalysis struct {
 	Id string `json:"id" bson:"id"  validate:"required" title:"任务ID"`
+}
+
+type SuTaskBatchCommand struct {
+	xbase2.Command[SuTaskBatchData]
+}
+
+type SuTaskBatchData struct {
+}
+
+type SuTaskDeleteCommand struct {
+	xbase2.Command[SuTaskDeleteData]
+}
+
+type SuTaskDeleteData struct {
+	TaskId string `json:"taskId" bson:"taskId" validate:"required" title:"任务ID"`
+}
+
+type SuTaskCloseCommand struct {
+	xbase2.Command[SuTaskCloseData]
+}
+
+type SuTaskCloseData struct {
+	Id string `json:"id" bson:"id" validate:"required" title:"任务ID"`
+}
+
+type SuTaskCompleteCommand struct {
+	xbase2.Command[SuTaskCompletedData]
+}
+
+type SuTaskCompletedData struct {
+	Id string `json:"id" bson:"id" validate:"required" title:"任务ID"`
 }

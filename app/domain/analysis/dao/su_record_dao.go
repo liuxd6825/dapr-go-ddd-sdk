@@ -50,8 +50,11 @@ func (dao *SuRecordDao) SumByTaskId(ctx context.Context, taskId string) (float64
 	if err != nil {
 		return 0, err
 	}
-	amount := sumFields["amount"].(float64)
-	return amount, err
+	if val, ok := sumFields["amount"]; ok {
+		amount := val.(float64)
+		return amount, nil
+	}
+	return 0, err
 }
 
 func (dao *SuTaskDao) SumAmount(ctx context.Context, taskId string) (map[string]any, error) {

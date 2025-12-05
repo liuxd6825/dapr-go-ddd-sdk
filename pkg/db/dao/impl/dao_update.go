@@ -3,6 +3,7 @@ package impl
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
 
@@ -19,6 +20,12 @@ func (d *DaoBase[T]) Update(ctx context.Context, entity T, opts ...idao.CallOpti
 
 	//d.PublishEvent(ctx, idao.AccessTypeUpdate, entity, opts...)
 	return idao.NewResult(res)
+}
+
+func (d *DaoBase[T]) UpdateNotNull(ctx context.Context, entity T, opts ...idao.CallOptions) *idao.Result {
+	options := idao.NewCallOptions(opts...)
+	options.SetNotUpdateNull(true)
+	return d.Update(ctx, entity, options)
 }
 
 func (d *DaoBase[T]) UpdateMap(ctx context.Context, id string, data map[string]any, opts ...idao.CallOptions) *idao.Result {

@@ -41,16 +41,24 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 
 	controller.Post("/analysis/su-task", "Create", restapi.WithTranDbKey(config.DBKey))
 	controller.Put("/analysis/su-task", "Update", restapi.WithTranDbKey(config.DBKey))
-	controller.Put("/analysis/su-task:analysis", "Analysis", restapi.WithTranDbKey(config.DBKey))
+	controller.Put("/analysis/su-task:analysis", "Analysis")
+	controller.Delete("/analysis/su-task", "Delete", restapi.WithTranDbKey(config.DBKey))
+	controller.Post("/analysis/su-task:renew", "Renew", restapi.WithTranDbKey(config.DBKey))
+	controller.Post("/analysis/su-task:close", "Close", restapi.WithTranDbKey(config.DBKey))
+	controller.Post("/analysis/su-task:complete", "Complete", restapi.WithTranDbKey(config.DBKey))
 
 	controller.GetOne("/analysis/su-task/{id}", "FindById")
 	controller.GetPaging("/analysis/su-task", "FindPaging")
 	controller.GetOne("/analysis/su-task:bill/{id}", "FindBill")
 	controller.GetData("/analysis/su-task:by-case", "FindByCaseId")
-
+	controller.GetData("/analysis/su-task:batch", "Batch")
 	controller.View("/analysis/su-task/bill.html", "GetBillView")
 
 	return controller
+}
+
+func (s *SuTaskApi) Renew(ctx context.Context, cmd *command.SuTaskRenewCommand) (*model2.SuTaskBillView, error) {
+	return s.taskService.Renew(ctx, cmd)
 }
 
 func (s *SuTaskApi) Create(ctx context.Context, cmd *command.SuTaskCreateCommand) (*model2.SuTask, error) {
@@ -61,12 +69,24 @@ func (s *SuTaskApi) Update(ctx context.Context, cmd *command.SuTaskUpdateCommand
 	return s.taskService.Update(ctx, cmd)
 }
 
-func (s *SuTaskApi) Analysis(ctx context.Context, cmd *command.SuTaskAnalysisCommand) error {
-	return s.taskService.Analysis(ctx, cmd.Data.Id)
+func (s *SuTaskApi) Delete(ctx context.Context, cmd *command.SuTaskDeleteCommand) error {
+	return s.taskService.Delete(ctx, cmd)
 }
 
-func (s *SuTaskApi) Delete(ctx context.Context, task *model2.SuTask) error {
-	return nil
+func (s *SuTaskApi) Close(ctx context.Context, cmd *command.SuTaskCloseCommand) error {
+	return s.taskService.Close(ctx, cmd)
+}
+
+func (s *SuTaskApi) Complete(ctx context.Context, cmd *command.SuTaskCompleteCommand) error {
+	return s.taskService.Complete(ctx, cmd)
+}
+
+func (s *SuTaskApi) Batch(ctx context.Context, cmd *command.SuTaskUpdateCommand) {
+
+}
+
+func (s *SuTaskApi) Analysis(ctx context.Context, cmd *command.SuTaskAnalysisCommand) error {
+	return s.taskService.Analysis(ctx, cmd.Data.Id)
 }
 
 func (s *SuTaskApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (store.FindPagingResult[*model2.SuTask], error) {

@@ -3,10 +3,11 @@ package amount
 import (
 	"context"
 	"fmt"
+	"math"
+
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	"math"
 )
 
 // NearMatchResult 存储匹配结果的详细信息
@@ -18,6 +19,8 @@ type NearMatchResult struct {
 	DifferencePercent float64 // 差额百分比
 }
 
+// AmountNear
+// @Description: 临近交易
 type AmountNear struct {
 	rule    model2.AmountNearRule
 	percent float64
@@ -34,7 +37,7 @@ func (s *AmountNear) IsEnable() bool {
 	return s.rule.IsEnable
 }
 
-// DoAction 整数交易
+// DoAction 临近交易
 func (s *AmountNear) DoAction(ctx context.Context, tx *model.Record, txIndex int, accTxs *model2.AccountRecords, result *action.AnalyseResult) {
 	isNear, res := isNearMultiple(tx.Amount, s.rule.NearAmount, s.percent)
 	if isNear {

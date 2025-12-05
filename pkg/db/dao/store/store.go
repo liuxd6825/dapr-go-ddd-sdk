@@ -29,6 +29,7 @@ type IStore[T any] interface {
 	// 更新
 
 	Update(ctx context.Context, entity T, opts ...Options) *SetResult[T]
+	UpdateNotNull(ctx context.Context, entity T, opts ...Options) *SetResult[T]
 	UpdateByRSQL(ctx context.Context, tenantId, filterRSQL string, data T, opts ...Options) *SetResult[T]
 	UpdateMany(ctx context.Context, tenantId string, entities []T, opts ...Options) *SetResult[T]
 	UpdateMap(ctx context.Context, tenantId string, id string, data map[string]any, opts ...Options) *SetResult[T]

@@ -1,16 +1,17 @@
 package action
 
 import (
+	"sync"
+
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	"sync"
 )
 
 type AnalyseResult struct {
-	Account     string
+	Account     string                      // 账号
 	SuRecords   map[string]*model2.SuRecord // 可疑数据
-	Batches     []*AnalyseBatch
-	RecordCount int64 // 流水记录总数量
+	Batches     []*AnalyseBatch             // 批量问题流水
+	RecordCount int64                       // 流水记录总数量
 }
 
 type AnalyseBatch struct {
@@ -136,6 +137,7 @@ func (s *AnalyseResult) AddRecord(tx *model.Record, suType model2.SuType, reason
 		Reason: reason,
 		Type:   suType,
 	})
+	item.RiskTags = item.GetRiskTags()
 	return item
 }
 

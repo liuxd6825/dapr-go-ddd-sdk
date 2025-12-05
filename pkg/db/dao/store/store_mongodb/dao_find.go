@@ -492,6 +492,9 @@ func (r *Dao[T]) SumByRSQL(ctx context.Context, tenantId string, rSql string, va
 	if err != nil {
 		panic(err)
 	}
+	if len(list) == 0 {
+		return map[string]any{}
+	}
 	return list[0]
 }
 

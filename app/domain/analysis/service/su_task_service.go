@@ -26,6 +26,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 	"go.temporal.io/sdk/client"
 )
 
@@ -51,6 +52,19 @@ func NewSuTaskService() *SuTaskService {
 		taskLogDao:     dao.NewSuTaskLogDao(config.DBKey),
 		codeService:    service.NewCodeService(),
 	}
+}
+
+func (s *SuTaskService) Renew(ctx context.Context, cmd *command.SuTaskRenewCommand) (*model.SuTaskBillView, error) {
+	if err := s.ClearAnalyseResults(ctx, cmd.Data.Id); err != nil {
+		return nil, err
+	}
+	if err := s.UpdateStatus(ctx, cmd.Data.Id, model.SuTaskStatus_New); err != nil {
+		return nil, err
+	}
+	task, err := s.QueryBillById(ctx, &query.SuTaskFindByIdQuery{
+		Id: cmd.Data.Id,
+	})
+	return task, err
 }
 
 // Create
@@ -105,6 +119,41 @@ func (s *SuTaskService) UpdateMany(ctx context.Context, v []*model.SuTask, opts 
 		task.StatusName = task.Status.String()
 	}
 	return s.taskDao.UpdateMany(ctx, v, opts...).GetError()
+}
+
+func (s *SuTaskService) Delete(ctx context.Context, cmd *command.SuTaskDeleteCommand) error {
+	taskId := cmd.Data.TaskId
+	task, err := s.FindById(ctx, taskId)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return nil
+	}
+	if task.Status != model.SuTaskStatus_New {
+		return errors.New("不可删除，原因：任务状态为%s。 ", task.Status.String())
+	}
+	return s.taskDao.DeleteById(ctx, cmd.Data.TaskId).GetError()
+}
+
+func (s *SuTaskService) Close(ctx context.Context, cmd *command.SuTaskCloseCommand) error {
+	task := &model.SuTask{}
+	task.Id = cmd.Data.Id
+	task.Status = model.SuTaskStatus_Closed
+	task.StatusName = model.SuTaskStatus_Closed.String()
+	task.FinishTime = timeutils.PNow()
+	fieldsOptions := idao.NewCallOptions().SetUpdateFields([]string{"status", "status_name", "finish_time"})
+	return s.taskDao.Update(ctx, task, fieldsOptions).GetError()
+}
+
+func (s *SuTaskService) Complete(ctx context.Context, cmd *command.SuTaskCompleteCommand) error {
+	task := &model.SuTask{}
+	task.Id = cmd.Data.Id
+	task.Status = model.SuTaskStatus_Completed
+	task.StatusName = model.SuTaskStatus_Completed.String()
+	task.FinishTime = timeutils.PNow()
+	fieldsOptions := idao.NewCallOptions().SetUpdateFields([]string{"status", "status_name", "finish_time"})
+	return s.taskDao.Update(ctx, task, fieldsOptions).GetError()
 }
 
 func (s *SuTaskService) DeleteById(ctx context.Context, id string, opts ...idao.CallOptions) error {
@@ -303,10 +352,24 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 	if err != nil {
 		return 0, err
 	}
+	type saveBatch struct {
+		records    []*model.SuRecord
+		batches    []*model.SuBatch
+		batchItems []*model.SuBatchItem
+	}
+
+	saves := []saveBatch{}
+
 	for _, result := range results {
 		records := make([]*model.SuRecord, 0)
 		batches := make([]*model.SuBatch, 0)
 		batchItems := make([]*model.SuBatchItem, 0)
+		save := saveBatch{
+			records:    records,
+			batches:    batches,
+			batchItems: batchItems,
+		}
+		saves = append(saves, save)
 		for _, record := range result.SuRecords {
 			records = append(records, record)
 			record.RecordId = record.Id
@@ -333,22 +396,26 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 				})
 			}
 		}
-		err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
-			if err = s.ClearAnalyseResults(ctx, task.Id); err != nil {
-				return err
-			}
-			if err = s.suBatchDao.CreateMany(ctx, batches).GetError(); err != nil {
-				return err
-			}
-			if err = s.suBatchItemDao.CreateMany(ctx, batchItems).GetError(); err != nil {
-				return err
-			}
-			if err = s.suRecordDao.CreateMany(ctx, records).GetError(); err != nil {
-				return err
-			}
-			return nil
-		})
 	}
+
+	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		if err = s.ClearAnalyseResults(ctx, task.Id); err != nil {
+			return err
+		}
+		for _, save := range saves {
+			if err = s.suBatchDao.CreateMany(ctx, save.batches).GetError(); err != nil {
+				return err
+			}
+			if err = s.suBatchItemDao.CreateMany(ctx, save.batchItems).GetError(); err != nil {
+				return err
+			}
+			if err = s.suRecordDao.CreateMany(ctx, save.records).GetError(); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
 	return recordCount, err
 }
 

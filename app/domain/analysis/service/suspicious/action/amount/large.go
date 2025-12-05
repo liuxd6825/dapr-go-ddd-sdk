@@ -3,11 +3,14 @@ package amount
 import (
 	"context"
 	"fmt"
+
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 )
 
+// AmountLarge
+// @Description: 大额金额
 type AmountLarge struct {
 	rule model2.AmountLargeRule
 }

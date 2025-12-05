@@ -59,8 +59,8 @@ type Options interface {
 	SetUpdateCancel(v []string) Options
 	SetUpdateCancelByDefault() Options
 
-	GetNullUpdate() bool
-	SetNullUpdate(val bool) Options
+	GetNotUpdateNull() bool
+	SetNotUpdateNull(val bool) Options
 
 	SetTenantId(v string) Options
 	GetTenantId() string
@@ -88,7 +88,7 @@ type RepositoryOptions struct {
 	updateFields  []string
 	updateCancel  []string
 	upsert        *bool
-	nullNotUpdate *bool // 空值是否更新
+	notUpdateNull *bool // 空值是否更新
 
 	tenantId *string
 	user     User
@@ -127,6 +127,10 @@ func NewOptions(o ...Options) Options {
 		}
 		if item.GetUser() != nil {
 			res.user = item.GetUser()
+		}
+		if !item.GetNotUpdateNull() {
+			val := item.GetNotUpdateNull()
+			res.notUpdateNull = &val
 		}
 	}
 	return res
@@ -206,16 +210,16 @@ func (o *RepositoryOptions) SetCommandId(v *string) Options {
 	return o
 }
 
-func (o *RepositoryOptions) GetNullUpdate() bool {
-	if o.nullNotUpdate == nil {
-		return true
+func (o *RepositoryOptions) GetNotUpdateNull() bool {
+	if o.notUpdateNull == nil {
+		return false
 	}
-	return *o.nullNotUpdate
+	return *o.notUpdateNull
 }
 
-func (o *RepositoryOptions) SetNullUpdate(val bool) Options {
+func (o *RepositoryOptions) SetNotUpdateNull(val bool) Options {
 	b := val
-	o.nullNotUpdate = &b
+	o.notUpdateNull = &b
 	return o
 }
 
@@ -299,4 +303,10 @@ func (o *RepositoryOptions) Merge(opts ...Options) Options {
 	}
 	res.SetUpdateCancel(updateCancel)
 	return res
+}
+
+func WithNotUpdateNull(val bool) Options {
+	return &RepositoryOptions{
+		notUpdateNull: &val,
+	}
 }

@@ -78,6 +78,12 @@ func (d *Dao[T]) Update(ctx context.Context, entity T, opts ...store2.Options) *
 	return res
 }
 
+func (d *Dao[T]) UpdateNotNull(ctx context.Context, entity T, opts ...store2.Options) *store2.SetResult[T] {
+	options := store2.NewOptions(opts...)
+	options.SetNotUpdateNull(true)
+	return d.Update(ctx, entity, options)
+}
+
 func (d *Dao[T]) UpdateMany(ctx context.Context, tenantId string, list []T, opts ...store2.Options) *store2.SetResult[T] {
 	res := store2.NewSetResultEmpty[T]()
 	gp.Try(func() error {

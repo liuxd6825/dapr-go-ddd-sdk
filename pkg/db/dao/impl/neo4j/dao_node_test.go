@@ -25,12 +25,11 @@ func Test_NodeDao(t *testing.T) {
 	humanSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 
 	daoCfg := &idao.DaoConfig{
-		DB:         driver,
-		DbKey:      "neo4j",
-		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(humanSchema),
-		Env:        xtest2.NewEnvConfig(),
-		IsPubEvent: false,
-		DaoType:    "node",
+		DB:       driver,
+		DBKey:    "neo4j",
+		DBSchema: dbschema.NewDBSchemaWithJsonSchema(humanSchema),
+		Env:      xtest2.NewEnvConfig(),
+		//DaoType:    "node",
 	}
 
 	dao := NewDao[map[string]any](daoCfg)

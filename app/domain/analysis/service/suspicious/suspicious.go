@@ -79,7 +79,7 @@ func (s *Analyse) DoAction(ctx context.Context) (allResults []*action.AnalyseRes
 	// --- 1. Pre-load dimension data ---
 
 	// --- 2. [CORE CHANGE] Group all transactions by Account first ---
-	txsByAccount, recordCount, err := s.getAccountTrans(ctx)
+	accountRecords, recordCount, err := s.getAccountRecords(ctx)
 	if err != nil {
 		logs.Errorfmt(ctx, "Failed to load transactions: %v", err)
 	}
@@ -128,7 +128,7 @@ func (s *Analyse) DoAction(ctx context.Context) (allResults []*action.AnalyseRes
 	// This goroutine now feeds whole account histories to the workers.
 	go func() {
 		defer close(jobs)
-		for _, accTrans := range txsByAccount {
+		for _, accTrans := range accountRecords {
 			jobs <- *accTrans
 		}
 		fmt.Println("[Producer] All accounts have been sent to workers.")
@@ -171,7 +171,7 @@ func (s *Analyse) applyRulesToAccount(ctx context.Context, accTxs *model2.Accoun
 	return result
 }
 
-func (s *Analyse) getAccountTrans(ctx context.Context) (res []*model2.AccountRecords, recordCount int64, err error) {
+func (s *Analyse) getAccountRecords(ctx context.Context) (res []*model2.AccountRecords, recordCount int64, err error) {
 	res = []*model2.AccountRecords{}
 	startTime := s.task.StartTime
 	endTime := s.task.EndTime

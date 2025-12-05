@@ -22,6 +22,7 @@ type Dao[T any] interface {
 	UpdateMany(ctx context.Context, entities []T, opts ...CallOptions) *Result
 	UpdateByRSQL(ctx context.Context, rsql string, entity T, opts ...CallOptions) *Result
 	UpdateMapByRSQL(ctx context.Context, rsql string, data map[string]any, opts ...CallOptions) *Result
+	UpdateNotNull(ctx context.Context, entity T, opts ...CallOptions) *Result
 
 	Delete(ctx context.Context, entity T, opts ...CallOptions) *Result
 	DeleteMany(ctx context.Context, entity []T, opts ...CallOptions) *Result

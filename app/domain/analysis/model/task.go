@@ -15,6 +15,7 @@ type SuTask struct {
 	Rules           SuTaskRule   `json:"rules" gorm:"rules;type:json" bson:"rules" title:"规则"` // 规则
 	StartTime       *time.Time   `json:"startTime" gorm:"start_time" bson:"start_time" title:"审计开始时间"`
 	EndTime         *time.Time   `json:"endTime" gorm:"end_time" bson:"end_time" title:"审计结束时间"`
+	FinishTime      *time.Time   `json:"finishTime" gorm:"finish_time" bson:"finish_time" title:"完成时间"`
 	Status          SuTaskStatus `json:"status" gorm:"status"  bson:"status" title:"状态"`
 	StatusName      string       `json:"statusName" gorm:"status_name"  bson:"status_name" title:"状态名称"`
 	OwnerId         string       `json:"ownerId" gorm:"owner_id"  bson:"owner_id" title:"负责人ID"`

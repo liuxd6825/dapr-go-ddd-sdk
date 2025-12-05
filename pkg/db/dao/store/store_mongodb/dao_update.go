@@ -17,6 +17,12 @@ func (r *Dao[T]) Update(ctx context.Context, entity T, opts ...store2.Options) *
 	return r.updateById(ctx, entity, opts...)
 }
 
+func (r *Dao[T]) UpdateNotNull(ctx context.Context, entity T, opts ...store2.Options) *store2.SetResult[T] {
+	opt := store2.NewOptions(opts...)
+	opt.SetNotUpdateNull(true)
+	return r.updateById(ctx, entity, opt)
+}
+
 func (r *Dao[T]) updateById(ctx context.Context, entity T, opts ...store2.Options) *store2.SetResult[T] {
 	res := store2.NewSetResultEmpty[T]()
 	gp.Try(func() error {
@@ -155,14 +161,15 @@ func (r *Dao[T]) UpdateMapByRSQL(ctx context.Context, tenantId string, filterRSQ
 func (r *Dao[T]) updateMap(ctx context.Context, tenantId string, filter any, data map[string]any, opts ...store2.Options) *store2.SetResult[T] {
 	res := store2.NewSetResultEmpty[T]()
 	gp.Try(func() error {
+		options := store2.NewOptions(opts...)
 		if err := assert2.NotEmpty(tenantId, assert2.NewOptions("tenantId is empty")); err != nil {
 			return err
 		}
 		if err := assert2.NotNil(filter, assert2.NewOptions("filterMap is nil")); err != nil {
 			return err
 		}
-		updateOptions := getUpdateOptions(opts...)
-		doc := r.getUpdateData(ctx, tenantId, data, opts...)
+		updateOptions := getUpdateOptions(options)
+		doc := r.getUpdateData(ctx, tenantId, data, options)
 		setData := bson.M{"$set": doc}
 		sCtx := r.getSessionCtx(ctx)
 		upeRes, err := r.getCollection(ctx).UpdateMany(sCtx, filter, setData, updateOptions)
@@ -181,11 +188,16 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 	r.eb.SetUpdatedInfo(ctx, data)
 	doc := r.entity2db(data)
 	opt := store2.NewOptions(opts...)
-
+	isNotUpdateNull := opt.GetNotUpdateNull()
 	for _, field := range r.GetSchema().Fields {
 		if !field.Updatable || field.PrimaryKey {
 			delete(doc, field.DBName)
 			delete(doc, field.Name)
+			continue
+		}
+		if isNotUpdateNull {
+			r.deleteNullField(doc, field.Name)
+			r.deleteNullField(doc, field.DBName)
 		}
 	}
 
@@ -208,6 +220,38 @@ func (r *Dao[T]) getUpdateData(ctx context.Context, tenantId string, data any, o
 		}
 	}
 	return doc
+}
+
+func (r *Dao[T]) deleteNullField(doc map[string]any, fileName string) {
+	val, ok := doc[fileName]
+	if !ok {
+		return
+	}
+	if val == nil {
+		delete(doc, fileName)
+		return
+	}
+	if v, ok := val.(string); ok {
+		if v == "" {
+			delete(doc, fileName)
+		}
+	} else if v, ok := val.(int64); ok {
+		if v == 0 {
+			delete(doc, fileName)
+		}
+	} else if v, ok := val.(int); ok {
+		if v == 0 {
+			delete(doc, fileName)
+		}
+	} else if v, ok := val.(float32); ok {
+		if v == 0 {
+			delete(doc, fileName)
+		}
+	} else if v, ok := val.(float64); ok {
+		if v == 0 {
+			delete(doc, fileName)
+		}
+	}
 }
 
 func (r *Dao[T]) getInsertData(ctx context.Context, tenantId string, data any, opts ...store2.Options) any {
