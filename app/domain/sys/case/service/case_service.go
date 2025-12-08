@@ -50,7 +50,7 @@ func (t *CaseService) Delete(ctx context.Context, cmd *command.CaseDeleteCommand
 }
 
 func (t *CaseService) DeleteBatch(ctx context.Context, cmd *command.CaseDeleteBatchCommand) error {
-	return t.dao.DeleteByIds(ctx, cmd.Data).GetError()
+	return t.dao.DeleteByIds(ctx, cmd.Data.Ids).GetError()
 }
 
 func (t *CaseService) Update(ctx context.Context, cmd *command.CaseUpdateCommand) error {

@@ -15,5 +15,10 @@ type CaseDeleteCommand struct {
 	xbase.DeleteByIdCommand
 }
 type CaseDeleteBatchCommand struct {
-	xbase.Command[[]string]
+	xbase.Command[DeleteByIds]
+}
+
+type DeleteByIds struct {
+	Ids    []string `json:"ids"`
+	CaseId string   `json:"caseId"`
 }

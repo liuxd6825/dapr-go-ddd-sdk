@@ -2,6 +2,9 @@ package subscribe
 
 import (
 	"context"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"strings"
 	"time"
 
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
@@ -25,6 +28,9 @@ type FolderEventSubHandler struct {
 	env               *env.Env
 	folderService     *service.FolderService
 	folderMetaService *service.FolderMetaService
+	docService        *service.DocumentService
+	docMetaService    *service.DocumentMetaService
+	fileService       *service.FileService
 	fsService         *service.FsService
 }
 
@@ -35,12 +41,17 @@ func NewFolderEventSubHandler(env *env.Env, baseUrl string) *FolderEventSubHandl
 		folderService:     service.NewFolderService(),
 		folderMetaService: service.NewFolderMetaService(),
 		fsService:         service.NewFsService(),
+		docService:        service.NewDocumentService(),
+		docMetaService:    service.NewDocumentMetaService(),
+		fileService:       service.NewFileService(),
 	}
 }
 
 func (s *FolderEventSubHandler) NewAPIController(app *iris.Application) *restapi.ApiController {
 	ctl := restapi.NewController(app, "subscribe/document/event", "FolderEventSubHandler", s)
 	ctl.EventHandle("folder-create-event", "FolderCreateEvent")
+	ctl.EventHandle("folder-update-alias-event", "FolderUpdateAliasEvent")
+	ctl.EventHandle("folder-delete-event", "FolderDeleteEvent")
 	ctl.Handle(iris.MethodOptions, "folder-create-event", "Check")
 	return ctl
 }
@@ -91,6 +102,78 @@ func (s *FolderEventSubHandler) FolderCreateEvent(ctx context.Context, event *ev
 		}
 
 		s.fsService.MkdirAll(folder.FolderPath)
+		return nil
+	})
+}
+
+func (s *FolderEventSubHandler) FolderUpdateAliasEvent(ctx context.Context, event *event.FolderUpdateAliasEvent) error {
+
+	folder, _ := model2.NewFolder()
+	folder.Id = event.Data.Id
+	folder.Alias = event.Data.Alias
+
+	opts := idao.NewCallOptions()
+	opts.SetUpdateFields([]string{"alias"})
+
+	return s.folderService.Update(ctx, folder, opts)
+}
+
+func (s *FolderEventSubHandler) FolderDeleteEvent(ctx context.Context, event *event.FolderDeleteEvent) error {
+	logs.Infofmt(ctx, "%s eventId:%s; occurredOn:%s; ", event.EventType, event.Id, event.CreatedTime.Format(time.DateTime))
+
+	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", event.Data.TenantId, event.Data.BusId, event.Data.EntityId))
+		if err != nil {
+			return err
+		}
+
+		if event.Data.Ids != nil && len(event.Data.Ids) > 0 {
+			for _, id := range event.Data.Ids {
+				folder, err := s.folderService.FindById(ctx, id)
+				if err != nil {
+					return err
+				}
+				var res *idao.Result
+				for _, f := range arr {
+					if strings.HasPrefix(f.FolderPath+"/", folder.FolderPath+"/") {
+						res = s.fileService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+						if res.Error != nil {
+							return res.Error
+						}
+
+						data, err := s.docService.FindByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+						if err != nil {
+							return err
+						}
+						if data != nil && len(data) > 0 {
+							for _, d := range data {
+								res = s.docMetaService.DeleteByDocumentId(ctx, d.Id)
+								if res.Error != nil {
+									return res.Error
+								}
+							}
+						}
+
+						res = s.docService.DeleteByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", f.Id))
+						if res.Error != nil {
+							return res.Error
+						}
+
+						res = s.folderService.DeleteById(ctx, f.Id)
+						if res.Error != nil {
+							return res.Error
+						}
+
+						res = s.folderMetaService.DeleteByFolderId(ctx, f.Id)
+						if res.Error != nil {
+							return res.Error
+						}
+					}
+				}
+				s.fsService.RemoveAll(folder.FolderPath)
+			}
+		}
+
 		return nil
 	})
 }

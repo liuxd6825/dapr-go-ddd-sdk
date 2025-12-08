@@ -43,14 +43,14 @@ func (e TenantStatus) Title() string {
 	return res
 }
 
-type UserStatus int
+type Status string
 
 const (
-	Using    UserStatus = 1 // 已启用
-	Disabled UserStatus = 0 // 已禁用
+	Using    Status = "Using"    // 已启用
+	Disabled Status = "Disabled" // 已禁用
 )
 
-func (e UserStatus) String() string {
+func (e Status) String() string {
 	res := "UNKNOWN"
 	switch e {
 	case Using:
@@ -63,7 +63,7 @@ func (e UserStatus) String() string {
 	return res
 }
 
-func (e UserStatus) Title() string {
+func (e Status) Title() string {
 	res := "UNKNOWN"
 	switch e {
 	case Using:

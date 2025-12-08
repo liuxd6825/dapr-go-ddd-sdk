@@ -15,6 +15,9 @@ type UserDeleteCommand struct {
 	xbase.Command[model.User]
 	//xbase.DeleteByIdCommand
 }
+type UserDeleteIdentityCommand struct {
+	xbase.DeleteByIdCommand
+}
 
 type UserDeleteBatchCommand struct {
 	xbase.Command[model.User]

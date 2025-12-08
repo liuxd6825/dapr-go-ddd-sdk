@@ -32,7 +32,7 @@ func NewAuthAPI(env *env.Env, rootPath string) *AuthAPI {
 
 func (s *AuthAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	s.authService = service.NewAuthService()
-	ctl := restapi.NewController(app, s.rootPath+"/auth", "sys.AuthAPI", s)
+	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.AuthAPI", s)
 	ctl.Post("/login", "Login")
 	return ctl
 }
@@ -62,10 +62,11 @@ func (s *AuthAPI) Login(ctx context.Context, cmd *command.LoginCommand) (*model.
 		return nil, errors.New("Traits转Map失败")
 	}
 	account, _ := ident["account"].(string)
-	user, err := s.userService.FindByAccount(ctx, account)
+	user, err := s.userService.FindUsingByAccount(ctx, account)
 	if err != nil {
 		return nil, err
 	}
+
 	loginUser := &model.LoginUser{
 		Id:            user.Id,
 		TenantId:      "test",

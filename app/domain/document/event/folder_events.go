@@ -43,3 +43,35 @@ func NewFolderCreateEvent(ctx context.Context, appId string, data *FolderCreateE
 	event.SetData(ctx, appId, data, &events.EventOptions{EventType: FolderCreateEventType})
 	return event
 }
+
+type FolderUpdateAliasEvent = events.Event[*FolderUpdateAliasEventData]
+
+type FolderUpdateAliasEventData struct {
+	Id    string `json:"id"`
+	Alias string `gorm:"alias" json:"alias,omitempty" bson:"alias"` // 目录别名
+}
+
+const FolderUpdateAliasEventType = "document.folder.update-alias-event"
+
+func NewFolderUpdateAliasEvent(ctx context.Context, appId string, data *FolderUpdateAliasEventData) *FolderUpdateAliasEvent {
+	event := &FolderUpdateAliasEvent{}
+	event.SetData(ctx, appId, data, &events.EventOptions{EventType: FolderUpdateAliasEventType})
+	return event
+}
+
+type FolderDeleteEvent = events.Event[*FolderDeleteEventData]
+
+type FolderDeleteEventData struct {
+	Ids      []string `json:"ids"`
+	TenantId string   `json:"tenantId" bson:"tenant_id" gorm:"tenant_id"`
+	BusId    string   `gorm:"bus_id" json:"busId,omitempty" bson:"bus_id"`
+	EntityId string   `gorm:"entity_id" json:"entityId,omitempty" bson:"entity_id"`
+}
+
+const FolderDeleteEventType = "document.folder.delete-event"
+
+func NewFolderDeleteEvent(ctx context.Context, appId string, data *FolderDeleteEventData) *FolderDeleteEvent {
+	event := &FolderDeleteEvent{}
+	event.SetData(ctx, appId, data, &events.EventOptions{EventType: FolderDeleteEventType})
+	return event
+}
