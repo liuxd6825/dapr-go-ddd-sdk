@@ -94,6 +94,8 @@ func (env *Env) Init() {
 	initDapr(env)
 	initResources(env)
 
+	initRedis(env)
+
 	env.Fsm = env.NewFsManager(env.Fs)
 }
 
@@ -150,8 +152,15 @@ func (env *Env) CloseDB(ctx context.Context) error {
 }
 
 func (env *Env) GetDB(dbKey string) DBItem {
+	dbKey = env.GetDBKeyValue(dbKey)
 	item := env.dbs[dbKey]
 	return item
+}
+
+func (env *Env) GetRedis(key string) (*Redis, bool) {
+	key = env.GetDBKeyValue(key)
+	redis, ok := env.Redis[key]
+	return redis, ok
 }
 
 func (env *Env) GetField(key string) any {
