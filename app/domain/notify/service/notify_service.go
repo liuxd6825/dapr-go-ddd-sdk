@@ -37,7 +37,7 @@ func NewNotifyService(client dapr.Client, env *env.Env) *NotifyService {
 }
 
 func newNotifyService(client dapr.Client, env *env.Env) *NotifyService {
-	redisClient, ok := env.GetRedis(config.DBKey)
+	redisClient, ok := env.GetRedis(config.GetRedisKey())
 	if !ok {
 		panic("redis client not exist")
 	}
