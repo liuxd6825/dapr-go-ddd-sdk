@@ -27,12 +27,17 @@ func NewJwtService() *JwtService {
 func (s *JwtService) Generate(session *client.Session, user *model.LoginUser) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
+	identityId := user.OryIdentityId
+	if session.Identity != nil && session.Identity.Id != "" {
+		identityId = session.Identity.Id
+	}
+
 	claims := token.Claims.(jwt.MapClaims)
-	claims["sub"] = session.Identity.Id
+	claims["sub"] = identityId
 	claims["user"] = user
 	claims["exp"] = session.ExpiresAt.Unix()
 	claims["iat"] = session.AuthenticatedAt.Unix()
-	claims["client_id"] = session.Identity.Id
+	claims["client_id"] = identityId
 
 	return token.SignedString([]byte(secret))
 }

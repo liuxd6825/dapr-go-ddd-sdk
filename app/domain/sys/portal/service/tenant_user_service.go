@@ -77,3 +77,16 @@ func (t *TenantUserService) DeleteByUserId(ctx context.Context, userId string) e
 	rSql := builder.Eq("user_id", userId).Build()
 	return t.dao.DeleteByRSQL(ctx, rSql, t.tenantOpt).GetError()
 }
+
+func (t *TenantUserService) FindByTenantIdAndUserId(ctx context.Context, tenantId, userId string) (*model.TenantUser, error) {
+	builder := dao2.NewRSQLBuilder()
+	rSql := builder.And(builder.Eq("ten_id", tenantId), builder.Eq("user_id", userId)).Build()
+	arr, err := t.dao.FindByRSQL(ctx, rSql, t.tenantOpt)
+	if err != nil {
+		return nil, err
+	}
+	if len(arr) == 0 {
+		return nil, nil
+	}
+	return arr[0], nil
+}
