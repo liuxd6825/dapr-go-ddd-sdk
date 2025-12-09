@@ -48,6 +48,7 @@ func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiControll
 	controller.Post("/analysis/su-task:complete", "Complete", restapi.WithTranDbKey(config.DBKey))
 
 	controller.GetOne("/analysis/su-task/{id}", "FindById")
+	controller.GetData("/analysis/su-task:status/{id}", "FindStatusById")
 	controller.GetPaging("/analysis/su-task", "FindPaging")
 	controller.GetOne("/analysis/su-task:bill/{id}", "FindBill")
 	controller.GetData("/analysis/su-task:by-case", "FindByCaseId")
@@ -97,6 +98,14 @@ func (s *SuTaskApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryReq
 func (s *SuTaskApi) FindById(ctx context.Context, qry *query.SuTaskFindByIdQuery) (*model2.SuTask, error) {
 	task, err := s.taskService.QueryById(ctx, qry)
 	return task, err
+}
+
+func (s *SuTaskApi) FindStatusById(ctx context.Context, qry *query.SuTaskFindStatusByIdQuery) (*model2.SuTask, error) {
+	task, err := s.taskService.FindById(ctx, qry.Id)
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
 }
 
 func (s *SuTaskApi) FindByCaseId(ctx context.Context, qry *query.SuTaskFindByCaseIdQuery) ([]*model2.SuTask, error) {

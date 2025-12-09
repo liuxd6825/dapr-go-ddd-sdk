@@ -6,5 +6,9 @@ type SuTaskFindByIdQuery struct {
 }
 
 type SuTaskFindByCaseIdQuery struct {
-	CaseId string `json:"caseId" query:"case-id"`
+	CaseId string `json:"caseId" param:"case-id"`
+}
+
+type SuTaskFindStatusByIdQuery struct {
+	Id string `json:"id" param:"id"`
 }
