@@ -13,7 +13,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -119,8 +118,8 @@ func (t *UserService) UpdateData(ctx context.Context, data *model.User, opts ...
 	return t.dao.Update(ctx, data, idao.NewCallOptions(t.tenantOpt, idao.NewCallOptions(opts...))).GetError()
 }
 
-func (t *UserService) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model.User, error) {
-	return t.dao.FindById(ctx, qry.Id, t.tenantOpt)
+func (t *UserService) FindById(ctx context.Context, id string) (*model.User, error) {
+	return t.dao.FindById(ctx, id, t.tenantOpt)
 }
 
 func (t *UserService) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.User], error) {

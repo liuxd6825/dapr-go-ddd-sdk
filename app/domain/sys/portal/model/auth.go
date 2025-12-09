@@ -1,8 +1,6 @@
 package model
 
-import (
-	client "github.com/ory/kratos-client-go"
-)
+import client "github.com/ory/kratos-client-go"
 
 type Login struct {
 	Method     string `json:"method" gorm:"method" bson:"method"`
@@ -14,6 +12,7 @@ type LoginUser struct {
 	Id            string `json:"id" bson:"id"`
 	TenantId      string `json:"tenantId" gorm:"tenant_id"  bson:"tenant_id"`        // 租户ID
 	TenantName    string `json:"tenantName" gorm:"tenant_name"  bson:"tenant_name" ` // 租户ID
+	IsAdmin       bool   `json:"isAdmin" gorm:"is_admin"  bson:"is_admin"`
 	Account       string `json:"account" gorm:"account" bson:"account"`
 	Name          string `json:"name" gorm:"name" bson:"name"`
 	Phone         string `json:"phone" gorm:"phone" bson:"phone"`
@@ -24,6 +23,7 @@ type LoginUser struct {
 	HeadPicture   string `json:"headPicture" gorm:"head_picture" bson:"head_picture"`
 	Status        string `json:"status" gorm:"status" bson:"status"`
 	OryIdentityId string `json:"oryIdentityId" gorm:"ory_identity_id" bson:"ory_identity_id"`
+	SessionId     string `json:"sessionId" gorm:"session_id" bson:"session_id"`
 }
 
 type LoginResult struct {

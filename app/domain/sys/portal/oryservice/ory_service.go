@@ -114,3 +114,14 @@ func (t *OryService) UpdateSettingsFlow(ctx context.Context, flowId string, upda
 	}
 	return flow, nil
 }
+
+func (t *OryService) GetSession(ctx context.Context, id string) (*client.SuccessfulNativeLogin, error) {
+	session, _, err := t.ory.IdentityAPI.GetSession(ctx, id).Execute()
+	if err != nil {
+		return nil, err
+	}
+
+	snl := client.NewSuccessfulNativeLogin(*session)
+
+	return snl, nil
+}

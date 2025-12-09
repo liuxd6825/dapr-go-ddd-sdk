@@ -122,6 +122,10 @@ func (s *TenantAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*mo
 }
 
 func (s *TenantAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.Tenant], error) {
+	ctx, _ = restapp.NewTestContext(context.Background(), func(option *restapp.ContextOption) {
+		tenantId := service.SystemTenantId
+		option.TenantId = &tenantId
+	})
 	return s.tenantService.FindPaging(ctx, qry)
 }
 

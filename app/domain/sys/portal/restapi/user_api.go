@@ -173,7 +173,7 @@ func (s *UserAPI) DeleteIdentity(ctx context.Context, cmd *command.UserDeleteIde
 }
 
 func (s *UserAPI) FindById(ctx context.Context, qry *query.FindByIdQuery) (*model.User, error) {
-	return s.userService.FindById(ctx, qry)
+	return s.userService.FindById(ctx, qry.Id)
 }
 
 func (s *UserAPI) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (idao.FindPagingResult[*model.User], error) {
