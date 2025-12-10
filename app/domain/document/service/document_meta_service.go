@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/orm_pkg/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
@@ -31,8 +33,18 @@ func (t *DocumentMetaService) Update(ctx context.Context, data *model.DocumentMe
 	return t.dao.Update(ctx, data, opts...).GetError()
 }
 
+func (t *DocumentMetaService) UpdateMany(ctx context.Context, entities []*model.DocumentMeta) error {
+	return t.dao.UpdateMany(ctx, entities).GetError()
+}
+
 func (t *DocumentMetaService) DeleteByDocumentId(ctx context.Context, documentId string) *idao.Result {
 	return t.dao.DeleteByRSQL(ctx, fmt.Sprintf("document_id=='%s'", documentId))
+}
+
+func (t *DocumentMetaService) DeleteByIds(ctx context.Context, ids []string) error {
+	builder := dao2.NewRSQLBuilder()
+	rSql := builder.In("id", ids).Build()
+	return t.dao.DeleteByRSQL(ctx, rSql).GetError()
 }
 
 func (t *DocumentMetaService) Submit(ctx context.Context, data *model.DocumentMeta, opts ...idao.CallOptions) error {
@@ -53,4 +65,53 @@ func (t *DocumentMetaService) FindBySource(ctx context.Context, sourceId string)
 
 func (t *DocumentMetaService) FindByDocumentId(ctx context.Context, folderId string) ([]*model.DocumentMeta, error) {
 	return t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", folderId))
+}
+
+func (t *DocumentMetaService) BuildUpdateModels(ctx context.Context, documentId string, targetMeta *model.FolderMeta, dMeta *[]string, uMeta *[]*model.DocumentMeta, cMeta *[]*model.DocumentMeta) error {
+	metas, err := t.FindByDocumentId(ctx, documentId)
+	if err != nil {
+		return err
+	}
+
+	if metas == nil || len(metas) == 0 {
+		if targetMeta != nil {
+			newMeta := &model.DocumentMeta{}
+			newMeta.Id = idutils.NewId()
+			newMeta.CaseId = targetMeta.CaseId
+			newMeta.DocumentId = documentId
+			newMeta.SourceType = targetMeta.SourceType
+			newMeta.Source = targetMeta.Source
+			newMeta.Name = ""
+			newMeta.Value = ""
+			*cMeta = append(*cMeta, newMeta)
+		}
+	} else {
+		for _, meta := range metas {
+			if meta.Name == "" || meta.Name == "SourceId" {
+				*dMeta = append(*dMeta, meta.Id)
+				if targetMeta != nil {
+					newMeta := &model.DocumentMeta{}
+					newMeta.Id = meta.Id
+					newMeta.CaseId = targetMeta.CaseId
+					newMeta.DocumentId = meta.DocumentId
+					newMeta.SourceType = targetMeta.SourceType
+					newMeta.Source = targetMeta.Source
+					newMeta.Name = ""
+					newMeta.Value = ""
+					*cMeta = append(*cMeta, newMeta)
+				}
+			} else {
+				if targetMeta != nil {
+					meta.SourceType = targetMeta.SourceType
+					meta.Source = targetMeta.Source
+				} else {
+					meta.SourceType = ""
+					meta.Source = ""
+				}
+				*uMeta = append(*uMeta, meta)
+			}
+		}
+	}
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
+	bank_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/restapi"
 	card_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
 	case_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/restapi"
 	currency_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/restapi"
@@ -17,6 +18,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys"}, func() error {
 		case_api.RegisterAllApi(app, baseUrl, env)
 		currency_api.RegisterAllApi(app, baseUrl, env)
+		bank_api.RegisterAllApi(app, baseUrl, env)
 		card_api.RegisterAllApi(app, baseUrl, env)
 		dict_api.RegisterAllApi(app, baseUrl, env)
 		protal_api.RegisterAllApi(app, baseUrl, env)

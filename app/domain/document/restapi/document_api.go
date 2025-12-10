@@ -31,6 +31,7 @@ type DocumentAPI struct {
 	fileService         *service.FileService
 	fsService           *service.FsService
 	folderService       *service.FolderService
+	folderMetaService   *service.FolderMetaService
 	tagRelationSvc      *tagSvc.TagRelationService
 }
 
@@ -40,6 +41,7 @@ func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
 	fileService := service.NewFileService()
 	fsService := service.NewFsService()
 	folderService := service.NewFolderService()
+	folderMetaService := service.NewFolderMetaService()
 	tagRelationSvc := tagSvc.NewTagRelationService()
 	return &DocumentAPI{
 		rootPath:            rootPath,
@@ -48,6 +50,7 @@ func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
 		fileService:         fileService,
 		fsService:           fsService,
 		folderService:       folderService,
+		folderMetaService:   folderMetaService,
 		tagRelationSvc:      tagRelationSvc,
 		documentMetaService: documentMetaService,
 	}
@@ -218,6 +221,40 @@ func (s *DocumentAPI) Move(ctx context.Context, cmd *command.DocumentMoveCommand
 		err = s.documentService.Update(ctx, &doc, opts)
 		if err != nil {
 			return err
+		}
+
+		folderMetas, err := s.folderMetaService.FindByFolderId(ctx, doc.FolderId)
+		if err != nil {
+			return err
+		}
+
+		folderMeta := s.folderMetaService.GetSourceModel(folderMetas)
+
+		dMetas := &[]string{}
+		uMetas := &[]*model.DocumentMeta{}
+		cMetas := &[]*model.DocumentMeta{}
+
+		err = s.documentMetaService.BuildUpdateModels(ctx, doc.Id, folderMeta, dMetas, uMetas, cMetas)
+
+		if len(*dMetas) > 0 {
+			err = s.documentMetaService.DeleteByIds(ctx, *dMetas)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(*cMetas) > 0 {
+			err = s.documentMetaService.CreateMany(ctx, *cMetas)
+			if err != nil {
+				return err
+			}
+		}
+
+		if len(*uMetas) > 0 {
+			err = s.documentMetaService.UpdateMany(ctx, *uMetas)
+			if err != nil {
+				return err
+			}
 		}
 
 		//处理文件移动 非主版本文件也需要移动

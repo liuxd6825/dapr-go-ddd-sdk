@@ -213,15 +213,38 @@ func (s *FolderAPI) SetColor(ctx context.Context, cmd *command.FolderUpdateComma
 func (s *FolderAPI) Move(ctx context.Context, cmd *command.FolderMoveCommand) error {
 	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 
+		targetMetas, err := s.folderMetaService.FindByFolderId(ctx, cmd.Data.ParentId)
+		if err != nil {
+			return err
+		}
+
+		targetMeta := s.folderMetaService.GetSourceModel(targetMetas)
+
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
 		if err != nil {
 			return err
 		}
+
+		dMetas := &[]string{}
+		uMetas := &[]*model.FolderMeta{}
+		cMetas := &[]*model.FolderMeta{}
+
 		folders := []*model.Folder{}
 		for _, f := range arr {
 			if strings.HasPrefix(f.FolderPath+"/", cmd.Data.SourcePath+"/") {
 				f.FolderPath = strings.Replace(f.FolderPath+"/", cmd.Data.SourcePath+"/", cmd.Data.TargetPath+"/"+cmd.Data.Name+"/", -1)
 				f.FolderPath = strings.TrimSuffix(f.FolderPath, "/")
+
+				err = s.folderMetaService.BuildUpdateModels(ctx, f.Id, targetMeta, dMetas, uMetas, cMetas)
+				if err != nil {
+					return err
+				}
+
+				err = s.docService.UpdateDocumentMetas(ctx, f.Id, targetMeta)
+				if err != nil {
+					return err
+				}
+
 				folders = append(folders, f)
 			}
 		}
@@ -232,6 +255,25 @@ func (s *FolderAPI) Move(ctx context.Context, cmd *command.FolderMoveCommand) er
 			err = s.folderService.UpdateMany(ctx, folders, opts)
 			if err != nil {
 				return err
+			}
+
+			if len(*dMetas) > 0 {
+				err = s.folderMetaService.DeleteByIds(ctx, *dMetas)
+				if err != nil {
+					return err
+				}
+			}
+			if len(*cMetas) > 0 {
+				err = s.folderMetaService.CreateMany(ctx, *cMetas)
+				if err != nil {
+					return err
+				}
+			}
+			if len(*uMetas) > 0 {
+				err = s.folderMetaService.UpdateMany(ctx, *uMetas)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -255,6 +297,52 @@ func (s *FolderAPI) Move(ctx context.Context, cmd *command.FolderMoveCommand) er
 	})
 	return err
 }
+
+//func (s *FolderAPI) Move(ctx context.Context, cmd *command.FolderMoveCommand) error {
+//	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
+//
+//		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", cmd.Data.TenantId, cmd.Data.BusId, cmd.Data.EntityId))
+//		if err != nil {
+//			return err
+//		}
+//		folders := []*model.Folder{}
+//		for _, f := range arr {
+//			if strings.HasPrefix(f.FolderPath+"/", cmd.Data.SourcePath+"/") {
+//				f.FolderPath = strings.Replace(f.FolderPath+"/", cmd.Data.SourcePath+"/", cmd.Data.TargetPath+"/"+cmd.Data.Name+"/", -1)
+//				f.FolderPath = strings.TrimSuffix(f.FolderPath, "/")
+//				folders = append(folders, f)
+//			}
+//		}
+//
+//		if len(folders) > 0 {
+//			opts := idao.NewCallOptions()
+//			opts.SetUpdateFields([]string{"folder_path"})
+//			err = s.folderService.UpdateMany(ctx, folders, opts)
+//			if err != nil {
+//				return err
+//			}
+//		}
+//
+//		opts := idao.NewCallOptions()
+//		opts.SetUpdateFields([]string{"parent_id"})
+//
+//		folder := model.Folder{}
+//		folder.Id = cmd.Data.Id
+//		folder.ParentId = cmd.Data.ParentId
+//
+//		err = s.folderService.Update(ctx, &folder, opts)
+//		if err != nil {
+//			return err
+//		}
+//
+//		err = s.fsService.MoveDir(cmd.Data.SourcePath, cmd.Data.TargetPath+"/"+cmd.Data.Name)
+//		if err != nil {
+//			return err
+//		}
+//		return nil
+//	})
+//	return err
+//}
 
 func (s *FolderAPI) Update(ctx context.Context, cmd *command.FolderUpdateCommand) error {
 	err := s.folderService.Update(ctx, &cmd.Data)
