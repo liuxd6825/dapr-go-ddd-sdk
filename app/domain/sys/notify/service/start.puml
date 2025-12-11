@@ -1,0 +1,15 @@
+@startuml
+
+actor 管理员  as manager
+control     通知服务     as nc
+control     任务服务     as tc
+control     Dapr        as dapr
+queue       Redis       as redis
+
+manager -> nc: 启动系统
+nc -> dapr: 订阅任务通知事件
+nc -> dapr: 订阅信息通知事件
+nc -> redis: 订阅广播消息
+
+
+@enduml

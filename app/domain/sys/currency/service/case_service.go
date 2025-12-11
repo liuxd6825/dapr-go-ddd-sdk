@@ -20,7 +20,6 @@ import (
 // @Description: 币种
 type CurrencyService struct {
 	dao *dao.CurrencyDao
-	xbase.Service
 }
 
 var (

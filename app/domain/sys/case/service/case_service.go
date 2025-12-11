@@ -16,7 +16,6 @@ import (
 
 type CaseService struct {
 	dao *dao.CaseDao
-	xbase.Service
 }
 
 var (

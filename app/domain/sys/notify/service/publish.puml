@@ -1,0 +1,26 @@
+@startuml
+actor       用户         as user
+boundary    任务分析     as ui
+control     通知服务     as nc
+control     任务服务     as tc
+control     Dapr        as dapr
+queue       Temporal    as wf
+queue       Redis       as redis
+
+user -> ui: 打开界面
+ui -> nc: 注册通知服务
+user -> ui: 编辑任务内容
+user -> ui: 提交任务
+ui -> tc: 提交任务
+tc -> wf: 启动分布式工作流
+wf -> tc: 执行分布式任务
+tc -> nc: 发布任务通知
+nc -> dapr: 发布任务状态事件
+
+
+
+
+
+
+
+@enduml

@@ -11,10 +11,10 @@ import (
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
-	notify "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/notify/restapi"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys"
 	sys_code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
+	notify "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/restapi"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
@@ -66,6 +66,7 @@ func main() {
 				sys.RegisterAllApi(app, baseUrl, env)
 				metrics.RegisterAllApi(app, baseUrl, env)
 				notify.RegisterAllApi(app, baseUrl, env)
+
 				/*
 					if err := lowcode.Run(server); err != nil {
 						return err

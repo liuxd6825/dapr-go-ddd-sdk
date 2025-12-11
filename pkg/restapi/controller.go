@@ -24,11 +24,11 @@ import (
 )
 
 type ApiController struct {
-	app      *iris.Application
-	rootPath string
-	routes   []*router.Route
-	apiName  string
-	apiCtl   any
+	app        *iris.Application
+	rootPath   string
+	routes     []*router.Route
+	apiName    string
+	apiService any
 }
 
 type HandleType int
@@ -76,13 +76,13 @@ func GetAPI(apiName string) (any, bool) {
 	return apis.Get(apiName)
 }
 
-func NewController(app *iris.Application, rootPath string, apiName string, apiController any) *ApiController {
+func NewController(app *iris.Application, rootPath string, apiName string, apiService any) *ApiController {
 	return &ApiController{
-		app:      app,
-		rootPath: rootPath,
-		apiName:  apiName,
-		apiCtl:   apiController,
-		routes:   make([]*router.Route, 0),
+		app:        app,
+		rootPath:   rootPath,
+		apiName:    apiName,
+		apiService: apiService,
+		routes:     make([]*router.Route, 0),
 	}
 }
 
@@ -94,6 +94,11 @@ func (c *ApiController) getPath(path string) string {
 	if ok := strings.HasSuffix(c.rootPath, "/"); ok {
 		root = root[:len(root)-1]
 	}
+
+	if len(path) > 0 && path[0] == ':' {
+		return root + path
+	}
+
 	return root + "/" + path
 }
 
@@ -101,15 +106,19 @@ func (c *ApiController) addRouter(router *router.Route) {
 	c.routes = append(c.routes, router)
 }
 
-func (c *ApiController) newCallMethod(handlerName string) (callMethod *CallMethod, err error) {
-	if c.apiCtl == nil {
-		return nil, errors.New("controller is nil")
+func (c *ApiController) newCallMethod(handlerName string, apiService any) (service any, callMethod *CallMethod, err error) {
+	service = apiService
+	if service == nil {
+		service = c.apiService
 	}
-	method, err := NewCallMethod(c.apiCtl, handlerName)
+	if service == nil {
+		return nil, nil, errors.New("apiService is nil")
+	}
+	method, err := NewCallMethod(service, handlerName)
 	if err != nil {
-		return nil, errors.New("get api func error: %s ", err.Error())
+		return service, method, err
 	}
-	return method, nil
+	return service, method, nil
 }
 
 func (c *ApiController) GetOne(path string, handlerName string, opts ...APIOptions) *router.Route {
@@ -239,9 +248,13 @@ func (c *ApiController) callView(method string, path string, handlerName string,
 
 func (c *ApiController) callMethod2(method string, path string, handlerName string, handleType HandleType, isViewHandle bool, opts ...APIOptions) *router.Route {
 	backCtx := context2.Background()
-	callMethod, err := c.newCallMethod(handlerName)
+	options := NewAPIOptions(opts...)
+	apiService, callMethod, err := c.newCallMethod(handlerName, options.ApiService)
 	if err != nil {
-		ctlType := reflect.TypeOf(c.apiCtl)
+		if apiService == nil {
+			panic(err)
+		}
+		ctlType := reflect.TypeOf(apiService)
 		if ctlType.Kind() == reflect.Ptr {
 			ctlType = ctlType.Elem()
 		}
@@ -257,7 +270,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 
 	handler := func(ictx *context.Context) {
 		gp.Try(func() error {
-			options := NewAPIOptions(opts...)
+
 			params, ctx, err := c.getParams(ictx, callMethod, handleType, options)
 			if err != nil {
 				if handleType == HandleType_Event {

@@ -364,6 +364,9 @@ func Join(val []string, front, suffix, sep string) string {
 
 // Include 检查字符串是否在列表中
 func Include(str string, list []string, ignoreCase bool) bool {
+	if list == nil {
+		return false
+	}
 	if ignoreCase {
 		for _, item := range list {
 			if strings.EqualFold(str, item) {

@@ -71,6 +71,13 @@ type Options interface {
 	GetUser2(ctx context.Context) User
 
 	Merge(opts ...Options) Options
+
+	ValidFields
+}
+
+type ValidFields interface {
+	SetValidFields(...string) Options
+	GetValidFields() []string
 }
 
 type User interface {
@@ -89,6 +96,7 @@ type RepositoryOptions struct {
 	updateCancel  []string
 	upsert        *bool
 	notUpdateNull *bool // 空值是否更新
+	validFields   []string
 
 	tenantId *string
 	user     User
@@ -275,6 +283,15 @@ func (o *RepositoryOptions) GetSort() *string {
 
 func (o *RepositoryOptions) SetSort(s *string) Options {
 	o.sort = s
+	return o
+}
+
+func (o *RepositoryOptions) GetValidFields() []string {
+	return o.validFields
+}
+
+func (o *RepositoryOptions) SetValidFields(validFields ...string) Options {
+	o.validFields = validFields
 	return o
 }
 

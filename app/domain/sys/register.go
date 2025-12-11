@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
+	bank_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/restapi"
 	card_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
 	case_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/restapi"
 	currency_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/restapi"
 	dict_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/restapi"
 	protal_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/restapi"
+	status_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/status/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
@@ -20,6 +22,8 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		card_api.RegisterAllApi(app, baseUrl, env)
 		dict_api.RegisterAllApi(app, baseUrl, env)
 		protal_api.RegisterAllApi(app, baseUrl, env)
+		status_api.RegisterAllApi(app, baseUrl, env)
+		bank_api.RegisterAllApi(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {

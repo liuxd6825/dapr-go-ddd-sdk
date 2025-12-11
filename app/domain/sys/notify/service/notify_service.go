@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	dapr "github.com/dapr/go-sdk/client"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/notify/event"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/notify/pkg"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/redis/go-redis/v9"
@@ -50,11 +50,24 @@ func newNotifyService(client dapr.Client, env *env.Env) *NotifyService {
 	return service
 }
 
-// Publish
-// 在 Temporal Activity 中调用此方法
-func (n *NotifyService) Publish(ctx context.Context, evt *event.TaskEvent) error {
-	// 使用 Dapr 发布消息
-	return n.daprClient.PublishEvent(ctx, event.PubSubName, event.TopicName, evt)
+// PublishMessage
+// @Description:
+// @receiver n
+// @param ctx
+// @param evt
+// @return error
+func (n *NotifyService) PublishMessage(ctx context.Context, evt *model.Message) {
+	n.BroadcastToAllNodes(ctx, evt.UserId, evt)
+}
+
+// PublishStatus
+// @Description:
+// @receiver n
+// @param ctx
+// @param evt
+// @return error
+func (n *NotifyService) PublishStatus(ctx context.Context, evt *model.Status) {
+	n.BroadcastToAllNodes(ctx, evt.UserId, evt)
 }
 
 // Close

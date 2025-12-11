@@ -18,21 +18,21 @@ import (
 // @Description: 币种
 type BankService struct {
 	dao *dao.BankDao
-	xbase.Service
 }
 
 var (
-	_BankOnce    sync.Once
-	_BankService *BankService
+	_bankOnce    sync.Once
+	_bankService *BankService
 )
 
 func NewBankService() *BankService {
-	_BankOnce.Do(func() {
-		_BankService = &BankService{
-			dao: dao.NewBankDao(config.DBKey),
+	_bankOnce.Do(func() {
+		bankDao := dao.NewBankDao(config.DBKey)
+		_bankService = &BankService{
+			dao: bankDao,
 		}
 	})
-	return _BankService
+	return _bankService
 }
 
 func (s *BankService) GetConfig() *idao.DaoConfig {

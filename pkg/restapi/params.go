@@ -47,7 +47,7 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, c
 		if dataMap, ok := target.(map[string]any); ok {
 			return dataMap, err
 		}
-		err = validator.Validate(target, removeNames...)
+		err = validator.ValidateExcept(target, removeNames...)
 		return target, err
 	}
 
@@ -122,7 +122,7 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, c
 		return nil, verifyErr.GetError()
 	}
 	res = targetValue.Interface()
-	return res, validator.Validate(target, removeNames...)
+	return res, validator.ValidateExcept(target, removeNames...)
 }
 
 // bindNestedStruct 处理嵌套结构体绑定

@@ -20,6 +20,7 @@ type APIOptions struct {
 	Before           BeforeFunc
 	After            AfterFunc
 	Event            *EventOption
+	ApiService       any // API服务
 }
 
 type EventOption struct {

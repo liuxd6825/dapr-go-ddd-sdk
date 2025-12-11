@@ -45,12 +45,32 @@ func New() (*validator.Validate, error) {
 	return validate, nil
 }
 
-func Validate(target interface{}, removeNames ...string) error {
-	return Validate2(validate, target, removeNames...)
+func Validate(target interface{}) error {
+	err := validate.Struct(target)
+	return GetVerifyError(err)
 }
 
-func Validate2(validate *validator.Validate, target interface{}, removeNames ...string) error {
-	err := validate.Struct(target)
+// ValidateExcept
+// @Description: 验证传入的字段之外的所有字段。
+// @param target
+// @param fields
+// @return error
+func ValidateExcept(target interface{}, fields ...string) error {
+	err := validate.StructExcept(target, fields...)
+	return GetVerifyError(err)
+}
+
+// ValidatePartial
+// @Description:  验证传入的字段
+// @param target
+// @param fields
+// @return error
+func ValidatePartial(target interface{}, fields ...string) error {
+	err := validate.StructPartial(target, fields...)
+	return GetVerifyError(err)
+}
+
+func GetVerifyError(err error) error {
 	if err != nil {
 		verifyError := errors.NewVerifyError()
 		if _, ok := err.(*validator.InvalidValidationError); ok {
@@ -68,7 +88,7 @@ func Validate2(validate *validator.Validate, target interface{}, removeNames ...
 					sn = sn[1:]
 				}
 				msg := fieldErr.Translate(trans)
-				field := getField(fieldErr, removeNames...)
+				field := getField(fieldErr, nil)
 				verifyError.AppendField(field, msg, title)
 			}
 		}
@@ -82,14 +102,15 @@ func getTitle(fieldErr validator.FieldError) string {
 	return stringutils.FirstLower(names[len(names)-1])
 }
 
-func getField(fieldErr validator.FieldError, removeNames ...string) string {
+func getField(fieldErr validator.FieldError, cancelFields []string) string {
 	names := strings.Split(fieldErr.StructNamespace(), ".")
 	var res []string
 	for i, name := range names {
 		if i == 0 {
 			continue
 		}
-		if stringutils.Include(name, removeNames, true) {
+
+		if stringutils.Include(name, cancelFields, true) {
 			continue
 		}
 		name = stringutils.FirstLower(name)
