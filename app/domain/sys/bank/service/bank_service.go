@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/command"
@@ -47,8 +50,12 @@ func (s *BankService) Create(ctx context.Context, cmd *command.BankCreateCommand
 
 func (s *BankService) CreateMany(ctx context.Context, cmd *command.BankCreateManyCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return s.dao.CreateMany(ctx, cmd.Data).GetError()
+		return s.CreateManyData(ctx, cmd.Data)
 	})
+}
+
+func (s *BankService) CreateManyData(ctx context.Context, entities []*model.Bank, opts ...idao.CallOptions) error {
+	return s.dao.CreateMany(ctx, entities, opts...).GetError()
 }
 
 func (s *BankService) Delete(ctx context.Context, cmd *command.BankDeleteCommand) error {
@@ -64,7 +71,7 @@ func (s *BankService) DeleteAll(ctx context.Context, cmd *command.BankDeleteComm
 }
 
 func (s *BankService) DeleteBatch(ctx context.Context, cmd *command.BankDeleteBatchCommand) error {
-	return s.dao.DeleteByIds(ctx, cmd.Data).GetError()
+	return s.dao.DeleteByIds(ctx, cmd.Data.Ids).GetError()
 }
 
 func (s *BankService) Update(ctx context.Context, cmd *command.BankUpdateCommand) error {
@@ -85,4 +92,21 @@ func (s *BankService) FindByAll(ctx context.Context) ([]*model.Bank, error) {
 func (s *BankService) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.Bank], error) {
 	res := s.dao.FindPaging(ctx, qry)
 	return res, res.GetError()
+}
+
+func (s *BankService) InitBank(ctx context.Context, tenantId string) error {
+	arr, err := s.dao.FindByRSQL(ctx, fmt.Sprintf("tenant_id=='%s'", "test"), idao.NewCallOptions().SetTenantId("test"))
+	if err != nil {
+		return err
+	}
+	if arr == nil || len(arr) == 0 {
+		return errors.New("初始化银行时没有找到银行数据")
+	}
+
+	for _, v := range arr {
+		v.Id = idutils.NewId()
+		v.TenantId = tenantId
+	}
+
+	return s.CreateManyData(ctx, arr, idao.NewCallOptions().SetTenantId(tenantId))
 }

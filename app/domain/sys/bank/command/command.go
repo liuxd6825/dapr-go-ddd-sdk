@@ -19,7 +19,12 @@ type BankDeleteCommand struct {
 	xbase.DeleteByIdCommand
 }
 type BankDeleteBatchCommand struct {
-	xbase.Command[[]string]
+	xbase.Command[BankDeleteBatchCommandData]
+}
+
+type BankDeleteBatchCommandData struct {
+	Ids    []string `json:"ids"`
+	CaseId string   `json:"caseId"`
 }
 
 type BankDeleteAllCommand struct {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
@@ -12,12 +13,14 @@ import (
 )
 
 type DocumentService struct {
-	dao *dao.DocumentDao
+	dao         *dao.DocumentDao
+	metaService *DocumentMetaService
 }
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
-		dao: dao.NewDocumentDao(DBKey),
+		dao:         dao.NewDocumentDao(DBKey),
+		metaService: NewDocumentMetaService(),
 	}
 }
 
@@ -73,6 +76,50 @@ func (t *DocumentService) FindPaging(ctx context.Context, qry store.FindPagingQu
 
 func (t *DocumentService) FindByRSQL(ctx context.Context, rsql string) ([]*model.Document, error) {
 	return t.dao.FindByRSQL(ctx, rsql)
+}
+
+func (t *DocumentService) FindByFolderId(ctx context.Context, folderId string) ([]*model.Document, error) {
+	return t.dao.FindByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", folderId))
+}
+
+func (t *DocumentService) UpdateDocumentMetas(ctx context.Context, folderId string, folderMeta *model.FolderMeta) error {
+	docs, err := t.FindByFolderId(ctx, folderId)
+	if err != nil {
+		return err
+	}
+	if docs == nil {
+		return nil
+	}
+	dMetas := &[]string{}
+	uMetas := &[]*model.DocumentMeta{}
+	cMetas := &[]*model.DocumentMeta{}
+
+	for _, doc := range docs {
+		err = t.metaService.BuildUpdateModels(ctx, doc.Id, folderMeta, dMetas, uMetas, cMetas)
+		if err != nil {
+			return err
+		}
+	}
+	if len(*dMetas) > 0 {
+		err = t.metaService.DeleteByIds(ctx, *dMetas)
+		if err != nil {
+			return err
+		}
+	}
+	if len(*cMetas) > 0 {
+		err = t.metaService.CreateMany(ctx, *cMetas)
+		if err != nil {
+			return err
+		}
+	}
+	if len(*uMetas) > 0 {
+		err = t.metaService.UpdateMany(ctx, *uMetas)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (t *DocumentService) Document2DocumentView(document *model.Document) *model.DocumentView {

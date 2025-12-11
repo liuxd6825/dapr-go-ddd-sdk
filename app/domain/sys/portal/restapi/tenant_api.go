@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/kataras/iris/v12"
+	service4 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/service"
+	service3 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
@@ -26,6 +28,8 @@ type TenantAPI struct {
 	userService       *service.UserService
 	tenantUserService *service.TenantUserService
 	oryService        *service2.OryService
+	currencyService   *service3.CurrencyService
+	bankService       *service4.BankService
 	rootPath          string
 }
 
@@ -36,6 +40,8 @@ func NewTenantAPI(env *env.Env, rootPath string) *TenantAPI {
 		userService:       service.NewUserService(),
 		tenantUserService: service.NewTenantUserService(),
 		oryService:        service2.NewOryService(),
+		currencyService:   service3.NewCurrencyService(),
+		bankService:       service4.NewBankService(),
 		rootPath:          rootPath,
 	}
 }
@@ -99,7 +105,24 @@ func (s *TenantAPI) Create(ctx context.Context, cmd *command.TenantCreateCommand
 
 		tus := []*model.TenantUser{tu}
 
-		return s.tenantUserService.CreateMany(ctx, tus)
+		err = s.tenantUserService.CreateMany(ctx, tus)
+		if err != nil {
+			return err
+		}
+
+		//初始化币种
+		err = s.currencyService.InitCurrency(ctx, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
+		//初始化银行
+		err = s.bankService.InitBank(ctx, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
+		//初始化标签
+
+		return nil
 	})
 }
 

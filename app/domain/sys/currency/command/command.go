@@ -19,7 +19,12 @@ type CurrencyDeleteCommand struct {
 	xbase.DeleteByIdCommand
 }
 type CurrencyDeleteBatchCommand struct {
-	xbase.Command[[]string]
+	xbase.Command[CurrencyDeleteBatchCommandData]
+}
+
+type CurrencyDeleteBatchCommandData struct {
+	Ids    []string `json:"ids"`
+	CaseId string   `json:"caseId"`
 }
 
 type CurrencyDeleteAllCommand struct {

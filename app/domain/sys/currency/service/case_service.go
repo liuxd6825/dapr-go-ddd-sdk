@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"strconv"
 	"sync"
 
@@ -48,8 +51,12 @@ func (s *CurrencyService) Create(ctx context.Context, cmd *command.CurrencyCreat
 
 func (s *CurrencyService) CreateMany(ctx context.Context, cmd *command.CurrencyCreateManyCommand) error {
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
-		return s.dao.CreateMany(ctx, cmd.Data).GetError()
+		return s.CreateManyData(ctx, cmd.Data)
 	})
+}
+
+func (s *CurrencyService) CreateManyData(ctx context.Context, entities []*model.Currency, opts ...idao.CallOptions) error {
+	return s.dao.CreateMany(ctx, entities, opts...).GetError()
 }
 
 func (s *CurrencyService) Delete(ctx context.Context, cmd *command.CurrencyDeleteCommand) error {
@@ -65,7 +72,7 @@ func (s *CurrencyService) DeleteAll(ctx context.Context, cmd *command.CurrencyDe
 }
 
 func (s *CurrencyService) DeleteBatch(ctx context.Context, cmd *command.CurrencyDeleteBatchCommand) error {
-	return s.dao.DeleteByIds(ctx, cmd.Data).GetError()
+	return s.dao.DeleteByIds(ctx, cmd.Data.Ids).GetError()
 }
 
 func (s *CurrencyService) Update(ctx context.Context, cmd *command.CurrencyUpdateCommand) error {
@@ -111,4 +118,21 @@ func (s *CurrencyService) UpdateAllCnyRate(ctx context.Context, cnyRate float64)
 		}
 		return s.dao.UpdateMany(ctx, list, idao.NewCallOptions().SetUpdateFields([]string{"Rate"})).GetError()
 	})
+}
+
+func (s *CurrencyService) InitCurrency(ctx context.Context, tenantId string) error {
+	arr, err := s.dao.FindByRSQL(ctx, fmt.Sprintf("tenant_id=='%s'", "test"), idao.NewCallOptions().SetTenantId("test"))
+	if err != nil {
+		return err
+	}
+	if arr == nil || len(arr) == 0 {
+		return errors.New("初始化币种时没有找到币种数据")
+	}
+
+	for _, v := range arr {
+		v.Id = idutils.NewId()
+		v.TenantId = tenantId
+	}
+
+	return s.CreateManyData(ctx, arr, idao.NewCallOptions().SetTenantId(tenantId))
 }

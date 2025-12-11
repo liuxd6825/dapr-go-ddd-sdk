@@ -19,6 +19,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys"}, func() error {
 		case_api.RegisterAllApi(app, baseUrl, env)
 		currency_api.RegisterAllApi(app, baseUrl, env)
+		bank_api.RegisterAllApi(app, baseUrl, env)
 		card_api.RegisterAllApi(app, baseUrl, env)
 		dict_api.RegisterAllApi(app, baseUrl, env)
 		protal_api.RegisterAllApi(app, baseUrl, env)
