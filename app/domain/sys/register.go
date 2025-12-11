@@ -24,7 +24,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		dict_api.RegisterAllApi(app, baseUrl, env)
 		protal_api.RegisterAllApi(app, baseUrl, env)
 		status_api.RegisterAllApi(app, baseUrl, env)
-		bank_api.RegisterAllApi(app, baseUrl, env)
+ 
 		return nil
 	})
 	if err != nil {

@@ -8,22 +8,22 @@ import (
 )
 
 type StatusApi struct {
-	statusService *service.StatusService
-	env           *env.Env
-	rootPath      string
+	service  *service.StatusService
+	env      *env.Env
+	rootPath string
 }
 
 func NewStatusApi(env *env.Env, rootPath string) *StatusApi {
 	statusService := service.NewStatusService()
 	return &StatusApi{
-		rootPath:      rootPath,
-		env:           env,
-		statusService: statusService,
+		env:      env,
+		rootPath: rootPath,
+		service:  statusService,
 	}
 }
 
 func (s *StatusApi) NewAPIController(app *iris.Application) *restapi.ApiController {
-	controller := restapi.NewController(app, s.rootPath+"/sys/status", "sys.status", s.statusService)
+	controller := restapi.NewController(app, s.rootPath+"/sys/status", "sys.status", s.service)
 	controller.Post("", "Create")
 	controller.Put("", "Update")
 	controller.Delete("", "Delete")
