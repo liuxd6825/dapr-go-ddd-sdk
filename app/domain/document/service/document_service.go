@@ -82,6 +82,10 @@ func (t *DocumentService) FindByFolderId(ctx context.Context, folderId string) (
 	return t.dao.FindByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", folderId))
 }
 
+func (t *DocumentService) FindDocumentCountByFolderId(ctx context.Context, folderId string) (int64, error) {
+	return t.dao.CountByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", folderId))
+}
+
 func (t *DocumentService) UpdateDocumentMetas(ctx context.Context, folderId string, folderMeta *model.FolderMeta) error {
 	docs, err := t.FindByFolderId(ctx, folderId)
 	if err != nil {

@@ -63,8 +63,25 @@ func (t *DocumentMetaService) FindBySource(ctx context.Context, sourceId string)
 	return t.dao.FindByRSQL(ctx, fmt.Sprintf("source=='%s'", sourceId))
 }
 
-func (t *DocumentMetaService) FindByDocumentId(ctx context.Context, folderId string) ([]*model.DocumentMeta, error) {
-	return t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", folderId))
+func (t *DocumentMetaService) FindByDocumentId(ctx context.Context, documentId string) ([]*model.DocumentMeta, error) {
+	return t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s'", documentId))
+}
+
+func (t *DocumentMetaService) FindByDocumentIdAndName(ctx context.Context, documentId, name string) (*model.DocumentMeta, error) {
+	arr, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s' and name=='%s'", documentId, name))
+	if err != nil {
+		return nil, err
+	}
+	if arr == nil || len(arr) == 0 {
+		return nil, nil
+	}
+	return arr[0], nil
+}
+
+func (t *DocumentMetaService) FindByDocumentIds(ctx context.Context, documentIds []string) ([]*model.DocumentMeta, error) {
+	builder := dao2.NewRSQLBuilder()
+	rSql := builder.In("document_id", documentIds).Build()
+	return t.dao.FindByRSQL(ctx, rSql)
 }
 
 func (t *DocumentMetaService) BuildUpdateModels(ctx context.Context, documentId string, targetMeta *model.FolderMeta, dMeta *[]string, uMeta *[]*model.DocumentMeta, cMeta *[]*model.DocumentMeta) error {

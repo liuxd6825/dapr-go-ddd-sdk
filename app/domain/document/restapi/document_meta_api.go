@@ -31,6 +31,7 @@ func NewDocumentMetaAPI(env *env.Env, rootPath string) *DocumentMetaAPI {
 func (s *DocumentMetaAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	ctl := restapi.NewController(app, s.rootPath+"/doc", "document.DocumentMetaAPI", s)
 	ctl.Post("/document-meta", "Create")
+	ctl.Post("/document-meta:submit", "Submit")
 	ctl.Post("/document-meta:batch", "CreateMany")
 	ctl.Put("/document-meta", "Update")
 	return ctl
@@ -38,6 +39,24 @@ func (s *DocumentMetaAPI) NewAPIController(app *iris.Application) *restapi.ApiCo
 
 func (s *DocumentMetaAPI) Create(ctx context.Context, cmd *command.DocumentMetaCreateCommand) error {
 	err := s.documentMetaService.Create(ctx, &cmd.Data)
+	return err
+}
+
+func (s *DocumentMetaAPI) Submit(ctx context.Context, cmd *command.DocumentMetaCreateCommand) error {
+	meta, err := s.documentMetaService.FindByDocumentIdAndName(ctx, cmd.Data.DocumentId, cmd.Data.Name)
+	if err != nil {
+		return err
+	}
+
+	if meta != nil {
+		meta.Value = cmd.Data.Value
+		opts := idao.NewCallOptions()
+		opts.SetUpdateFields([]string{"value"})
+		err = s.documentMetaService.Update(ctx, meta, opts)
+	} else {
+		err = s.documentMetaService.Create(ctx, &cmd.Data)
+	}
+
 	return err
 }
 

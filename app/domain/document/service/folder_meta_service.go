@@ -66,6 +66,12 @@ func (t *FolderMetaService) FindBySource(ctx context.Context, sourceId string) (
 	return t.dao.FindByRSQL(ctx, fmt.Sprintf("source=='%s'", sourceId))
 }
 
+func (t *FolderMetaService) FindByFolderIds(ctx context.Context, folderIds []string) ([]*model.FolderMeta, error) {
+	builder := dao2.NewRSQLBuilder()
+	rSql := builder.In("folder_id", folderIds).Build()
+	return t.dao.FindByRSQL(ctx, rSql)
+}
+
 func (t *FolderMetaService) FindByFolderId(ctx context.Context, folderId string) ([]*model.FolderMeta, error) {
 	return t.dao.FindByRSQL(ctx, fmt.Sprintf("folder_id=='%s'", folderId))
 }
