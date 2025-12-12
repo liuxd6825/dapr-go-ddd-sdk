@@ -72,14 +72,23 @@ func (s *DocumentAPI) NewAPIController(app *iris.Application) *restapi.ApiContro
 	return ctl
 }
 
-func (s *DocumentAPI) UploadChunk(ctx context.Context, ictx iris.Context) error {
-	chunk, _, err := ictx.FormFile("chunk")
-	chunkIndex := ictx.FormValue("chunkIndex")
-	chunkSize := ictx.FormValue("chunkSize")
-	objectName := ictx.FormValue("objectName")
-	folderPath := ictx.FormValue("folderPath")
+func (s *DocumentAPI) UploadChunk(ctx context.Context, iCtx iris.Context) error {
+	chunk, _, err := iCtx.FormFile("chunk")
+	chunkIndex := iCtx.FormValue("chunkIndex")
+	chunkSize := iCtx.FormValue("chunkSize")
+	objectName := iCtx.FormValue("objectName")
+	folderPath := iCtx.FormValue("folderPath")
+	folderId := iCtx.FormValue("folderId")
 	if err != nil {
 		return err
+	}
+
+	count, err := s.folderService.GetChildrenCount(ctx, folderId)
+	if err != nil {
+		return err
+	}
+	if count > 1024 {
+		return errors.New("文件夹与文档总数量不能超过1024")
 	}
 
 	has := s.fsService.Exists(folderPath + "/" + objectName)
@@ -87,7 +96,7 @@ func (s *DocumentAPI) UploadChunk(ctx context.Context, ictx iris.Context) error 
 	if chunkIndex == "0" && !has {
 		file := s.fsService.Create(folderPath + "/" + objectName)
 		if file != nil {
-			file.Close()
+			_ = file.Close()
 		}
 	}
 
@@ -389,20 +398,38 @@ func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderA
 	if len(documents.GetData()) == 0 {
 		return store2.NewFindPagingResult([]*model.DocumentView{}, 0, qry, nil), nil
 	}
+	docIds := make([]string, 0)
+	for _, document := range documents.GetData() {
+		docIds = append(docIds, document.Id)
+	}
+	allMetas, err := s.documentMetaService.FindByDocumentIds(ctx, docIds)
+	if err != nil {
+		return nil, err
+	}
 
 	dvs := make([]*model.DocumentView, 0)
 	for _, d := range documents.GetData() {
 		dv := s.documentService.Document2DocumentView(d)
-		dv.Meta, err = s.getMetaByDocumentId(ctx, dv.Id)
-		if err != nil {
-			return nil, err
-		}
+		dv.Meta = s.getMeta(allMetas, dv.Id)
 		dvs = append(dvs, dv)
 	}
 
 	res := store2.NewFindPagingResult(dvs, int64(len(dvs)), qry, nil)
 
 	return res, nil
+}
+
+func (s *DocumentAPI) getMeta(metas []*model.DocumentMeta, documentId string) []*model.DocumentMeta {
+	docMetas := make([]*model.DocumentMeta, 0)
+	if metas == nil || len(metas) == 0 {
+		return []*model.DocumentMeta{}
+	}
+	for _, meta := range metas {
+		if meta.DocumentId == documentId {
+			docMetas = append(docMetas, meta)
+		}
+	}
+	return docMetas
 }
 
 func (s *DocumentAPI) getMetaByDocumentId(ctx context.Context, documentId string) ([]*model.DocumentMeta, error) {

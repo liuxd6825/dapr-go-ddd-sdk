@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
@@ -14,12 +15,14 @@ import (
 const DBKey string = "$db"
 
 type FolderService struct {
-	dao *dao.FolderDao
+	dao        *dao.FolderDao
+	docService *DocumentService
 }
 
 func NewFolderService() *FolderService {
 	return &FolderService{
-		dao: dao.NewFolderDao(DBKey),
+		dao:        dao.NewFolderDao(DBKey),
+		docService: NewDocumentService(),
 	}
 }
 
@@ -123,6 +126,22 @@ func (t *FolderService) FindPaging(ctx context.Context, qry store.FindPagingQuer
 
 func (t *FolderService) FindByRSQL(ctx context.Context, rsql string) ([]*model.Folder, error) {
 	return t.dao.FindByRSQL(ctx, rsql)
+}
+
+func (t *FolderService) FindChildrenFolderCount(ctx context.Context, folderId string) (int64, error) {
+	return t.dao.CountByRSQL(ctx, fmt.Sprintf("parent_id=='%s'", folderId))
+}
+
+func (s *FolderService) GetChildrenCount(ctx context.Context, folderId string) (int64, error) {
+	fCount, err := s.FindChildrenFolderCount(ctx, folderId)
+	if err != nil {
+		return 0, err
+	}
+	cCount, err := s.docService.FindDocumentCountByFolderId(ctx, folderId)
+	if err != nil {
+		return 0, err
+	}
+	return fCount + cCount, nil
 }
 
 func (t *FolderService) Folder2FolderView(folder *model.Folder) *model.FolderView {

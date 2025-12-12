@@ -54,7 +54,6 @@ func (s *FolderAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 	ctl.Post("/folder:root", "CreateRoot")
 	ctl.Post("/folder", "Create")
 	ctl.Put("/folder", "Update")
-	ctl.Put("/folder", "Update")
 	ctl.Put("/folder:rename", "Rename")
 	ctl.Put("/folder:color", "SetColor")
 	ctl.Put("/folder:move", "Move")
@@ -114,6 +113,14 @@ func (s *FolderAPI) Create(ctx context.Context, cmd *command.FolderCreateCommand
 		}
 		if vErr.HasError() {
 			return vErr
+		}
+
+		count, err1 := s.folderService.GetChildrenCount(ctx, cmd.Data.ParentId)
+		if err1 != nil {
+			return err1
+		}
+		if count > 1024 {
+			return errors.New("文件夹与文档总数量不能超过1024")
 		}
 
 		folder := s.folderService.FolderView2Folder(&cmd.Data)
@@ -415,20 +422,38 @@ func (s *FolderAPI) FindPaging(ctx context.Context, query *query.FindFolderByFol
 	if len(folders.GetData()) == 0 {
 		return store2.NewFindPagingResult([]*model.FolderView{}, 0, qry, nil), nil
 	}
+	folderIds := make([]string, 0)
+	for _, folder := range folders.GetData() {
+		folderIds = append(folderIds, folder.Id)
+	}
+	allMetas, err := s.folderMetaService.FindByFolderIds(ctx, folderIds)
+	if err != nil {
+		return nil, err
+	}
 
 	fvs := make([]*model.FolderView, 0)
 	for _, f := range folders.GetData() {
 		fv := s.folderService.Folder2FolderView(f)
-		fv.Meta, err = s.getMetaByFolderId(ctx, fv.Id)
-		if err != nil {
-			return nil, err
-		}
+		fv.Meta = s.getMeta(allMetas, fv.Id)
 		fvs = append(fvs, fv)
 	}
 
 	res := store2.NewFindPagingResult(fvs, int64(len(fvs)), qry, nil)
 
 	return res, nil
+}
+
+func (s *FolderAPI) getMeta(metas []*model.FolderMeta, folderId string) []*model.FolderMeta {
+	folderMetas := make([]*model.FolderMeta, 0)
+	if metas == nil || len(metas) == 0 {
+		return []*model.FolderMeta{}
+	}
+	for _, meta := range metas {
+		if meta.FolderId == folderId {
+			folderMetas = append(folderMetas, meta)
+		}
+	}
+	return folderMetas
 }
 
 func (s *FolderAPI) getMetaByFolderId(ctx context.Context, folderId string) ([]*model.FolderMeta, error) {
