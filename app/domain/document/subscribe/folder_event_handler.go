@@ -3,9 +3,10 @@ package subscribe
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"strings"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
@@ -63,6 +64,15 @@ func (s *FolderEventSubHandler) Check(ctx context.Context) error {
 
 func (s *FolderEventSubHandler) FolderCreateEvent(ctx context.Context, event *event.FolderCreateEvent) error {
 	logs.Infofmt(ctx, "%s eventId:%s; occurredOn:%s; ", event.EventType, event.Id, event.CreatedTime.Format(time.DateTime))
+
+	// 解决重复接收消息
+	f, err := s.folderService.FindById(ctx, event.Data.Id)
+	if err != nil {
+		return err
+	}
+	if f != nil {
+		return nil
+	}
 
 	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		folder, _ := model2.NewFolder()

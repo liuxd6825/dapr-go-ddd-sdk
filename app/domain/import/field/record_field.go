@@ -236,22 +236,22 @@ type Region struct {
 // RecordFields
 // 资金记录 实体类型
 type RecordFields struct {
-	Id       string   `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
-	RowNum   int64    `json:"rowNum" bson:"rowNum" index:""  title:"行号"`
-	Iden     string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`           // 标识
-	Name     string   `json:"name"  bson:"name" validate:"-" title:"名称"`           // 名称
-	Acct     string   `json:"acct" bson:"acct" validate:"-" title:"账号"`            // 账号
-	AcctType string   `json:"accType" bson:"accType"  validate:"-" title:"账号类型"`   // 账号类型
-	Category string   `json:"category"  bson:"category" validate:"-" title:"类别"`   // 类别Id 公司或个人
-	Balance  *float64 `json:"balance" bson:"balance" validate:"-" title:"余额账户"`    // 余额账户
-	BankName string   `json:"bankName" bson:"bankName"  validate:"-" title:"开户银行"` // 开户银行
-
-	OppIden     string `json:"oppIden" bson:"oppIden" validate:"-" title:"对方标识"`            // 对方标识
-	OppName     string `json:"oppName" bson:"oppName" validate:"-" title:"对方名称"`            // 对方名称
-	OppAcct     string `json:"oppAcct"  bson:"oppAcct" validate:"-" title:"对方账号"`           // 对方账号
-	OppAcctType string `json:"oppAccType" bson:"oppAccType"  validate:"-" title:"对方账号类型"`   // 对方账号类型
-	OppCategory string `json:"oppCategory" bson:"oppCategory"  validate:"-" title:"对方类别"`   // 对方类别
-	OppBankName string `json:"oppBankName" bson:"oppBankName"  validate:"-" title:"对方开户银行"` // 对方开户银行
+	Id          string   `json:"id"  bson:"id" validate:"required" title:"行Id"` // 行Id
+	RowNum      int64    `json:"rowNum" bson:"rowNum" index:""  title:"行号"`
+	Iden        string   `json:"iden" bson:"iden"  validate:"-" title:"标识"`           // 标识
+	Name        string   `json:"name"  bson:"name" validate:"-" title:"名称"`           // 名称
+	Acct        string   `json:"acct" bson:"acct" validate:"-" title:"账号"`            // 账号
+	AcctType    string   `json:"accType" bson:"accType"  validate:"-" title:"账号类型"`   // 账号类型
+	Category    string   `json:"category"  bson:"category" validate:"-" title:"类别"`   // 类别Id 公司或个人
+	Balance     *float64 `json:"balance" bson:"balance" validate:"-" title:"余额账户"`    // 余额账户
+	BankName    string   `json:"bankName" bson:"bankName"  validate:"-" title:"开户银行"` // 开户银行
+	Cash        bool     `json:"cash"  title:"是否现金"`
+	OppIden     string   `json:"oppIden" bson:"oppIden" validate:"-" title:"对方标识"`            // 对方标识
+	OppName     string   `json:"oppName" bson:"oppName" validate:"-" title:"对方名称"`            // 对方名称
+	OppAcct     string   `json:"oppAcct"  bson:"oppAcct" validate:"-" title:"对方账号"`           // 对方账号
+	OppAcctType string   `json:"oppAccType" bson:"oppAccType"  validate:"-" title:"对方账号类型"`   // 对方账号类型
+	OppCategory string   `json:"oppCategory" bson:"oppCategory"  validate:"-" title:"对方类别"`   // 对方类别
+	OppBankName string   `json:"oppBankName" bson:"oppBankName"  validate:"-" title:"对方开户银行"` // 对方开户银行
 
 	Serial  string            `json:"serial"   bson:"serial"  validate:"-" title:"流水号"`   // 流水号
 	Payout  *float64          `json:"payout"   bson:"payout"  validate:"-" title:"借方发生额"` // 借方发生额（支取）

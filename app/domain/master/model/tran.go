@@ -44,37 +44,37 @@ func NewTran() *Tran {
 func NewTranFromRecord(record *Record) *Tran {
 	acct := record.Acct
 	name := record.Name
-	acctType := record.AcctType
+	//acctType := record.AcctType
 	bankName := record.BankName
 
 	oppAcct := record.OppAcct
 	oppName := record.OppName
-	oppAcctType := record.OppAcctType
+	//oppAcctType := record.OppAcctType
 	oppBankName := record.OppBankName
 
 	if record.Payout != 0 {
 		acct = record.OppAcct
 		name = record.OppName
-		acctType = record.OppAcctType
+		//acctType = record.OppAcctType
 		bankName = record.OppBankName
 
 		oppAcct = record.Acct
 		oppName = record.Name
-		oppAcctType = record.AcctType
+		//oppAcctType = record.AcctType
 		oppBankName = record.BankName
 	}
 
 	tran := &Tran{
-		BaseModel:   record.BaseModel,
-		Name:        name,
-		MasterType:  record.MasterType,
-		MasterId:    record.MasterId,
-		Acct:        acct,
-		AcctType:    acctType,
-		BankName:    bankName,
-		OppName:     oppName,
-		OppAcct:     oppAcct,
-		OppAcctType: oppAcctType,
+		BaseModel:  record.BaseModel,
+		Name:       name,
+		MasterType: record.MasterType,
+		MasterId:   record.MasterId,
+		Acct:       acct,
+		//AcctType:    acctType,
+		BankName: bankName,
+		OppName:  oppName,
+		OppAcct:  oppAcct,
+		//OppAcctType: oppAcctType,
 		OppBankName: oppBankName,
 		Cash:        record.Cash,
 		Amount:      record.Amount,
@@ -87,6 +87,6 @@ func NewTranFromRecord(record *Record) *Tran {
 		Month:       int(record.Date.Month()),
 		Day:         record.Date.Day(),
 	}
-	tran.Id = record.TranId
+	//tran.Id = record.TranId
 	return tran
 }
