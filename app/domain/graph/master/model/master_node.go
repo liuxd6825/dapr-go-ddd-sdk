@@ -5,6 +5,7 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/utils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
@@ -23,7 +24,23 @@ type MasterNode struct {
 
 func NewMasterNode(data map[string]any, dbSch *dbschema.DBSchema) *MasterNode {
 	tenantId, _ := maputils.GetString(data, "tenant_id", "")
-	name, _ := maputils.GetString(data, "name", "")
+	meta := schema.GetMetaExtension(dbSch.JsonSchema)
+	var nameField string = "name"
+	var name string = ""
+
+	if meta != nil {
+		if meta.Graph != nil && meta.Graph.IsEnable {
+			if len(meta.Graph.Name) > 0 {
+				if field := dbSch.LookedField(meta.Graph.Name); field != nil {
+					nameField = field.DBName
+				}
+			}
+		}
+	}
+	if val, ok := data[nameField]; ok {
+		name = stringutils.AnyToString(val)
+	}
+
 	caseId, _ := maputils.GetString(data, "case_id", "")
 	id, _ := maputils.GetString(data, "id", "")
 	desc := utils.GetDescription(data, dbSch)

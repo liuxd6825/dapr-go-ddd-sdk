@@ -2,17 +2,17 @@ package model
 
 type Relation struct {
 	NId         string   `json:"nid" bson:"nid"`
-	Id          string   `json:"id" bson:"id"`
-	Name        string   `json:"name" bson:"name"`
-	CaseId      string   `json:"caseId" bson:"case_id"`
-	DrawId      string   `json:"drawId" bson:"draw_id"`
-	RelType     string   `json:"relType" bson:"rel_type"`
-	Source      string   `json:"source" bson:"source"`
-	Description string   `json:"description" bson:"description"`
-	Target      string   `json:"target" bson:"target"`
-	Keywords    []string `json:"keywords" bson:"keywords"`
-	SourceIds   string   `json:"sourceIds" bson:"source_ids"`
-	SourceType  string   `json:"sourceType" bson:"source_type"`
+	Id          string   `json:"id" bson:"id" title:"ID"`
+	Name        string   `json:"name" bson:"name" title:"名称"`
+	CaseId      string   `json:"caseId" bson:"case_id" title:"案件ID"`
+	DrawId      string   `json:"drawId" bson:"draw_id" title:"绘图ID"`
+	RelType     string   `json:"relType" bson:"rel_type" title:"关系类型"`
+	Source      string   `json:"source" bson:"source" title:"来源ID"`
+	Target      string   `json:"target" bson:"target" title:"目录ID"`
+	Keywords    []string `json:"keywords" bson:"keywords" title:"关键字"`
+	SourceIds   string   `json:"sourceIds" bson:"source_ids" title:"数据源ID"`
+	SourceType  string   `json:"sourceType" bson:"source_type" title:"数据源类型"`
+	Description string   `json:"description" bson:"description" title:"说明"`
 }
 
 func NewRelation() *Relation {

@@ -29,6 +29,8 @@ type DBSchema struct {
 	relEndIdFieldOk   bool
 	labelFields       []*Field
 	labelFieldsOK     bool
+	/*	nameFieldsOK      bool
+		nameFields        []*Field*/
 }
 
 func NewDBSchema() *DBSchema {

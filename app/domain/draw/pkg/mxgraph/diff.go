@@ -2,9 +2,10 @@ package mxgraph
 
 import (
 	"encoding/json"
+	"strings"
+
 	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/xmlquery"
-	"strings"
 )
 
 type BaseCell struct {
@@ -195,7 +196,7 @@ func (c *DiffCell) GetObjectCellType(xml *xmlquery.Node) string {
 	case "产品":
 		return "product"
 	}
-	return ""
+	return cellType
 }
 
 func (c *DiffCell) GetNewXml() *xmlquery.Node {

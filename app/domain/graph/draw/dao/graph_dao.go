@@ -71,16 +71,31 @@ func (d *GraphDao) relationsRemoves(ctx context.Context, tenantId string, batch 
 func (d *GraphDao) nodesCreates(ctx context.Context, tenantId string, batch *model2.SaveBatch, drawId string) {
 	// 创建节点
 	for _, item := range batch.Nodes.Creates {
-		create := "MERGE ($<n>$<label>{id:$<id>}) ON CREATE SET $<n>.name=$<name> ON MATCH SET $<n>.id=$<id>,$<n>.name=$<name>,$<n>.description=$<desc>; \n"
+		create := `MERGE ($<n>$<label>{id:$<id>}) ON CREATE SET
+		$<n>.name=$<name> ON MATCH SET
+		$<n>.id=$<id>,
+		$<n>.name=$<name>,
+		$<n>.type=$<type>,
+		$<n>.case_id=$<case_id>,
+		$<n>.description=$<desc>, 
+		$<n>.draw_id=$<draw_id>,
+		$<n>.source_ids=$<source_ids>,
+	    $<n>.source_type=$<source_type>,
+		$<n>.table=$<table>;
+		`
 		fb := stringutils.NewFmtBuilder()
 		fb.String("n", fmt.Sprintf("n%d", 1))
 		fb.String("caseId", item.CaseId)
-		fb.String("drawId", drawId)
 		fb.String("label", d.getItemLabels(tenantId, item, drawId))
 		fb.Varchar("id", item.Id)
 		fb.Varchar("name", item.Name)
 		fb.Varchar("desc", item.Description)
 		fb.Varchar("type", item.Type)
+		fb.Varchar("case_id", item.CaseId)
+		fb.Varchar("draw_id", item.DrawId)
+		fb.Varchar("source_ids", item.SourceIds)
+		fb.Varchar("source_type", item.SourceType)
+		fb.Varchar("table", item.Table)
 		d.write(ctx, fb.Format(create))
 	}
 }
@@ -90,13 +105,29 @@ func (d *GraphDao) nodesUpdates(ctx context.Context, tenantId string, batch *mod
 		MATCH (n:human:tenant_test:case_1001:draw_D001:draw) WHERE n.id='' SET n.name='', n.source='', n.target=‘’
 	*/
 	for _, item := range batch.Nodes.Updates {
-		update := "MATCH ($<n>$<labels>{id:$<id>}) SET $<n>.name=$<name>,$<n>.description=$<desc> \n"
+		update := `MATCH ($<n>$<labels>{id:$<id>}) SET 
+		$<n>.name=$<name>,
+		$<n>.type=$<type>,
+		$<n>.case_id=$<case_id>,
+		$<n>.description=$<desc>, 
+		$<n>.draw_id=$<draw_id>,
+		$<n>.source_ids=$<source_ids>,
+	    $<n>.source_type=$<source_type>,
+		$<n>.table=$<table>
+`
 		fb := stringutils.NewFmtBuilder()
 		fb.String("n", "n")
 		fb.String("labels", d.getDrawLabels(drawId))
 		fb.Varchar("id", item.Id)
 		fb.Varchar("name", item.Name)
 		fb.Varchar("desc", item.Description)
+		fb.Varchar("type", item.Type)
+		fb.Varchar("case_id", item.CaseId)
+		fb.Varchar("draw_id", item.DrawId)
+		fb.Varchar("source_ids", item.SourceIds)
+		fb.Varchar("source_type", item.SourceType)
+		fb.Varchar("table", item.Table)
+
 		d.write(ctx, fb.Format(update))
 	}
 

@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi/request"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
-	"sync"
 )
 
 type GraphService struct {
@@ -190,7 +191,8 @@ func newNode(caseId string, cell *mxgraph.DiffCell) *model2.Node {
 	node.Type = cell.GetNodeLabel()
 	node.SourceType = "draw"
 	node.SourceIds = cell.Id
-	node.Description = ""
+	node.Type = "draw"
+	node.Description = node.Name
 	return node
 }
 
