@@ -413,6 +413,15 @@ func (s *FolderAPI) FindPaging(ctx context.Context, query *query.FindFolderByFol
 	qry.PageNum = 0
 	qry.PageSize = 99999999999999
 	qry.Filter = "parent_id=='" + query.FolderId + "'"
+	if query.TenantId != "" {
+		qry.Filter = qry.Filter + " and tenant_id=='" + query.TenantId + "'"
+	}
+	if query.BusId != "" {
+		qry.Filter = qry.Filter + " and bus_id=='" + query.BusId + "'"
+	}
+	if query.EntityId != "" {
+		qry.Filter = qry.Filter + " and entity_id=='" + query.EntityId + "'"
+	}
 	qry.Sort = "created_time:desc"
 	qry.IsTotalRows = true
 	folders, err := s.folderService.FindPaging(ctx, qry)

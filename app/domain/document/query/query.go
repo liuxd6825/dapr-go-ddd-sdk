@@ -6,6 +6,9 @@ type FindByIdQuery struct {
 
 type FindFolderByFolderIdQuery struct {
 	FolderId string `json:"folderId" query:"folder-id" required:"true"`
+	TenantId string `json:"tenantId" query:"tenant-id" required:"-"`
+	BusId    string `json:"busId" query:"bus-id" required:"-"`
+	EntityId string `json:"entityId" query:"entity-id" required:"-"`
 }
 
 type FindByCaseIdQuery struct {
