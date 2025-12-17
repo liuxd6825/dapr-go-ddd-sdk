@@ -1,18 +1,18 @@
 package command
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
+)
 
 type TagRelationCreateCommand struct {
-	CommandId string            `json:"commandId"`
-	Data      model.TagRelation `json:"data"`
+	xbase.Command[model.TagRelation]
 }
 
 type TagRelationUpdateCommand struct {
-	CommandId string            `json:"commandId"`
-	Data      model.TagRelation `json:"data"`
+	xbase.Command[model.TagRelation]
 }
 
 type TagRelationDeleteCommand struct {
-	CommandId string            `json:"commandId"`
-	Data      model.TagRelation `json:"data"`
+	xbase.DeleteByIdCommand
 }

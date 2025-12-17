@@ -3,15 +3,16 @@ package restapi
 import (
 	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "tag"}, func() error {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys.tag"}, func() error {
 		RegisterTagApi(app, baseUrl, env)
 		RegisterTagTypeApi(app, baseUrl, env)
+		RegisterTagRelationApi(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -20,15 +21,13 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterTagApi(app *iris.Application, baseUrl string, env *env.Env) {
-	ragApi := NewTagAPI(env)
-	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
-		a.Handle(ragApi)
-	})
+	restapi.RegisterController(app, NewTagAPI(env, baseUrl))
 }
 
 func RegisterTagTypeApi(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewTagTypeAPI(env)
-	mvc.Configure(app.Party(baseUrl), func(a *mvc.Application) {
-		a.Handle(api)
-	})
+	restapi.RegisterController(app, NewTagTypeAPI(env, baseUrl))
+}
+
+func RegisterTagRelationApi(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.RegisterController(app, NewTagRelationAPI(env, baseUrl))
 }

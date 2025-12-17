@@ -3,14 +3,14 @@ package restapi
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/query"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -19,80 +19,42 @@ type TagTypeAPI struct {
 	env            *env.Env
 	tagTypeService *service.TagTypeService
 	tagService     *service.TagService
+	rootPath       string
 }
 
-func NewTagTypeAPI(env *env.Env) *TagTypeAPI {
+func NewTagTypeAPI(env *env.Env, rootPath string) *TagTypeAPI {
 	tagTypeService := service.NewTagTypeService()
 	tagService := service.NewTagService()
 	return &TagTypeAPI{
 		env:            env,
 		tagTypeService: tagTypeService,
 		tagService:     tagService,
+		rootPath:       rootPath,
 	}
 }
 
-func (s *TagTypeAPI) BeforeActivation(b mvc.BeforeActivation) {
-	b.Handle(iris.MethodPost, "/sys/tag-type", "Create")
-	b.Handle(iris.MethodPut, "/sys/tag-type", "Update")
-	b.Handle(iris.MethodDelete, "/sys/tag-type", "Delete")
-	b.Handle(iris.MethodGet, "/sys/tag-type", "FindPaging")
+func (s *TagTypeAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+	s.tagTypeService = service.NewTagTypeService()
+	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TagTypeAPI", s)
+	ctl.Post("/tag-type", "Create")
+	ctl.Put("/tag-type", "Update")
+	ctl.Delete("/tag-type", "Delete", restapi.WithParamsInBody(true))
+	ctl.GetPaging("/tag-type", "FindPaging")
+	return ctl
 }
 
-func (s *TagTypeAPI) Create(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		err := tx.StartTx(ctx, []string{s.tagTypeService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
-			var cmd *command.TagTypeCreateCommand
-			if err := ictx.ReadJSON(&cmd); err != nil {
-				return err
-			}
-
-			res := s.tagTypeService.Create(ctx, &cmd.Data)
-
-			return res.Error
-		})
-
-		return err
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+func (s *TagTypeAPI) Create(ctx context.Context, cmd *command.TagTypeCreateCommand) error {
+	return s.tagTypeService.Create(ctx, cmd)
 }
 
-func (s *TagTypeAPI) Update(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		var cmd *command.TagTypeUpdateCommand
-		if err := ictx.ReadJSON(&cmd); err != nil {
-			return err
-		}
-
-		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"name", "color"})
-
-		res := s.tagTypeService.Update(ctx, &cmd.Data, opts)
-		return res.Error
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+func (s *TagTypeAPI) Update(ctx context.Context, cmd *command.TagTypeUpdateCommand) error {
+	opts := idao.NewCallOptions()
+	opts.SetUpdateFields([]string{"name", "color"})
+	return s.tagTypeService.Update(ctx, &cmd.Data, opts)
 }
 
-func (s *TagTypeAPI) Delete(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		err := tx.StartTx(ctx, []string{s.tagTypeService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
-			var cmd *command.TagTypeDeleteCommand
-			if err := ictx.ReadJSON(&cmd); err != nil {
-				return err
-			}
-
-			res := s.tagTypeService.DeleteById(ctx, cmd.Data.Id)
-
-			//err := s.DeleteByParentId(ctx, cmd.Data.Id)
-
-			return res.Error
-		})
-
-		return err
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+func (s *TagTypeAPI) Delete(ctx context.Context, cmd *command.TagTypeDeleteCommand) error {
+	return s.tagTypeService.Delete(ctx, cmd)
 }
 
 func (s *TagTypeAPI) DeleteByParentId(ctx context.Context, id string) error {
@@ -120,28 +82,19 @@ func (s *TagTypeAPI) DeleteByParentId(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *TagTypeAPI) FindPaging(ictx iris.Context) {
-	restapi.Try(ictx, func(ctx context.Context) error {
-		tenantId := ictx.URLParam("tenant-id")
-		caseId := ictx.URLParam("case-id")
-		etag := ictx.URLParam("etag")
+func (s *TagTypeAPI) FindPaging(ctx context.Context, qry *query.FindPagingTagQuery) (idao.FindPagingResult[*model.TagType], error) {
+	var filter string
+	if qry.ETag == true {
+		filter = fmt.Sprintf("tenant_id=='%s' and is_e_tag==%v", qry.TenantId, qry.ETag)
+	} else {
+		filter = fmt.Sprintf("tenant_id=='%s' and ((case_id=='%s' and is_e_tag==%v) or is_e_tag==%s)", qry.TenantId, qry.CaseId, qry.ETag, "true")
+	}
 
-		var filter string
-		if etag == "true" {
-			filter = fmt.Sprintf("tenant_id=='%s' and is_e_tag==%s", tenantId, etag)
-		} else {
-			filter = fmt.Sprintf("tenant_id=='%s' and ((case_id=='%s' and is_e_tag==%s) or is_e_tag==%s)", tenantId, caseId, etag, "true")
-		}
-
-		qry := store2.NewFindPagingQueryRequest()
-		qry.PageNum = 0
-		qry.PageSize = 99999999999999
-		qry.Filter = filter
-		qry.Sort = "created_time:desc"
-		qry.IsTotalRows = true
-		res := s.tagTypeService.FindPaging(ctx, qry)
-		return restapi.SetData(ictx, res)
-	}).Catch(func(ctx context.Context, err error) {
-		restapi.SetError(ictx, err)
-	})
+	qry1 := store2.NewFindPagingQueryRequest()
+	qry1.PageNum = 0
+	qry1.PageSize = 99999999999999
+	qry1.Filter = filter
+	qry1.Sort = "created_time:desc"
+	qry1.IsTotalRows = true
+	return s.tagTypeService.FindPaging(ctx, qry1)
 }

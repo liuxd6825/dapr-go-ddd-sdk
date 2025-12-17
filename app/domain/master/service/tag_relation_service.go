@@ -1,8 +1,9 @@
 package service
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
-
-const DBKey string = "$db"
+import (
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
+)
 
 type TagRelationService struct {
 	*dao.TagRelationDao
@@ -10,6 +11,6 @@ type TagRelationService struct {
 
 func NewTagRelationService() *TagRelationService {
 	return &TagRelationService{
-		TagRelationDao: dao.NewTagRelationDao(DBKey),
+		TagRelationDao: dao.NewTagRelationDao(config.DBKey),
 	}
 }

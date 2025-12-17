@@ -354,6 +354,7 @@ func (s *DocumentAPI) Update(ctx context.Context, cmd *command.DocumentUpdateCom
 
 func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCommand) error {
 	err := tx.StartTx(ctx, []string{s.documentService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
+		//删标签关系
 		res := s.tagRelationSvc.DeleteByRSQL(ctx, fmt.Sprintf("bus_id=='%s'", cmd.Data.Id))
 		if res.Error != nil {
 			return res.Error

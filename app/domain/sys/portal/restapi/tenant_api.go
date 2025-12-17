@@ -11,6 +11,7 @@ import (
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
+	service5 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
@@ -30,6 +31,7 @@ type TenantAPI struct {
 	oryService        *service2.OryService
 	currencyService   *service3.CurrencyService
 	bankService       *service4.BankService
+	tagService        *service5.TagService
 	rootPath          string
 }
 
@@ -42,6 +44,7 @@ func NewTenantAPI(env *env.Env, rootPath string) *TenantAPI {
 		oryService:        service2.NewOryService(),
 		currencyService:   service3.NewCurrencyService(),
 		bankService:       service4.NewBankService(),
+		tagService:        service5.NewTagService(),
 		rootPath:          rootPath,
 	}
 }
@@ -77,6 +80,11 @@ func (s *TenantAPI) InitSysTenant(ctx context.Context) error {
 			return err
 		}
 		_, err = s.tenantUserService.CreateSysTenantUser(ctx, tenant.Id, user.Id)
+		if err != nil {
+			return err
+		}
+		//初始化标签
+		err = s.tagService.InitTag(ctx, tenant.Id)
 		if err != nil {
 			return err
 		}
@@ -121,6 +129,10 @@ func (s *TenantAPI) Create(ctx context.Context, cmd *command.TenantCreateCommand
 			return err
 		}
 		//初始化标签
+		err = s.tagService.InitTag(ctx, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
