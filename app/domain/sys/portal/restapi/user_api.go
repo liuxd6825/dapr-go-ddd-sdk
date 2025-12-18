@@ -89,23 +89,32 @@ func (s *UserAPI) Update(ctx context.Context, cmd *command.UserUpdateCommand) er
 }
 
 func (s *UserAPI) UpdatePassword(ctx context.Context, cmd *command.UpdatePasswordCommand) error {
+	if cmd.Data.Password != cmd.Data.ConfirmPassword {
+		return errors.New("密码不一致")
+	}
+	user, err := s.userService.FindUsingByAccount(ctx, cmd.Data.Account)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("账号已禁用")
+	}
+	user.Password = cmd.Data.Password
+	return s.updatePassword(ctx, user)
+}
+
+func (s *UserAPI) ResetPassword(ctx context.Context, cmd *command.UserUpdateCommand) error {
+	cmd.Data.Password = "123@@abc"
+	return s.updatePassword(ctx, &cmd.Data)
+}
+
+func (s *UserAPI) updatePassword(ctx context.Context, user *model.User) error {
 	err := tx.StartTx(ctx, []string{s.userService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
-		if cmd.Data.Password != cmd.Data.ConfirmPassword {
-			return errors.New("密码不一致")
-		}
-		user, err := s.userService.FindUsingByAccount(ctx, cmd.Data.Account)
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			return errors.New("账号已禁用")
-		}
-		password := cmd.Data.Password
 		updateIdentityBody := client.UpdateIdentityBody{
 			Credentials: &client.IdentityWithCredentials{
 				Password: &client.IdentityWithCredentialsPassword{
 					Config: &client.IdentityWithCredentialsPasswordConfig{
-						Password: &password,
+						Password: &user.Password,
 					},
 				},
 			},
@@ -114,41 +123,12 @@ func (s *UserAPI) UpdatePassword(ctx context.Context, cmd *command.UpdatePasswor
 				"email":   user.Email,
 			},
 		}
-		_, err = s.oryService.UpdateIdentity(ctx, user.OryIdentityId, updateIdentityBody)
+		_, err := s.oryService.UpdateIdentity(ctx, user.OryIdentityId, updateIdentityBody)
 		if err != nil {
 			return err
 		}
-		data, _ := model.NewUser()
-		data.Id = user.Id
-		data.Password = password
-		return s.userService.UpdateData(ctx, data, idao.NewCallOptions().SetUpdateFields([]string{"password"}))
-	})
-	return err
-}
 
-func (s *UserAPI) ResetPassword(ctx context.Context, cmd *command.UserUpdateCommand) error {
-	err := tx.StartTx(ctx, []string{s.userService.GetConfig().DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
-		password := "123@@abc"
-		updateIdentityBody := client.UpdateIdentityBody{
-			Credentials: &client.IdentityWithCredentials{
-				Password: &client.IdentityWithCredentialsPassword{
-					Config: &client.IdentityWithCredentialsPasswordConfig{
-						Password: &password,
-					},
-				},
-			},
-			Traits: map[string]interface{}{
-				"account": cmd.Data.Account,
-				"email":   cmd.Data.Email,
-			},
-		}
-		_, err := s.oryService.UpdateIdentity(ctx, cmd.Data.OryIdentityId, updateIdentityBody)
-		if err != nil {
-			return err
-		}
-		cmd.UpdateMask = []string{"password"}
-		cmd.Data.Password = password
-		return s.userService.Update(ctx, cmd)
+		return s.userService.UpdateData(ctx, user, idao.NewCallOptions().SetUpdateFields([]string{"password"}))
 	})
 	return err
 }
