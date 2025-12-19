@@ -108,7 +108,6 @@ func (s *AuthAPI) Generate(ctx context.Context, cmd *command.GenerateJwtCommand)
 		Address:       user.Address,
 		Gender:        user.Gender,
 		Work:          user.Work,
-		HeadPicture:   user.HeadPicture,
 		Status:        string(user.Status),
 		OryIdentityId: user.OryIdentityId,
 		SessionId:     cmd.Data.SessionId,
@@ -133,6 +132,8 @@ func (s *AuthAPI) Generate(ctx context.Context, cmd *command.GenerateJwtCommand)
 	}
 
 	jwt, err := s.jwtService.Generate(&session.Session, loginUser)
+
+	loginUser.HeadPicture = user.HeadPicture
 
 	return &model.LoginResult{LoginSession: session, LoginJwt: jwt, LoginUser: *loginUser}, nil
 }
