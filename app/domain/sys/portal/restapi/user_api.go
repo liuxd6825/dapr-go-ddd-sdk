@@ -84,7 +84,6 @@ func (s *UserAPI) Create(ctx context.Context, cmd *command.UserCreateCommand) er
 }
 
 func (s *UserAPI) Update(ctx context.Context, cmd *command.UserUpdateCommand) error {
-	cmd.UpdateMask = []string{"name", "phone", "email", "address", "gender", "work", "status"}
 	return s.userService.Update(ctx, cmd)
 }
 
