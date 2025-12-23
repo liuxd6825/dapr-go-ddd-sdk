@@ -989,12 +989,18 @@ func (r *Dao[T]) findByGroupQuery(ctx context.Context, qry *QueryGroup, results 
 	coll := r.getCollection(ctx)
 
 	filter := qry.GetFilter()
-	if !filter.IsAggregate() && !qry.IsGroup() {
+	//if !filter.IsAggregate() && !qry.IsGroup() {
+	if (!filter.IsAggregate() && !qry.IsGroup()) || (qry.IsGroup() && qry.IsLeaf()) {
 		findOptions, err := r.newFindOptions(qry.Query, opts...)
 		if err != nil {
 			return err
 		}
 		match := filter.Match
+		//-----------
+		if qry.IsLeaf() {
+			match = qry.GetGroupExpandFilter().Match
+		}
+		//------------
 		list, _, err := r.mFindList(ctx, match, findOptions)
 		results.results = list
 
@@ -1009,6 +1015,11 @@ func (r *Dao[T]) findByGroupQuery(ctx context.Context, qry *QueryGroup, results 
 	}
 
 	pipeline := filter.NewPipeline()
+	//---------
+	if qry.IsExpand() {
+		pipeline = qry.GetGroupExpandFilter().NewPipeline()
+	}
+	//---------
 	gSort := qry.GetBsonFilterSort()
 	if gSort != nil && len(gSort) > 0 {
 		pipeline = append(pipeline, gSort)
@@ -1057,20 +1068,31 @@ func (r *Dao[T]) findByGroupQuery(ctx context.Context, qry *QueryGroup, results 
 	}
 
 	defer cur.Close(ctx)
-
-	err = cur.All(ctx, results.results)
+	//---------
+	d := make([]struct {
+		Data      []T   `json:"data" bson:"data"`
+		TotalRows int64 `json:"totalRows" bson:"total_rows"`
+	}, 0)
+	//---------
+	err = cur.All(ctx, &d)
 	if err != nil {
 		return err
 	}
+	//---------
+	results.results = d[0].Data
+	//---------
 
-	if qry.Query.GetIsTotalRows() {
-		total, err := r.aggregateTotal(ctx, coll, pipeline)
-		if err != nil {
-			return err
-		}
-		results.totalRows = total
-	}
+	//if qry.Query.GetIsTotalRows() {
+	//	total, err := r.aggregateTotal(ctx, coll, pipeline)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	results.totalRows = total
+	//}
 
+	//----------
+	results.totalRows = d[0].TotalRows
+	//----------
 	return err
 
 }

@@ -153,7 +153,9 @@ func (q *QueryGroup) GetTotalGroup() bson.D {
 	projectMap["_id"] = "null"
 	pushMap := make(map[string]interface{})
 	pushMap["_id"] = "$_id"
-
+	//--------
+	pushMap["id"] = "$_id"
+	//--------
 	groupIndex := 0
 	if q.GroupKeys != nil && len(q.GroupKeys) > 0 && len(q.GroupKeys) < len(q.GroupCols) {
 		groupIndex = len(q.GroupKeys)
