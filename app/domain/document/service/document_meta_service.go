@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/orm_pkg/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 
@@ -47,16 +50,54 @@ func (t *DocumentMetaService) DeleteByIds(ctx context.Context, ids []string) err
 	return t.dao.DeleteByRSQL(ctx, rSql).GetError()
 }
 
-func (t *DocumentMetaService) Submit(ctx context.Context, data *model.DocumentMeta, opts ...idao.CallOptions) error {
-	metas, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s' and source=='%s' and name=='%s'", data.DocumentId, data.Source, data.Name))
+func (t *DocumentMetaService) Submit(ctx context.Context, cmd *command.DocumentMetaSubmitCommand, opts ...idao.CallOptions) error {
+	meta, err := t.FindByDocumentIdAndName(ctx, cmd.Data.DocumentId, cmd.Data.Name)
 	if err != nil {
 		return err
 	}
-	if metas != nil && len(metas) == 1 {
-		return t.dao.Update(ctx, data, opts...).GetError()
+	if meta != nil {
+		meta.Value = cmd.Data.Value
+		opts := idao.NewCallOptions()
+		opts.SetUpdateFields([]string{"value"})
+		err = t.Update(ctx, meta, opts)
 	} else {
-		return t.dao.Create(ctx, data, opts...).GetError()
+		err = t.Create(ctx, &cmd.Data)
 	}
+	return err
+}
+
+func (t *DocumentMetaService) SaveStatusBySourceType(ctx context.Context, cmd *command.DocumentMetaSaveStatusBySourceType) error {
+	verr := errors.NewVerifyError()
+	if cmd.Data.SourceType == "" {
+		verr.AppendField("SourceType", "不能为空")
+	}
+	if cmd.Data.Name == "" {
+		verr.AppendField("Name", "不能为空")
+	}
+	if cmd.Data.Value == "" {
+		verr.AppendField("Value", "不能为空")
+	}
+	if verr.HasError() {
+		return verr
+	}
+
+	meta, err := t.FindBySourceTypeAndName(ctx, cmd.Data.DocumentId, cmd.Data.SourceType, cmd.Data.Name)
+	if err != nil {
+		return err
+	}
+	if meta != nil {
+		meta.Value = cmd.Data.Value
+		opts := idao.NewCallOptions()
+		opts.SetUpdateFields([]string{"value"})
+		err = t.Update(ctx, meta, opts)
+	} else {
+		if cmd.Data.CaseId == "" {
+			verr.AppendField("CaseId", "不能为空")
+			return verr
+		}
+		err = t.Create(ctx, &cmd.Data)
+	}
+	return err
 }
 
 func (t *DocumentMetaService) FindBySource(ctx context.Context, sourceId string) ([]*model.DocumentMeta, error) {
@@ -69,6 +110,17 @@ func (t *DocumentMetaService) FindByDocumentId(ctx context.Context, documentId s
 
 func (t *DocumentMetaService) FindByDocumentIdAndName(ctx context.Context, documentId, name string) (*model.DocumentMeta, error) {
 	arr, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s' and name=='%s'", documentId, name))
+	if err != nil {
+		return nil, err
+	}
+	if arr == nil || len(arr) == 0 {
+		return nil, nil
+	}
+	return arr[0], nil
+}
+
+func (t *DocumentMetaService) FindBySourceTypeAndName(ctx context.Context, documentId, sourceType, name string) (*model.DocumentMeta, error) {
+	arr, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s' and source_typoe=='%s' and name=='%s'", documentId, sourceType, name))
 	if err != nil {
 		return nil, err
 	}

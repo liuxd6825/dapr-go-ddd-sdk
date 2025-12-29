@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service/interfaces"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
@@ -25,20 +26,22 @@ import (
 )
 
 type DocumentService struct {
-	dao        *dao.DocumentDao
-	graphRag   *my_rag.GraphRag
-	docExtract *doc_extract.Extract
+	dao            *dao.DocumentDao
+	graphRag       *my_rag.GraphRag
+	docExtract     *doc_extract.Extract
+	statusProvider interfaces.ImportStatusProvider
 }
 
 var documentService *DocumentService
 var documentServiceOnce sync.Once
 
-func NewDocumentService() *DocumentService {
+func NewDocumentService(statusProvider interfaces.ImportStatusProvider) *DocumentService {
 	documentServiceOnce.Do(func() {
 		documentService = &DocumentService{
-			dao:        dao.NewDocumentDao(DBKey),
-			graphRag:   NewGraphRag(),
-			docExtract: doc_extract.NewExtract(logs.GetLogger2()),
+			dao:            dao.NewDocumentDao(DBKey),
+			graphRag:       NewGraphRag(),
+			docExtract:     doc_extract.NewExtract(logs.GetLogger2()),
+			statusProvider: statusProvider,
 		}
 		documentService.graphRag.SetOnEvents(documentService.initOnEvents)
 	})
@@ -113,13 +116,16 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 				if !ok {
 					msg := fmt.Sprintf("fskey=%s not found", doc.FsKey)
 					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
+					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
-				text, err := s.docExtract.Extract(fs, doc.Path+doc.FileName)
+				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Importing, "")
+				text, err := s.docExtract.Extract(fs, doc.FilePath+doc.FileName)
 				if err != nil {
 					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
 					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
+					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
@@ -132,8 +138,10 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 				}
 				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
+					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure, err.Error())
 					return err
 				}
+				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Succee, "")
 			}
 		}
 		return nil
@@ -283,7 +291,7 @@ func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCrea
 		FsKey:    cmd.Data.FsKey,
 		FileId:   cmd.Data.FileId,
 		FileName: cmd.Data.FileName,
-		Path:     cmd.Data.Path,
+		FilePath: cmd.Data.Path,
 		State:    0,
 		Message:  "创建",
 	}

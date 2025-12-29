@@ -412,6 +412,7 @@ func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderA
 	for _, d := range documents.GetData() {
 		dv := s.documentService.Document2DocumentView(d)
 		dv.Meta = s.getMeta(allMetas, dv.Id)
+		dv.Status = getStatus(dv.Meta)
 		dvs = append(dvs, dv)
 	}
 
@@ -420,6 +421,15 @@ func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderA
 	return res, nil
 }
 
+func getStatus(list []*model.DocumentMeta) string {
+	status := ""
+	for _, m := range list {
+		if m.Name == "status" {
+			status += m.SourceType + ":" + m.Value + ";"
+		}
+	}
+	return status
+}
 func (s *DocumentAPI) getMeta(metas []*model.DocumentMeta, documentId string) []*model.DocumentMeta {
 	docMetas := make([]*model.DocumentMeta, 0)
 	if metas == nil || len(metas) == 0 {
