@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
@@ -42,22 +43,12 @@ func (s *DocumentMetaAPI) Create(ctx context.Context, cmd *command.DocumentMetaC
 	return err
 }
 
-func (s *DocumentMetaAPI) Submit(ctx context.Context, cmd *command.DocumentMetaCreateCommand) error {
-	meta, err := s.documentMetaService.FindByDocumentIdAndName(ctx, cmd.Data.DocumentId, cmd.Data.Name)
-	if err != nil {
-		return err
-	}
+func (s *DocumentMetaAPI) Submit(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
+	return s.documentMetaService.Submit(ctx, cmd)
+}
 
-	if meta != nil {
-		meta.Value = cmd.Data.Value
-		opts := idao.NewCallOptions()
-		opts.SetUpdateFields([]string{"value"})
-		err = s.documentMetaService.Update(ctx, meta, opts)
-	} else {
-		err = s.documentMetaService.Create(ctx, &cmd.Data)
-	}
-
-	return err
+func (s *DocumentMetaAPI) SaveStatusBySourceType(ctx context.Context, cmd *command.DocumentMetaSaveStatusBySourceType) error {
+	return s.documentMetaService.SaveStatusBySourceType(ctx, cmd)
 }
 
 func (s *DocumentMetaAPI) CreateMany(ctx context.Context, cmd *command.DocumentMetaCreateManyCommand) error {
