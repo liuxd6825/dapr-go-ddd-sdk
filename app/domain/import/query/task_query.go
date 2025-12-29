@@ -8,6 +8,11 @@ type TaskFindByIdQuery struct {
 	Id string `json:"id" param:"id" required:"true"`
 }
 
+type TaskFindByFileIdQuery struct {
+	FileId string `json:"fileId" query:"file-id" required:"true"`
+	CaseId string `json:"caseId" query:"case-id" required:"true"`
+}
+
 // TaskFindPagingByCaseIdQuery 分页查询命令
 type TaskFindPagingByCaseIdQuery struct {
 	CaseId string `json:"caseId"  param:"id" required:"true"`

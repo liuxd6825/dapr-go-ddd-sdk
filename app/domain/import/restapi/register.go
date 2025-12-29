@@ -16,6 +16,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		RegisterTaskApi(app, baseUrl, env)
 		RegisterRecordAPI(app, baseUrl, env)
 		RegisterTemplateAPI(app, baseUrl, env)
+		RegisterRagAPI(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -50,4 +51,8 @@ func RegisterRecordAPI(app *iris.Application, baseUrl string, env *env.Env) {
 
 func RegisterTemplateAPI(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewTemplateAPI(env, baseUrl))
+}
+
+func RegisterRagAPI(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.RegisterController(app, NewRagApi(env, baseUrl))
 }

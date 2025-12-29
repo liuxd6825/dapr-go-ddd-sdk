@@ -174,3 +174,8 @@ func (r *TaskService) FindPagingByCaseId(ctx context.Context, qry idao.FindPagin
 	res := r.dao.FindPaging(ctx, qry)
 	return res, res.GetError()
 }
+
+func (r *TaskService) FindByFileId(ctx context.Context, caseId string, fileId string) (*model.Task, error) {
+	task, err := r.dao.FindOneByRSQL(ctx, fmt.Sprintf("case_id=='%s' and file_id=='%s'", caseId, fileId))
+	return task, err
+}
