@@ -11,21 +11,26 @@ const (
 	ImportStatusType_Failure   ImportStatusType = "失败"
 )
 
+func (s ImportStatusType) String() string {
+	return string(s)
+}
+
 type ImportDoc interface {
-	GetFileId() string
-	GetSourceType() string
-	GetSourceApp() string
-	GetSourceId() string
-	GetFilePath() string
-	GetFileName() string
+	GetSourceApp() string  // 来源系统名称
+	GetSourceType() string // 来源数据类型
+	GetSourceId() string   // 来源数据ID
+	GetFilePath() string   // 文件目录
+	GetFileId() string     // 文件id
+	GetFileName() string   // 数据名称
+	GetFsKey() string
 }
 
 type ImportStatusProvider interface {
 	// UpdateStatus
 	// @Description: 更新知识导入状态
-	// @param FileID
+	// @param fileID
 	// @param status
 	// @param statusMsg
 	// @return error
-	UpdateStatus(cxt context.Context, doc ImportDoc, status ImportStatusType, statusMsg string) error
+	UpdateStatus(cxt context.Context, doc ImportDoc, status string, statusMsg string) error
 }

@@ -116,16 +116,16 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 				if !ok {
 					msg := fmt.Sprintf("fskey=%s not found", doc.FsKey)
 					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
-					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure, msg)
+					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure.String(), msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
-				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Importing, "")
+				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Importing.String(), "")
 				text, err := s.docExtract.Extract(fs, doc.FilePath+doc.FileName)
 				if err != nil {
 					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
 					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
-					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure, msg)
+					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure.String(), msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
@@ -138,10 +138,10 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 				}
 				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
-					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure, err.Error())
+					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure.String(), err.Error())
 					return err
 				}
-				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Succee, "")
+				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Succee.String(), "")
 			}
 		}
 		return nil
