@@ -36,6 +36,7 @@ func (s *TaskAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 	ctl.Put("/task", "Update")
 	ctl.Delete("/task", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/task/{id}", "FindById")
+	ctl.GetOne("/task:by-file-id", "FindByFileId")
 	ctl.GetPaging("/task", "FindPaging")
 	return ctl
 }
@@ -58,4 +59,8 @@ func (s *TaskAPI) FindById(ctx context.Context, qry *query.TaskFindByIdQuery) (*
 
 func (s *TaskAPI) FindPaging(ctx context.Context, qry *idao.FindPagingByCaseIdQueryRequest) (idao.FindPagingResult[*model.Task], error) {
 	return s.taskService.FindPagingByCaseId(ctx, qry)
+}
+
+func (s *TaskAPI) FindByFileId(ctx context.Context, qry *query.TaskFindByFileIdQuery) (*model.Task, error) {
+	return s.taskService.FindByFileId(ctx, qry.CaseId, qry.FileId)
 }
