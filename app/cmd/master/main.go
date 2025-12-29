@@ -11,16 +11,21 @@ import (
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
+	rag_command "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
+	rag_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys"
 	sys_code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 	notify "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/tasks"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 var (
@@ -72,10 +77,38 @@ func main() {
 						return err
 					}
 				*/
+
 				tasks.RunWorker()
+
+				backWorks()
+
 				return nil
 			})
 			return err
 		},
 	})
+}
+
+// backWorker
+// @Description: 后台服务
+func backWorks() {
+	go func() {
+		ctx := context.Background()
+		tenantService := service.NewTenantService()
+		list, err := tenantService.FindAll(context.Background())
+		if err != nil {
+			panic(err)
+		}
+		for _, tenant := range list {
+			cmd := &rag_command.DocumentScanCommand{
+				CommandId: idutils.NewId(),
+				Data: rag_command.DocumentScanData{
+					TenantId: tenant.Id,
+				},
+			}
+			tenantCtx := appctx.NewTenantContext(ctx, tenant.Id)
+			logs.InfoMsg(tenantCtx, "知识库开始扫描文件， tenantId：", tenant.Id, " tenantName:", tenant.Name)
+			rag_service.NewDocumentServiceDefault().Scan(tenantCtx, cmd)
+		}
+	}()
 }

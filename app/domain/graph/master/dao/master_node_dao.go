@@ -167,7 +167,7 @@ func (d *MasterNodeDao) UpdateMain(ctx context.Context, node *model.MasterNode) 
 }
 
 // UpdateRelNode 根据关系数据创建图节点与关系
-func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRecord) {
+func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRecord) error {
 	// 是否改名
 	isRename := d.IsRename(record)
 	isChangedRelType := d.IsChangedRelType(record)
@@ -201,7 +201,7 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 		fb.Varchar("table", rel.Table)
 
 		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
-			panic(err)
+			return err
 		}
 		fmtStr = `
 				MATCH (n1$<labels>{id:$<source>}), (m1$<labels>{id:$<target>}) WITH n1,m1
@@ -211,7 +211,7 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 				}]->(m1)
 			`
 		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
-			panic(err)
+			return err
 		}
 	}
 
@@ -238,11 +238,11 @@ func (d *MasterNodeDao) UpdateRelNode(ctx context.Context, record *dbevent.CDCRe
 		fb.Varchar("id", node.Id)
 		fb.Varchar("description", node.Description)
 		if err := d.write(ctx, fmtStr, fb, nil); err != nil {
-			panic(err)
+			return err
 		}
 	}
 
-	return
+	return nil
 
 }
 

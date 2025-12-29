@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/enum"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/orm_pkg/dao"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/dao"
@@ -84,6 +85,11 @@ func (t *TenantService) FindById(ctx context.Context, id string) (*model.Tenant,
 func (t *TenantService) FindPaging(ctx context.Context, qry store.FindPagingQuery) (idao.FindPagingResult[*model.Tenant], error) {
 	res := t.dao.FindPaging(ctx, qry, t.tenantOpt)
 	return res, res.GetError()
+}
+
+func (t *TenantService) FindAll(ctx context.Context) ([]*model.Tenant, error) {
+	res := t.dao.FindAll(ctx, t.tenantOpt)
+	return res.GetData(), res.GetError()
 }
 
 func (t *TenantService) FindCountByCode(ctx context.Context, code string) (int64, error) {

@@ -9,6 +9,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service/interfaces"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
@@ -48,6 +49,10 @@ func NewDocumentService(statusProvider interfaces.ImportStatusProvider) *Documen
 	return documentService
 }
 
+func NewDocumentServiceDefault() *DocumentService {
+	return NewDocumentService(outside.NewImportStatusProvider())
+}
+
 func (s *DocumentService) initOnEvents(e *storage.DocEvents) {
 	e.OnStartInsert = s.onStartInsert
 	e.OnDoneInsert = s.onDoneInsert
@@ -78,13 +83,21 @@ func (s *DocumentService) onDoneExtractEntities(ctx context.Context, ragDoc *ent
 
 func (s *DocumentService) Scan(ctx context.Context, cmd *command.DocumentScanCommand) {
 	go func() {
-		s.scan(ctx, cmd.Data.TenantId, cmd.Data.CaseId)
+		s.scan(ctx, cmd.Data.TenantId)
 	}()
 }
 
-func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
+// scan
+// @Description:
+// @receiver s
+// @param ctx
+// @param tenantId
+// @param caseId
+func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 	isLockScan := false
+
 	gp.Try(func() error {
+		caseId := ""
 		_, _ = s.unlockScan(ctx, tenantId, caseId)
 		isLockVal, err := s.lockScan(ctx, tenantId, caseId)
 		if err != nil {
@@ -96,8 +109,9 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 		}
 
 		for {
+			filter := fmt.Sprintf("state==0")
 			findQuery := &store.FindPagingQueryRequest{
-				Filter:   fmt.Sprintf("case_id=='%s' and state==0", caseId),
+				Filter:   filter,
 				PageNum:  0,
 				PageSize: 1,
 			}
@@ -149,7 +163,7 @@ func (s *DocumentService) scan(ctx context.Context, tenantId, caseId string) {
 		logs.Errorfmt(ctx, "rag scan err:%s", err.Error())
 	}).Finally(func() {
 		if isLockScan {
-			_, _ = s.unlockScan(ctx, tenantId, caseId)
+			_, _ = s.unlockScan(ctx, tenantId, "")
 		}
 	})
 }
@@ -187,7 +201,7 @@ func (s *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreat
 	doc := newDocumentWithCreateCommand(ctx, cmd)
 	err := s.create(ctx, doc)
 	if err == nil {
-		s.scan(ctx, doc.TenantId, doc.CaseId)
+		s.scan(ctx, doc.TenantId)
 	}
 	return err
 }
@@ -291,7 +305,7 @@ func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCrea
 		FsKey:    cmd.Data.FsKey,
 		FileId:   cmd.Data.FileId,
 		FileName: cmd.Data.FileName,
-		FilePath: cmd.Data.Path,
+		FilePath: cmd.Data.FilePath,
 		State:    0,
 		Message:  "创建",
 	}
