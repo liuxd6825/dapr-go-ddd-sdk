@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"time"
 
 	"github.com/google/uuid"
@@ -152,6 +154,11 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 	buffer := bytes.NewBuffer(fileByte)
 
 	gp2.Try(func() error {
+		docModel := &doc.Document{}
+		docModel.Id = idutils.NewId()
+		docModel.FileId = task.DocId
+		docModel.SourceType = "流水"
+		docModel.CaseId = task.CaseId
 		// 读取缓存数据
 		res, err = s.readExcel(ctx, task, cmd.Data.Template, buffer, false, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
 			fields := logs.Fields{
@@ -165,6 +172,10 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 			logs.Debug(ctx, fields)
 			createRes := s.dao.CreateMany(ctx, list)
 			if createRes != nil {
+				return err
+			}
+			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateEditing.Name(), "")
+			if err != nil {
 				return err
 			}
 			if batchBack != nil {
@@ -181,6 +192,13 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 			cmd1.Data.State = task_pkg.TaskStateGenerated
 			cmd1.Data.Message = fmt.Sprintf("成功%v条，错误%v条", res.RecordTotal, res.ErrorCount)
 			err = s.taskService.UpdateState(ctx, &cmd1)
+			if err != nil {
+				return err
+			}
+			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateGenerated.Name(), "")
+			if err != nil {
+				return err
+			}
 		}
 		return err
 	}).Catch(func(e error) {
@@ -269,6 +287,18 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 			cmd.Data.State = task_pkg.TaskStateImported
 			cmd.Data.EndTime = times.PNow()
 			err = s.taskService.UpdateProgress(ctx, &cmd.Data)
+			if err != nil {
+				return err
+			}
+			docModel := &doc.Document{}
+			docModel.Id = idutils.NewId()
+			docModel.FileId = appcmd.Data.DocId
+			docModel.SourceType = "流水"
+			docModel.CaseId = appcmd.Data.CaseId
+			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateImported.Name(), "")
+			if err != nil {
+				return err
+			}
 		}
 		return err
 	}).Catch(func(e error) {

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service/interfaces"
 	"math"
 	"strings"
 	"time"
@@ -29,22 +31,24 @@ import (
 )
 
 type RecordService struct {
-	dao             *dao2.RecordDao
-	docFileService  *docfile.FileService
-	currencyService *currency_service.CurrencyService
-	bankService     *bank_service.BankService
-	taskService     *TaskService
-	runtimeOptions  readexcel.RuntimeOptions
+	dao               *dao2.RecordDao
+	docFileService    *docfile.FileService
+	currencyService   *currency_service.CurrencyService
+	bankService       *bank_service.BankService
+	taskService       *TaskService
+	runtimeOptions    readexcel.RuntimeOptions
+	docStatusProvider interfaces.ImportStatusProvider
 }
 
 func NewRecordService() *RecordService {
 	return singleutils.CreateObj[*RecordService](func() *RecordService {
 		return &RecordService{
-			dao:             dao2.NewRecordDao(config.DBKey),
-			docFileService:  docfile.NewFileService(),
-			taskService:     NewTaskService(),
-			currencyService: currency_service.NewCurrencyService(),
-			bankService:     bank_service.NewBankService(),
+			dao:               dao2.NewRecordDao(config.DBKey),
+			docFileService:    docfile.NewFileService(),
+			taskService:       NewTaskService(),
+			currencyService:   currency_service.NewCurrencyService(),
+			bankService:       bank_service.NewBankService(),
+			docStatusProvider: outside.NewImportStatusProvider(),
 		}
 	})
 }
