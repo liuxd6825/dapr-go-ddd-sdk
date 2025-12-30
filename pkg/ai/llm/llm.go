@@ -2,12 +2,13 @@ package llm
 
 import (
 	"context"
+
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 )
 
-type LLM = model.BaseChatModel
+type LLM = model.ToolCallingChatModel
 
 // NewOpenAI component initialization function of node 'ChatModel1' in graph 'graphAgent'
 /*

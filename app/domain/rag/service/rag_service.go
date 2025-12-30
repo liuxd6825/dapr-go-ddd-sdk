@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"sync"
+
+	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
+	"github.com/cloudwego/eino/components/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
@@ -12,7 +16,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/sirupsen/logrus"
-	"sync"
 )
 
 type RagService struct {
@@ -68,14 +71,33 @@ func newGraphRag() *my_rag.GraphRag {
 		panic("read RagConfig error" + err.Error())
 	}
 
-	llm, err := llm.NewOpenAI(ctx, openai.ChatModelConfig{
-		BaseURL: ragCfg.LLM.BaseUrl,
-		Model:   ragCfg.LLM.Model, // 使用的模型版本
-		APIKey:  ragCfg.LLM.APIKey,
-	})
+	var llmModel model.ToolCallingChatModel
+	switch ragCfg.LLM.Type {
+	case "ollama":
+		m, err := llm.NewOllama(ctx, ollama.ChatModelConfig{
+			BaseURL: ragCfg.LLM.BaseUrl,
+			Model:   ragCfg.LLM.Model, // 使用的模型版本
+		})
 
-	if err != nil {
-		panic("open rag model error" + err.Error())
+		if err != nil {
+			panic("open rag model error" + err.Error())
+		}
+
+		llmModel = m
+	case "openai":
+		m, err := llm.NewOpenAI(ctx, openai.ChatModelConfig{
+			BaseURL: ragCfg.LLM.BaseUrl,
+			Model:   ragCfg.LLM.Model, // 使用的模型版本
+			APIKey:  ragCfg.LLM.APIKey,
+		})
+
+		if err != nil {
+			panic("open rag model error" + err.Error())
+		}
+
+		llmModel = m
+	default:
+		panic("rag config llm.type is null ")
 	}
 
 	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
@@ -97,5 +119,5 @@ func newGraphRag() *my_rag.GraphRag {
 
 	})
 	store := storage.NewStorage(graphStorage, vectorStorage, kv, embedder)
-	return my_rag.NewGraphRag(llm, store, ragConfig, logrus.New())
+	return my_rag.NewGraphRag(llmModel, store, ragConfig, logrus.New())
 }

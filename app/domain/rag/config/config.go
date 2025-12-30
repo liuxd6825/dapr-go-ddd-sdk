@@ -9,6 +9,7 @@ type RagConfig struct {
 }
 
 type LLMConfig struct {
+	Type    string `json:"type"` // ollama;
 	Model   string `json:"model"`
 	APIKey  string `json:"apiKey"`
 	BaseUrl string `json:"baseUrl"`
