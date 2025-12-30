@@ -386,7 +386,7 @@ func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCom
 func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderAndFilter) (idao.FindPagingResult[*model.DocumentView], error) {
 	qry := store2.NewFindPagingQueryRequest()
 	qry.PageNum = 0
-	qry.PageSize = 99999999999999
+	qry.PageSize = 1000
 	qry.Filter = "folder_id=='" + query.FolderId + "'"
 	if len(query.Filter) > 0 {
 		qry.Filter += " and " + query.Filter
@@ -424,6 +424,9 @@ func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderA
 }
 
 func getStatus(list []*model.DocumentMeta) string {
+	if len(list) == 1 {
+		return list[0].Value
+	}
 	status := ""
 	for _, m := range list {
 		if m.Name == "status" {

@@ -29,8 +29,8 @@ func NewDocumentEventHandler(env *env.Env, baseUrl string) *DocumentEventHandler
 
 func (s *DocumentEventHandler) NewAPIController(app *iris.Application) *restapi.ApiController {
 	ctl := restapi.NewController(app, "subscribe/rag/event", "RagDocumentEventSubHandler", s)
-	ctl.EventHandle("document-create-document", "CreateDocumentEvent")
-	ctl.Handle(iris.MethodOptions, "document-create-document", "Check")
+	ctl.EventHandle("document-create-event", "CreateDocumentEvent")
+	ctl.Handle(iris.MethodOptions, "document-create-event", "Check")
 	return ctl
 }
 
@@ -40,6 +40,7 @@ func (s *DocumentEventHandler) Check(ctx context.Context) error {
 
 func (s *DocumentEventHandler) CreateDocumentEvent(ctx context.Context, event *event.DocumentCreateEvent) error {
 	logs.DebugEvent(ctx, event, "CreateDocumentEvent")
+
 	cmd, err := newDocumentCreateCommand(event)
 	if err != nil {
 		return err
@@ -54,10 +55,14 @@ func (s *DocumentEventHandler) CreateDocumentEvent(ctx context.Context, event *e
 func newDocumentCreateCommand(event *event.DocumentCreateEvent) (*command.DocumentCreateCommand, error) {
 	cmd := &command.DocumentCreateCommand{}
 	cmd.CommandId = event.Id
+	cmd.Data.Id = event.Id
 	cmd.Data.FsKey = event.Data.FsKey
 	cmd.Data.CaseId = event.Data.CaseId
 	cmd.Data.FilePath = event.Data.FilePath
 	cmd.Data.FileId = event.Data.FileId
 	cmd.Data.FileName = event.Data.FileName
+	cmd.Data.SourceType = event.Data.SourceType
+	cmd.Data.SourceId = event.Data.SourceId
+	cmd.Data.SourceApp = event.Data.SourceApp
 	return cmd, nil
 }

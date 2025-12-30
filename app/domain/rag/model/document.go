@@ -13,13 +13,34 @@ type Document struct {
 	SourceId   string           `json:"sourceId,omitempty" gorm:"source_id"  bson:"source_id"`         // 来源数据ID
 	SourceType string           `json:"sourceType,omitempty" gorm:"source_type"  bson:"source_type"`   // 来源类型
 	SourceApp  string           `json:"sourceApp,omitempty" gorm:"source_app"  bson:"source_app"`      // 来源应用
-	State      int              `json:"state,omitempty" gorm:"state"  bson:"state"`                    // 状态
-	ChunkCount int              `json:"chunkCount,omitempty" gorm:"chunk_count"  bson:"chunk_count"`   // 块数量
-	DoneChunk  int              `json:"doneChunk,omitempty" gorm:"done_chunk"  bson:"done_chunk"`      // 完成数理
+	State      DocumentState    `json:"state,omitempty" gorm:"state"  bson:"state"`                    // 状态
+	ChunkCount int64            `json:"chunkCount,omitempty" gorm:"chunk_count"  bson:"chunk_count"`   // 块数量
+	DoneChunk  int64            `json:"doneChunk,omitempty" gorm:"done_chunk"  bson:"done_chunk"`      // 完成数理
 	StartTime  *time.Time       `json:"startTime,omitempty" gorm:"start_time"  bson:"start_time"`      // 开始时间
 	EndTime    *time.Time       `json:"endTime,omitempty" gorm:"end_time"  bson:"end_time"`            // 结束时间
 	Message    string           `json:"message,omitempty" gorm:"message"  bson:"message"`              // 消息
 
+}
+
+type DocumentState string
+
+const (
+	DocumentState_Pending   DocumentState = "排队中"
+	DocumentState_Importing DocumentState = "导入中"
+	DocumentState_Succee    DocumentState = "完成"
+	DocumentState_Failure   DocumentState = "失败"
+)
+
+func (s DocumentState) String() string {
+	return string(s)
+}
+
+func (d *Document) GetId() string {
+	return d.Id
+}
+
+func (d *Document) GetCaseId() string {
+	return d.CaseId
 }
 
 func (d *Document) GetFileId() string {

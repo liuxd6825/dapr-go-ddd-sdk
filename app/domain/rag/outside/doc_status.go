@@ -25,14 +25,18 @@ func NewDocStatusProvider() *DocumentMetaService {
 }
 
 func (d *DocumentMetaService) UpdateStatus(ctx context.Context, doc interfaces.ImportDoc, status string, statusMsg string) error {
-	cmd := &command.DocumentMetaSaveStatusBySourceType{}
-	cmd.CommandId = idutils.NewId()
-	cmd.Data = model.DocumentMeta{}
-	cmd.Data.Id = idutils.NewId()
-	cmd.Data.DocumentId = doc.GetFileId()
-	cmd.Data.SourceType = doc.GetSourceType()
-	cmd.Data.Source = doc.GetSourceId()
-	cmd.Data.Name = "status"
-	cmd.Data.Value = status
-	return d.service.SaveStatusBySourceType(ctx, cmd)
+	if doc.GetSourceApp() == "document_service" {
+		cmd := &command.DocumentMetaSaveStatusBySourceType{}
+		cmd.CommandId = idutils.NewId()
+		cmd.Data = model.DocumentMeta{}
+		cmd.Data.Id = idutils.NewId()
+		cmd.Data.CaseId = doc.GetCaseId()
+		cmd.Data.DocumentId = doc.GetSourceId()
+		cmd.Data.SourceType = "知识"
+		cmd.Data.Source = doc.GetId()
+		cmd.Data.Name = "status"
+		cmd.Data.Value = status
+		return d.service.SaveStatusBySourceType(ctx, cmd)
+	}
+	return nil
 }

@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -156,7 +158,8 @@ func (t *DocumentMetaService) FindByDocumentIdAndName(ctx context.Context, docum
 }
 
 func (t *DocumentMetaService) FindBySourceTypeAndName(ctx context.Context, documentId, sourceType, name string) (*model.DocumentMeta, error) {
-	arr, err := t.dao.FindByRSQL(ctx, fmt.Sprintf("document_id=='%s' and source_typoe=='%s' and name=='%s'", documentId, sourceType, name))
+	rsqlBuilder := rsql.NewBuilder().And(rsql.Eq("document_id", documentId), rsql.Eq("source_type", sourceType), rsql.Eq("name", name))
+	arr, err := t.dao.FindByRSQL(ctx, rsqlBuilder.Build())
 	if err != nil {
 		return nil, err
 	}

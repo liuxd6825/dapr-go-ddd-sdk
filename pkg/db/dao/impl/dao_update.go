@@ -64,6 +64,7 @@ func (d *DaoBase[T]) UpdateMapByRSQL(ctx context.Context, rsql string, data map[
 	}
 	return idao.NewResult(res)
 }
+
 func (d *DaoBase[T]) IsNil(entity T) bool {
 	return any(entity) == nil
 }

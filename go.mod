@@ -9,7 +9,6 @@ require (
 )
 
 require (
-	github.com/open2b/scriggo v0.60.0
 	github.com/beevik/etree v1.5.0
 	github.com/citilinkru/camunda-client-go/v3 v3.5.0
 	github.com/dapr/components-contrib v1.15.2
@@ -26,6 +25,7 @@ require (
 	github.com/liuxd6825/k6server v1.9.0
 	//github.com/mitchellh/mapstructure v1.5.0  // indirect
 	github.com/neo4j/neo4j-go-driver/v5 v5.28.0
+	github.com/open2b/scriggo v0.60.0
 	github.com/orcaman/concurrent-map v1.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -46,7 +46,7 @@ require (
 	github.com/dop251/goja v0.0.0-20240220182346-e401ed450204
 	github.com/duke-git/lancet/v2 v2.3.1
 	github.com/flosch/pongo2/v6 v6.0.0
-	github.com/fsnotify/fsnotify v1.7.0
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/go-resty/resty/v2 v2.11.0
 	github.com/gookit/goutil v0.6.15
 	github.com/iris-contrib/httpexpect/v2 v2.15.2
@@ -90,6 +90,7 @@ require (
 require (
 	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
+	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 )
 

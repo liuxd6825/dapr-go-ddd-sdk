@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/dapr/go-sdk/client"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
@@ -19,11 +20,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 type DocumentService struct {
@@ -31,6 +32,7 @@ type DocumentService struct {
 	graphRag       *my_rag.GraphRag
 	docExtract     *doc_extract.Extract
 	statusProvider interfaces.ImportStatusProvider
+	current        *model.Document
 }
 
 var documentService *DocumentService
@@ -59,14 +61,14 @@ func (s *DocumentService) initOnEvents(e *storage.DocEvents) {
 }
 
 func (s *DocumentService) onStartInsert(ctx context.Context, ragDoc *entity.Document) {
-	_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, 1, "导入中...")
+	_ = s.updateState(ctx, s.current, model.DocumentState_Importing, "导入中...")
 }
 
 func (s *DocumentService) onDoneInsert(ctx context.Context, ragDoc *entity.Document, err error) {
 	if err == nil {
-		_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, 100, "导入成功")
+		_ = s.updateState(ctx, s.current, model.DocumentState_Succee, "导入成功")
 	} else {
-		_ = s.updateState(ctx, ragDoc.TenantId, ragDoc.CaseId, ragDoc.Id, -1, err.Error())
+		_ = s.updateState(ctx, s.current, model.DocumentState_Succee, err.Error())
 	}
 }
 
@@ -81,9 +83,9 @@ func (s *DocumentService) onDoneExtractEntities(ctx context.Context, ragDoc *ent
 
 }
 
-func (s *DocumentService) Scan(ctx context.Context, cmd *command.DocumentScanCommand) {
+func (s *DocumentService) Scan(userCtx context.Context, cmd *command.DocumentScanCommand) {
 	go func() {
-		s.scan(ctx, cmd.Data.TenantId)
+		s.scan(userCtx, cmd.Data.TenantId)
 	}()
 }
 
@@ -95,51 +97,48 @@ func (s *DocumentService) Scan(ctx context.Context, cmd *command.DocumentScanCom
 // @param caseId
 func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 	isLockScan := false
-
+	env := env.GetEnv()
 	gp.Try(func() error {
 		caseId := ""
-		_, _ = s.unlockScan(ctx, tenantId, caseId)
-		isLockVal, err := s.lockScan(ctx, tenantId, caseId)
-		if err != nil {
-			return err
-		}
-		isLockScan = isLockVal
-		if isLockScan == false {
-			return nil
-		}
-
 		for {
-			filter := fmt.Sprintf("state==0")
-			findQuery := &store.FindPagingQueryRequest{
-				Filter:   filter,
-				PageNum:  0,
-				PageSize: 1,
+			_, _ = s.unlockScan(ctx, tenantId, caseId)
+
+			isLockVal, err := s.lockScan(ctx, tenantId, caseId)
+			if err != nil {
+				return err
 			}
-			findResult := s.dao.FindPaging(ctx, findQuery)
-			if findResult.GetError() != nil {
-				return findResult.GetError()
+			isLockScan = isLockVal
+			if isLockScan == false {
+				continue
 			}
-			if len(findResult.GetData()) == 0 {
-				break
+			list, err := s.getDocumentByPending(ctx)
+			if err != nil {
+				return err
 			}
-			// 处理所有文档
-			list := findResult.GetData()
-			env := env.GetEnv()
+			if len(list) == 0 {
+				continue
+			}
+			time.Sleep(time.Second * 10)
 			for _, doc := range list {
+				s.current = doc
+				err = s.updateState(ctx, doc, model.DocumentState_Importing, "")
+				if err != nil {
+					msg := fmt.Sprintf("updateState() error:%s", doc.FsKey)
+					logs.Errorfmt(ctx, msg)
+				}
 				fs, ok := env.Fsm.GetFs(doc.FsKey)
 				if !ok {
 					msg := fmt.Sprintf("fskey=%s not found", doc.FsKey)
-					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
-					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure.String(), msg)
+					_ = s.updateState(ctx, doc, model.DocumentState_Failure, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
-				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Importing.String(), "")
-				text, err := s.docExtract.Extract(fs, doc.FilePath+doc.FileName)
+
+				fileName := fmt.Sprintf("%s/%s", doc.FilePath, doc.FileName)
+				text, err := s.docExtract.Extract(fs, fileName)
 				if err != nil {
 					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
-					_ = s.updateState(ctx, doc.TenantId, doc.CaseId, doc.Id, -1, msg)
-					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure.String(), msg)
+					_ = s.updateState(ctx, doc, model.DocumentState_Succee, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
@@ -152,13 +151,13 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 				}
 				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
-					_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Failure.String(), err.Error())
-					return err
+					logs.ErrorMsg(ctx, "rag scan UpdateStatus", err.Error())
+					_ = s.updateState(ctx, doc, model.DocumentState_Failure, err.Error())
+					continue
 				}
-				_ = s.statusProvider.UpdateStatus(ctx, doc, interfaces.ImportStatusType_Succee.String(), "")
+				_ = s.updateState(ctx, doc, model.DocumentState_Succee, "")
 			}
 		}
-		return nil
 	}).Catch(func(err error) {
 		logs.Errorfmt(ctx, "rag scan err:%s", err.Error())
 	}).Finally(func() {
@@ -168,17 +167,27 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 	})
 }
 
-func (s *DocumentService) updateState(ctx context.Context, tenantId string, caseId, id string, state int, msg string) error {
-	doc := &model.Document{}
-	doc.Id = id
-	doc.TenantId = tenantId
-	doc.CaseId = caseId
-	doc.State = state
-	doc.Message = msg
-	callOptions := idao.NewCallOptions()
-	callOptions.SetUpdateFields([]string{"state", "message"})
-	_ = s.dao.Update(ctx, doc, callOptions)
-	return nil
+func (s *DocumentService) getDocumentByPending(ctx context.Context) ([]*model.Document, error) {
+	sqlBuild := rsql.NewBuilder().Eq("state", model.DocumentState_Pending.String())
+	findQuery := &store.FindPagingQueryRequest{
+		Filter:   sqlBuild.Build(),
+		PageNum:  0,
+		PageSize: 1,
+	}
+	findResult := s.dao.FindPaging(ctx, findQuery)
+	return findResult.GetData(), findResult.GetError()
+}
+
+func (s *DocumentService) updateState(ctx context.Context, doc *model.Document, state model.DocumentState, msg string) error {
+	return gp.Try(func() error {
+		doc.State = state
+		doc.Message = msg
+		callOptions := idao.NewCallOptions()
+		callOptions.SetUpdateFields([]string{"state", "message"})
+		_ = s.dao.Update(ctx, doc, callOptions)
+		_ = s.statusProvider.UpdateStatus(ctx, doc, state.String(), msg)
+		return nil
+	}).Error
 }
 
 // Ingests 提取文档知识
@@ -200,9 +209,6 @@ func (s *DocumentService) Ingests(ctx context.Context, document []*model.Documen
 func (s *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
 	doc := newDocumentWithCreateCommand(ctx, cmd)
 	err := s.create(ctx, doc)
-	if err == nil {
-		s.scan(ctx, doc.TenantId)
-	}
 	return err
 }
 
@@ -226,9 +232,7 @@ func (s *DocumentService) create(ctx context.Context, entity *model.Document, op
 	if tenantId == "" {
 		errs.AppendField("tenantId", "不能为空")
 	}
-	if entity.State != 0 {
-		errs.AppendField("state", "状态不正确")
-	}
+	entity.State = model.DocumentState_Pending
 	if errs.HasError() {
 		return errs
 	}
@@ -302,29 +306,19 @@ func (s *DocumentService) unlockScan(ctx context.Context, tenantId, caseId strin
 
 func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCreateCommand) *model.Document {
 	doc := &model.Document{
-		FsKey:    cmd.Data.FsKey,
-		FileId:   cmd.Data.FileId,
-		FileName: cmd.Data.FileName,
-		FilePath: cmd.Data.FilePath,
-		State:    0,
-		Message:  "创建",
+		FsKey:      cmd.Data.FsKey,
+		FileId:     cmd.Data.FileId,
+		FileName:   cmd.Data.FileName,
+		FilePath:   cmd.Data.FilePath,
+		SourceType: cmd.Data.SourceType,
+		SourceApp:  cmd.Data.SourceApp,
+		SourceId:   cmd.Data.SourceId,
+		State:      model.DocumentState_Pending,
+		Message:    "创建",
 	}
 	tenantId := appctx.GetTenantId2(ctx)
-	doc.Id = idutils.NewId()
+	doc.Id = cmd.Data.Id
 	doc.CaseId = cmd.Data.CaseId
 	doc.TenantId = tenantId
 	return doc
-}
-
-func newDocument(cmdData *command.DocumentData) *model.Document {
-	return &model.Document{
-		FileId:     cmdData.FileId,
-		FileName:   cmdData.FileName,
-		State:      cmdData.State,
-		ChunkCount: cmdData.ChunkCount,
-		DoneChunk:  cmdData.DoneChunk,
-		StartTime:  cmdData.StartTime,
-		EndTime:    cmdData.EndTime,
-		Message:    cmdData.Message,
-	}
 }

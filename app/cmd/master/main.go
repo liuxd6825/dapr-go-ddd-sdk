@@ -80,7 +80,7 @@ func main() {
 
 				tasks.RunWorker()
 
-				// backWorks()
+				runBackWorker()
 
 				return nil
 			})
@@ -91,7 +91,7 @@ func main() {
 
 // backWorker
 // @Description: 后台服务
-func backWorks() {
+func runBackWorker() {
 	go func() {
 		ctx := context.Background()
 		tenantService := service.NewTenantService()
@@ -107,8 +107,18 @@ func backWorks() {
 				},
 			}
 			tenantCtx := appctx.NewTenantContext(ctx, tenant.Id)
-			logs.InfoMsg(tenantCtx, "知识库开始扫描文件， tenantId：", tenant.Id, " tenantName:", tenant.Name)
-			rag_service.NewDocumentServiceDefault().Scan(tenantCtx, cmd)
+			userCtx, err := appctx.NewAuthUserContext(tenantCtx, &appctx.AuthUserEntity{
+				Id:       "system_worker",
+				Name:     "system_worker",
+				TenantId: tenant.Id,
+			})
+			if err != nil {
+				logs.Errorfmt(tenantCtx, err.Error())
+				continue
+			}
+
+			logs.InfoMsg(userCtx, "知识库开始扫描文件， tenantId：", tenant.Id, " tenantName:", tenant.Name)
+			rag_service.NewDocumentServiceDefault().Scan(userCtx, cmd)
 		}
 	}()
 }

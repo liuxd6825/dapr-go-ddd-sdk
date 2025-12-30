@@ -738,7 +738,7 @@ func (r *Dao[T]) FindPaging(ctx context.Context, qry store2.FindPagingQuery, opt
 	groupQueryResult := &findByGroupQueryOptions{}
 	err = r.findByGroupQuery(ctx, queryGroup, groupQueryResult)
 	if err != nil {
-		panic(err)
+		return store2.NewFindPagingResultWithError[T](err)
 	}
 	data := groupQueryResult.results.([]T)
 	if data == nil {

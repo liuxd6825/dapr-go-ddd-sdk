@@ -16,13 +16,15 @@ func (s ImportStatusType) String() string {
 }
 
 type ImportDoc interface {
+	GetId() string         // 导入文档ID
+	GetCaseId() string     // 案件ID
 	GetSourceApp() string  // 来源系统名称
 	GetSourceType() string // 来源数据类型
 	GetSourceId() string   // 来源数据ID
 	GetFilePath() string   // 文件目录
 	GetFileId() string     // 文件id
 	GetFileName() string   // 数据名称
-	GetFsKey() string
+	GetFsKey() string      // 存储KEY
 }
 
 type ImportStatusProvider interface {
