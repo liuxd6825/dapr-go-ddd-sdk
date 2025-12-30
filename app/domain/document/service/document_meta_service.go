@@ -87,11 +87,12 @@ func (t *DocumentMetaService) PublishDocumentRagEvent(ctx context.Context, cmd *
 		data.Id = idutils.NewId()
 		data.CaseId = docModel.CaseId
 		data.FsKey = docModel.FsKey
-		data.FileId = docModel.Id
-		data.FileName = docModel.Name
-		data.FilePath = folder.FolderPath + "/" + docModel.ObjectName
-		data.SourceId = cmd.Data.Source
-		data.SourceType = cmd.Data.SourceType
+		data.FileId = docModel.FileId
+		data.FileName = docModel.ObjectName
+		data.FilePath = folder.FolderPath
+		data.SourceId = docModel.Id
+		data.SourceType = "document"
+		data.SourceApp = "document_service"
 		evt := event.NewDocumentCreateEvent(ctx, "duxm-master-cmd-service", data)
 		err = xbase.PublishEvent(ctx, evt)
 		if err != nil {
