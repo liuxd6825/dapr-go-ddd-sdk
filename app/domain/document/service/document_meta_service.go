@@ -72,7 +72,7 @@ func (t *DocumentMetaService) Save(ctx context.Context, cmd *command.DocumentMet
 	return err
 }
 
-func (t *DocumentMetaService) PublishDocumentCreateEvent(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
+func (t *DocumentMetaService) PublishDocumentRagEvent(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
 	if cmd.Data.Name == "docType" && cmd.Data.Value == "知识" {
 		docModel, err := t.docService.FindById(ctx, cmd.Data.DocumentId)
 		if err != nil {

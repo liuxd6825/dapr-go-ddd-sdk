@@ -54,7 +54,7 @@ func (s *DocumentMetaAPI) Save(ctx context.Context, cmd *command.DocumentMetaSub
 		if err != nil {
 			return err
 		}
-		err = s.documentMetaService.PublishDocumentCreateEvent(ctx, cmd)
+		err = s.documentMetaService.PublishDocumentRagEvent(ctx, cmd)
 		return err
 	})
 	return err
