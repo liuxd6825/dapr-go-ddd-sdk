@@ -424,14 +424,18 @@ func (s *DocumentAPI) FindPaging(ctx context.Context, query *query.FindByFolderA
 }
 
 func getStatus(list []*model.DocumentMeta) string {
-	if len(list) == 1 {
-		return list[0].Value
-	}
-	status := ""
+	statusList := make([]*model.DocumentMeta, 0)
 	for _, m := range list {
 		if m.Name == "status" {
-			status += m.SourceType + ":" + m.Value + ";"
+			statusList = append(statusList, m)
 		}
+	}
+	if len(statusList) == 1 {
+		return statusList[0].Value
+	}
+	status := ""
+	for _, m := range statusList {
+		status += m.SourceType + ":" + m.Value + ";"
 	}
 	return status
 }

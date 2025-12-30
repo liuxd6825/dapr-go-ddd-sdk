@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
@@ -39,8 +38,6 @@ func (s *DocumentEventHandler) Check(ctx context.Context) error {
 }
 
 func (s *DocumentEventHandler) CreateDocumentEvent(ctx context.Context, event *event.DocumentCreateEvent) error {
-	logs.DebugEvent(ctx, event, "CreateDocumentEvent")
-
 	cmd, err := newDocumentCreateCommand(event)
 	if err != nil {
 		return err

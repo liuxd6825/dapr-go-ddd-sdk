@@ -27,7 +27,7 @@ type DocumentState string
 const (
 	DocumentState_Pending   DocumentState = "排队中"
 	DocumentState_Importing DocumentState = "导入中"
-	DocumentState_Succee    DocumentState = "完成"
+	DocumentState_Succee    DocumentState = "已导入"
 	DocumentState_Failure   DocumentState = "失败"
 )
 

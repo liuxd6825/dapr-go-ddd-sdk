@@ -241,6 +241,7 @@ func (s *DocumentService) create(ctx context.Context, entity *model.Document, op
 		return errors.New("不支持对%s文件进行解析, 文件类型不正确。", entity.FileName)
 	}
 	s.dao.Create(ctx, entity, opts...)
+	s.statusProvider.UpdateStatus(ctx, entity, entity.State.String(), "")
 	return nil
 }
 
