@@ -14,17 +14,14 @@ type FolderMetaAPI struct {
 	rootPath          string
 	env               *env.Env
 	folderMetaService *service.FolderMetaService
-	docService        *service.FolderService
 }
 
 func NewFolderMetaAPI(env *env.Env, rootPath string) *FolderMetaAPI {
 	folderMetaService := service.NewFolderMetaService()
-	docService := service.NewFolderService()
 	return &FolderMetaAPI{
 		rootPath:          rootPath,
 		env:               env,
 		folderMetaService: folderMetaService,
-		docService:        docService,
 	}
 }
 

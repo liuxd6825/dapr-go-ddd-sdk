@@ -37,6 +37,8 @@ func NewFolderAPI(env *env.Env, rootPath string) *FolderAPI {
 	fsService := service.NewFsService()
 	folderMetaService := service.NewFolderMetaService()
 	docMetaService := service.NewDocumentMetaService()
+	docMetaService.SetInit(docService, folderService)
+	docService.SetInit(docMetaService)
 	return &FolderAPI{
 		rootPath:          rootPath,
 		env:               env,
