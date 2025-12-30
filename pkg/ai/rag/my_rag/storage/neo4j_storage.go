@@ -311,8 +311,12 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 		maxDeep = 5
 	}
 	labels := n.getLabels(opts)
-	cypher := fmt.Sprintf("MATCH p=(n%s)-[*..%d]-(m) WHERE n.name in [%s] OPTIONAL MATCH (n)-[r]->(m) RETURN p LIMIT %d", labels, query.MaxDeep, namesStr, limit)
-	n.logger.Info(cypher)
+
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf(` MATCH p=(n%s)-[*..%d]-(m) `, labels, query.MaxDeep))
+	sb.WriteString(fmt.Sprintf(` WHERE ANY(word IN [%s] WHERE n.description CONTAINS word) `, namesStr))
+	sb.WriteString(fmt.Sprintf(` OR n.name IN [%s] RETURN p LIMIT 1000`, namesStr))
+	n.logger.Info(sb.String())
 
 	session := n.client.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -320,7 +324,7 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 	nodes = make(map[string]*GraphEntity)
 	rels = make(map[string]*GraphRelationship)
 
-	err = n.executeQuery(ctx, session, cypher, nil, func(result neo4j.ResultWithContext) error {
+	err = n.executeQuery(ctx, session, sb.String(), nil, func(result neo4j.ResultWithContext) error {
 		for result.Next(ctx) {
 			record := result.Record()
 			for _, key := range record.Keys {

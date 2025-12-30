@@ -3,6 +3,10 @@ package my_rag
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/cloudwego/eino/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
@@ -10,9 +14,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"sync"
-	"time"
 )
 
 type GraphRag struct {
@@ -313,13 +314,31 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 
 // getKeys 取得关键字
 func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, error) {
+	prompt := `
+### 角色设定
+你是一个专业的实体提取工具。你的任务是从输入文本中提取特定类型的实体。
+
+### 提取规则
+1. **提取范围**：提取所有 人名、地址、物品、名词。
+2. **强制规则**：文本中任何被 "[]" 或 "【】" 包裹的内容，必须视为**一个独立的完整实体**。
+3. **输出格式**：
+   - 使用英文逗号 "," 分隔所有实体。
+   - 严禁输出任何换行符、序号、Markdown标记或解释性文字。
+   - 如果未提取到任何内容，请直接返回空文本（即什么都不输出）。
+
+### 示例
+输入：小明带着[红色雨伞]去了杭州。
+输出：小明,红色雨伞,杭州
+
+输入：今天天气不错。
+输出：天气
+
+输入：他住在【高新园区】的公寓里。
+输出：他,高新园区,公寓
+
+### 待处理文本\n` + query
 	msgList := []*schema.Message{
-		{Role: schema.User, Content: fmt.Sprintf("### 指令：提取以下文本中的实体并用逗号分隔\n### 文本：{%s}", query)},
-		{Role: schema.System, Content: `
-			从文本中提取所有实体名称，当文本中有以[]或【】包括的文字，视为一个实体。输出结构用英文逗号分隔各实体，不要包含其他符号或说明。\n
-			按以下格式输出：实体1,实体2,实体3
-			示例：张三,李四,北京,上海
-		`},
+		{Role: schema.User, Content: prompt},
 	}
 	resp, err := g.LLM.Stream(ctx, msgList)
 	sb, err := Reader(resp)
