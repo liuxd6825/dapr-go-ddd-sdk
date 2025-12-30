@@ -22,9 +22,10 @@ type DocumentMetaAPI struct {
 }
 
 func NewDocumentMetaAPI(env *env.Env, rootPath string) *DocumentMetaAPI {
-	documentMetaService := service.NewDocumentMetaService()
 	docService := service.NewDocumentService()
 	folderService := service.NewFolderService()
+	documentMetaService := service.NewDocumentMetaService()
+	documentMetaService.SetInit(docService, folderService)
 	return &DocumentMetaAPI{
 		rootPath:            rootPath,
 		env:                 env,

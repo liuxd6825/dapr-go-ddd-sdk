@@ -23,11 +23,15 @@ type DocumentMetaService struct {
 }
 
 func NewDocumentMetaService() *DocumentMetaService {
-	return &DocumentMetaService{
-		dao:           dao.NewDocumentMetaDao(DBKey),
-		docService:    NewDocumentService(),
-		folderService: NewFolderService(),
+	svc := &DocumentMetaService{
+		dao: dao.NewDocumentMetaDao(DBKey),
 	}
+	return svc
+}
+
+func (t *DocumentMetaService) SetInit(docService *DocumentService, folderService *FolderService) {
+	t.docService = docService
+	t.folderService = folderService
 }
 
 func (t *DocumentMetaService) Create(ctx context.Context, data *model.DocumentMeta) error {

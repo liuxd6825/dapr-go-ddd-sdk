@@ -19,9 +19,12 @@ type DocumentService struct {
 
 func NewDocumentService() *DocumentService {
 	return &DocumentService{
-		dao:         dao.NewDocumentDao(DBKey),
-		metaService: NewDocumentMetaService(),
+		dao: dao.NewDocumentDao(DBKey),
 	}
+}
+
+func (s *DocumentService) SetInit(metaService *DocumentMetaService) {
+	s.metaService = metaService
 }
 
 func (s *DocumentService) GetConfig() *idao.DaoConfig {

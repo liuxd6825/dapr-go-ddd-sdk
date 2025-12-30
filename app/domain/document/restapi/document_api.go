@@ -37,12 +37,14 @@ type DocumentAPI struct {
 
 func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
 	documentService := service.NewDocumentService()
-	documentMetaService := service.NewDocumentMetaService()
 	fileService := service.NewFileService()
 	fsService := service.NewFsService()
 	folderService := service.NewFolderService()
 	folderMetaService := service.NewFolderMetaService()
 	tagRelationSvc := tagSvc.NewTagRelationService()
+	documentMetaService := service.NewDocumentMetaService()
+	documentMetaService.SetInit(documentService, folderService)
+	documentService.SetInit(documentMetaService)
 	return &DocumentAPI{
 		rootPath:            rootPath,
 		env:                 env,
