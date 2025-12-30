@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -15,12 +17,16 @@ import (
 )
 
 type DocumentMetaService struct {
-	dao *dao.DocumentMetaDao
+	dao           *dao.DocumentMetaDao
+	docService    *DocumentService
+	folderService *FolderService
 }
 
 func NewDocumentMetaService() *DocumentMetaService {
 	return &DocumentMetaService{
-		dao: dao.NewDocumentMetaDao(DBKey),
+		dao:           dao.NewDocumentMetaDao(DBKey),
+		docService:    NewDocumentService(),
+		folderService: NewFolderService(),
 	}
 }
 
@@ -64,6 +70,31 @@ func (t *DocumentMetaService) Submit(ctx context.Context, cmd *command.DocumentM
 		err = t.Create(ctx, &cmd.Data)
 	}
 	return err
+}
+
+func (t *DocumentMetaService) PublishDocumentCreateEvent(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
+	if cmd.Data.Name == "docType" && cmd.Data.Value == "知识" {
+		docModel, err := t.docService.FindById(ctx, cmd.Data.DocumentId)
+		if err != nil {
+			return err
+		}
+		folder, err := t.folderService.FindById(ctx, docModel.FolderId)
+		data := &event.DocumentCreateEventData{}
+		data.Id = idutils.NewId()
+		data.CaseId = docModel.CaseId
+		data.FsKey = docModel.FsKey
+		data.FileId = docModel.Id
+		data.FileName = docModel.Name
+		data.FilePath = folder.FolderPath + "/" + docModel.ObjectName
+		data.SourceId = cmd.Data.Source
+		data.SourceType = cmd.Data.SourceType
+		evt := event.NewDocumentCreateEvent(ctx, "duxm-master-cmd-service", data)
+		err = xbase.PublishEvent(ctx, evt)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (t *DocumentMetaService) SaveStatusBySourceType(ctx context.Context, cmd *command.DocumentMetaSaveStatusBySourceType) error {
