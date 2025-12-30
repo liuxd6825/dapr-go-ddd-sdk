@@ -189,14 +189,16 @@ func (q *QueryGroup) GetPageSize() int64 {
 // @return map[string]interface{}
 // @return error
 func (q *QueryGroup) GetFilter() *rsql_mongo.Filter {
-	if q.Filter == "" {
-		return rsql_mongo.NewMongoFilter()
-	}
+	//if q.Filter == "" {
+	//	return rsql_mongo.NewMongoFilter()
+	//}
 
 	p := rsql_mongo.NewProcess(q.TenantId)
-	if err := rsql.ParseProcess(q.Filter, p); err != nil {
-		panic(err)
+	if q.Filter != "" {
+		if err := rsql.ParseProcess(q.Filter, p); err != nil {
+			panic(err)
 
+		}
 	}
 	filter := p.GetFilter().(*rsql_mongo.Filter)
 	return filter
