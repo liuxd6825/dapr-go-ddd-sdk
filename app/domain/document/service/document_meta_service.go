@@ -56,7 +56,7 @@ func (t *DocumentMetaService) DeleteByIds(ctx context.Context, ids []string) err
 	return t.dao.DeleteByRSQL(ctx, rSql).GetError()
 }
 
-func (t *DocumentMetaService) Submit(ctx context.Context, cmd *command.DocumentMetaSubmitCommand, opts ...idao.CallOptions) error {
+func (t *DocumentMetaService) Save(ctx context.Context, cmd *command.DocumentMetaSubmitCommand, opts ...idao.CallOptions) error {
 	meta, err := t.FindByDocumentIdAndName(ctx, cmd.Data.DocumentId, cmd.Data.Name)
 	if err != nil {
 		return err

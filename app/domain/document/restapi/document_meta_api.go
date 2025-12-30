@@ -37,7 +37,7 @@ func NewDocumentMetaAPI(env *env.Env, rootPath string) *DocumentMetaAPI {
 func (s *DocumentMetaAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	ctl := restapi.NewController(app, s.rootPath+"/doc", "document.DocumentMetaAPI", s)
 	ctl.Post("/document-meta", "Create")
-	ctl.Post("/document-meta:submit", "Submit")
+	ctl.Post("/document-meta:save", "Save")
 	ctl.Post("/document-meta:batch", "CreateMany")
 	ctl.Put("/document-meta", "Update")
 	return ctl
@@ -48,9 +48,9 @@ func (s *DocumentMetaAPI) Create(ctx context.Context, cmd *command.DocumentMetaC
 	return err
 }
 
-func (s *DocumentMetaAPI) Submit(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
+func (s *DocumentMetaAPI) Save(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
 	err := tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
-		err := s.documentMetaService.Submit(ctx, cmd)
+		err := s.documentMetaService.Save(ctx, cmd)
 		if err != nil {
 			return err
 		}
