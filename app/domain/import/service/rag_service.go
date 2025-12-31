@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"sync"
@@ -40,16 +42,46 @@ func newRagService() *RagService {
 		panic("read RagConfig error" + err.Error())
 	}
 
-	chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
-		BaseURL: ragCfg.LLM.BaseUrl,
-		Model:   ragCfg.LLM.Model, // 使用的模型版本
-		APIKey:  ragCfg.LLM.APIKey,
-	})
+	//chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+	//	BaseURL: ragCfg.LLM.BaseUrl,
+	//	Model:   ragCfg.LLM.Model, // 使用的模型版本
+	//	APIKey:  ragCfg.LLM.APIKey,
+	//})
+
+	var llmModel model.ToolCallingChatModel
+	switch ragCfg.LLM.Type {
+	case "ollama":
+		m, err := llm.NewOllama(ctx, ollama.ChatModelConfig{
+			BaseURL: ragCfg.LLM.BaseUrl,
+			Model:   ragCfg.LLM.Model, // 使用的模型版本
+		})
+
+		if err != nil {
+			panic("open rag model error" + err.Error())
+		}
+
+		llmModel = m
+	case "openai":
+		m, err := llm.NewOpenAI(ctx, openai.ChatModelConfig{
+			BaseURL: ragCfg.LLM.BaseUrl,
+			Model:   ragCfg.LLM.Model, // 使用的模型版本
+			APIKey:  ragCfg.LLM.APIKey,
+		})
+
+		if err != nil {
+			panic("open rag model error" + err.Error())
+		}
+
+		llmModel = m
+	default:
+		panic("rag config llm.type is null ")
+	}
+
 	if err != nil {
 		panic("create import.RagModel error" + err.Error())
 	}
 	ragService := &RagService{}
-	ragService.chatModel = chatModel
+	ragService.chatModel = llmModel
 	return ragService
 }
 
@@ -119,91 +151,30 @@ func (s *RagService) getSystemPrompt() *schema.Message {
 			"9. 我方名称属性值从户名或我方户名字段取值，如果数据中没有户名或我方户名字段则从数据json中表名属性值中分析取出值。" +
 			"10. 我方账号属性值从我方账号或账号字段取值。" +
 			"11. 我方开户行属性值从开户行或我方开户行字段取值，如果数据中没有开户行或我方开户行字段则从数据json中非结构化数据属性值中分析取出值。" +
-			"12. 从**公式参数说明**中分析公式参数。" +
 			"**公式json数据**" +
 			"```json" +
-			"[" +
-			"    { key: \"replace\", title: \"文字替换\", desc: \"文字替换(【文本】,【替换文本】,【新文本】)\" }," +
-			"    { key: \"toDateTime\", title: \"取时间\", desc: \"取时间(【日期部分】,【时间部分...】)\" }," +
-			"    { key: \"toFloat\", title: \"取浮点值\", desc: \"取浮点值(【值】)\" }," +
-			"    { key: \"abs\", title: \"取绝对值\", desc: \"取绝对值(【值】)\" }," +
-			"    { key: \"isMinus\", title: \"是否有负号\", desc: \"是否有负号(【值】)\" }," +
-			"    { key: \"payout\", title: \"取支出金额\", desc: \"取支出金额(【值】)\" }," +
-			"    { key: \"income\", title: \"取收入金额\", desc: \"取收入金额(【值】)\" }," +
-			"    { key: \"amount\", title: \"取交易金额\", desc: \"取交易金额(【支出金额】,【收入金额】)\" }," +
-			"    { key: \"toString\", title: \"取文本\", desc: \"取文本(【文本】,【默认值】)\" }," +
-			"    { key: \"payoutByTag\", title: \"根据标识取支出金额\", desc: \"根据标识取支出金额(【标识文本】,【支出标识】,【金额】)\" }," +
-			"    { key: \"incomeByTag\", title: \"根据标识取收入金额\", desc: \"根据标识取收入金额(【标识文本】,【收入标识】,【金额】)\" }," +
-			"    { key: \"regexpNum\", title: \"取数字文本\", desc: \"取数字文本(【文本】,【默认值】,【顺序号】)\" }," +
-			"    { key: \"match\", title:\"取中间文本\", desc: \"取中间文本(【文本】,【开始文本】,【结尾文本】,【替换文本...】)\"  }," +
-			"    { key: \"zhiFuBaoOppAcc\", title:\"取支付宝账号\", desc: \"取支付宝账号(【支付宝公司名称】,【对方公司名称】,【备注或摘要】,【默认值】,【替换文本...】)\" }," +
-			"    { key: \"zhiFuBaoOppName\", title:\"取支持宝人名\", desc: \"取支持宝人名(【支付宝公司名称】,【对方公司名称】,【备注或摘要】,【开始文本】,【结尾文本】,【默认值】,【替换文本...】)\" }," +
-			"    { key: \"getCurrencyType\", title:\"取币种\", desc: \"取币种(【字段...】)\" }," +
-			"    { key: \"isCash\", title:\"是否现金交易\", desc: \"是否现金交易('现金,取现,卡取',【备注字段...】)\" }," +
-			"    { key: \"getBankName\", title:\"取开户行\", desc: \"取开户行(【字段...】)\" }," +
-			"]" +
-			"```" +
-			"**公式参数说明**" +
-			"- 文字替换" +
-			"    - 参数1: 原始文本字段" +
-			"    - 参数2: 需要替换的文本" +
-			"    - 参数3: 新文本" +
-			"- 取时间" +
-			"    - 参数1: 日期部分字段" +
-			"    - 参数2: 时间部分字段" +
-			"- 取浮点值" +
-			"    - 参数1: 需要转成浮点数的字段" +
-			"- 取绝对值" +
-			"    - 参数1: 需要取绝对值的字段" +
-			"- 是否有负号" +
-			"    - 参数1: 需要判断是否有负号的字段" +
-			"- 取支出金额" +
-			"    - 参数1: 支出金额字段" +
-			"- 取收入金额" +
-			"    - 参数1: 收入金额字段" +
-			"- 取交易金额" +
-			"    - 参数1: 支出金额字段" +
-			"    - 参数2: 收入金额字段" +
-			"- 取文本" +
-			"    - 参数1: 需要取文本的字段" +
-			"    - 参数2: 默认值" +
-			"- 根据标识取支出金额" +
-			"    - 参数1: 标识文本\"借\"" +
-			"    - 参数2: 支出标识字段" +
-			"    - 参数3: 支出金额字段" +
-			"- 根据标识取收入金额" +
-			"    - 参数1: 标识文本\"贷\"" +
-			"    - 参数2: 收入标识字段" +
-			"    - 参数3: 收入金额字段" +
-			"- 取数字文本" +
-			"    - 参数1: 需要取数字文本的字段" +
-			"    - 参数2: 默认值" +
-			"    - 参数3: 顺序号" +
-			"- 取中间文本" +
-			"    - 参数1: 需要取文本的字段" +
-			"    - 参数2: 开始文本" +
-			"    - 参数3: 结尾文本" +
-			"    - 参数4: 替换文本" +
-			"- 取支付宝账号" +
-			"    - 参数1: 支付宝公司名称" +
-			"    - 参数2: 对方公司名称" +
-			"    - 参数3: 备注或摘要字段" +
-			"    - 参数4: 默认值" +
-			"    - 参数5: 替换文本" +
-			"- 取支持宝人名" +
-			"    - 参数1: 支付宝公司名称" +
-			"    - 参数2: 对方公司名称" +
-			"    - 参数3: 备注或摘要字段" +
-			"    - 参数4: 开始文本" +
-			"    - 参数5: 结尾文本" +
-			"    - 参数6: 默认值" +
-			"    - 参数7: 替换文本" +
-			"- 取币种" +
-			"    - 参数1: 币种字段" +
-			"- 是否现金交易" +
-			"    - 参数1: 现金交易关键词\"现金,取现,卡取\"" +
-			"    - 参数2: 提取现金交易关键词的字段" +
-			"- 取开户行" +
-			"    - 参数1: 开户银行字段，如：`我方开户行或对方开户行`",
+			"{" +
+			"	\"properties\": {" +
+			"		{ \"name\": \"文字替换\", \"parameters\": [\"原始文本字段\", \"需要替换的文本\", \"新文本\"], \"desc\": \"文字替换(【文本】,【替换文本】,【新文本】)\" }," +
+			"		{ \"name\": \"取时间\", \"parameters\": [\"日期部分字段\", \"时间部分字段\"], \"desc\": \"取时间(【日期部分】,【时间部分...】)\" }," +
+			"		{ \"name\": \"取浮点值\", \"parameters\": [\"需要转成浮点数的字段\"], \"desc\": \"取浮点值(【值】)\" }," +
+			"		{ \"name\": \"取绝对值\", \"parameters\": [\"需要取绝对值的字段\"], \"desc\": \"取绝对值(【值】)\" }," +
+			"		{ \"name\": \"是否有负号\", \"parameters\": [\"需要判断是否有负号的字段\"], \"desc\": \"是否有负号(【值】)\" }," +
+			"		{ \"name\": \"取支出金额\", \"parameters\": [\"支出金额字段\"], \"desc\": \"取支出金额(【值】)\" }," +
+			"		{ \"name\": \"取收入金额\", \"parameters\": [\"收入金额字段\"], \"desc\": \"取收入金额(【值】)\" }," +
+			"		{ \"name\": \"取交易金额\", \"parameters\": [\"支出金额字段\", \"收入金额字段\"], \"desc\": \"取交易金额(【支出金额】,【收入金额】)\" }," +
+			"		{ \"name\": \"取文本\", \"parameters\": [\"需要取文本的字段\", \"默认值\"], \"desc\": \"取文本(【文本】,【默认值】)\" }," +
+			"		{ \"name\": \"根据标识取支出金额\", \"parameters\": [\"'借'\", \"支出标识字段\", \"支出金额字段\"], \"desc\": \"根据标识取支出金额(【标识文本】,【支出标识】,【金额】)\" }," +
+			"		{ \"name\": \"根据标识取收入金额\", \"parameters\": [\"'贷'\", \"收入标识字段\", \"收入金额字段\"], \"desc\": \"根据标识取收入金额(【标识文本】,【收入标识】,【金额】)\" }," +
+			"		{ \"name\": \"取数字文本\", \"parameters\": [\"需要取数字文本的字段\", \"默认值\", \"顺序号\"], \"desc\": \"取数字文本(【文本】,【默认值】,【顺序号】)\" }," +
+			"		{ \"name\": \"取中间文本\", \"parameters\": [\"需要取文本的字段\", \"开始文本\", \"结尾文本\", \"替换文本\"], \"desc\": \"取中间文本(【文本】,【开始文本】,【结尾文本】,【替换文本...】)\"  }," +
+			"		{ \"name\": \"取支付宝账号\", \"parameters\": [\"支付宝公司名称\", \"对方公司名称\", \"备注或摘要字段\", \"默认值\", \"替换文本\"], \"desc\": \"取支付宝账号(【支付宝公司名称】,【对方公司名称】,【备注或摘要】,【默认值】,【替换文本...】)\" }," +
+			"		{ \"name\": \"取支持宝人名\", \"parameters\": [\"支付宝公司名称\", \"对方公司名称\", \"备注或摘要字段\", \"开始文本\", \"结尾文本\", \"默认值\", \"替换文本\"], \"desc\": \"取支持宝人名(【支付宝公司名称】,【对方公司名称】,【备注或摘要】,【开始文本】,【结尾文本】,【默认值】,【替换文本...】)\" }," +
+			"		{ \"name\": \"取币种\", \"parameters\": [\"币种字段\"], \"desc\": \"取币种(【字段...】)\" }," +
+			"		{ \"name\": \"是否现金交易\", \"parameters\": [\"现金交易关键词'现金,取现,卡取'\", \"提取现金交易关键词的字段\"], \"desc\": \"是否现金交易('现金,取现,卡取',【备注字段...】)\" }," +
+			"		{ \"name\": \"取开户行\", \"parameters\": [\"开户银行字段\"], \"desc\": \"取开户行(【字段...】)\" }" +
+			"	}" +
+			"}" +
+			"```",
 	}
 }

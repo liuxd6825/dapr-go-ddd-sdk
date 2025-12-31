@@ -85,6 +85,9 @@ func (t *DocumentMetaService) PublishDocumentRagEvent(ctx context.Context, cmd *
 			return err
 		}
 		folder, err := t.folderService.FindById(ctx, docModel.FolderId)
+		if err != nil {
+			return err
+		}
 		data := &event.DocumentCreateEventData{}
 		data.Id = idutils.NewId()
 		data.CaseId = docModel.CaseId
@@ -92,6 +95,7 @@ func (t *DocumentMetaService) PublishDocumentRagEvent(ctx context.Context, cmd *
 		data.FileId = docModel.FileId
 		data.FileName = docModel.ObjectName
 		data.FilePath = folder.FolderPath
+		data.SourceUrl = fmt.Sprintf("/document/view.html?document-id=%s&folder-id=%s", docModel.Id, docModel.FolderId)
 		data.SourceId = docModel.Id
 		data.SourceType = "document"
 		data.SourceApp = "document_service"
