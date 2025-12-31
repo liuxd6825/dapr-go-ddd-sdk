@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -18,6 +19,18 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/db"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 )
+
+const nodeID = "id"
+const nodeName = "name"
+const nodeType = "type"
+const nodeTenantId = "tenant_id"
+const nodeCaseId = "case_id"
+const nodeDocId = "doc_id"
+const nodeDescription = "description"
+const nodeSourceIds = "source_ids"
+const nodeSourceUrl = "source_url"
+const nodeSourceType = "source_type"
+const nodeSourceName = "source_name"
 
 // Neo4jGraphStorage provides a Neo4j graph database implementation of storage interfaces.
 // It handles database connections and operations for storing and retrieving graph entities
@@ -110,22 +123,22 @@ func (n *Neo4jGraphStorage) LoadTenant(ctx context.Context, tenantId, caseId str
 	return nil
 }
 
-func (n *Neo4jGraphStorage) GraphSaveDoc(ctx context.Context, tenantId, caseId, docId string, entries []*GraphEntity, relationships []*GraphRelationship) error {
-	err := n.GraphSaveDocEntities(ctx, tenantId, caseId, docId, entries)
+func (n *Neo4jGraphStorage) GraphSaveDoc(ctx context.Context, doc *entity.Document, entries []*GraphEntity, relationships []*GraphRelationship) error {
+	err := n.GraphSaveDocEntities(ctx, doc, entries)
 	if err != nil {
 		return err
 	}
-	return n.GraphSaveDocRelationships(ctx, tenantId, caseId, docId, relationships)
+	return n.GraphSaveDocRelationships(ctx, doc, relationships)
 }
 
-func (n *Neo4jGraphStorage) GraphSaveDocEntities(ctx context.Context, tenantId, caseId, docId string, entries []*GraphEntity) error {
+func (n *Neo4jGraphStorage) GraphSaveDocEntities(ctx context.Context, doc *entity.Document, entries []*GraphEntity) error {
 	labelGroup := n.getGroupEntity(ctx, entries)
 	// 并发处理不同标签组
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(labelGroup))
 
 	for label, list := range labelGroup {
-		err := n.graphSaveDocEntities(ctx, tenantId, caseId, docId, label, list)
+		err := n.graphSaveDocEntities(ctx, doc, label, list)
 		if err != nil {
 			errChan <- err
 		}
@@ -147,21 +160,23 @@ func (n *Neo4jGraphStorage) GraphSaveDocEntities(ctx context.Context, tenantId, 
 	return nil
 }
 
-func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, tenantId, caseId, docId, label string, entries []*GraphEntity) error {
+func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, doc *entity.Document, label string, entries []*GraphEntity) error {
 
 	// 2. 准备批量数据（实际可从JSON/CSV加载）
 	batchData := []map[string]any{}
 	for _, entry := range entries {
 		batchData = append(batchData, map[string]any{
-			"id":          entry.Id,
-			"name":        entry.Name,
-			"case_id":     entry.CaseId,
-			"doc_id":      entry.DocId,
-			"tenant_id":   entry.TenantId,
-			"description": entry.Descriptions,
-			"source_ids":  entry.SourceIDs,
-			"source_type": "doc",
-			"type":        entry.Type,
+			nodeID:          entry.Id,
+			nodeName:        entry.Name,
+			nodeCaseId:      entry.CaseId,
+			nodeDocId:       entry.DocId,
+			nodeType:        entry.Type,
+			nodeTenantId:    entry.TenantId,
+			nodeDescription: entry.Descriptions,
+			nodeSourceIds:   entry.SourceIDs,
+			nodeSourceType:  "doc",
+			nodeSourceUrl:   doc.Url,
+			nodeSourceName:  doc.FileName,
 		})
 	}
 
@@ -170,7 +185,7 @@ func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, tenantId, 
 		"batch": batchData,
 	}
 
-	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:%s:doc", tenantId, caseId, docId, label)
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:%s:doc", doc.TenantId, doc.CaseId, doc.Id, label)
 
 	cypher := fmt.Sprintf(`
 	UNWIND $batch AS row
@@ -198,9 +213,9 @@ func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, tenantId, 
 
 }
 
-func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, tenantId, caseId, docId string, relationships []*GraphRelationship) error {
+func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, doc *entity.Document, relationships []*GraphRelationship) error {
 	// 2. 准备批量数据（实际可从JSON/CSV加载）
-	batchData := []map[string]any{}
+	var batchData []map[string]any
 	for _, rel := range relationships {
 		batchData = append(batchData, map[string]any{
 			"id":          rel.Id,
@@ -221,7 +236,7 @@ func (n *Neo4jGraphStorage) GraphSaveDocRelationships(ctx context.Context, tenan
 		"batch": batchData,
 	}
 
-	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:doc", tenantId, caseId, docId)
+	labels := fmt.Sprintf(":tenant_%s:case_%s:doc_%s:doc", doc.TenantId, doc.CaseId, doc.Id)
 
 	cypher := fmt.Sprintf(`
 	UNWIND $batch AS row
@@ -265,14 +280,17 @@ func (n *Neo4jGraphStorage) getGroupEntity(ctx context.Context, entries []*Graph
 	return res
 }
 
-func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryParam, opts Options) ([]string, error) {
-	contents := []string{}
+func (n *Neo4jGraphStorage) GraphQuery(ctx context.Context, query GraphQueryParam, opts Options) (contents []string, err error) {
+	urls := map[string]string{}
 	nodes, rels, err := n.FindNodes(ctx, query, opts)
 	if err != nil {
 		return nil, err
 	}
 	for _, node := range nodes {
 		contents = append(contents, node.Descriptions)
+		if _, ok := urls[node.SourceUrl]; !ok {
+			urls[node.SourceUrl] = node.SourceUrl
+		}
 	}
 	for _, edge := range rels {
 		source, ok1 := nodes[edge.Source]
@@ -315,7 +333,7 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintf(` MATCH p=(n%s)-[*..%d]-(m) `, labels, query.MaxDeep))
 	sb.WriteString(fmt.Sprintf(` WHERE ANY(word IN [%s] WHERE n.description CONTAINS word) `, namesStr))
-	sb.WriteString(fmt.Sprintf(` OR n.name IN [%s] RETURN p LIMIT 1000`, namesStr))
+	sb.WriteString(fmt.Sprintf(` OR n.name IN [%s] RETURN p LIMIT 1000 `, namesStr))
 	n.logger.Info(sb.String())
 
 	session := n.client.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
@@ -352,13 +370,15 @@ func (n *Neo4jGraphStorage) FindNodes(ctx context.Context, query GraphQueryParam
 }
 
 func newGraphEntity(node neo4j.Node) *GraphEntity {
-	id := maputils.GetStringErr(node.Props, "id", "")
-	name := maputils.GetStringErr(node.Props, "name", "")
-	typeName := maputils.GetStringErr(node.Props, "type", "")
-	caseId := maputils.GetStringErr(node.Props, "case_id", "")
-	docId := maputils.GetStringErr(node.Props, "doc_id", "")
-	descriptions := maputils.GetStringErr(node.Props, "description", "")
-	sourceIDs := maputils.GetStringErr(node.Props, "source_ids", "")
+	id := maputils.GetStringErr(node.Props, nodeID, "")
+	name := maputils.GetStringErr(node.Props, nodeName, "")
+	typeName := maputils.GetStringErr(node.Props, nodeType, "")
+	caseId := maputils.GetStringErr(node.Props, nodeCaseId, "")
+	docId := maputils.GetStringErr(node.Props, nodeDocId, "")
+	descriptions := maputils.GetStringErr(node.Props, nodeDescription, "")
+	sourceIDs := maputils.GetStringErr(node.Props, nodeSourceIds, "")
+	sourceUrl := maputils.GetStringErr(node.Props, nodeSourceUrl, "")
+	sourceName := maputils.GetStringErr(node.Props, nodeSourceName, "")
 	return &GraphEntity{
 		Id:           id,
 		Name:         name,
@@ -367,6 +387,8 @@ func newGraphEntity(node neo4j.Node) *GraphEntity {
 		DocId:        docId,
 		Descriptions: descriptions,
 		SourceIDs:    sourceIDs,
+		SourceUrl:    sourceUrl,
+		SourceName:   sourceName,
 	}
 }
 
@@ -671,9 +693,9 @@ func (n *Neo4jGraphStorage) GraphRelationships(ctx context.Context, pairs [][2]s
 		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 			labels := n.getDocLabels(opts)
 			query := fmt.Sprintf(`
-UNWIND $pairs AS pair
-MATCH (start%s {name: pair[0]})-[r]-(end%s{name: pair[1]})
-RETURN pair[0] as source, pair[1] as target, properties(r) as edge_properties
+	UNWIND $pairs AS pair
+	MATCH (start%s {name: pair[0]})-[r]-(end%s{name: pair[1]})
+	RETURN pair[0] as source, pair[1] as target, properties(r) as edge_properties
 			`, labels, labels)
 
 			// Convert pairs to a format suitable for the query
@@ -752,10 +774,10 @@ func (n *Neo4jGraphStorage) GraphCountEntitiesRelationships(ctx context.Context,
 		return sess.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 			labels := n.getDocLabels(opts)
 			query := fmt.Sprintf(`
-MATCH (n%s)
-WHERE n.name IN $entity_ids
-OPTIONAL MATCH (n)-[r]-()
-RETURN n.name AS entity_id, COUNT(r) AS degree
+	MATCH (n%s)
+	WHERE n.name IN $entity_ids
+	OPTIONAL MATCH (n)-[r]-()
+	RETURN n.name AS entity_id, COUNT(r) AS degree
             `, labels)
 			queryRes, err := tx.Run(ctx, query, map[string]any{
 				"entity_ids": names,
@@ -910,19 +932,19 @@ func (n *Neo4jGraphStorage) session(sessFunc func(context.Context, neo4j.Session
 }
 
 func graphEntityFromNode(node dbtype.Node) *GraphEntity {
-	name, ok := node.Props["name"].(string)
+	name, ok := node.Props[nodeName].(string)
 	if !ok {
 		name = ""
 	}
-	typ, ok := node.Props["type"].(string)
+	typ, ok := node.Props[nodeType].(string)
 	if !ok {
 		typ = ""
 	}
-	desc, ok := node.Props["description"].(string)
+	desc, ok := node.Props[nodeDescription].(string)
 	if !ok {
 		desc = ""
 	}
-	sourceIDs, ok := node.Props["source_ids"].(string)
+	sourceIDs, ok := node.Props[nodeSourceIds].(string)
 	if !ok {
 		sourceIDs = ""
 	}

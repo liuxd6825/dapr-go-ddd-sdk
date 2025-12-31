@@ -1,6 +1,6 @@
 package entity
 
-type Edge struct {
+type Edge1 struct {
 	Id       string `json:"id"`
 	CaseId   string `json:"case_id"`
 	TenantId string `json:"tenant_id"`

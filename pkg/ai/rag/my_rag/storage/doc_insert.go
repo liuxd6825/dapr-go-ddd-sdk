@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/cloudwego/eino/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"slices"
-	"sort"
-	"strings"
-	"time"
 )
 
 type summarizeDescriptionsPromptData struct {
@@ -138,7 +139,7 @@ func ExtractEntities(
 				}
 			}
 
-			if err := storage.GraphSaveDoc(ctx, doc.TenantId, doc.CaseId, doc.Id, newEntities, newRelationships); err != nil {
+			if err := storage.GraphSaveDoc(ctx, doc, newEntities, newRelationships); err != nil {
 				return err
 			}
 

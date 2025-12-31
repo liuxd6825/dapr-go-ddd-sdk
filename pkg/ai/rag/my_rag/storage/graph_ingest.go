@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"sort"
-	"strings"
-	"time"
 )
 
 type DocEventType string
@@ -180,7 +181,7 @@ func (d *GraphHandle) ExtractEntities(
 				}
 			}
 
-			if err := d.storage.GraphSaveDoc(ctx, doc.TenantId, doc.CaseId, doc.Id, newEntities, newRelationships); err != nil {
+			if err := d.storage.GraphSaveDoc(ctx, doc, newEntities, newRelationships); err != nil {
 				return err
 			}
 

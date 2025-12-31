@@ -1,6 +1,10 @@
 package storage
 
-import "context"
+import (
+	"context"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
+)
 
 type InsertDocData struct {
 	ChunkId  int
@@ -103,7 +107,7 @@ type GraphStorage interface {
 	// Used to expand the context during queries.
 	GraphRelatedEntities(ctx context.Context, names []string, opts Options) (map[string][]*GraphEntity, error)
 
-	GraphSaveDoc(ctx context.Context, tenantId, caseId, docId string, entries []*GraphEntity, rels []*GraphRelationship) error
+	GraphSaveDoc(ctx context.Context, doc *entity.Document, entries []*GraphEntity, rels []*GraphRelationship) error
 
 	GraphQuery(ctx context.Context, param GraphQueryParam, opts Options) ([]string, error)
 }

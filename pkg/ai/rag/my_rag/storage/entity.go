@@ -16,9 +16,9 @@ type Source struct {
 	TenantId   string `json:"tenantId"`
 	CaseId     string `json:"caseId"`
 	DocId      string `json:"docId"`
-	Content    string
-	TokenSize  int
-	OrderIndex int
+	Content    string `json:"content"`
+	TokenSize  int    `json:"tokenSize"`
+	OrderIndex int    `json:"orderIndex"`
 }
 
 func (s Source) GenID(docID string) string {
@@ -34,11 +34,13 @@ type GraphEntity struct {
 	CaseId   string `json:"caseId"`
 	DocId    string `json:"docId"`
 
-	Name         string `json:"name"`
-	Type         string `json:"type"`
-	Descriptions string `json:"description"`
-	SourceIDs    string
-	CreatedAt    time.Time
+	Name         string    `json:"name"`
+	Type         string    `json:"type"`
+	Descriptions string    `json:"description"`
+	SourceIDs    string    `json:"sourceIDs"`
+	SourceUrl    string    `json:"sourceUrl"`
+	SourceName   string    `json:"sourceName"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 // GraphRelationship represents a relationship between two entities in the knowledge graph.

@@ -148,6 +148,7 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 					FileName: doc.FileName,
 					TenantId: doc.TenantId,
 					CaseId:   doc.CaseId,
+					Url:      doc.SourceUrl,
 				}
 				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
@@ -314,6 +315,7 @@ func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCrea
 		SourceType: cmd.Data.SourceType,
 		SourceApp:  cmd.Data.SourceApp,
 		SourceId:   cmd.Data.SourceId,
+		SourceUrl:  cmd.Data.SourceUrl,
 		State:      model.DocumentState_Pending,
 		Message:    "创建",
 	}

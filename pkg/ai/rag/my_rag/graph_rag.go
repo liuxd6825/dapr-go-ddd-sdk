@@ -29,6 +29,7 @@ const MaxRetrieveContexts = 5 // 最大检索上下文数量
 type GoResult struct {
 	Data []string
 	Err  error
+	Urls []string
 }
 
 func NewGraphRag(llm llm.LLM, store storage.Storage, config storage.Config, logger *logrus.Logger) *GraphRag {

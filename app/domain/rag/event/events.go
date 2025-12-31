@@ -22,6 +22,7 @@ type DocumentCreateEventData struct {
 	SourceId   string `json:"sourceId"`   // 来源数据ID document_id
 	SourceType string `json:"sourceType"` // 来源类型 document
 	SourceApp  string `json:"sourceApp"`  // 来源应用 document_service
+	SourceUrl  string `json:"sourceUrl"`  // 来源的URL
 }
 
 func NewDocumentCreateEvent(ctx context.Context, appId string, data *DocumentCreateEventData) *DocumentCreateEvent {

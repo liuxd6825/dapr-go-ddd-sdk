@@ -32,15 +32,16 @@ type DocumentDeleteData struct {
 }
 
 type DocumentCreateData struct {
-	Id         string `json:"id"`
-	CaseId     string `json:"caseId"`
-	FsKey      string `json:"fsKey"`    // 文件fs key
-	FilePath   string `json:"filePath"` // 文件目录
-	FileId     string `json:"fileId"`   // 文件ID
-	FileName   string `json:"fileName"` // 内容
-	SourceId   string `json:"sourceId"`
-	SourceType string `json:"sourceType"`
-	SourceApp  string `json:"sourceApp"`
+	Id         string `json:"id" title:"主键" `
+	CaseId     string `json:"caseId" title:"案件ID"`
+	FsKey      string `json:"fsKey" title:"文件存储KEY"`
+	FilePath   string `json:"filePath" title:"文件目录"`
+	FileId     string `json:"fileId" title:"文件ID"`
+	FileName   string `json:"fileName" title:"文件名称"`
+	SourceId   string `json:"sourceId" title:"来源ID"`
+	SourceType string `json:"sourceType" title:"来源类型"`
+	SourceApp  string `json:"sourceApp" title:"来源应用"`
+	SourceUrl  string `json:"sourceUrl" title:"来源链接"`
 }
 
 type DocumentData struct {
