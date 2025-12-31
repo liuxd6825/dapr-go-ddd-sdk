@@ -175,8 +175,8 @@ func (n *Neo4jGraphStorage) graphSaveDocEntities(ctx context.Context, doc *entit
 			nodeDescription: entry.Descriptions,
 			nodeSourceIds:   entry.SourceIDs,
 			nodeSourceType:  "doc",
-			nodeSourceUrl:   doc.Url,
-			nodeSourceName:  doc.FileName,
+			nodeSourceUrl:   doc.SourceUrl,
+			nodeSourceName:  doc.SourceName,
 		})
 	}
 

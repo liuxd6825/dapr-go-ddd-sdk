@@ -1,12 +1,13 @@
 package entity
 
 type Document struct {
-	Id       string `json:"id"`
-	FileName string `json:"fileName"`
-	Text     string `json:"text"`
-	TenantId string `json:"tenantId"`
-	CaseId   string `json:"caseId"`
-	Url      string `json:"url"`
+	Id         string `json:"id"`
+	FileName   string `json:"fileName"`
+	Text       string `json:"text"`
+	TenantId   string `json:"tenantId"`
+	CaseId     string `json:"caseId"`
+	SourceUrl  string `json:"sourceUrl"`
+	SourceName string `json:"sourceName"`
 }
 
 func (d *Document) GetId() string {
@@ -29,6 +30,10 @@ func (d *Document) GetTenantId() string {
 	return d.TenantId
 }
 
-func (d *Document) GetUrl() string {
-	return d.Url
+func (d *Document) GetSourceUrl() string {
+	return d.SourceUrl
+}
+
+func (d *Document) GetSourceName() string {
+	return d.SourceName
 }

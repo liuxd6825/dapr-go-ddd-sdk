@@ -42,6 +42,7 @@ type DocumentCreateData struct {
 	SourceType string `json:"sourceType" title:"来源类型"`
 	SourceApp  string `json:"sourceApp" title:"来源应用"`
 	SourceUrl  string `json:"sourceUrl" title:"来源链接"`
+	SourceName string `json:"sourceName" title:"来源链接"`
 }
 
 type DocumentData struct {

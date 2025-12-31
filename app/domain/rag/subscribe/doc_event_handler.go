@@ -61,5 +61,7 @@ func newDocumentCreateCommand(event *event.DocumentCreateEvent) (*command.Docume
 	cmd.Data.SourceType = event.Data.SourceType
 	cmd.Data.SourceId = event.Data.SourceId
 	cmd.Data.SourceApp = event.Data.SourceApp
+	cmd.Data.SourceUrl = event.Data.SourceUrl
+	cmd.Data.SourceName = event.Data.SourceName
 	return cmd, nil
 }

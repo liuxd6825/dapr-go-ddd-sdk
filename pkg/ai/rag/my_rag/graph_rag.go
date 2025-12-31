@@ -287,7 +287,7 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 		contexts = append(contexts, res.Data...)
 	}
 
-	logger.Info("contexts", contexts)
+	// logger.Info("contexts", contexts)
 
 	prompt := buildRAGPrompt(query.Query, contexts)
 	messages := []*schema.Message{
@@ -338,9 +338,11 @@ func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, err
 输出：他,高新园区,公寓
 
 ### 待处理文本\n` + query
+
 	msgList := []*schema.Message{
 		{Role: schema.User, Content: prompt},
 	}
+
 	resp, err := g.LLM.Stream(ctx, msgList)
 	sb, err := Reader(resp)
 	if err != nil {

@@ -143,12 +143,13 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 					continue
 				}
 				ragDoc := &entity.Document{
-					Id:       doc.Id,
-					Text:     text,
-					FileName: doc.FileName,
-					TenantId: doc.TenantId,
-					CaseId:   doc.CaseId,
-					Url:      doc.SourceUrl,
+					Id:         doc.Id,
+					Text:       text,
+					FileName:   doc.FileName,
+					TenantId:   doc.TenantId,
+					CaseId:     doc.CaseId,
+					SourceUrl:  doc.SourceUrl,
+					SourceName: doc.SourceName,
 				}
 				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
@@ -238,12 +239,14 @@ func (s *DocumentService) create(ctx context.Context, entity *model.Document, op
 		return errs
 	}
 	entity.TenantId = tenantId
-	if ok := s.docExtract.IsSupport(entity.FileName); !ok {
-		return errors.New("不支持对%s文件进行解析, 文件类型不正确。", entity.FileName)
-	}
+
 	s.dao.Create(ctx, entity, opts...)
-	s.statusProvider.UpdateStatus(ctx, entity, entity.State.String(), "")
-	return nil
+	if ok := s.docExtract.IsSupport(entity.FileName); !ok {
+		entity.State = model.DocumentState_FormatNotSupported
+	}
+
+	return s.statusProvider.UpdateStatus(ctx, entity, entity.State.String(), "")
+
 }
 
 // Delete 删除文档
@@ -316,6 +319,7 @@ func newDocumentWithCreateCommand(ctx context.Context, cmd *command.DocumentCrea
 		SourceApp:  cmd.Data.SourceApp,
 		SourceId:   cmd.Data.SourceId,
 		SourceUrl:  cmd.Data.SourceUrl,
+		SourceName: cmd.Data.SourceName,
 		State:      model.DocumentState_Pending,
 		Message:    "创建",
 	}
