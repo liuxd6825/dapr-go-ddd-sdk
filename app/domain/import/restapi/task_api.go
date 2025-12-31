@@ -2,6 +2,9 @@ package restapi
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
@@ -42,7 +45,9 @@ func (s *TaskAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 }
 
 func (s *TaskAPI) Create(ctx context.Context, cmd *command.TaskCreateCommand) error {
-	return s.taskService.Create(ctx, cmd)
+	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+		return s.taskService.Create(ctx, cmd)
+	})
 }
 
 func (s *TaskAPI) Update(ctx context.Context, cmd *command.TaskUpdateCommand) error {
