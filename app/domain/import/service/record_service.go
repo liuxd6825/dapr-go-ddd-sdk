@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service/interfaces"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/outside"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/interfaces"
 	"math"
 	"strings"
 	"time"
