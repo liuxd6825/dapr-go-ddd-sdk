@@ -3,15 +3,18 @@ package service
 import (
 	"context"
 	"fmt"
-
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service/interfaces"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/singleutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 )
@@ -19,12 +22,14 @@ import (
 type TaskService struct {
 	dao *dao2.TaskDao
 	xbase.Service
+	docStatusProvider interfaces.ImportStatusProvider
 }
 
 func NewTaskService() *TaskService {
 	return singleutils.CreateObj[*TaskService](func() *TaskService {
 		taskService := &TaskService{
-			dao: dao2.NewTaskDao(config.DBKey),
+			dao:               dao2.NewTaskDao(config.DBKey),
+			docStatusProvider: outside.NewImportStatusProvider(),
 		}
 		return taskService
 	})
@@ -49,7 +54,23 @@ func (r *TaskService) Create(ctx context.Context, cmd *command.TaskCreateCommand
 		entity.MasterType = cmd.Data.MasterType
 		entity.MasterId = cmd.Data.MasterId
 		entity.MasterName = cmd.Data.MasterName
-		return r.dao.Create(ctx, entity).GetError()
+		err := r.dao.Create(ctx, entity).GetError()
+		if err != nil {
+			return err
+		}
+
+		docModel := &doc.Document{}
+		docModel.Id = idutils.NewId()
+		docModel.FileId = entity.FileId
+		docModel.SourceId = entity.DocId
+		docModel.SourceType = "流水"
+		docModel.CaseId = entity.CaseId
+		docModel.SourceApp = "document_service"
+		err = r.docStatusProvider.UpdateStatus(ctx, docModel, model.TaskStateEditing.Name(), "")
+		if err != nil {
+			return err
+		}
+		return nil
 	})
 }
 

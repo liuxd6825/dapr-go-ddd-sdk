@@ -154,11 +154,6 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 	buffer := bytes.NewBuffer(fileByte)
 
 	gp2.Try(func() error {
-		docModel := &doc.Document{}
-		docModel.Id = idutils.NewId()
-		docModel.FileId = task.DocId
-		docModel.SourceType = "流水"
-		docModel.CaseId = task.CaseId
 		// 读取缓存数据
 		res, err = s.readExcel(ctx, task, cmd.Data.Template, buffer, false, func(ctx context.Context, list []*task_pkg.RecordIe, batch readexcel.Batching) error {
 			fields := logs.Fields{
@@ -172,10 +167,6 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 			logs.Debug(ctx, fields)
 			createRes := s.dao.CreateMany(ctx, list)
 			if createRes != nil {
-				return err
-			}
-			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateEditing.Name(), "")
-			if err != nil {
 				return err
 			}
 			if batchBack != nil {
@@ -195,6 +186,13 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 			if err != nil {
 				return err
 			}
+			docModel := &doc.Document{}
+			docModel.Id = idutils.NewId()
+			docModel.FileId = task.FileId
+			docModel.SourceId = task.DocId
+			docModel.SourceType = "流水"
+			docModel.CaseId = task.CaseId
+			docModel.SourceApp = "document_service"
 			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateGenerated.Name(), "")
 			if err != nil {
 				return err
@@ -292,9 +290,11 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 			}
 			docModel := &doc.Document{}
 			docModel.Id = idutils.NewId()
-			docModel.FileId = appcmd.Data.DocId
+			docModel.FileId = appcmd.Data.FileId
+			docModel.SourceId = appcmd.Data.DocId
 			docModel.SourceType = "流水"
 			docModel.CaseId = appcmd.Data.CaseId
+			docModel.SourceApp = "document_service"
 			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateImported.Name(), "")
 			if err != nil {
 				return err
