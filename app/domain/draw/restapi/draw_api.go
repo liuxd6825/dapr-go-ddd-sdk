@@ -3,9 +3,10 @@ package restapi
 import (
 	"context"
 	"fmt"
+	"net/url"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi/request"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
@@ -15,8 +16,11 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
-	"net/url"
 )
+
+type DrawFileRequest struct {
+	Id string `json:"id" path:"id" required:"true" title:"案件ID"`
+}
 
 type DrawAPI struct {
 	env          *env.Env
@@ -114,10 +118,6 @@ func (s *DrawAPI) FindById(ctx context.Context, query *restapi.FindByIdRequest) 
 	return draw, err
 }
 
-type DrawFileRequest struct {
-	Id string `json:"id" path:"id" required:"true" title:"案件ID"`
-}
-
 func (s *DrawAPI) ReadFile(ctx context.Context, ictx iris.Context, params *DrawFileRequest) error {
 	draw, err := s.getDrawById(ctx, params.Id)
 	if err != nil {
@@ -132,30 +132,35 @@ func (s *DrawAPI) ReadFile(ctx context.Context, ictx iris.Context, params *DrawF
 	return err
 }
 
-func (s *DrawAPI) SaveFile(ctx context.Context, ictx iris.Context) error {
-	id := ictx.Params().GetString("id")
-	draw, err := s.getDrawById(ctx, id)
+func (s *DrawAPI) SaveFile(ctx context.Context, cmd *command.DrawSaveFileCommand) error {
+	/*
+		id := ictx.Params().GetString("id")
+		draw, err := s.getDrawById(ctx, id)
+		if err != nil {
+			return err
+		}
+		if draw == nil {
+			return errors.ErrorOf("没有找到分析图: %s", id)
+		}
+
+		var saveRequest command.SaveFileRequest
+		err = ictx.ReadJSON(&saveRequest)
+		if err != nil {
+			return err
+		}
+	*/
+
+	err := s.fileService.Save(ctx, cmd.GetCaseId(), cmd.GetFileName(), cmd.GetXML())
 	if err != nil {
 		return err
 	}
-	if draw == nil {
-		return errors.ErrorOf("没有找到分析图: %s", id)
-	}
-	var saveRequest request.SaveFileRequest
-	err = ictx.ReadJSON(&saveRequest)
-	if err != nil {
-		return err
-	}
-	err = s.fileService.Save(ctx, draw.CaseId, draw.FileName, saveRequest.XML)
-	if err != nil {
-		return err
-	}
-	return s.graphService.Save(ctx, draw.CaseId, draw.Id, &saveRequest)
+	return s.graphService.Save(ctx, cmd)
+
 }
 
 func (s *DrawAPI) getDrawById(ctx context.Context, id string) (*model.Draw, error) {
 	if id == "" {
-		panic(errors.New("id is required"))
+		return nil, errors.New("id is required")
 	}
 
 	draw, err := s.drawDao.FindById(ctx, id)

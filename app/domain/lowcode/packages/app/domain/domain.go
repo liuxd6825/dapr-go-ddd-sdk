@@ -41,16 +41,16 @@ import (
 	pkg36 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	pkg37 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/subscribe"
 	pkg38 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/utils"
-	pkg39 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	pkg40 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	pkg41 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
 	pkg42 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	pkg43 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	pkg44 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	pkg45 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel/script"
-	pkg46 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	pkg46 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	pkg47 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	pkg48 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	pkg49 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
 	pkg50 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/command"
 	pkg51 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
@@ -1000,56 +1000,56 @@ func Packages() native.Packages {
 		Name: "command",
 		Declarations: native.Declarations{
 			// Functions
-			"NewTaskUpdateProgressCommand": pkg39.NewTaskUpdateProgressCommand,
+			"NewTaskUpdateProgressCommand": command.NewTaskUpdateProgressCommand,
 
 			// Types
-			"SchemaCreateCommand":             (*pkg39.SchemaCreateCommand)(nil),
-			"SchemaUpdateCommand":             (*pkg39.SchemaUpdateCommand)(nil),
-			"SchemaDeleteCommand":             (*pkg39.SchemaDeleteCommand)(nil),
-			"TaskCreateCommand":               (*pkg39.TaskCreateCommand)(nil),
-			"TaskLockCommand":                 (*pkg39.TaskLockCommand)(nil),
-			"TaskDeleteCommand":               (*pkg39.TaskDeleteCommand)(nil),
-			"TaskRecordCreateCommand":         (*pkg39.TaskRecordCreateCommand)(nil),
-			"TaskRecordDeleteCommand":         (*pkg39.TaskRecordDeleteCommand)(nil),
-			"TaskRecordImportCommand":         (*pkg39.TaskRecordImportCommand)(nil),
-			"TaskRecordNoImportCommand":       (*pkg39.TaskRecordNoImportCommand)(nil),
-			"TaskStopCommand":                 (*pkg39.TaskStopCommand)(nil),
-			"TaskUpdateStateCommand":          (*pkg39.TaskUpdateStateCommand)(nil),
-			"TaskUnlockCommand":               (*pkg39.TaskUnlockCommand)(nil),
-			"TaskUpdateCommand":               (*pkg39.TaskUpdateCommand)(nil),
-			"TaskUpdateProgressCommand":       (*pkg39.TaskUpdateProgressCommand)(nil),
-			"TaskUpdateRecordTemplateCommand": (*pkg39.TaskUpdateRecordTemplateCommand)(nil),
-			"TaskValidateCommand":             (*pkg39.TaskValidateCommand)(nil),
-			"TaskRecordCommandData":           (*pkg39.TaskRecordCommandData)(nil),
-			"TempCreateCommand":               (*pkg39.TempCreateCommand)(nil),
-			"TempUpdateCommand":               (*pkg39.TempUpdateCommand)(nil),
-			"TempDeleteCommand":               (*pkg39.TempDeleteCommand)(nil),
-			"ExcelFileCreateCommand":          (*pkg39.ExcelFileCreateCommand)(nil),
-			"ExcelCreateByFileCommandData":    (*pkg39.ExcelCreateByFileCommandData)(nil),
-			"ExcelFileUpdateCommand":          (*pkg39.ExcelFileUpdateCommand)(nil),
-			"ExcelFileDeleteCommand":          (*pkg39.ExcelFileDeleteCommand)(nil),
-			"ExcelFileDeleteByIdCommand":      (*pkg39.ExcelFileDeleteByIdCommand)(nil),
-			"ExcelCreateRowsCommand":          (*pkg39.ExcelCreateRowsCommand)(nil),
-			"ExcelCreateRowsCommandData":      (*pkg39.ExcelCreateRowsCommandData)(nil),
-			"ExcelFindRecordsQuery":           (*pkg39.ExcelFindRecordsQuery)(nil),
-			"ExcelRowCreateCommand":           (*pkg39.ExcelRowCreateCommand)(nil),
-			"ExcelRowCreateManyCommand":       (*pkg39.ExcelRowCreateManyCommand)(nil),
-			"ExcelRowUpdateCommand":           (*pkg39.ExcelRowUpdateCommand)(nil),
-			"ExcelRowDeleteCommand":           (*pkg39.ExcelRowDeleteCommand)(nil),
-			"ExcelSheetCreateCommand":         (*pkg39.ExcelSheetCreateCommand)(nil),
-			"ExcelSheetCreateManyCommand":     (*pkg39.ExcelSheetCreateManyCommand)(nil),
-			"ExcelSheetUpdateCommand":         (*pkg39.ExcelSheetUpdateCommand)(nil),
-			"ExcelSheetDeleteCommand":         (*pkg39.ExcelSheetDeleteCommand)(nil),
-			"RecordPreviewCommand":            (*pkg39.RecordPreviewCommand)(nil),
-			"RecordCreate4ExcelCommand":       (*pkg39.RecordCreate4ExcelCommand)(nil),
-			"RecordImport2MasterCommand":      (*pkg39.RecordImport2MasterCommand)(nil),
-			"RecordCreateCommand":             (*pkg39.RecordCreateCommand)(nil),
-			"RecordDeleteCommand":             (*pkg39.RecordDeleteCommand)(nil),
-			"RecordUpdateFilterCommand":       (*pkg39.RecordUpdateFilterCommand)(nil),
-			"RecordUpdateCommand":             (*pkg39.RecordUpdateCommand)(nil),
-			"RecordUpdateFieldCommand":        (*pkg39.RecordUpdateFieldCommand)(nil),
-			"RecordRecordCommand":             (*pkg39.RecordRecordCommand)(nil),
-			"RecordRecordCommandData":         (*pkg39.RecordRecordCommandData)(nil),
+			"SchemaCreateCommand":             (*command.SchemaCreateCommand)(nil),
+			"SchemaUpdateCommand":             (*command.SchemaUpdateCommand)(nil),
+			"SchemaDeleteCommand":             (*command.SchemaDeleteCommand)(nil),
+			"TaskCreateCommand":               (*command.TaskCreateCommand)(nil),
+			"TaskLockCommand":                 (*command.TaskLockCommand)(nil),
+			"TaskDeleteCommand":               (*command.TaskDeleteCommand)(nil),
+			"TaskRecordCreateCommand":         (*command.TaskRecordCreateCommand)(nil),
+			"TaskRecordDeleteCommand":         (*command.TaskRecordDeleteCommand)(nil),
+			"TaskRecordImportCommand":         (*command.TaskRecordImportCommand)(nil),
+			"TaskRecordNoImportCommand":       (*command.TaskRecordNoImportCommand)(nil),
+			"TaskStopCommand":                 (*command.TaskStopCommand)(nil),
+			"TaskUpdateStateCommand":          (*command.TaskUpdateStateCommand)(nil),
+			"TaskUnlockCommand":               (*command.TaskUnlockCommand)(nil),
+			"TaskUpdateCommand":               (*command.TaskUpdateCommand)(nil),
+			"TaskUpdateProgressCommand":       (*command.TaskUpdateProgressCommand)(nil),
+			"TaskUpdateRecordTemplateCommand": (*command.TaskUpdateRecordTemplateCommand)(nil),
+			"TaskValidateCommand":             (*command.TaskValidateCommand)(nil),
+			"TaskRecordCommandData":           (*command.TaskRecordCommandData)(nil),
+			"TempCreateCommand":               (*command.TempCreateCommand)(nil),
+			"TempUpdateCommand":               (*command.TempUpdateCommand)(nil),
+			"TempDeleteCommand":               (*command.TempDeleteCommand)(nil),
+			"ExcelFileCreateCommand":          (*command.ExcelFileCreateCommand)(nil),
+			"ExcelCreateByFileCommandData":    (*command.ExcelCreateByFileCommandData)(nil),
+			"ExcelFileUpdateCommand":          (*command.ExcelFileUpdateCommand)(nil),
+			"ExcelFileDeleteCommand":          (*command.ExcelFileDeleteCommand)(nil),
+			"ExcelFileDeleteByIdCommand":      (*command.ExcelFileDeleteByIdCommand)(nil),
+			"ExcelCreateRowsCommand":          (*command.ExcelCreateRowsCommand)(nil),
+			"ExcelCreateRowsCommandData":      (*command.ExcelCreateRowsCommandData)(nil),
+			"ExcelFindRecordsQuery":           (*command.ExcelFindRecordsQuery)(nil),
+			"ExcelRowCreateCommand":           (*command.ExcelRowCreateCommand)(nil),
+			"ExcelRowCreateManyCommand":       (*command.ExcelRowCreateManyCommand)(nil),
+			"ExcelRowUpdateCommand":           (*command.ExcelRowUpdateCommand)(nil),
+			"ExcelRowDeleteCommand":           (*command.ExcelRowDeleteCommand)(nil),
+			"ExcelSheetCreateCommand":         (*command.ExcelSheetCreateCommand)(nil),
+			"ExcelSheetCreateManyCommand":     (*command.ExcelSheetCreateManyCommand)(nil),
+			"ExcelSheetUpdateCommand":         (*command.ExcelSheetUpdateCommand)(nil),
+			"ExcelSheetDeleteCommand":         (*command.ExcelSheetDeleteCommand)(nil),
+			"RecordPreviewCommand":            (*command.RecordPreviewCommand)(nil),
+			"RecordCreate4ExcelCommand":       (*command.RecordCreate4ExcelCommand)(nil),
+			"RecordImport2MasterCommand":      (*command.RecordImport2MasterCommand)(nil),
+			"RecordCreateCommand":             (*command.RecordCreateCommand)(nil),
+			"RecordDeleteCommand":             (*command.RecordDeleteCommand)(nil),
+			"RecordUpdateFilterCommand":       (*command.RecordUpdateFilterCommand)(nil),
+			"RecordUpdateCommand":             (*command.RecordUpdateCommand)(nil),
+			"RecordUpdateFieldCommand":        (*command.RecordUpdateFieldCommand)(nil),
+			"RecordRecordCommand":             (*command.RecordRecordCommand)(nil),
+			"RecordRecordCommandData":         (*command.RecordRecordCommandData)(nil),
 
 			// Constants
 
@@ -1360,7 +1360,7 @@ func Packages() native.Packages {
 		},
 	}
 	// Package: github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query
-	pkgs["github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"] = native.Package{
+	pkgs["github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"] = native.Package{
 		Name: "query",
 		Declarations: native.Declarations{
 			// Functions

@@ -2,6 +2,9 @@ package doc_extract
 
 import (
 	"fmt"
+	"path"
+	"strings"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/docx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/pdf"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/ppt"
@@ -10,8 +13,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract/xlsx"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"path"
-	"strings"
 )
 
 type Reader interface {
@@ -59,9 +60,10 @@ func (e *Extract) Extract(fs afero.Fs, filename string) (string, error) {
 	extName := strings.ToLower(path.Ext(filename))
 	if reader, ok := e.readers[extName]; ok {
 		text, err := reader.ReadFile(fs, filename)
-		if err == nil {
-			return e.clear(text), nil
+		if err != nil {
+			return "", err
 		}
+		return e.clear(text), nil
 	}
 	return "", fmt.Errorf("unsupported file type: %s", extName)
 }

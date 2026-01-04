@@ -10,6 +10,8 @@ type Node struct {
 	DrawId      string `json:"drawId" gorm:"draw_id"  bson:"draw_id"`
 	SourceIds   string `json:"sourceIds" gorm:"source_ids"  bson:"source_ids"`
 	SourceType  string `json:"sourceType" gorm:"source_type"  bson:"source_type"`
+	SourceUrl   string `json:"sourceUrl" gorm:"source_url"  bson:"source_url" title:"数据源URL"`
+	SourceName  string `json:"sourceName" gorm:"source_name"  bson:"source_name" title:"数据源名称"`
 	Description string `json:"description" gorm:"description" bson:"description"`
 	Table       string `json:"table" gorm:"table"  bson:"table"`
 }

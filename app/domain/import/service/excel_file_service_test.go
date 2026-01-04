@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/stretchr/testify/assert"
 )

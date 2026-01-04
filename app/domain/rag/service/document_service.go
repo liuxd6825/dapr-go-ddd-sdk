@@ -138,7 +138,7 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 				text, err := s.docExtract.Extract(fs, fileName)
 				if err != nil {
 					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
-					_ = s.updateState(ctx, doc, model.DocumentState_Succee, msg)
+					_ = s.updateState(ctx, doc, model.DocumentState_FormatNotSupported, msg)
 					logs.Errorfmt(ctx, msg)
 					continue
 				}
