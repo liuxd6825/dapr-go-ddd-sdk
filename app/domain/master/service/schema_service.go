@@ -29,7 +29,7 @@ type schemaService struct {
 
 func NewSchemaService(env *env.Env, rootPath string) ISchemaService {
 	return &schemaService{
-		fileService: NewFileService(env, rootPath),
+		fileService: NewFileService(env, "src"),
 	}
 }
 

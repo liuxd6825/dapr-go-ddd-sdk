@@ -15,7 +15,7 @@ type HtmlAPI struct {
 
 func NewHtmlAPI(env *env.Env, rootPath string) *HtmlAPI {
 	return &HtmlAPI{
-		service: service.NewFileService(env, rootPath),
+		service: service.NewFileService(env, "web"),
 	}
 }
 
