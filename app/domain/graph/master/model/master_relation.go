@@ -35,7 +35,7 @@ func NewMasterRelation(data map[string]any, dbSchema *dbschema.DBSchema) *Master
 	relStartId := getRelStartId(dbSchema, data)
 	relEndId := getRelEndId(dbSchema, data)
 	relType := getRelType(dbSchema, data)
-	desc := utils.GetDescription(data, dbSchema)
+	relDesc := utils.GetRelDescription(data, dbSchema)
 	return &MasterRelation{
 		Id:          id,
 		CaseId:      caseId,
@@ -47,7 +47,7 @@ func NewMasterRelation(data map[string]any, dbSchema *dbschema.DBSchema) *Master
 		SourceIds:   id,
 		Table:       dbSchema.TableName,
 		SourceType:  SourceType,
-		Description: desc,
+		Description: relDesc,
 	}
 }
 

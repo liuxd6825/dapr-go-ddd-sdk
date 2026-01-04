@@ -43,7 +43,7 @@ func NewMasterNode(data map[string]any, dbSch *dbschema.DBSchema) *MasterNode {
 
 	caseId, _ := maputils.GetString(data, "case_id", "")
 	id, _ := maputils.GetString(data, "id", "")
-	desc := utils.GetDescription(data, dbSch)
+	desc := utils.GetNodeDescription(data, dbSch)
 	typeName := utils.GetNodeType(dbSch)
 	if list := stringutils.MacroValues(typeName); len(list) > 0 {
 		for _, key := range list {

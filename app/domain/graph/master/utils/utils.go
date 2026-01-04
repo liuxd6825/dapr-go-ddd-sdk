@@ -6,6 +6,7 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
 func GetNodeType(dbSch *dbschema.DBSchema) string {
@@ -41,7 +42,7 @@ func getAttributes(sch *jsonschema.Schema) map[string]any {
 }
 */
 
-func GetDescription(data map[string]any, dbSch *dbschema.DBSchema) string {
+func GetNodeDescription(data map[string]any, dbSch *dbschema.DBSchema) string {
 	if dbSch == nil {
 		return ""
 	}
@@ -65,6 +66,25 @@ func GetDescription(data map[string]any, dbSch *dbschema.DBSchema) string {
 		}
 	}
 	return sb.String()
+}
+
+func GetRelDescription(data map[string]any, dbSch *dbschema.DBSchema) string {
+	if dbSch == nil {
+		return ""
+	}
+	meta := schema.GetMetaExtension(dbSch.JsonSchema)
+	if meta == nil || meta.Graph == nil || !meta.Graph.IsEnable {
+		return ""
+	}
+	fieldName := "relationType"
+	if meta.Graph.RelName != "" {
+		fieldName = meta.Graph.RelName
+	}
+	fieldName = stringutils.AsFieldName(fieldName)
+	if val, ok := data[fieldName]; ok {
+		return fmt.Sprintf("%s", val)
+	}
+	return ""
 }
 
 func isDescField(fieldName string) bool {

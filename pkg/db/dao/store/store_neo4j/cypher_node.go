@@ -426,7 +426,7 @@ func (c *nodeCypher[T]) getLabels(labels ...string) string {
 	if strings.HasSuffix(s, ":") {
 		s = s[:len(s)-1]
 	}
-	return strings.ToLower(s)
+	return s
 }
 
 func (c *nodeCypher[T]) GetCreateProperties(ctx context.Context, data any) (string, map[string]any, error) {

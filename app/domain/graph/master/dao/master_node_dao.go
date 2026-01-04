@@ -108,7 +108,7 @@ func (d *MasterNodeDao) CreateRelNode(ctx context.Context, rel *model.MasterRela
 	fb.Varchar("tenantId", rel.TenantId)
 	fb.Varchar("caseId", rel.CaseId)
 	fb.Varchar("keywords", rel.Keywords)
-	fb.Varchar("description", "")
+	fb.Varchar("description", rel.Description)
 	fb.Varchar("sourceType", rel.SourceType)
 	fb.Varchar("table", rel.Table)
 
