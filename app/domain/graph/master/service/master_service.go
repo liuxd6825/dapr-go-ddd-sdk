@@ -222,7 +222,9 @@ func (s *MasterService) clearAll(ctx context.Context) {
 		nodeDao = d
 		break
 	}
-	nodeDao.ClearAll(ctx)
+	if nodeDao != nil {
+		nodeDao.ClearAll(ctx)
+	}
 }
 
 // getGraphMeta

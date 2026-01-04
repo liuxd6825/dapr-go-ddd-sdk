@@ -6,16 +6,18 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 const tenantId = "test"
 const caseId = "1001"
 
-//go:embed ../../../draw/service/test_file/333.drawio
+//go:embed test_file/333.drawio
 var linkUpdateTargetIsEmptyDrawio string
 
 //go:embed test_file/diff1/1_add_object.json
@@ -52,7 +54,7 @@ func Test_AddObject(t *testing.T) {
 		}
 
 		graphService := NewGraphService()
-		saveBatch := graphService.GetSaveBatch("1001", drawId, diff)
+		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
 		nodeDao := dao.NewGraphDao(neo4jDBKey)
@@ -73,7 +75,7 @@ func Test_UpdateLabel(t *testing.T) {
 		}
 
 		graphService := NewGraphService()
-		saveBatch := graphService.GetSaveBatch("1001", drawId, diff)
+		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
 		nodeDao := dao.NewGraphDao("")
@@ -96,7 +98,7 @@ func Test_AllJson(t *testing.T) {
 		}
 
 		graphService := NewGraphService()
-		saveBatch := graphService.GetSaveBatch("1001", drawId, diff)
+		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
 		nodeDao := dao.NewGraphDao("")
@@ -111,4 +113,17 @@ func newEnv() *env.Env {
 	envCfg := xtest.NewEnvConfigNeo4j()
 	env.SetEnv(envCfg)
 	return envCfg
+}
+
+func newSaveFileCommand(xml string, diff *mxgraph.FileDiff) command.IDrawSaveCommand {
+	cmd := &command.DrawSaveCommand{}
+	cmd.CommandId = idutils.NewId()
+	cmd.Data = command.DrawSaveCommandData{
+		CaseId:   caseId,
+		DrawId:   drawId,
+		FileName: "testFile",
+		XML:      xml,
+		Diff:     diff,
+	}
+	return cmd
 }

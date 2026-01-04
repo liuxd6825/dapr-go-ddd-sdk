@@ -7,9 +7,9 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
@@ -200,7 +200,7 @@ func newNode(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) *model2.Node 
 	node.Type = "draw"
 	node.Description = node.Name
 	node.SourceUrl = getSourceUrl(cmd)
-	node.SourceName = cmd.GetFileName()
+	node.SourceName = getSourceName(cmd)
 	return node
 }
 
@@ -223,7 +223,7 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 		rel.Target = cell.GetTargetId()
 		rel.Keywords = []string{rel.RelType}
 		rel.SourceUrl = getSourceUrl(cmd)
-		rel.SourceName = cmd.GetFileName()
+		rel.SourceName = getSourceName(cmd)
 		items = append(items, rel)
 
 	} else if cell.Extend.Type == "edge" {
@@ -241,7 +241,7 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 			rel.Source = cell.Extend.SourceId
 			rel.Target = cell.Extend.TargetId
 			rel.SourceUrl = getSourceUrl(cmd)
-			rel.SourceName = cmd.GetFileName()
+			rel.SourceName = getSourceName(cmd)
 			items = append(items, rel)
 		}
 
@@ -253,7 +253,7 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 			rel.Source = cell.Extend.SourceId
 			rel.Target = cell.Extend.TargetId
 			rel.SourceUrl = getSourceUrl(cmd)
-			rel.SourceName = cmd.GetFileName()
+			rel.SourceName = getSourceName(cmd)
 			items = append(items, rel)
 		}
 	}
