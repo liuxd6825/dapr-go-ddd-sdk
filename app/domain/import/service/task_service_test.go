@@ -3,9 +3,9 @@ package service
 import (
 	"testing"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"

@@ -14,6 +14,7 @@ type Graph struct {
 	RelStart  string   `json:"relStart"`  // 是图关系中的开始节点字段
 	RelEnd    string   `json:"relEnd"`    // 是图关系中的结束节点字段
 	RelType   string   `json:"relType"`   // 是图关系中的类型字段
+	RelName   string   `json:"relName"`   // 图关系名称字段
 	Labels    []string `json:"labels"`    // 是图节点的标签
 	Name      string   `json:"name"`      // 名称字段名
 }

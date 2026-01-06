@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"time"
 
+	command2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
+	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
@@ -18,7 +19,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task_pkg "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
@@ -131,7 +132,7 @@ func (s *RecordService) readExcel(ctx context.Context, task *task_pkg.Task, temp
 // @param ctx
 // @param cmd
 // @return error
-func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCreate4ExcelCommand, batchBack func(batch readexcel.Batching) error) (res *Create4ExcelResult, err error) {
+func (s *RecordService) Create4Excel(ctx context.Context, cmd *command2.RecordCreate4ExcelCommand, batchBack func(batch readexcel.Batching) error) (res *Create4ExcelResult, err error) {
 	now := time.Now()
 	task := &task_pkg.Task{
 		DocId:     cmd.Data.DocId,
@@ -176,7 +177,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 			return nil
 		})
 		if err == nil {
-			cmd1 := command.TaskUpdateStateCommand{}
+			cmd1 := command2.TaskUpdateStateCommand{}
 			cmd1.CommandId = cmd.CommandId
 			cmd1.Data = field.TaskUpdateStateFields{}
 			cmd1.Data.Id = cmd.Data.TaskId
@@ -213,7 +214,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command.RecordCre
 // @param ctx
 // @param appcmd
 // @return error
-func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.RecordImport2MasterCommand) (err error) {
+func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) (err error) {
 	taskId := appcmd.Data.TaskId
 	/*
 		tenantId := appctx.GetTenantId2(ctx)
@@ -229,7 +230,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 	pageSize := gp2.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
 
 	// 批量导入数据
-	createMany := func(ctx context.Context, appcmd *command.RecordImport2MasterCommand) error {
+	createMany := func(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) error {
 		logs.Debugf(ctx, nil, "createMany() context=%v", func() any {
 			return appctx.GetMessage(ctx)
 		})
@@ -279,7 +280,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command.Recor
 		err = createMany(ctx, appcmd)
 		if err == nil {
 			// 更新任务状态
-			cmd := command.NewTaskUpdateProgressCommand(appcmd.CommandId, taskId)
+			cmd := command2.NewTaskUpdateProgressCommand(appcmd.CommandId, taskId)
 			cmd.Data.Complete = recordCount
 			cmd.Data.StartTime = startTime
 			cmd.Data.State = task_pkg.TaskStateImported
@@ -441,7 +442,7 @@ func newCells(mapDataCells map[string]readexcel.DataCells) map[string]task_pkg.R
 // @param list
 // @return *command.RecordCreateManyFromExcelCommand
 // @return error
-func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*event.RecordImportMasterEvent, error) {
+func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command2.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*event.RecordImportMasterEvent, error) {
 	items := make([]*field.RecordFields, 0)
 	for _, e := range list {
 		record := &field.RecordFields{

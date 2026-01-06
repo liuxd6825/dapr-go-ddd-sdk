@@ -19,6 +19,7 @@ type MasterRelation struct {
 	Target      string   `json:"target" gorm:"column:target;relEndId:true"`
 	SourceIds   string   `json:"sourceIds" gorm:"column:source_ids"`
 	SourceType  string   `json:"sourceType" gorm:"column:source_type"`
+	SourceUrl   string   `json:"sourceUrl" gorm:"column:source_url;relStartId:true"`
 	RelType     string   `json:"relType" gorm:"column:rel_type;relType:true"`
 	Keywords    []string `json:"keywords" gorm:"column:keywords;type:text;serializer:json"`
 	Description string   `json:"description" gorm:"column:description"`
@@ -35,7 +36,7 @@ func NewMasterRelation(data map[string]any, dbSchema *dbschema.DBSchema) *Master
 	relStartId := getRelStartId(dbSchema, data)
 	relEndId := getRelEndId(dbSchema, data)
 	relType := getRelType(dbSchema, data)
-	desc := utils.GetDescription(data, dbSchema)
+	relDesc := utils.GetRelDescription(data, dbSchema)
 	return &MasterRelation{
 		Id:          id,
 		CaseId:      caseId,
@@ -47,7 +48,7 @@ func NewMasterRelation(data map[string]any, dbSchema *dbschema.DBSchema) *Master
 		SourceIds:   id,
 		Table:       dbSchema.TableName,
 		SourceType:  SourceType,
-		Description: desc,
+		Description: relDesc,
 	}
 }
 

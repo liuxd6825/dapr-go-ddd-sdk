@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 )
 
 func CreateTestExcelData(ctx context.Context, taskId string, fileName string, sheet string, batchSize int64, temp *model.RecordTemplate) error {

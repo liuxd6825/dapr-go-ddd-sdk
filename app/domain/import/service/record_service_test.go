@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/query"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"

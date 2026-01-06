@@ -3,12 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/command"
+
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/outside"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/interfaces"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"

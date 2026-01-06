@@ -6,18 +6,31 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
-	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 const tenantId = "test"
 const caseId = "1001"
 
-//go:embed ../../../draw/service/test_file/333.drawio
+//go:embed test_file/333.drawio
 var linkUpdateTargetIsEmptyDrawio string
+
+//go:embed test_file/diff1/1_add_object.json
+var addObjectJson string
+
+//go:embed test_file/diff1/2_update_label.json
+var updateLabelJson string
+
+//go:embed test_file/diff1/3_all.json
+var allJson string
+
+var drawId = "D001"
+var neo4jDBKey = ""
 
 func Test_Diff3(t *testing.T) {
 	drawFile, err := mxgraph.NewDrawioFile(linkUpdateTargetIsEmptyDrawio)
@@ -31,24 +44,20 @@ func Test_Diff3(t *testing.T) {
 
 }
 
-//go:embed test_file/diff1/1_add_object.json
-var addObjectJson string
-
 func Test_AddObject(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest2.NewContext()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
-
+		ctx := xtest.NewContext()
+		env.SetEnv(newEnv())
 		diff := mxgraph.NewFileDiff(addObjectJson)
 		if diff == nil {
 			return errors.New("diff is nil")
 		}
 
 		graphService := NewGraphService()
-		saveBatch := graphService.GetSaveBatch("1001", diff)
+		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewGraphDao()
+		nodeDao := dao.NewGraphDao(neo4jDBKey)
 		nodeDao.BatchSave(ctx, saveBatch, "D001")
 		return nil
 	}).Catch(func(e error) {
@@ -56,36 +65,32 @@ func Test_AddObject(t *testing.T) {
 	})
 }
 
-//go:embed test_file/diff1/2_update_label.json
-var updateLabelJson string
-
 func Test_UpdateLabel(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest2.NewContext()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		ctx := xtest.NewContext()
+		env.SetEnv(newEnv())
 		diff := mxgraph.NewFileDiff(updateLabelJson)
 		if diff == nil {
 			t.Fatal("diff is nil")
 		}
 
 		graphService := NewGraphService()
-		saveBatch := graphService.GetSaveBatch("1001", diff)
+		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
-		nodeDao := dao.NewGraphDao()
-		nodeDao.BatchSave(ctx, saveBatch, "D001")
+
+		nodeDao := dao.NewGraphDao("")
+		nodeDao.BatchSave(ctx, saveBatch, drawId)
+
 		return nil
 	}).Catch(func(e error) {
 		t.Error(e)
 	})
 }
 
-//go:embed test_file/diff1/3_all.json
-var allJson string
-
 func Test_AllJson(t *testing.T) {
 	gp.Try(func() error {
-		ctx := xtest2.NewContext()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		ctx := xtest.NewContext()
+		env.SetEnv(newEnv())
 
 		diff := mxgraph.NewFileDiff(allJson)
 		if diff == nil {
@@ -93,13 +98,32 @@ func Test_AllJson(t *testing.T) {
 		}
 
 		graphService := NewGraphService()
-		saveBatch := graphService.GetSaveBatch("1001", diff)
+		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewGraphDao()
-		nodeDao.BatchSave(ctx, saveBatch, "D001")
+		nodeDao := dao.NewGraphDao("")
+		nodeDao.BatchSave(ctx, saveBatch, drawId)
 		return nil
 	}).Catch(func(e error) {
 		t.Error(e)
 	})
+}
+
+func newEnv() *env.Env {
+	envCfg := xtest.NewEnvConfigNeo4j()
+	env.SetEnv(envCfg)
+	return envCfg
+}
+
+func newSaveFileCommand(xml string, diff *mxgraph.FileDiff) command.IDrawSaveCommand {
+	cmd := &command.DrawSaveCommand{}
+	cmd.CommandId = idutils.NewId()
+	cmd.Data = command.DrawSaveCommandData{
+		CaseId:   caseId,
+		DrawId:   drawId,
+		FileName: "testFile",
+		XML:      xml,
+		Diff:     diff,
+	}
+	return cmd
 }
