@@ -83,6 +83,17 @@ func (t *OryService) GetIdentity(ctx context.Context, id string) (*client.Identi
 	return ident, nil
 }
 
+func (t *OryService) GetIdentityByCode(ctx context.Context, code string) (*client.Identity, error) {
+	list, _, err := t.ory.IdentityAPI.ListIdentities(ctx).CredentialsIdentifier(code).Execute()
+	if err != nil {
+		return nil, err
+	}
+	if len(list) == 0 {
+		return nil, nil
+	}
+	return &list[0], nil
+}
+
 func (t *OryService) UpdateIdentity(ctx context.Context, id string, updateIdentityBody client.UpdateIdentityBody) (*client.Identity, error) {
 	ident, _, err := t.ory.IdentityAPI.UpdateIdentity(ctx, id).UpdateIdentityBody(updateIdentityBody).Execute()
 	if err != nil {

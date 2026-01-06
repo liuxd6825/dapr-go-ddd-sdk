@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	service5 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/enum"
@@ -23,6 +23,9 @@ type TenantService struct {
 	tuDao     *dao.TenantUserDao
 	tenantOpt idao.CallOptions
 	xbase.Service
+	tagService        *service5.TagService
+	userService       *UserService
+	tenantUserService *TenantUserService
 }
 
 var (
@@ -33,12 +36,57 @@ var (
 func NewTenantService() *TenantService {
 	_tenantOnce.Do(func() {
 		_tenantDomainService = &TenantService{
-			tenantOpt: idao.NewCallOptions().SetTenantId(SystemTenantId),
-			dao:       dao.NewTenantDao(config.DBKey),
-			tuDao:     dao.NewTenantUserDao(config.DBKey),
+			tenantOpt:         idao.NewCallOptions().SetTenantId(SystemTenantId),
+			dao:               dao.NewTenantDao(config.DBKey),
+			tuDao:             dao.NewTenantUserDao(config.DBKey),
+			userService:       NewUserService(),
+			tenantUserService: NewTenantUserService(),
+			tagService:        service5.NewTagService(),
 		}
 	})
 	return _tenantDomainService
+}
+
+func (t *TenantService) InitSysTenant(ctx context.Context) error {
+	tenant, err := t.CreateSysTenant(ctx)
+	if err != nil {
+		return err
+	}
+	user, err := t.userService.CreateSysUser(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = t.tenantUserService.CreateTenantUser(ctx, tenant.Id, user.Id)
+	if err != nil {
+		return err
+	}
+	//初始化标签
+	err = t.tagService.InitTag(ctx, tenant.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *TenantService) InitDemoTenant(ctx context.Context, initTenant *command.InitTenant) error {
+	tenant, err := t.CreateDemoTenant(ctx, initTenant)
+	if err != nil {
+		return err
+	}
+	user, err := t.userService.CreateDemoUser(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = t.tenantUserService.CreateTenantUser(ctx, tenant.Id, user.Id)
+	if err != nil {
+		return err
+	}
+	//初始化标签
+	err = t.tagService.InitTag(ctx, tenant.Id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *TenantService) CreateSysTenant(ctx context.Context) (*model.Tenant, error) {
@@ -47,7 +95,7 @@ func (t *TenantService) CreateSysTenant(ctx context.Context) (*model.Tenant, err
 		return nil, err
 	}
 	if sysTenant != nil {
-		return nil, errors.New("租户只能初始化一次")
+		return sysTenant, nil
 	}
 
 	sysTenant, _ = model.NewTenant()
@@ -60,6 +108,27 @@ func (t *TenantService) CreateSysTenant(ctx context.Context) (*model.Tenant, err
 		return nil, err
 	}
 	return sysTenant, nil
+}
+
+func (t *TenantService) CreateDemoTenant(ctx context.Context, tenant *command.InitTenant) (*model.Tenant, error) {
+	demoTenant, err := t.FindById(ctx, tenant.TenantId)
+	if err != nil {
+		return nil, err
+	}
+	if demoTenant != nil {
+		return demoTenant, nil
+	}
+
+	demoTenant, _ = model.NewTenant()
+	demoTenant.Id = tenant.TenantId
+	demoTenant.Name = tenant.TenantName
+	demoTenant.Status = enum.Using
+
+	err = t.Create(ctx, demoTenant)
+	if err != nil {
+		return nil, err
+	}
+	return demoTenant, nil
 }
 
 func (t *TenantService) Create(ctx context.Context, data *model.Tenant) error {

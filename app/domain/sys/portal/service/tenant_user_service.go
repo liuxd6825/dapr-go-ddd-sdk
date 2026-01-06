@@ -34,17 +34,26 @@ func NewTenantUserService() *TenantUserService {
 	return _tenantUserService
 }
 
-func (t *TenantUserService) CreateSysTenantUser(ctx context.Context, tenantId, userId string) (*model.TenantUser, error) {
-	tenantUser, _ := model.NewTenantUser()
-	tenantUser.Id = fmt.Sprintf("%s_%s", tenantId, userId)
-	tenantUser.TenId = tenantId
-	tenantUser.UserId = userId
-	tenantUser.IsAdmin = true
+func (t *TenantUserService) CreateTenantUser(ctx context.Context, tenantId, userId string) (*model.TenantUser, error) {
 
-	err := t.dao.Create(ctx, tenantUser, t.tenantOpt).GetError()
+	id := fmt.Sprintf("%s_%s", tenantId, userId)
+	tenantUser, err := t.dao.FindById(ctx, id, t.tenantOpt)
 	if err != nil {
 		return nil, err
 	}
+	if tenantUser == nil {
+		tenantUser, _ = model.NewTenantUser()
+		tenantUser.Id = fmt.Sprintf("%s_%s", tenantId, userId)
+		tenantUser.TenId = tenantId
+		tenantUser.UserId = userId
+		tenantUser.IsAdmin = true
+
+		err = t.dao.Create(ctx, tenantUser, t.tenantOpt).GetError()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return tenantUser, nil
 }
 

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
@@ -59,7 +60,23 @@ func (t *TagService) FindPaging(ctx context.Context, qry store.FindPagingQuery) 
 	return res, res.GetError()
 }
 
+func (t *TagService) FindByTenantId(ctx context.Context, tenantId string, opts ...idao.CallOptions) (int64, error) {
+	count, err := t.dao.CountByRSQL(ctx, fmt.Sprintf("tenant_id=='%s'", tenantId), opts...)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func (t *TagService) InitTag(ctx context.Context, tenantId string) error {
+	count, err := t.FindByTenantId(ctx, tenantId, idao.NewCallOptions().SetTenantId(tenantId))
+	if err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+
 	tt, err := t.tagTypeService.InitTagType(ctx, tenantId)
 	if err != nil {
 		return err

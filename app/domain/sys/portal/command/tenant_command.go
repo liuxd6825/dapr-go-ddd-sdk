@@ -14,3 +14,8 @@ type TenantUpdateCommand struct {
 type TenantDeleteCommand struct {
 	xbase.DeleteByIdCommand
 }
+
+type InitTenant struct {
+	TenantName string `json:"tenantName"`
+	TenantId   string `json:"tenantId"`
+}

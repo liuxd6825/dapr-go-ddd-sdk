@@ -53,7 +53,7 @@ func (s *TenantAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 	s.tenantService = service.NewTenantService()
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TenantAPI", s)
 	ctl.Post("/tenant", "Create")
-	ctl.Post("/tenant:init", "InitSysTenant")
+	ctl.Post("/tenant:init", "InitTenant")
 	ctl.Put("/tenant", "Update")
 	ctl.Delete("/tenant", "Delete", restapi.WithParamsInBody(true))
 	ctl.GetOne("/tenant/{id}", "FindById")
@@ -62,7 +62,7 @@ func (s *TenantAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 	return ctl
 }
 
-func (s *TenantAPI) InitSysTenant(ctx context.Context) error {
+func (s *TenantAPI) InitTenant(ctx context.Context, tenant *command.InitTenant) error {
 
 	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 
@@ -71,23 +71,20 @@ func (s *TenantAPI) InitSysTenant(ctx context.Context) error {
 			option.TenantId = &tenantId
 		})
 
-		tenant, err := s.tenantService.CreateSysTenant(ctx)
 		if err != nil {
 			return err
 		}
-		user, err := s.userService.CreateSysUser(ctx)
+
+		err = s.tenantService.InitSysTenant(ctx)
 		if err != nil {
 			return err
 		}
-		_, err = s.tenantUserService.CreateSysTenantUser(ctx, tenant.Id, user.Id)
+
+		err = s.tenantService.InitDemoTenant(ctx, tenant)
 		if err != nil {
 			return err
 		}
-		//初始化标签
-		err = s.tagService.InitTag(ctx, tenant.Id)
-		if err != nil {
-			return err
-		}
+
 		return nil
 	})
 }

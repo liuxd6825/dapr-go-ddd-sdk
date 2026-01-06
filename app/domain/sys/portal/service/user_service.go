@@ -52,43 +52,86 @@ func (t *UserService) GetConfig() *idao.DaoConfig {
 
 func (t *UserService) CreateSysUser(ctx context.Context) (*model.User, error) {
 
-	password := "123@@abc"
-	body := client.CreateIdentityBody{
-		Credentials: &client.IdentityWithCredentials{
-			Password: &client.IdentityWithCredentialsPassword{
-				Config: &client.IdentityWithCredentialsPasswordConfig{
-					Password: &password,
-				},
-			},
-		},
-		Traits: map[string]interface{}{
-			"account": "super_admin",
-			"email":   "super_admin@163.com",
-		},
-	}
-	ident, err := t.oryService.CreateIdentityExecute(ctx, body)
-	if err != nil {
-		if err.Error() == "409 Conflict" {
-
-		} else {
-			return nil, err
-		}
-	}
-
 	user, _ := model.NewUser()
 	user.Id = "super_admin"
 	user.TenantId = SystemTenantId
 	user.Account = "super_admin"
 	user.Email = "super_admin@163.com"
 	user.Name = "系统管理员"
-	user.Password = password
 	user.Status = enum.Using
-	user.OryIdentityId = ident.Id
 
-	err = t.CreateData(ctx, user)
+	user, err := t.CreateInitUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
+
+	return user, nil
+}
+
+func (t *UserService) CreateDemoUser(ctx context.Context) (*model.User, error) {
+
+	user, _ := model.NewUser()
+	user.Id = "user_demo"
+	user.TenantId = SystemTenantId
+	user.Account = "demo"
+	user.Email = "demo@163.com"
+	user.Name = "演示用户"
+	user.Status = enum.Using
+
+	user, err := t.CreateInitUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (t *UserService) CreateInitUser(ctx context.Context, user *model.User) (*model.User, error) {
+
+	ident, err := t.oryService.GetIdentityByCode(ctx, user.Account)
+	if err != nil {
+		return nil, err
+	}
+
+	password := "123@@abc"
+	if ident == nil {
+		body := client.CreateIdentityBody{
+			Credentials: &client.IdentityWithCredentials{
+				Password: &client.IdentityWithCredentialsPassword{
+					Config: &client.IdentityWithCredentialsPasswordConfig{
+						Password: &password,
+					},
+				},
+			},
+			Traits: map[string]interface{}{
+				"account": user.Account,
+				"email":   user.Email,
+			},
+		}
+		ident, err = t.oryService.CreateIdentityExecute(ctx, body)
+		if err != nil {
+			if err.Error() == "409 Conflict" {
+
+			} else {
+				return nil, err
+			}
+		}
+	}
+
+	user.OryIdentityId = ident.Id
+	user.Password = password
+
+	tempUser, err := t.FindById(ctx, user.Id)
+	if err != nil {
+		return nil, err
+	}
+	if tempUser == nil {
+		err = t.CreateData(ctx, user)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return user, nil
 }
 
@@ -106,6 +149,10 @@ func (t *UserService) Delete(ctx context.Context, cmd *command.UserDeleteCommand
 	return xbase.DoCommand(ctx, cmd, func(ctx context.Context) error {
 		return t.dao.DeleteById(ctx, cmd.Data.Id, t.tenantOpt).GetError()
 	})
+}
+
+func (t *UserService) DeleteById(ctx context.Context, id string) error {
+	return t.dao.DeleteById(ctx, id, t.tenantOpt).GetError()
 }
 
 func (t *UserService) Update(ctx context.Context, cmd *command.UserUpdateCommand) error {
