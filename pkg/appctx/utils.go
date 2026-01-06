@@ -8,18 +8,28 @@ import (
 	"strings"
 )
 
-const Authorization = "Authorization"
+const Authorization = "authorization"
 
 func NewWebContext(parent context.Context, ictx iris.Context) (ctx context.Context) {
 	header := ictx.Request().Header
-	token := ictx.Request().Header.Get("authorization")
+	token := header.Get(Authorization)
 	ctx = parent
 	if ctx1, err1 := NewAuthContext(ctx, getAuthorization(token, header)); err1 == nil {
 		ctx = ctx1
+	} else {
+		fmt.Println(err1)
 	}
 	ctx = NewHeaderContext(ctx, ictx.Request().Header)
-	//ctx = NewTenantContext(ctx, "test")
 	return ctx
+}
+
+func HasToken(ictx iris.Context) bool {
+	header := ictx.Request().Header
+	token := header.Get(Authorization)
+	if token == "" {
+		return false
+	}
+	return true
 }
 
 func NewContext(parent context.Context, tenantId string, token string, header map[string][]string) (ctx context.Context) {

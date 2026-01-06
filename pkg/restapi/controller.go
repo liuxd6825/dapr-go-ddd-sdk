@@ -3,6 +3,7 @@ package restapi
 import (
 	context2 "context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 
 	"reflect"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
@@ -407,9 +407,13 @@ func (c *ApiController) newContext(parent context2.Context, ictx *context.Contex
 	if app.ProdMode {
 		ctx = appctx.NewWebContext(ctx, ictx)
 	} else {
-		ctx, err = restapp.NewTestContext(context2.Background())
-		if err != nil {
-			return nil, err
+		if appctx.HasToken(ictx) {
+			ctx = appctx.NewWebContext(ctx, ictx)
+		} else {
+			ctx, err = restapp.NewTestContext(context2.Background())
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

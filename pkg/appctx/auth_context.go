@@ -23,7 +23,10 @@ func NewAuthContext(ctx context.Context, token string) (context.Context, error) 
 	if err != nil {
 		return nil, err
 	}
-	return context.WithValue(ctx, authCtxKey, tk), nil
+	newCtx := context.WithValue(ctx, authCtxKey, tk)
+	newCtx, err = NewAuthUserContext(newCtx, tk.GetUser())
+
+	return newCtx, err
 }
 
 func NewAuthContextUser(ctx context.Context, tk *AuthTokenEntity) (context.Context, error) {
