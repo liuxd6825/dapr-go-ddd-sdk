@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/milvus-io/milvus/client/v2/index"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/milvus-io/milvus/client/v2/index"
 
 	"github.com/milvus-io/milvus/client/v2/entity"
 	"github.com/milvus-io/milvus/client/v2/milvusclient"
@@ -452,6 +453,9 @@ func (m *MilvusVector) VectorInsertDoc(ctx context.Context, data InsertDocData, 
 		WithVarcharColumn("file_name", []string{data.FileName})
 	_, err = m.client.Insert(ctx, insertOpts)
 	if err != nil {
+		if strings.Contains(err.Error(), "can't find collection") {
+			m.CreateTenant(ctx, data.TenantId)
+		}
 		println(err)
 	}
 	return err

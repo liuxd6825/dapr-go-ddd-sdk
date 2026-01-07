@@ -11,6 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -56,6 +57,16 @@ func (d *GraphHandle) SetOnEvents(setEvents func(e *DocEvents)) {
 // document handler, and stores the results in the appropriate storage.
 // It returns an error if any step in the process fails.
 func (d *GraphHandle) SaveGraph(ctx context.Context, doc *entity.Document) (err error) {
+	if doc == nil {
+		return errors.New("rag document is nil")
+	}
+	logs.Info(ctx, logs.Fields{
+		"fileName":  doc.FileName,
+		"docId":     doc.Id,
+		"caseId":    doc.CaseId,
+		"sourceUrl": doc.SourceUrl,
+	}, "rag.SaveGraph()")
+
 	if d.events.OnStartInsert != nil {
 		d.events.OnStartInsert(ctx, doc)
 	}
@@ -148,14 +159,14 @@ func (d *GraphHandle) ExtractEntities(
 			}()
 
 			orderIndex := source.OrderIndex
-			logger.Info("call LLM extract orderIndex:", orderIndex)
+			logger.Info("call LLM extract orderIndex:", orderIndex, " docId:", source.DocId)
 			// Extract entities and relationships for this source chunk
 			entities, relationships, err := d.llmExtractEntities(ctx, doc, source.Content)
 			if err != nil {
 				return fmt.Errorf("failed to extract entities with LLM: %w", err)
 			}
 
-			logger.Info("Done call LLM orderIndex:", orderIndex, " entities:", len(entities), " relationships:", len(relationships))
+			logger.Info("Done call LLM orderIndex:", orderIndex, " entities:", len(entities), " relationships:", len(relationships), " docId:", source.DocId)
 
 			if err != nil {
 				return fmt.Errorf("failed to merge entities with LLM: %w", err)
