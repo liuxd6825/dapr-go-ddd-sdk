@@ -3,3 +3,4 @@
 *.xml.idea/
 *.db
 dist/
+*/**/xtest/file_store/

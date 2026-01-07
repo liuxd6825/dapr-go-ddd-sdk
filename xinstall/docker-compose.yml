@@ -1,0 +1,359 @@
+version: '3.8'
+
+services:
+
+
+
+  # ==========================================
+  # 1. 基础设施 - 共享数据库 (Postgres 15)
+  # ==========================================
+  postgres-shared:
+    image: postgres:15-alpine
+    container_name: postgres-shared
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - TZ=Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      # 挂载初始化脚本：会自动执行 create-dbs.sql 和 dtm.sql
+      - ./postgres/init-sql:/docker-entrypoint-initdb.d
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+
+  # ==========================================
+  # 2. Nacos (单机模式)
+  # ==========================================
+  nacos:
+    image: nacos/nacos-server:v2.4.3
+    container_name: nacos
+    restart: always
+    environment:
+      - MODE=standalone
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN=SecretKey012345678901234567890123456789012345678901234567890123456789
+      - NACOS_AUTH_IDENTITY_KEY=nacos
+      - NACOS_AUTH_IDENTITY_VALUE=nacos
+      - JVM_XMS=256m
+      - JVM_XMX=512m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    volumes:
+      - ./nacos/logs:/home/nacos/logs
+      - ./nacos/data:/home/nacos/data
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # 3. DTM (分布式事务)
+  # ==========================================
+  dtm:
+    image: yedf/dtm:latest
+    container_name: dtm
+    restart: always
+    ports:
+      - "36789:36789"
+      - "36790:36790"
+    volumes:
+      - ./dtm/conf/dtm.yaml:/app/dtm/configs/dtm.yaml
+    depends_on:
+      postgres-shared:
+        condition: service_healthy
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # 4. Neo4j (图数据库)
+  # ==========================================
+  neo4j:
+    image: neo4j:5-community
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/12345678
+      - NEO4J_server_memory_heap_initial__size=1G
+      - NEO4J_server_memory_heap_max__size=2G
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_server_default__listen__address=0.0.0.0
+    volumes:
+      - ./neo4j/data:/data
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # 5. Ory Kratos (身份认证)
+  # ==========================================
+  # 5.1 Kratos 迁移工具 (一次性)
+  kratos-migrate:
+    image: oryd/kratos:latest
+    container_name: kratos-migrate
+    environment:
+      - DSN=postgres://postgres:secret@postgres-shared:5432/kratos?sslmode=disable
+    volumes:
+      - ./kratos/conf:/etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    depends_on:
+      postgres-shared:
+        condition: service_healthy
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # Kratos (身份认证核心服务)
+  # ==========================================
+  # 5.2 Kratos 核心服务
+  kratos:
+    image: oryd/kratos:latest
+    container_name: kratos
+    restart: always
+    depends_on:
+      kratos-migrate:
+        condition: service_completed_successfully
+    ports:
+      - "4433:4433"
+      - "4434:4434"
+    environment:
+      - DSN=postgres://postgres:secret@postgres-shared:5432/kratos?sslmode=disable
+    volumes:
+      - ./kratos/conf:/etc/config/kratos
+    command: serve -c /etc/config/kratos/kratos.yml --dev
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # 6. Temporal (工作流引擎)
+  # ==========================================
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    container_name: temporal
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgres12_pgx
+      - DB_PORT=5432
+      - POSTGRES_SEEDS=postgres-shared
+      - POSTGRES_USER=postgres
+      - POSTGRES_PWD=secret
+      - DB_NAME=temporal
+      - DB_NAME_VISIBILITY=temporal_visibility
+      - ENABLE_ES=false
+      - SKIP_DEFAULT_NAMESPACE_CREATION=false
+    depends_on:
+      postgres-shared:
+        condition: service_healthy
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # temporal UI (工作流引擎管理界面)
+  # ==========================================
+  temporal-ui:
+    image: temporalio/ui:2.28.0
+    container_name: temporal-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      - temporal
+    networks:
+      - dev-network
+
+
+
+
+  # ==========================================
+  # redis (缓存数据库)
+  # ==========================================
+  redis:
+    image: redis:6.2.6
+    container_name: redis
+    restart: always
+    # 通过命令行参数设置密码
+    command: redis-server --requirepass 123456 --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - dev-network
+    # 可选：健康检查，确保密码生效且服务可用
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123456", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+
+
+
+  # ==========================================
+  # 8. RabbitMQ (消息队列)
+  # ==========================================
+  rabbitmq:
+    # 使用带有管理界面的镜像版本
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # AMQP 协议端口 (代码连接用)
+      - "15672:15672" # 管理界面 Web UI
+    environment:
+      # 设置默认登录账号密码
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=123456
+    volumes:
+      # 数据持久化
+      - ./rabbitmq/data:/var/lib/rabbitmq
+      # 日志持久化
+      - ./rabbitmq/logs:/var/log/rabbitmq
+      # 配置文件挂载 (将本地 conf 目录映射到容器配置目录)
+      # 你可以在 ./rabbitmq/conf 下放 *.conf 文件来覆盖默认配置
+      - ./rabbitmq/conf:/etc/rabbitmq/conf.d
+    networks:
+      - dev-network
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+
+  # ==========================================
+  # 12.etcd
+  # ==========================================
+  etcd:
+    container_name: etcd
+    image: quay.io/coreos/etcd:v3.5.25
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/etcd:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - dev-network
+
+
+  # ==========================================
+  # 12.minio
+  # ==========================================
+  minio:
+    container_name: minio
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - dev-network
+
+
+  # ==========================================
+  # 12.Milvus
+  # ==========================================
+  milvus:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.6.8
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+      MQ_TYPE: woodpecker
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "etcd"
+      - "minio"
+    networks:
+      - dev-network
+
+
+
+  # ==========================================
+  # 12.Milvus 可视化管理界面 (强烈推荐)
+  # ==========================================
+  attu:
+    image: zilliz/attu:latest
+    container_name: attu
+    restart: always
+    environment:
+      - MILVUS_URL=milvus:19530
+    ports:
+      - "8000:3000" # 宿主机 8000 端口访问
+    depends_on:
+      - milvus
+    networks:
+      - dev-network
+
+# ==========================================
+# 网络定义
+# ==========================================
+networks:
+  dev-network:
+    driver: bridge
+    external: true
+    name: dev-network # 强制指定名称，方便其他脚本引用
+
+
+# 安装milvusdb/milvus:v2.5.12， Username: admin ，Password: 123456， 数据,日志，配置等文件放到 ./milvus目录下。
+# docker compose up -d
+# docker compose up -d --force-recreate milvus

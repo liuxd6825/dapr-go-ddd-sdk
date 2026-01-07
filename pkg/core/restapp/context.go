@@ -48,6 +48,33 @@ func NewContextNoAuth(ictx iris.Context) (newCtx context.Context, err error) {
 	})
 }
 
+func NewSystemContext(ctx context.Context, opts ...ContextOptions) (newCtx context.Context, err error) {
+	defer func() {
+		err = errors.GetRecoverError(err, recover())
+	}()
+	var pCtx context.Context = ctx
+
+	// 添加 日志 上下文
+	newCtx = logs.NewContext(pCtx)
+
+	opt := newContextOption(opts...)
+	for _, fun := range opts {
+		fun(opt)
+	}
+
+	//添加 租户 上下文
+	if opt.TenantId != nil {
+		newCtx = appctx2.NewTenantContext(newCtx, "sys")
+	}
+
+	newCtx, err = appctx2.NewAuthContext(newCtx, TestToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return newCtx, err
+}
+
 // NewTestContext
 //
 //	@Description:

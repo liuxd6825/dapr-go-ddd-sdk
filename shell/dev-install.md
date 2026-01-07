@@ -1,4 +1,5 @@
 # 开发
+
 ## 格式化
 juicefs format --storage s3 --bucket http://192.168.120.224:9000/atp 
 --access-key minioadmin \
