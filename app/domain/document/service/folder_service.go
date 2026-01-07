@@ -124,6 +124,10 @@ func (t *FolderService) FindPaging(ctx context.Context, qry store.FindPagingQuer
 	return res, res.GetError()
 }
 
+func (t *FolderService) FindCountByPath(ctx context.Context, caseId string, folderPath string) (int64, error) {
+	return t.dao.CountByRSQL(ctx, fmt.Sprintf("case_id=='%s' and folder_path=='%s'", caseId, folderPath))
+}
+
 func (t *FolderService) FindByRSQL(ctx context.Context, rsql string) ([]*model.Folder, error) {
 	return t.dao.FindByRSQL(ctx, rsql)
 }
