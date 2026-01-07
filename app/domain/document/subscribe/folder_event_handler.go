@@ -143,6 +143,9 @@ func (s *FolderEventSubHandler) FolderDeleteEvent(ctx context.Context, event *ev
 				if err != nil {
 					return err
 				}
+				if folder == nil {
+					continue
+				}
 				var res *idao.Result
 				for _, f := range arr {
 					if strings.HasPrefix(f.FolderPath+"/", folder.FolderPath+"/") {
