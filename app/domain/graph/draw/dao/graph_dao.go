@@ -71,17 +71,18 @@ func (d *GraphDao) relationsRemoves(ctx context.Context, tenantId string, batch 
 func (d *GraphDao) nodesCreates(ctx context.Context, tenantId string, batch *model2.SaveBatch, drawId string) {
 	// 创建节点
 	for _, item := range batch.Nodes.Creates {
-		create := `MERGE ($<n>$<label>{id:$<id>}) ON CREATE SET
-		$<n>.name=$<name> ON MATCH SET
-		$<n>.id=$<id>,
-		$<n>.name=$<name>,
-		$<n>.type=$<type>,
-		$<n>.case_id=$<case_id>,
-		$<n>.description=$<desc>, 
-		$<n>.draw_id=$<draw_id>,
-		$<n>.source_ids=$<source_ids>,
-	    $<n>.source_type=$<source_type>,
-		$<n>.table=$<table>;
+		create := `
+MERGE ($<n>$<label>{id:$<id>}) ON CREATE SET
+$<n>.name=$<name> ON MATCH SET
+$<n>.id=$<id>,
+$<n>.name=$<name>,
+$<n>.type=$<type>,
+$<n>.case_id=$<case_id>,
+$<n>.description=$<desc>, 
+$<n>.draw_id=$<draw_id>,
+$<n>.source_ids=$<source_ids>,
+$<n>.source_type=$<source_type>,
+$<n>.table=$<table>;
 		`
 		fb := stringutils.NewFmtBuilder()
 		fb.String("n", fmt.Sprintf("n%d", 1))
@@ -105,15 +106,16 @@ func (d *GraphDao) nodesUpdates(ctx context.Context, tenantId string, batch *mod
 		MATCH (n:human:tenant_test:case_1001:draw_D001:draw) WHERE n.id='' SET n.name='', n.source='', n.target=‘’
 	*/
 	for _, item := range batch.Nodes.Updates {
-		update := `MATCH ($<n>$<labels>{id:$<id>}) SET 
-		$<n>.name=$<name>,
-		$<n>.type=$<type>,
-		$<n>.case_id=$<case_id>,
-		$<n>.description=$<desc>, 
-		$<n>.draw_id=$<draw_id>,
-		$<n>.source_ids=$<source_ids>,
-	    $<n>.source_type=$<source_type>,
-		$<n>.table=$<table>
+		update := `
+MATCH ($<n>$<labels>{id:$<id>}) SET 
+$<n>.name=$<name>,
+$<n>.type=$<type>,
+$<n>.case_id=$<case_id>,
+$<n>.description=$<desc>, 
+$<n>.draw_id=$<draw_id>,
+$<n>.source_ids=$<source_ids>,
+$<n>.source_type=$<source_type>,
+$<n>.table=$<table>
 `
 		fb := stringutils.NewFmtBuilder()
 		fb.String("n", "n")
@@ -166,10 +168,10 @@ func (d *GraphDao) relationsCreate(ctx context.Context, tenantId string, batch *
 	// 创建节点
 	for _, item := range batch.Relations.Creates {
 		create := `
-		MATCH ($<a>:draw_$<drawId>{id:$<source>}),($<b>:draw_$<drawId>{id:$<target>})
-		WITH $<a>,$<b> MERGE ($<a>)-[$<r>:$<relType>{id:$<id>}]->($<b>) 
-		ON MATCH  SET $<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<r>.description+$<desc>,$<r>.keywords=$<keywords>
-		ON CREATE SET $<r>.id=$<id>,$<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<desc>,$<r>.keywords=$<keywords>
+MATCH ($<a>:draw_$<drawId>{id:$<source>}),($<b>:draw_$<drawId>{id:$<target>})
+WITH $<a>,$<b> MERGE ($<a>)-[$<r>:$<relType>{id:$<id>}]->($<b>) 
+ON MATCH  SET $<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<r>.description+$<desc>,$<r>.keywords=$<keywords>
+ON CREATE SET $<r>.id=$<id>,$<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<desc>,$<r>.keywords=$<keywords>
 `
 		fb := stringutils.NewFmtBuilder()
 		fb.String("a", "a")
@@ -177,16 +179,16 @@ func (d *GraphDao) relationsCreate(ctx context.Context, tenantId string, batch *
 		fb.String("r", "r")
 		fb.String("caseId", item.CaseId)
 		fb.String("drawId", drawId)
-		fb.String("relType", item.RelType)
-
+		//fb.String("relType", item.RelType)
+		fb.String("relType", "draw")
 		fb.Varchar("id", item.Id)
 		fb.Varchar("source", item.Source)
 		fb.Varchar("target", item.Target)
 		fb.Varchar("name", item.Name)
 		fb.Varchar("desc", item.Description)
 		fb.Varchar("keywords", item.RelType)
-
-		d.write(ctx, fb.Format(create))
+		cypher := fb.Format(create)
+		d.write(ctx, cypher)
 	}
 }
 
@@ -194,9 +196,9 @@ func (d *GraphDao) relationsUpdate(ctx context.Context, tenantId string, batch *
 	// 更新关系
 	for _, item := range batch.Relations.Updates {
 		set := `
-		MATCH (:draw_$<drawId>{id:$<source>})-[$<r>:$<relType>{id:$<id>}]->(:draw_$<drawId>{id:$<target>}) 
-		WHERE $<r>.id=$<id> 
-		SET $<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<desc>,$<r>.keywords=$<keywords>,$<r>.source_type='draw' 
+MATCH (:draw_$<drawId>{id:$<source>})-[$<r>:$<relType>{id:$<id>}]->(:draw_$<drawId>{id:$<target>}) 
+WHERE $<r>.id=$<id> 
+SET $<r>.name=$<name>,$<r>.source=$<source>,$<r>.target=$<target>,$<r>.description=$<desc>,$<r>.keywords=$<keywords>,$<r>.source_type='draw' 
 `
 		fb := stringutils.NewFmtBuilder()
 		fb.String("r", "r")
@@ -205,7 +207,8 @@ func (d *GraphDao) relationsUpdate(ctx context.Context, tenantId string, batch *
 		fb.Varchar("id", item.Id)
 		fb.Varchar("source", item.Source)
 		fb.Varchar("target", item.Target)
-		fb.Varchar("relType", item.RelType)
+		fb.String("relType", "draw")
+		//fb.Varchar("relType", item.RelType)
 		fb.Varchar("name", item.Name)
 		fb.Varchar("desc", item.Description)
 		fb.Varchar("keywords", item.RelType)
