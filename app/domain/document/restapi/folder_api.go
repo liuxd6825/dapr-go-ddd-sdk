@@ -192,10 +192,13 @@ func (s *FolderAPI) renameFolder(ctx context.Context, cmd *command.FolderRenameC
 			return err
 		}
 
-		err = s.fsService.Rename(cmd.Data.OldName, cmd.Data.FolderPath)
-		if err != nil {
-			return err
+		if cmd.Data.OldName != cmd.Data.FolderPath {
+			err = s.fsService.Rename(cmd.Data.OldName, cmd.Data.FolderPath)
+			if err != nil {
+				return err
+			}
 		}
+
 		return nil
 	})
 
