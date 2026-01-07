@@ -156,6 +156,14 @@ func (s *FolderAPI) Rename(ctx context.Context, cmd *command.FolderRenameCommand
 
 func (s *FolderAPI) renameFolder(ctx context.Context, cmd *command.FolderRenameCommand) error {
 	err := tx.StartTx(ctx, []string{s.folderService.GetConfig().DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
+		count, err := s.folderService.FindCountByPath(ctx, cmd.Data.EntityId, cmd.Data.FolderPath)
+		if err != nil {
+			return err
+		}
+		if count > 0 {
+			return errors.New("目标已存在")
+		}
+
 		tenantId := appctx.GetTenantId2(ctx)
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", tenantId, cmd.Data.BusId, cmd.Data.EntityId))
 		if err != nil {
