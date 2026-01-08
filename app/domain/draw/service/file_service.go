@@ -48,11 +48,11 @@ func (s *FileService) Init() *FileService {
 	return s
 }
 
-func (s *FileService) Create(ctx context.Context, caseId, fileName string) error {
-	return s.Save(ctx, caseId, fileName, _newContent)
+func (s *FileService) Create(ctx context.Context, caseId, drawId, fileName string) error {
+	return s.Save(ctx, caseId, fileName, drawId, _newContent)
 }
 
-func (s *FileService) Save(ctx context.Context, caseId, fileName string, content string) error {
+func (s *FileService) Save(ctx context.Context, caseId, drawId string, fileName string, content string) error {
 	if fileName == "" {
 		return errors.New("file name is empty")
 	}
@@ -60,7 +60,7 @@ func (s *FileService) Save(ctx context.Context, caseId, fileName string, content
 		fileName += ".drawio"
 	}
 	tenantId, _ := appctx.GetTenantId(ctx)
-	fileName = fmt.Sprintf("/%s/%s/%s", tenantId, caseId, fileName)
+	fileName = fmt.Sprintf("/%s/%s/%s.drawio", tenantId, caseId, drawId)
 	pathName := filepath.Dir(fileName)
 	exists := s.drawFs.Exists(pathName)
 	if !exists && pathName != "." {

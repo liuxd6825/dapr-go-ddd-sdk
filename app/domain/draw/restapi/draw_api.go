@@ -81,7 +81,7 @@ func (s *DrawAPI) Create(ctx context.Context, ictx iris.Context, cmd *command.Cr
 	if res.RowsAffected > 0 {
 		_ = ictx.JSON(draw)
 	}
-	return s.fileService.Create(ctx, draw.CaseId, draw.Id)
+	return s.fileService.Create(ctx, draw.CaseId, draw.Id, draw.FileName)
 }
 
 func (s *DrawAPI) Update(ctx context.Context, cmd *command.UpdateCommand) (any, error) {
@@ -133,24 +133,17 @@ func (s *DrawAPI) ReadFile(ctx context.Context, ictx iris.Context, params *DrawF
 }
 
 func (s *DrawAPI) SaveFile(ctx context.Context, cmd *command.DrawSaveFileCommand) error {
-	/*
-		id := ictx.Params().GetString("id")
-		draw, err := s.getDrawById(ctx, id)
-		if err != nil {
-			return err
-		}
-		if draw == nil {
-			return errors.ErrorOf("没有找到分析图: %s", id)
-		}
 
-		var saveRequest command.SaveFileRequest
-		err = ictx.ReadJSON(&saveRequest)
-		if err != nil {
-			return err
-		}
-	*/
+	id := cmd.Data.DrawId
+	draw, err := s.getDrawById(ctx, id)
+	if err != nil {
+		return err
+	}
+	if draw == nil {
+		return errors.ErrorOf("没有找到分析图: %s", id)
+	}
 
-	err := s.fileService.Save(ctx, cmd.GetCaseId(), cmd.GetFileName(), cmd.GetXML())
+	err = s.fileService.Save(ctx, cmd.GetCaseId(), cmd.GetDrawId(), cmd.GetFileName(), cmd.GetXML())
 	if err != nil {
 		return err
 	}
