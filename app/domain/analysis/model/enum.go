@@ -51,9 +51,9 @@ func (s SuTaskStatus) String() string {
 	case SuTaskStatus_New:
 		return "任务新建"
 	case SuTaskStatus_TaskQueuing:
-		return "任务排队"
+		return "排队中"
 	case SuTaskStatus_InProgress:
-		return "系统计算"
+		return "计算中"
 	case SuTaskStatus_Inspect:
 		return "流水调查"
 	case SuTaskStatus_Completed:

@@ -54,6 +54,13 @@ func NewSuTaskService() *SuTaskService {
 	}
 }
 
+// Renew
+// @Description: 重新生成
+// @receiver s
+// @param ctx
+// @param cmd
+// @return *model.SuTaskBillView
+// @return error
 func (s *SuTaskService) Renew(ctx context.Context, cmd *command.SuTaskRenewCommand) (*model.SuTaskBillView, error) {
 	if err := s.ClearAnalyseResults(ctx, cmd.Data.Id); err != nil {
 		return nil, err
@@ -358,18 +365,12 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 		batchItems []*model.SuBatchItem
 	}
 
-	saves := []saveBatch{}
+	var saves []saveBatch
 
 	for _, result := range results {
 		records := make([]*model.SuRecord, 0)
 		batches := make([]*model.SuBatch, 0)
 		batchItems := make([]*model.SuBatchItem, 0)
-		save := saveBatch{
-			records:    records,
-			batches:    batches,
-			batchItems: batchItems,
-		}
-		saves = append(saves, save)
 		for _, record := range result.SuRecords {
 			records = append(records, record)
 			record.RecordId = record.Id
@@ -396,6 +397,13 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 				})
 			}
 		}
+
+		save := saveBatch{
+			records:    records,
+			batches:    batches,
+			batchItems: batchItems,
+		}
+		saves = append(saves, save)
 	}
 
 	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
