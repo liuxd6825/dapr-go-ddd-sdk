@@ -58,7 +58,7 @@ func (s *SuTaskAccountApi) Delete(ctx context.Context, task *model2.SuTask) erro
 }
 
 func (s *SuTaskAccountApi) BatchDelete(ctx context.Context, cmd *command.SuTaskAccountBatchDeleteCommand) error {
-	return s.accountService.DeleteByIds(ctx, cmd.Data)
+	return s.accountService.DeleteByIds(ctx, cmd.Data.Ids)
 }
 
 func (s *SuTaskAccountApi) FindPaging(ctx context.Context, qry *idao.FindPagingQueryRequest) (store.FindPagingResult[*model2.SuTaskAccount], error) {

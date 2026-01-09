@@ -15,5 +15,10 @@ type SuTaskAccountBatchCreateCommand struct {
 	xbase.Command[[]*model.SuTaskAccount]
 }
 type SuTaskAccountBatchDeleteCommand struct {
-	xbase.Command[[]string]
+	xbase.Command[SuTaskAccountBatchDeleteCommandData]
+}
+
+type SuTaskAccountBatchDeleteCommandData struct {
+	CaseId string   `json:"caseId"`
+	Ids    []string `json:"ids"`
 }
