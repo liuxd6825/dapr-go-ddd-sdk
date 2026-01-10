@@ -187,7 +187,7 @@ func (s *RecordDao) DistinctCompany(ctx context.Context, caseId, masterType, mas
 // @param name
 // @return []*query.RecordAccountFindByNameResult
 // @return error
-func (s *RecordDao) DistinctAccount(ctx context.Context, caseId, masterType, masterId, myFilter, oppFilter string) ([]*query.DistinctAccountResult, error) {
+func (s *RecordDao) DistinctAccount(ctx context.Context, caseId, masterType, masterId, myFilter, oppFilter string, findOpp bool) ([]*query.DistinctAccountResult, error) {
 	var accounts []*query.DistinctAccountResult
 	keys := map[string]bool{}
 	err := s.findDistinct(ctx, "acct, bank_name", caseId, masterType, masterId, myFilter, func(list []*model.Record) {
@@ -207,22 +207,25 @@ func (s *RecordDao) DistinctAccount(ctx context.Context, caseId, masterType, mas
 		return nil, err
 	}
 
-	err = s.findDistinct(ctx, "opp_acct, opp_bank_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
-		for _, item := range list {
-			if _, ok := keys[item.OppAcct]; !ok {
-				keys[item.OppAcct] = true
-				record := &query.DistinctAccountResult{
-					Account:   item.OppAcct,
-					BankName:  item.OppBankName,
-					OwnerName: item.OppName,
+	if findOpp {
+		err = s.findDistinct(ctx, "opp_acct, opp_bank_name", caseId, masterType, masterId, oppFilter, func(list []*model.Record) {
+			for _, item := range list {
+				if _, ok := keys[item.OppAcct]; !ok {
+					keys[item.OppAcct] = true
+					record := &query.DistinctAccountResult{
+						Account:   item.OppAcct,
+						BankName:  item.OppBankName,
+						OwnerName: item.OppName,
+					}
+					accounts = append(accounts, record)
 				}
-				accounts = append(accounts, record)
 			}
+		})
+		if err != nil {
+			return nil, err
 		}
-	})
-	if err != nil {
-		return nil, err
 	}
+
 	return accounts, nil
 }
 

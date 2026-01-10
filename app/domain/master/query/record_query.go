@@ -48,10 +48,11 @@ type RecordFindPagingQuery = ddd_query.FindPagingQuery
 type RecordFindPagingResult = ddd_query.FindPagingResult
 
 type DistinctAccountByNameQuery struct {
-	CaseId     string `json:"caseId" query:"case-id" validate:"required" title:"案件ID"`
-	Name       string `json:"name" query:"name"  title:"开户人"`
-	MasterType string `json:"masterType" query:"master-type"  title:"主数据类型"`
-	MasterId   string `json:"masterName" query:"master-id" title:"主数据Id"`
+	CaseId           string `json:"caseId" query:"case-id" validate:"required" title:"案件ID"`
+	Name             string `json:"name" query:"name"  title:"开户人"`
+	MasterType       string `json:"masterType" query:"master-type"  title:"主数据类型"`
+	MasterId         string `json:"masterName" query:"master-id" title:"主数据Id"`
+	IsFindOppAccount bool   `json:"isFindOppAccount" query:"is-find-opp-account" title:"是否查询对方账号"`
 }
 
 type DistinctAccountResult struct {
