@@ -1,11 +1,12 @@
-package feign
+package micro_feign
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"net/http"
 	"reflect"
 	"sync"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
 const Version = "0.6.0"

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/feign"
+
+	feign2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/micro/micro_feign"
+
 	"time"
 )
 
@@ -19,19 +21,19 @@ type User struct {
 }
 
 type UserRequestConfig struct {
-	feign.RequestConfig
+	feign2.RequestConfig
 	ID string `param:"id"`
 }
 
 type UserListRequestConfig struct {
-	feign.RequestConfig
+	feign2.RequestConfig
 	Limit int    `query:"limit"`
 	Page  int    `query:"page"`
 	Token string `header:"Authorization"`
 }
 
 type UserCreateRequestConfig struct {
-	feign.RequestConfig
+	feign2.RequestConfig
 	// default content-type = text/plain when use body tag like `body:""`
 	// use feign.WithDefaultContenType("application/json") can change it
 	Data *User `body:"application/json"`
@@ -47,10 +49,10 @@ type TestApi struct {
 
 func main() {
 
-	factory := feign.New()
+	factory := feign2.New()
 	defer factory.Close()
 	// click https://mockapi.io/clone/61567ea3e039a0001725aa19 to create a mockapi project
-	apiIntf, err := factory.Build(&TestApi{}, feign.WithBaseURL("https://"+mockAPIID+".mockapi.io/api/v1"), feign.WithRequestMiddleware(func(c *feign.RequestContext) error {
+	apiIntf, err := factory.Build(&TestApi{}, feign2.WithBaseURL("https://"+mockAPIID+".mockapi.io/api/v1"), feign2.WithRequestMiddleware(func(c *feign2.RequestContext) error {
 		url := c.Request.URL.String()
 		method := c.Request.Method
 		fmt.Println("requestTo", url, "method", method)
@@ -96,7 +98,7 @@ func main() {
 		ID: newUser.ID,
 	})
 	if err != nil {
-		var rErr feign.RequestError
+		var rErr feign2.RequestError
 		if errors.As(err, &rErr) {
 			fmt.Printf("expect 404, got: %d ,res %s \n", rErr.StatusCode(), rErr.Body())
 		} else {

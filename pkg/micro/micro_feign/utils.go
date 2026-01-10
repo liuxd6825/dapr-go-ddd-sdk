@@ -1,4 +1,4 @@
-package feign
+package micro_feign
 
 import (
 	"container/list"

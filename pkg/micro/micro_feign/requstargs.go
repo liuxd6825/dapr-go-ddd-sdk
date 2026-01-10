@@ -1,12 +1,13 @@
-package feign
+package micro_feign
 
 import (
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	urlUtils "net/url"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
 type requestConfigFieldBuilder func(field reflect.Value, req *requestTemplate, layers []string, querys *[]string) error

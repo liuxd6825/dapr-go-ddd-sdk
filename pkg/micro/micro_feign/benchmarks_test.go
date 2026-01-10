@@ -1,4 +1,4 @@
-package feign_test
+package micro_feign_test
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/snownd/cake"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary

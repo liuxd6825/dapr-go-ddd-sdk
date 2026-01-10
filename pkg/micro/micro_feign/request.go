@@ -1,15 +1,16 @@
-package feign
+package micro_feign
 
 import (
 	"compress/gzip"
 	"compress/zlib"
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"io"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 var _emptyValue reflect.Value

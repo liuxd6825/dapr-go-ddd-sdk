@@ -1,15 +1,16 @@
-package feign_test
+package micro_feign_test
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/feign"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	feign2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/micro/micro_feign"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRequestMiddleware(t *testing.T) {
@@ -31,10 +32,10 @@ func TestRequestMiddleware(t *testing.T) {
 	type client struct {
 		SimpleGet func(context.Context) (string, error) `url:"/foo/bar"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
 
-	mw1 := func(c *feign.RequestContext) error {
+	mw1 := func(c *feign2.RequestContext) error {
 		mw1Path = c.Request.URL.Path
 		if assert.Equal(t, 1, index) {
 			index++
@@ -47,7 +48,7 @@ func TestRequestMiddleware(t *testing.T) {
 		}
 		return nil
 	}
-	mw2 := func(c *feign.RequestContext) error {
+	mw2 := func(c *feign2.RequestContext) error {
 		if assert.Equal(t, 2, index) {
 			index++
 		}
@@ -59,9 +60,9 @@ func TestRequestMiddleware(t *testing.T) {
 	}
 
 	ci, err := f.Build(&client{},
-		feign.WithBaseURL(ts.URL),
-		feign.WithRequestMiddleware(mw1),
-		feign.WithRequestMiddleware(mw2),
+		feign2.WithBaseURL(ts.URL),
+		feign2.WithRequestMiddleware(mw1),
+		feign2.WithRequestMiddleware(mw2),
 	)
 	if !assert.NoError(t, err) {
 		return
@@ -86,16 +87,16 @@ func TestGetWithPathParam(t *testing.T) {
 	defer ts.Close()
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Name string `param:"name"`
 	}
 
 	type client struct {
 		SimpleGet func(*config) (string, error) `url:"/foo/:name"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -124,7 +125,7 @@ func TestGetWithQuery(t *testing.T) {
 	defer ts.Close()
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		QueryStr   string  `query:"queryStrKey"`
 		QueryInt   int     `query:"queryIntKey"`
 		QueryBool  bool    `query:"queryBoolKey"`
@@ -134,9 +135,9 @@ func TestGetWithQuery(t *testing.T) {
 	type client struct {
 		Query func(*config) (string, error) `url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -165,16 +166,16 @@ func TestConfigHeader(t *testing.T) {
 	defer ts.Close()
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Name string `header:"X-App-Name"`
 	}
 
 	type client struct {
 		SimpleGet func(*config) (string, error) `url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -199,9 +200,9 @@ func TestFuncHeader(t *testing.T) {
 	type client struct {
 		SimpleGet func() (string, error) `url:"/foo" headers:"X-App-Name=cake"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -227,16 +228,16 @@ func TestRequestStructHeaders(t *testing.T) {
 		Name string `header:"X-App-Name"`
 	}
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Headers *headers `headers:""`
 	}
 
 	type client struct {
 		SimpleGet func(*config) (string, error) `url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -260,16 +261,16 @@ func TestRequestMapHeaders(t *testing.T) {
 	defer ts.Close()
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Headers map[string]string `headers:""`
 	}
 
 	type client struct {
 		SimpleGet func(*config) (string, error) `url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -298,16 +299,16 @@ func TestPostRequestWithBody(t *testing.T) {
 	}
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Data testBody `body:"application/json"`
 	}
 
 	type client struct {
 		PostWithBody func(*config) (*testBody, error) `method:"POST" url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -336,16 +337,16 @@ func TestPostRequestWithShortBodytag(t *testing.T) {
 	}
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Data testBody `body:"json"`
 	}
 
 	type client struct {
 		PostWithBody func(*config) (*testBody, error) `method:"POST" url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -381,16 +382,16 @@ func TestPostRequestWithURLEncodedForm(t *testing.T) {
 	defer ts.Close()
 
 	type config struct {
-		feign.RequestConfig
+		feign2.RequestConfig
 		Data testForm `form:""`
 	}
 
 	type client struct {
 		PostWithBody func(*config) (*testForm, error) `method:"POST" url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -418,9 +419,9 @@ func TestResponseErr(t *testing.T) {
 	type client struct {
 		SimpleGet func() (*res, error) `url:"/foo"`
 	}
-	f := feign.New()
+	f := feign2.New()
 	defer f.Close()
-	ci, err := f.Build(&client{}, feign.WithBaseURL(ts.URL))
+	ci, err := f.Build(&client{}, feign2.WithBaseURL(ts.URL))
 	if !assert.NoError(t, err) {
 		return
 	}
