@@ -1,11 +1,11 @@
 package restapi
 
 import (
-	context2 "context"
+	context "context"
 	"reflect"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	icontext "github.com/kataras/iris/v12/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
@@ -22,7 +22,7 @@ type CallMethod struct {
 
 var mapType = reflect.TypeOf((*map[string]any)(nil)).Elem()
 var errType = reflect.TypeOf((*error)(nil)).Elem()
-var ctxType = reflect.TypeOf((*context2.Context)(nil)).Elem()
+var ctxType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var ictxType = reflect.TypeOf((*iris.Context)(nil)).Elem()
 var findPagingQueryType = reflect.TypeOf((*store.FindPagingQuery)(nil)).Elem()
 
@@ -72,17 +72,18 @@ func NewCallMethod(object any, methodName string) (*CallMethod, error) {
 	return &callMethod, nil
 }
 
-func (c *CallMethod) Call(ctx context2.Context, ictx *context.Context, params any) (any, error) {
+func (c *CallMethod) Call(ctx context.Context, ictx *icontext.Context, params any) (any, error) {
 	in := make([]reflect.Value, c.Method.Type().NumIn())
+	if c.InParams >= 0 {
+		in[c.InParams] = reflect.ValueOf(params)
+	}
 	if c.InCtx >= 0 {
 		in[c.InCtx] = reflect.ValueOf(ctx)
 	}
 	if c.InICtx >= 0 {
 		in[c.InICtx] = reflect.ValueOf(ictx)
 	}
-	if c.InParams >= 0 {
-		in[c.InParams] = reflect.ValueOf(params)
-	}
+
 	out := c.Method.Call(in)
 	var resData any
 	var err error

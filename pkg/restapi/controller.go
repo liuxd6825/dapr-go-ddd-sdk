@@ -1,15 +1,17 @@
 package restapi
 
 import (
-	context2 "context"
+	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/micro/micro_states"
 
 	"reflect"
 	"strings"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	icontext "github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/core/router"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -24,14 +26,23 @@ import (
 )
 
 type ApiController struct {
-	app        *iris.Application
-	rootPath   string
-	routes     []*router.Route
-	apiName    string
-	apiService any
+	app           *iris.Application
+	rootPath      string
+	routes        []*router.Route
+	apiName       string
+	apiService    any
+	stateProvider micro_states.IMicroState
 }
 
 type HandleType int
+
+type ICommand interface {
+	GetCommandId() string
+}
+
+type IEvent interface {
+	GetEventId() string
+}
 
 const (
 	HandleType_API   HandleType = iota // 服务API
@@ -39,17 +50,17 @@ const (
 	HandleType_CDC                     // 数据库数据变化
 )
 
-type ApiFunc func(ctx context2.Context, ictx *context.Context, params any) (any, error)
+type ApiFunc func(ctx context.Context, ictx *icontext.Context, params any) (any, error)
 
-type APIController interface {
+type IAPIController interface {
 	NewAPIController(app *iris.Application) *ApiController
 }
 
-type RenderViewFunc func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error
+type RenderViewFunc func(ctx context.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error
 
 var apis = types.NewCMap[any]()
 
-var View RenderViewFunc = func(ctx context2.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error {
+var View RenderViewFunc = func(ctx context.Context, ictx iris.Context, fileName string, viewData ...map[string]any) error {
 	if fileName == "" {
 		fileName = ictx.Request().URL.Path
 	}
@@ -60,7 +71,7 @@ var View RenderViewFunc = func(ctx context2.Context, ictx iris.Context, fileName
 	return ictx.View(fileName, vData...)
 }
 
-func RegisterController(app *iris.Application, api APIController) {
+func RegisterController(app *iris.Application, api IAPIController) {
 	apiCtl := api.NewAPIController(app)
 	if apiCtl == nil {
 		panic("api controller is nil")
@@ -78,11 +89,12 @@ func GetAPI(apiName string) (any, bool) {
 
 func NewController(app *iris.Application, rootPath string, apiName string, apiService any) *ApiController {
 	return &ApiController{
-		app:        app,
-		rootPath:   rootPath,
-		apiName:    apiName,
-		apiService: apiService,
-		routes:     make([]*router.Route, 0),
+		app:           app,
+		rootPath:      rootPath,
+		apiName:       apiName,
+		apiService:    apiService,
+		routes:        make([]*router.Route, 0),
+		stateProvider: micro_states.NewDaprState(),
 	}
 }
 
@@ -123,7 +135,7 @@ func (c *ApiController) newCallMethod(handlerName string, apiService any) (servi
 
 func (c *ApiController) GetOne(path string, handlerName string, opts ...APIOptions) *router.Route {
 	opts = append(opts, APIOptions{
-		After: func(ctx context2.Context, ictx *context.Context, data any, err error) (any, error) {
+		After: func(ctx context.Context, ictx *icontext.Context, data any, err error) (any, error) {
 			if err != nil {
 				return nil, err
 			}
@@ -147,7 +159,7 @@ func (c *ApiController) GetData(path string, handlerName string, opts ...APIOpti
 
 func (c *ApiController) GetPaging(path string, handlerName string, opts ...APIOptions) *router.Route {
 	opts = append(opts, APIOptions{
-		GetFieldValue: func(ictx *context.Context, object any, fieldType reflect.StructField, fieldValue reflect.Value) (outParam any, ok bool, err error) {
+		GetFieldValue: func(ictx *icontext.Context, object any, fieldType reflect.StructField, fieldValue reflect.Value) (outParam any, ok bool, err error) {
 			switch fieldType.Name {
 			case "ValueCols":
 				valueCols := ictx.URLParam("value-cols")
@@ -246,8 +258,15 @@ func (c *ApiController) callView(method string, path string, handlerName string,
 	return c.callMethod2(method, path, handlerName, handleType, true, opts...)
 }
 
+func (c *ApiController) isAllowSaveState(handleType HandleType, ictx *icontext.Context) bool {
+	if handleType == HandleType_Event || ictx.Request().Method != iris.MethodGet {
+		return true
+	}
+	return false
+}
+
 func (c *ApiController) callMethod2(method string, path string, handlerName string, handleType HandleType, isViewHandle bool, opts ...APIOptions) *router.Route {
-	backCtx := context2.Background()
+	backCtx := context.Background()
 	options := NewAPIOptions(opts...)
 	apiService, callMethod, err := c.newCallMethod(handlerName, options.ApiService)
 	if err != nil {
@@ -268,22 +287,31 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 		path = c.getPath(path)
 	}
 
-	handler := func(ictx *context.Context) {
+	handler := func(ictx *icontext.Context) {
 		gp.Try(func() error {
 
 			params, ctx, err := c.getParams(ictx, callMethod, handleType, options)
 			if err != nil {
 				if handleType == HandleType_Event {
-					logs.Error(context2.Background(), logs.Fields{"type": "event", "urlPath": path, "handlerName": handlerName, "error": err.Error()})
+					logs.Error(context.Background(), logs.Fields{"type": "event", "urlPath": path, "handlerName": handlerName, "error": err.Error()})
 					return nil
 				}
 				return err
+			}
+			saveState := c.isAllowSaveState(handleType, ictx)
+			if saveState {
+				if has, data, err := c.getState(ctx, ictx, params); err != nil {
+					return err
+				} else if has {
+					logs.Info(backCtx, logs.Fields{"method": method, "path": path, "info": "idempotent request, return exist data"})
+					return SetOKJsonData(ictx, data)
+				}
 			}
 
 			var data any
 			logs.Info(backCtx, logs.Fields{"method": method, "path": path, "params": params})
 			if len(options.TranDBKeys) > 0 {
-				err = tx.StartTx(ctx, options.TranDBKeys, func(ctx context2.Context, options ...*store.SessionOptions) error {
+				err = tx.StartTx(ctx, options.TranDBKeys, func(ctx context.Context, options ...*store.SessionOptions) error {
 					data, err = callMethod.Call(ctx, ictx, params)
 					return err
 				})
@@ -298,6 +326,9 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 			}
 			if err == nil && callMethod.OutData >= 0 {
 				//logs.Info(backCtx, logs.Fields{"method": method, "path": path, "handlerName": handlerName, "data": data})
+				if saveState {
+					_ = c.setState(ctx, ictx, params, data)
+				}
 				err = SetOKJsonData(ictx, data)
 			}
 			return err
@@ -327,7 +358,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 	return r
 }
 
-func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod, handleType HandleType, opts ...APIOptions) (params any, rctx context2.Context, err error) {
+func (c *ApiController) getParams(ictx *icontext.Context, callMethod *CallMethod, handleType HandleType, opts ...APIOptions) (params any, rctx context.Context, err error) {
 	// CallMethod初始化
 	for _, opt := range opts {
 		if opt.InitMethod != nil {
@@ -351,7 +382,7 @@ func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod,
 		}
 	}
 	if err == nil && rctx == nil {
-		rctx = appctx.NewWebContext(context2.Background(), ictx)
+		rctx = appctx.NewWebContext(context.Background(), ictx)
 	}
 	return params, rctx, err
 }
@@ -360,7 +391,7 @@ func (c *ApiController) getParams(ictx *context.Context, callMethod *CallMethod,
 // ictx: iris请求上下文
 // paramType: 参数类型
 // isEventHandle: 是否是事件处理
-func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type, handleType HandleType, opts ...APIOptions) (params any, rctx context2.Context, err error) {
+func (c *ApiController) GetParams(ictx *icontext.Context, paramType reflect.Type, handleType HandleType, opts ...APIOptions) (params any, rctx context.Context, err error) {
 	paramsValue, err := reflectutils.New(paramType)
 	if err != nil {
 		return nil, nil, errors.New("create params error: %s ", err.Error())
@@ -391,15 +422,15 @@ func (c *ApiController) GetParams(ictx *context.Context, paramType reflect.Type,
 	return params, rctx, nil
 }
 
-func (c *ApiController) GetCtx(ictx *context.Context) (context2.Context, error) {
-	ctx, err := c.newContext(context2.Background(), ictx)
+func (c *ApiController) GetCtx(ictx *icontext.Context) (context.Context, error) {
+	ctx, err := c.newContext(context.Background(), ictx)
 	if err != nil {
 		return nil, err
 	}
 	return ctx, nil
 }
 
-func (c *ApiController) newContext(parent context2.Context, ictx *context.Context) (ctx context2.Context, err error) {
+func (c *ApiController) newContext(parent context.Context, ictx *icontext.Context) (ctx context.Context, err error) {
 	ctx = parent
 	app := env.GetEnv().App
 	appId := app.AppId
@@ -410,7 +441,7 @@ func (c *ApiController) newContext(parent context2.Context, ictx *context.Contex
 		if appctx.HasToken(ictx) {
 			ctx = appctx.NewWebContext(ctx, ictx)
 		} else {
-			ctx, err = restapp.NewTestContext(context2.Background())
+			ctx, err = restapp.NewTestContext(context.Background())
 			if err != nil {
 				return nil, err
 			}
