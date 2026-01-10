@@ -135,6 +135,10 @@ func (e *Event[T]) GetId() string {
 	return e.Id
 }
 
+func (e *Event[T]) GetEventId() string {
+	return e.Id
+}
+
 func (e *Event[T]) GetTenantId() string {
 	return e.TenantId
 }

@@ -70,7 +70,6 @@ require (
 	github.com/carmel/gooxml v0.0.0-20220216072414-40ff56130850
 	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250612061754-5a3deb091dc5
 	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250612061754-5a3deb091dc5
-	github.com/cloudwego/eino-ext/components/tool/browseruse v0.0.0-20250610035057-2c4e7c8488a5
 	github.com/cloudwego/eino-ext/components/tool/mcp v0.0.3
 	github.com/extrame/xls v0.0.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -99,12 +98,9 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/chromedp/cdproto v0.0.0-20250319231242-a755498943c8 // indirect
-	github.com/chromedp/chromedp v0.13.3 // indirect
-	github.com/chromedp/sysutil v1.1.0 // indirect
+
 	github.com/cilium/ebpf v0.11.0 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
-	github.com/cloudwego/eino-ext/components/tool/duckduckgo v0.0.0-20250610035057-2c4e7c8488a5 // indirect
 	github.com/cloudwego/eino-ext/libs/acl/openai v0.0.0-20250605072634-0f875e04269d // indirect
 	github.com/cockroachdb/errors v1.9.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
@@ -124,7 +120,6 @@ require (
 	github.com/glebarez/go-sqlite v1.20.3 // indirect
 	github.com/glebarez/sqlite v1.7.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-json-experiment/json v0.0.0-20250223041408-d3c622f1b874 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.0.4 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -370,10 +365,6 @@ replace go.mongodb.org/mongo-driver => ../../mongo-driver
 
 replace github.com/liuxd6825/jsonschema/v6 => ../../jsonschema
 
-//replace github.com/liuxd6825/dapr => gitee.com/liuxd6825/dapr v1.7.1-1.0-alpha2
-//replace github.com/liuxd6825/dapr-go-sdk => gitee.com/liuxd6825/go-sdk v1.7.1-1.0-alpha2
-//replace github.com/liuxd6825/dapr-components-contrib => gitee.com/liuxd6825/components-contrib v1.7.1-1.0-alpha
-
 replace github.com/dapr/dapr => ../dapr
 
 replace github.com/dapr/go-sdk => ../dapr-go-sdk
@@ -388,8 +379,3 @@ replace gorm.io/gorm => ../../gorm
 
 replace github.com/mark3labs/mcp-go v0.31.0 => ../../mcp-go
 
-replace (
-	github.com/apache/rocketmq-client-go v1.2.5 => github.com/apache/rocketmq-client-go v1.2.4
-	nhooyr.io/websocket v1.8.11 => github.com/coder/websocket v1.8.11
-	nhooyr.io/websocket v1.8.7 => github.com/coder/websocket v1.8.7
-)

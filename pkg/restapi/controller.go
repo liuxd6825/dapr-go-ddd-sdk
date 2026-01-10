@@ -259,8 +259,19 @@ func (c *ApiController) callView(method string, path string, handlerName string,
 }
 
 func (c *ApiController) isAllowSaveState(handleType HandleType, ictx *icontext.Context) bool {
-	if handleType == HandleType_Event || ictx.Request().Method != iris.MethodGet {
+	switch handleType {
+	case HandleType_API:
+		method := ictx.Request().Method
+		switch method {
+		case iris.MethodPost, iris.MethodPut:
+			return true
+		default:
+			return false
+		}
+	case HandleType_Event:
 		return true
+	case HandleType_CDC:
+		return false
 	}
 	return false
 }
