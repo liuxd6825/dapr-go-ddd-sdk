@@ -69,6 +69,7 @@ func (d *Document) GetFilePath() string {
 func (d *Document) GetFileName() string {
 	return d.FileName
 }
+
 func (d *Document) GetFsKey() string {
 	return d.FsKey
 }

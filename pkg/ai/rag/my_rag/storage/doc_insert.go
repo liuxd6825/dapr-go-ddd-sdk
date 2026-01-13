@@ -207,7 +207,7 @@ func LlmExtractEntities(
 		if err != nil {
 			nErr := fmt.Errorf("failed to call LLM: %w", err)
 			retry++
-			logger.Warn("Retry extract", "retry", retry, "error", nErr)
+			logger.Warn("Retry extract", " retry", retry, " error ", nErr)
 			continue
 		}
 

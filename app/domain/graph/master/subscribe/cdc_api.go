@@ -45,7 +45,7 @@ func (s *CdcAPI) DaprOptions(ctx context.Context) error {
 
 func (s *CdcAPI) DataChange(ctx context.Context, ictx iris.Context, cdc *dbevent.CDCRecord) error {
 	logs.Infofmt(ctx, "%s CdcAPI.DataChange(CDCRecord) table:[%s]", dataChangeURL, cdc.Table)
-	if cdc.Table == "record" {
+	if cdc.Table == "master_record" {
 		return s.recordService.DataChange(ctx, cdc)
 	}
 	return s.masterService.DataChange(ctx, cdc)

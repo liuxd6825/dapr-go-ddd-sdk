@@ -129,6 +129,42 @@ func GetBool(m map[string]interface{}, key string, def bool) (bool, error) {
 	return res, nil
 }
 
+func GetFloat64(m map[string]interface{}, key string, def float64) (float64, error) {
+	res := def
+	if v, ok := m[key]; ok {
+		return convert.ToFloat64(v)
+	}
+	return res, nil
+}
+
+func GetPFloat64(m map[string]interface{}, key string, def *float64) (*float64, error) {
+	res := def
+	if v, ok := m[key]; ok {
+		if v != nil {
+			val, err := convert.ToFloat64(v)
+			if err != nil {
+				return nil, err
+			}
+			return &val, nil
+		}
+	}
+	return res, nil
+}
+
+func GetDate(m map[string]interface{}, key string, def *time.Time) (*time.Time, error) {
+	res := def
+	if v, ok := m[key]; ok {
+		if v != nil {
+			val, err := convert.ToDateTime(v)
+			if err != nil {
+				return nil, err
+			}
+			return &val, nil
+		}
+	}
+	return res, nil
+}
+
 func GetInt64(m map[string]interface{}, key string, def int64) (int64, error) {
 	var res = def
 	if v, ok := m[key]; ok {
@@ -145,10 +181,21 @@ func GetInt64(m map[string]interface{}, key string, def int64) (int64, error) {
 				}
 				res = num
 			}
+		} else if val, ok := v.(float64); ok {
+			res = int64(val)
+			return res, nil
 		}
 		return convert.ToInt(v)
 	}
 	return res, nil
+}
+
+func GetInt(m map[string]interface{}, key string, def int64) (int, error) {
+	res, err := GetInt64(m, key, def)
+	if err != nil {
+		return 0, err
+	}
+	return int(res), nil
 }
 
 func Decode(input interface{}, out interface{}) error {

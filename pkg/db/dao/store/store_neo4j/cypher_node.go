@@ -604,15 +604,14 @@ func (c *nodeCypher[T]) GetUpdatePropertiesByMap(ctx context.Context, mapData ma
 
 func (c *nodeCypher[T]) NewUpdateMap(ctx context.Context, data any) map[string]any {
 	res := c.newMap(ctx, data, func(m map[string]any) {
-		c.eb.SetUpdatedInfo(ctx, m)
+		//c.eb.SetUpdatedInfo(ctx, m)
 	})
 	return res
 }
 
 func (c *nodeCypher[T]) NewCreateMap(ctx context.Context, data any) map[string]any {
-
 	mapData := c.newMap(ctx, data, func(m map[string]any) {
-		c.eb.SetCreatedInfo(ctx, m)
+		// c.eb.SetCreatedInfo(ctx, m)
 	})
 	return mapData
 }

@@ -3,6 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync"
+
+	"github.com/cloudwego/eino-ext/components/model/ark"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
@@ -12,7 +15,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"sync"
 )
 
 type RagService struct {
@@ -50,6 +52,18 @@ func newRagService() *RagService {
 
 	var llmModel model.ToolCallingChatModel
 	switch ragCfg.LLM.Type {
+	case "ark":
+		m, err := llm.NewArk(ctx, &ark.ChatModelConfig{
+			APIKey:  ragCfg.LLM.APIKey,
+			BaseURL: ragCfg.LLM.BaseUrl,
+			Model:   ragCfg.LLM.Model, // 使用的模型版本
+		})
+
+		if err != nil {
+			panic("open rag model error" + err.Error())
+		}
+
+		llmModel = m
 	case "ollama":
 		m, err := llm.NewOllama(ctx, ollama.ChatModelConfig{
 			BaseURL: ragCfg.LLM.BaseUrl,

@@ -27,7 +27,7 @@ func (d *Base[T]) write(ctx context.Context, fmtStr string, fb *stringutils.FmtB
 		}})
 
 	} else {
-		logs.InfoMsg(ctx, cypher)
+		// logs.InfoMsg(ctx, cypher)
 	}
 	return err
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/mapperutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 )
 
 // RagRecordService
@@ -67,6 +67,48 @@ func (s *RagRecordService) NewRecord(ctx context.Context, cdcRecord *dbevent.CDC
 
 func (s *RagRecordService) newRecord(ctx context.Context, data map[string]any) (*model.Record, error) {
 	record := &model.Record{}
-	err := mapperutils.MapToStructWithTag(data, record, "bson")
-	return record, err
+	record.Id, _ = maputils.GetString(data, "id", "")
+	record.CaseId, _ = maputils.GetString(data, "case_id", "")
+	record.TenantId, _ = maputils.GetString(data, "tenant_id", "")
+	record.TaskId, _ = maputils.GetString(data, "task_id", "")
+
+	record.DocId, _ = maputils.GetString(data, "doc_id", "")
+	record.FileId, _ = maputils.GetString(data, "file_id", "")
+	record.FileName, _ = maputils.GetString(data, "file_name", "")
+	record.RowNum, _ = maputils.GetInt64(data, "row_num", 0)
+	record.Remark, _ = maputils.GetString(data, "remark", "")
+
+	record.Iden, _ = maputils.GetString(data, "iden", "")
+	record.Name, _ = maputils.GetString(data, "name", "")
+	record.Type, _ = maputils.GetString(data, "type", "")
+	record.Acct, _ = maputils.GetString(data, "acct", "")
+	record.AcctType, _ = maputils.GetString(data, "acct_type", "")
+	record.BankName, _ = maputils.GetString(data, "bank_name", "")
+	record.Balance, _ = maputils.GetPFloat64(data, "balance", nil)
+	record.Category, _ = maputils.GetString(data, "category", "")
+
+	record.OppIden, _ = maputils.GetString(data, "opp_iden", "")
+	record.OppName, _ = maputils.GetString(data, "opp_name", "")
+	record.OppAcctType, _ = maputils.GetString(data, "opp_acct_type", "")
+	record.OppAcct, _ = maputils.GetString(data, "opp_acct", "")
+	record.OppBankName, _ = maputils.GetString(data, "opp_bank_name", "")
+
+	record.Payout, _ = maputils.GetPFloat64(data, "payout", nil)
+	record.Income, _ = maputils.GetPFloat64(data, "income", nil)
+	record.Date, _ = maputils.GetDate(data, "date", nil)
+	record.Amount, _ = maputils.GetPFloat64(data, "amount", nil)
+	record.Ccy, _ = maputils.GetString(data, "ccy", "")
+
+	record.CreatorId, _ = maputils.GetString(data, "creator_id", "")
+	record.CreatorName, _ = maputils.GetString(data, "creator_name", "")
+	record.CreatedTime, _ = maputils.GetDate(data, "created_time", nil)
+	record.UpdaterId, _ = maputils.GetString(data, "updater_id", "")
+	record.UpdaterName, _ = maputils.GetString(data, "updater_name", "")
+	record.UpdatedTime, _ = maputils.GetDate(data, "updated_time", nil)
+
+	record.Year, _ = maputils.GetInt(data, "year", 0)
+	record.Month, _ = maputils.GetInt(data, "month", 0)
+	record.Day, _ = maputils.GetInt(data, "day", 0)
+
+	return record, nil
 }

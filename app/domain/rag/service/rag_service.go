@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/cloudwego/eino-ext/components/model/ark"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
@@ -82,7 +83,17 @@ func newGraphRag() *my_rag.GraphRag {
 		if err != nil {
 			panic("open rag model error" + err.Error())
 		}
-
+		llmModel = m
+	case "ark":
+		m, err := llm.NewArk(ctx, &ark.ChatModelConfig{
+			BaseURL: ragCfg.LLM.BaseUrl,
+			APIKey:  ragCfg.LLM.APIKey, // 填写你的 API Key
+			Model:   ragCfg.LLM.Model,  // 填写你的推理接入点 ID (例如: ep-2024...)
+			// Region: "cn-beijing",          // 可选，默认为 cn-beijing
+		})
+		if err != nil {
+			panic("open rag model error" + err.Error())
+		}
 		llmModel = m
 	case "openai":
 		m, err := llm.NewOpenAI(ctx, openai.ChatModelConfig{

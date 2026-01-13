@@ -276,12 +276,13 @@ func (r *Neo4jResult[T]) NewGraphEdges(list []any) []*graph2.Edge {
 		if n, ok := i.(dbtype.Relationship); ok {
 			prop := n.GetProperties()
 			id, _ := maputils.GetString(prop, "id", "")
-			startId, _ := maputils.GetString(prop, "startId", "")
-			endId, _ := maputils.GetString(prop, "endId", "")
+			startId, _ := maputils.GetString(prop, "source", "")
+			endId, _ := maputils.GetString(prop, "target", "")
+			keywords, _ := maputils.GetString(prop, "keywords", "")
 			node := &graph2.Edge{
 				Nid:   stringutils.Int64ToString(n.Id),
 				Id:    id,
-				Label: n.Type,
+				Label: keywords,
 				From:  startId,
 				To:    endId,
 				Props: prop,

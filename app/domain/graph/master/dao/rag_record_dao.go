@@ -49,9 +49,10 @@ func (d *RagRecordDao) Create(ctx context.Context, record *model.Record) error {
 	if err != nil {
 		panic(err)
 	}
-	c := storeDao.Cypher
+	//c := storeDao.Cypher
 
-	labels := c.GetLabels(ctx, record)
+	//labels := c.GetLabels(ctx, record)
+	labels := fmt.Sprintf(":record:case_%s", record.CaseId)
 
 	fb := stringutils.NewFmtBuilder()
 	fb.String("labels", labels)

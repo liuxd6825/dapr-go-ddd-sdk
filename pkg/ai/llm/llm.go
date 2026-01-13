@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 
+	"github.com/cloudwego/eino-ext/components/model/ark" // 引入 Ark 组件
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
@@ -32,4 +33,16 @@ func NewOpenAI(ctx context.Context, cfg openai.ChatModelConfig) (cm model.ToolCa
 func NewOllama(ctx context.Context, cfg ollama.ChatModelConfig) (cm model.ToolCallingChatModel, err error) {
 	cm, err = ollama.NewChatModel(ctx, &cfg)
 	return cm, err
+}
+
+// NewArk
+// @Description: 火山 Ark 模型初始化
+// @param ctx
+// @param cfg
+// @return cm
+// @return err
+func NewArk(ctx context.Context, cfg *ark.ChatModelConfig) (cm model.ToolCallingChatModel, err error) {
+	// 2. 初始化模型组件
+	chatModel, err := ark.NewChatModel(ctx, cfg)
+	return chatModel, nil
 }
