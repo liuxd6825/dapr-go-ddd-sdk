@@ -11,6 +11,20 @@ type ChatDao struct {
 	idao.Dao[*model.Chat]
 }
 
+//func NewChatDao(dbKey string, env *env.Env) *ChatDao {
+//	tableName := "rag_chat"
+//	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Chat{}, tableName)
+//	newCfg := &dao.DaoConfig{
+//		DBKey:     dbKey,
+//		TableName: tableName,
+//		DBSchema:  dbSch,
+//		Env:       env,
+//	}
+//	baseDao := dao.NewDao[*model.Chat](newCfg)
+//	daoVal := &ChatDao{Dao: baseDao}
+//	return daoVal
+//}
+
 func NewChatDao(dbKey string) *ChatDao {
 	tableName := "rag_chat"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Chat{}, tableName)

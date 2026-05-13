@@ -75,6 +75,7 @@ func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string
 	engine.AddFunc("onlyOneField", OnlyOneField)
 	engine.AddFunc("mapValue", MapValue)
 	engine.AddFunc("propValue", PropValue)
+	engine.AddFunc("returnString", ReturnString)
 	engine.AddFunc("global", GetGlobal)
 	return engine
 }

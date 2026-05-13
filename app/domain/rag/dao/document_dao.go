@@ -11,6 +11,20 @@ type DocumentDao struct {
 	idao.Dao[*model.Document]
 }
 
+//func NewDocumentDao(dbKey string, env *env.Env) *DocumentDao {
+//	tableName := "rag_document"
+//	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Document{}, tableName)
+//	newCfg := &dao.DaoConfig{
+//		DBKey:     dbKey,
+//		TableName: tableName,
+//		DBSchema:  dbSch,
+//		Env:       env,
+//	}
+//	baseDao := dao.NewDao[*model.Document](newCfg)
+//	daoVal := &DocumentDao{Dao: baseDao}
+//	return daoVal
+//}
+
 func NewDocumentDao(dbKey string) *DocumentDao {
 	tableName := "rag_document"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Document{}, tableName)

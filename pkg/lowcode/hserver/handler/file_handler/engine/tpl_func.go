@@ -147,6 +147,10 @@ func PropValue(field string, props []*Property) *Property {
 	return nil
 }
 
+func ReturnString(s string) string {
+	return s
+}
+
 var globalValues *types.CMap[any] = types.NewCMap[any]()
 
 func GetGlobal(name string) any {

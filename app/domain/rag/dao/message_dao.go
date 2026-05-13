@@ -11,6 +11,20 @@ type MessageDao struct {
 	idao.Dao[*model.Message]
 }
 
+//func NewMessageDao(dbKey string, env *env.Env) *MessageDao {
+//	tableName := "rag_message"
+//	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Message{}, tableName)
+//	newCfg := &dao.DaoConfig{
+//		DBKey:     dbKey,
+//		TableName: tableName,
+//		DBSchema:  dbSch,
+//		Env:       env,
+//	}
+//	baseDao := dao.NewDao[*model.Message](newCfg)
+//	daoVal := &MessageDao{Dao: baseDao}
+//	return daoVal
+//}
+
 func NewMessageDao(dbKey string) *MessageDao {
 	tableName := "rag_message"
 	dbSch := dbschema.NewDBSchemaWithStruct(tableName, &model.Message{}, tableName)
