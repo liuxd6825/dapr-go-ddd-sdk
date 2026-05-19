@@ -1,0 +1,100 @@
+@startuml
+
+title 电力储能电站 (ESS) 系统架构拓扑图
+caption Create by CTO | 2025
+
+' --- 样式设置 (Skinparam) ---
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 60
+
+' 颜色定义
+skinparam package {
+    BackgroundColor<<Cloud>> #E3F2FD
+    BackgroundColor<<Station>> #FFFDE7
+    BackgroundColor<<Local>> #E0F2F1
+    BackgroundColor<<Physical>> #F3E5F5
+    BorderColor Gray
+}
+
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #333333
+}
+
+' --- 1. 云端与电网层 ---
+package "Level 4: 云端与电网交互层 (Cloud & Grid)" <<Cloud>> {
+    component "电网调度中心\n(Grid Dispatch)" as Grid
+    component "云端运维平台\n(Cloud / Digital Twin)" as Cloud
+
+    note right of Cloud
+        SOH预测
+        现货交易策略
+    end note
+}
+
+' --- 2. 站控层 ---
+package "Level 3: 站控层 (Station Control)" <<Station>> {
+    component "EMS\n(能量管理系统)" as EMS #Gold
+    component "SCADA\n(数据采集与监控)" as SCADA
+    component "消防主机\n(Fire Host)" as FireHost
+}
+
+' --- 3. 本地控制层 ---
+package "Level 2: 本地控制层 (Local Control)" <<Local>> {
+    component "PCS\n(储能变流器)" as PCS
+    component "BAMS/MBMS\n(堆级电池管理)" as BAMS
+
+    note left of PCS
+        DC/AC 转换
+        高压 1500V
+    end note
+}
+
+' --- 4. 感知与执行层 ---
+package "Level 1: 感知与执行层 (Physical & Sensing)" <<Physical>> {
+    package "电池堆 (Battery Stack)" {
+        component "BCU/RBMS\n(簇级管理)" as BCU
+        component "BMU\n(模组级采样)" as BMU
+        component "电池包/模组\n(Pack/Module)" as Pack
+    }
+
+    component "热管理系统\n(TMS/Liquid Cooling)" as TMS
+    component "消防灭火装置\n(FSS)" as FSS
+}
+
+' --- 关系连接 (Connections) ---
+
+' 1. 对外通信
+Grid <==> EMS : IEC 104 / 61850\n(AGC/AVC 指令)
+Cloud <==> EMS : MQTT / HTTPS\n(数据上云/策略下发)
+
+' 2. 站内通信 (以太网/Modbus TCP)
+EMS <==> PCS : Modbus TCP / IEC 61850
+EMS <==> BAMS : Modbus TCP
+EMS <--> FireHost : IO / Modbus
+SCADA .u.> EMS : 数据镜像
+
+' 3. BMS 内部层级 (CAN总线/内部通讯)
+BAMS <==> BCU : Ethernet / CAN
+BCU <==> BMU : Internal CAN
+BMU ..> Pack : 电压/温度采样
+
+' 4. 辅助系统控制
+BAMS ..> TMS : 启动/温控信号
+FireHost ..> FSS : 触发灭火
+BCU ..> PCS : 接触器联动/急停
+
+' 5. 能量流 (Power Flow) - 使用粗线表示
+PCS ==[thickness=4,#B71C1C]==> Pack : **DC 1500V Power Bus**
+note on link
+  直流侧能量流
+  (充电/放电)
+end note
+
+' 布局辅助
+BAMS -[hidden]- PCS
+
+@enduml
