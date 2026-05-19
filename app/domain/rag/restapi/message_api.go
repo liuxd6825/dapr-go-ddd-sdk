@@ -33,7 +33,7 @@ func (s *MessageAPI) NewAPIController(app *iris.Application) *restapi.ApiControl
 }
 
 func (s *MessageAPI) Create(ctx context.Context, cmd *command.MessageCreateCommand) error {
-	return s.msgService.Create(ctx, &cmd.Data).GetError()
+	return s.msgService.Create(ctx, &cmd.Data)
 }
 
 func (s *MessageAPI) Update(ctx context.Context, cmd *command.MessageUpdateCommand) error {

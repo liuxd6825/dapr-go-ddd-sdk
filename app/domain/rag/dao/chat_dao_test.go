@@ -8,12 +8,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 )
 
 func Test_ChatDao_Insert(t *testing.T) {
 	ctx := xtest2.NewContext()
-	e := xtest.NewEnvConfig_Mongo("db", "test")
+	e := xtest2.NewEnvConfigMongo(&env.Mongo{
+		DbKey:  "db",
+		DbName: "test",
+	})
 	env.SetEnv(e)
 	dao := NewChatDao("db")
 	chat := &model.Chat{

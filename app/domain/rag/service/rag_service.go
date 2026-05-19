@@ -3,13 +3,13 @@ package service
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/cloudwego/eino-ext/components/model/ark"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
@@ -20,7 +20,9 @@ import (
 )
 
 type RagService struct {
-	graphRag *my_rag.GraphRag
+	graphRag           *my_rag.GraphRag
+	messageService     *MessageService
+	chatSummaryService *ChatSummaryService
 }
 
 var ragService *RagService
@@ -37,6 +39,14 @@ func NewRagService() *RagService {
 	return ragService
 }
 
+func (s *RagService) SetMessageService(messageService *MessageService) {
+	s.messageService = messageService
+}
+
+func (s *RagService) SetChatSummaryService(chatSummaryService *ChatSummaryService) {
+	s.chatSummaryService = chatSummaryService
+}
+
 func (s *RagService) CreateTenant(ctx context.Context) error {
 	tenantId, _ := appctx.GetTenantId(ctx)
 	return s.graphRag.CreateTenant(ctx, tenantId)
@@ -49,6 +59,26 @@ func (s *RagService) CreateCase(ctx context.Context, caseId string) error {
 
 func (s *RagService) Query(ctx context.Context, query my_rag.QueryParam, streams ...func(txt string)) (string, error) {
 	query.TenantId, _ = appctx.GetTenantId(ctx)
+
+	if s.chatSummaryService != nil && s.messageService != nil && query.ChatId != "" {
+		chatSummary, err := s.chatSummaryService.GetByChatId(ctx, query.ChatId)
+		if err == nil && chatSummary != nil && chatSummary.Summary != "" {
+			s.graphRag.SetInitialSummary(chatSummary.Summary)
+		}
+
+		chatHistory, err := s.messageService.FindByChatIdAfterPosition(ctx, query.ChatId, 0)
+		if err == nil && len(chatHistory) > 0 {
+			history := make([]*my_rag.Content, 0, len(chatHistory))
+			for _, msg := range chatHistory {
+				history = append(history, &my_rag.Content{
+					Role:    msg.Role,
+					Content: msg.Content,
+				})
+			}
+			query.ConversationHistory = history
+		}
+	}
+
 	return s.graphRag.Query(ctx, &query, streams...)
 }
 
@@ -75,9 +105,12 @@ func newGraphRag() *my_rag.GraphRag {
 	var llmModel model.ToolCallingChatModel
 	switch ragCfg.LLM.Type {
 	case "ollama":
+		timeout := 30 * time.Second
 		m, err := llm.NewOllama(ctx, ollama.ChatModelConfig{
 			BaseURL: ragCfg.LLM.BaseUrl,
 			Model:   ragCfg.LLM.Model, // 使用的模型版本
+			//Thinking: &ollama.ThinkValue{"low"},
+			Timeout: timeout,
 		})
 
 		if err != nil {
@@ -111,24 +144,25 @@ func newGraphRag() *my_rag.GraphRag {
 		panic("rag config llm.type is null ")
 	}
 
-	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
-		BaseURL:        ragCfg.Embedder.BaseURL,
-		EmbeddingModel: ragCfg.Embedder.Model,
-		ApiKey:         ragCfg.Embedder.ApiKey,
-	})
+	/*
+		embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
+			BaseURL:        ragCfg.Embedder.BaseURL,
+			EmbeddingModel: ragCfg.Embedder.Model,
+			ApiKey:         ragCfg.Embedder.ApiKey,
+		})
 
-	vectorStorage := storage.NewMilvusVector(embedder, storage.MilvusConfig{
-		Addr:           ragCfg.Vector.Addr,
-		CollectionName: ragCfg.Vector.CollectionName,
-		Dim:            ragCfg.Vector.Dim,
-	})
-
+		vectorStorage := storage.NewMilvusVector(embedder, storage.MilvusConfig{
+			Addr:           ragCfg.Vector.Addr,
+			CollectionName: ragCfg.Vector.CollectionName,
+			Dim:            ragCfg.Vector.Dim,
+		})
+	*/
 	graphStorage := storage.NewNeo4jGraphStorage("neo4j", logs.GetLogger())
 	kv := storage.NewRedisKeyValueStorage()
 
 	ragConfig := storage.NewRagConfig(func(cfg *storage.RagConfig) {
 
 	})
-	store := storage.NewStorage(graphStorage, vectorStorage, kv, embedder)
+	store := storage.NewStorageNoEmbedder(graphStorage, kv)
 	return my_rag.NewGraphRag(llmModel, store, ragConfig, logrus.New())
 }

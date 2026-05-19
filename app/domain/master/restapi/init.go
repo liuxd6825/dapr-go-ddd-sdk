@@ -41,7 +41,7 @@ func RegisterRecordDay(app *iris.Application, baseUrl string, env *env.Env) {
 }
 
 func RegisterCdcToNeo4j(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewGraphAPI(env, baseUrl))
+	//restapi.RegisterController(app, NewGraphAPI(env, baseUrl))
 	restapi.RegisterController(app, subscribe.NewCdcAPI(env, baseUrl))
 }
 

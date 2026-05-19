@@ -3,11 +3,11 @@ package storage
 import (
 	"testing"
 
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,7 +21,7 @@ func Test_FindNodes(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		env.SetEnv(xtest2.NewEnvConfigNeo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
 
 		names := []string{"张三"}
@@ -50,7 +50,7 @@ func Test_DeleteDoc(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		env.SetEnv(xtest2.NewEnvConfigNeo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
 		graph := dao.DeleteDoc(ctx, tenantId, caseId, "aa")
 		t.Log(graph)
@@ -64,7 +64,7 @@ func Test_GraphEntity(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		env.SetEnv(xtest2.NewEnvConfigNeo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
 		entity, err := dao.GraphEntity(ctx, "孙悟空", Options{
 			TenantId:  tenantId,
@@ -84,7 +84,7 @@ func Test_GraphRelationship(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		env.SetEnv(xtest2.NewEnvConfigNeo4j())
 		dao := NewNeo4jGraphStorage("neo4j", logger)
 		entity, err := dao.GraphRelationship(ctx, "孙悟空", "唐僧", Options{
 			TenantId:  tenantId,
@@ -104,7 +104,7 @@ func Test_graphSaveDocEntities(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
-		env.SetEnv(xtest.NewEnvConfig_Neo4j())
+		env.SetEnv(xtest2.NewEnvConfigNeo4j())
 		store := NewNeo4jGraphStorage("neo4j", logger)
 		var entities []*GraphEntity
 		var rels []*GraphRelationship
@@ -143,7 +143,9 @@ func Test_graphSaveDocEntities(t *testing.T) {
 			}
 			rels = append(rels, rel)
 		}
-		err := store.GraphSaveDoc(ctx, tenantId, caseId, "aa", entities, rels)
+ 
+		doc := &entity.Document{}
+		err := store.GraphSaveDoc(ctx, doc, entities, rels)
 		return err
 	}).Catch(func(e error) {
 		t.Error(e)

@@ -12,10 +12,12 @@ type Content struct {
 
 // QueryParam Configuration parameters for query execution in LightRAG.
 type QueryParam struct {
-	TenantId string `json:"tenantId"`
-	CaseId   string `json:"caseId"`
+	TenantId string `json:"tenantId"` // 租户ID
+	CaseId   string `json:"caseId"`   // 项目ID
+	ChatId   string `json:"chatId"`   // 会话ID
 	Query    string `json:"query"`
 	MaxDeep  int    `json:"maxDeep"`
+
 	// Mode specifies the retrieval mode:
 	// - "local": Focuses on context-dependent information.
 	// - "global": Utilizes global knowledge.

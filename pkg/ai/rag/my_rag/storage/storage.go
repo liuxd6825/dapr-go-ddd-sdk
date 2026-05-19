@@ -179,6 +179,7 @@ type storage struct {
 	VectorStorage
 	KeyValueStorage
 	EmbedderStore
+	isEmbedder bool
 }
 
 type NewStorageOptions struct {
@@ -188,7 +189,7 @@ type NewStorageOptions struct {
 	Embedder EmbedderStore
 }
 
-func NewStorage(graph GraphStorage, vector VectorStorage, keyValue KeyValueStorage, embedder EmbedderStore) Storage {
+func NewStorage(graph GraphStorage, keyValue KeyValueStorage, vector VectorStorage, embedder EmbedderStore) Storage {
 	if graph == nil {
 		panic("graph cannot be nil")
 	}
@@ -206,6 +207,21 @@ func NewStorage(graph GraphStorage, vector VectorStorage, keyValue KeyValueStora
 		VectorStorage:   vector,
 		KeyValueStorage: keyValue,
 		EmbedderStore:   embedder,
+		isEmbedder:      true,
+	}
+}
+
+func NewStorageNoEmbedder(graph GraphStorage, keyValue KeyValueStorage) Storage {
+	if graph == nil {
+		panic("graph cannot be nil")
+	}
+	if keyValue == nil {
+		panic("keyValue cannot be nil")
+	}
+	return &storage{
+		GraphStorage:    graph,
+		KeyValueStorage: keyValue,
+		isEmbedder:      false,
 	}
 }
 
@@ -213,12 +229,15 @@ func (s *storage) CreateTenant(ctx context.Context, tenantId string) error {
 	if err := s.GraphStorage.CreateTenant(ctx, tenantId); err != nil {
 		return err
 	}
-	if err := s.KeyValueStorage.CreateTenant(ctx, tenantId); err != nil {
-		return err
+	if s.isEmbedder {
+		if err := s.KeyValueStorage.CreateTenant(ctx, tenantId); err != nil {
+			return err
+		}
+		if err := s.VectorStorage.CreateTenant(ctx, tenantId); err != nil {
+			return err
+		}
 	}
-	if err := s.VectorStorage.CreateTenant(ctx, tenantId); err != nil {
-		return err
-	}
+
 	return nil
 }
 
@@ -226,11 +245,13 @@ func (s *storage) CreateCase(ctx context.Context, tenantId string, caseId string
 	if err := s.GraphStorage.CreateCase(ctx, tenantId, caseId); err != nil {
 		return err
 	}
-	if err := s.KeyValueStorage.CreateCase(ctx, tenantId, caseId); err != nil {
-		return err
-	}
-	if err := s.VectorStorage.CreateCase(ctx, tenantId, caseId); err != nil {
-		return err
+	if s.isEmbedder {
+		if err := s.KeyValueStorage.CreateCase(ctx, tenantId, caseId); err != nil {
+			return err
+		}
+		if err := s.VectorStorage.CreateCase(ctx, tenantId, caseId); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -239,11 +260,13 @@ func (s *storage) DeleteTenant(ctx context.Context, tenantId string) error {
 	if err := s.GraphStorage.DeleteTenant(ctx, tenantId); err != nil {
 		return err
 	}
-	if err := s.KeyValueStorage.DeleteTenant(ctx, tenantId); err != nil {
-		return err
-	}
-	if err := s.VectorStorage.DeleteTenant(ctx, tenantId); err != nil {
-		return err
+	if s.isEmbedder {
+		if err := s.KeyValueStorage.DeleteTenant(ctx, tenantId); err != nil {
+			return err
+		}
+		if err := s.VectorStorage.DeleteTenant(ctx, tenantId); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -252,11 +275,13 @@ func (s *storage) DeleteCase(ctx context.Context, tenantId, caseId string) error
 	if err := s.GraphStorage.DeleteCase(ctx, tenantId, caseId); err != nil {
 		return err
 	}
-	if err := s.KeyValueStorage.DeleteCase(ctx, tenantId, caseId); err != nil {
-		return err
-	}
-	if err := s.VectorStorage.DeleteCase(ctx, tenantId, caseId); err != nil {
-		return err
+	if s.isEmbedder {
+		if err := s.KeyValueStorage.DeleteCase(ctx, tenantId, caseId); err != nil {
+			return err
+		}
+		if err := s.VectorStorage.DeleteCase(ctx, tenantId, caseId); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -265,11 +290,13 @@ func (s *storage) DeleteDoc(ctx context.Context, tenantId, caseId, docId string)
 	if err := s.GraphStorage.DeleteDoc(ctx, tenantId, caseId, docId); err != nil {
 		return err
 	}
-	if err := s.KeyValueStorage.DeleteDoc(ctx, tenantId, caseId, docId); err != nil {
-		return err
-	}
-	if err := s.VectorStorage.DeleteDoc(ctx, tenantId, caseId, docId); err != nil {
-		return err
+	if s.isEmbedder {
+		if err := s.KeyValueStorage.DeleteDoc(ctx, tenantId, caseId, docId); err != nil {
+			return err
+		}
+		if err := s.VectorStorage.DeleteDoc(ctx, tenantId, caseId, docId); err != nil {
+			return err
+		}
 	}
 	return nil
 }

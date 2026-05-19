@@ -15,7 +15,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/xtest"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -207,7 +207,9 @@ func Test_GraphRag_Query(t *testing.T) {
 }
 
 func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
-	env.SetEnv(xtest.NewEnvConfig_Neo4j("192.168.120.224"))
+	env.SetEnv(xtest2.NewEnvConfigNeo4j(xtest2.Neo4jOptions{
+		Addr: "192.168.120.224",
+	}))
 
 	llm := newLLM2(ctx)
 
@@ -250,6 +252,6 @@ func newLLM2(ctx context.Context) llm2.LLM {
 	if err != nil {
 		panic(err)
 	}
-	llm.WithTools()
+	//llm.WithTools()
 	return llm
 }

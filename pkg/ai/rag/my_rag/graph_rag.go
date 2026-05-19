@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cloudwego/eino/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
+	ragcontext "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/context"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -17,11 +17,13 @@ import (
 )
 
 type GraphRag struct {
-	LLM       llm.LLM
-	store     storage.Storage
-	logger    *logrus.Logger
-	config    storage.Config
-	docHandle *storage.GraphHandle
+	LLM        llm.LLM
+	store      storage.Storage
+	logger     *logrus.Logger
+	config     storage.Config
+	docHandle  *storage.GraphHandle
+	ctxManager *ragcontext.ContextManager
+	ctxConfig  *ragcontext.Config
 }
 
 const MaxRetrieveContexts = 5 // 最大检索上下文数量
@@ -34,12 +36,16 @@ type GoResult struct {
 
 func NewGraphRag(llm llm.LLM, store storage.Storage, config storage.Config, logger *logrus.Logger) *GraphRag {
 	docHandle := storage.NewGraphHandle(config, store, llm, logger)
+	ctxConfig := ragcontext.DefaultConfig()
+	ctxManager, _ := ragcontext.NewContextManager(ctxConfig)
 	return &GraphRag{
-		LLM:       llm,
-		store:     store,
-		logger:    logger,
-		config:    config,
-		docHandle: docHandle,
+		LLM:        llm,
+		store:      store,
+		logger:     logger,
+		config:     config,
+		docHandle:  docHandle,
+		ctxManager: ctxManager,
+		ctxConfig:  ctxConfig,
 	}
 }
 
@@ -49,6 +55,20 @@ func (g *GraphRag) SetOnEvent() {
 
 func (g *GraphRag) SetOnEvents(setEvents func(e *storage.DocEvents)) {
 	g.docHandle.SetOnEvents(setEvents)
+}
+
+func (g *GraphRag) SetContextConfig(cfg *ragcontext.Config) {
+	g.ctxConfig = cfg
+	g.ctxManager, _ = ragcontext.NewContextManager(cfg)
+}
+
+func (g *GraphRag) SetInitialSummary(summary string) {
+	g.ctxConfig.InitialSummary = summary
+	g.ctxManager, _ = ragcontext.NewContextManager(g.ctxConfig)
+}
+
+func (g *GraphRag) GetContextManager() *ragcontext.ContextManager {
+	return g.ctxManager
 }
 
 // IngestDocuments 将文档摄取到 Milvus
@@ -252,52 +272,27 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 		query.MaxDeep = MaxRetrieveContexts
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	// 使用结构体通道传递结果和错误
-	resultCh := make(chan *GoResult, 2)
-
-	logger := g.logger
-	logger.Info("query", query.Query)
-
-	// 协程1：取图关系中知识
-	go func() {
-		defer wg.Done()
-		resultCh <- g.getGraphContext(ctx, query)
-	}()
-
-	// 协程2：取向量数据库中的知道
-	go func() {
-		defer wg.Done()
-		resultCh <- g.getVectorContext(ctx, query)
-	}()
-
-	// 等待协程完成并关闭通道
-	go func() {
-		wg.Wait()
-		close(resultCh)
-	}()
-
 	var contexts []string
-	for res := range resultCh {
-		if res.Err != nil {
-			return "", fmt.Errorf("协程执行失败: %w", res.Err)
-		}
-		contexts = append(contexts, res.Data...)
+	re := g.getGraphContext(ctx, query)
+	if re.Err != nil {
+		return "", re.Err
+	}
+	contexts = append(contexts, re.Data...)
+
+	history := convertToContextHistory(query.ConversationHistory)
+	buildParam := &ragcontext.BuildParam{
+		Query:               query.Query,
+		RetrievedContext:    contexts,
+		ConversationHistory: history,
 	}
 
-	// logger.Info("contexts", contexts)
+	ctxResult, err := g.ctxManager.Build(ctx, buildParam)
+	if err != nil {
+		return "", fmt.Errorf("上下文组装失败: %w", err)
+	}
 
-	prompt := buildRAGPrompt(query.Query, contexts)
 	messages := []*schema.Message{
-		{Role: schema.User, Content: prompt},
-	}
-	for _, item := range query.ConversationHistory {
-		messages = append(messages, &schema.Message{
-			Role:    schema.RoleType(item.Role),
-			Content: item.Content,
-		})
+		{Role: schema.User, Content: ctxResult.FinalPrompt},
 	}
 
 	resp, err := g.LLM.Stream(ctx, messages)
@@ -311,6 +306,20 @@ func (g *GraphRag) Query(ctx context.Context, query *QueryParam, streams ...func
 	}
 
 	return sb.String(), nil
+}
+
+func convertToContextHistory(src []*Content) []*ragcontext.Content {
+	if len(src) == 0 {
+		return nil
+	}
+	result := make([]*ragcontext.Content, 0, len(src))
+	for _, c := range src {
+		result = append(result, &ragcontext.Content{
+			Role:    c.Role,
+			Content: c.Content,
+		})
+	}
+	return result
 }
 
 // getKeys 取得关键字
@@ -337,7 +346,7 @@ func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, err
 输入：他住在【高新园区】的公寓里。
 输出：他,高新园区,公寓
 
-### 待处理文本\n` + query
+### 待处理文本` + "\n" + query
 
 	msgList := []*schema.Message{
 		{Role: schema.User, Content: prompt},
@@ -359,14 +368,13 @@ func (g *GraphRag) getKeywords(ctx context.Context, query string) ([]string, err
 	return list, nil
 }
 
-func buildRAGPrompt(query string, context []string) string {
-	sb := strings.Builder{}
-	sb.WriteString("你是一个知识助手，根据以下上下文回答问题：\n\n")
-
-	for i, text := range context {
-		sb.WriteString(fmt.Sprintf("上下文 %d: %s\n\n", i+1, text))
-	}
-
-	sb.WriteString(fmt.Sprintf("问题: %s\n\n回答:", query))
-	return sb.String()
-}
+// buildRAGPrompt 已废弃，请使用 ContextManager.Build() 替代
+// func buildRAGPrompt(query string, context []string) string {
+// 	sb := strings.Builder{}
+// 	sb.WriteString("你是一个知识助手，根据以下上下文回答问题：\n\n")
+// 	for i, text := range context {
+// 		sb.WriteString(fmt.Sprintf("上下文 %d: %s\n\n", i+1, text))
+// 	}
+// 	sb.WriteString(fmt.Sprintf("问题: %s\n\n回答:", query))
+// 	return sb.String()
+// }

@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	graph2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
@@ -12,11 +13,11 @@ import (
 type GraphAPI struct {
 	env          *env.Env
 	rootPath     string
-	queryService *graph2.QueryService
+	queryService *graph2.MasterQueryService
 }
 
 func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
-	queryService := graph2.NewQueryService()
+	queryService := graph2.NewMasterQueryService()
 	return &GraphAPI{
 		env:          env,
 		rootPath:     rootPath,
@@ -24,10 +25,10 @@ func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
 	}
 }
 
-func (s *GraphAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
+func (s *GraphAPI) NewAPIController2(app *iris.Application) *restapi.ApiController {
 	controller := restapi.NewController(app, s.rootPath, "master.GraphAPI", s)
-	controller.GetOne("/case/{caseId}/master/graph?id={id}", "FindById")
-	controller.GetList("/case/{caseId}/master/graph", "FindByCaseId")
+	/*	controller.GetOne("/case/{caseId}/master/graph?id={id}", "FindById")
+		controller.GetData("/case/{caseId}/master/graph", "FindByCaseId")*/
 	return controller
 }
 

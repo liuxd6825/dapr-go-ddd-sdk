@@ -15,7 +15,7 @@ type CdcAPI struct {
 	env           *env.Env
 	rootPath      string
 	masterService *service.MasterService
-	queryService  *service.QueryService
+	queryService  *service.MasterQueryService
 	recordService *service.RagRecordService
 }
 
