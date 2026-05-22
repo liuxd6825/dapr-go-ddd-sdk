@@ -133,7 +133,7 @@ func initDapr(e *Env) {
 }
 
 func (c *Dapr) IsEnable() bool {
-	return c.Start
+	return true
 }
 
 func (c *Dapr) GetHost() string {
