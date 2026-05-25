@@ -89,8 +89,8 @@ func (d *RagRecordDao) Create(ctx context.Context, record *model.Record) error {
 	MERGE (a1$<labels>:account{id:$<acct>}, name:$<acct>, case_id:$<caseId>,table:$<table>,source_ids:$<id>})   
 	MERGE (n1)-[:owner]->(a1)  
 
-	MERGE (n2$<labels>:human{id:$<oppName>,name:$<oppName>},case_id:$<caseId>,table:$<table>,source_ids:$<id>})
-	MERGE (a2$<labels>:account{id:$<oppAcct>,name:$<oppAcct>},case_id:$<caseId>,table:$<table>,source_ids:$<id>})   
+	MERGE (n2$<labels>:human{id:$<oppName>,name:$<oppName>,case_id:$<caseId>,table:$<table>,source_ids:$<id>})
+	MERGE (a2$<labels>:account{id:$<oppAcct>,name:$<oppAcct>,case_id:$<caseId>,table:$<table>,source_ids:$<id>})   
 	MERGE (n2)-[:owner]->(a2)  
 `
 	if err = d.write(ctx, fmtStr, fb, dataMap); err != nil {
@@ -154,8 +154,8 @@ func (d *RagRecordDao) Update(ctx context.Context, record *model.Record) error {
 	MERGE (a1$<labels>:account{id:$<acct>},name:$<acct>,case_id:$<caseId>,table:$<table>,source_ids:$<id>})   
 	MERGE (n1)-[:owner]->(a1)  
 
-	MERGE (n2$<labels>:human{id:$<oppName>,name:$<oppName>},case_id:$<caseId>,table:$<table>,source_ids:$<id>})
-	MERGE (a2$<labels>:account{id:$<oppAcct>,name:$<oppAcct>},case_id:$<caseId>,table:$<table>,source_ids:$<id>})   
+	MERGE (n2$<labels>:human{id:$<oppName>,name:$<oppName>,case_id:$<caseId>,table:$<table>,source_ids:$<id>})
+	MERGE (a2$<labels>:account{id:$<oppAcct>,name:$<oppAcct>,case_id:$<caseId>,table:$<table>,source_ids:$<id>})   
 	MERGE (n2)-[:owner]->(a2) 
 
 `
