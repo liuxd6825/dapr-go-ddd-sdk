@@ -86,7 +86,7 @@ func (d *RagRecordDao) Create(ctx context.Context, record *model.Record) error {
 
 	fmtStr := `
 	MERGE (n1$<labels>:human{id:$<name>,name:$<name>})
-	MERGE (a1$<labels>:account{id:$<acct>, name:$<acct>})   
+	MERGE (a1$<labels>:account{id:$<acct>,name:$<acct>})   
 	MERGE (n1)-[:owner]->(a1)  
 
 	MERGE (n2$<labels>:human{id:$<oppName>,name:$<oppName>})
