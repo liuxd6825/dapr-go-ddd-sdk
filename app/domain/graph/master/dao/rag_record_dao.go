@@ -72,13 +72,25 @@ func (d *RagRecordDao) Create(ctx context.Context, record *model.Record) error {
 	fb.Varchar("sourceType", record.FileId)
 	fb.Varchar("table", "record")
 
+	/*
+		case_id	PnRAAeb4liYYMyLfpsA7e9bu
+		description	备注:; 人员类型:[third]; 性别:; 姓名:王五; 曾用名:; 学历:; 编码:00A-HM-0004; tagColor:; 标签:; 毕业院校:;
+		id	ofehCc6djYnw9TlUdbRCx1sG
+		name	王五
+		source_ids	ofehCc6djYnw9TlUdbRCx1sG
+		source_type	master
+		table	human
+		tenant_id	test
+		type	case_PnRAAeb4liYYMyLfpsA7e9bu,human,master
+	*/
+
 	fmtStr := `
-	MERGE (n1$<labels>:human{id:$<name>})
-	MERGE (a1$<labels>:account{id:$<acct>})   
+	MERGE (n1$<labels>:human{id:$<name>, name:$<name>, case_id:$<caseId>,table:$<table>,source_ids:$<id>)
+	MERGE (a1$<labels>:account{id:$<acct>}, name:$<acct>, case_id:$<caseId>,table:$<table>,source_ids:$<id>)   
 	MERGE (n1)-[:owner]->(a1)  
 
-	MERGE (n2$<labels>:human{id:$<oppName>})
-	MERGE (a2$<labels>:account{id:$<oppAcct>})   
+	MERGE (n2$<labels>:human{id:$<oppName>, name:$<oppName>}, case_id:$<caseId>,table:$<table>,source_ids:$<id>)
+	MERGE (a2$<labels>:account{id:$<oppAcct>, name:$<oppAcct>}, case_id:$<caseId>,table:$<table>,source_ids:$<id>)   
 	MERGE (n2)-[:owner]->(a2)  
 `
 	if err = d.write(ctx, fmtStr, fb, dataMap); err != nil {
@@ -138,13 +150,14 @@ func (d *RagRecordDao) Update(ctx context.Context, record *model.Record) error {
 	fb.Varchar("table", "record")
 
 	fmtStr := `
-	MERGE (n1$<labels>:human{id:$<name>})
-	MERGE (a1$<labels>:account{id:$<acct>})   
+	MERGE (n1$<labels>:human{id:$<name>, name:$<name>, case_id:$<caseId>,table:$<table>,source_ids:$<id>)
+	MERGE (a1$<labels>:account{id:$<acct>}, name:$<acct>, case_id:$<caseId>,table:$<table>,source_ids:$<id>)   
 	MERGE (n1)-[:owner]->(a1)  
 
-	MERGE (n2$<labels>:human{id:$<oppName>})
-	MERGE (a2$<labels>:account{id:$<oppAcct>})   
-	MERGE (n2)-[:owner]->(a2)  
+	MERGE (n2$<labels>:human{id:$<oppName>, name:$<oppName>}, case_id:$<caseId>,table:$<table>,source_ids:$<id>)
+	MERGE (a2$<labels>:account{id:$<oppAcct>, name:$<oppAcct>}, case_id:$<caseId>,table:$<table>,source_ids:$<id>)   
+	MERGE (n2)-[:owner]->(a2) 
+
 `
 	if err = d.write(ctx, fmtStr, fb, dataMap); err != nil {
 		return err
