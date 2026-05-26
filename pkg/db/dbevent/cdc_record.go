@@ -122,3 +122,16 @@ func (r *CDCRecord) SetBeforeValue(key string, val any) *CDCRecord {
 	r.Before[key] = val
 	return r
 }
+
+func (r *CDCRecord) GetId() string {
+	if r.After["id"] != nil {
+		return r.After["id"].(string)
+	} else if r.Before["id"] != nil {
+		return r.Before["id"].(string)
+	}
+	return ""
+}
+
+func (r *CDCRecord) GetTable() string {
+	return r.Table
+}

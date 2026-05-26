@@ -44,6 +44,11 @@ type IEvent interface {
 	GetEventId() string
 }
 
+type IRecordCDC interface {
+	GetId() string
+	GetTable() string
+}
+
 const (
 	HandleType_API   HandleType = iota // 服务API
 	HandleType_Event                   // Event事件
@@ -271,7 +276,7 @@ func (c *ApiController) isAllowSaveState(handleType HandleType, ictx *icontext.C
 	case HandleType_Event:
 		return true
 	case HandleType_CDC:
-		return false
+		return true
 	}
 	return false
 }
@@ -335,7 +340,7 @@ func (c *ApiController) callMethod2(method string, path string, handlerName stri
 					data, err = opt.After(ctx, ictx, data, err)
 				}
 			}
-			if err == nil && callMethod.OutData >= 0 {
+			if err == nil && (callMethod.OutData >= 0 || saveState) {
 				//logs.Info(backCtx, logs.Fields{"method": method, "path": path, "handlerName": handlerName, "data": data})
 				if saveState {
 					_ = c.setState(ctx, ictx, params, data)

@@ -25,7 +25,7 @@ func NewDocStatusProvider() *DocumentMetaService {
 }
 
 func (d *DocumentMetaService) UpdateStatus(ctx context.Context, doc interfaces.ImportDoc, status string, statusMsg string) error {
-	if doc.GetSourceApp() == "document_service" {
+	if doc.GetSourceApp() == "document_service" || doc.GetSourceApp() == "" {
 		cmd := &command.DocumentMetaSaveStatusBySourceType{}
 		cmd.CommandId = idutils.NewId()
 		cmd.Data = model.DocumentMeta{}

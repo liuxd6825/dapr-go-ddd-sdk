@@ -19,6 +19,8 @@ func (c *ApiController) getStateKey(ctx context.Context, ictx *icontext.Context,
 		stateKey = fmt.Sprintf("command-%s", cmd.GetCommandId())
 	} else if ev, ok := params.(IEvent); ok {
 		stateKey = fmt.Sprintf("event-%s", ev.GetEventId())
+	} else if ev, ok := params.(IRecordCDC); ok {
+		stateKey = fmt.Sprintf("cdc-%s-%s", ev.GetTable(), ev.GetId())
 	} else {
 		stateKey = ictx.Request().RequestURI
 	}
