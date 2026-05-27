@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"sync"
 	"time"
 
@@ -144,25 +145,25 @@ func newGraphRag() *my_rag.GraphRag {
 		panic("rag config llm.type is null ")
 	}
 
-	/*
-		embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
-			BaseURL:        ragCfg.Embedder.BaseURL,
-			EmbeddingModel: ragCfg.Embedder.Model,
-			ApiKey:         ragCfg.Embedder.ApiKey,
-		})
+	embedder := embedding.NewOllamaEmbedder(embedding.OllamaConfig{
+		BaseURL:        ragCfg.Embedder.BaseURL,
+		EmbeddingModel: ragCfg.Embedder.Model,
+		ApiKey:         ragCfg.Embedder.ApiKey,
+	})
 
-		vectorStorage := storage.NewMilvusVector(embedder, storage.MilvusConfig{
-			Addr:           ragCfg.Vector.Addr,
-			CollectionName: ragCfg.Vector.CollectionName,
-			Dim:            ragCfg.Vector.Dim,
-		})
-	*/
+	vectorStorage := storage.NewMilvusVector(embedder, storage.MilvusConfig{
+		Addr:           ragCfg.Vector.Addr,
+		CollectionName: ragCfg.Vector.CollectionName,
+		Dim:            ragCfg.Vector.Dim,
+	})
+
 	graphStorage := storage.NewNeo4jGraphStorage("neo4j", logs.GetLogger())
 	kv := storage.NewRedisKeyValueStorage()
 
 	ragConfig := storage.NewRagConfig(func(cfg *storage.RagConfig) {
-
 	})
-	store := storage.NewStorageNoEmbedder(graphStorage, kv)
+
+	//store := storage.NewStorageNoEmbedder(graphStorage, kv)
+	store := storage.NewStorage(graphStorage, kv, vectorStorage, embedder)
 	return my_rag.NewGraphRag(llmModel, store, ragConfig, logrus.New())
 }

@@ -265,6 +265,7 @@ func (d *GraphHandle) llmExtractEntities(
 		// Parse initial extraction results
 		var sourceParsed LLMResult
 		jsonData := GetJsonString(sourceResult)
+		jsonData = ReplaceThink(jsonData)
 		err = json.Unmarshal([]byte(jsonData), &sourceParsed)
 		if err != nil {
 			nErr := fmt.Errorf("failed to parse llm result: %w", err)
@@ -300,6 +301,7 @@ func (d *GraphHandle) llmExtractEntities(
 
 			var gleanParsed LLMResult
 			jsonData := GetJsonString(sourceResult)
+			jsonData = ReplaceThink(jsonData)
 			err = json.Unmarshal([]byte(jsonData), &gleanParsed)
 			if err != nil {
 				nErr := fmt.Errorf("failed to parse llm result: %w", err)

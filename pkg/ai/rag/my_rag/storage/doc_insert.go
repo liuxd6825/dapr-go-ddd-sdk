@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -325,6 +326,12 @@ func GetJsonString(message *schema.Message) string {
 	}
 	end := strings.LastIndex(message.Content, "```")
 	return str[start+7 : end]
+}
+
+func ReplaceThink(input string) string {
+	re := regexp.MustCompile(`(?s)<think>.*?</think>`)
+	result := re.ReplaceAllString(input, "")
+	return result
 }
 
 // DedupeLLMResult 删除重复数据
