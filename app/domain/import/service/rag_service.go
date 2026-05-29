@@ -72,13 +72,26 @@ func newRagService() *RagService {
 	case "ollama":
 		keepalive := time.Duration(-1)
 		options := &ollama.Options{}
-		options.NumCtx = 1024 * 256
+		if ragCfg.LLM.CtxLength < 4096 {
+			options.NumCtx = 4096
+		} else {
+			options.NumCtx = ragCfg.LLM.CtxLength
+		}
+
+		var thinkValue any
+		if ragCfg.LLM.Think == "" || ragCfg.LLM.Think == "true" {
+			thinkValue = true
+		} else if ragCfg.LLM.Think == "high" || ragCfg.LLM.Think == "low" || ragCfg.LLM.Think == "medium" {
+			thinkValue = ragCfg.LLM.Think
+		} else if ragCfg.LLM.Think != "true" {
+			thinkValue = false
+		}
 
 		m, err := llm.NewOllama(ctx, ollama.ChatModelConfig{
 			BaseURL:   ragCfg.LLM.BaseUrl,
 			Model:     ragCfg.LLM.Model, // 使用的模型版本
 			KeepAlive: &keepalive,
-			Thinking:  &ollama.ThinkValue{Value: "high"},
+			Thinking:  &ollama.ThinkValue{Value: thinkValue},
 			Options:   options,
 		})
 
