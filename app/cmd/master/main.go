@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis"
+	company_lib "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/company-lib/restapi"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	draw_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
@@ -71,6 +71,7 @@ func main() {
 				sys.RegisterAllApi(app, baseUrl, env)
 				metrics.RegisterAllApi(app, baseUrl, env)
 				notify.RegisterAllApi(app, baseUrl, env)
+				company_lib.RegisterAllApi(app, baseUrl, env)
 
 				/*
 					if err := lowcode.Run(server); err != nil {

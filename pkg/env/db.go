@@ -3,6 +3,7 @@ package env
 import (
 	"context"
 
+	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -16,6 +17,7 @@ type DBItem interface {
 	GetNeo4j() neo4j.DriverWithContext
 	GetMongo() *mongodb.MongoDB
 	GetGormDB() *gorm.DB
+	GetElastic() *elasticsearch.Client
 	GetDB() any
 	CloseDB(ctx context.Context) error
 	GetConfig() any
@@ -26,13 +28,14 @@ type EventPublish interface {
 }
 
 type dbItem struct {
-	dbKey  string
-	dbType DBType
-	redis  *redis.Client
-	neo4j  neo4j.DriverWithContext
-	mongo  *mongodb.MongoDB
-	gormDb *gorm.DB
-	config any
+	dbKey   string
+	dbType  DBType
+	redis   *redis.Client
+	neo4j   neo4j.DriverWithContext
+	mongo   *mongodb.MongoDB
+	gormDb  *gorm.DB
+	elastic *elasticsearch.Client
+	config  any
 }
 
 type DBType string
@@ -47,6 +50,7 @@ const (
 	DBType_MongoDB  DBType = "mongodb"
 	DBType_MsSQL    DBType = "mssql"
 	DBType_Oracle   DBType = "oracle"
+	DBType_Elastic  DBType = "elastic"
 )
 
 func (d DBType) String() string {
@@ -69,6 +73,8 @@ func (d *dbItem) GetDB() any {
 		return d.gormDb
 	case DBType_Oracle:
 		return d.gormDb
+	case DBType_Elastic:
+		return d.elastic
 	default:
 		panic("db type not supported")
 	}
@@ -94,6 +100,10 @@ func (d *dbItem) GetGormDB() *gorm.DB {
 	return d.gormDb
 }
 
+func (d *dbItem) GetElastic() *elasticsearch.Client {
+	return d.elastic
+}
+
 func (d *dbItem) CloseDB(ctx context.Context) error {
 	return gp.Try(func() error {
 		if d.mongo != nil {
@@ -104,6 +114,9 @@ func (d *dbItem) CloseDB(ctx context.Context) error {
 		}
 		if d.gormDb != nil {
 			return d.gormClose(d.gormDb)
+		}
+		if d.elastic != nil {
+			return d.elastic.Close(ctx)
 		}
 		return nil
 	}).Error

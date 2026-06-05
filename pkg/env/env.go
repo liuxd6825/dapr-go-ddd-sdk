@@ -28,6 +28,7 @@ type Env struct {
 	Neo4j     map[string]*Neo4j    `yaml:"neo4j" json:"neo4J"`
 	Mysql     map[string]*MySql    `yaml:"mysql" json:"mysql"`
 	Minio     map[string]*Minio    `yaml:"minio" json:"minio"`
+	Elastic   map[string]*Elastic  `yaml:"elastic" json:"elastic"`
 	Redis     map[string]*Redis    `yaml:"redis" json:"redis"`
 	Fs        []map[string]any     `yaml:"fs" json:"fs"`
 	//Auth      *Auth                `yaml:"auth" json:"auth"`
@@ -64,6 +65,7 @@ func NewEnv() *Env {
 		Neo4j:     map[string]*Neo4j{},
 		Mysql:     map[string]*MySql{},
 		Minio:     map[string]*Minio{},
+		Elastic:   map[string]*Elastic{},
 		Redis:     map[string]*Redis{},
 		Fs:        []map[string]any{},
 		//Auth:      &Auth{},
@@ -94,6 +96,7 @@ func (env *Env) Init() {
 	initDapr(env)
 	initResources(env)
 
+	InitDBElastic(env)
 	initRedis(env)
 
 	env.Fsm = env.NewFsManager(env.Fs)
