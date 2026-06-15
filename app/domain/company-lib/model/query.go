@@ -17,7 +17,7 @@ type CompanyQuery struct {
 	LegalPerson  string `json:"legalPerson" param:"legalPerson" query:"legal-person"`
 }
 
-type FullQuery struct {
+type FullTextSearchQuery struct {
 	Text string `json:"text" param:"text" query:"text"`
 }
 
@@ -31,4 +31,8 @@ type CompanyQueryResult struct {
 type SearchResult struct {
 	Total int64
 	Hits  []map[string]interface{}
+}
+
+type AiQueryRequest struct {
+	Prompt string `json:"prompt"`
 }

@@ -41,7 +41,7 @@ func (s *CompanyService) Search(ctx context.Context, query *model.CompanyQuery) 
 	return toCompanyResult(result), nil
 }
 
-func (s *CompanyService) FullTextSearch(ctx context.Context, query *model.FullQuery) (*model.CompanyQueryResult, error) {
+func (s *CompanyService) FullTextSearch(ctx context.Context, query *model.FullTextSearchQuery) (*model.CompanyQueryResult, error) {
 	dsl, err := buildFullCompanyQuery(query)
 	if err != nil {
 		return nil, err
@@ -148,7 +148,7 @@ func buildCompanyQuery(query *model.CompanyQuery) (string, error) {
 	return fmt.Sprintf(`{"query": {"bool": {"must": [%s]}}}`, strings.Join(clauses, ",")), nil
 }
 
-func buildFullCompanyQuery(query *model.FullQuery) (string, error) {
+func buildFullCompanyQuery(query *model.FullTextSearchQuery) (string, error) {
 	var clauses []string
 
 	if query.Text != "" {

@@ -33,8 +33,9 @@ func NewMasterGraphDao() *MasterGraphDao {
 }
 
 func (d *MasterGraphDao) FindByCaseId(ctx context.Context, caseId string) *graph.GraphView {
-	tenantId := appctx.GetTenantId2(ctx)
-	cypher := fmt.Sprintf("MATCH (n:tenant_%s:master:case_%s) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId)
+	//tenantId := appctx.GetTenantId2(ctx)
+	//cypher := fmt.Sprintf("MATCH (n:tenant_%s:master:case_%s) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", tenantId, caseId)
+	cypher := fmt.Sprintf("MATCH (n:doc:case_%s) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m", caseId)
 	res, err := d.GetStore().Query(ctx, cypher, nil)
 	if err != nil {
 		panic(err)
