@@ -54,7 +54,10 @@ func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *eve
 		v.Serial = item.Serial
 		v.Payout = getFloat(item.Payout)
 		v.Income = getFloat(item.Income)
-		v.Cash = model.CashType(item.Cash)
+		v.Cash = 0 //model.CashType(item.Cash)
+		if item.Cash {
+			v.Cash = 1
+		}
 		v.Io = getIoType(item.Income, item.Payout)
 		v.Amount = getFloat(item.Amount)
 

@@ -661,15 +661,17 @@ func (d *Dao[T]) findPaging(ctx context.Context, query store2.FindPagingQuery, o
 			// 分组where条件
 			for i, value := range query.GetGroupKeys() {
 				field := query.GetGroupCols()[i]
-				qryDb = qryDb.Where(field.Field+"=?", value)
-				countDb = countDb.Where(field.Field+"=?", value)
-				sumDb = sumDb.Where(field.Field+"=?", value)
+				snakeField := stringutils.AsFieldName(field.Field)
+				qryDb = qryDb.Where(snakeField+"=?", value)
+				countDb = countDb.Where(snakeField+"=?", value)
+				sumDb = sumDb.Where(snakeField+"=?", value)
 			}
 			// 以groupKey位置的上个字段为分组字段
 			if colLen-keyLen > 0 {
 				field := query.GetGroupCols()[keyLen]
-				qryDb = qryDb.Group(field.Field).Select(field.Field)
-				countDb.Group(field.Field).Select(field.Field)
+				snakeField := stringutils.AsFieldName(field.Field)
+				qryDb = qryDb.Group(snakeField).Select(snakeField)
+				countDb.Group(snakeField).Select(snakeField)
 
 			}
 			if isGroup && colLen-keyLen > 0 {
