@@ -23,7 +23,18 @@ func NewEnv(cfg *EnvConfig) *env.Env {
 	env.Neo4j = NewNeo4j(cfg.Neo4j)
 	env.Minio = NewMinio(cfg.Minio)
 	env.Redis = NewRedis(cfg.Redis)
+	env.Elastic = NewElastic(cfg.Elastic)
 	return env
+}
+
+func NewElastic(cfg map[string]*ElasticConfig) map[string]*env.Elastic {
+	items := map[string]*env.Elastic{}
+	for key, item := range cfg {
+		m := &env.Elastic{}
+		copy(item, m)
+		items[key] = m
+	}
+	return items
 }
 
 func NewRedis(cfg map[string]*RedisConfig) map[string]*env.Redis {

@@ -9,10 +9,12 @@ type RagConfig struct {
 }
 
 type LLMConfig struct {
-	Type    string `json:"type"` // ollama;
-	Model   string `json:"model"`
-	APIKey  string `json:"apiKey"`
-	BaseUrl string `json:"baseUrl"`
+	Type      string `json:"type"` // ollama;
+	Model     string `json:"model"`
+	APIKey    string `json:"apiKey"`
+	BaseUrl   string `json:"baseUrl"`
+	CtxLength int    `json:"ctxLength"`
+	Think     string `json:"think"`
 }
 
 type EmbedderConfig struct {

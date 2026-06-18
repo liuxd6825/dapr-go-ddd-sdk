@@ -28,6 +28,7 @@ type EnvConfig struct {
 	Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
 	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
 	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
+	Elastic   map[string]*ElasticConfig  `yaml:"elastic" json:"elastic"`
 	Fs        []map[string]any           `yaml:"fs" json:"fs"`
 	Auth      *AuthConfig                `yaml:"auth" json:"auth"`
 	Temporal  *TemporalConfig            `yaml:"temporal" json:"temporal"`

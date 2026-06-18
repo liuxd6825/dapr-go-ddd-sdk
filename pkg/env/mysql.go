@@ -46,7 +46,7 @@ func (cfg *MySql) DSN() string {
 		loc = cfg.params(cfg.Loc)
 	}
 
-	dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%v&loc=%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DbName, charset, parseTime, loc)
+	dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=%v&loc=%s&interpolateParams=true", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DbName, charset, parseTime, loc)
 	return dsn
 }
 
