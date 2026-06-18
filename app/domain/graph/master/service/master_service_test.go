@@ -21,7 +21,7 @@ func Test_DeleteById(t *testing.T) {
 	ctx := xtest2.NewContext()
 	envInv := xtest2.NewEnvConfigNeo4j()
 	env.SetEnv(envInv)
-	nodeDao := dao.NewMasterNodeDao([]string{"company_test"}, nil)
+	nodeDao := dao.NewMasterNodeDao([]string{"company_test"}, nil, nil)
 	nodeDao.GetConfig().Env = envInv
 
 	gp.Try(func() error {
@@ -93,8 +93,8 @@ func newService() *MasterService {
 	companyCompanyJsonSch := dbschema.NewDBSchemaWithJsonSchema(companyCompanySch)
 
 	service := NewMasterService()
-	service.AddDao(companySch, companyJsonSch)
-	service.AddDao(companyCompanySch, companyCompanyJsonSch)
+	service.AddDao(companySch, companyJsonSch, nil, nil)
+	service.AddDao(companyCompanySch, companyCompanyJsonSch, nil, nil)
 
 	return service
 }

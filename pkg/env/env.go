@@ -144,6 +144,13 @@ func (env *Env) AddMySql(dbCfg *MySql) {
 	env.Mysql[dbCfg.DbKey] = dbCfg
 }
 
+func (env *Env) AddMinio(dbCfg *Minio) {
+	if dbCfg == nil {
+		panic(errors.New("dbCfg is nil"))
+	}
+	env.Minio[dbCfg.Name] = dbCfg
+}
+
 func (env *Env) CloseDB(ctx context.Context) error {
 	for _, d := range env.dbs {
 		_ = d.CloseDB(ctx)
@@ -184,6 +191,13 @@ func (env *Env) GetDBKeyValue(dbKey string) string {
 	return dbKey
 }
 
+func (env *Env) GetMinioByKey(dbKey string) (*Minio, bool) {
+	mdb := env.Minio[dbKey]
+	return mdb, mdb != nil
+}
+
+//
+
 func GetDB(dbKey string) DBItem {
 	dbKey = _env.GetDBKeyValue(dbKey)
 	return _env.GetDB(dbKey)
@@ -207,6 +221,15 @@ func GetMongoByKey(dbKey string) (*mongodb.MongoDB, bool) {
 		return nil, false
 	}
 	mdb := item.GetMongo()
+	return mdb, mdb != nil
+}
+
+func GetMinioByKey(dbKey string) (*Minio, bool) {
+	item := GetEnv()
+	if item == nil {
+		return nil, false
+	}
+	mdb := item.Minio[dbKey]
 	return mdb, mdb != nil
 }
 

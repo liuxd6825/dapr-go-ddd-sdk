@@ -14,8 +14,14 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 		return nil
 	})
 	RegisterDrawApi(app, baseUrl, env)
+	RegisterRecordParquetApi(app, baseUrl, env)
 }
 
 func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewMasterAPI(env, baseUrl))
+}
+
+// RegisterRecordParquetApi 注册银行流水 parquet 导入 API
+func RegisterRecordParquetApi(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.RegisterController(app, NewRecordParquetAPI(env, baseUrl))
 }

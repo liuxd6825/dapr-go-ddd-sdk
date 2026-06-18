@@ -2,18 +2,20 @@ package env
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"strings"
 )
 
 type Minio struct {
-	Name            string
-	Endpoint        string `yaml:"endpoint"`
-	AccessKey       string `yaml:"accessKey"`
-	SecretAccessKey string `yaml:"secretAccessKey"`
-	UseSSL          bool   `yaml:"useSSL"`
-	Client          *minio.Client
+	Name      string
+	Endpoint  string            `yaml:"endpoint"`
+	AccessKey string            `yaml:"accessKey"`
+	SecretKey string            `yaml:"secretKey"`
+	UseSSL    bool              `yaml:"useSSL"`
+	Buckets   map[string]string `yaml:"buckets"`
+	Client    *minio.Client
 }
 
 func NewMinio() *Minio {
@@ -33,7 +35,7 @@ func initMinio(env *Env) {
 		}
 		k = strings.ToLower(k)
 		options := &minio.Options{
-			Creds:  credentials.NewStaticV4(m.AccessKey, m.SecretAccessKey, ""),
+			Creds:  credentials.NewStaticV4(m.AccessKey, m.SecretKey, ""),
 			Secure: m.UseSSL,
 		}
 		client, err := minio.New(m.Endpoint, options)
@@ -43,4 +45,8 @@ func initMinio(env *Env) {
 		m.Client = client
 		_minioList[k] = client
 	}
+}
+
+func (m *Minio) Minio() {
+
 }

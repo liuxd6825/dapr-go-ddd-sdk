@@ -35,47 +35,43 @@ func NewAcctType(v string) AcctType {
 type RecordIe struct {
 	xbase.BaseModel `bson:",inline"`
 
-	/*	MasterId   string `json:"masterId" gorm:"master_id" bson:"master_id" title:"主数据ID"`
-		MasterType string `json:"masterType" gorm:"master_type" bson:"master_type" title:"主数据类型"`
-	*/
+	RowNum  int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:"" title:"行号" parquet:"name=row_num, type=INT64, repetitiontype=REQUIRED"`
+	TaskId  string `json:"taskId" gorm:"task_id" bson:"task_id" index:"" title:"任务id" parquet:"name=task_id, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	DocId   string `json:"docId" gorm:"doc_id" bson:"doc_id" index:"" title:"文档id" parquet:"name=doc_id, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	FileId  string `json:"fileId" gorm:"file_id" bson:"file_id" index:"" title:"文件id" parquet:"name=file_id, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	SheetId string `json:"sheetId" gorm:"sheet_id" bson:"sheet_id" index:"" title:"Sheet页Id" parquet:"name=sheet_id, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
 
-	RowNum  int64  `json:"rowNum" gorm:"row_num" bson:"row_num" index:""  title:"行号"`
-	TaskId  string `json:"taskId" gorm:"task_id" bson:"task_id" index:""  title:"任务id"`
-	DocId   string `json:"docId" gorm:"doc_id" bson:"doc_id" index:""  title:"文档id"`
-	FileId  string `json:"fileId" gorm:"file_id" bson:"file_id" index:""  title:"文件id"`
-	SheetId string `json:"sheetId" gorm:"sheet_id" bson:"sheet_id" index:""  title:"Sheet页Id"`
+	Iden     string   `json:"iden" gorm:"iden" bson:"iden" validate:"-" title:"我方标识" parquet:"name=iden, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Name     string   `json:"name" gorm:"name" bson:"name" index:"" validate:"-" title:"我方名称" parquet:"name=name, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Acct     string   `json:"acct" gorm:"acct" bson:"acct" index:"" validate:"-" title:"我方账号" parquet:"name=acct, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	AcctType string   `json:"acctType" gorm:"acct_type" bson:"acct_type" validate:"-" title:"我方账号类型" parquet:"name=acct_type, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Category string   `json:"category" gorm:"category" bson:"category" validate:"-" title:"我方类别" parquet:"name=category, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	BankName string   `json:"bankName" gorm:"bank_name" bson:"bank_name" validate:"-" title:"我方开户银行" parquet:"name=bank_name, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Balance  *float64 `json:"balance" gorm:"balance" bson:"balance" validate:"-" title:"我方余额账户" parquet:"name=balance, type=DOUBLE, repetitiontype=OPTIONAL"`
 
-	Iden     string   `json:"iden"  gorm:"iden"  bson:"iden"  validate:"-" title:"我方标识"`
-	Name     string   `json:"name" gorm:"name" bson:"name" index:""  validate:"-" title:"我方名称"`
-	Acct     string   `json:"acct" gorm:"acct"  bson:"acct" index:""  validate:"-" title:"我方账号"`
-	AcctType string   `json:"acctType" gorm:"acct_type"  bson:"acct_type" validate:"-" title:"我方账号类型"`
-	Category string   `json:"category" gorm:"category"  bson:"category" validate:"-" title:"我方类别"`
-	BankName string   `json:"bankName"  gorm:"bank_name"  bson:"bank_name"  validate:"-" title:"我方开户银行"`
-	Balance  *float64 `json:"balance" gorm:"balance" bson:"balance" validate:"-" title:"我方余额账户"`
+	OppIden     string `json:"oppIden" gorm:"opp_iden" bson:"opp_iden" validate:"-" title:"对方标识" parquet:"name=opp_iden, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	OppName     string `json:"oppName" gorm:"opp_name" bson:"opp_name" validate:"-" title:"对方名称" parquet:"name=opp_name, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	OppAcct     string `json:"oppAcct" gorm:"opp_acct" bson:"opp_acct" validate:"-" title:"对方账号" parquet:"name=opp_acct, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	OppAcctType string `json:"oppAcctType" gorm:"opp_acct_type" bson:"opp_acct_type" validate:"-" title:"对方账号类型" parquet:"name=opp_acct_type, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	OppCategory string `json:"oppCategory" gorm:"opp_category" bson:"opp_category" validate:"-" title:"对方类别" parquet:"name=opp_category, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	OppBankName string `json:"oppBankName" gorm:"opp_bank_name" bson:"opp_bank_name" validate:"-" title:"对方开户银行" parquet:"name=opp_bank_name, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
 
-	OppIden     string `json:"oppIden" gorm:"opp_iden" bson:"opp_iden" validate:"-" title:"对方标识"`
-	OppName     string `json:"oppName" gorm:"opp_name"  bson:"opp_name" validate:"-" title:"对方名称"`
-	OppAcct     string `json:"oppAcct" gorm:"opp_acct" bson:"opp_acct" validate:"-" title:"对方账号"`
-	OppAcctType string `json:"oppAcctType" gorm:"opp_acct_type" bson:"opp_acct_type" validate:"-" title:"对方账号类型"`
-	OppCategory string `json:"oppCategory" gorm:"opp_category" bson:"opp_category"  validate:"-" title:"对方类别"`
-	OppBankName string `json:"oppBankName"  gorm:"opp_bank_name" bson:"opp_bank_name"  validate:"-" title:"对方开户银行"`
-
-	Cash    string     `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金标识"`
-	Serial  string     `json:"serial" gorm:"serial" bson:"serial" validate:"-" title:"流水号"`
-	Payout  *float64   `json:"payout" gorm:"payout" bson:"payout" index:""  validate:"-" title:"支出金额"`
-	Income  *float64   `json:"income"  gorm:"income" bson:"income" index:"" validate:"-" title:"收入金额"`
-	Amount  *float64   `json:"amount" gorm:"amount" bson:"amount" index:""  validate:"-" title:"交易金额"`
-	Date    *time.Time `json:"date" gorm:"date" bson:"date" index:"" validate:"-" title:"交易时间"`
-	Type    string     `json:"type" gorm:"type" bson:"type" validate:"-" title:"交易类型"`
-	Ccy     string     `json:"ccy"  gorm:"ccy" bson:"ccy" validate:"-" title:"交易币种" `
-	Place   string     `json:"place" gorm:"place"  bson:"place" validate:"-" title:"交易地点"`
-	Summary string     `json:"summary" gorm:"summary" bson:"summary" validate:"-" title:"摘要"`
-	Notes   string     `json:"notes" gorm:"notes"  bson:"notes" validate:"-" title:"备注"`
-
-	Errors map[string][]string      `json:"errors" gorm:"errors;json" bson:"errors"`
-	Cells  map[string]RecordIeCells `json:"cells" gorm:"cells;json" bson:"cells"`
+	Cash    string     `json:"cash" gorm:"cash" bson:"cash" index:"" title:"现金标识" parquet:"name=cash, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Serial  string     `json:"serial" gorm:"serial" bson:"serial" validate:"-" title:"流水号" parquet:"name=serial, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Payout  *float64   `json:"payout" gorm:"payout" bson:"payout" index:"" validate:"-" title:"支出金额" parquet:"name=payout, type=DOUBLE, repetitiontype=OPTIONAL"`
+	Income  *float64   `json:"income" gorm:"income" bson:"income" index:"" validate:"-" title:"收入金额" parquet:"name=income, type=DOUBLE, repetitiontype=OPTIONAL"`
+	Amount  *float64   `json:"amount" gorm:"amount" bson:"amount" index:"" validate:"-" title:"交易金额" parquet:"name=amount, type=DOUBLE, repetitiontype=OPTIONAL"`
+	Date    *time.Time `json:"date" gorm:"date" bson:"date" index:"" validate:"-" title:"交易时间" parquet:"name=date, type=INT64, repetitiontype=OPTIONAL"`
+	Type    string     `json:"type" gorm:"type" bson:"type" validate:"-" title:"交易类型" parquet:"name=type, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Ccy     string     `json:"ccy" gorm:"ccy" bson:"ccy" validate:"-" title:"交易币种" parquet:"name=ccy, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Place   string     `json:"place" gorm:"place" bson:"place" validate:"-" title:"交易地点" parquet:"name=place, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Summary string     `json:"summary" gorm:"summary" bson:"summary" validate:"-" title:"摘要" parquet:"name=summary, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	Notes   string     `json:"notes" gorm:"notes" bson:"notes" validate:"-" title:"备注" parquet:"name=notes, type=BYTE_ARRAY, repetitiontype=REQUIRED"`
+	// 💡 修正后的 Errors Map 标签：
+	Errors map[string][]string `json:"errors" gorm:"errors;json" bson:"errors" parquet:"name=errors, type=MAP, keytype=BYTE_ARRAY, key_converted_type=UTF8, valuetype=BYTE_ARRAY, value_converted_type=UTF8, value_repetitiontype=REPEATED"`
+	// 💡 修正后的 Cells Map 标签：
+	Cells map[string]RecordIeCells `json:"cells" gorm:"cells;json" bson:"cells" parquet:"name=cells, type=MAP,  keytype=BYTE_ARRAY, key_converted_type=UTF8, valuetype=STRUCT"`
 }
-
 type RecordIeCells []RecordIeCell
 
 type RecordIeCell struct {

@@ -2,7 +2,6 @@ package sub_import
 
 import (
 	"context"
-	"time"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
@@ -10,9 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/view"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
@@ -53,38 +49,33 @@ func (s *RecordEventSubHandler) Check(ctx context.Context) error {
 }
 
 func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) error {
-	logs.Infofmt(ctx, "record-import-master-event eventId:%s; occurredOn:%s; ", event.Id, event.CreatedTime.Format(time.DateTime))
-	records, err := s.factory.NewByRecordImportMasterEvent(ctx, event)
-	if err != nil {
-		return err
-	}
-	/*	var details []*model.Tran
-		var recordDays []*view.RecordDayView
-		for _, record := range records {
-			tran := model.NewTranFromRecord(record)
-			details = append(details, tran)
-
-			d1, err := view.NewRecordDayView(record)
+	return nil
+	/*
+			logs.Infofmt(ctx, "record-import-master-event eventId:%s; occurredOn:%s; ", event.Id, event.CreatedTime.Format(time.DateTime))
+			records, err := s.factory.NewByRecordImportMasterEvent(ctx, event)
 			if err != nil {
 				return err
 			}
-			recordDays = append(recordDays, d1)
-			// recordDays = append(recordDays, d2)
-		}
-	*/
+		 	var details []*model.Tran
+				var recordDays []*view.RecordDayView
+				for _, record := range records {
+					tran := model.NewTranFromRecord(record)
+					details = append(details, tran)
 
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
-		err = s.recordService.CreateMany(ctx, records)
-		return err
-
-		/*		err = s.recordDayViewService.IncAmountMany(ctx, recordDays)
-				if err != nil {
-					return err
+					d1, err := view.NewRecordDayView(record)
+					if err != nil {
+						return err
+					}
+					recordDays = append(recordDays, d1)
+					// recordDays = append(recordDays, d2)
 				}
-				return s.tranDetailService.CreateMany(ctx, details)
-		*/
-	})
 
+
+			return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+				err = s.recordService.CreateMany(ctx, records)
+				return err
+			})
+	*/
 }
 
 func (s *RecordEventSubHandler) newRecordDayView(tran *model.Tran, record *model.Record) *view.RecordDayView {

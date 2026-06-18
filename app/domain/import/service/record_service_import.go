@@ -4,23 +4,26 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
-	command2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
-	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
-
 	"github.com/google/uuid"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/enum"
+	command2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/doris"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
+	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/miniofs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/spf13/afero"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	task_pkg "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -208,6 +211,26 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command2.RecordCr
 	return res, err
 }
 
+func (s *RecordService) newDorisImporter() (*doris.DorisImporter, error) {
+	dorisAny, ok := env.GetEnv().App.Meta["doris"]
+	if !ok {
+		return nil, errors.New("doris env not set")
+	}
+
+	value, ok := dorisAny.(map[string]any)
+	if !ok {
+		return nil, errors.New("doris env not set")
+	}
+
+	dorisConfig, err := doris.NewConfigWithMap(value)
+	if err != nil {
+		return nil, err
+	}
+	dorisConfig.Table = "master_record1"
+	loader := doris.NewDorisImporter(*dorisConfig)
+	return loader, nil
+}
+
 // Import2Master
 // @Description: 将任务中的银行流水导入取主数据中。
 // @receiver r
@@ -215,99 +238,129 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command2.RecordCr
 // @param appcmd
 // @return error
 func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) (err error) {
-	taskId := appcmd.Data.TaskId
-	/*
-		tenantId := appctx.GetTenantId2(ctx)
-		if count, err := s.CountErrorByTaskId(ctx, tenantId, taskId); err != nil {
-			return err
-		} else if count > 0 {
-			return errors.New("发现错误数据%v条，请更正后再提交。", count)
-		}
-	*/
 
-	pageNum := int64(0)
-	recordCount := int64(0)
-	pageSize := gp2.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
-
-	// 批量导入数据
-	createMany := func(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) error {
-		logs.Debugf(ctx, nil, "createMany() context=%v", func() any {
-			return appctx.GetMessage(ctx)
-		})
-		return tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
-			for {
-				// 取得批量数据
-				qry := query.NewRecordIeFindPagingByTaskIdQuery(appcmd.Data.TaskId, false)
-				qry.SetPageNum(pageNum)
-				qry.SetPageSize(pageSize)
-
-				res := s.FindPagingByTaskId(ctx, qry)
-				if err != nil {
-					return err
-				}
-				if res.GetDataLength() == 0 {
-					return nil
-				}
-				// 如果没有数据
-				if res.GetPageNum() > pageNum {
-					return nil
-				}
-
-				// 通过领域事件，导入流水到主数据
-				// 生成领域事件
-				importEvent, err := newRecordCreateManyFromExcelCommand(ctx, appcmd, res.GetData())
-				if err != nil {
-					return err
-				}
-				if pageNum > 0 {
-					importEvent.Data.IsAddItems = true
-				}
-				// 发布领域事件
-				if err := s.PublishImportRecordToMasterEvent(ctx, importEvent); err != nil {
-					return err
-				}
-				recordCount += int64(len(res.GetData()))
-				pageNum++
-			}
-
-		})
+	tempFs, err := miniofs.NewFs(env.GetEnv(), "default", "importData")
+	if err != nil {
+		return err
 	}
 
-	// 执行导入
-	gp2.Try(func() error {
-		startTime := times.PNow()
-		// 批量导入数据
-		err = createMany(ctx, appcmd)
-		if err == nil {
-			// 更新任务状态
-			cmd := command2.NewTaskUpdateProgressCommand(appcmd.CommandId, taskId)
-			cmd.Data.Complete = recordCount
-			cmd.Data.StartTime = startTime
-			cmd.Data.State = task_pkg.TaskStateImported
-			cmd.Data.EndTime = times.PNow()
-			err = s.taskService.UpdateProgress(ctx, &cmd.Data)
-			if err != nil {
-				return err
-			}
-			docModel := &doc.Document{}
-			docModel.Id = idutils.NewId()
-			docModel.FileId = appcmd.Data.FileId
-			docModel.SourceId = appcmd.Data.DocId
-			docModel.SourceType = "流水"
-			docModel.CaseId = appcmd.Data.CaseId
-			docModel.SourceApp = "document_service"
-			err = s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateImported.Name(), "")
-			if err != nil {
-				return err
-			}
-		}
+	loader, err := s.newDorisImporter()
+	if err != nil {
 		return err
-	}).Catch(func(e error) {
-		err = e
-	}).Finally(func() {
+	}
+	err = tempFs.Mkdir("/record", os.ModeDir)
+	if err != nil {
+		return err
+	}
+	parquetFileName := fmt.Sprintf("/record/record_%s.parquet", appcmd.CommandId)
+	parquetFile, err := doris.NewParquetFile[*doris.Record](tempFs, parquetFileName)
+	if err != nil {
+		return err
+	}
 
+	recordCount := int64(0)
+	recordCount, err = s.writeParquetFile(ctx, parquetFile, appcmd)
+	if err != nil {
+		return err
+	}
+
+	return s.importData(ctx, tempFs, loader, appcmd, tempFs.GetBucketName(), parquetFileName, recordCount)
+
+}
+
+func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, loader *doris.DorisImporter, appcmd *command2.RecordImport2MasterCommand, s3BucketName, pFileName string, recordCount int64) error {
+	taskId := appcmd.Data.TaskId
+	// 导入数据到Doris数据库中
+	_, err := loader.ImportFile(tempFs, pFileName, doris.LoadOptions{
+		Format: doris.FormatParquet,
+		Label:  "record_" + taskId,
+	})
+	if err != nil {
+		return err
+	}
+
+	// 创建导入事件
+	importEvent, err := newRecordCreateManyFromExcelCommand(ctx, appcmd, s3BucketName, pFileName)
+	if err != nil {
+		return err
+	}
+
+	startTime := times.PNow()
+	// 更新任务状态
+	cmd := command2.NewTaskUpdateProgressCommand(appcmd.CommandId, appcmd.Data.TaskId)
+	cmd.Data.Complete = recordCount
+	cmd.Data.StartTime = startTime
+	cmd.Data.State = task_pkg.TaskStateImported
+	cmd.Data.EndTime = times.PNow()
+
+	docModel := &doc.Document{}
+	docModel.Id = idutils.NewId()
+	docModel.FileId = appcmd.Data.FileId
+	docModel.SourceId = appcmd.Data.DocId
+	docModel.SourceType = "流水"
+	docModel.CaseId = appcmd.Data.CaseId
+	docModel.SourceApp = "document_service"
+
+	// 开启事务
+	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		// 发布领域事件
+		if err := s.PublishImportRecordToMasterEvent(ctx, importEvent); err != nil {
+			return err
+		}
+		if err := s.taskService.UpdateProgress(ctx, &cmd.Data); err != nil {
+			return err
+		}
+		if err := s.docStatusProvider.UpdateStatus(ctx, docModel, task_pkg.TaskStateImported.Name(), ""); err != nil {
+			return err
+		}
+		return nil
 	})
 	return err
+}
+
+// 生成parquet文件
+func (s *RecordService) writeParquetFile(ctx context.Context, pFile *doris.ParquetFile[*doris.Record], appcmd *command2.RecordImport2MasterCommand) (recordCount int64, err error) {
+	pageNum := int64(0)
+	pageSize := gp2.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
+	recordCount = int64(0)
+
+	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+		for {
+			// 取得批量数据
+			qry := query.NewRecordIeFindPagingByTaskIdQuery(appcmd.Data.TaskId, false)
+			qry.SetPageNum(pageNum)
+			qry.SetPageSize(pageSize)
+
+			res := s.FindPagingByTaskId(ctx, qry)
+			if err != nil {
+				return err
+			}
+			if res.GetDataLength() == 0 {
+				return nil
+			}
+			// 如果没有数据
+			if res.GetPageNum() > pageNum {
+				return nil
+			}
+
+			for _, item := range res.GetData() {
+				item.TaskId = appcmd.Data.TaskId
+				if err1 := pFile.Write(doris.NewRecord(item)); err1 != nil {
+					return err1
+				}
+			}
+			recordCount += int64(len(res.GetData()))
+			pageNum++
+		}
+	})
+
+	if err != nil {
+		return 0, err
+	}
+	if err = pFile.WriteStop(); err != nil {
+		return 0, err
+	}
+	return recordCount, nil
 }
 
 func (s *RecordService) PublishImportRecordToMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) (err error) {
@@ -442,43 +495,19 @@ func newCells(mapDataCells map[string]readexcel.DataCells) map[string]task_pkg.R
 // @param list
 // @return *command.RecordCreateManyFromExcelCommand
 // @return error
-func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command2.RecordImport2MasterCommand, list []*task_pkg.RecordIe) (*event.RecordImportMasterEvent, error) {
-	items := make([]*field.RecordFields, 0)
-	for _, e := range list {
-		record := &field.RecordFields{
-			RowNum:   e.RowNum,
-			Id:       e.Id,
-			Iden:     e.Iden,
-			Name:     e.Name,
-			Acct:     e.Acct,
-			AcctType: e.AcctType,
-			Category: e.Category,
-			Balance:  e.Balance,
-			BankName: e.BankName,
-
-			OppIden:     e.OppIden,
-			OppName:     e.OppName,
-			OppAcct:     e.OppAcct,
-			OppAcctType: e.OppAcctType,
-			OppCategory: e.OppCategory,
-			OppBankName: e.OppBankName,
-
-			Serial:  e.Serial,
-			Payout:  e.Payout,
-			Income:  e.Income,
-			Amount:  e.Amount,
-			Date:    e.Date,
-			Type:    e.Type,
-			Ccy:     e.Ccy,
-			Place:   e.Place,
-			Summary: e.Summary,
-			Notes:   e.Notes,
-		}
-		if len(record.Ccy) == 0 {
-			record.Ccy = enum.CurrencyCNY.String()
-		}
-		items = append(items, record)
+func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command2.RecordImport2MasterCommand, s3Bucket, s3FilePath string) (*event.RecordImportMasterEvent, error) {
+	if appcmd == nil {
+		return nil, errors.New("appcmd 参数不能为空")
 	}
+	// 拼出 s3://user:pass@host/bucket/key 完整 URL 写入 S3FileUrl，
+	// graph 域 RecordEventSubHandler 拿到后可直接传给 apoc.load.parquet
+	minioCfg, ok := env.GetEnv().GetMinioByKey("default")
+	if !ok {
+		return nil, errors.New("env minio.default not configured")
+	}
+	s3FileUrl := fmt.Sprintf("s3://%s:%s@%s/%s/%s",
+		minioCfg.AccessKey, minioCfg.SecretKey, minioCfg.Endpoint,
+		s3Bucket, strings.TrimLeft(s3FilePath, "/"))
 
 	eventData := &event.RecordImportMasterEventData{
 		CaseId:     appcmd.Data.CaseId,
@@ -488,7 +517,7 @@ func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command2.R
 		SheetId:    appcmd.Data.SheetId,
 		SheetName:  appcmd.Data.SheetName,
 		TaskId:     appcmd.Data.TaskId,
-		Items:      items,
+		S3FileUrl:  s3FileUrl,
 		MasterType: appcmd.Data.MasterType,
 		MasterId:   appcmd.Data.MasterId,
 	}
