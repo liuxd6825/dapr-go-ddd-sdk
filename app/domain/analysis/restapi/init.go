@@ -11,4 +11,5 @@ func Register(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewSuTaskAccountApi(env, baseUrl))
 	restapi.RegisterController(app, NewSuTaskRecordApi(env, baseUrl))
 	restapi.RegisterController(app, NewMongoQueryAPI(env, baseUrl))
+	restapi.RegisterController(app, NewMysqlQueryAPI(env, baseUrl))
 }
