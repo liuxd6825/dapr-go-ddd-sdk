@@ -40,7 +40,7 @@ func NewMongoQueryAPI(env *env.Env, rootPath string) *MongoQueryAPI {
 
 func (s *MongoQueryAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	controller := restapi.NewController(app, s.rootPath+"/analysis/", "analysis.MongoQueryAPI", s)
-	controller.Post("aggregate", "Aggregate")
+	//controller.Post("aggregate", "Aggregate")
 	return controller
 }
 
