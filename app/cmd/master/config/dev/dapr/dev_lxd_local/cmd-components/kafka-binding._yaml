@@ -1,0 +1,20 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: cdc-mysql  # Binding 名称 需与应用端点匹配
+spec:
+  type: bindings.kafka
+  version: v1
+  metadata:
+    - name: brokers           # Kafka Broker 地址
+      value: "localhost:9092"
+    - name: topics            # 目标 Topic
+      value: "cdc"
+    - name: consumerGroup     # 消费者组 ID
+      value: "cdc-mysql-group"
+    - name: authType          # SASL/SSL 认证配置（若启用）
+      value: "none"
+    - name: version
+      value: "1.0.0"
+    - name: direction
+      value: "input"

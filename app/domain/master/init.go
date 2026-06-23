@@ -1,19 +1,19 @@
 package master
 
 import (
-	"context"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 func Init(app *iris.Application, baseUrl string, env *env.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "master"}, func() error {
-		restapi.Init(app, baseUrl, env)
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
+	record.Init(app, baseUrl, env)
+	company.Init(app, baseUrl, env)
+	contract.Init(app, baseUrl, env)
+	human.Init(app, baseUrl, env)
+	product.Init(app, baseUrl, env)
 }

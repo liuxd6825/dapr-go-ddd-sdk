@@ -1,0 +1,109 @@
+env: prod
+envs:
+  prod:
+    app:
+      id: duxm-master-service
+      prodMode: true
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      hServer:
+        enable: true
+        srcName: src
+        webName: web
+        basePath: ""
+        reload: true
+      template:
+        enable: true
+        fsId: "file"
+        apiUrl: "/html"
+        basePath: ""
+      meta:
+        db: "default"
+        ragDb: "default"  # 取得
+        drawDb: "default"
+        neo4jDb: "neo4j"
+        rag:
+          llm:
+            baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            model: "deepseek-r1-distill-llama-70b"
+            apiKey: "sk-4a999651298047efaaf38aea633ba636"
+          embedder:
+            baseUrl: "http://127.0.0.1:11434"
+            model:  "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "127.0.0.1:19530"
+            collectionName : "graph"
+            dim: 1024
+        ory:
+          url: "http://127.0.0.1:4434"
+    fs:
+      - name: "documentIoStore"
+        type: local
+        path: "/home/l/program/file-store/test/doc"
+      - name: "drawIoStore"
+        type: local
+        path: "/home/l/program/file-store/test/draw"
+      - name: "temp"
+        type: local
+        path: "/home/l/program/file-store/test/temp"
+      - name: "src"
+        type: local
+        path: "${HomePath}/server"
+        tags:
+          - app-src
+      - name: "web"
+        type: local
+        path: "${HomePath}/web"
+        tags:
+          - web-src
+    log:
+      outputType: file   # console file all
+      level: info
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "${ExePath}/logs/${ExeName}.log"
+    dapr:
+      command: "/home/l/program/dapr/daprd"
+      host: localhost
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      start: true
+      startArgs:
+        log-level: "info"
+        log-file: "${ExePath}/logs/master.dapr.log"
+        log-output-type: "file"  # console file all
+        config: "${ExePath}/config/dapr/config.yaml"
+        components-path: "${ExePath}/config/dapr/components"
+        resources-path:  "${ExePath}/config/dapr/components"
+        # placement-host-address: 127.0.0.1:50005
+        # scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    mongo:
+      default:
+        host: 127.0.0.1:27018,127.0.0.1:27019,127.0.0.1:27020
+        replicaSet: mongors
+        dbname: test-master
+        user: super_admin
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    neo4j:
+      neo4j:
+        host: 127.0.0.1
+        port: 17687
+        dbname:
+        user: neo4j
+        pwd: 12345678
+    temporal:
+      host: 127.0.0.1
+      port: 7233
+      namespace: "default"
+      taskQueue: "master-task"

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis"
 	company_lib "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/company-lib/restapi"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
@@ -20,6 +21,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/html/handler/render"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	appcmd "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp/cmd"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -72,7 +74,7 @@ func main() {
 				metrics.RegisterAllApi(app, baseUrl, env)
 				notify.RegisterAllApi(app, baseUrl, env)
 				company_lib.RegisterAllApi(app, baseUrl, env)
-
+				render.RegisterRenderHandler(app, env, map[string]any{})
 				/*
 					if err := lowcode.Run(server); err != nil {
 						return err

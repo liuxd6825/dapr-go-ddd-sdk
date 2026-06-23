@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/field"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"

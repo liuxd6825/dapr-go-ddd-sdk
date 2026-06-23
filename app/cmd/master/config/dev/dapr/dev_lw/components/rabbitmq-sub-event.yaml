@@ -1,0 +1,95 @@
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: master-record-import-event-sub
+spec:
+  pubsubname: pubsub                           # 引用pubsub组件名称
+  topic: "dev-master-cdc"                      # 必须映射到 RabbitMQ 的 Exchange 名称
+  routes:                                      # 你的应用中接收消息的路由
+    default: /subscribe/master/event/record-import-master-event
+  metadata:
+    rawPayload: "true"                                # 非dapr消息，关系配置
+    queueName: "dev-master.record.import-event"    # 告诉 Dapr 直接消费这个名字的队列
+    routingKey: "master.record.import-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
+
+---
+
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: document.folder.create-event-sub
+spec:
+  pubsubname: pubsub                           # 引用pubsub组件名称
+  topic: "dev-master-cdc"                      # 必须映射到 RabbitMQ 的 Exchange 名称
+  routes:                                      # 你的应用中接收消息的路由
+    default: /subscribe/document/event/folder-create-event
+  metadata:
+    rawPayload: "true"                                # 非dapr消息，关系配置
+    queueName: "dev-document.folder.create-event"    # 告诉 Dapr 直接消费这个名字的队列
+    routingKey: "document.folder.create-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
+
+---
+
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: rag.document.create-event-sub
+spec:
+  pubsubname: pubsub                           # 引用pubsub组件名称
+  topic: "dev-master-cdc"                      # 必须映射到 RabbitMQ 的 Exchange 名称
+  routes: # 你的应用中接收消息的路由
+    default: /subscribe/rag/event/document-create-event
+  metadata:
+    rawPayload: "true"                                # 非dapr消息，关系配置
+    queueName: "dev-document.folder.document-event"   # 告诉 Dapr 直接消费这个名字的队列
+    routingKey: "rag.document.create-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
+
+---
+
+
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: rag.document.create-event-sub
+spec:
+  pubsubname: pubsub                           # 引用pubsub组件名称
+  topic: "dev-master-cdc"                      # 必须映射到 RabbitMQ 的 Exchange 名称
+  routes: # 你的应用中接收消息的路由
+    default: /subscribe/rag/event/document-create-event
+  metadata:
+    rawPayload: "true"                                # 非dapr消息，关系配置
+    queueName: "dev-document.folder.document-event"   # 告诉 Dapr 直接消费这个名字的队列
+    routingKey: "rag.document.create-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
+
+
+---
+
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: document.folder.update-alias-event-sub
+spec:
+  pubsubname: pubsub                           # 引用pubsub组件名称
+  topic: "dev-master-cdc"                      # 必须映射到 RabbitMQ 的 Exchange 名称
+  routes:                                      # 你的应用中接收消息的路由
+    default: /subscribe/document/event/folder-update-alias-event
+  metadata:
+    rawPayload: "true"                                # 非dapr消息，关系配置
+    queueName: "dev-document.folder.update-alias-event"    # 告诉 Dapr 直接消费这个名字的队列
+    routingKey: "document.folder.update-alias-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
+
+---
+
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: document.folder.delete-event-sub
+spec:
+  pubsubname: pubsub                           # 引用pubsub组件名称
+  topic: "dev-master-cdc"                      # 必须映射到 RabbitMQ 的 Exchange 名称
+  routes:                                      # 你的应用中接收消息的路由
+    default: /subscribe/document/event/folder-delete-event
+  metadata:
+    rawPayload: "true"                                # 非dapr消息，关系配置
+    queueName: "dev-document.folder.delete-event"    # 告诉 Dapr 直接消费这个名字的队列
+    routingKey: "document.folder.delete-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;

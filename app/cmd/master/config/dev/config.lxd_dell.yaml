@@ -1,0 +1,182 @@
+env: dev_lxd_dell
+envs:
+  dev_lxd_dell:
+    app:
+      id: duxm-master-service
+      prodMode: false
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      webName: web
+      authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
+      hServer:
+        enable: false
+        srcName: src
+
+        basePath: ""
+        reload: true
+        npm:
+          links:
+          - name: ui5e
+            path: /@fs/Users/lxd/Projects/duxm/h-master/packages
+          - name: draw
+            path: /@fs/Users/lxd/Projects/duxm/h-draw
+      meta:
+        db: "default"
+        ragDb: "default"
+        drawDb: "default"
+        neo4jDb: "neo4j"
+        redis: "default"
+        doris:
+          host: 192.168.120.224
+          port: 8040
+          database: master
+          username: admin
+          password:
+        rag:
+          llm:
+            type: "ollama"
+            baseURL: "http://192.168.120.224:11434"
+            model: "qwen3.6:27b"
+            apiKey: "ollama"
+            ctxLength: 32768
+            think: low
+          embedder:
+            baseUrl: "http://192.168.120.224:11434"
+            model:  "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "192.168.120.224:19530"
+            collectionName : "graph"
+            dim: 1024
+        ory:
+          url: "http://192.168.120.224:4434"
+    fs:
+      - name: "documentIoStore"
+        type: local
+        path: "/Users/lxd/Projects/duxm/h-master/file-store/dev/doc"
+      - name: "drawIoStore"
+        type: local
+        path: "/Users/lxd/Projects/duxm/h-master/file-store/dev/draw"
+      - name: "temp"
+        type: local
+        path: "/Users/lxd/Projects/duxm/h-master/file-store/dev/temp"
+
+      - name: "src"
+        type: local
+        path: "${HomePath}/server"
+        tags:
+          - app-src
+      - name: "web"
+        type: local
+        path: "${HomePath}/web/src"
+        tags:
+          - web-src
+      - name: "nodeModules"
+        type: local
+        path: "${HomePath}/web/node_modules"
+        tags:
+          - node-modules
+      - name: "packages"
+        type: local
+        path: "${HomePath}/packages"
+        tags:
+          - node-modules
+      - name: "draw_packages"
+        type: local
+        path: "/Users/lxd/Projects/duxm/h-draw/web"
+        tags:
+          - node-modules
+    log:
+      outputType: console
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${ExeName}.log"
+    dapr:
+      command: daprd
+      start: true
+      host: 127.0.0.1
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      startArgs:
+        log-level: "info"
+        log-file: "./logs/dev/${ExeName}.dapr.log"
+        log-output-type: "console"
+        config: "./config/dev/dapr/${EnvName}/config.yaml"
+        components-path: "./config/dev/dapr/${EnvName}/cmd-components"
+        resources-path: "./config/dev/dapr/${EnvName}/cmd-components"
+        # placement-host-address: 127.0.0.1:50005
+        # scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    temporal:
+      host: 192.168.120.224
+      port: 7233
+      namespace: "default"
+      taskQueue: "master-task"
+    mongo:
+      default:
+        host: 192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020
+        replicaSet: mongors
+        dbname: master
+        user: super_admin
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    neo4j:
+      neo4j:
+        host: "192.168.120.224"
+        port: 7687
+        dbname:
+        user: neo4j
+        pwd: 12345678
+    redis:
+      default:
+        host: "192.168.120.224:6379"
+        db: 2
+        pwd: 123456
+        poolSize: 10
+    minio:
+      default:
+        endpoint: "192.168.120.224:9000"
+        accessKey: "minioadmin"
+        secretKey: "minioadmin"
+        useSSL: false
+        buckets:
+          importData: "import-data"
+    mysql:
+      doris:
+        host: "192.168.120.224"
+        port: "9030"
+        user: "root"
+        pwd:
+        dbname: "master"
+        loc: "Asia/Shanghai"
+        parseTime: true
+        charset: "utf8mb4"
+    elastic:
+      elastic:
+        addresses:
+          - "http://192.168.120.224:9200"
+        username: "elastic"
+        password: "12345678"
+        apiKey: ""
+        serviceToken: ""
+        cloudId: ""
+        caCert: ""
+        clientCert: ""
+        clientKey: ""
+        debug: false
+        retry:
+          maxRetries: 3
+          retryOnTimeout: true
+          retryBackoff: "100ms"
+
+
+

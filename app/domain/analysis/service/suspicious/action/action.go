@@ -2,8 +2,10 @@ package action
 
 import (
 	"context"
+
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/model"
+
 	"time"
 )
 

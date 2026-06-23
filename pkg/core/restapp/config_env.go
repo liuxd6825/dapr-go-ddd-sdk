@@ -13,6 +13,7 @@ func NewEnv(cfg *EnvConfig) *env.Env {
 	env := env.NewEnv()
 	env.Fs = cfg.Fs
 	env.Name = cfg.Name
+
 	env.App = NewApp(cfg.App)
 	env.Fsm = NewFsm(cfg.Fs, cfg.App.HServer.SrcName)
 	env.Log = NewLog(cfg.Log)

@@ -1,0 +1,155 @@
+env: dev
+envs:
+  dev:
+    app:
+      id: duxm-master-service
+      prodMode: false
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
+      hServer:
+        enable: true
+        srcName: src
+        webName: web
+        basePath: ""
+        reload: true
+        npm :
+          links:
+            - name: ui5e
+              path: /@fs/Users/lxd/Projects/duxm/h-master/packages
+            - name: draw
+              path: /@fs/Users/lxd/Projects/duxm/h-draw
+      meta:
+        db: "default"
+        ragDb: "default"
+        drawDb: "default"
+        neo4jDb: "neo4j"
+        redis: "default"
+        rag:
+          llm:
+            type: "openai"
+            baseURL: "https://api.minimaxi.com/v1"
+            model: "MiniMax-M2.7"
+            apiKey: "sk-cp-s1rksxmWNo1I4AZuCusJUDcOa4i1mllHGaDvDs5Dn2Mr-wjLJsEJ8cJq6TzEZWgjSc2pK8qe5wOBP5kDQH1BllGbMHLk5-E9xlMscZZUJdwOH9TZcwFy0mc"
+          embedder:
+            baseUrl: "http://192.168.120.224:11434"
+            model: "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "127.0.0.1:19530"
+            collectionName: "graph"
+            dim: 1024
+        rag3:
+          llm:
+            type: "ollama"
+            baseURL: "http://192.168.120.224:11434"
+            model: "qwen3.5:27b"
+            apiKey: ""
+          embedder:
+            baseUrl: "http://192.168.120.224:11434"
+            model: "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "http://192.168.120.224:19530"
+            collectionName: "graph"
+            dim: 1024
+        ory:
+          url: "http://127.0.0.1:4434"
+    fs:
+      - name: "documentIoStore"
+        type: local
+        path: "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/xtest/file_store/dev/document"
+      - name: "drawIoStore"
+        type: local
+        path: "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/xtest/file_store/dev/drawio"
+      - name: "temp"
+        type: local
+        path: "/Users/lxd/Projects/liuxd6825/dapr/dapr-go-ddd-sdk/xtest/file_store/dev/temp"
+      - name: "src"
+        type: local
+        path: "${HomePath}/server"
+        tags:
+          - app-src
+      - name: "web"
+        type: local
+        path: "${HomePath}/web/src"
+        tags:
+          - web-src
+      - name: "nodeModules"
+        type: local
+        path: "${HomePath}/web/node_modules"
+        tags:
+          - node-modules
+      - name: "packages"
+        type: local
+        path: "${HomePath}/packages"
+        tags:
+          - node-modules
+    auth:
+      storeDbKey: mysql  # 用户mysql存储权限数据
+      enable: true
+    log:
+      outputType: console
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${ExeName}.log"
+    dapr:
+      start: true
+      host: 127.0.0.1
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      startArgs:
+        log-level: "info"
+        log-file: "./logs/${ExeName}.dapr.log"
+        log-output-type: "console"
+        config: "./config/dev_lxd/dapr/config.yaml"
+        components-path: "./config/dev_lxd/dapr/components"
+        resources-path: "./config/dev_lxd/dapr/components"
+        placement-host-address: 127.0.0.1:50005
+        scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    mongo:
+      default:
+        host: 127.0.0.1:27017,127.0.0.1:27018
+        replicaSet: rs0
+        dbname: master
+        user: super_admin
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    mysql1111:
+      mysql:
+        host: 127.0.0.1
+        port: 3306
+        user: root
+        pwd: 11111111
+        dbname: master
+        loc: Asia/Shanghai
+        parseTime: true
+        charset: utf8mb4
+    neo4j:
+      neo4j:
+        host: 127.0.0.1
+        port: 7687
+        dbname:
+        user: neo4j
+        pwd: 12345678
+    temporal:
+      host: 127.0.0.1
+      port: 7233
+      namespace: "default"
+      taskQueue: "master-task"
+    redis:
+      default:
+        host: "127.0.0.1:6379"
+        db: 2
+        pwd: 123456
+        poolSize: 10

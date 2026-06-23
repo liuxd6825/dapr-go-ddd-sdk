@@ -1,0 +1,17 @@
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: record-import-master-event
+spec:
+  pubsubname: pubsub                          # 引用组件名称
+  topic: master-cdc-graph                     # 关键点 1: 'topic' 字段必须映射到 RabbitMQ 的 Exchange 名称
+  routes:                                      # 你的应用中接收消息的路由
+    default: /subscribe/import/record-import-master-event
+  metadata:                                   # 关键点 2: 使用 metadata 来指定路由键和 rawPayload
+    rawPayload: "true"                       # <--非dapr消息，关系配置
+    # 告诉 Dapr 直接消费这个名字的队列
+    queueName: "master-event-queue"
+    # --- 核心解决方案 ---
+    # 明确告诉 Dapr 在绑定队列时使用哪个路由键。
+    # 这个值必须与消息发布方使用的路由键相匹配！
+    routingKey: "record-import-master-event"

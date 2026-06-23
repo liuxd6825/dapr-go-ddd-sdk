@@ -1,0 +1,433 @@
+env: dev_224
+envs:
+
+  dev_224_prod:
+    app:
+      id: duxm-master-cmd-service
+      prodMode: true
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
+      hServer:
+        enable: true
+        srcName: src
+        webName: web
+        basePath: ""
+        reload: true
+        npm:
+          enabled: false
+          links:
+            - name: ui5e
+              path: /@fs/D:/Works/New/Code/newCode/h-master/packages
+            - name: web
+              path: /@fs/D:/Works/New/Code/newCode/draw
+      template:
+        enable: true
+        fsId: "file"
+        apiUrl: "/html"
+        basePath: ""
+      meta:
+        db: "default"
+        ragDb: "default"  # 取得
+        drawDb: "default"
+        neo4jDb: "neo4j"
+        redis: "default"
+        rag:
+          llm:
+            baseUrl: "http://192.168.120.224:11434"
+            model: "deepseek-r1:32b"
+            apiKey: ""
+          llm2:
+            baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            model: "deepseek-r1-distill-llama-70b"
+            apiKey: "sk-4a999651298047efaaf38aea633ba636"
+          embedder:
+            baseUrl: "http://192.168.120.224:11434"
+            model:  "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "192.168.120.224:19530"
+            collectionName : "graph"
+            dim: 1024
+        ory:
+          url: "http://192.168.120.224:4434"
+    fs:
+      - name: "drawIoStore"
+        type: local
+        path: "W:/dev/draw"
+      - name: "documentIoStore"
+        type: local
+        path: "W:/dev/doc"
+      - name: "src"
+        type: local
+        path: "${HomePath}/server"
+        tags:
+          - app-src
+      - name: "web"
+        type: local
+        path: "${HomePath}/web/dist"
+        tags:
+          - web-src
+      - name: "nodeModules"
+        type: local
+        path: "${HomePath}/web/node_modules"
+        tags:
+          - node-modules
+      - name: "packages"
+        type: local
+        path: "${HomePath}/packages"
+        tags:
+          - node-modules
+      - name: "draw_packages"
+        type: local
+        path: "D:/Works/New/Code/newCode/draw"
+        tags:
+          - node-modules
+    auth:
+      storeDbKey: mysql  # 用户mysql存储权限数据
+      enable: true
+    log:
+      outputType: console
+      level: info
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${ExeName}.log"
+    dapr:
+      host: localhost
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      start: false
+      startArgs:
+        log-level: "info"
+        log-file: "D:/Works/New/Code/newCode/h-master/server/logs/${ExeName}.dapr.log"
+        log-output-type: "console"
+        config: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/config.yaml"
+        components-path: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/components"
+        resources-path: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/components"
+        placement-host-address: 127.0.0.1:50005
+        scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    mongo:
+      default:
+        host: 192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020
+        replicaSet: mongors
+        dbname: master
+        user: super_admin
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    mysql:
+      mysql:
+        host: 192.168.120.224
+        port: 3306
+        user: root
+        pwd: 123456
+        dbname: master
+        loc: Asia/Shanghai
+        parseTime: true
+        charset: utf8mb4
+    neo4j:
+      neo4j:
+        host: 192.168.120.224
+        port: 7687
+        dbname:
+        user: neo4j
+        pwd: 12345678
+    redis:
+      default:
+        host: 192.168.120.224:6379
+        db: 2
+        pwd: 123456
+        poolSize: 10
+    temporal:
+      host: 192.168.120.224
+      port: 7233
+      namespace: "default"
+      taskQueue: "master-task"
+
+  dev_224:
+    app:
+      id: duxm-master-cmd-service
+      prodMode: false
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      authToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOiIyYTBhOTQ4MS01NmY3LTRmMjYtODNjYy0zYzRlMDhkZTMwOGIiLCJleHAiOjE3NzUwNDE2NDYsImlhdCI6MTc3NDk1NTI0Niwic3ViIjoiMmEwYTk0ODEtNTZmNy00ZjI2LTgzY2MtM2M0ZTA4ZGUzMDhiIiwidXNlciI6eyJpZCI6IlFKZWJpUnZIRGFxQ1NvSDcxQ09SYlNtciIsInRlbmFudElkIjoidGVzdCIsInRlbmFudE5hbWUiOiJ0ZXN0IiwiaXNBZG1pbiI6ZmFsc2UsImFjY291bnQiOiJhZG1pbiIsIm5hbWUiOiJhZG1pbiIsInBob25lIjoiIiwiZW1haWwiOiJhZG1pbkAxNjMuY29tIiwiYWRkcmVzcyI6IiIsImdlbmRlciI6IiIsIndvcmsiOiIiLCJoZWFkUGljdHVyZSI6IiIsInN0YXR1cyI6IlVzaW5nIiwib3J5SWRlbnRpdHlJZCI6IjJhMGE5NDgxLTU2ZjctNGYyNi04M2NjLTNjNGUwOGRlMzA4YiIsInNlc3Npb25JZCI6IjQ5NDc3YTQ4LWRjN2ItNGQyNy05OWVkLTc0OGM0NGVkZGZhNyJ9fQ.R0r4ScXPKv3pUEoonSZVqDD9mD0U4pNcMt2POp4dC-E"
+      hServer:
+        enable: true
+        srcName: src
+        webName: web
+        basePath: ""
+        reload: true
+        npm:
+          enabled: true
+          links:
+            - name: ui5e
+              path: /@fs/D:/Works/New/Code/newCode/h-master/packages
+            - name: web
+              path: /@fs/D:/Works/New/Code/newCode/draw
+      template:
+        enable: true
+        fsId: "file"
+        apiUrl: "/html"
+        basePath: ""
+      meta:
+        db: "default"
+        ragDb: "default"  # 取得
+        drawDb: "default"
+        neo4jDb: "neo4j"
+        redis: "default"
+        rag:
+          llm:
+            type: "ollama"
+            baseURL: "http://192.168.120.224:11434"
+            model: "deepseek-r1:14b"
+            apiKey: ""
+          llm2:
+            baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            model: "deepseek-r1-distill-llama-70b"
+            apiKey: "sk-4a999651298047efaaf38aea633ba636"
+          embedder:
+            baseUrl: "http://192.168.120.224:11434"
+            model:  "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "192.168.120.224:19530"
+            collectionName : "graph"
+            dim: 1024
+        ory:
+          url: "http://192.168.120.224:4434"
+    fs:
+      - name: "drawIoStore"
+        type: local
+        path: "W:/dev/draw"
+      - name: "documentIoStore"
+        type: local
+        path: "W:/dev/doc"
+      - name: "src"
+        type: local
+        path: "${HomePath}/server"
+        tags:
+          - app-src
+      - name: "web"
+        type: local
+        path: "${HomePath}/web/src"
+        tags:
+          - web-src
+      - name: "nodeModules"
+        type: local
+        path: "${HomePath}/web/node_modules"
+        tags:
+          - node-modules
+      - name: "packages"
+        type: local
+        path: "${HomePath}/packages"
+        tags:
+          - node-modules
+      - name: "draw_packages"
+        type: local
+        path: "D:/Works/New/Code/newCode/draw"
+        tags:
+          - node-modules
+    auth:
+      storeDbKey: mysql  # 用户mysql存储权限数据
+      enable: true
+    log:
+      outputType: console
+      level: info
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${ExeName}.log"
+    dapr:
+      host: localhost
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      start: true
+      startArgs:
+        log-level: "info"
+        log-file: "D:/Works/New/Code/newCode/h-master/server/logs/${ExeName}.dapr.log"
+        log-output-type: "console"
+        config: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/config.yaml"
+        components-path: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/components"
+        resources-path: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/components"
+        placement-host-address: 127.0.0.1:50005
+        scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    mongo:
+      default:
+        host: 192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020
+        replicaSet: mongors
+        dbname: master
+        user: super_admin
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    mysql:
+      mysql:
+        host: 192.168.120.224
+        port: 3306
+        user: root
+        pwd: 123456
+        dbname: master
+        loc: Asia/Shanghai
+        parseTime: true
+        charset: utf8mb4
+    neo4j:
+      neo4j:
+        host: 192.168.120.224
+        port: 7687
+        dbname:
+        user: neo4j
+        pwd: 12345678
+    redis:
+      default:
+        host: 192.168.120.224:6379
+        db: 2
+        pwd: 123456
+        poolSize: 10
+    temporal:
+      host: 192.168.120.224
+      port: 7233
+      namespace: "default"
+      taskQueue: "master-task"
+
+  dev_lw:
+    app:
+      id: duxm-master-cmd-service
+      prodMode: false
+      httpPort: 43001
+      rootUrl: /api/v1.0
+      authToken: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEdXhtLUp3dC1Ub2tlbiIsImV4cCI6MTcwMzc1Mjk3NCwidXNlciI6eyJ0ZW5hbnROYW1lIjoidGVzdCIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50SWQiOiJ0ZXN0IiwidGVuYW50QWNjb3VudCI6InRlc3QiLCJpZCI6IjE3MjY0Nzk0NDEyNTUwNTEyNjQiLCJ1c2VyVHlwZSI6IlRFTkFOVF9BRE1JTiIsImFjY291bnQiOiJ0ZXN0Iiwic3RhdHVzIjoiVVNFSU5HIn0sImNsaWVudF9pZCI6IjA5OGY2YmNkNDYyMWQzNzNjYWRlNGU4MzI2MjdiNGY2In0.s_kHa3pKt6XehbsL7E9PJqywM_pxbbq6V2zHyZCJmDk"
+      hServer:
+        enable: true
+        srcName: src
+        webName: web
+        basePath: ""
+        reload: true
+        npm:
+          links:
+            - name: ui5e
+              path: /@fs/D:/Works/New/Code/newCode/h-master/packages
+            - name: web
+              path: /@fs/D:/Works/New/Code/newCode/draw
+      template:
+        enable: true
+        fsId: "file"
+        apiUrl: "/html"
+        basePath: ""
+      meta:
+        rag:
+          llm:
+            baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            modal: "deepseek-r1-distill-llama-70b"
+            apiKey: "sk-4a999651298047efaaf38aea633ba636"
+          embedder:
+            baseUrl: "http://192.168.120.224:11434"
+            modal: "bge-m3:latest"
+            apiKey: ""
+          vector:
+            addr: "192.168.120.224:19530"
+            collectionName: "graph"
+            dim: 1024
+    fs:
+      - name: "drawIoStore"
+        type: local
+        path: "D:/drawio"
+      - name: "documentIoStore"
+        type: local
+        path: "D:/W"
+      - name: "src"
+        type: local
+        path: "${HomePath}/server"
+        tags:
+          - app-src
+      - name: "web"
+        type: local
+        path: "${HomePath}/web/src"
+        tags:
+          - web-src
+      - name: "nodeModules"
+        type: local
+        path: "${HomePath}/web/node_modules"
+        tags:
+          - node-modules
+      - name: "packages"
+        type: local
+        path: "${HomePath}/packages"
+        tags:
+          - node-modules
+      - name: "draw_packages"
+        type: local
+        path: "D:/Works/New/Code/newCode/draw"
+        tags:
+          - node-modules
+    auth:
+      storeDbKey: mysql  # 用户mysql存储权限数据
+      enable: true
+    log:
+      outputType: console
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${ExeName}.log"
+    dapr:
+      host: localhost
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      start: true
+      startArgs:
+        log-level: "info"
+        log-file: "D:/Works/New/Code/newCode/h-master/server/logs/${ExeName}.dapr.log"
+        log-output-type: "console"
+        config: "D:/Works/New/Code/newCode/h-master/server/config/dapr/${EnvName}/config.yaml"
+        components-path: "D:/Works/New/Code/newCode/h-master/server/config/dapr/${EnvName}/cmd-components"
+        resources-path: "D:/Works/New/Code/newCode/h-master/server/config/dapr/${EnvName}/cmd-components"
+        placement-host-address: 127.0.0.1:50005
+        scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    mongo:
+      default:
+        host: localhost:27018,localhost:27019,localhost:27020
+        replicaSet: mongors
+        dbname: dev_master_cmd
+        user: master
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    mysql:
+      mysql:
+        host: localhost
+        port: 3306
+        user: root
+        pwd: root
+        dbname: master
+        loc: Asia/Shanghai
+        parseTime: true
+        charset: utf8mb4
+    neo4j:
+      neo4j:
+        host: 127.0.0.1
+        port: 7687
+        dbname:
+        user: neo4j
+        pwd: 12345678

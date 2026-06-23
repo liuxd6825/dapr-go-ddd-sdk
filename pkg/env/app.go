@@ -14,6 +14,7 @@ import (
 type App struct {
 	AppId      string         `yaml:"id" json:"id"`               // 应用ID
 	AppName    string         `yaml:"name" json:"name"`           // 应用名称
+	WebName    string         `yaml:"webName" json:"webName"`     // Web源码文件系统名称
 	ProdMode   bool           `yaml:"prodMode" json:"prodMode"`   // 是生产模式
 	HttpHost   string         `yaml:"httpHost" json:"httpHost"`   // 绑定HTTP IP
 	HttpPort   int            `yaml:"httpPort" json:"httpPort"`   // 绑定HTTP 端口

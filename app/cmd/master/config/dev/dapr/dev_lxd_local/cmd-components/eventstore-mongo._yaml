@@ -1,0 +1,21 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: eventstore
+  namespace:
+spec:
+  type: eventstore.mongodb
+  version: v1
+  metadata:
+    - name: host
+      value: 127.0.0.1:27017
+   # - name: replica-set
+   #   value: mongors
+    - name: databaseName
+      value: "dev_dapr_esdb"
+    - name: username
+      value: "dapr"
+    - name: password
+      value: "123456"
+    - name: operationTimeout
+      value: 5s

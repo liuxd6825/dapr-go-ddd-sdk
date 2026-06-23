@@ -1,0 +1,14 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: lock-store
+spec:
+  type: lock.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: "192.168.120.224:6379"
+    - name: redisPassword
+      value: "123456"
+    - name: disableTls
+      value: "true"  # 如果是1.6+版本可能需要此配置

@@ -94,6 +94,10 @@ func GetWebParams(ictx iris.Context, target interface{}, removeNames []string, c
 				if err := setFieldValue(&fieldValue, val); err != nil {
 					verifyErr.AppendField(fieldType.Name, err.Error())
 				}
+			} else if val := ictx.Params().Get(queryName); val != "" {
+				if err := setFieldValue(&fieldValue, val); err != nil {
+					verifyErr.AppendField(fieldType.Name, err.Error())
+				}
 			}
 		} else if paramName := fieldType.Tag.Get(ParamTag); paramName != "" {
 			// 处理通用param标签（兼容双模式）

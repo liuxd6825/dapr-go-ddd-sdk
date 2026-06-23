@@ -3,7 +3,7 @@ package model
 import (
 	"strings"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/model"
 )
 
 type SuRecord struct {

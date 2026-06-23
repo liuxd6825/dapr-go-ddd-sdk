@@ -47,21 +47,22 @@ import (
 	pkg43 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	pkg44 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	pkg45 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel/script"
-	pkg46 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	pkg47 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	pkg48 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
-	pkg49 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
-	pkg50 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/command"
-	pkg51 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/dao"
-	pkg52 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
-	pkg53 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/factory"
-	pkg54 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/model"
-	pkg55 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/query"
-	pkg56 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/restapi"
+	pkg46 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
+	pkg49 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record"
+	pkg50 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/command"
+	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/dao"
+	pkg52 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/event"
+	pkg53 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/factory"
+	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/model"
+	query2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/query"
+	restapi2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/restapi"
+	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/service"
+	pkg58 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/subscribe/sub_import"
+	view2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/view"
 	pkg57 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/service"
-	pkg58 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/subscribe/sub_import"
-	pkg59 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/view"
 	pkg60 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
 	pkg61 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	pkg62 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
@@ -1508,26 +1509,26 @@ func Packages() native.Packages {
 		Name: "dao",
 		Declarations: native.Declarations{
 			// Functions
-			"NewCompanyDao":       pkg51.NewCompanyDao,
-			"CreateTables":        pkg51.CreateTables,
-			"NewRecordDao":        pkg51.NewRecordDao,
-			"NewRecordDayViewDao": pkg51.NewRecordDayViewDao,
-			"NewTagRelationDao":   pkg51.NewTagRelationDao,
-			"NewTranDao":          pkg51.NewTranDao,
+			"NewCompanyDao":       dao2.NewCompanyDao,
+			"CreateTables":        dao2.CreateTables,
+			"NewRecordDao":        dao2.NewRecordDao,
+			"NewRecordDayViewDao": dao2.NewRecordDayViewDao,
+			"NewTagRelationDao":   dao2.NewTagRelationDao,
+			"NewTranDao":          dao2.NewTranDao,
 
 			// Types
-			"CompanyDao":        (*pkg51.CompanyDao)(nil),
-			"RecordDao":         (*pkg51.RecordDao)(nil),
-			"IRecordDayViewDao": (*pkg51.IRecordDayViewDao)(nil),
-			"RecordDayViewDao":  (*pkg51.RecordDayViewDao)(nil),
-			"SummaryType":       (*pkg51.SummaryType)(nil),
-			"TagRelationDao":    (*pkg51.TagRelationDao)(nil),
-			"TranDao":           (*pkg51.TranDao)(nil),
+			"CompanyDao":        (*dao2.CompanyDao)(nil),
+			"RecordDao":         (*dao2.RecordDao)(nil),
+			"IRecordDayViewDao": (*dao2.IRecordDayViewDao)(nil),
+			"RecordDayViewDao":  (*dao2.RecordDayViewDao)(nil),
+			"SummaryType":       (*dao2.SummaryType)(nil),
+			"TagRelationDao":    (*dao2.TagRelationDao)(nil),
+			"TranDao":           (*dao2.TranDao)(nil),
 
 			// Constants
-			"SummaryType_Year":  pkg51.SummaryType_Year,
-			"SummaryType_Month": pkg51.SummaryType_Month,
-			"SummaryType_Day":   pkg51.SummaryType_Day,
+			"SummaryType_Year":  dao2.SummaryType_Year,
+			"SummaryType_Month": dao2.SummaryType_Month,
+			"SummaryType_Day":   dao2.SummaryType_Day,
 
 			// Variables
 		},
@@ -1569,28 +1570,28 @@ func Packages() native.Packages {
 		Name: "model",
 		Declarations: native.Declarations{
 			// Functions
-			"NewRecord":         pkg54.NewRecord,
-			"NewTranId":         pkg54.NewTranId,
-			"NewTranId2":        pkg54.NewTranId2,
-			"NewTran":           pkg54.NewTran,
-			"NewTranFromRecord": pkg54.NewTranFromRecord,
+			"NewRecord":         model2.NewRecord,
+			"NewTranId":         model2.NewTranId,
+			"NewTranId2":        model2.NewTranId2,
+			"NewTran":           model2.NewTran,
+			"NewTranFromRecord": model2.NewTranFromRecord,
 
 			// Types
-			"Company":     (*pkg54.Company)(nil),
-			"IOType":      (*pkg54.IOType)(nil),
-			"CashType":    (*pkg54.CashType)(nil),
-			"AccountType": (*pkg54.AccountType)(nil),
-			"Record":      (*pkg54.Record)(nil),
-			"TagRelation": (*pkg54.TagRelation)(nil),
-			"Tran":        (*pkg54.Tran)(nil),
+			"Company":     (*model2.Company)(nil),
+			"IOType":      (*model2.IOType)(nil),
+			"CashType":    (*model2.CashType)(nil),
+			"AccountType": (*model2.AccountType)(nil),
+			"Record":      (*model2.Record)(nil),
+			"TagRelation": (*model2.TagRelation)(nil),
+			"Tran":        (*model2.Tran)(nil),
 
 			// Constants
-			"IOType_Out":           pkg54.IOType_Out,
-			"IOType_In":            pkg54.IOType_In,
-			"CashType_None":        pkg54.CashType_None,
-			"CashType_Cash":        pkg54.CashType_Cash,
-			"AccountType_Personal": pkg54.AccountType_Personal,
-			"AccountType_Company":  pkg54.AccountType_Company,
+			"IOType_Out":           model2.IOType_Out,
+			"IOType_In":            model2.IOType_In,
+			"CashType_None":        model2.CashType_None,
+			"CashType_Cash":        model2.CashType_Cash,
+			"AccountType_Personal": model2.AccountType_Personal,
+			"AccountType_Company":  model2.AccountType_Company,
 
 			// Variables
 		},
@@ -1602,21 +1603,21 @@ func Packages() native.Packages {
 			// Functions
 
 			// Types
-			"RecordFindByIdQuery":              (*pkg55.RecordFindByIdQuery)(nil),
-			"RecordFindByIdsQuery":             (*pkg55.RecordFindByIdsQuery)(nil),
-			"RecordFindAllQuery":               (*pkg55.RecordFindAllQuery)(nil),
-			"RecordFindByCaseIdQuery":          (*pkg55.RecordFindByCaseIdQuery)(nil),
-			"RecordFindByDocIdQuery":           (*pkg55.RecordFindByDocIdQuery)(nil),
-			"RecordFindByTaskIdQuery":          (*pkg55.RecordFindByTaskIdQuery)(nil),
-			"RecordFindByFileIdQuery":          (*pkg55.RecordFindByFileIdQuery)(nil),
-			"RecordFindPagingQuery":            (*pkg55.RecordFindPagingQuery)(nil),
-			"RecordFindPagingResult":           (*pkg55.RecordFindPagingResult)(nil),
-			"TranDetailFindThresholdQuery":     (*pkg55.TranDetailFindThresholdQuery)(nil),
-			"TranDetailFindCashThresholdQuery": (*pkg55.TranDetailFindCashThresholdQuery)(nil),
-			"RecordDayFindByIdQuery":           (*pkg55.RecordDayFindByIdQuery)(nil),
-			"RecordDayFindByCaseIdQuery":       (*pkg55.RecordDayFindByCaseIdQuery)(nil),
-			"RecordDayFindBySumChartQuery":     (*pkg55.RecordDayFindBySumChartQuery)(nil),
-			"RecordDayFindBySumTableQuery":     (*pkg55.RecordDayFindBySumTableQuery)(nil),
+			"RecordFindByIdQuery":              (*query2.RecordFindByIdQuery)(nil),
+			"RecordFindByIdsQuery":             (*query2.RecordFindByIdsQuery)(nil),
+			"RecordFindAllQuery":               (*query2.RecordFindAllQuery)(nil),
+			"RecordFindByCaseIdQuery":          (*query2.RecordFindByCaseIdQuery)(nil),
+			"RecordFindByDocIdQuery":           (*query2.RecordFindByDocIdQuery)(nil),
+			"RecordFindByTaskIdQuery":          (*query2.RecordFindByTaskIdQuery)(nil),
+			"RecordFindByFileIdQuery":          (*query2.RecordFindByFileIdQuery)(nil),
+			"RecordFindPagingQuery":            (*query2.RecordFindPagingQuery)(nil),
+			"RecordFindPagingResult":           (*query2.RecordFindPagingResult)(nil),
+			"TranDetailFindThresholdQuery":     (*query2.TranDetailFindThresholdQuery)(nil),
+			"TranDetailFindCashThresholdQuery": (*query2.TranDetailFindCashThresholdQuery)(nil),
+			"RecordDayFindByIdQuery":           (*query2.RecordDayFindByIdQuery)(nil),
+			"RecordDayFindByCaseIdQuery":       (*query2.RecordDayFindByCaseIdQuery)(nil),
+			"RecordDayFindBySumChartQuery":     (*query2.RecordDayFindBySumChartQuery)(nil),
+			"RecordDayFindBySumTableQuery":     (*query2.RecordDayFindBySumTableQuery)(nil),
 
 			// Constants
 
@@ -1628,30 +1629,30 @@ func Packages() native.Packages {
 		Name: "restapi",
 		Declarations: native.Declarations{
 			// Functions
-			"NewSchemaAPI":        pkg56.NewSchemaAPI,
-			"NewTagRelationAPI":   pkg56.NewTagRelationAPI,
-			"NewGraphAPI":         pkg56.NewGraphAPI,
-			"NewHtmlAPI":          pkg56.NewHtmlAPI,
-			"Init":                pkg56.Init,
-			"RegisterSchema":      pkg56.RegisterSchema,
-			"RegisterHtml":        pkg56.RegisterHtml,
-			"RegisterRecord":      pkg56.RegisterRecord,
-			"RegisterRecordDay":   pkg56.RegisterRecordDay,
-			"RegisterCdcToNeo4j":  pkg56.RegisterCdcToNeo4j,
-			"RegisterSub":         pkg56.RegisterSub,
-			"NewRecordAPI":        pkg56.NewRecordAPI,
-			"NewRecordDayViewApi": pkg56.NewRecordDayViewApi,
+			"NewSchemaAPI":        restapi2.NewSchemaAPI,
+			"NewTagRelationAPI":   restapi2.NewTagRelationAPI,
+			"NewGraphAPI":         restapi2.NewGraphAPI,
+			"NewHtmlAPI":          restapi2.NewHtmlAPI,
+			"Init":                restapi2.Init,
+			"RegisterSchema":      restapi2.RegisterSchema,
+			"RegisterHtml":        restapi2.RegisterHtml,
+			"RegisterRecord":      restapi2.RegisterRecord,
+			"RegisterRecordDay":   restapi2.RegisterRecordDay,
+			"RegisterCdcToNeo4j":  restapi2.RegisterCdcToNeo4j,
+			"RegisterSub":         restapi2.RegisterSub,
+			"NewRecordAPI":        restapi2.NewRecordAPI,
+			"NewRecordDayViewApi": restapi2.NewRecordDayViewApi,
 
 			// Types
-			"SchemaAPI":          (*pkg56.SchemaAPI)(nil),
-			"TagRelationAPI":     (*pkg56.TagRelationAPI)(nil),
-			"GraphAPI":           (*pkg56.GraphAPI)(nil),
-			"FindByCaseIdParams": (*pkg56.FindByCaseIdParams)(nil),
-			"FindByIdParams":     (*pkg56.FindByIdParams)(nil),
-			"FindByNameParams":   (*pkg56.FindByNameParams)(nil),
-			"HtmlAPI":            (*pkg56.HtmlAPI)(nil),
-			"RecordAPI":          (*pkg56.RecordAPI)(nil),
-			"RecordDayViewApi":   (*pkg56.RecordDayViewApi)(nil),
+			"SchemaAPI":          (*restapi2.SchemaAPI)(nil),
+			"TagRelationAPI":     (*restapi2.TagRelationAPI)(nil),
+			"GraphAPI":           (*restapi2.GraphAPI)(nil),
+			"FindByCaseIdParams": (*restapi2.FindByCaseIdParams)(nil),
+			"FindByIdParams":     (*restapi2.FindByIdParams)(nil),
+			"FindByNameParams":   (*restapi2.FindByNameParams)(nil),
+			"HtmlAPI":            (*restapi2.HtmlAPI)(nil),
+			"RecordAPI":          (*restapi2.RecordAPI)(nil),
+			"RecordDayViewApi":   (*restapi2.RecordDayViewApi)(nil),
 
 			// Constants
 
@@ -1663,21 +1664,21 @@ func Packages() native.Packages {
 		Name: "service",
 		Declarations: native.Declarations{
 			// Functions
-			"NewFileService":          pkg57.NewFileService,
-			"NewRecordDayViewService": pkg57.NewRecordDayViewService,
-			"NewRecordService":        pkg57.NewRecordService,
-			"NewSchemaService":        pkg57.NewSchemaService,
-			"NewTagRelationService":   pkg57.NewTagRelationService,
-			"NewTranDetailService":    pkg57.NewTranDetailService,
+			"NewFileService":          service2.NewFileService,
+			"NewRecordDayViewService": service2.NewRecordDayViewService,
+			"NewRecordService":        service2.NewRecordService,
+			"NewSchemaService":        service2.NewSchemaService,
+			"NewTagRelationService":   service2.NewTagRelationService,
+			"NewTranDetailService":    service2.NewTranDetailService,
 
 			// Types
-			"Options":              (*pkg57.Options)(nil),
-			"IFileService":         (*pkg57.IFileService)(nil),
-			"RecordDayViewService": (*pkg57.RecordDayViewService)(nil),
-			"RecordService":        (*pkg57.RecordService)(nil),
-			"ISchemaService":       (*pkg57.ISchemaService)(nil),
-			"TagRelationService":   (*pkg57.TagRelationService)(nil),
-			"TranDetailService":    (*pkg57.TranDetailService)(nil),
+			"Options":              (*service2.Options)(nil),
+			"IFileService":         (*service2.IFileService)(nil),
+			"RecordDayViewService": (*service2.RecordDayViewService)(nil),
+			"RecordService":        (*service2.RecordService)(nil),
+			"ISchemaService":       (*service2.ISchemaService)(nil),
+			"TagRelationService":   (*service2.TagRelationService)(nil),
+			"TranDetailService":    (*service2.TranDetailService)(nil),
 
 			// Constants
 			"DBKey": pkg57.DBKey,
@@ -1705,16 +1706,16 @@ func Packages() native.Packages {
 		Name: "view",
 		Declarations: native.Declarations{
 			// Functions
-			"NewRecordSumTableView": pkg59.NewRecordSumTableView,
-			"NewRecordDayViewId":    pkg59.NewRecordDayViewId,
-			"NewRecordDayView":      pkg59.NewRecordDayView,
-			"NewRecordSumChartView": pkg59.NewRecordSumChartView,
+			"NewRecordSumTableView": view2.NewRecordSumTableView,
+			"NewRecordDayViewId":    view2.NewRecordDayViewId,
+			"NewRecordDayView":      view2.NewRecordDayView,
+			"NewRecordSumChartView": view2.NewRecordSumChartView,
 
 			// Types
-			"RecordSumTableQueryView": (*pkg59.RecordSumTableQueryView)(nil),
-			"RecordSumTableView":      (*pkg59.RecordSumTableView)(nil),
-			"RecordDayView":           (*pkg59.RecordDayView)(nil),
-			"RecordSumChartView":      (*pkg59.RecordSumChartView)(nil),
+			"RecordSumTableQueryView": (*view2.RecordSumTableQueryView)(nil),
+			"RecordSumTableView":      (*view2.RecordSumTableView)(nil),
+			"RecordDayView":           (*view2.RecordDayView)(nil),
+			"RecordSumChartView":      (*view2.RecordSumChartView)(nil),
 
 			// Constants
 

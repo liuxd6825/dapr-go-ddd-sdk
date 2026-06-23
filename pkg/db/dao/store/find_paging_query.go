@@ -107,7 +107,7 @@ type FindPagingQueryDTO struct {
 }
 
 type FindByIdRequest struct {
-	Id string `json:"id" query:"id" validate:"required" title:"id"`
+	Id string `json:"id" param:"id" validate:"required" title:"id"`
 }
 
 type FindAllQueryRequest struct {

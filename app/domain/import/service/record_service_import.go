@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	command2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/doris"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/event"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/event"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"

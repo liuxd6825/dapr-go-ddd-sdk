@@ -35,7 +35,7 @@ func StartApp(opts *AppStartOptions) {
 			serverEnv := env.App.HServer
 			if serverEnv.Enable {
 				srcName := serverEnv.SrcName
-				webName := serverEnv.WebName
+				webName := env.App.WebName
 				return hserver.InitHServer(server, flag.MainFile, srcName, webName, server.EnvConfig(), serverEnv.WatchRestart, opts.OnHServerInitEvent)
 			}
 			return nil

@@ -19,6 +19,10 @@ type Human struct {
 	// Meta: dbField.readable=true, column.hide=true, query.allowQuery=false
 	CaseId string `json:"caseId" meta:"dbField.readable=true, column.hide=true, query.allowQuery=false" `
 
+	// Code 编码
+	// Meta: readonly, allowGroup
+	Code string `json:"code,omitempty" title:"编码" gorm:"code"`
+
 	// Name 姓名 (Required)
 	Name string `json:"name" meta:"ui5-input, width=150" title:"姓名" required:"true"`
 

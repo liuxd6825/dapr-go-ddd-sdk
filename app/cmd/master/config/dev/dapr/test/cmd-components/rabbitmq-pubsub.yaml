@@ -1,0 +1,43 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: pubsub
+  namespace:
+spec:
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+    - name: host
+      value: "amqp://rabbitmq:123456@192.168.120.224:5672"
+    - name: exchangeKind
+      value: "topic" # <--- 修改这里以匹配现有的交换机类型
+    - name: consumerID
+      value: "test-master-service"
+    - name: enableDeadLetter
+      value: "true"
+    - name: deletedWhenUnused
+      value: "false"
+    - name: autoAck #  false:手动确认推荐,保证消息可靠性;
+      value: "false"
+    - name: deliveryMode
+      value: "0"
+    - name: requeueInFailure
+      value: "true"
+
+    #  1:严格顺序消费(阻塞模式); 大于1: 并行处理，提高吞吐量; 0:无限模式;
+    - name: prefetchCount
+      value: "1"
+    - name: reconnectWait
+      value: "0"
+    - name: concurrencyMode
+      value: single
+
+    # 建议为共享队列设置为 durable：消息是否保存
+    - name: durable
+      value: "true"
+
+    # --- 解决此问题的关键配置 ---
+    # 明确禁用 Dapr 的自动死信队列功能。
+    # 这会阻止 Dapr 在 QueueDeclare 时发送 'x-dead-letter-exchange' 参数。
+    - name: enableDeadLettering
+      value: "false"

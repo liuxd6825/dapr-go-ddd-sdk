@@ -3,13 +3,12 @@ package hserver
 import (
 	"fmt"
 
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/html/handler/render"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/handler/file_handler"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 )
@@ -66,16 +65,20 @@ func InitHServer(httpServer *restapp.HttpServer, fileName string, srcFsName stri
 	irisApp := httpServer.App()
 
 	if webFs != nil {
-		nodeModulesFs := env.Fsm.GetFsByTag("node-modules")
-		cfg := &file_handler.Config{
-			ServerFs:    srcFs,
-			WebFs:       webFs,
-			NodeModules: nodeModulesFs,
-			Env:         env,
-		}
-		fileHandler := file_handler.NewHandler(irisApp, vData, cfg)
-		httpServer.App().Get("/{file:path}", fileHandler.Handle)
-		restapi.View = fileHandler.RenderView
+		//nodeModulesFs := env.Fsm.GetFsByTag("node-modules")
+		/*
+			cfg := &render.Config{
+				ServerFs:    srcFs,
+				WebFs:       webFs,
+				NodeModules: nodeModulesFs,
+				Env:         env,
+			}
+			fileHandler := render.NewRenderHandler(irisApp, vData, cfg)
+			httpServer.App().Get("/{file:path}", fileHandler.Handle)
+			restapi.View = fileHandler.RenderView
+		*/
+
+		render.RegisterRenderHandler(irisApp, env, vData)
 	}
 	if srcFs != nil && autoRestart {
 		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {
