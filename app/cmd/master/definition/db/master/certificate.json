@@ -1,0 +1,105 @@
+{
+  "description": "人员-证件-基本信息",
+  "name": "certificate",
+  "order": 1001,
+  "properties": {
+    "humanId": {
+      "name": "humanId",
+      "notNull": true,
+      "order": 1001,
+      "title": "人员Id",
+      "type": "string"
+    },
+    "remark": {
+      "name": "remark",
+      "order": 1002,
+      "title": "备注",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "caseId": {
+      "name": "caseId",
+      "notNull": true,
+      "order": 1003,
+      "title": "项目Id",
+      "type": "string"
+    },
+    "id": {
+      "name": "id",
+      "notNull": true,
+      "order": 1004,
+      "title": "主键",
+      "type": "string"
+    },
+    "endDate": {
+      "name": "endDate",
+      "order": 1005,
+      "title": "结束日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "certificateType": {
+      "name": "certificateType",
+      "order": 1006,
+      "title": "证件类型",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "certificateCode": {
+      "name": "certificateCode",
+      "order": 1007,
+      "title": "证件编号",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "aaaaa": {
+      "name": "aaaaa",
+      "order": 1008,
+      "title": "bbbbbb",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "tenantId": {
+      "name": "tenantId",
+      "notNull": true,
+      "order": 1009,
+      "title": "租户Id",
+      "type": "string"
+    },
+    "startDate": {
+      "name": "startDate",
+      "order": 1010,
+      "title": "开始日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "used": {
+      "name": "used",
+      "order": 1011,
+      "title": "是否常用",
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "caseId",
+    "humanId"
+  ],
+  "type": "object"
+}

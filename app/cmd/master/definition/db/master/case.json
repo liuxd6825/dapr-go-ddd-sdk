@@ -1,0 +1,215 @@
+{
+  "name": "master_case",
+  "type": "object",
+  "description": "项目",
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "dbTable": {
+      "name": "master_case",
+      "dbKey": "$db"
+    },
+    "form": {
+      "default": {
+        "name": "default",
+        "title": "默认",
+        "items": [
+          { "field": "name" },
+          { "field": "caseTypeId" },
+          { "field": "subjectName" },
+          { "field": "investigators" },
+          { "field": "filingTime" },
+          { "field": "status" },
+          { "field": "remark" },
+          { "field": "creatorName"},
+          { "field": "updaterName"}
+        ]
+      }
+    }
+  },
+  "required": ["name", "subjectName"],
+  "properties": {
+    "name": {
+      "type": ["string"],
+      "title": "项目名称",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "query": {
+          "allowQuery": true
+        }
+      }
+    },
+    "code": {
+      "type": ["string", "null"],
+      "title": "项目编号",
+      "order": 101,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "filingTime": {
+      "type": ["date", "null"],
+      "title": "结案时间",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "subjectName": {
+      "type": ["string", "null"],
+      "title": "项目主体"
+    },
+    "investigators": {
+      "type": ["string", "null"],
+      "title": "办案人员",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "status": {
+      "type": ["string", "null"],
+      "title": "项目状态",
+      "meta": {
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "items": [
+              { "code": "NotStarted", "title": "未启动" },
+              { "code": "EarlyStage", "title": "前期" },
+              { "code": "Filed", "title": "已立案" },
+              { "code": "ClosedCase", "title": "已结案" }
+            ]
+          }
+        },
+        "query": {
+          "ctlType": "select",
+          "options": {
+            "key": "code",
+            "label": "title",
+            "items": [
+              { "code": "NotStarted", "title": "未启动" },
+              { "code": "EarlyStage", "title": "前期" },
+              { "code": "Filed", "title": "已立案" },
+              { "code": "ClosedCase", "title": "已结案" }
+            ]
+          }
+        }
+      }
+    },
+    "caseTypeId": {
+      "type": "string",
+      "title": "项目类型",
+      "meta": {
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "apiUrl": "/api/v1.0/sys/dict-type/CaseType/dictionary",
+            "key": "code",
+            "label": "title"
+          }
+        },
+        "query": {
+          "ctlType": "select",
+          "key": "code",
+          "label": "title",
+          "options": {
+            "apiUrl": "/api/v1.0/sys/dict-type/CaseType/dictionary",
+            "key": "code",
+            "label": "title"
+          }
+        }
+      }
+    },
+    "remark": {
+      "name": "remark",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "备注",
+      "order": 9001,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-textarea",
+          "colSpan": "S2 M2 L2 XL2"
+        },
+        "dbField": {
+          "size": 500
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "creatorName": {
+      "name": "creatorName",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "创建人",
+      "order": 9004,
+      "meta": {
+        "dbField": {
+          "creatable": true,
+          "updatable": true,
+          "readable": true
+        },
+        "column": {
+          "hide": true,
+          "readonly": true
+        },
+        "form": {
+          "ctlType": "e-editor-input"
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "updaterName": {
+      "name": "updaterName",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "修改人",
+      "order": 9007,
+      "meta": {
+        "dbField": {
+          "creatable": true,
+          "updatable": true,
+          "readable": true
+        },
+        "form": {
+          "ctlType": "e-editor-input"
+        },
+        "query": {
+          "allowQuery": false
+        },
+        "column": {
+          "readonly": true
+        }
+      }
+    }
+  }
+}

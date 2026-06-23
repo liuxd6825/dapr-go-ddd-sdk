@@ -1,0 +1,149 @@
+{
+  "description": "人员-地址",
+  "name": "human_address",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_address",
+      "dbKey": "$db",
+      "properties": {
+        "neo4j": {
+          "type": "node"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "order": 102,
+      "title": "项目Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "order": 102,
+      "title": "人员Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "country": {
+      "name": "country",
+      "order": 101,
+      "title": "国家",
+      "type": [
+        "string",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "width": 120
+        }
+      }
+    },
+    "province": {
+      "name": "province",
+      "order": 102,
+      "title": "省份",
+      "type": [
+        "string",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "width": 120
+        }
+      }
+    },
+    "city": {
+      "name": "city",
+      "order": 103,
+      "title": "城市",
+      "type": [
+        "string",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "width": 120
+        }
+      }
+    },
+    "addr": {
+      "name": "addr",
+      "order": 104,
+      "title": "详细地址",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "purpose": {
+      "name": "purpose",
+      "order": 105,
+      "title": "用途",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "startDate": {
+      "name": "startDate",
+      "order": 106,
+      "title": "开始日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "endDate": {
+      "name": "endDate",
+      "order": 107,
+      "title": "结束日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "used": {
+      "name": "used",
+      "order": 108,
+      "title": "是否常用",
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "horizontal": "center"
+        }
+      }
+    }
+  }
+}

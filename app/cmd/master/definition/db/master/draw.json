@@ -1,0 +1,149 @@
+{
+  "description": "分析图",
+  "name": "draw",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "drawId",
+      "aggType": "master.draw",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "draw",
+       "dbKey": "$db"
+    },
+    "form": {
+      "default": {
+        "items": [
+          {"field": "name"},
+          {
+            "field": "remark",
+            "ctlType": "ui5-textarea"
+          },
+          {
+            "field": "creatorName",
+            "hide": false,
+            "ctlType": "e-editor-input"
+          },
+          {
+            "field": "updaterName",
+            "hide": false,
+            "ctlType": "e-editor-input"
+          }
+        ]
+      }
+    }
+  },
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "order": 102,
+      "title": "图名",
+      "type": "string",
+      "meta": {
+        "column": {
+          "width": 500
+        }
+      }
+    },
+    "fileName": {
+      "name": "fileName",
+      "order": 108,
+      "title": "文件名",
+      "type": ["string", "null"],
+      "meta": {
+        "query": {
+          "allowQuery": false
+        },
+        "column": {
+          "width": 500,
+          "hide": true
+        }
+      }
+    },
+    "status": {
+      "name": "status",
+      "order": 107,
+      "title": "图状态",
+      "type": ["string", "null"],
+      "meta": {
+        "query": {
+          "allowQuery": false
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "remark": {
+      "name": "remark",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "备注",
+      "order": 9001,
+      "meta": {
+        "dbField": {
+          "size": 200
+        },
+        "query": {
+          "allowQuery": true
+        },
+        "column": {
+          "width": 500
+        }
+      }
+    },
+    "updaterName": {
+      "name": "updaterName",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "修改人",
+      "order": 9007,
+      "meta": {
+        "dbField": {
+          "creatable": true,
+          "updatable": true,
+          "readable": true
+        },
+        "form": {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": true
+        },
+        "column": {
+          "readonly": true,
+          "width": 200
+        }
+      }
+    }
+  }
+}

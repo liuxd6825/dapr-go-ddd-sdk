@@ -1,0 +1,103 @@
+{
+  "name": "human_reported_amount",
+  "type": "object",
+  "description": "报案人金额",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_reported_amount",
+       "dbKey": "$db"
+    }
+  },
+  "properties": {
+    "humanId": {
+      "name": "humanId",
+      "title": "人员Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "reportInvestAmount": {
+      "name": "reportInvestAmount",
+      "type": ["number", "null"],
+      "title": "报案投资金额",
+      "order": 2002
+    },
+    "reportRefundAmount": {
+      "name": "reportRefundAmount",
+      "type": ["number", "null"],
+      "title": "报案返款金额",
+      "order": 2003
+    },
+    "reportLossAmount": {
+      "name": "reportLossAmount",
+      "type": ["number", "null"],
+      "title": "报案损失金额",
+      "order": 2004
+    },
+    "contractInvestAmount": {
+      "name": "contractInvestAmount",
+      "type": ["number", "null"],
+      "title": "合同投资金额",
+      "order": 2005
+    },
+    "contractRefundAmount": {
+      "name": "contractRefundAmount",
+      "type": ["number", "null"],
+      "title": "合同返利金额",
+      "order": 2006
+    },
+    "contractLossAmount": {
+      "name": "contractLossAmount",
+      "type": ["number", "null"],
+      "title": "合同损失金额",
+      "order": 2007
+    },
+    "diffInvestAmount": {
+      "name": "diffInvestAmount",
+      "type": ["number", "null"],
+      "title": "投资金额差",
+      "order": 2008
+    },
+    "diffRefundAmount": {
+      "name": "diffRefundAmount",
+      "type": ["number", "null"],
+      "title": "返利金额差",
+      "order": 2009
+    },
+    "diffLossAmount": {
+      "name": "diffLossAmount",
+      "type": ["number", "null"],
+      "title": "损失金额差",
+      "order": 2010
+    }
+  }
+}

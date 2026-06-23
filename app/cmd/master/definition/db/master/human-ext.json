@@ -1,0 +1,92 @@
+{
+  "description": "人员-扩展信息",
+  "name": "human_ext",
+  "order": 101,
+  "type": "object",
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_ext",
+       "dbKey": "$db"
+    },
+    "attributes": {
+      "neo4j": {
+        "labels": [
+          "ext"
+        ],
+        "type": [
+          "rel",
+          "node"
+        ],
+        "title": "其他"
+      }
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "order": 102,
+      "title": "人员Id",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "extType": {
+      "name": "extType",
+      "order": 107,
+      "title": "类型",
+      "type": [
+        "string",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "width": 300
+        }
+      }
+    },
+    "content": {
+      "name": "content",
+      "order": 108,
+      "title": "内容",
+      "type": [
+        "string",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "width": 500
+        }
+      }
+    }
+  }
+}

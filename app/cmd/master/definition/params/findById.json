@@ -1,0 +1,18 @@
+{
+  "name": "findById",
+  "type": "object",
+  "description": "按ID查询",
+  "properties": {
+    "id": {
+      "type": "string",
+      "title": "ID",
+      "example": "/api/v1.0/human/{id}",
+      "meta": {
+        "param": {
+          "name": "id",
+          "type": "path"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "name": "company_product",
+  "type": "object",
+  "description": "合同产品关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "companyId",
+      "aggType": "master.company",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "company_product",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "product", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${companyId}",
+      "relEnd": "${id}",
+      "relType": "own",
+      "relName": "relationType",
+      "name": "name"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true,
+          "nodeLabelFormat": "case_%s",
+          "nodeLabel": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "companyId": {
+      "name": "companyId",
+      "title": "合同Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 108,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"发售产品\", \"代理产品\", \"购买产品\"]"
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "产品名称",
+      "order": 2003
+    },
+    "code": {
+      "name": "code",
+      "type": ["string", "null"],
+      "title": "产品编号",
+      "order": 2007
+    },
+    "nature": {
+      "name": "nature",
+      "type": ["string", "null"],
+      "title": "产品性质",
+      "order": 2005
+    },
+    "productType": {
+      "name": "productType",
+      "type": ["string", "null"],
+      "title": "产品类型",
+      "order": 2005
+    },
+    "seller": {
+      "name": "seller",
+      "type": ["string", "null"],
+      "title": "发售方",
+      "order": 2009
+    },
+    "startDate": {
+      "name": "startDate",
+      "type": ["date", "null"],
+      "title": "生效日期",
+      "order": 2009
+    },
+    "endDate": {
+      "name": "endDate",
+      "type": ["date", "null"],
+      "title": "失效日期",
+      "order": 2009
+    },
+    "remark": {
+      "name": "remark",
+      "type": ["string", "null"],
+      "title": "说明",
+      "order": 2009
+    }
+  }
+}

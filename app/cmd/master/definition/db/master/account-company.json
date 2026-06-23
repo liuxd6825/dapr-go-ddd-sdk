@@ -1,0 +1,96 @@
+{
+  "name": "account_company",
+  "type": "object",
+  "description": "账号与公司关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "companyId",
+      "aggType": "master.account",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "account_company",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "company", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${accountId}",
+      "relEnd": "${id}",
+      "relType": "own"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "accountId": {
+      "name": "accountId",
+      "title": "账号ID",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 108,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"开户人\", \"借用人\", \"流程往来\"]"
+        }
+      }
+    },
+    "useType": {
+      "type": ["string", "null"],
+      "title": "公司名称",
+      "order": 2003,
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"公司\", \"人员\", \"合同\", \"产品\"]"
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "公司名称",
+      "order": 2003
+    },
+    "startDate": {
+      "type": ["date", "null"],
+      "title": "开始时间",
+      "order": 2013
+    },
+    "endDate": {
+      "type": ["date", "null"],
+      "title": "结束日期",
+      "order": 2023
+    }
+  }
+}

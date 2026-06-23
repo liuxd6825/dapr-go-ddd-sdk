@@ -1,0 +1,108 @@
+{
+  "name": "product_contract",
+  "type": "object",
+  "description": "产品人员关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.product",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "product_contract",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "contract", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${productId}",
+      "relEnd": "${id}",
+      "relType": "own",
+      "relName": "relationType",
+      "name": "name"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "productId": {
+      "title": "产品Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 2001,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"产品交易合同\"]"
+        },
+        "dbField": {
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "合同名称",
+      "order": 2003
+    },
+    "code": {
+      "name": "code",
+      "type": ["string", "null"],
+      "title": "合同编号",
+      "order": 2007
+    },
+    "contractType": {
+      "name": "productType",
+      "type": ["string", "null"],
+      "title": "合同类型",
+      "order": 2003
+    },
+    "firstParty": {
+      "name": "firstParty",
+      "type": ["string", "null"],
+      "title": "甲方",
+      "order": 2005
+    },
+    "secondParty": {
+      "name": "secondParty",
+      "type": ["string", "null"],
+      "title": "乙方",
+      "order": 2005
+    },
+    "amount": {
+      "name": "amount",
+      "type": ["number", "null"],
+      "title": "产品金额",
+      "order": 2009
+    }
+  }
+}

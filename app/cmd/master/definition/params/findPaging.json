@@ -1,0 +1,111 @@
+{
+    "name": "findPaging",
+    "type": "object",
+    "description": "项目",
+    "meta": {
+        "convert": {
+            "name": "PagingQueryConverter"
+        }
+    },
+    "properties": {
+        "filter": {
+            "type": ["string","null"],
+            "title": "过滤条件",
+            "example": "name=='lxd' and address~='c%' and name!='001' ",
+            "meta": {
+                "param": {
+                    "name": "filter",
+                    "type": "query"
+                }
+            }
+        },
+        "fields": {
+            "type": "string",
+            "title": "要返回的字段",
+            "example": "field1, field2, field3",
+            "meta": {
+                "param": {
+                    "name": "fields",
+                    "type": "query"
+                }
+            }
+        },
+        "sort": {
+            "type": "string",
+            "title": "排序",
+            "example": "name:desc,address:asc",
+            "meta": {
+                "param": {
+                    "name": "sort",
+                    "type": "query"
+                }
+            }
+        },
+        "pageNum": {
+            "type": ["number","null"],
+            "title": "页号",
+            "default": "0",
+            "meta": {
+                "param": {
+                    "name": "page-num",
+                    "type": "query"
+                }
+            }
+        },
+        "pageSize": {
+            "type": ["number","null"],
+            "title": "页大小",
+            "default": 20,
+            "meta": {
+                "param": {
+                    "name": "page-size",
+                    "type": "query"
+                }
+            }
+        },
+        "groupCols": {
+            "type": ["string","null"],
+            "title": "页大小",
+            "example": "field1:$type, field2:$type, ...  $type = string | int | float | money | date | dateTime | bool | array | object | year | month | day ",
+            "meta": {
+                "param": {
+                    "name": "group-cols",
+                    "type": "query"
+                }
+            }
+        },
+        "groupKeys": {
+            "type": ["string", "null"],
+            "title": "当前分组字段",
+            "example": "field1, field2, field3, ...",
+            "meta": {
+                "param": {
+                    "name":"group-keys",
+                    "type": "query"
+                }
+            }
+        },
+        "valueCols": {
+            "type": ["string", "null"],
+            "title": "汇总字段",
+            "example": "payout:$func,income:$func,amount:$func;$func=sum|count|avg|first|last|max|min|zer ",
+            "meta": {
+                "param": {
+                    "name":"value-cols",
+                    "type": "query"
+                }
+            }
+        },
+        "isTotalRows": {
+            "type": ["boolean", "null"],
+            "title": "汇总字段",
+            "example": "payout:$func,income:$func,amount:$func;$func=sum|count|avg|first|last|max|min|zer ",
+            "meta": {
+                "param": {
+                    "name":"is-total-rows",
+                    "type": "query"
+                }
+            }
+        }
+    }
+}

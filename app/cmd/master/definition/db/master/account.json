@@ -1,0 +1,125 @@
+{
+  "description": "账号",
+  "name": "account",
+  "order": 101,
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "accountId",
+      "aggType": "master.account",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "account",
+      "dbKey": "$db"
+    },
+    "column": {
+      "default": {
+        "name": "default",
+        "title": "默认",
+        "items": [
+          {"field": "id"},
+          {"field": "tenantId"},
+          {"field": "caseId"},
+          {"field": "account"},
+          {"field": "orgName"},
+          {"field": "accountNum"},
+          {"field": "startDate"},
+          {"field": "endDate"},
+          {"field": "used"},
+          {"field": "remark"},
+          {"field": "createdTime"}
+        ]
+      }
+    },
+    "attribute": {
+      "neo4j":{
+        "tag": ["account"]
+      }
+    },
+    "graph":{
+      "isEnable": true,
+      "graphType": "node",
+      "labels": ["account", "master"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "account": {
+      "name": "account",
+      "order": 102,
+      "title": "账号",
+      "type": "string",
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "orgName": {
+      "name": "orgName",
+      "order": 108,
+      "title": "机构名称",
+      "type": ["string", "null"]
+    },
+    "accountNum": {
+      "name": "accountNum",
+      "order": 107,
+      "title": "账号",
+      "type": ["string", "null"]
+    },
+    "startDate": {
+      "name": "startDate",
+      "order": 111,
+      "title": "开始日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "endDate": {
+      "name": "endDate",
+      "order": 106,
+      "title": "结束日期",
+      "type": [
+        "date",
+        "null"
+      ]
+    },
+    "used": {
+      "name": "used",
+      "order": 112,
+      "title": "是否常用",
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "meta": {
+        "column": {
+          "horizontal": "center"
+        }
+      }
+    }
+  }
+}

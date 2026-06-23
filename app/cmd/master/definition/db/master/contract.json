@@ -1,0 +1,386 @@
+{
+  "name": "contract",
+  "type": "object",
+  "description": "合同基本信息",
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "id",
+      "aggType": "master.contract",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "contract",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "contract", "master"],
+      "graphType": ["node"]
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 1001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        },
+        "form": {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "code": {
+      "name": "code",
+      "type": "string",
+      "title": "编码",
+      "order": 1001,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-input",
+          "readonly": true
+        },
+        "column": {
+          "width": "120"
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "contractCode": {
+      "name": "contractCode",
+      "type": "string",
+      "title": "合同编号",
+      "order": 1002,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-input",
+          "required": true
+        },
+        "column": {
+          "width": "120"
+        },
+        "query": {
+          "ctlType": "text"
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string"],
+      "title": "合同名称",
+      "order": 1003
+    },
+    "contractType": {
+      "name": "contractType",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "合同类型",
+      "order": 1004,
+      "meta": {
+        "query": {
+          "allowQuery": false
+        },
+        "column": {
+          "width": "120"
+        }
+      }
+    },
+    "sourceType": {
+      "name": "sourceType",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "数据来源",
+      "order": 1005,
+      "meta": {
+        "query": {
+          "allowQuery": false
+        },
+        "column": {
+          "width": "120"
+        }
+      }
+    },
+    "contractStatus": {
+      "name": "contractStatus",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "合同状态",
+      "order": 1006,
+      "meta": {
+        "query": {
+          "ctlType": "select",
+          "options": {
+            "key": "code",
+            "label": "title",
+            "items": [
+              {
+                "code": "有效合同",
+                "title": "有效合同"
+              },
+              {
+                "code": "无效合同",
+                "title": "无效合同"
+              },
+              {
+                "code": "效力待定合同",
+                "title": "效力待定合同"
+              },
+              {
+                "code": "解除合同",
+                "title": "解除合同"
+              },
+              {
+                "code": "终止合同",
+                "title": "终止合同"
+              }
+            ]
+          }
+        },
+        "column": {
+          "width": "120"
+        },
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "items": [
+              {
+                "code": "有效合同",
+                "title": "有效合同"
+              },
+              {
+                "code": "无效合同",
+                "title": "无效合同"
+              },
+              {
+                "code": "效力待定合同",
+                "title": "效力待定合同"
+              },
+              {
+                "code": "解除合同",
+                "title": "解除合同"
+              },
+              {
+                "code": "终止合同",
+                "title": "终止合同"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "amount": {
+      "name": "amount",
+      "type": [
+        "number",
+        "null"
+      ],
+      "title": "合同金额",
+      "order": 1007,
+      "meta": {
+        "query": {
+          "allowQuery": false
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "planStartDate": {
+      "name": "planStartDate",
+      "type": [
+        "date",
+        "null"
+      ],
+      "title": "计划开始日期",
+      "order": 1008,
+      "meta": {
+        "query": {
+          "ctlType": "dateRange"
+        }
+      }
+    },
+    "planEndDate": {
+      "name": "planEndDate",
+      "type": [
+        "date",
+        "null"
+      ],
+      "title": "计划完成日期",
+      "order": 1014,
+      "meta": {
+        "query": {
+          "ctlType": "dateRange"
+        }
+      }
+    },
+    "realStartDate": {
+      "name": "realStartDate",
+      "type": [
+        "date",
+        "null"
+      ],
+      "title": "实际开始日期",
+      "order": 1015,
+      "meta": {
+        "query": {
+          "ctlType": "dateRange"
+        }
+      }
+    },
+    "realEndDate": {
+      "name": "realEndDate",
+      "type": [
+        "date",
+        "null"
+      ],
+      "title": "实际完成日期",
+      "order": 1024,
+      "meta": {
+        "query": {
+          "ctlType": "dateRange"
+        }
+      }
+    },
+    "tagId": {
+      "name": "tagId",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "tagId",
+      "order": 1025,
+      "meta": {
+        "column": {
+          "hide": true
+        },
+        "form" : {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        },
+        "dbField": {
+          "size": 500
+        }
+      }
+    },
+    "tagColor": {
+      "name": "tagColor",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "tagColor",
+      "order": 1025,
+      "meta": {
+        "column": {
+          "hide": true
+        },
+        "form" : {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        },
+        "dbField": {
+          "size": 500
+        }
+      }
+    },
+    "tagName": {
+      "name": "tagName",
+      "title": "标签",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1025,
+      "meta": {
+        "column": {
+          "width": 300
+        },
+        "form": {
+          "ctlType": "ui5e-tag-selector",
+          "options": {
+            "tagTypeUrl": "/api/v1.0/sys/tag-type",
+            "tagUrl": "/api/v1.0/sys/tag",
+            "isForm": true
+          }
+        },
+        "query": {
+          "allowQuery": true,
+          "ctlType": "tagSelector",
+          "options": {
+            "tagTypeUrl": "/api/v1.0/sys/tag-type",
+            "tagUrl": "/api/v1.0/sys/tag",
+            "isForm": true
+          }
+        },
+        "dbField": {
+          "size": 500
+        }
+      }
+    },
+    "remark": {
+      "name": "remark",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "备注",
+      "order": 1800,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-textarea",
+          "colSpan": "-1",
+          "rows": 3
+        },
+        "dbField": {
+          "size": 200
+        }
+      }
+    },
+    "content": {
+      "name": "content",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "合同内容",
+      "order": 1900,
+      "meta": {
+        "query": {
+          "allowQuery": false
+        },
+        "form": {
+          "ctlType": "ui5-textarea",
+          "colSpan": "-1",
+          "rows": 4
+        }
+      }
+    }
+  },
+  "order": 1001
+}

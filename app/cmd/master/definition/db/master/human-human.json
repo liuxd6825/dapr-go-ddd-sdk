@@ -1,0 +1,125 @@
+{
+  "name": "human_human",
+  "type": "object",
+  "description": "人员关系",
+  "allOf": [
+    {"$ref": "/definition/db/base.json"}
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "humanId",
+      "aggType": "master.human",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "human_human",
+       "dbKey": "$db"
+    },
+    "graph": {
+      "isEnable": true,
+      "labels": ["case_${caseId}", "human", "master"],
+      "graphType": ["rel","node"],
+      "relStart": "${humanId}",
+      "relEnd": "${id}",
+      "relType": "own",
+      "relName": "relationType",
+      "name": "name"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "humanId": {
+      "name": "humanId",
+      "title": "人员Id",
+      "type": "string",
+      "order": 2001,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        }
+      }
+    },
+    "relationType": {
+      "name": "relationType",
+      "order": 108,
+      "title": "关系类型",
+      "type": ["string", "null"],
+      "meta": {
+        "column": {
+          "type": "dropdown",
+          "source": "[\"\",\"亲属\", \"同事\", \"朋友\"]"
+        },
+        "dbField": {
+          "relType": true
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "type": ["string", "null"],
+      "title": "姓名",
+      "order": 2003,
+      "meta": {
+        "column": {
+          "width": 100
+        }
+      }
+    },
+    "gender": {
+      "name": "gender",
+      "type": ["string", "null"],
+      "title": "性别",
+      "order": 2007,
+      "meta": {
+        "column": {
+          "width": 100
+        }
+      }
+    },
+    "age": {
+      "name": "age",
+      "type": ["integer", "null"],
+      "title": "年龄",
+      "order": 2005,
+      "meta": {
+        "column": {
+          "width": 100
+        }
+      }
+    },
+    "identNum": {
+      "name": "identNum",
+      "type": ["string", "null"],
+      "title": "证件号",
+      "order": 2006
+    },
+    "link": {
+      "name": "link",
+      "type": ["string", "null"],
+      "title": "联系方式",
+      "order": 2008
+    },
+    "addr": {
+      "name": "addr",
+      "type": ["string", "null"],
+      "title": "地址",
+      "order": 2009
+    }
+  }
+}

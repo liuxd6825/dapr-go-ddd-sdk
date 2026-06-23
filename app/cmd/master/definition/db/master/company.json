@@ -1,0 +1,719 @@
+{
+  "name": "company",
+  "type": "object",
+  "description": "公司基本信息",
+  "allOf": [
+    {
+      "$ref": "/definition/db/base.json"
+    }
+  ],
+  "meta": {
+    "ddd": {
+      "aggField": "id",
+      "aggType": "master.company",
+      "isPubEvent": true
+    },
+    "dbTable": {
+      "name": "company",
+      "dbKey": "$db",
+      "properties": {
+        "neo4j": {
+          "type": "node"
+        }
+      }
+    },
+    "form": {},
+    "graph": {
+      "isEnable": true,
+      "graphType": ["node"],
+      "labels": ["case_${caseId}", "company", "master"],
+      "name": "name"
+    }
+  },
+  "properties": {
+    "caseId": {
+      "name": "caseId",
+      "title": "项目Id",
+      "type": "string",
+      "order": 100,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "column": {
+          "hide": true
+        },
+        "form": {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "code": {
+      "name": "code",
+      "title": "公司编码",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 999,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "form": {
+          "readonly": true
+        },
+        "query": {
+          "allowQuery": false
+        }
+      }
+    },
+    "name": {
+      "name": "name",
+      "title": "公司名称",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1000,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "form": {
+          "required": true
+        },
+        "query": {
+          "allowQuery": true
+        }
+      }
+    },
+    "regNo": {
+      "name": "regNo",
+      "title": "工商注册号",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1001
+    },
+    "operatingStatus": {
+      "name": "operatingStatus",
+      "title": "经营状态",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1004,
+      "meta": {
+        "dbField": {
+          "readable": true
+        },
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "items": [
+              {
+                "code": "存续",
+                "title": "存续"
+              },
+              {
+                "code": "在业",
+                "title": "在业"
+              },
+              {
+                "code": "吊销",
+                "title": "吊销"
+              },
+              {
+                "code": "注销",
+                "title": "注销"
+              },
+              {
+                "code": "迁入",
+                "title": "迁入"
+              },
+              {
+                "code": "迁出",
+                "title": "迁出"
+              },
+              {
+                "code": "停业",
+                "title": "停业"
+              },
+              {
+                "code": "清算",
+                "title": "清算"
+              }
+            ]
+          }
+        },
+        "query": {
+          "ctlType": "select",
+          "options": {
+            "key": "code",
+            "label": "title",
+            "items": [
+              {
+                "code": "存续",
+                "title": "存续"
+              },
+              {
+                "code": "在业",
+                "title": "在业"
+              },
+              {
+                "code": "吊销",
+                "title": "吊销"
+              },
+              {
+                "code": "注销",
+                "title": "注销"
+              },
+              {
+                "code": "迁入",
+                "title": "迁入"
+              },
+              {
+                "code": "迁出",
+                "title": "迁出"
+              },
+              {
+                "code": "停业",
+                "title": "停业"
+              },
+              {
+                "code": "清算",
+                "title": "清算"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "creditCode": {
+      "name": "creditCode",
+      "title": "统一社会信用代码",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1005
+    },
+    "identification": {
+      "name": "identification",
+      "title": "纳税人识别号",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1006
+    },
+    "orgCode": {
+      "title": "组织机构代码",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1007
+    },
+    "businessTerm": {
+      "title": "营业期限",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1008
+    },
+    "qualification": {
+      "title": "纳税人资质",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1009
+    },
+    "approvalDate": {
+      "title": "核准日期",
+      "type": [
+        "date",
+        "null"
+      ],
+      "order": 1010
+    },
+    "createDate": {
+      "title": "成立时间",
+      "type": [
+        "date",
+        "null"
+      ],
+      "order": 1011
+    },
+    "entType": {
+      "title": "企业类型",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1012,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "items": [
+              {
+                "code": "国有企业",
+                "title": "国有企业"
+              },
+              {
+                "code": "集体企业",
+                "title": "集体企业"
+              },
+              {
+                "code": "股份合作企业",
+                "title": "股份合作企业"
+              },
+              {
+                "code": "联营企业",
+                "title": "联营企业"
+              },
+              {
+                "code": "有限责任公司",
+                "title": "有限责任公司"
+              },
+              {
+                "code": "股份有限公司",
+                "title": "股份有限公司"
+              },
+              {
+                "code": "私营企业",
+                "title": "私营企业"
+              },
+              {
+                "code": "其他企业",
+                "title": "其他企业"
+              },
+              {
+                "code": "合资经营企业",
+                "title": "合资经营企业"
+              },
+              {
+                "code": "合作经营企业",
+                "title": "合作经营企业"
+              },
+              {
+                "code": "港、澳、台商独资经营企业",
+                "title": "港、澳、台商独资经营企业"
+              },
+              {
+                "code": "港、澳、台商投资股份有限公司",
+                "title": "港、澳、台商投资股份有限公司"
+              },
+              {
+                "code": "中外合资经营企业",
+                "title": "中外合资经营企业"
+              },
+              {
+                "code": "中外合作经营企业",
+                "title": "中外合作经营企业"
+              },
+              {
+                "code": "外资企业",
+                "title": "外资企业"
+              },
+              {
+                "code": "外商投资股份有限公司",
+                "title": "外商投资股份有限公司"
+              }
+            ]
+          }
+        },
+        "query": {
+          "ctlType": "select",
+          "options": {
+            "key": "code",
+            "label": "title",
+            "items": [
+              {
+                "code": "国有企业",
+                "title": "国有企业"
+              },
+              {
+                "code": "集体企业",
+                "title": "集体企业"
+              },
+              {
+                "code": "股份合作企业",
+                "title": "股份合作企业"
+              },
+              {
+                "code": "联营企业",
+                "title": "联营企业"
+              },
+              {
+                "code": "有限责任公司",
+                "title": "有限责任公司"
+              },
+              {
+                "code": "股份有限公司",
+                "title": "股份有限公司"
+              },
+              {
+                "code": "私营企业",
+                "title": "私营企业"
+              },
+              {
+                "code": "其他企业",
+                "title": "其他企业"
+              },
+              {
+                "code": "合资经营企业",
+                "title": "合资经营企业"
+              },
+              {
+                "code": "合作经营企业",
+                "title": "合作经营企业"
+              },
+              {
+                "code": "港、澳、台商独资经营企业",
+                "title": "港、澳、台商独资经营企业"
+              },
+              {
+                "code": "港、澳、台商投资股份有限公司",
+                "title": "港、澳、台商投资股份有限公司"
+              },
+              {
+                "code": "中外合资经营企业",
+                "title": "中外合资经营企业"
+              },
+              {
+                "code": "中外合作经营企业",
+                "title": "中外合作经营企业"
+              },
+              {
+                "code": "外资企业",
+                "title": "外资企业"
+              },
+              {
+                "code": "外商投资股份有限公司",
+                "title": "外商投资股份有限公司"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "industry": {
+      "title": "行业",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1013
+    },
+    "personnelSize": {
+      "title": "人员规模",
+      "type": [
+        "integer",
+        "null"
+      ],
+      "order": 1014
+    },
+    "insuredPersons": {
+      "title": "参保人数",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1015
+    },
+    "regAuthority": {
+      "title": "登记机关",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1016
+    },
+    "nameUsed": {
+      "title": "曾用名",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1017
+    },
+    "engName": {
+      "title": "英文名称",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1018
+    },
+    "addr": {
+      "name": "addr",
+      "title": "注册地址",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1019
+    },
+    "addrType": {
+      "title": "地址类型",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1021,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "items": [
+              {
+                "code": "商用办公地址",
+                "title": "商用办公地址"
+              },
+              {
+                "code": "商住两用地址",
+                "title": "商住两用地址"
+              },
+              {
+                "code": "集中办公区地址",
+                "title": "集中办公区地址"
+              },
+              {
+                "code": "虚拟注册地址",
+                "title": "虚拟注册地址"
+              },
+              {
+                "code": "产业园区地址",
+                "title": "产业园区地址"
+              }
+            ]
+          }
+        },
+        "query": {
+          "ctlType": "select",
+          "options": {
+            "key": "code",
+            "label": "title",
+            "items": [
+              {
+                "code": "商用办公地址",
+                "title": "商用办公地址"
+              },
+              {
+                "code": "商住两用地址",
+                "title": "商住两用地址"
+              },
+              {
+                "code": "集中办公区地址",
+                "title": "集中办公区地址"
+              },
+              {
+                "code": "虚拟注册地址",
+                "title": "虚拟注册地址"
+              },
+              {
+                "code": "产业园区地址",
+                "title": "产业园区地址"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "regCapitalType": {
+      "name": "regCapitalType",
+      "title": "注册资本类型",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1022,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-select",
+          "options": {
+            "items": [
+              {
+                "code": "实缴注册资本",
+                "title": "实缴注册资本"
+              },
+              {
+                "code": "认缴注册资本",
+                "title": "认缴注册资本"
+              }
+            ]
+          }
+        },
+        "query": {
+          "ctlType": "select",
+          "options": {
+            "key": "code",
+            "label": "title",
+            "items": [
+              {
+                "code": "实缴注册资本",
+                "title": "实缴注册资本"
+              },
+              {
+                "code": "认缴注册资本",
+                "title": "认缴注册资本"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "regCapital": {
+      "name": "regCapital",
+      "title": "注册资本",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1023
+    },
+    "paidInCapital": {
+      "name": "paidInCapital",
+      "title": "实缴资本",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1024
+    },
+    "tagId": {
+      "name": "tagId",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "tagId",
+      "order": 1025,
+      "maxLength": 500,
+      "meta": {
+        "column": {
+          "hide": true
+        },
+        "form" : {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        },
+        "dbField": {
+          "size": 500
+        }
+      }
+    },
+    "tagColor": {
+      "name": "tagColor",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "tagColor",
+      "order": 1025,
+      "maxLength": 500,
+      "meta": {
+        "column": {
+          "hide": true
+        },
+        "form" : {
+          "hide": true
+        },
+        "query": {
+          "allowQuery": false
+        },
+        "dbField": {
+          "size": 500
+        }
+      }
+    },
+    "tagName": {
+      "name": "tagName",
+      "title": "标签",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 1025,
+      "maxLength": 500,
+      "meta": {
+        "column": {
+          "width": 300
+        },
+        "form": {
+          "ctlType": "ui5e-tag-selector",
+          "options": {
+            "tagTypeUrl": "/api/v1.0/sys/tag-type",
+            "tagUrl": "/api/v1.0/sys/tag",
+            "isForm": true
+          }
+        },
+        "query": {
+          "allowQuery": true,
+          "ctlType": "tagSelector",
+          "options": {
+            "tagTypeUrl": "/api/v1.0/sys/tag-type",
+            "tagUrl": "/api/v1.0/sys/tag",
+            "isForm": true
+          }
+        },
+        "dbField": {
+          "size": 500
+        }
+      }
+    },
+    "remark": {
+      "name": "remark",
+      "type": [
+        "string",
+        "null"
+      ],
+      "title": "备注",
+      "order": 9001,
+      "meta": {
+        "form": {
+          "ctlType": "ui5-textarea",
+          "colSpan": "-1",
+          "rows": "3"
+        },
+        "dbField": {
+          "size": 200
+        }
+      }
+    },
+    "natureOfBusiness": {
+      "title": "经营范围",
+      "type": [
+        "string",
+        "null"
+      ],
+      "order": 9100,
+      "meta": {
+        "dbField": {
+          "size": 2000
+        },
+        "form": {
+          "colSpan": "-1",
+          "ctlType": "ui5-textarea",
+          "maxlength": "100",
+          "rows": "8"
+        },
+        "column": {
+          "width": "300"
+        }
+      }
+    }
+  },
+  "order": 1001
+}
