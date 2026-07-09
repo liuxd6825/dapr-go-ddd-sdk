@@ -21,7 +21,7 @@ type Document struct {
 	StartTime  *time.Time       `json:"startTime,omitempty" gorm:"start_time"  bson:"start_time" title:"开始时间"`   // 开始时间
 	EndTime    *time.Time       `json:"endTime,omitempty" gorm:"end_time"  bson:"end_time" title:"结束时间"`         // 结束时间
 	Message    string           `json:"message,omitempty" gorm:"message"  bson:"message" title:"消息"`             // 消息
-
+	RagDocId   string           `json:"ragDocId,omitempty" gorm:"rag_doc_id" bson:"rag_doc_id" title:"Rag文档Id"`
 }
 
 type DocumentState string

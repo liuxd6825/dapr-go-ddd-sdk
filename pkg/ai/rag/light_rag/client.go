@@ -21,12 +21,14 @@ type Client struct {
 	query      *QueryService
 	graph      *GraphService
 	baseUrl    string
+	apiKey     string
 }
 
-func NewClient(baseUrl string, httpClient *http.Client) *Client {
+func NewClient(baseUrl string, apiKey string, httpClient *http.Client) *Client {
 	cli := &Client{
 		httpClient: httpClient,
 		baseUrl:    baseUrl,
+		apiKey:     apiKey,
 	}
 	cli.doc = NewDocumentService(cli)
 	cli.query = NewQueryService(cli)
@@ -57,8 +59,9 @@ func (c *Client) Put(ctx context.Context, url string, data any) (resp *http.Resp
 	return c.httpClient.Do(request)
 }
 
-func (c *Client) Delete(ctx context.Context, url string) (resp *http.Response, err error) {
-	request := c.newRequest(ctx, http.MethodDelete, url, nil)
+func (c *Client) Delete(ctx context.Context, url string, data any) (resp *http.Response, err error) {
+	reader := c.newReader(ctx, data)
+	request := c.newRequest(ctx, http.MethodDelete, url, reader)
 	return c.httpClient.Do(request)
 }
 
@@ -74,6 +77,11 @@ func (c *Client) newRequest(ctx context.Context, methodType string, url string, 
 		Header: http.Header{},
 		Body:   NewReadCloser(body),
 	}
+	if body == nil {
+		request.Body = nil
+	}
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-API-Key", c.apiKey)
 	return request
 }
 
@@ -110,11 +118,11 @@ func (c *Client) getJsonData(ctx context.Context, resp *http.Response, data any)
 	return json.Unmarshal(bytes, data)
 }
 
-func (c *Client) uploadFile(ctx context.Context, url string, fileName string, fs afero.Fs) error {
+func (c *Client) uploadFile(ctx context.Context, url string, fileName string, fs afero.Fs) (string, error) {
 	// 打开文件
 	fileData, err := afero.ReadFile(fs, fileName)
 	if err != nil {
-		return fmt.Errorf("unable to open file: %v", err)
+		return "", fmt.Errorf("unable to open file: %v", err)
 	}
 	fileReader := bytes.NewReader(fileData)
 	// 创建一个缓冲区用于存储 multipart 数据
@@ -125,43 +133,59 @@ func (c *Client) uploadFile(ctx context.Context, url string, fileName string, fs
 	// 创建一个文件字段并将文件数据写入其中
 	part, err := writer.CreateFormFile("file", filepath.Base(fileName))
 	if err != nil {
-		return fmt.Errorf("unable to create form file: %v", err)
+		return "", fmt.Errorf("unable to create form file: %v", err)
 	}
 
 	// 将文件内容复制到表单字段中
 	_, err = io.Copy(part, fileReader)
 	if err != nil {
-		return fmt.Errorf("unable to copy file contents: %v", err)
+		return "", fmt.Errorf("unable to copy file contents: %v", err)
 	}
 
 	// 结束 multipart 写入
 	err = writer.Close()
 	if err != nil {
-		return fmt.Errorf("unable to close writer: %v", err)
+		return "", fmt.Errorf("unable to close writer: %v", err)
 	}
 
 	// 创建请求
 	req, err := http.NewRequest(http.MethodPost, c.baseUrl+url, body)
 	if err != nil {
-		return fmt.Errorf("unable to create request: %v", err)
+		return "", fmt.Errorf("unable to create request: %v", err)
 	}
 
 	// 设置 Content-Type 头
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-API-Key", c.apiKey)
 
 	// 执行请求
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("request failed: %v", err)
+		return "", fmt.Errorf("request failed: %v", err)
 	}
 	defer resp.Body.Close()
 
 	// 检查响应状态码
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("upload failed with status: %v", resp.Status)
+		return "", fmt.Errorf("upload failed with status: %v", resp.Status)
 	}
 
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("upload failed: %v", err)
+	}
+	res := &uploadResult{}
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return "", fmt.Errorf("upload failed: %v", err)
+	}
 	// 成功上传
 	fmt.Println("File uploaded successfully!")
-	return nil
+	return res.TrackId, nil
+}
+
+type uploadResult struct {
+	Message string `json:"message"`
+	Status  string `json:"status"`
+	TrackId string `json:"track_id"`
 }

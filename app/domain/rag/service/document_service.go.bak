@@ -3,8 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/light_rag"
-	"net/http"
 	"sync"
 	"time"
 
@@ -14,6 +12,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service/interfaces"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/doc_extract"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -28,9 +28,9 @@ import (
 )
 
 type DocumentService struct {
-	dao      *dao.DocumentDao
-	graphRag *light_rag.DocumentService
-	//docExtract     *doc_extract.Extract
+	dao            *dao.DocumentDao
+	graphRag       *my_rag.GraphRag
+	docExtract     *doc_extract.Extract
 	statusProvider interfaces.ImportStatusProvider
 	current        *model.Document
 }
@@ -40,16 +40,13 @@ var documentServiceOnce sync.Once
 
 func NewDocumentService(statusProvider interfaces.ImportStatusProvider) *DocumentService {
 	documentServiceOnce.Do(func() {
-		ragCfg := light_rag.LoadLightRagConfig()
-		cli := light_rag.NewClient(ragCfg.Url, ragCfg.ApiKey, &http.Client{})
 		documentService = &DocumentService{
-			dao: dao.NewDocumentDao(DBKey),
-			//graphRag:       NewGraphRag(),
-			//docExtract:     doc_extract.NewExtract(logs.GetLogger2()),
+			dao:            dao.NewDocumentDao(DBKey),
+			graphRag:       NewGraphRag(),
+			docExtract:     doc_extract.NewExtract(logs.GetLogger2()),
 			statusProvider: statusProvider,
-			graphRag:       light_rag.NewDocumentService(cli),
 		}
-		//documentService.graphRag.SetOnEvents(documentService.initOnEvents)
+		documentService.graphRag.SetOnEvents(documentService.initOnEvents)
 	})
 	return documentService
 }
@@ -138,54 +135,26 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 				}
 
 				fileName := fmt.Sprintf("%s/%s", doc.FilePath, doc.FileName)
-				//text, err := s.docExtract.Extract(fs, fileName)
-				//if err != nil {
-				//	msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
-				//	_ = s.updateState(ctx, doc, model.DocumentState_FormatNotSupported, msg)
-				//	logs.Errorfmt(ctx, msg)
-				//	continue
-				//}
-				//ragDoc := &entity.Document{
-				//	Id:         doc.Id,
-				//	Text:       text,
-				//	FileName:   doc.FileName,
-				//	TenantId:   doc.TenantId,
-				//	CaseId:     doc.CaseId,
-				//	SourceUrl:  doc.SourceUrl,
-				//	SourceName: doc.SourceName,
-				//}
-				//_, err = s.graphRag.IngestDocument(ctx, ragDoc)
-				trackId, err := s.graphRag.Upload(ctx, fileName, fs)
+				text, err := s.docExtract.Extract(fs, fileName)
+				if err != nil {
+					msg := fmt.Sprintf("fskey=%s, fileName=%s, extract error:%s", doc.FsKey, doc.FileName, err.Error())
+					_ = s.updateState(ctx, doc, model.DocumentState_FormatNotSupported, msg)
+					logs.Errorfmt(ctx, msg)
+					continue
+				}
+				ragDoc := &entity.Document{
+					Id:         doc.Id,
+					Text:       text,
+					FileName:   doc.FileName,
+					TenantId:   doc.TenantId,
+					CaseId:     doc.CaseId,
+					SourceUrl:  doc.SourceUrl,
+					SourceName: doc.SourceName,
+				}
+				_, err = s.graphRag.IngestDocument(ctx, ragDoc)
 				if err != nil {
 					logs.ErrorMsg(ctx, "rag scan UpdateStatus", err.Error())
 					_ = s.updateState(ctx, doc, model.DocumentState_Failure, err.Error())
-					continue
-				}
-				success := true
-				for {
-					time.Sleep(time.Second * 5)
-					resp, err := s.graphRag.GetStatuses(ctx, trackId)
-					if err != nil {
-						_ = s.updateState(ctx, doc, model.DocumentState_Failure, err.Error())
-						success = false
-						break
-					}
-					if len(resp.Statuses.FAILED) > 0 {
-						doc.RagDocId = resp.Statuses.FAILED[0].Id
-						_ = s.updateState(ctx, doc, model.DocumentState_Failure, "文档解析失败")
-						success = false
-						break
-					}
-					if len(resp.Statuses.COMPLETED) > 0 {
-						doc.RagDocId = resp.Statuses.COMPLETED[0].Id
-						break
-					}
-					if len(resp.Statuses.PROCESSED) > 0 {
-						doc.RagDocId = resp.Statuses.PROCESSED[0].Id
-						break
-					}
-				}
-				if !success {
 					continue
 				}
 				_ = s.updateState(ctx, doc, model.DocumentState_Succee, "")
@@ -216,11 +185,7 @@ func (s *DocumentService) updateState(ctx context.Context, doc *model.Document, 
 		doc.State = state
 		doc.Message = msg
 		callOptions := idao.NewCallOptions()
-		if doc.RagDocId != "" {
-			callOptions.SetUpdateFields([]string{"state", "message", "rag_doc_id"})
-		} else {
-			callOptions.SetUpdateFields([]string{"state", "message"})
-		}
+		callOptions.SetUpdateFields([]string{"state", "message"})
 		_ = s.dao.Update(ctx, doc, callOptions)
 		_ = s.statusProvider.UpdateStatus(ctx, doc, state.String(), msg)
 		return nil
@@ -228,20 +193,20 @@ func (s *DocumentService) updateState(ctx context.Context, doc *model.Document, 
 }
 
 // Ingests 提取文档知识
-//func (s *DocumentService) Ingests(ctx context.Context, document []*model.Document, streams ...func(txt string)) []error {
-//	var docList []*entity.Document
-//	for _, item := range document {
-//		doc := &entity.Document{
-//			Id:       item.Id,
-//			FileName: item.FileName,
-//			TenantId: item.TenantId,
-//			CaseId:   item.CaseId,
-//		}
-//		docList = append(docList, doc)
-//	}
-//	_, _, errs := s.graphRag.IngestDocuments(ctx, docList)
-//	return errs
-//}
+func (s *DocumentService) Ingests(ctx context.Context, document []*model.Document, streams ...func(txt string)) []error {
+	var docList []*entity.Document
+	for _, item := range document {
+		doc := &entity.Document{
+			Id:       item.Id,
+			FileName: item.FileName,
+			TenantId: item.TenantId,
+			CaseId:   item.CaseId,
+		}
+		docList = append(docList, doc)
+	}
+	_, _, errs := s.graphRag.IngestDocuments(ctx, docList)
+	return errs
+}
 
 func (s *DocumentService) Create(ctx context.Context, cmd *command.DocumentCreateCommand) error {
 	doc := newDocumentWithCreateCommand(ctx, cmd)
@@ -276,9 +241,9 @@ func (s *DocumentService) create(ctx context.Context, entity *model.Document, op
 	entity.TenantId = tenantId
 
 	s.dao.Create(ctx, entity, opts...)
-	//if ok := s.docExtract.IsSupport(entity.FileName); !ok {
-	//	entity.State = model.DocumentState_FormatNotSupported
-	//}
+	if ok := s.docExtract.IsSupport(entity.FileName); !ok {
+		entity.State = model.DocumentState_FormatNotSupported
+	}
 
 	return s.statusProvider.UpdateStatus(ctx, entity, entity.State.String(), "")
 
@@ -305,32 +270,8 @@ func (s *DocumentService) delete(ctx context.Context, caseId, id string, opts ..
 	if errs.HasError() {
 		return errs
 	}
-	doc, err := s.dao.FindById(ctx, id)
-	if err != nil {
-		return err
-	}
-	res := s.dao.DeleteByRSQL(ctx, fmt.Sprintf(`tenant_id=="%s" and case_id=="%s" and id=="%s"`, tenantId, caseId, id), opts...)
-	if res.Error != nil {
-		return res.Error
-	}
-	if doc.RagDocId != "" {
-		_, err = s.graphRag.Delete(ctx, []string{doc.RagDocId})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *DocumentService) DeleteByRSql(ctx context.Context, cmd *command.DocumentDeleteByDocCommand, opts ...idao.CallOptions) error {
-	docs, err := s.dao.FindByRSQL(ctx, fmt.Sprintf(`source_type=="document" and source_id=="%s"`, cmd.Data.DocId))
-	if err != nil {
-		return err
-	}
-	if len(docs) == 0 {
-		return nil
-	}
-	return s.delete(ctx, docs[0].CaseId, docs[0].Id)
+	s.dao.DeleteByRSQL(ctx, fmt.Sprintf(`tenant_id=="%s" and case_id="%s" and id=="%s"`, tenantId, caseId, id), opts...)
+	return s.graphRag.DeleteDoc(ctx, tenantId, caseId, id)
 }
 
 func (s *DocumentService) lockScan(ctx context.Context, tenantId, caseId string) (bool, error) {

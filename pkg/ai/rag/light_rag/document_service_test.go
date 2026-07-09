@@ -21,7 +21,7 @@ func Test_Upload(t *testing.T) {
 	}
 	defer file.Close()
 
-	err = client().Document().Upload(ctx, filePath, fs)
+	_, err = client().Document().Upload(ctx, filePath, fs)
 	if err != nil {
 		t.Fatal(err)
 	}

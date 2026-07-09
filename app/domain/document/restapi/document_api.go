@@ -367,6 +367,11 @@ func (s *DocumentAPI) Delete(ctx context.Context, cmd *command.DocumentDeleteCom
 			return res.Error
 		}
 
+		err := s.documentService.PublishDeleteRagDocumentEvent(ctx, cmd.Data.Id, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
+
 		res = s.documentMetaService.DeleteByDocumentId(ctx, cmd.Data.Id)
 		if res.Error != nil {
 			return res.Error

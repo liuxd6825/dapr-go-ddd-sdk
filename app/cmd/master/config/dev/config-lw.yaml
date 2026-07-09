@@ -160,9 +160,8 @@ envs:
       rootUrl: /api/v1.0
       authToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOiIyYTBhOTQ4MS01NmY3LTRmMjYtODNjYy0zYzRlMDhkZTMwOGIiLCJleHAiOjE3NzUwNDE2NDYsImlhdCI6MTc3NDk1NTI0Niwic3ViIjoiMmEwYTk0ODEtNTZmNy00ZjI2LTgzY2MtM2M0ZTA4ZGUzMDhiIiwidXNlciI6eyJpZCI6IlFKZWJpUnZIRGFxQ1NvSDcxQ09SYlNtciIsInRlbmFudElkIjoidGVzdCIsInRlbmFudE5hbWUiOiJ0ZXN0IiwiaXNBZG1pbiI6ZmFsc2UsImFjY291bnQiOiJhZG1pbiIsIm5hbWUiOiJhZG1pbiIsInBob25lIjoiIiwiZW1haWwiOiJhZG1pbkAxNjMuY29tIiwiYWRkcmVzcyI6IiIsImdlbmRlciI6IiIsIndvcmsiOiIiLCJoZWFkUGljdHVyZSI6IiIsInN0YXR1cyI6IlVzaW5nIiwib3J5SWRlbnRpdHlJZCI6IjJhMGE5NDgxLTU2ZjctNGYyNi04M2NjLTNjNGUwOGRlMzA4YiIsInNlc3Npb25JZCI6IjQ5NDc3YTQ4LWRjN2ItNGQyNy05OWVkLTc0OGM0NGVkZGZhNyJ9fQ.R0r4ScXPKv3pUEoonSZVqDD9mD0U4pNcMt2POp4dC-E"
       hServer:
-        enable: true
+        enable: false
         srcName: src
-        webName: web
         basePath: ""
         reload: true
         npm:
@@ -172,6 +171,7 @@ envs:
               path: /@fs/D:/Works/New/Code/newCode/h-master/packages
             - name: web
               path: /@fs/D:/Works/New/Code/newCode/draw
+      webName: web
       template:
         enable: true
         fsId: "file"
@@ -187,7 +187,14 @@ envs:
           llm:
             type: "ollama"
             baseURL: "http://192.168.120.224:11434"
-            model: "deepseek-r1:14b"
+            model: "qwen3.5:9b-q8_0"
+            apiKey: "ollama"
+            ctxLength: 32768
+            think: low
+          llm4:
+            type: "openai"
+            baseURL: "https://api.minimaxi.com/v1"
+            model: "MiniMax-M2.7"
             apiKey: ""
           llm2:
             baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -203,6 +210,9 @@ envs:
             dim: 1024
         ory:
           url: "http://192.168.120.224:4434"
+        lightRag:
+          url: "http://192.168.120.224:9621"
+          apiKey: "AcBd_zYeeeE_Ffj"
     fs:
       - name: "drawIoStore"
         type: local
@@ -256,9 +266,9 @@ envs:
         log-level: "info"
         log-file: "D:/Works/New/Code/newCode/h-master/server/logs/${ExeName}.dapr.log"
         log-output-type: "console"
-        config: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/config.yaml"
-        components-path: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/components"
-        resources-path: "D:/Works/New/Code/newCode/h-master/server/config/dev/dapr/dev_lw/components"
+        config: "D:/Works/New/Code/golang/src-dapr/dapr_source/dapr-go-ddd-sdk/app/cmd/master/config/dev/dapr/dev_lw/config.yaml"
+        components-path: "D:/Works/New/Code/golang/src-dapr/dapr_source/dapr-go-ddd-sdk/app/cmd/master/config/dev/dapr/dev_lw/components"
+        resources-path: "D:/Works/New/Code/golang/src-dapr/dapr_source/dapr-go-ddd-sdk/app/cmd/master/config/dev/dapr/dev_lw/components"
         placement-host-address: 127.0.0.1:50005
         scheduler-host-address: 127.0.0.1:50006
         enable-metrics: false
@@ -285,10 +295,19 @@ envs:
         loc: Asia/Shanghai
         parseTime: true
         charset: utf8mb4
+      doris:
+        host: 192.168.120.224
+        port: 9030
+        user: root
+        pwd:
+        dbname: master
+        loc: Asia/Shanghai
+        parseTime: true
+        charset: utf8mb4
     neo4j:
       neo4j:
         host: 192.168.120.224
-        port: 7687
+        port: 17687
         dbname:
         user: neo4j
         pwd: 12345678
@@ -303,6 +322,23 @@ envs:
       port: 7233
       namespace: "default"
       taskQueue: "master-task"
+    elastic:
+      elastic:
+        addresses:
+          - "http://192.168.120.224:9200"
+        username: "elastic"
+        password: "12345678"
+        apiKey: ""
+        serviceToken: ""
+        cloudId: ""
+        caCert: ""
+        clientCert: ""
+        clientKey: ""
+        debug: false
+        retry:
+          maxRetries: 3
+          retryOnTimeout: true
+          retryBackoff: "100ms"
 
   dev_lw:
     app:
