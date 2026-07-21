@@ -35,7 +35,7 @@ func (s *ContractAPI) NewAPIController(app *iris.Application) *restapi.ApiContro
 	controller.Post("/contract", "Create")
 	controller.Put("/contract", "Update")
 	controller.Delete("/contract/{id}", "DeleteById")
-	controller.Delete("/contract:deleteBatch", "DeleteByIds")
+	controller.Delete("/contract:deleteBatch", "DeleteByIds", restapi.WithParamsInBody(true))
 	controller.GetPaging("/contract", "FindPagingByCaseId")
 	controller.GetData("/contract:by-tag", "FindPagingByTagId")
 	controller.GetOne("/contract/{id}", "FindById")
