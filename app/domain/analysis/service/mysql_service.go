@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
@@ -80,6 +81,47 @@ func (s *MysqlService) Aggregate(ctx context.Context, qry *query.MysqlQuery) (an
 	return results, nil
 }
 
+func (s *MysqlService) Summary(ctx context.Context, qry *query.SummaryQuery) (any, error) {
+	sql := fmt.Sprintf("SELECT "+
+		"case_id,name,opp_name, min_date,max_date,total_amount,total_count,total_acct FROM "+
+		"("+
+		" SELECT case_id,name,opp_name,MIN(DATE) AS min_date,MAX(DATE) AS max_date,ROUND(SUM(amount),2) AS total_amount,COUNT(id) AS total_count, COUNT(DISTINCT opp_acct) as total_acct "+
+		" FROM master_record "+
+		" WHERE 1=1 and case_id='%s'"+
+		" %s "+
+		" GROUP BY case_id, name, opp_name"+
+		") t "+
+		" WHERE 1=1 %s "+
+		" order by total_amount desc", qry.CaseId, getDateCondition(qry), getCondition(qry))
+
+	rows, err := s.db.Raw(sql).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	columns, _ := rows.Columns()
+	results := make([]map[string]any, 0)
+
+	for rows.Next() {
+		values := make([]any, len(columns))
+		valuePtrs := make([]any, len(columns))
+		for i := range values {
+			valuePtrs[i] = &values[i]
+		}
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, err
+		}
+		row := make(map[string]any)
+		for i, col := range columns {
+			row[col] = convertValue(values[i])
+		}
+		results = append(results, row)
+	}
+
+	return results, nil
+}
+
 func convertTimeValues(data []map[string]any, timeKey string) []map[string]any {
 	for _, item := range data {
 		if v, ok := item[timeKey]; ok {
@@ -151,4 +193,39 @@ func CompleteAndSortMysqlData(data []map[string]any, timeKey string, timeType mo
 
 	completedData = append(completedData, data[len(data)-1])
 	return completedData, nil
+}
+
+func getDateCondition(qry *query.SummaryQuery) string {
+	condition := ""
+	if qry.DateMin != "" {
+		condition += fmt.Sprintf(" and date >= '%s'", qry.DateMin)
+	}
+	if qry.DateMax != "" {
+		condition += fmt.Sprintf(" and date <= '%s 23:59:59'", qry.DateMax)
+	}
+	return condition
+}
+
+func getCondition(qry *query.SummaryQuery) string {
+	condition := ""
+	if qry.Name != "" {
+		condition += fmt.Sprintf(" and name='%s'", qry.Name)
+	}
+	if qry.OppName != "" {
+		oppName := fmt.Sprintf("%v%v%v", "'", strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(qry.OppName, " ", ""), "，", ","), ",", "','"), "'")
+		condition += fmt.Sprintf(" and opp_name in (%s)", oppName)
+	}
+	if qry.TotalAmountMin != nil {
+		condition += fmt.Sprintf(" and total_amount >= %v", qry.TotalAmountMin)
+	}
+	if qry.TotalAmountMax != nil {
+		condition += fmt.Sprintf(" and total_amount <= %v", qry.TotalAmountMax)
+	}
+	if qry.TotalCountMin != nil {
+		condition += fmt.Sprintf(" and total_count >= %v", qry.TotalCountMin)
+	}
+	if qry.TotalCountMax != nil {
+		condition += fmt.Sprintf(" and total_count <= %v", qry.TotalCountMax)
+	}
+	return condition
 }

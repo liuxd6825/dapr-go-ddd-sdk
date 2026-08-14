@@ -307,7 +307,7 @@ envs:
     neo4j:
       neo4j:
         host: 192.168.120.224
-        port: 17687
+        port: 7687
         dbname:
         user: neo4j
         pwd: 12345678

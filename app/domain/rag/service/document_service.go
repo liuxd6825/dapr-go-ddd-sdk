@@ -105,7 +105,6 @@ func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 		caseId := ""
 		for {
 			_, _ = s.unlockScan(ctx, tenantId, caseId)
-
 			isLockVal, err := s.lockScan(ctx, tenantId, caseId)
 			if err != nil {
 				return err

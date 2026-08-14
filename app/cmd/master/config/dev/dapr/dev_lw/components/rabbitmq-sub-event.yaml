@@ -41,7 +41,7 @@ spec:
     default: /subscribe/rag/event/document-create-event
   metadata:
     rawPayload: "true"                                # 非dapr消息，关系配置
-    queueName: "dev-document.folder.document-event"   # 告诉 Dapr 直接消费这个名字的队列
+    queueName: "dev-document.folder.document-create-event"   # 告诉 Dapr 直接消费这个名字的队列
     routingKey: "rag.document.create-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
 
 ---
@@ -58,7 +58,7 @@ spec:
     default: /subscribe/rag/event/document-delete-event
   metadata:
     rawPayload: "true"                                # 非dapr消息，关系配置
-    queueName: "dev-document.folder.document-event"   # 告诉 Dapr 直接消费这个名字的队列
+    queueName: "dev-document.folder.document-delete-event"   # 告诉 Dapr 直接消费这个名字的队列
     routingKey: "rag.document.delete-event"   # RabbitMQ中的topic， 多个用“,”逗号分隔;
 
 
