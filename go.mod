@@ -104,6 +104,10 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/twpayne/go-geom v1.6.1 // indirect
+	github.com/vesoft-inc/fbthrift v0.0.0-20230214024353-fa2f34755b28 // indirect
+	github.com/vesoft-inc/nebula-go/v3 v3.6.0 // indirect
+	github.com/xitongsys/parquet-go v1.6.0 // indirect
+	github.com/xitongsys/parquet-go-source v0.0.0-20241021075129-b732d2ac9c9b // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 )
 
