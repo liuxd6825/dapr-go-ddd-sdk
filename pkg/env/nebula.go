@@ -46,6 +46,9 @@ func InitDBNebula(env *Env) {
 }
 
 func (env *Env) GetNebulaByKey(dbKey string) (*Nebula, bool) {
+	if env.Nebula == nil {
+		return nil, false
+	}
 	n := env.Nebula[dbKey]
 	return n, n != nil
 }
@@ -53,6 +56,9 @@ func (env *Env) GetNebulaByKey(dbKey string) (*Nebula, bool) {
 func (env *Env) AddNebula(cfg *Nebula) {
 	if cfg == nil {
 		return
+	}
+	if env.Nebula == nil {
+		env.Nebula = map[string]*Nebula{}
 	}
 	env.Nebula[cfg.Name] = cfg
 }
