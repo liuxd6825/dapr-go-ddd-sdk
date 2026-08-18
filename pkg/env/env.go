@@ -66,6 +66,7 @@ func NewEnv() *Env {
 		Neo4j:     map[string]*Neo4j{},
 		Mysql:     map[string]*MySql{},
 		Minio:     map[string]*Minio{},
+		Nebula:    map[string]*Nebula{},
 		Elastic:   map[string]*Elastic{},
 		Redis:     map[string]*Redis{},
 		Fs:        []map[string]any{},
@@ -94,6 +95,7 @@ func (env *Env) Init() {
 	InitDBNeo4j(env)
 
 	initMinio(env)
+	InitDBNebula(env)
 	initDapr(env)
 	initResources(env)
 
