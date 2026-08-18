@@ -21,9 +21,11 @@ func TestRecordNebulaDao_BuildInsertNGQLs(t *testing.T) {
 			Ccy:      "CNY",
 		},
 	}
-	p := ImportParams{
+	p := NebulaImportParams{
 		TenantId:  "t001",
 		CaseId:    "case1",
+		Bucket:    "bucket1",
+		Key:       "key1",
 		BatchSize: 500,
 	}
 	ngqls := BuildInsertNGQLs(p, batch)

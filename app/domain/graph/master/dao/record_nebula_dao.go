@@ -34,6 +34,18 @@ func NewRecordNebulaDao(env *env.Env) *RecordNebulaDao {
 	return _recordNebulaDao
 }
 
+// NebulaImportParams NebulaGraph 导入参数（独立类型，避免与 Parquet ImportParams 的 S3Path 凭证格式混淆）
+type NebulaImportParams struct {
+	TenantId    string
+	CaseId      string
+	Bucket      string
+	Key         string
+	BatchSize   int
+	Parallel    bool
+	Concurrency int
+	Retries     int
+}
+
 // Row parquet 流式读取时的行结构
 type Row struct {
 	TenantId string  `parquet:"name=tenant_id, type=BYTE_ARRAY, convertedtype=UTF8"`
@@ -50,14 +62,13 @@ type Row struct {
 }
 
 // ImportFromS3 通过流式 Parquet 读取 + Nebula nGQL 写入
-func (d *RecordNebulaDao) ImportFromS3(ctx context.Context, p ImportParams) (res *ImportResult, err error) {
+func (d *RecordNebulaDao) ImportFromS3(ctx context.Context, p NebulaImportParams) (res *ImportResult, err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 	}()
 
-	bucket, key := splitS3Path(p.S3Path)
-	if bucket == "" || key == "" {
-		return nil, errors.New("s3Path must include bucket/key, got: %s", p.S3Path)
+	if p.Bucket == "" || p.Key == "" {
+		return nil, errors.New("bucket and key must be non-empty")
 	}
 	if p.BatchSize <= 0 {
 		p.BatchSize = 500
@@ -92,13 +103,13 @@ func (d *RecordNebulaDao) ImportFromS3(ctx context.Context, p ImportParams) (res
 		return nil, errors.New("env minio.default not configured")
 	}
 
-	pf, err := miniosrc.NewS3FileReaderWithClient(ctx, minioCfg.Client, bucket, key)
+	pf, err := miniosrc.NewS3FileReaderWithClient(ctx, minioCfg.Client, p.Bucket, p.Key)
 	if err != nil {
 		return nil, errors.New("open s3 parquet reader failed: %v", err)
 	}
 	defer pf.Close()
 
-	pr, err := reader.NewParquetReader(pf, key, 4)
+	pr, err := reader.NewParquetReader(pf, p.Key, 4)
 	if err != nil {
 		return nil, errors.New("new parquet reader failed: %v", err)
 	}
@@ -109,8 +120,8 @@ func (d *RecordNebulaDao) ImportFromS3(ctx context.Context, p ImportParams) (res
 	start := time.Now()
 
 	logs.InfoMsg(ctx, "RecordNebulaDao.ImportFromS3 start",
-		" bucket=", bucket,
-		" key=", key,
+		" bucket=", p.Bucket,
+		" key=", p.Key,
 		" tenantId=", p.TenantId,
 		" caseId=", p.CaseId,
 		" rows=", num,
@@ -183,7 +194,7 @@ func (d *RecordNebulaDao) initSchema(ctx context.Context, session *nebula.Sessio
 
 // insertBatch 对单批执行 INSERT VERTEX/EDGE
 func (d *RecordNebulaDao) insertBatch(ctx context.Context, session *nebula.Session, batch []Row) error {
-	ngqls := BuildInsertNGQLs(ImportParams{}, batch)
+	ngqls := BuildInsertNGQLs(NebulaImportParams{}, batch)
 	for _, q := range ngqls {
 		if _, err := session.Execute(q); err != nil {
 			return err
@@ -193,7 +204,7 @@ func (d *RecordNebulaDao) insertBatch(ctx context.Context, session *nebula.Sessi
 }
 
 // BuildInsertNGQLs 生成 INSERT VERTEX + INSERT EDGE nGQL 列表
-func BuildInsertNGQLs(p ImportParams, batch []Row) []string {
+func BuildInsertNGQLs(p NebulaImportParams, batch []Row) []string {
 	humans := make(map[string]Row)
 	accounts := make(map[string]Row)
 	for _, r := range batch {
@@ -275,19 +286,4 @@ func BuildInsertNGQLs(p ImportParams, batch []Row) []string {
 
 func escapeNGQL(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
-}
-
-// splitS3Path 从 s3://host[:port]/bucket/key 中解析 bucket / key
-func splitS3Path(s3Path string) (bucket, key string) {
-	trimmed := strings.TrimPrefix(s3Path, "s3://")
-	idx := strings.Index(trimmed, "/")
-	if idx < 0 {
-		return "", ""
-	}
-	rest := trimmed[idx+1:]
-	slash := strings.Index(rest, "/")
-	if slash < 0 {
-		return rest, ""
-	}
-	return rest[:slash], rest[slash+1:]
 }
