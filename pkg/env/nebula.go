@@ -1,6 +1,7 @@
 package env
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -61,6 +62,14 @@ func (env *Env) AddNebula(cfg *Nebula) {
 		env.Nebula = map[string]*Nebula{}
 	}
 	env.Nebula[cfg.Name] = cfg
+}
+
+// GetSession 从连接池获取一个已认证的 Nebula Session
+func (n *Nebula) GetSession(ctx context.Context) (*nebula.Session, error) {
+	if n == nil || n.pool == nil {
+		return nil, fmt.Errorf("nebula connection pool not initialized for %q", n.Name)
+	}
+	return n.pool.GetSession(n.User, n.Password)
 }
 
 func toNebulaHostAddresses(addrs []string) []nebula.HostAddress {
