@@ -103,11 +103,6 @@ func (s *RecordNebulaService) resolveS3Path(s3Path string) (bucket, key string, 
 			return parts[1], parts[2], nil
 		}
 		// 形式 2: s3://bucket/key
-		minioCfg, ok := s.env.GetMinioByKey(nebulaMinioName)
-		if !ok {
-			return "", "", errors.New("env minio.default not configured")
-		}
-		_ = minioCfg
 		parts := strings.SplitN(trimmed, "/", 2)
 		if len(parts) != 2 {
 			return "", "", errors.New("s3 path must include bucket/key, got: %s", s3Path)
