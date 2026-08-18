@@ -15,6 +15,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	})
 	RegisterDrawApi(app, baseUrl, env)
 	RegisterRecordParquetApi(app, baseUrl, env)
+	RegisterRecordNebulaApi(app, baseUrl, env)
 }
 
 func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env) {
@@ -24,4 +25,8 @@ func RegisterDrawApi(app *iris.Application, baseUrl string, env *env.Env) {
 // RegisterRecordParquetApi 注册银行流水 parquet 导入 API
 func RegisterRecordParquetApi(app *iris.Application, baseUrl string, env *env.Env) {
 	restapi.RegisterController(app, NewRecordParquetAPI(env, baseUrl))
+}
+
+func RegisterRecordNebulaApi(app *iris.Application, baseUrl string, env *env.Env) {
+	restapi.RegisterController(app, NewRecordNebulaAPI(env, baseUrl))
 }
