@@ -28,6 +28,7 @@ type Env struct {
 	Neo4j     map[string]*Neo4j    `yaml:"neo4j" json:"neo4J"`
 	Mysql     map[string]*MySql    `yaml:"mysql" json:"mysql"`
 	Minio     map[string]*Minio    `yaml:"minio" json:"minio"`
+	Nebula    map[string]*Nebula   `yaml:"nebula" json:"nebula"`
 	Elastic   map[string]*Elastic  `yaml:"elastic" json:"elastic"`
 	Redis     map[string]*Redis    `yaml:"redis" json:"redis"`
 	Fs        []map[string]any     `yaml:"fs" json:"fs"`
