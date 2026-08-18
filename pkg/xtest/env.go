@@ -96,6 +96,87 @@ func InitEnv_Neo4j(opts ...Neo4jOptions) *env.Env {
 	return envVal
 }
 
+type NebulaOptions struct {
+	Addr     string
+	DBKey    string
+	User     string
+	Password string
+	Space    string
+	PoolSize int
+}
+
+var NebulaRemoveOption = NebulaOptions{
+	Addr:     NebulaHostRemote + ":9669",
+	DBKey:    NebulaDBKey,
+	User:     "root",
+	Password: "nebula",
+	Space:    "test_default",
+	PoolSize: 10,
+}
+
+var NebulaLocalOption = NebulaOptions{
+	Addr:     NebulaHostLocal + ":9669",
+	DBKey:    NebulaDBKey,
+	User:     "root",
+	Password: "nebula",
+	Space:    "test_default",
+	PoolSize: 10,
+}
+
+func NewEnvConfigNebula(opts ...NebulaOptions) *env.Env {
+	addr := NebulaHostLocal + ":9669"
+	dbKey := NebulaDBKey
+	user := "root"
+	password := "nebula"
+	space := "test_default"
+	poolSize := 10
+	for _, opt := range opts {
+		if opt.Addr != "" {
+			addr = opt.Addr
+		}
+		if opt.DBKey != "" {
+			dbKey = opt.DBKey
+		}
+		if opt.User != "" {
+			user = opt.User
+		}
+		if opt.Password != "" {
+			password = opt.Password
+		}
+		if opt.Space != "" {
+			space = opt.Space
+		}
+		if opt.PoolSize > 0 {
+			poolSize = opt.PoolSize
+		}
+	}
+	res := env.NewEnv()
+	res.App.AppId = "test"
+	res.App.AppName = "app"
+	res.App.HttpHost = ""
+	res.App.HttpPort = 0
+	res.App.Meta = map[string]any{
+		"db": dbKey,
+	}
+
+	res.AddNebula(&env.Nebula{
+		Name:     dbKey,
+		Addrs:    []string{addr},
+		User:     user,
+		Password: password,
+		Space:    space,
+		PoolSize: poolSize,
+	})
+	res.Init()
+	return res
+}
+
+func InitEnv_Nebula(opts ...NebulaOptions) *env.Env {
+	envVal := NewEnvConfigNebula(opts...)
+	env.SetEnv(envVal)
+	return envVal
+}
+
 func InitEnv_MongoRemoteTest(opts ...*MongoOptions) *env.Env {
 	envVal := NewEnvConfigMongo(GetMongoEnv_Remote(opts...))
 	env.SetEnv(envVal)

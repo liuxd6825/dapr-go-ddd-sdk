@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
 func TestRecordNebulaService_EmptyPath(t *testing.T) {
@@ -55,5 +56,29 @@ func TestRecordNebulaService_ResolveS3Path(t *testing.T) {
 		if k != c.wantKey {
 			t.Errorf("key: got %q want %q", k, c.wantKey)
 		}
+	}
+}
+
+func TestRecordNebulaService_ImportFromS3(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test in -short mode")
+	}
+
+	envVal := xtest2.InitEnv_Nebula(xtest2.NebulaRemoveOption)
+	ctx := xtest2.NewContext()
+	svc := NewRecordNebulaService(envVal)
+
+	s3Path := "s3://" + testS3Access + ":" + testS3Secret + "@" +
+		testS3Host + "/" + testBucket + "/" + testParquetKey
+
+	res, err := svc.ImportFromS3(ctx, s3Path, testCaseId, ImportOptions{BatchSize: 500})
+	if err != nil {
+		t.Fatalf("first ImportFromS3 failed: %v", err)
+	}
+	if res.Total != 738 {
+		t.Errorf("expected total=738, got %d", res.Total)
+	}
+	if res.FailedOperations != 0 {
+		t.Errorf("expected failed=0, got %d (errors: %v)", res.FailedOperations, res.ErrorMessages)
 	}
 }
