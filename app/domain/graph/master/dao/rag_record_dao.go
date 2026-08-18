@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -25,6 +26,11 @@ func NewRagRecordDao(dbKey string) *RagRecordDao {
 		_recordDao = newRecordDao(dbKey, "record")
 	})
 	return _recordDao
+}
+
+// NewRecordDao 历史命名别名 (向后兼容旧测试文件)
+func NewRecordDao() *RagRecordDao {
+	return NewRagRecordDao(config.Neo4jDBKey)
 }
 
 func newRecordDao(dbKey string, labels ...string) *RagRecordDao {
