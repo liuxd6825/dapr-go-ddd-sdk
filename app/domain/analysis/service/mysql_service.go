@@ -81,8 +81,8 @@ func (s *MysqlService) Aggregate(ctx context.Context, qry *query.MysqlQuery) (an
 	return results, nil
 }
 
-func (s *MysqlService) Summary(ctx context.Context, qry *query.SummaryQuery) (any, error) {
-	sql := fmt.Sprintf("SELECT "+
+func (s *MysqlService) Summary(ctx context.Context, qry *query.SummaryQuery) (map[string]any, error) {
+	subSql := fmt.Sprintf("SELECT "+
 		"case_id,name,opp_name, min_date,max_date,total_amount,total_count,total_acct FROM "+
 		"("+
 		" SELECT case_id,name,opp_name,MIN(DATE) AS min_date,MAX(DATE) AS max_date,ROUND(SUM(amount),2) AS total_amount,COUNT(id) AS total_count, COUNT(DISTINCT opp_acct) as total_acct "+
@@ -90,9 +90,20 @@ func (s *MysqlService) Summary(ctx context.Context, qry *query.SummaryQuery) (an
 		" WHERE 1=1 and case_id='%s'"+
 		" %s "+
 		" GROUP BY case_id, name, opp_name"+
-		") t "+
-		" WHERE 1=1 %s "+
-		" order by total_amount desc", qry.CaseId, getDateCondition(qry), getCondition(qry))
+		") a "+
+		" WHERE 1=1 %s ", qry.CaseId, getSummaryDateCondition(qry), getSummaryCondition(qry))
+
+	subSql = fmt.Sprintf("SELECT"+
+		" case_id,name,opp_name, min_date,max_date,total_amount,total_count,total_acct"+
+		" FROM (%s) b"+
+		" where 1=1 %s", subSql, getSummaryFilter(qry))
+
+	var val int64 = 0
+	count := &val
+	countSql := fmt.Sprintf("SELECT COUNT(*) FROM (%s) AS t", subSql)
+	s.db.Raw(countSql).Scan(count)
+
+	sql := fmt.Sprintf(" %s %s %s", subSql, getSummarySort(qry), getSummaryLimit(qry))
 
 	rows, err := s.db.Raw(sql).Rows()
 	if err != nil {
@@ -119,7 +130,40 @@ func (s *MysqlService) Summary(ctx context.Context, qry *query.SummaryQuery) (an
 		results = append(results, row)
 	}
 
-	return results, nil
+	return map[string]any{"total": count, "rows": results}, nil
+}
+
+func (s *MysqlService) AutoComplete(ctx context.Context, qry *query.AutoCompleteQuery) ([]string, error) {
+	sql := fmt.Sprintf("select distinct %s from master_record where 1=1 %s %s", qry.Field, getAutoCompleteFilter(qry.Filter), getAutoCompleteCondition(qry.Field, qry.Value))
+	rows, err := s.db.Raw(sql).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	res := make([]string, 0)
+
+	for rows.Next() {
+		var str string = ""
+		_ = rows.Scan(&str)
+		res = append(res, str)
+	}
+
+	return res, nil
+}
+
+func getAutoCompleteCondition(field string, value string) string {
+	if field == "" || value == "" {
+		return ""
+	}
+	return " and " + field + " like '%" + value + "%'"
+}
+
+func getAutoCompleteFilter(filter string) string {
+	if filter == "" {
+		return ""
+	}
+	return fmt.Sprintf(" and %s", filter)
 }
 
 func convertTimeValues(data []map[string]any, timeKey string) []map[string]any {
@@ -195,7 +239,7 @@ func CompleteAndSortMysqlData(data []map[string]any, timeKey string, timeType mo
 	return completedData, nil
 }
 
-func getDateCondition(qry *query.SummaryQuery) string {
+func getSummaryDateCondition(qry *query.SummaryQuery) string {
 	condition := ""
 	if qry.DateMin != "" {
 		condition += fmt.Sprintf(" and date >= '%s'", qry.DateMin)
@@ -206,26 +250,73 @@ func getDateCondition(qry *query.SummaryQuery) string {
 	return condition
 }
 
-func getCondition(qry *query.SummaryQuery) string {
+func getSummaryCondition(qry *query.SummaryQuery) string {
 	condition := ""
 	if qry.Name != "" {
 		condition += fmt.Sprintf(" and name='%s'", qry.Name)
 	}
 	if qry.OppName != "" {
-		oppName := fmt.Sprintf("%v%v%v", "'", strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(qry.OppName, " ", ""), "，", ","), ",", "','"), "'")
+		replacer := strings.NewReplacer(
+			"，", "','",
+			"\r\n", "','",
+			"\r\n,", "','",
+			"\r\n，", "','",
+			",\r\n", "','",
+			"，\r\n", "','",
+			"\n", "','",
+			"\r", "','",
+			"\n,", "','",
+			"\r,", "','",
+			"\n，", "','",
+			"\r，", "','",
+			",\n", "','",
+			",\r", "','",
+			"，\n", "','",
+			"，\r", "','",
+			",", "','",
+		)
+		oppName := "'" + replacer.Replace(qry.OppName) + "'"
 		condition += fmt.Sprintf(" and opp_name in (%s)", oppName)
 	}
 	if qry.TotalAmountMin != nil {
-		condition += fmt.Sprintf(" and total_amount >= %v", qry.TotalAmountMin)
+		condition += fmt.Sprintf(" and total_amount >= %v", *qry.TotalAmountMin)
 	}
 	if qry.TotalAmountMax != nil {
-		condition += fmt.Sprintf(" and total_amount <= %v", qry.TotalAmountMax)
+		condition += fmt.Sprintf(" and total_amount <= %v", *qry.TotalAmountMax)
 	}
 	if qry.TotalCountMin != nil {
-		condition += fmt.Sprintf(" and total_count >= %v", qry.TotalCountMin)
+		condition += fmt.Sprintf(" and total_count >= %v", *qry.TotalCountMin)
 	}
 	if qry.TotalCountMax != nil {
-		condition += fmt.Sprintf(" and total_count <= %v", qry.TotalCountMax)
+		condition += fmt.Sprintf(" and total_count <= %v", *qry.TotalCountMax)
 	}
 	return condition
+}
+
+func getSummaryFilter(qry *query.SummaryQuery) string {
+	if qry.Filter == "" {
+		return ""
+	}
+	return fmt.Sprintf(" and %s", qry.Filter)
+}
+
+func getSummarySort(qry *query.SummaryQuery) string {
+	if qry.Sort == "" {
+		return " order by total_amount desc"
+	}
+	return fmt.Sprintf(" order by %s", qry.Sort)
+}
+
+func getSummaryLimit(qry *query.SummaryQuery) string {
+	pageSize := qry.PageSize
+	if pageSize <= 0 {
+		pageSize = 50
+	}
+	page := qry.Page
+	if page <= 0 {
+		page = 0
+	} else {
+		page = page - 1
+	}
+	return fmt.Sprintf("LIMIT %v OFFSET %v", pageSize, page*pageSize)
 }

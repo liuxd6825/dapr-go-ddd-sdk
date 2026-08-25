@@ -12,4 +12,8 @@ type SummaryQuery struct {
 	TotalAmountMax *float64 `json:"amount_max"`
 	TotalCountMin  *int     `json:"count_min"`
 	TotalCountMax  *int     `json:"count_max"`
+	Page           int      `json:"page"`
+	PageSize       int      `json:"page_size"`
+	Filter         string   `json:"filter"`
+	Sort           string   `json:"sort"`
 }

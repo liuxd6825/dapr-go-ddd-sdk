@@ -3,11 +3,18 @@ package query
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 )
+
+type AutoCompleteQuery struct {
+	Field  string `json:"field" query:"field"`
+	Value  string `json:"value" query:"value"`
+	Filter string `json:"filter" query:"filter"`
+}
 
 type MysqlQuery struct {
 	Params     map[string]MysqlQueryParam `json:"params" title:"参数"`
@@ -113,15 +120,20 @@ func (q *MysqlQuery) initMatch(match map[string]any) map[string]any {
 func (q *MysqlQuery) getFieldValue(values map[string]any) (res map[string]any, remove bool, err error) {
 	res = make(map[string]any)
 	for key, val := range values {
-		switch val.(type) {
+		switch v := val.(type) {
 		case map[string]interface{}:
 			valMap := val.(map[string]any)
 			res[key] = q.initMatch(valMap)
+		case []any:
+			processed := q.processSliceValues(v)
+			if len(processed) > 0 {
+				res[key] = processed
+			}
 		case int64, int32:
 			res[key] = val
 		case string:
 			isRemove := false
-			val, isRemove, err = q.getValue(val.(string))
+			val, isRemove, err = q.getValue(v)
 			if err != nil {
 				panic(err)
 			}
@@ -131,6 +143,25 @@ func (q *MysqlQuery) getFieldValue(values map[string]any) (res map[string]any, r
 		}
 	}
 	return res, len(res) == 0, err
+}
+
+func (q *MysqlQuery) processSliceValues(items []any) []any {
+	res := make([]any, 0, len(items))
+	for _, item := range items {
+		if s, ok := item.(string); ok {
+			processed, isRemove, err := q.getValue(s)
+			if err != nil {
+				panic(err)
+			}
+			if isRemove {
+				continue
+			}
+			res = append(res, processed)
+			continue
+		}
+		res = append(res, item)
+	}
+	return res
 }
 
 func (q *MysqlQuery) getValue(val string) (res any, remove bool, err error) {
@@ -178,6 +209,8 @@ func (q *MysqlQuery) BuildWhereClause(match map[string]any) string {
 					conditions = append(conditions, fmt.Sprintf("%s = '%v'", key, value))
 				case "$ne":
 					conditions = append(conditions, fmt.Sprintf("%s != '%v'", key, value))
+				case "$in":
+					conditions = append(conditions, buildInClause(key, value))
 				}
 			}
 		case string:
@@ -198,6 +231,18 @@ func (q *MysqlQuery) BuildWhereClause(match map[string]any) string {
 		}
 	}
 	return result
+}
+
+func buildInClause(key string, value any) string {
+	items, ok := value.([]any)
+	if !ok || len(items) == 0 {
+		return "1=0"
+	}
+	quoted := make([]string, 0, len(items))
+	for _, item := range items {
+		quoted = append(quoted, fmt.Sprintf("'%v'", item))
+	}
+	return fmt.Sprintf("%s IN (%s)", key, strings.Join(quoted, ","))
 }
 
 func (q *MysqlQuery) buildDateRangeCondition() string {
@@ -227,7 +272,7 @@ func (q *MysqlQuery) buildDateRangeCondition() string {
 		endStr = fmt.Sprintf("%v", endVal)
 	}
 
-	return fmt.Sprintf("date >= '%s' AND date <= '%s'", startStr, endStr)
+	return fmt.Sprintf("date >= '%s' AND date <= '%s 23:59:59'", startStr, endStr)
 }
 
 func (q *MysqlQuery) BuildGroupClause() string {
