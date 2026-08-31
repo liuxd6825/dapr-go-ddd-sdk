@@ -70,6 +70,7 @@ require (
 	github.com/cloudwego/eino-ext/components/model/ollama v0.1.8
 	github.com/cloudwego/eino-ext/components/model/openai v0.1.7
 	github.com/cloudwego/eino-ext/components/tool/mcp v0.0.3
+	github.com/elastic/go-elasticsearch/v9 v9.4.1
 	github.com/extrame/xls v0.0.1
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/invopop/jsonschema v0.13.0
@@ -83,6 +84,9 @@ require (
 	github.com/shopspring/decimal v1.2.0
 	github.com/tiktoken-go/tokenizer v0.6.2
 	github.com/tmc/langchaingo v0.1.13
+	github.com/vesoft-inc/nebula-go/v3 v3.8.0
+	github.com/xitongsys/parquet-go v1.6.2
+	github.com/xitongsys/parquet-go-source v0.0.0-20241021075129-b732d2ac9c9b
 	go.temporal.io/sdk v1.36.0
 	golang.org/x/net v0.43.0
 	gorm.io/driver/sqlite v1.5.7
@@ -91,10 +95,11 @@ require (
 require (
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
+	github.com/apache/thrift v0.14.2 // indirect
 	github.com/bytedance/sonic v1.15.1 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.9.0 // indirect
-	github.com/elastic/go-elasticsearch/v9 v9.4.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
@@ -105,9 +110,6 @@ require (
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/vesoft-inc/fbthrift v0.0.0-20230214024353-fa2f34755b28 // indirect
-	github.com/vesoft-inc/nebula-go/v3 v3.8.0 // indirect
-	github.com/xitongsys/parquet-go v1.6.2 // indirect
-	github.com/xitongsys/parquet-go-source v0.0.0-20241021075129-b732d2ac9c9b // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 )
 
