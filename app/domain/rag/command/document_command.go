@@ -21,6 +21,11 @@ type DocumentDeleteCommand struct {
 	Data      DocumentDeleteData `json:"data"`
 }
 
+type DocumentDeleteByDocCommand struct {
+	CommandId string                  `json:"commandId"`
+	Data      DocumentDeleteByDocData `json:"data"`
+}
+
 type DocumentScanCommand struct {
 	CommandId string           `json:"commandId"`
 	Data      DocumentScanData `json:"data"`
@@ -29,6 +34,10 @@ type DocumentScanCommand struct {
 type DocumentDeleteData struct {
 	CaseId string `json:"caseId"`
 	Id     string `json:"id"`
+}
+
+type DocumentDeleteByDocData struct {
+	DocId string `json:"docId"`
 }
 
 type DocumentCreateData struct {

@@ -35,7 +35,7 @@ func (s *HumanAPI) NewAPIController(app *iris.Application) *restapi.ApiControlle
 	controller.Post("/human", "Create")
 	controller.Put("/human", "Update")
 	controller.Delete("/human/{id}", "DeleteById")
-	controller.Delete("/human:deleteBatch", "DeleteByIds")
+	controller.Delete("/human:deleteBatch", "DeleteByIds", restapi.WithParamsInBody(true))
 	controller.GetPaging("/human", "FindPagingByCaseId")
 	controller.GetData("/human:by-tag", "FindPagingByTagId")
 	controller.GetData("/human:total", "FindCardTotal")

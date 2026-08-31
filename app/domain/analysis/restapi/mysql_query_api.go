@@ -27,9 +27,19 @@ func NewMysqlQueryAPI(env *env.Env, rootPath string) *MysqlQueryAPI {
 func (s *MysqlQueryAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	controller := restapi.NewController(app, s.rootPath+"/analysis/", "analysis.MysqlQueryAPI", s)
 	controller.Post("aggregate", "Aggregate")
+	controller.Post("summary", "Summary")
+	controller.GetData("autocomplete", "AutoComplete")
 	return controller
 }
 
 func (s *MysqlQueryAPI) Aggregate(ctx context.Context, qry *query.MysqlQuery) (any, error) {
 	return s.service.Aggregate(ctx, qry)
+}
+
+func (s *MysqlQueryAPI) Summary(ctx context.Context, qry *query.SummaryQuery) (any, error) {
+	return s.service.Summary(ctx, qry)
+}
+
+func (s *MysqlQueryAPI) AutoComplete(ctx context.Context, qry *query.AutoCompleteQuery) ([]string, error) {
+	return s.service.AutoComplete(ctx, qry)
 }

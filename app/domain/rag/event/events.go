@@ -31,3 +31,18 @@ func NewDocumentCreateEvent(ctx context.Context, appId string, data *DocumentCre
 	event.SetData(ctx, appId, data, &events.EventOptions{EventType: DocumentCreateEventEventType})
 	return event
 }
+
+type DocumentDeleteEvent = events.Event[*DocumentDeleteEventData]
+
+const DocumentDeleteEventEventType = "rag.document.delete-event"
+
+type DocumentDeleteEventData struct {
+	DocId  string `json:"docId" ` // 文档ID
+	FileId string `json:"fileId"` // 文件ID
+}
+
+func NewDocumentDeleteEvent(ctx context.Context, appId string, data *DocumentDeleteEventData) *DocumentDeleteEvent {
+	event := &DocumentDeleteEvent{}
+	event.SetData(ctx, appId, data, &events.EventOptions{EventType: DocumentDeleteEventEventType})
+	return event
+}

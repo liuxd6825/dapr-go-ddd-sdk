@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/event"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
@@ -54,6 +55,19 @@ func (t *DocumentService) Delete(ctx context.Context, cmd *command.DocumentDelet
 
 func (t *DocumentService) DeleteById(ctx context.Context, id string) *idao.Result {
 	return t.dao.DeleteById(ctx, id)
+}
+
+func (t *DocumentService) PublishDeleteRagDocumentEvent(ctx context.Context, docId, fileId string) error {
+	data := &event.DocumentDeleteEventData{
+		DocId:  docId,
+		FileId: fileId,
+	}
+	evt := event.NewDocumentDeleteEvent(ctx, "duxm-master-cmd-service", data)
+	err := xbase.PublishEvent(ctx, evt)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (t *DocumentService) DeleteByRSQL(ctx context.Context, rsql string) *idao.Result {

@@ -36,7 +36,7 @@ func (s *CompanyAPI) NewAPIController(app *iris.Application) *restapi.ApiControl
 	controller.Post("/company", "Create")
 	controller.Put("/company", "Update")
 	controller.Delete("/company/{id}", "DeleteById")
-	controller.Delete("/company:deleteBatch", "DeleteByIds")
+	controller.Delete("/company:deleteBatch", "DeleteByIds", restapi.WithParamsInBody(true))
 	controller.GetPaging("/company", "FindPagingByCaseId")
 	controller.GetData("/company:by-tag", "FindPagingByTagId")
 	controller.GetOne("/company/{id}", "FindById")
