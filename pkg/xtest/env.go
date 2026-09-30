@@ -8,15 +8,14 @@ import (
 type EnvConfig struct {
 }
 
-func NewEnvConfig() *env.Env {
-	res := env.NewEnv()
-	res.App.AppId = "test"
-	res.App.AppName = "app"
-	res.App.HttpHost = "localhost"
-	res.App.HttpPort = 0
-	return res
+type NebulaOptions struct {
+	Addr     string
+	DBKey    string
+	User     string
+	Password string
+	Space    string
+	PoolSize int
 }
-
 type Neo4jOptions struct {
 	Addr     string
 	DBKey    string
@@ -26,12 +25,70 @@ type Neo4jOptions struct {
 	Password string
 }
 
+var Neo4jRemoveOption = Neo4jOptions{
+	Addr:     "192.168.120.224",
+	Port:     "7687",
+	Database: "",
+	Password: "12345678",
+	UserName: "neo4jdao",
+}
+
+var Neo4jLocalOption = Neo4jOptions{
+	Addr:     "127.0.0.1",
+	Port:     "7687",
+	Database: "",
+	Password: "12345678",
+	UserName: "neo4jdao",
+}
+
+var NebulaRemoveOption = NebulaOptions{
+	Addr:     NebulaHostRemote + ":9669",
+	DBKey:    NebulaDBKey,
+	User:     "root",
+	Password: "nebula",
+	Space:    "test_default",
+	PoolSize: 10,
+}
+
+var NebulaLocalOption = NebulaOptions{
+	Addr:     NebulaHostLocal + ":9669",
+	DBKey:    NebulaDBKey,
+	User:     "root",
+	Password: "nebula",
+	Space:    "test_default",
+	PoolSize: 10,
+}
+
+type HugeOptions struct {
+	Addr     string
+	DBKey    string
+	Port     int
+	Database string
+	UserName string
+	Password string
+}
+
+func InitEnv_Neo4j(opts ...Neo4jOptions) *env.Env {
+	envVal := NewEnvConfigNeo4j(opts...)
+	env.SetEnv(envVal)
+	return envVal
+}
+
+func NewEnvConfig() *env.Env {
+	res := env.NewEnv()
+	res.App.AppId = "test"
+	res.App.AppName = "app"
+	res.App.HttpHost = "localhost"
+	res.App.HttpPort = 0
+	return res
+}
+
 func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
 	addr := "localhost"
-	dbKey := "neo4j"
+	dbKey := "neo4jdao"
 	port := "7687"
 	database := ""
-	userName := "neo4j"
+	userName := "neo4jdao"
 	password := "12345678"
 	for _, opt := range opts {
 		if opt.Addr != "" {
@@ -74,53 +131,53 @@ func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
 	return res
 }
 
-var Neo4jRemoveOption = Neo4jOptions{
-	Addr:     "192.168.120.224",
-	Port:     "7687",
-	Database: "",
-	Password: "12345678",
-	UserName: "neo4j",
-}
+func NewEnvConfigHuge(opts ...HugeOptions) *env.Env {
+	addr := "localhost"
+	dbKey := "huge"
+	port := 8080
+	database := ""
+	userName := "admin"
+	password := "admin"
+	for _, opt := range opts {
+		if opt.Addr != "" {
+			addr = opt.Addr
+		}
+		if opt.DBKey != "" {
+			dbKey = opt.DBKey
+		}
+		if opt.Port != 0 {
+			port = opt.Port
+		}
+		if opt.Database != "" {
+			database = opt.Database
+		}
+		if opt.UserName != "" {
+			userName = opt.UserName
+		}
+		if opt.Password != "" {
+			password = opt.Password
+		}
+	}
+	res := env.NewEnv()
+	res.App.AppId = "test"
+	res.App.AppName = "app"
+	res.App.HttpHost = ""
+	res.App.HttpPort = 0
+	res.App.Meta = map[string]any{
+		"db": dbKey,
+	}
+	res.Dapr.SetEnable(false)
 
-var Neo4jLocalOption = Neo4jOptions{
-	Addr:     "127.0.0.1",
-	Port:     "7687",
-	Database: "",
-	Password: "12345678",
-	UserName: "neo4j",
-}
-
-func InitEnv_Neo4j(opts ...Neo4jOptions) *env.Env {
-	envVal := NewEnvConfigNeo4j(opts...)
-	env.SetEnv(envVal)
-	return envVal
-}
-
-type NebulaOptions struct {
-	Addr     string
-	DBKey    string
-	User     string
-	Password string
-	Space    string
-	PoolSize int
-}
-
-var NebulaRemoveOption = NebulaOptions{
-	Addr:     NebulaHostRemote + ":9669",
-	DBKey:    NebulaDBKey,
-	User:     "root",
-	Password: "nebula",
-	Space:    "test_default",
-	PoolSize: 10,
-}
-
-var NebulaLocalOption = NebulaOptions{
-	Addr:     NebulaHostLocal + ":9669",
-	DBKey:    NebulaDBKey,
-	User:     "root",
-	Password: "nebula",
-	Space:    "test_default",
-	PoolSize: 10,
+	res.AddHuge(&env.Huge{
+		DbKey:    dbKey,
+		Host:     addr,
+		Port:     port,
+		Graph:    database,
+		Username: userName,
+		Password: password,
+	})
+	res.Init()
+	return res
 }
 
 func NewEnvConfigNebula(opts ...NebulaOptions) *env.Env {

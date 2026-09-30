@@ -97,7 +97,7 @@ func TestGetList(t *testing.T) {
 	repos := NewCompanyNodeDao()
 	cypher := "MATCH (n:graph_T1_N3eb0982799464cf199f2182d130e4a32_company)-[r*0..]->(m) RETURN n, r "
 	if result, err := repos.Query(context.Background(), cypher, nil); err != nil {
-		log.Println("error connecting to neo4j:", err)
+		log.Println("error connecting to neo4jdao:", err)
 	} else {
 		var comps []CompanyNode
 		var rels []CompanyRelation

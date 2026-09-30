@@ -108,6 +108,10 @@ func NewMongoDao[T any](dbSch *store2.DBSchema, initFun func(ctx context.Context
 	return r
 }
 
+func (r *Dao[T]) GetDBClient() any {
+	return r.mongodb.GetClient()
+}
+
 func (r *Dao[T]) GetDbType() string {
 	return idao.DbType_MongoDB.String()
 }

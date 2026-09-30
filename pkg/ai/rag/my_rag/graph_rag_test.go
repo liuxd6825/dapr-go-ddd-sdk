@@ -226,7 +226,7 @@ func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
 	logger := logrus.New()
 	keyValue := storage.NewRedisKeyValueStorage()
 
-	graph := storage.NewNeo4jGraphStorage("neo4j", logger)
+	graph := storage.NewNeo4jGraphStorage("neo4jdao", logger)
 	config := storage.NewRagConfig()
 	store := storage.NewStorage(graph, vector, keyValue, embedder)
 	return NewGraphRag(llm, store, config, logger)

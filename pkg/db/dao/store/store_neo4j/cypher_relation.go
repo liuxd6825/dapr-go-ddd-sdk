@@ -224,17 +224,17 @@ func (c *relationCypher[T]) UpdateLabelByFilter(ctx context.Context, tenantId st
 }
 
 func (c *relationCypher[T]) DeleteLabelById(ctx context.Context, tenantId string, id string, label string) (CypherResult, error) {
-	// neo4j 不支持删除关系标签
+	// neo4jdao 不支持删除关系标签
 	return nil, nil
 }
 
 func (c *relationCypher[T]) DeleteLabelByFilter(ctx context.Context, tenantId string, filter string, labels ...string) (CypherResult, error) {
-	// neo4j 不支持删除关系标签
+	// neo4jdao 不支持删除关系标签
 	return nil, nil
 }
 
 func (c *relationCypher[T]) DeleteByLabels(ctx context.Context, tenantId string, label ...string) (CypherResult, error) {
-	// neo4j 不支持删除关系标签
+	// neo4jdao 不支持删除关系标签
 	return nil, nil
 }
 

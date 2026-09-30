@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/huge"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/neo4j"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/sql"
@@ -138,6 +139,8 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 			dao = sql.NewDao[T](daoCfg)
 		case env.DBType_Neo4j:
 			dao = neo4j.NewDao[T](daoCfg)
+		case env.DBType_Huge:
+			dao = huge.NewDao[T](daoCfg)
 		default:
 			panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
 		}

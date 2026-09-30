@@ -77,4 +77,5 @@ type IStore[T any] interface {
 	*/
 	GetSchema() *DBSchema
 	GetDbType() string
+	GetDBClient() any
 }

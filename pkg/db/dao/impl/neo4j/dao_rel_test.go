@@ -25,7 +25,7 @@ func Test_RelDao(t *testing.T) {
 	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest2.HumanRelSchema)
 	relCfg := &idao2.DaoConfig{
 		DB:         driver,
-		DbKey:      "neo4j",
+		DbKey:      "neo4jdao",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema),
 		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
@@ -122,7 +122,7 @@ func TestRelDao_Many(t *testing.T) {
 	relSchema := schema.NewJsonSchemaWithJson("humanRel.json", xtest2.HumanRelSchema)
 	relCfg := &idao2.DaoConfig{
 		DB:         driver,
-		DbKey:      "neo4j",
+		DbKey:      "neo4jdao",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(relSchema),
 		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
@@ -156,7 +156,7 @@ func TestRelDao_Many(t *testing.T) {
 			"peopleType": []string{"1111"},
 			"tags":       []string{"tag1", "tag2"},
 			"caseId":     "test",
-			"graphId":    "neo4j-test",
+			"graphId":    "neo4jdao-test",
 		}
 		rels = append(rels, entity)
 	}
@@ -292,7 +292,7 @@ func newNodeDao(t *testing.T) idao2.Dao[map[string]any] {
 	nodeSchema := schema.NewJsonSchemaWithJson("human.json", xtest2.HumanSchema)
 	nodeCfg := &idao2.DaoConfig{
 		DB:         driver,
-		DbKey:      "neo4j",
+		DbKey:      "neo4jdao",
 		DBSchema:   dbschema.NewDBSchemaWithJsonSchema(nodeSchema),
 		Env:        xtest2.NewEnvConfig(),
 		IsPubEvent: false,
@@ -313,7 +313,7 @@ func newNodes(humanName string, id string, t *testing.T) []map[string]interface{
 		"peopleType": []string{"1111"},
 		"tags":       []string{"tag1", "tag2"},
 		"caseId":     "test",
-		"graphId":    "neo4j-test",
+		"graphId":    "neo4jdao-test",
 	}
 	endNode := map[string]any{
 		"id":      "end" + id,
@@ -324,7 +324,7 @@ func newNodes(humanName string, id string, t *testing.T) []map[string]interface{
 		"peopleType": []string{"1111"},
 		"tags":       []string{"tag1", "tag2"},
 		"caseId":     "test",
-		"graphId":    "neo4j-test",
+		"graphId":    "neo4jdao-test",
 	}
 
 	return []map[string]interface{}{

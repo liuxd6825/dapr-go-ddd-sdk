@@ -24,9 +24,9 @@ type Dapr struct {
 	Actor               DaprActor                  `yaml:"actor" json:"actor"`
 	Start               bool                       `yaml:"start" json:"start"`
 	StartArgs           map[string]any             `yaml:"startArgs" json:"startArgs"`
-	//Enable              bool                       `yaml:"enable" json:"enable"`
-	ApiVersion string `yaml:"apiVersion" json:"apiVersion"`
-	client     dapr2.DaprClient
+	Enable              bool                       `yaml:"enable" json:"enable"`
+	ApiVersion          string                     `yaml:"apiVersion" json:"apiVersion"`
+	client              dapr2.DaprClient
 }
 
 // DaprServer dapr服务端参数
@@ -133,7 +133,11 @@ func initDapr(e *Env) {
 }
 
 func (c *Dapr) IsEnable() bool {
-	return true
+	return c.Enable
+}
+
+func (c *Dapr) SetEnable(enable bool) {
+	c.Enable = enable
 }
 
 func (c *Dapr) GetHost() string {

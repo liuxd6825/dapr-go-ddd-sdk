@@ -1,7 +1,8 @@
-package dao
+package neo4jdao
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )

@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 	"sync"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
 
 	"github.com/cloudwego/eino-ext/components/model/ark"
 	"github.com/cloudwego/eino-ext/components/model/ollama"
@@ -157,7 +158,7 @@ func newGraphRag() *my_rag.GraphRag {
 		Dim:            ragCfg.Vector.Dim,
 	})
 
-	graphStorage := storage.NewNeo4jGraphStorage("neo4j", logs.GetLogger())
+	graphStorage := storage.NewNeo4jGraphStorage("neo4jdao", logs.GetLogger())
 	kv := storage.NewRedisKeyValueStorage()
 
 	ragConfig := storage.NewRagConfig(func(cfg *storage.RagConfig) {

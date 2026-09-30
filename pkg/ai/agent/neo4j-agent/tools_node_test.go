@@ -2,6 +2,9 @@ package neo4jagent
 
 import (
 	"context"
+	"log"
+	"testing"
+
 	tool_mcp "github.com/cloudwego/eino-ext/components/tool/mcp"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/components/tool"
@@ -10,8 +13,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/agent/common"
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/mcp"
-	"log"
-	"testing"
 )
 
 func Test_newTools(t *testing.T) {
@@ -88,7 +89,7 @@ func Test_callMcpTool(t *testing.T) {
 
 	mcpToolInfo := []*schema.ToolInfo{
 		{
-			Name: "neo4j-query",
+			Name: "neo4jdao-query",
 			Desc: "通过neo4j的cypher语句查询关系数据",
 			ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
 				"tenantId": {

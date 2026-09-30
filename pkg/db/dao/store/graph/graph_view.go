@@ -3,6 +3,12 @@ package graph
 type Nodes map[string]*Node
 type Edges map[string]*Edge
 
+type IGraphView interface {
+	SetNodes(key string, data map[string]*Node)
+	SetEdges(key string, data map[string]*Edge)
+	AddNodes(key string, data []*Node)
+	AddEdges(key string, data []*Edge)
+}
 type GraphView struct {
 	Nodes map[string]Nodes
 	Edges map[string]Edges
@@ -29,7 +35,7 @@ func (g *GraphView) AddNodes(key string, data []*Node) {
 		items = make(map[string]*Node)
 	}
 	for _, node := range data {
-		items[node.Id] = node
+		items[node.Nid] = node
 	}
 	g.Nodes[key] = items
 }
@@ -40,7 +46,7 @@ func (g *GraphView) AddEdges(key string, data []*Edge) {
 		items = make(map[string]*Edge)
 	}
 	for _, item := range data {
-		items[item.Id] = item
+		items[item.Nid] = item
 	}
 	g.Edges[key] = items
 }

@@ -123,3 +123,7 @@ func (g *Graph) init(ctx *jsonschema.CompilerContext, values map[string]any) err
 	}
 	return g.Valid()
 }
+
+func (g GraphType) ToString() string {
+	return string(g)
+}

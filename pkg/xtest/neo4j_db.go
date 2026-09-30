@@ -15,7 +15,7 @@ func GetNeo4jRemoteCfg() *env.Neo4j {
 		Host:     Neo4jHostRemote,
 		Port:     "7687",
 		Database: Neo4jDBName,
-		UserName: "neo4j",
+		UserName: "neo4jdao",
 		Password: "12345678",
 	}
 }
@@ -26,7 +26,7 @@ func GetNeo4jLocalCfg() *env.Neo4j {
 		Host:     Neo4jHostLocal,
 		Port:     "7687",
 		Database: "",
-		UserName: "neo4j",
+		UserName: "neo4jdao",
 		Password: "12345678",
 	}
 }

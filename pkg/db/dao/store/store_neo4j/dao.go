@@ -100,6 +100,10 @@ func newDao[T any](driver neo4j.DriverWithContext, cypher Cypher[T], config *Con
 	return dao
 }
 
+func (d *Dao[T]) GetDBClient() any {
+	return d.Driver
+}
+
 func (d *Dao[T]) StartTx(ctx context.Context, fun store2.TxFunc, options ...*store2.SessionOptions) error {
 	return nil
 }
@@ -154,7 +158,7 @@ func (d *Dao[T]) Run(ctx context.Context, cypher string, params map[string]any, 
 
 func (d *Dao[T]) CreateIndex(ctx context.Context, index, label, property string) (err error) {
 	cypher := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS FOR (n:%s) ON (n.%s) ", index, label, property)
-	idxSession := d.Driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	idxSession := d.Driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4jdao"})
 
 	_, err = idxSession.Run(ctx, cypher, nil)
 	defer func() {
@@ -172,7 +176,7 @@ func (d *Dao[T]) GetEntityLabels(ctx context.Context, entity T, labels ...string
 }
 
 func (d *Dao[T]) query(ctx context.Context, query string, data map[string]any) (any, error) {
-	result, err := neo4j.ExecuteQuery(ctx, d.Driver, query, data, neo4j.EagerResultTransformer, neo4j.ExecuteQueryWithDatabase("neo4j"))
+	result, err := neo4j.ExecuteQuery(ctx, d.Driver, query, data, neo4j.EagerResultTransformer, neo4j.ExecuteQueryWithDatabase("neo4jdao"))
 	return result, err
 }
 
@@ -197,7 +201,7 @@ func (d *Dao[T]) doSession(ctx context.Context, fun func(tx neo4j.ManagedTransac
 		}
 	}()
 	/*
-		ex, err := session.BeginTransaction(ctx, func(config *neo4j.TransactionConfig) {
+		ex, err := session.BeginTransaction(ctx, func(config *neo4jdao.TransactionConfig) {
 			config.Timeout = 50 * time.Second
 		})
 		if err != nil {
@@ -254,7 +258,7 @@ func (d *Dao[T]) DeleteMany(ctx context.Context, tenantId string, entity []T, op
 }
 
 func (d *Dao[T]) GetDbType() string {
-	return "neo4j"
+	return "neo4jdao"
 }
 
 func GetLabels(labels ...string) string {

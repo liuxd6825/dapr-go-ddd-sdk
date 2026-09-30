@@ -433,7 +433,7 @@ func (d *Dao[T]) ImportJson(ctx context.Context, cmd ImportJsonCmd, opts ...stor
 
 	logs.Debug(ctx, logs.Fields{"cypher": cypher})
 
-	session := d.Driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	session := d.Driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4jdao"})
 	defer session.Close(ctx)
 
 	_, err = session.Run(ctx, cypher, nil)

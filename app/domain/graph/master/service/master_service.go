@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao/impl/hugedao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
@@ -15,7 +16,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 	"github.com/liuxd6825/jsonschema/v6"
 )
@@ -23,16 +23,16 @@ import (
 // MasterService
 // @Description: 主数据关系图
 type MasterService struct {
-	nodeDaoMap   *types.CMap[*dao.MasterNodeDao]
-	relDaoMap    *types.CMap[*dao.BusRelationDao]
+	nodeDaoMap   *types.CMap[dao.IMasterNodeDao]
+	relDaoMap    *types.CMap[dao.IBusRelationDao]
 	dbSchMap     *types.CMap[*dbschema.DBSchema]
 	graphMetaMap *types.CMap[*schema.Graph]
 }
 
 func NewMasterService() *MasterService {
 	ser := &MasterService{
-		nodeDaoMap:   types.NewCMap[*dao.MasterNodeDao](),
-		relDaoMap:    types.NewCMap[*dao.BusRelationDao](),
+		nodeDaoMap:   types.NewCMap[dao.IMasterNodeDao](),
+		relDaoMap:    types.NewCMap[dao.IBusRelationDao](),
 		dbSchMap:     types.NewCMap[*dbschema.DBSchema](),
 		graphMetaMap: types.NewCMap[*schema.Graph](),
 	}
@@ -98,31 +98,35 @@ func (s *MasterService) GetDBSchema(tableName string) *dbschema.DBSchema {
 }
 
 func (s *MasterService) Create(record *dbevent.CDCRecord) {
+	if record == nil {
+		panic("record is nil")
+	}
+	if record.DBSchema == nil {
+		panic("record.DBSchema is nil")
+	}
 	ctx := s.newCtx(record)
-	gp.Try(func() error {
-		tableName := record.Table
-		nodeDao := s.getNodeDao(tableName)
-		if nodeDao == nil {
-			return nil
-		}
 
-		afterData := record.AfterMap()
-		node := model.NewMasterNode(afterData, record.DBSchema)
-		if s.isMaster(record) {
-			nodeDao.CreateMain(ctx, node)
-		} else if s.isRelation(record) {
-			// 是关系数据
-			relDao := s.getRelDao(record)
-			if relDao == nil {
-				return nil
-			}
-			rel := model.NewMasterRelation(afterData, record.DBSchema)
-			nodeDao.CreateRelNode(ctx, rel, node)
+	tableName := record.Table
+	nodeDao := s.getNodeDao(tableName)
+	if nodeDao == nil {
+		panic("node dao not exist table:" + tableName)
+	}
+
+	afterData := record.AfterMap()
+	node := model.NewMasterNode(afterData, record.DBSchema)
+	if s.isMaster(record) {
+		nodeDao.CreateMain(ctx, node)
+	} else if s.isRelation(record) {
+		// 是关系数据
+		relDao := s.getRelDao(record)
+		if relDao == nil {
+			panic("relDao not exist")
 		}
-		return nil
-	}).Catch(func(e error) {
-		logs.Errorf(ctx, nil, e.Error())
-	})
+		rel := model.NewMasterRelation(afterData, record.DBSchema)
+		nodeDao.CreateRelNode(ctx, rel, node)
+	} else {
+		panic("record not master and relation")
+	}
 }
 
 func (s *MasterService) isMaster(record *dbevent.CDCRecord) bool {
@@ -186,7 +190,7 @@ func (s *MasterService) newCtx(record *dbevent.CDCRecord) context.Context {
 	return ctx
 }
 
-func (s *MasterService) getNodeDao(tableName string) *dao.MasterNodeDao {
+func (s *MasterService) getNodeDao(tableName string) dao.IMasterNodeDao {
 	get, ok := s.nodeDaoMap.Get(tableName)
 	if !ok {
 		return nil
@@ -194,7 +198,7 @@ func (s *MasterService) getNodeDao(tableName string) *dao.MasterNodeDao {
 	return get
 }
 
-func (s *MasterService) getRelDao(record *dbevent.CDCRecord) *dao.BusRelationDao {
+func (s *MasterService) getRelDao(record *dbevent.CDCRecord) dao.IBusRelationDao {
 	get, ok := s.relDaoMap.Get(record.Table)
 	if !ok {
 		return nil
@@ -203,21 +207,34 @@ func (s *MasterService) getRelDao(record *dbevent.CDCRecord) *dao.BusRelationDao
 }
 
 func (s *MasterService) AddDao(jsonSch *jsonschema.Schema, dbSchema *dbschema.DBSchema, metaExt *schema.MetaExtension, graphMeta *schema.Graph) {
+	if jsonSch == nil {
+		panic(" jsonSch 不能为空。")
+	}
+	if dbSchema == nil {
+		panic(" dbSchema 不能为空。")
+	}
+	if metaExt == nil {
+		panic(" metaExt 不能为空。")
+	}
+	if graphMeta == nil {
+		panic(" graphMeta 不能为空。")
+	}
+
 	tableName := metaExt.DBTable.Name
-	var nodeDao *dao.MasterNodeDao
+	var nodeDao dao.IMasterNodeDao
 	if graphMeta.IsNodeType() {
-		nodeDao = dao.NewMasterNodeDao(graphMeta.Labels, dbSchema, graphMeta)
+		nodeDao = hugedao.NewMasterNodeDao(graphMeta.Labels, dbSchema, graphMeta)
 		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
 	if graphMeta.IsRelType() {
-		relDao := dao.NewBusRelationDao(dbSchema, nodeDao, graphMeta)
+		relDao := hugedao.NewBusRelationDao(dbSchema, nodeDao, graphMeta)
 		s.relDaoMap.Add(tableName, relDao)
 	}
 	s.graphMetaMap.Add(tableName, graphMeta)
 }
 
-func (s *MasterService) clearAll(ctx context.Context) {
-	var nodeDao *dao.MasterNodeDao
+func (s *MasterService) ClearAll(ctx context.Context) {
+	var nodeDao dao.IMasterNodeDao
 	for _, d := range s.nodeDaoMap.Items() {
 		nodeDao = d
 		break

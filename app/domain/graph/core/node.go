@@ -1,6 +1,6 @@
 package core
 
-type Node struct {
+type Node333 struct {
 	Id          string   `json:"id"`
 	Name        string   `json:"name"`
 	CaseId      string   `json:"caseId"`

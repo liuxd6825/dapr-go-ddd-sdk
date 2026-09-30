@@ -15,12 +15,12 @@ type MasterRelation struct {
 	Id          string   `json:"id" gorm:"column:id"`
 	CaseId      string   `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%"`
 	TenantId    string   `json:"tenantId" gorm:"column:tenant_id;nodeLabel:true;nodeLabelFormat:tenant_%"`
-	Source      string   `json:"source" gorm:"column:source;relStartId:true"`
-	Target      string   `json:"target" gorm:"column:target;relEndId:true"`
-	SourceIds   string   `json:"sourceIds" gorm:"column:source_ids"`
-	SourceType  string   `json:"sourceType" gorm:"column:source_type"`
-	SourceUrl   string   `json:"sourceUrl" gorm:"column:source_url;relStartId:true"`
+	RelSourceId string   `json:"relSourceId" gorm:"column:rel_source_id;relStartId:true"`
+	RelTargetId string   `json:"relTargetId" gorm:"column:rel_target_id;relEndId:true"`
 	RelType     string   `json:"relType" gorm:"column:rel_type;relType:true"`
+	SrcId       string   `json:"srcId" gorm:"column:src_id"`
+	SrcType     string   `json:"srcType" gorm:"column:src_type"`
+	SrcUrl      string   `json:"srcUrl" gorm:"column:src_url;relStartId:true"`
 	Keywords    []string `json:"keywords" gorm:"column:keywords;type:text;serializer:json"`
 	Description string   `json:"description" gorm:"column:description"`
 	Table       string   `json:"table" gorm:"column:table"`
@@ -43,11 +43,11 @@ func NewMasterRelation(data map[string]any, dbSchema *dbschema.DBSchema) *Master
 		TenantId:    tenantId,
 		Keywords:    []string{relType},
 		RelType:     relType,
-		Source:      relStartId,
-		Target:      relEndId,
-		SourceIds:   id,
+		RelSourceId: relStartId,
+		RelTargetId: relEndId,
+		SrcId:       id,
 		Table:       dbSchema.TableName,
-		SourceType:  SourceType,
+		SrcType:     SourceType,
 		Description: relDesc,
 	}
 }

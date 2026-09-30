@@ -102,16 +102,16 @@ func initMinio(cfg *restapp.EnvConfig) error {
 }
 
 func initNeo4j(dbConfig *restapp.Neo4jConfig) error {
-	cfg := func(config *neo4j.Config) {
+	cfg := func(config *neo4jdao.Config) {
 		config.MaxConnectionPoolSize = 10
 	}
 	neo4jUil := fmt.Sprintf("bolt://%v:%v", dbConfig.Host, dbConfig.Port)
-	configures := []func(*neo4j.Config){cfg}
-	driver, err := neo4j.NewDriverWithContext(neo4jUil, neo4j.BasicAuth(dbConfig.User, dbConfig.Pwd, ""), configures...)
+	configures := []func(*neo4jdao.Config){cfg}
+	driver, err := neo4jdao.NewDriverWithContext(neo4jUil, neo4jdao.BasicAuth(dbConfig.User, dbConfig.Pwd, ""), configures...)
 	if err != nil {
 		return err
 	}
-	neo4j_dao.SetDB(driver)
+	neo4jdao.SetDB(driver)
 	return nil
 }
 */

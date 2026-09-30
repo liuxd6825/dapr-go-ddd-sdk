@@ -3,6 +3,7 @@ package neo4j
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/sirupsen/logrus"
@@ -121,7 +122,7 @@ func newTool(cfg *Config) mcp.Tool {
 		),
 		mcp.WithString("cypher",
 			mcp.Required(),
-			mcp.Description("cypher statements in the neo4j database"),
+			mcp.Description("cypher statements in the neo4jdao database"),
 		),
 	)
 }

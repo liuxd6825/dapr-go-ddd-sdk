@@ -25,12 +25,13 @@ type Env struct {
 	Dapr      *Dapr                `yaml:"dapr" json:"dapr"`
 	Resources map[string]*Resource `yaml:"resources" json:"resources"`
 	Mongo     map[string]*Mongo    `yaml:"mongo" json:"mongo"`
-	Neo4j     map[string]*Neo4j    `yaml:"neo4j" json:"neo4J"`
+	Neo4j     map[string]*Neo4j    `yaml:"neo4jdao" json:"neo4J"`
 	Mysql     map[string]*MySql    `yaml:"mysql" json:"mysql"`
 	Minio     map[string]*Minio    `yaml:"minio" json:"minio"`
 	Nebula    map[string]*Nebula   `yaml:"nebula" json:"nebula"`
 	Elastic   map[string]*Elastic  `yaml:"elastic" json:"elastic"`
 	Redis     map[string]*Redis    `yaml:"redis" json:"redis"`
+	Huge      map[string]*Huge     `yaml:"hugedao" json:"hugedao"`
 	Fs        []map[string]any     `yaml:"fs" json:"fs"`
 	//Auth      *Auth                `yaml:"auth" json:"auth"`
 	Fsm *fsm.Manager `yaml:"-" json:"-"`
@@ -69,6 +70,7 @@ func NewEnv() *Env {
 		Nebula:    map[string]*Nebula{},
 		Elastic:   map[string]*Elastic{},
 		Redis:     map[string]*Redis{},
+		Huge:      map[string]*Huge{},
 		Fs:        []map[string]any{},
 		//Auth:      &Auth{},
 		Fsm: fsm.NewManager(),
@@ -93,6 +95,7 @@ func (env *Env) Init() {
 	InitDBMongo(env)
 	InitDBMySql(env)
 	InitDBNeo4j(env)
+	InitDBHuge(env)
 
 	initMinio(env)
 	InitDBNebula(env)
@@ -148,6 +151,13 @@ func (env *Env) AddMySql(dbCfg *MySql) {
 		panic(errors.New("dbCfg is nil"))
 	}
 	env.Mysql[dbCfg.DbKey] = dbCfg
+}
+
+func (env *Env) AddHuge(dbCfg *Huge) {
+	if dbCfg == nil {
+		panic(errors.New("dbCfg is nil"))
+	}
+	env.Huge[dbCfg.DbKey] = dbCfg
 }
 
 func (env *Env) AddMinio(dbCfg *Minio) {

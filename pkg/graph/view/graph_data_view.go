@@ -100,7 +100,7 @@ func (e EdgeType) Color() string {
 }
 
 type GraphEdge struct {
-	Identity int64                  `json:"identity"`           // neo4j id
+	Identity int64                  `json:"identity"`           // neo4jdao id
 	Type     string                 `json:"type"`               // 标签
 	Start    int64                  `json:"start"`              // 开始节点Id
 	End      int64                  `json:"end"`                // 结束节点Id
@@ -201,7 +201,7 @@ func (n *GraphNode) Id() (string, error) {
 	if v, ok := n.Props["id"].(string); ok {
 		return v, nil
 	}
-	return "", errors.New("node property 'id' is null, neo4j node id = %v ", n.Identity)
+	return "", errors.New("node property 'id' is null, neo4jdao node id = %v ", n.Identity)
 }
 
 func (n *GraphNode) AddSubNode(node *GraphNode) {
@@ -350,21 +350,21 @@ func (n *GraphEdge) Id() (string, error) {
 	if v, ok := n.Props["id"].(string); ok {
 		return v, nil
 	}
-	return "", errors.New("edge property 'id' is null, neo4j edge id = %v ", n.Identity)
+	return "", errors.New("edge property 'id' is null, neo4jdao edge id = %v ", n.Identity)
 }
 
 func (n *GraphEdge) StartId() (string, error) {
 	if v, ok := n.Props["startId"].(string); ok {
 		return v, nil
 	}
-	return "", errors.New("edge property 'startId' is null, neo4j edge id = %v ", n.Identity)
+	return "", errors.New("edge property 'startId' is null, neo4jdao edge id = %v ", n.Identity)
 }
 
 func (n *GraphEdge) EndId() (string, error) {
 	if v, ok := n.Props["endId"].(string); ok {
 		return v, nil
 	}
-	return "", errors.New("edge property 'endId' is null, neo4j edge id = %v ", n.Identity)
+	return "", errors.New("edge property 'endId' is null, neo4jdao edge id = %v ", n.Identity)
 }
 
 func (n *GraphEdge) GetPropertyValue(propName string, doValue ...func(value string)) (string, bool) {

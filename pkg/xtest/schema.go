@@ -255,14 +255,14 @@ const CompanySchema = `
       "name": "company",
       "dbKey": "mysql",
       "properties": {
-        "neo4j": {
+        "neo4jdao": {
           "type": "node"
         }
       }
     },
     "form": {},
     "attributes": {
-      "neo4j":{
+      "neo4jdao":{
         "labels": ["company"],
         "type": ["node"]
       }
@@ -866,7 +866,7 @@ const CompanyCompanySchema = `
       "dbKey": "mysql"
     },
     "attributes": {
-      "neo4j":{
+      "neo4jdao":{
         "labels": ["company"],
         "type": ["rel","node"]
       }

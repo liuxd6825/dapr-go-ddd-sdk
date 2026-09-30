@@ -31,7 +31,7 @@ import (
 	pkg26 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
 	pkg27 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 	pkg28 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph"
-	pkg29 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/neo4jdao"
 	pkg30 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
 	pkg31 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/restapi"
 	pkg32 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service"
@@ -821,13 +821,13 @@ func Packages() native.Packages {
 		Name: "dao",
 		Declarations: native.Declarations{
 			// Functions
-			"NewGraphDao":    pkg29.NewGraphDao,
-			"CreateTables":   pkg29.CreateTables,
-			"NewRelationDao": pkg29.NewRelationDao,
+			"NewGraphDao":    neo4jdao.NewGraphDao,
+			"CreateTables":   neo4jdao.CreateTables,
+			"NewRelationDao": neo4jdao.NewRelationDao,
 
 			// Types
-			"GraphDao":    (*pkg29.GraphDao)(nil),
-			"RelationDao": (*pkg29.RelationDao)(nil),
+			"GraphDao":    (*neo4jdao.GraphDao)(nil),
+			"RelationDao": (*neo4jdao.RelationDao)(nil),
 
 			// Constants
 

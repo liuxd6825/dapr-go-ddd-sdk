@@ -46,12 +46,41 @@ func NewDaoBase[T any](store store2.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] 
 		aggField = "id"
 	}
 	tableName := stringutils.AsFieldName(cfg.DBSchema.Name)
+	appId := ""
+	if cfg.Env != nil {
+		appId = cfg.Env.App.AppId
+	}
 	return &DaoBase[T]{
 		store:       store,
 		cfg:         cfg,
 		dbKey:       cfg.DBKey,
 		tableName:   tableName,
-		appId:       cfg.GetEnv().App.AppId,
+		appId:       appId,
+		aggField:    aggField,
+		aggType:     cfg.AggType,
+		eventPrefix: "eventPrefix",
+	}
+}
+
+// NewDaoBaseNoEnv 测试 / 注入场景: 构造不依赖 env 的 DaoBase,避免 AppId 访问
+func NewDaoBaseNoEnv[T any](store store2.IStore[T], cfg *idao.DaoConfig) *DaoBase[T] {
+	if cfg == nil {
+		panic("dao base config is nil")
+	}
+	aggField := cfg.AggField
+	if aggField == "" {
+		aggField = "id"
+	}
+	tableName := ""
+	if cfg.DBSchema != nil {
+		tableName = stringutils.AsFieldName(cfg.DBSchema.Name)
+	}
+	return &DaoBase[T]{
+		store:       store,
+		cfg:         cfg,
+		dbKey:       cfg.DBKey,
+		tableName:   tableName,
+		appId:       "",
 		aggField:    aggField,
 		aggType:     cfg.AggType,
 		eventPrefix: "eventPrefix",

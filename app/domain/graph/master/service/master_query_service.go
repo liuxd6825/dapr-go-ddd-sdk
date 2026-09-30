@@ -3,17 +3,18 @@ package service
 import (
 	"context"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
+	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao/impl/hugedao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/graph"
 )
 
 type MasterQueryService struct {
-	graphDao *dao.MasterGraphDao
+	graphDao dao2.IMasterGraphDao
 }
 
 func NewMasterQueryService() *MasterQueryService {
 	return &MasterQueryService{
-		graphDao: dao.NewMasterGraphDao(),
+		graphDao: hugedao.NewMasterGraphDao(),
 	}
 }
 
@@ -27,4 +28,12 @@ func (s *MasterQueryService) FindById(ctx context.Context, caseId, id string) *g
 
 func (s *MasterQueryService) FindByName(ctx context.Context, caseId, name string) *graph.GraphView {
 	return s.graphDao.FindByName(ctx, caseId, name)
+}
+
+func (s *MasterQueryService) FindByContainName(ctx context.Context, caseId, name string) *graph.GraphView {
+	return s.graphDao.FindByContainName(ctx, caseId, name)
+}
+
+func (s *MasterQueryService) FindByStartName(ctx context.Context, caseId, name string) *graph.GraphView {
+	return s.graphDao.FindByStartWithName(ctx, caseId, name)
 }

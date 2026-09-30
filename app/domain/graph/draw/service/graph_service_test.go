@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/neo4jdao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -57,7 +57,7 @@ func Test_AddObject(t *testing.T) {
 		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewGraphDao(neo4jDBKey)
+		nodeDao := neo4jdao.NewGraphDao(neo4jDBKey)
 		nodeDao.BatchSave(ctx, saveBatch, "D001")
 		return nil
 	}).Catch(func(e error) {
@@ -78,7 +78,7 @@ func Test_UpdateLabel(t *testing.T) {
 		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewGraphDao("")
+		nodeDao := neo4jdao.NewGraphDao("")
 		nodeDao.BatchSave(ctx, saveBatch, drawId)
 
 		return nil
@@ -101,7 +101,7 @@ func Test_AllJson(t *testing.T) {
 		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
-		nodeDao := dao.NewGraphDao("")
+		nodeDao := neo4jdao.NewGraphDao("")
 		nodeDao.BatchSave(ctx, saveBatch, drawId)
 		return nil
 	}).Catch(func(e error) {

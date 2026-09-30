@@ -24,7 +24,7 @@ type EnvConfig struct {
 	Dapr      *DaprConfig                `yaml:"dapr" json:"dapr"`
 	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
 	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
-	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4j" json:"neo4J"`
+	Neo4j     map[string]*Neo4jConfig    `yaml:"neo4jdao" json:"neo4J"`
 	Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
 	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
 	Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`

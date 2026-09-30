@@ -1,4 +1,4 @@
-package dao
+package neo4jdao
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ func Test_FindGraphByDrawId(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest2.NewContext()
 		env.SetEnv(xtest2.NewEnvConfigNeo4j())
-		dao := NewGraphDao("neo4j")
+		dao := NewGraphDao("neo4jdao")
 		graph := dao.FindGraphByDrawId(ctx, "1001", "XSj4nnZikcd02N3ntBVeSKugYX")
 		t.Log(graph)
 		return nil

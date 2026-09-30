@@ -163,6 +163,10 @@ func getUpdateFields(dbSchema *gormschema.Schema) []string {
 	return fields
 }
 
+func (c *Dao[T]) GetDBClient() any {
+	return nil
+}
+
 func (d *Dao[T]) GetDbType() string {
 	return d.dbType
 }

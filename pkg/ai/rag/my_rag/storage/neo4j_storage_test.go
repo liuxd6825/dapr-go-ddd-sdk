@@ -22,7 +22,7 @@ func Test_FindNodes(t *testing.T) {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest2.NewEnvConfigNeo4j())
-		dao := NewNeo4jGraphStorage("neo4j", logger)
+		dao := NewNeo4jGraphStorage("neo4jdao", logger)
 
 		names := []string{"张三"}
 		query := GraphQueryParam{
@@ -51,7 +51,7 @@ func Test_DeleteDoc(t *testing.T) {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest2.NewEnvConfigNeo4j())
-		dao := NewNeo4jGraphStorage("neo4j", logger)
+		dao := NewNeo4jGraphStorage("neo4jdao", logger)
 		graph := dao.DeleteDoc(ctx, tenantId, caseId, "aa")
 		t.Log(graph)
 		return nil
@@ -65,7 +65,7 @@ func Test_GraphEntity(t *testing.T) {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest2.NewEnvConfigNeo4j())
-		dao := NewNeo4jGraphStorage("neo4j", logger)
+		dao := NewNeo4jGraphStorage("neo4jdao", logger)
 		entity, err := dao.GraphEntity(ctx, "孙悟空", Options{
 			TenantId:  tenantId,
 			CaseId:    caseId,
@@ -85,7 +85,7 @@ func Test_GraphRelationship(t *testing.T) {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest2.NewEnvConfigNeo4j())
-		dao := NewNeo4jGraphStorage("neo4j", logger)
+		dao := NewNeo4jGraphStorage("neo4jdao", logger)
 		entity, err := dao.GraphRelationship(ctx, "孙悟空", "唐僧", Options{
 			TenantId:  tenantId,
 			CaseId:    caseId,
@@ -105,7 +105,7 @@ func Test_graphSaveDocEntities(t *testing.T) {
 		ctx := xtest2.NewContext()
 		logger := logrus.New()
 		env.SetEnv(xtest2.NewEnvConfigNeo4j())
-		store := NewNeo4jGraphStorage("neo4j", logger)
+		store := NewNeo4jGraphStorage("neo4jdao", logger)
 		var entities []*GraphEntity
 		var rels []*GraphRelationship
 
@@ -143,7 +143,7 @@ func Test_graphSaveDocEntities(t *testing.T) {
 			}
 			rels = append(rels, rel)
 		}
- 
+
 		doc := &entity.Document{}
 		err := store.GraphSaveDoc(ctx, doc, entities, rels)
 		return err

@@ -11,7 +11,7 @@ type Config struct {
 	Addr    string `json:"addr" yaml:"addr"`
 	// Tools   []ToolConfig `json:"tools" yaml:"tools"`
 	Mongo []mongo.Config `json:"mongo" yaml:"mongo"`
-	Neo4j []neo4j.Config `json:"neo4j" yaml:"neo4J"`
+	Neo4j []neo4j.Config `json:"neo4jdao" yaml:"neo4J"`
 }
 
 type ToolConfig struct {

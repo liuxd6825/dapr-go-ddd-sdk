@@ -33,7 +33,7 @@ func getAttributes(sch *jsonschema.Schema) map[string]any {
 	if meta == nil || meta.Attributes == nil {
 		return nil
 	}
-	if val, ok := meta.Attributes["neo4j"]; ok {
+	if val, ok := meta.Attributes["neo4jdao"]; ok {
 		if mapVal, ok := val.(map[string]interface{}); ok {
 			return mapVal
 		}

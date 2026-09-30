@@ -8,6 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/neo4jdao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
@@ -15,7 +16,7 @@ import (
 )
 
 type GraphService struct {
-	graphDao *dao.GraphDao
+	graphDao dao.IGraphDao
 }
 
 var _graphService *GraphService
@@ -30,7 +31,7 @@ func NewGraphService() *GraphService {
 
 func newGraphService() *GraphService {
 	graphService := &GraphService{
-		graphDao: dao.NewGraphDao(service.Neo4jDBKey),
+		graphDao: neo4jdao.NewGraphDao(service.Neo4jDBKey),
 	}
 
 	return graphService
@@ -103,7 +104,7 @@ func (s *GraphService) addCreateRelation(saveBatch *model2.SaveBatch, cmd comman
 	}
 	items := newRelation(cmd, cell)
 	for _, rel := range items {
-		if rel.Source != "" && rel.Target != "" && rel.RelType != "" {
+		if rel.SrcId != "" && rel.TargetId != "" && rel.RelType != "" {
 			saveBatch.Relations.AddCreate(rel)
 		}
 	}
@@ -139,11 +140,11 @@ func (s *GraphService) addUpdateRelation(saveBatch *model2.SaveBatch, cmd comman
 			create.Id = cell.Extend.ParentId + "-" + cell.Id
 			create.CaseId = cmd.GetCaseId()
 			create.RelType = cell.GetRelType()
-			create.Source = cell.GetSourceId()
-			create.Target = cell.GetTargetId()
+			create.SrcId = cell.GetSourceId()
+			create.TargetId = cell.GetTargetId()
 			create.Name = *cell.Value
-			create.SourceUrl = getSourceUrl(cmd)
-			create.SourceName = getSourceName(cmd)
+			create.SrcUrl = getSrcUrl(cmd)
+			create.SrcName = getSrcName(cmd)
 			saveBatch.Relations.AddCreate(create)
 		}
 
@@ -162,10 +163,10 @@ func (s *GraphService) addUpdateRelation(saveBatch *model2.SaveBatch, cmd comman
 			rel.Id = cell.Id + "-" + label.Id
 			rel.CaseId = cmd.GetCaseId()
 			rel.RelType = label.Value
-			rel.Source = cell.GetSourceId()
-			rel.Target = cell.GetTargetId()
-			rel.SourceUrl = getSourceUrl(cmd)
-			rel.SourceName = getSourceName(cmd)
+			rel.SrcId = cell.GetSourceId()
+			rel.TargetId = cell.GetTargetId()
+			rel.SrcUrl = getSrcUrl(cmd)
+			rel.SrcName = getSrcName(cmd)
 			saveBatch.Relations.AddCreate(rel)
 		}
 	}
@@ -195,12 +196,12 @@ func newNode(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) *model2.Node 
 	node.CaseId = cmd.GetCaseId()
 	node.Name = cell.GetNodeName()
 	node.Type = cell.GetNodeLabel()
-	node.SourceType = "draw"
-	node.SourceIds = cell.Id
+	node.SrcType = "draw"
+	node.SrcId = cell.Id
 	node.Type = "draw"
 	node.Description = node.Name
-	node.SourceUrl = getSourceUrl(cmd)
-	node.SourceName = getSourceName(cmd)
+	node.SrcUrl = getSrcUrl(cmd)
+	node.SrcName = getSrcName(cmd)
 	return node
 }
 
@@ -219,11 +220,11 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 		rel.Id = cell.Extend.ParentId + "-" + cell.Id
 		rel.CaseId = cmd.GetCaseId()
 		rel.RelType = cell.GetRelType()
-		rel.Source = cell.GetSourceId()
-		rel.Target = cell.GetTargetId()
+		rel.SrcId = cell.GetSourceId()
+		rel.TargetId = cell.GetTargetId()
 		rel.Keywords = []string{rel.RelType}
-		rel.SourceUrl = getSourceUrl(cmd)
-		rel.SourceName = getSourceName(cmd)
+		rel.SrcUrl = getSrcUrl(cmd)
+		rel.SrcName = getSrcName(cmd)
 		items = append(items, rel)
 
 	} else if cell.Extend.Type == "edge" {
@@ -238,10 +239,10 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 			rel.Id = cell.Id
 			rel.CaseId = cmd.GetCaseId()
 			rel.RelType = *cell.Value
-			rel.Source = cell.Extend.SourceId
-			rel.Target = cell.Extend.TargetId
-			rel.SourceUrl = getSourceUrl(cmd)
-			rel.SourceName = getSourceName(cmd)
+			rel.SrcId = cell.Extend.SourceId
+			rel.TargetId = cell.Extend.TargetId
+			rel.SrcUrl = getSrcUrl(cmd)
+			rel.SrcName = getSrcName(cmd)
 			items = append(items, rel)
 		}
 
@@ -250,23 +251,23 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 			rel.Id = cell.Id + "-" + label.Id
 			rel.CaseId = cmd.GetCaseId()
 			rel.RelType = label.Value
-			rel.Source = cell.Extend.SourceId
-			rel.Target = cell.Extend.TargetId
-			rel.SourceUrl = getSourceUrl(cmd)
-			rel.SourceName = getSourceName(cmd)
+			rel.SrcId = cell.Extend.SourceId
+			rel.TargetId = cell.Extend.TargetId
+			rel.SrcUrl = getSrcUrl(cmd)
+			rel.SrcName = getSrcName(cmd)
 			items = append(items, rel)
 		}
 	}
 	return items
 }
 
-func getSourceUrl(cmd command.IDrawSaveCommand) string {
+func getSrcUrl(cmd command.IDrawSaveCommand) string {
 	if env.GetEnv().App.ProdMode {
 		return fmt.Sprintf("/draw/draw.html?id=%s&case-id=%s", cmd.GetDrawId(), cmd.GetCaseId())
 	}
 	return fmt.Sprintf("/draw/draw.html?dev=1&id=%s&case-id=%s", cmd.GetDrawId(), cmd.GetCaseId())
 }
 
-func getSourceName(cmd command.IDrawSaveCommand) string {
+func getSrcName(cmd command.IDrawSaveCommand) string {
 	return cmd.GetFileName()
 }

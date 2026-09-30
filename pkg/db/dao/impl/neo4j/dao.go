@@ -26,7 +26,7 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 		if val, ok := cfg.DB.(neo4j.DriverWithContext); ok {
 			driver = val
 		} else {
-			panic("database config error neo4j.DriverWithContext")
+			panic("database config error neo4jdao.DriverWithContext")
 		}
 	}
 	envInst := cfg.Env
@@ -42,7 +42,7 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 		if val, ok := item.GetDB().(neo4j.DriverWithContext); ok {
 			driver = val
 		} else {
-			panic(fmt.Sprintf("dbKey %s is not neo4j.DriverWithContext", cfg.DBKey))
+			panic(fmt.Sprintf("dbKey %s is not neo4jdao.DriverWithContext", cfg.DBKey))
 		}
 	}
 
@@ -52,7 +52,7 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 		Labels:   cfg.GraphLabels,
 	}
 	if config.Labels == nil && cfg.GraphType == idao2.GraphType_Node {
-		panic(fmt.Sprintf("neo4j dao %s config.Labels is be must nil", dbSch.TableName))
+		panic(fmt.Sprintf("neo4jdao dao %s config.Labels is be must nil", dbSch.TableName))
 	}
 
 	var storeImp store.IStore[T]

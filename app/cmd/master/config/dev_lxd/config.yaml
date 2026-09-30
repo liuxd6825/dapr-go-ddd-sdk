@@ -23,7 +23,7 @@ envs:
         db: "default"
         ragDb: "default"
         drawDb: "default"
-        neo4jDb: "neo4j"
+        neo4jDb: "neo4jdao"
         redis: "default"
         rag:
           llm:
@@ -140,7 +140,7 @@ envs:
         host: 127.0.0.1
         port: 7687
         dbname:
-        user: neo4j
+        user: neo4jdao
         pwd: 12345678
     temporal:
       host: 127.0.0.1

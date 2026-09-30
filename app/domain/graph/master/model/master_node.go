@@ -15,8 +15,9 @@ type MasterNode struct {
 	Name        string `json:"name" gorm:"column:name"`
 	CaseId      string `json:"caseId" gorm:"column:case_id;nodeLabel:true;nodeLabelFormat:case_%s"`
 	TenantId    string `json:"tenantId" gorm:"column:tenant_id;nodeLabel:true;nodeLabelFormat:tenant_%s"`
-	SourceIds   string `json:"sourceIds" gorm:"column:source_ids"`
-	SourceType  string `json:"sourceType" gorm:"column:source_type"`
+	SrcId       string `json:"srcId" gorm:"column:src_id"`
+	SrcType     string `json:"srcType" gorm:"column:src_type"`
+	SrcUrl      string `json:"srcUrl" gorm:"column:src_url"`
 	Description string `json:"description" gorm:"column:description"`
 	Type        string `json:"type" gorm:"column:type"`
 	Table       string `json:"table" gorm:"column:table"`
@@ -61,8 +62,8 @@ func NewMasterNode(data map[string]any, dbSch *dbschema.DBSchema) *MasterNode {
 		Name:        name,
 		CaseId:      caseId,
 		TenantId:    tenantId,
-		SourceIds:   id,
-		SourceType:  SourceType,
+		SrcId:       id,
+		SrcType:     SourceType,
 		Type:        typeName,
 		Table:       dbSch.TableName,
 		Description: desc,

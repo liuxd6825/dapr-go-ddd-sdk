@@ -1,4 +1,4 @@
-package dao
+package neo4jdao
 
 import (
 	"context"

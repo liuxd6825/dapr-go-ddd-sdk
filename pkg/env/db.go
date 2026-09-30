@@ -3,6 +3,7 @@ package env
 import (
 	"context"
 
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
 	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -18,6 +19,7 @@ type DBItem interface {
 	GetMongo() *mongodb.MongoDB
 	GetGormDB() *gorm.DB
 	GetElastic() *elasticsearch.Client
+	GetHuge() *hugegraph.CommonClient
 	GetDB() any
 	CloseDB(ctx context.Context) error
 	GetConfig() any
@@ -35,6 +37,7 @@ type dbItem struct {
 	mongo   *mongodb.MongoDB
 	gormDb  *gorm.DB
 	elastic *elasticsearch.Client
+	huge    *hugegraph.CommonClient
 	config  any
 }
 
@@ -46,11 +49,12 @@ const (
 	DBType_Postgres DBType = "postgres"
 	DBType_MySQL    DBType = "mysql"
 	DBType_Sqlite   DBType = "sqlite"
-	DBType_Neo4j    DBType = "neo4j"
+	DBType_Neo4j    DBType = "neo4jdao"
 	DBType_MongoDB  DBType = "mongodb"
 	DBType_MsSQL    DBType = "mssql"
 	DBType_Oracle   DBType = "oracle"
 	DBType_Elastic  DBType = "elastic"
+	DBType_Huge     DBType = "hugedao"
 )
 
 func (d DBType) String() string {
@@ -75,6 +79,8 @@ func (d *dbItem) GetDB() any {
 		return d.gormDb
 	case DBType_Elastic:
 		return d.elastic
+	case DBType_Huge:
+		return d.huge
 	default:
 		panic("db type not supported")
 	}
@@ -102,6 +108,10 @@ func (d *dbItem) GetGormDB() *gorm.DB {
 
 func (d *dbItem) GetElastic() *elasticsearch.Client {
 	return d.elastic
+}
+
+func (d *dbItem) GetHuge() *hugegraph.CommonClient {
+	return d.huge
 }
 
 func (d *dbItem) CloseDB(ctx context.Context) error {

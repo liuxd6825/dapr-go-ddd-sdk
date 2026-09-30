@@ -83,7 +83,7 @@ func NewSqlite() *gorm.DB {
 func NewNeo4j() neo4j.DriverWithContext {
 	ctx := context.Background()
 	uri := fmt.Sprintf("bolt://%v:%v", "127.0.0.1", 7687)
-	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth("neo4j", "12345678", ""))
+	driver, err := neo4j.NewDriverWithContext(uri, neo4j.BasicAuth("neo4jdao", "12345678", ""))
 	if err != nil {
 		panic(err)
 	}

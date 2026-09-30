@@ -6,6 +6,8 @@ go 1.25
 require (
 	github.com/cloudwego/eino v0.7.13
 	github.com/mark3labs/mcp-go v0.32.0
+	github.com/apache/hugegraph-toolchain/hugegraph-client-go v1.7.0
+
 )
 
 require (
@@ -409,3 +411,5 @@ replace github.com/dop251/goja => ../../goja
 replace gorm.io/gorm => ../../gorm
 
 replace github.com/mark3labs/mcp-go v0.31.0 => ../../mcp-go
+
+replace github.com/apache/hugegraph-toolchain/hugegraph-client-go   => ../../hugegraph-toolchain/hugegraph-client-go

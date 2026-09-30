@@ -26,7 +26,7 @@ func Test_NodeDao(t *testing.T) {
 
 	daoCfg := &idao.DaoConfig{
 		DB:       driver,
-		DBKey:    "neo4j",
+		DBKey:    "neo4jdao",
 		DBSchema: dbschema.NewDBSchemaWithJsonSchema(humanSchema),
 		Env:      xtest2.NewEnvConfig(),
 		//DaoType:    "node",
@@ -53,7 +53,7 @@ func Test_NodeDao(t *testing.T) {
 			"peopleType": []string{"1111"},
 			"tags":       []string{"tag1", "tag2"},
 			"caseId":     "test",
-			"graphId":    "neo4j-test",
+			"graphId":    "neo4jdao-test",
 		}
 		list = append(list, entity)
 	}

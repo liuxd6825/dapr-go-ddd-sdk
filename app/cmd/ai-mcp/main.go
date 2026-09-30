@@ -9,11 +9,11 @@ import (
 
 func main() {
 	cfg := &neo4j_mcp.Config{
-		Name: "nc-neo4j-mcp",
+		Name: "nc-neo4jdao-mcp",
 		Addr: "0.0.0.0:6825",
 		Neo4j: neo4j_mcp.Neo4jConfig{
 			Uri:      "bolt://localhost:7687",
-			Username: "neo4j",
+			Username: "neo4jdao",
 			Password: "12345678",
 		},
 	}

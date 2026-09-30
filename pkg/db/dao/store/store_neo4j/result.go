@@ -226,7 +226,7 @@ func (r *Neo4jResult[T]) GetOne(dataKey string, entity interface{}, schema *stor
 	if count == 0 {
 		return false, nil
 	} else if count > 1 {
-		return false, fmt.Errorf("GetOne(dataKey, data) dataKey \"%s\" neo4j result %v > 1  not exist ", key, count)
+		return false, fmt.Errorf("GetOne(dataKey, data) dataKey \"%s\" neo4jdao result %v > 1  not exist ", key, count)
 	}
 	var err error
 	item := list[0]

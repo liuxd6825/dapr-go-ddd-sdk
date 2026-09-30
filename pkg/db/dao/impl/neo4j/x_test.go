@@ -6,7 +6,7 @@ import (
 
 var (
 	neo4jURL = "bolt://localhost:7687"
-	username = "neo4j"
+	username = "neo4jdao"
 	password = "12345678"
 	driver   neo4j.DriverWithContext
 )

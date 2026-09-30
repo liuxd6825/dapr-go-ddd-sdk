@@ -1,4 +1,4 @@
-package dao
+package neo4jdao
 
 import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
@@ -28,7 +28,7 @@ func (d *RelationDao) GetStore() *store_neo4j.Dao[*model.Relation] {
 	iStore := d.Dao.GetStore().(any)
 	nodeStoreDao, ok := iStore.(*store_neo4j.Dao[*model.Relation])
 	if !ok {
-		panic("neo4j store does not implement neo4j.Dao")
+		panic("neo4jdao store does not implement neo4jdao.Dao")
 	}
 	return nodeStoreDao
 }

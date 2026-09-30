@@ -21,7 +21,7 @@ envs:
         db: "default"
         ragDb: "default"  # 取得
         drawDb: "default"
-        neo4jDb: "neo4j"
+        neo4jDb: "neo4jdao"
         rag:
           llm:
             baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -100,7 +100,7 @@ envs:
         host: 127.0.0.1
         port: 17687
         dbname:
-        user: neo4j
+        user: neo4jdao
         pwd: 12345678
     temporal:
       host: 127.0.0.1
