@@ -26,6 +26,10 @@ type MasterRelation struct {
 	Table       string   `json:"table" gorm:"column:table"`
 }
 
+func (m *MasterRelation) GetId() string {
+	return m.Id
+}
+
 func NewMasterRelation(data map[string]any, dbSchema *dbschema.DBSchema) *MasterRelation {
 	if dbSchema == nil {
 		panic(errors.New("dbSch is nil"))

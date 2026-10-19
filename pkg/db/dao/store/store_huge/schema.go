@@ -16,10 +16,6 @@ import (
 )
 
 const (
-	VertexLabelMaster = "master"
-	VertexLabelSame   = "same"
-	EdgeLabelSame     = "same"
-
 	PropDataTypeText      = "TEXT"
 	PropCardinalitySingle = "SINGLE"
 	PropCardinalityList   = "LIST"
@@ -168,92 +164,6 @@ func EnsureIndex(ctx context.Context, client *hugegraph.CommonClient, baseType, 
 		return nil
 	}
 	return fmt.Errorf("create indexLabel %s status=%d body=%s", indexName, resp.StatusCode, bodyStr)
-}
-
-// DefaultMasterSchemaSpec 返回 master graph 默认期望 schema 状态。
-// rel_type 改为 EdgeLabel "master_rel" 的属性,通过索引加速按 relType 查询。
-// node_type 用于区分主子表节点类型(person/company),即所有主表节点共用
-// master VertexLabel,通过 node_type 属性区分业务实体类型。
-func DefaultMasterSchemaSpec() SchemaSpec {
-	masterVertexProps := []string{
-		"id", "name", "case_id", "tenant_id", "source_ids",
-		"source_type", "description", "type", "node_type", "table",
-	}
-	masterRelProps := []string{
-		"id", "rel_type", "source", "target", "keywords",
-		"case_id", "tenant_id", "source_ids", "source_type",
-		"description", "table",
-	}
-	return SchemaSpec{
-		PropertyKeys: DefaultPropertyKeys,
-		VertexLabels: []VertexLabelSpec{
-			{
-				Name:        VertexLabelMaster,
-				Properties:  masterVertexProps,
-				PrimaryKeys: []string{"id"},
-			},
-			{
-				Name:        VertexLabelSame,
-				Properties:  []string{"name"},
-				PrimaryKeys: []string{"name"},
-			},
-		},
-		EdgeLabels: []EdgeLabelSpec{
-			{
-				Name:        EdgeLabelSame,
-				SourceLabel: VertexLabelMaster,
-				TargetLabel: VertexLabelSame,
-				Properties:  []string{"name"},
-				Frequency:   FrequencySingle,
-			},
-			{
-				Name:        "master_rel",
-				SourceLabel: VertexLabelMaster,
-				TargetLabel: VertexLabelMaster,
-				Properties:  masterRelProps,
-				Frequency:   FrequencySingle,
-			},
-		},
-		IndexLabels: []IndexLabelSpec{
-			{
-				Name: "masterById", BaseLabel: VertexLabelMaster, BaseType: "VERTEX_LABEL",
-				Fields: []string{"id"},
-			},
-			{
-				Name: "masterByName", BaseLabel: VertexLabelMaster, BaseType: "VERTEX_LABEL",
-				Fields: []string{"name"},
-			},
-			{
-				Name: "masterByNodeType", BaseLabel: VertexLabelMaster, BaseType: "VERTEX_LABEL",
-				Fields: []string{"type"},
-			},
-			{
-				Name: "masterRelByRelType", BaseLabel: "master_rel", BaseType: "EDGE_LABEL",
-				Fields: []string{"rel_type"},
-			},
-			{
-				Name: "masterRelById", BaseLabel: "master_rel", BaseType: "EDGE_LABEL",
-				Fields: []string{"id"},
-			},
-			{
-				Name: "sameByName", BaseLabel: VertexLabelSame, BaseType: "VERTEX_LABEL",
-				Fields: []string{"name"},
-			},
-		},
-	}
-}
-
-// SyncMasterSchema 将默认 master schema spec 同步到 HugeGraph(add-only)。
-// 推荐作为 DAO 启动时调用入口,会对比实际 schema 并补齐缺失项。
-func SyncMasterSchema(ctx context.Context, client *hugegraph.CommonClient) error {
-	return SyncSchema(ctx, client, DefaultMasterSchemaSpec())
-}
-
-// EnsureMasterSchema 兼容层:旧 API 内部转调 SyncMasterSchema。
-// relTypeName 参数已废弃(rel_type 现在是边的属性,不再独立 EdgeLabel),保留仅为向后兼容。
-func EnsureMasterSchema(ctx context.Context, client *hugegraph.CommonClient, relTypeName string) error {
-	_ = relTypeName
-	return SyncMasterSchema(ctx, client)
 }
 
 func isAlreadyExists(err error) bool {

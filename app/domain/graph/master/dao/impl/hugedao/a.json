@@ -1,0 +1,110 @@
+[
+  {
+    "labels": [
+      [],
+      []
+    ],
+    "objects": [
+      {
+        "id": "1:a",
+        "label": "master",
+        "properties": {
+          "case_id": "1001",
+          "description": "公司名称:a; ",
+          "id": "a",
+          "name": "a",
+          "node_type": "case_1001,company,master",
+          "source_ids": "a",
+          "source_type": "master",
+          "table": "company",
+          "tenant_id": "test",
+          "type": "case_1001,company,master"
+        },
+        "type": "vertex"
+      },
+      {
+        "id": "2:a",
+        "label": "same",
+        "properties": {
+          "name": "a"
+        },
+        "type": "vertex"
+      }
+    ]
+  },
+  {
+    "labels": [
+      [],
+      []
+    ],
+    "objects": [
+      {
+        "id": "1:a",
+        "label": "master",
+        "properties": {
+          "case_id": "1001",
+          "description": "公司名称:a; ",
+          "id": "a",
+          "name": "a",
+          "node_type": "case_1001,company,master",
+          "source_ids": "a",
+          "source_type": "master",
+          "table": "company",
+          "tenant_id": "test",
+          "type": "case_1001,company,master"
+        },
+        "type": "vertex"
+      },
+      {
+        "id": "1:a_c",
+        "label": "master",
+        "properties": {
+          "case_id": "1001",
+          "description": "公司名称:c; ",
+          "id": "a_c",
+          "name": "c",
+          "node_type": "case_1001,company,master",
+          "source_ids": "a_c",
+          "source_type": "master",
+          "table": "company_company",
+          "tenant_id": "test",
+          "type": "case_1001,company,master"
+        },
+        "type": "vertex"
+      }
+    ]
+  },
+  {
+    "labels": [
+      [],
+      []
+    ],
+    "objects": [
+      {
+        "id": "1:b",
+        "label": "master",
+        "properties": {
+          "case_id": "1001",
+          "description": "公司名称:b; ",
+          "id": "b",
+          "name": "b",
+          "node_type": "case_1001,company,master",
+          "source_ids": "b",
+          "source_type": "master",
+          "table": "company",
+          "tenant_id": "test",
+          "type": "case_1001,company,master"
+        },
+        "type": "vertex"
+      },
+      {
+        "id": "2:b",
+        "label": "same",
+        "properties": {
+          "name": "b"
+        },
+        "type": "vertex"
+      }
+    ]
+  }
+]

@@ -21,6 +21,11 @@ type MasterNode struct {
 	Description string `json:"description" gorm:"column:description"`
 	Type        string `json:"type" gorm:"column:type"`
 	Table       string `json:"table" gorm:"column:table"`
+	Keywords    string `json:"keywords" gorm:"column:keywords"`
+}
+
+func (m *MasterNode) GetId() string {
+	return m.Id
 }
 
 func NewMasterNode(data map[string]any, dbSch *dbschema.DBSchema) *MasterNode {

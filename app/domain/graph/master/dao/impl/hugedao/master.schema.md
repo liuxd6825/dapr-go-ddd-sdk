@@ -36,9 +36,10 @@ schema.propertyKey("src_name").asText().ifNotExist().create();
 
 ## 创建顶点
 ```
-def schema = graph.schema();
+def schema = graph.schema(); 
 schema.vertexLabel("master_node")
 .properties(
+  "id",         "node_type",
   "name",       "case_id",    "tenant_id",  "description",
   "type",       "table",      "keywords",   "tags",
   "src_id",     "src_type",   "src_name",   "src_url"
@@ -50,17 +51,20 @@ schema.indexLabel("master_node_src_id").onV("master_node").by("src_id").secondar
 schema.indexLabel("master_node_keywords").onV("master_node").by("keywords").search().ifNotExist().create();
 schema.indexLabel("master_node_tags").onV("master_node").by("tags").search().ifNotExist().create();  
 
-//schema.indexLabel("master_node_tenant_id").onV("master_node").by("tenant_id").secondary().ifNotExist().create();
-//schema.indexLabel("master_node_table").onV("master_node").by("table").secondary().ifNotExist().create();
-//schema.indexLabel("master_node_src_name").onV("master_node").by("src_name").secondary().ifNotExist().create();
-//schema.indexLabel("master_node_src_type").onV("master_node").by("src_type").secondary().ifNotExist().create();
-//schema.indexLabel("master_node_src_url").onV("master_node").by("src_url").secondary().ifNotExist().create();
+
 schema.vertexLabel("master_same")
 .properties(
   "name"  
 )
 .useCustomizeStringId().ifNotExist().create();
 schema.indexLabel("master_same_name").onV("master_same").by("name").secondary().ifNotExist().create();
+
+
+//schema.indexLabel("master_node_tenant_id").onV("master_node").by("tenant_id").secondary().ifNotExist().create();
+//schema.indexLabel("master_node_table").onV("master_node").by("table").secondary().ifNotExist().create();
+//schema.indexLabel("master_node_src_name").onV("master_node").by("src_name").secondary().ifNotExist().create();
+//schema.indexLabel("master_node_src_type").onV("master_node").by("src_type").secondary().ifNotExist().create();
+//schema.indexLabel("master_node_src_url").onV("master_node").by("src_url").secondary().ifNotExist().create();
 ```
 ## 创建边
 ```
@@ -68,6 +72,7 @@ def schema = graph.schema();
 schema.edgeLabel("master_rel")
 .sourceLabel("master_node").targetLabel("master_node")
 .properties(
+  "id",            "name",
   "rel_target_id", "rel_source_id",   "rel_type",     "case_id",   "tenant_id", 
   "keywords",      "tags",            "table",        "description", 
   "src_id",        "src_type",        "src_name",     "src_url"
@@ -84,5 +89,9 @@ schema.indexLabel("master_rel_tags").onE("master_rel").by("tags").search().ifNot
 //schema.indexLabel("master_rel_tenant_id").v("master_rel").by("tenant_id").secondary().ifNotExist().create();
 //schema.indexLabel("master_rel_src_name").onE("master_rel").by("src_name").secondary().ifNotExist().create();
 //schema.indexLabel("master_rel_src_url").onE("master_rel").by("src_url").secondary().ifNotExist().create();
+
+
+schema.edgeLabel("master_rel_same").sourceLabel("master_node").targetLabel("master_same").ifNotExist().create();
+
 
 ```

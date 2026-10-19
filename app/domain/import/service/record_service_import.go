@@ -238,7 +238,6 @@ func (s *RecordService) newDorisImporter() (*doris.DorisImporter, error) {
 // @param appcmd
 // @return error
 func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) (err error) {
-
 	tempFs, err := miniofs.NewFs(env.GetEnv(), "default", "importData")
 	if err != nil {
 		return err
@@ -265,13 +264,12 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.Reco
 	}
 
 	return s.importData(ctx, tempFs, loader, appcmd, tempFs.GetBucketName(), parquetFileName, recordCount)
-
 }
 
-func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, loader *doris.DorisImporter, appcmd *command2.RecordImport2MasterCommand, s3BucketName, pFileName string, recordCount int64) error {
+func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, importer *doris.DorisImporter, appcmd *command2.RecordImport2MasterCommand, s3BucketName, pFileName string, recordCount int64) error {
 	taskId := appcmd.Data.TaskId
 	// 导入数据到Doris数据库中
-	_, err := loader.ImportFile(tempFs, pFileName, doris.LoadOptions{
+	_, err := importer.ImportFile(tempFs, pFileName, doris.LoadOptions{
 		Format: doris.FormatParquet,
 		Label:  "record_" + taskId,
 	})

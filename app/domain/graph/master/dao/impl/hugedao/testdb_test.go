@@ -1,4 +1,4 @@
-package hugedao
+package hugedao_test
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package doris
+package doris_test
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/doris"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/miniofs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
@@ -36,7 +37,7 @@ const (
 // HTTP-based loader forwards the S3 URL as the body and the credentials
 // as headers, without depending on a real Doris instance.
 func TestImportFileFromS3HTTP_Unit(t *testing.T) {
-	const wantPath = "s3://import-data/record/abc.parquet"
+	const wantPath = "s3://import-data/record/record.parquet"
 
 	var got struct {
 		method      string
@@ -81,7 +82,7 @@ func TestImportFileFromS3HTTP_Unit(t *testing.T) {
 	host, port := parts[0], 0
 	fmt.Sscanf(parts[1], "%d", &port)
 
-	loader := NewDorisImporter(Config{
+	importFile := doris.NewDorisImporter(doris.Config{
 		BEHost:   host,
 		BEPort:   port,
 		Database: "master",
@@ -91,15 +92,15 @@ func TestImportFileFromS3HTTP_Unit(t *testing.T) {
 		Timeout:  5 * time.Second,
 	})
 
-	resp, err := loader.ImportFileFromS3HTTP(wantPath, S3Config{
+	resp, err := importFile.ImportFileFromS3HTTP(wantPath, doris.S3Config{
 		Endpoint:     s3TestEndpoint,
 		Region:       "us-east-1",
 		AccessKey:    s3TestAccessKey,
 		SecretKey:    s3TestSecretKey,
 		UsePathStyle: true,
 		UseSSL:       true,
-	}, LoadOptions{
-		Format:  FormatParquet,
+	}, doris.LoadOptions{
+		Format:  doris.FormatParquet,
 		Columns: "id, name",
 		Label:   "label-x",
 	})
@@ -158,7 +159,7 @@ func TestImportFileFromS3HTTP_Unit(t *testing.T) {
 // ImportFileFromS3 method would issue, by extracting the SQL-construction
 // portion from the implementation under test.
 func TestImportFileFromS3_BuildQuery(t *testing.T) {
-	got := buildS3InsertQuery(
+	got := doris.BuildS3InsertQuery(
 		"master", "master_record1",
 		"s3://b/k", "ak", "sk",
 		"us-east-1", "host:9000", true, "parquet",
@@ -192,7 +193,7 @@ func TestBuildS3Path(t *testing.T) {
 		{"import-data", "record/test.parquet", "s3://import-data/record/test.parquet"},
 	}
 	for _, c := range cases {
-		if got := BuildS3Path(c.bucket, c.key); got != c.want {
+		if got := doris.BuildS3Path(c.bucket, c.key); got != c.want {
 			t.Errorf("BuildS3Path(%q, %q) = %q, want %q", c.bucket, c.key, got, c.want)
 		}
 	}
@@ -200,13 +201,13 @@ func TestBuildS3Path(t *testing.T) {
 
 // TestImportFileFromS3_ArgValidation ensures we fail fast on empty inputs.
 func TestImportFileFromS3_ArgValidation(t *testing.T) {
-	loader := NewDorisImporter(Config{
+	loader := doris.NewDorisImporter(doris.Config{
 		BEHost: "x", BEPort: 8040, Database: "d", Table: "t", Username: "u", Password: "p",
 	})
-	if _, err := loader.ImportFileFromS3("", S3Config{AccessKey: "a", SecretKey: "b"}, LoadOptions{}); err == nil {
+	if _, err := loader.ImportFileFromS3("", doris.S3Config{AccessKey: "a", SecretKey: "b"}, doris.LoadOptions{}); err == nil {
 		t.Error("expected error for empty s3 path, got nil")
 	}
-	if _, err := loader.ImportFileFromS3("s3://b/k", S3Config{}, LoadOptions{}); err == nil {
+	if _, err := loader.ImportFileFromS3("s3://b/k", doris.S3Config{}, doris.LoadOptions{}); err == nil {
 		t.Error("expected error for missing credentials, got nil")
 	}
 }
@@ -219,12 +220,12 @@ func TestImportFileFromS3_Integration(t *testing.T) {
 		t.Skip("skipping doris/s3 integration test in -short mode")
 	}
 	client := newTestMinIOClient(t)
-	fs, err := miniofs.NewFs(miniofs.Config{Bucket: s3TestBucket}, client)
+	fs, err := miniofs.NewFs(env, "minio", "bucket")
 	if err != nil {
 		t.Fatalf("miniofs.NewFs: %v", err)
 	}
 	// Verify Doris is reachable too; otherwise skip.
-	dorisLoader := NewDorisImporter(Config{
+	dorisLoader := doris.NewDorisImporter(doris.Config{
 		BEHost:   "192.168.120.224",
 		BEPort:   8040,
 		Database: "master",
@@ -237,9 +238,9 @@ func TestImportFileFromS3_Integration(t *testing.T) {
 	defer cancel()
 	pingReq, _ := http.NewRequestWithContext(pingCtx, http.MethodGet,
 		fmt.Sprintf("http://%s:%d/api/%s/%s/_stream_load",
-			dorisLoader.config.BEHost, dorisLoader.config.BEPort,
-			dorisLoader.config.Database, dorisLoader.config.Table), nil)
-	if resp, err := dorisLoader.client.Do(pingReq); err != nil {
+			dorisLoader.Config().BEHost, dorisLoader.Config().BEPort,
+			dorisLoader.Config().Database, dorisLoader.Config().Table), nil)
+	if resp, err := dorisLoader.Client().Do(pingReq); err != nil {
 		t.Skipf("doris BE not reachable: %v", err)
 	} else {
 		_ = resp.Body.Close()
@@ -266,12 +267,12 @@ func TestImportFileFromS3_Integration(t *testing.T) {
 	if err := fs.Mkdir("/record", 0o755); err != nil {
 		t.Fatalf("Mkdir: %v", err)
 	}
-	pf, err := NewParquetFile[*Record](fs, path)
+	pf, err := doris.NewParquetFile[*doris.Record](fs, path)
 	if err != nil {
 		t.Fatalf("NewParquetFile: %v", err)
 	}
 	for i := 0; i < rowCount; i++ {
-		if err := pf.Write(&Record{
+		if err := pf.Write(&doris.Record{
 			Id:          idutils.NewId(),
 			TenantId:    "tenant-s3",
 			CaseId:      "case-s3",
@@ -346,18 +347,18 @@ func TestImportFileFromS3_Integration(t *testing.T) {
 	}
 
 	// 2. Have Doris fetch it directly from S3.
-	s3Path := BuildS3Path(s3TestBucket, strings.TrimLeft(path, "/"))
+	s3Path := doris.BuildS3Path(s3TestBucket, strings.TrimLeft(path, "/"))
 	t.Logf("→ sending s3Path=%q to doris", s3Path)
-	resp, err := dorisLoader.ImportFileFromS3(s3Path, S3Config{
+	resp, err := dorisLoader.ImportFileFromS3(s3Path, doris.S3Config{
 		Endpoint:     s3TestEndpoint,
 		Region:       "us-east-1",
 		AccessKey:    s3TestAccessKey,
 		SecretKey:    s3TestSecretKey,
 		UsePathStyle: true,
 		UseSSL:       s3TestUseSSL,
-	}, LoadOptions{
-		Format:  FormatParquet,
-		Columns: RecordTableColumns,
+	}, doris.LoadOptions{
+		Format:  doris.FormatParquet,
+		Columns: doris.RecordTableColumns,
 		Label:   fmt.Sprintf("s3_test_%d", now.UnixNano()),
 	})
 	if err != nil {
@@ -367,7 +368,7 @@ func TestImportFileFromS3_Integration(t *testing.T) {
 		// don't t.Fail — a column-type mismatch is a data problem, not a
 		// loader-method problem.
 		t.Logf("ImportFileFromS3 returned error (likely column-type mismatch with %s.%s): %v",
-			dorisLoader.config.Database, dorisLoader.config.Table, err)
+			dorisLoader.Config().Database, dorisLoader.Config().Table, err)
 		return
 	}
 	if !strings.EqualFold(resp.Status, "Success") {

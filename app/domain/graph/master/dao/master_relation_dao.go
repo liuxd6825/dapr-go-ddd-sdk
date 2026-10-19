@@ -15,5 +15,5 @@ type IBusRelationDao interface {
 	FindByName(ctx context.Context, name string) *model2.MasterRelation
 	UpdateRecord(ctx context.Context, record *restapi.CDCRecord) *model2.MasterNode
 	DeleteRecord(ctx context.Context, record *restapi.CDCRecord)
-	GetStore() *store_huge.Dao[*model2.MasterRelation]
+	GetStore() *store_huge.BaseDao[*model2.MasterRelation]
 }

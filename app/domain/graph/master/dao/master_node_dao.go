@@ -12,9 +12,9 @@ import (
 )
 
 type IMasterNodeDao interface {
-	idao.Dao[*model.MasterNode]
+	//'idao.Dao[*model.MasterNode]
 	GraphMeta() *schema.Graph
-	CreateMain(ctx context.Context, node *model.MasterNode)
+	CreateMain(ctx context.Context, node *model.MasterNode) error
 	CreateRelNode(ctx context.Context, rel *model.MasterRelation, relNode *model.MasterNode) *model.MasterNode
 	UpdateMain(ctx context.Context, node *model.MasterNode)
 	UpdateRelNode(ctx context.Context, record *dbevent.CDCRecord) error

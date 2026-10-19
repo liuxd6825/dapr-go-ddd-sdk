@@ -1,4 +1,4 @@
-package hugedao
+package hugedao_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao/impl/hugedao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
@@ -79,8 +80,8 @@ func buildTestDBSchema() *dbschema.DBSchema {
 			"description": {"type": "string"},
 			"table": {"type": "string"},
 			"type": {"type": "string"},
-			"source_ids": {"type": "string"},
-			"source_type": {"type": "string"},
+			"src_id": {"type": "string"},
+			"src_type": {"type": "string"},
 			"keywords": {"type": "string"}
 		}
 	}`
@@ -139,36 +140,39 @@ func assertCount(t *testing.T, client *hugegraph.CommonClient, script string, ex
 func newMasterNodeDao(t *testing.T, client *hugegraph.CommonClient) dao.IMasterNodeDao {
 	t.Helper()
 	gm := newTestGraph()
-	if err := EnsureSchema(context.Background(), client, gm); err != nil {
+	if err := hugedao.EnsureSchema(context.Background(), client, gm); err != nil {
 		t.Fatalf("EnsureSchema: %v", err)
 	}
 	registerTestEnv(client)
-	return NewMasterNodeDao([]string{"master"}, newDBSchema("master_node"), gm)
+	return hugedao.NewMasterNodeDao(client, gm)
 }
 
-func newBusRelationDao(t *testing.T, client *hugegraph.CommonClient) *BusRelationDao {
+func newBusRelationDao(t *testing.T, client *hugegraph.CommonClient) *hugedao.BusRelationDao {
 	t.Helper()
 	gm := newTestGraph()
 	nodeDao := newMasterNodeDao(t, client)
-	return NewBusRelationDao(newDBSchema("master_relation"), nodeDao, gm)
+	return hugedao.NewBusRelationDao(client, newDBSchema("master_relation"), nodeDao, gm)
 }
 
 func TestMasterNodeDao_CreateMain(t *testing.T) {
 	client := getClient(t)
-	cleanAll(t, client)
+	//cleanAll(t, client)
 	dao := newMasterNodeDao(t, client)
 	node := &model.MasterNode{
 		Id:          "n1",
 		Name:        "alpha",
 		CaseId:      "c1",
 		TenantId:    "t1",
-		SourceIds:   "n1",
-		SourceType:  "master",
+		SrcId:       "n1",
+		SrcType:     "master",
 		Type:        "entity",
 		Description: "test node",
 		Table:       "master_node",
 	}
-	dao.CreateMain(context.Background(), node)
+	err := dao.CreateMain(context.Background(), node)
+	if err != nil {
+		t.Fatalf("dao.CreateMain: %v", err)
+	}
 }
 
 func TestMasterNodeDao_DeleteMain(t *testing.T) {
@@ -223,12 +227,12 @@ func TestMasterNodeDao_CreateRelNode(t *testing.T) {
 	}, sch)
 
 	relNode := &model.MasterNode{
-		Id:         "rn1",
-		Name:       "rn1",
-		CaseId:     "c1",
-		TenantId:   "t1",
-		SourceType: "master",
-		SourceIds:  "r1",
+		Id:       "rn1",
+		Name:     "rn1",
+		CaseId:   "c1",
+		TenantId: "t1",
+		SrcType:  "master",
+		SrcId:    "r1",
 	}
 
 	dao.CreateRelNode(context.Background(), rel, relNode)

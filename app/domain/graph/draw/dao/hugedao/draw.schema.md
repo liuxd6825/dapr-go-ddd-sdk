@@ -37,12 +37,12 @@ schema.propertyKey("src_name").asText().ifNotExist().create();
 def schema = graph.schema();
 schema.vertexLabel("draw_node")
 .properties(
-  "id",           "name",        "type",       "case_id",   "tenant_id",  "draw_id", 
+  "id",           "name",        "node_type",       "case_id",   "tenant_id",  "draw_id", 
   "description",  "table",       "keywords",   "tags",
   "src_url",      "src_name",    "src_id",     "src_type"
 ).useCustomizeStringId().ifNotExist().create();
 schema.indexLabel("draw_node_name").onV("draw_node").by("name").secondary().ifNotExist().create();
-schema.indexLabel("draw_node_type").onV("draw_node").by("type").secondary().ifNotExist().create();
+schema.indexLabel("draw_node_type").onV("draw_node").by("node_type").secondary().ifNotExist().create();
 schema.indexLabel("draw_node_case_id").onV("draw_node").by("case_id").secondary().ifNotExist().create();
 schema.indexLabel("draw_node_draw_id").onV("draw_node").by("draw_id").secondary().ifNotExist().create();
 schema.indexLabel("draw_node_table").onV("draw_node").by("table").secondary().ifNotExist().create();

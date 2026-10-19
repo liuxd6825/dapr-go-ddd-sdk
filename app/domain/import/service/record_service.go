@@ -10,6 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/interfaces"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/spark/livyserver"
 
 	docfile "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
@@ -39,9 +40,10 @@ type RecordService struct {
 	taskService       *TaskService
 	runtimeOptions    readexcel.RuntimeOptions
 	docStatusProvider interfaces.ImportStatusProvider
+	livyServer        *livyserver.LivyServer
 }
 
-func NewRecordService() *RecordService {
+func NewRecordService(livyServer *livyserver.LivyServer) *RecordService {
 	return singleutils.CreateObj[*RecordService](func() *RecordService {
 		return &RecordService{
 			dao:               dao2.NewRecordDao(config.DBKey),
@@ -50,6 +52,7 @@ func NewRecordService() *RecordService {
 			currencyService:   currency_service.NewCurrencyService(),
 			bankService:       bank_service.NewBankService(),
 			docStatusProvider: outside.NewImportStatusProvider(),
+			livyServer:        livyServer,
 		}
 	})
 }

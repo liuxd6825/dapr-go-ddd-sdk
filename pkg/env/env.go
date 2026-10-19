@@ -132,39 +132,39 @@ func (env *Env) AddDB(dbItem DBItem) {
 	env.dbs[dbKey] = dbItem
 }
 
-func (env *Env) AddNeo4j(dbCfg *Neo4j) {
-	if dbCfg == nil {
+func (env *Env) AddNeo4j(neo4jCfg *Neo4j) {
+	if neo4jCfg == nil {
 		panic(errors.New("dbCfg is nil"))
 	}
-	env.Neo4j[dbCfg.DbKey] = dbCfg
+	env.Neo4j[neo4jCfg.DbKey] = neo4jCfg
 }
 
-func (env *Env) AddMongo(dbCfg *Mongo) {
-	if dbCfg == nil {
-		panic(errors.New("dbCfg is nil"))
+func (env *Env) AddMongo(mongoCfg *Mongo) {
+	if mongoCfg == nil {
+		panic(errors.New("mongoCfg is nil"))
 	}
-	env.Mongo[dbCfg.DbKey] = dbCfg
+	env.Mongo[mongoCfg.DbKey] = mongoCfg
 }
 
-func (env *Env) AddMySql(dbCfg *MySql) {
-	if dbCfg == nil {
-		panic(errors.New("dbCfg is nil"))
+func (env *Env) AddMySql(mysqlCfg *MySql) {
+	if mysqlCfg == nil {
+		panic(errors.New("mysqlCfg is nil"))
 	}
-	env.Mysql[dbCfg.DbKey] = dbCfg
+	env.Mysql[mysqlCfg.DbKey] = mysqlCfg
 }
 
-func (env *Env) AddHuge(dbCfg *Huge) {
-	if dbCfg == nil {
-		panic(errors.New("dbCfg is nil"))
+func (env *Env) AddHuge(hugeCfg *Huge) {
+	if hugeCfg == nil {
+		panic(errors.New("hugeCfg is nil"))
 	}
-	env.Huge[dbCfg.DbKey] = dbCfg
+	env.Huge[hugeCfg.DbKey] = hugeCfg
 }
 
-func (env *Env) AddMinio(dbCfg *Minio) {
-	if dbCfg == nil {
-		panic(errors.New("dbCfg is nil"))
+func (env *Env) AddMinio(minoCfg *Minio) {
+	if minoCfg == nil {
+		panic(errors.New("minoCfg is nil"))
 	}
-	env.Minio[dbCfg.Name] = dbCfg
+	env.Minio[minoCfg.Name] = minoCfg
 }
 
 func (env *Env) CloseDB(ctx context.Context) error {

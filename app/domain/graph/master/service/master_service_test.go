@@ -97,7 +97,8 @@ func Test_Case1(t *testing.T) {
 }
 
 func Test_DeleteById(t *testing.T) {
-	nodeDao := hugedao.NewMasterNodeDao([]string{"company_test"}, nil, nil)
+	//nodeDao := hugedao.NewMasterNodeDao([]string{"company_test"}, nil, nil)
+	nodeDao := hugedao.NewMasterNodeDao([]string{"company_test"}, client, nil)
 	nodeDao.GetConfig().Env = envInv
 
 	gp.Try(func() error {

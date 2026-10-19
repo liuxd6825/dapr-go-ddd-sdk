@@ -1,4 +1,4 @@
-package doris
+package doris_test
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/miniofs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/doris"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
 	"github.com/minio/minio-go/v7"
@@ -71,11 +71,11 @@ func TestParquetFile_MinIO(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping minio integration test in -short mode")
 	}
-	client := newTestMinIOClient(t)
-	fs, err := miniofs.NewFs(miniofs.Config{Bucket: testMinIOBucket}, client)
-	if err != nil {
-		t.Fatalf("miniofs.NewFs: %v", err)
-	}
+	/*	client := newTestMinIOClient(t)
+		fs, err := miniofs.NewFs(miniofs.Config{Bucket: testMinIOBucket}, client)
+		if err != nil {
+			t.Fatalf("miniofs.NewFs: %v", err)
+		}*/
 
 	path := fmt.Sprintf("/record/test_parquet_%d.parquet", time.Now().UnixNano())
 	t.Cleanup(func() { _ = fs.RemoveAll("/record") })
@@ -84,7 +84,7 @@ func TestParquetFile_MinIO(t *testing.T) {
 	if err := fs.Mkdir("/record", 0o755); err != nil {
 		t.Fatalf("Mkdir /record: %v", err)
 	}
-	pf, err := NewParquetFile[*Record](fs, path)
+	pf, err := doris.NewParquetFile[*doris.Record](fs, path)
 	if err != nil {
 		t.Fatalf("NewParquetFile: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestParquetFile_MinIO(t *testing.T) {
 	now := time.Now()
 	const rowCount = 10
 	for i := 0; i < rowCount; i++ {
-		if err := pf.Write(&Record{
+		if err := pf.Write(&doris.Record{
 			Id:          idutils.NewId(),
 			TenantId:    "tenant-minio",
 			CaseId:      "case-minio",
@@ -189,18 +189,18 @@ func TestParquetFile_MinIO_CloseIsIdempotent(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping minio integration test in -short mode")
 	}
-	client := newTestMinIOClient(t)
-	fs, err := miniofs.NewFs(miniofs.Config{Bucket: testMinIOBucket}, client)
-	if err != nil {
-		t.Fatalf("miniofs.NewFs: %v", err)
-	}
+	/*	client := newTestMinIOClient(t)
+		fs, err := miniofs.NewFs(miniofs.Config{Bucket: testMinIOBucket}, client)
+		if err != nil {
+			t.Fatalf("miniofs.NewFs: %v", err)
+		}*/
 	t.Cleanup(func() { _ = fs.RemoveAll("/record") })
 
 	path := fmt.Sprintf("/record/test_idempotent_%d.parquet", time.Now().UnixNano())
 	if err := fs.Mkdir("/record", 0o755); err != nil {
 		t.Fatalf("Mkdir: %v", err)
 	}
-	pf, err := NewParquetFile[*Record](fs, path)
+	pf, err := doris.NewParquetFile[*doris.Record](fs, path)
 	if err != nil {
 		t.Fatalf("NewParquetFile: %v", err)
 	}

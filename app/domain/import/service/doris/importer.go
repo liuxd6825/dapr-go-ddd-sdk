@@ -35,6 +35,14 @@ func NewDorisImporter(cfg Config) *DorisImporter {
 	}
 }
 
+func (c DorisImporter) Config() *Config {
+	return &c.config
+}
+
+func (c DorisImporter) Client() *http.Client {
+	return c.client
+}
+
 // LoadOptions 允许自定义单次导入的参数
 type LoadOptions struct {
 	Format          LoadFormat // 文件格式，例如 "parquet"、"csv"、"json" (留空默认视为 csv)
@@ -202,7 +210,7 @@ func BuildS3Path(bucket, key string) string {
 // Doris's S3 TVF expects single-quoted string literals, so we wrap each
 // interpolated value with single quotes explicitly (Go's %q produces
 // double-quoted Go-style strings, which Doris would reject).
-func buildS3InsertQuery(database, table, s3Path, accessKey, secretKey,
+func BuildS3InsertQuery(database, table, s3Path, accessKey, secretKey,
 	region, endpoint string, usePathStyle bool, format string,
 ) string {
 	q := func(s string) string { return "'" + strings.ReplaceAll(s, "'", `\'`) + "'" }
@@ -264,7 +272,7 @@ func (dl *DorisImporter) ImportFileFromS3(s3Path string, s3cfg S3Config, opts Lo
 	}
 
 	// Build the INSERT INTO ... SELECT FROM S3(...) statement.
-	query := buildS3InsertQuery(
+	query := BuildS3InsertQuery(
 		dl.config.Database, dl.config.Table,
 		s3Path, s3cfg.AccessKey, s3cfg.SecretKey,
 		s3cfg.Region, s3cfg.Endpoint, s3cfg.UsePathStyle, format,

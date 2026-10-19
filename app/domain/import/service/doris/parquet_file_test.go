@@ -1,4 +1,4 @@
-package doris
+package doris_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/doris"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
 	"github.com/spf13/afero"
@@ -16,14 +17,14 @@ import (
 
 func TestRecordWrite(t *testing.T) {
 	fs := afero.NewOsFs()
-	pf, err := NewParquetFile[*Record](fs, "./record.parquet")
+	pf, err := doris.NewParquetFile[*doris.Record](fs, "./record.parquet")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	now := time.Now()
 	for i := 0; i < 200000; i++ {
-		item := &Record{}
+		item := &doris.Record{}
 		item.Id = idutils.NewId()
 		item.TenantId = "TenantId"
 		item.CaseId = "caseid"
@@ -93,7 +94,7 @@ func TestRecordWrite(t *testing.T) {
 		t.Fatal("parquet file is empty")
 	}
 
-	loader := NewDorisLoader(Config{
+	importer := doris.NewDorisImporter(doris.Config{
 		BEHost:   "192.168.120.224",
 		BEPort:   8040,
 		Database: "master",
@@ -103,9 +104,9 @@ func TestRecordWrite(t *testing.T) {
 	})
 
 	t.Logf("→ 开始 Stream Load 到 Doris ...")
-	if _, err := loader.ImportFile(fs, "./record.parquet", LoadOptions{
-		Format:  FormatParquet,
-		Columns: RecordTableColumns,
+	if _, err := importer.ImportFile(fs, "./record.parquet", doris.LoadOptions{
+		Format:  doris.FormatParquet,
+		Columns: doris.RecordTableColumns,
 	}); err != nil {
 		t.Fatalf("ImportFile failed: %v", err)
 	}

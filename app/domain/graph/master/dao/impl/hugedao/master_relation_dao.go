@@ -17,12 +17,15 @@ import (
 
 type BusRelationDao struct {
 	idao.Dao[*model2.MasterRelation]
-	nodeDao dao2.IMasterNodeDao
-	*Base[*model2.MasterRelation]
+	*store_huge.EdgeDao[*model2.MasterRelation]
+	nodeDao   dao2.IMasterNodeDao
 	graphMeta *schema.Graph
+	client    *hugegraph.CommonClient
 }
 
-func NewBusRelationDao(dbSch *store.DBSchema, nodeDao dao2.IMasterNodeDao, graphMeta *schema.Graph) *BusRelationDao {
+const DB_KEY_HUGE = "hugegraph"
+
+func NewBusRelationDao(client *hugegraph.CommonClient, dbSch *store.DBSchema, nodeDao dao2.IMasterNodeDao, graphMeta *schema.Graph) *BusRelationDao {
 	relCfg := &dao.DaoConfig{
 		DBKey:              DB_KEY_HUGE,
 		GraphType:          idao.GraphType_Rel,
@@ -30,11 +33,16 @@ func NewBusRelationDao(dbSch *store.DBSchema, nodeDao dao2.IMasterNodeDao, graph
 		IsCancelSoftDelete: true,
 	}
 	relDao := dao.NewDao[*model2.MasterRelation](relCfg)
+	cfg := &store_huge.Config[*model2.MasterRelation]{
+		DBSchema: dbSch,
+		Labels:   []string{"master_rel"},
+	}
+	edgeDao := store_huge.NewEdgeDao[*model2.MasterRelation](client, cfg)
 	return &BusRelationDao{
 		graphMeta: graphMeta,
 		Dao:       relDao,
 		nodeDao:   nodeDao,
-		Base:      &Base[*model2.MasterRelation]{DBSchema: dbSch},
+		EdgeDao:   edgeDao,
 	}
 }
 
@@ -44,7 +52,7 @@ func (d *BusRelationDao) GraphMeta() *schema.Graph {
 
 // EnsureSchema 触发 schema 初始化
 func (d *BusRelationDao) EnsureSchema(ctx context.Context) error {
-	client := d.GetStore().GetDBClient().(*hugegraph.CommonClient)
+	client := d.GetHugeClient()
 	return EnsureSchema(ctx, client, d.graphMeta)
 }
 
@@ -56,9 +64,9 @@ func (d *BusRelationDao) CreateSameName(_ context.Context, _ *model2.MasterNode)
 func (d *BusRelationDao) FindByName(ctx context.Context, name string) *model2.MasterRelation {
 	script := fmt.Sprintf(
 		"g.V().hasLabel('%s').has('name','%s').valueMap(true)",
-		store_huge.VertexLabelMaster, escapeGremlin(name),
+		VertexLabelMaster, escapeGremlin(name),
 	)
-	res, err := d.GetStore().Gremlin(ctx, script, nil)
+	res, err := d.Gremlin(ctx, script, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -88,33 +96,33 @@ func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *restapi.CDCRe
 	// 1. 创建 src 顶点 (若不存在)
 	srcScript := fmt.Sprintf(
 		"if (g.V().hasLabel('%s').has('id','%s').hasNext()) { 0 } else { g.addV('%s').property('id','%s').property('name','%s').next(); 0 }",
-		store_huge.VertexLabelMaster, escapeGremlin(rel.RelSourceId),
-		store_huge.VertexLabelMaster,
+		VertexLabelMaster, escapeGremlin(rel.RelSourceId),
+		VertexLabelMaster,
 		escapeGremlin(node.Id), escapeGremlin(node.Name),
 	)
-	if _, err := d.GetStore().Gremlin(ctx, srcScript, nil); err != nil {
+	if _, err := d.Gremlin(ctx, srcScript, nil); err != nil {
 		panic(err)
 	}
 
 	// 2. 创建 dst 顶点 (若不存在)
 	dstScript := fmt.Sprintf(
 		"if (g.V().hasLabel('%s').has('name','%s').hasNext()) { 0 } else { g.addV('%s').property('tenant_id','%s').property('name','%s').property('description','%s').next(); 0 }",
-		store_huge.VertexLabelMaster, escapeGremlin(nodeName),
-		store_huge.VertexLabelMaster,
+		VertexLabelMaster, escapeGremlin(nodeName),
+		VertexLabelMaster,
 		escapeGremlin(tenantId), escapeGremlin(nodeName), escapeGremlin(rel.Description),
 	)
-	if _, err := d.GetStore().Gremlin(ctx, dstScript, nil); err != nil {
+	if _, err := d.Gremlin(ctx, dstScript, nil); err != nil {
 		panic(err)
 	}
 
 	// 3. 创建或获取 master_rel 边 (若已存在则跳过)
 	relExistScript := fmt.Sprintf(
 		"g.V().hasLabel('%s').has('id','%s').outE('%s').has('id','%s').count()",
-		store_huge.VertexLabelMaster, escapeGremlin(rel.RelSourceId),
+		VertexLabelMaster, escapeGremlin(rel.RelSourceId),
 		EdgeLabelMasterRel, escapeGremlin(rel.Id),
 	)
-	relE := d.GetStore()
-	res, err := relE.Gremlin(ctx, relExistScript, nil)
+
+	res, err := d.Gremlin(ctx, relExistScript, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -127,16 +135,16 @@ func (d *BusRelationDao) UpdateRecord(ctx context.Context, record *restapi.CDCRe
 	if count == 0 {
 		creScript := fmt.Sprintf(
 			"g.V().hasLabel('%s').has('id','%s').addE('%s').to(__.V().hasLabel('%s').has('name','%s')).property('id','%s').property('rel_type','%s').property('tenant_id','%s').property('case_id','%s').property('description','%s').next()",
-			store_huge.VertexLabelMaster, escapeGremlin(rel.RelSourceId),
+			VertexLabelMaster, escapeGremlin(rel.RelSourceId),
 			EdgeLabelMasterRel,
-			store_huge.VertexLabelMaster, escapeGremlin(nodeName),
+			VertexLabelMaster, escapeGremlin(nodeName),
 			escapeGremlin(rel.Id),
 			escapeGremlin(relType),
 			escapeGremlin(tenantId),
 			escapeGremlin(rel.CaseId),
 			escapeGremlin(rel.Description),
 		)
-		if _, err := d.GetStore().Gremlin(ctx, creScript, nil); err != nil {
+		if _, err := d.Gremlin(ctx, creScript, nil); err != nil {
 			panic(err)
 		}
 	}
@@ -155,16 +163,16 @@ func (d *BusRelationDao) DeleteRecord(ctx context.Context, record *restapi.CDCRe
 		"g.E().hasLabel('%s').has('id','%s').drop().iterate()",
 		EdgeLabelMasterRel, escapeGremlin(rel.Id),
 	)
-	if _, err := d.GetStore().Gremlin(ctx, delRelScript, nil); err != nil {
+	if _, err := d.Gremlin(ctx, delRelScript, nil); err != nil {
 		panic(err)
 	}
 
 	// 2. 清理孤立端点
 	delOrphanScript := fmt.Sprintf(
 		"g.V().hasLabel('%s').has('name','%s').where(__.inE().count().is(eq(0)).and().outE().count().is(eq(0))).drop().iterate()",
-		store_huge.VertexLabelMaster, escapeGremlin(name),
+		VertexLabelMaster, escapeGremlin(name),
 	)
-	if _, err := d.GetStore().Gremlin(ctx, delOrphanScript, nil); err != nil {
+	if _, err := d.Gremlin(ctx, delOrphanScript, nil); err != nil {
 		panic(err)
 	}
 }
@@ -182,16 +190,16 @@ func mapToMasterRelation(m map[string]any) *model2.MasterRelation {
 		TenantId:    get("tenant_id"),
 		RelSourceId: get("rel_source_id"),
 		RelTargetId: get("rel_target_id"),
-		SourceId:    get("source_id"),
-		SourceType:  get("source_type"),
+		SrcId:       get("src_id"),
+		SrcType:     get("src_type"),
 		Description: get("description"),
 		Table:       get("table"),
 	}
 }
 
-func (d *BusRelationDao) GetStore() *store_huge.Dao[*model2.MasterRelation] {
+func (d *BusRelationDao) GetStore() *store_huge.BaseDao[*model2.MasterRelation] {
 	iStore := d.Dao.GetStore().(any)
-	storeDao, ok := iStore.(*store_huge.Dao[*model2.MasterRelation])
+	storeDao, ok := iStore.(*store_huge.BaseDao[*model2.MasterRelation])
 	if !ok {
 		panic("hugegraph store does not implement store_huge.Dao")
 	}

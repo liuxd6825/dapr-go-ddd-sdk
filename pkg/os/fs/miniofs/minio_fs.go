@@ -47,6 +47,10 @@ func NewFs(env *env.Env, minioKey string, bucketKey string) (*Fs, error) {
 	return &Fs{cfg: cfg, rootPath: cfg.RootPath, client: m.Client, minio: m, env: env}, nil
 }
 
+func NewFs2(cfg Config, client *minio.Client, minio *env.Minio, env *env.Env) (*Fs, error) {
+	return &Fs{cfg: cfg, rootPath: cfg.RootPath, client: client, minio: minio, env: env}, nil
+}
+
 // Compile-time assertion that *Fs implements afero.Fs.
 var _ afero.Fs = (*Fs)(nil)
 
