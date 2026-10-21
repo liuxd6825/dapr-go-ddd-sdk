@@ -1,4 +1,4 @@
-package config
+package ragconfigs
 
 const (
 	DefaultCompressThreshold = 50000

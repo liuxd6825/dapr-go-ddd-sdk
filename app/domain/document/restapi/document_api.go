@@ -9,6 +9,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
+	docconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
@@ -19,13 +20,14 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DocumentAPI struct {
+	config              docconfigs.Config
 	rootPath            string
-	env                 *env.Env
+	env                 *envs.Env
 	documentService     *service.DocumentService
 	documentMetaService *service.DocumentMetaService
 	fileService         *service.FileService
@@ -35,19 +37,21 @@ type DocumentAPI struct {
 	tagRelationSvc      *tagSvc.TagRelationService
 }
 
-func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
-	documentService := service.NewDocumentService()
-	fileService := service.NewFileService()
-	fsService := service.NewFsService()
-	folderService := service.NewFolderService()
-	folderMetaService := service.NewFolderMetaService()
-	tagRelationSvc := tagSvc.NewTagRelationService()
-	documentMetaService := service.NewDocumentMetaService()
+func NewDocumentAPI(env *envs.Env, rootPath string, config docconfigs.Config) *DocumentAPI {
+
+	documentService := service.NewDocumentService(config.MongoDbKey)
+	fileService := service.NewFileService(config.MongoDbKey)
+	fsService := service.NewFsService(config.MongoDbKey)
+	folderService := service.NewFolderService(config.MongoDbKey)
+	folderMetaService := service.NewFolderMetaService(config.MongoDbKey)
+	tagRelationSvc := tagSvc.NewTagRelationService(config.MongoDbKey)
+	documentMetaService := service.NewDocumentMetaService(config.MongoDbKey)
 	documentMetaService.SetInit(documentService, folderService)
 	documentService.SetInit(documentMetaService)
 	return &DocumentAPI{
 		rootPath:            rootPath,
 		env:                 env,
+		config:              config,
 		documentService:     documentService,
 		fileService:         fileService,
 		fsService:           fsService,

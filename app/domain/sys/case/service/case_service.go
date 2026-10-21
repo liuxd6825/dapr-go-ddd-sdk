@@ -2,13 +2,11 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -18,18 +16,10 @@ type CaseService struct {
 	dao *dao.CaseDao
 }
 
-var (
-	_caseOnce          sync.Once
-	_caseDomainService *CaseService
-)
-
-func NewCaseService() *CaseService {
-	_caseOnce.Do(func() {
-		_caseDomainService = &CaseService{
-			dao: dao.NewCaseDao(config.DBKey),
-		}
-	})
-	return _caseDomainService
+func NewCaseService(dbKey string) *CaseService {
+	return &CaseService{
+		dao: dao.NewCaseDao(dbKey),
+	}
 }
 
 func (s *CaseService) GetConfig() *idao.DaoConfig {

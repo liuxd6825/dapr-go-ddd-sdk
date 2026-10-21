@@ -10,26 +10,28 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DictTypeAPI struct {
-	env             *env.Env
+	dbKey           string
+	env             *envs.Env
 	dictTypeService *service.DictTypeService
 	rootPath        string
 }
 
-func NewDictTypeAPI(env *env.Env, rootPath string) *DictTypeAPI {
+func NewDictTypeAPI(env *envs.Env, rootPath string, dbKey string) *DictTypeAPI {
 	return &DictTypeAPI{
+		dbKey:           dbKey,
 		env:             env,
-		dictTypeService: service.NewDictTypeService(),
+		dictTypeService: service.NewDictTypeService(dbKey),
 		rootPath:        rootPath,
 	}
 }
 
 func (s *DictTypeAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.dictTypeService = service.NewDictTypeService()
+	s.dictTypeService = service.NewDictTypeService(s.dbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.DictTypeApi", s)
 	ctl.Post("/dictionary-type", "Create")
 	ctl.Put("/dictionary-type", "Update")

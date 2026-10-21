@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 func InitDbWithConfig(envName string, prefix string, dbKey string, config *Config, tables *Tables) error {
@@ -17,12 +17,12 @@ func InitDbWithConfig(envName string, prefix string, dbKey string, config *Confi
 		name = config.Env
 	}
 
-	env := env.GetEnv()
+	env := envs.GetEnv()
 
 	return InitDb(dbKey, tables, env, prefix)
 }
 
-func InitDb(dbKey string, tables *Tables, env *env.Env, prefix string) error {
+func InitDb(dbKey string, tables *Tables, env *envs.Env, prefix string) error {
 	if dbKey == "" {
 		panic("dbkey is not emtiy")
 	}
@@ -43,7 +43,7 @@ func InitDb(dbKey string, tables *Tables, env *env.Env, prefix string) error {
 	return nil
 }
 
-func InitDbScript(dbKey string, tables *Tables, env *env.Env, prefix string, saveFile string) error {
+func InitDbScript(dbKey string, tables *Tables, env *envs.Env, prefix string, saveFile string) error {
 	if dbKey == "" {
 		panic("dbkey is not emtiy")
 	}

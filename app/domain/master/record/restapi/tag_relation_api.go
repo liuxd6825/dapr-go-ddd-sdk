@@ -9,17 +9,17 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type TagRelationAPI struct {
-	env            *env.Env
+	env            *envs.Env
 	tagRelationSvc *service.TagRelationService
 }
 
-func NewTagRelationAPI(env *env.Env, rootPath string) *TagRelationAPI {
-	tagRelationSvc := service.NewTagRelationService()
+func NewTagRelationAPI(env *envs.Env, rootPath string, dbKey string) *TagRelationAPI {
+	tagRelationSvc := service.NewTagRelationService(dbKey)
 	return &TagRelationAPI{
 		env:            env,
 		tagRelationSvc: tagRelationSvc,

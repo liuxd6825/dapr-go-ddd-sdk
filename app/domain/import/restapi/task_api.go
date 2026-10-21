@@ -4,37 +4,39 @@ import (
 	"context"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/spark/livyserver"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type TaskAPI struct {
-	env           *env.Env
+	dbKey         string
+	env           *envs.Env
 	taskService   *service.TaskService
 	recordService *service.RecordService
 	rootPath      string
 }
 
-func NewTaskAPI(env *env.Env, rootPath string) *TaskAPI {
+func NewTaskAPI(env *envs.Env, rootPath string, livyServer *livyserver.LivyServer, dbKey string) *TaskAPI {
 	return &TaskAPI{
+		dbKey:         dbKey,
 		env:           env,
 		rootPath:      rootPath,
-		taskService:   service.NewTaskService(),
-		recordService: service.NewRecordService(),
+		taskService:   service.NewTaskService(dbKey),
+		recordService: service.NewRecordService(livyServer, dbKey),
 	}
 }
 
 func (s *TaskAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.taskService = service.NewTaskService()
+	s.taskService = service.NewTaskService(s.dbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/import", "TaskAPI", s)
 	ctl.Post("/task", "Create")
 	ctl.Put("/task", "Update")
@@ -46,7 +48,7 @@ func (s *TaskAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 }
 
 func (s *TaskAPI) Create(ctx context.Context, cmd *command.TaskCreateCommand) error {
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.dbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		return s.taskService.Create(ctx, cmd)
 	})
 }

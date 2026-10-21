@@ -19,14 +19,16 @@ import (
 )
 
 type DocumentMetaService struct {
+	dbKey         string
 	dao           *dao.DocumentMetaDao
 	docService    *DocumentService
 	folderService *FolderService
 }
 
-func NewDocumentMetaService() *DocumentMetaService {
+func NewDocumentMetaService(dbKey string) *DocumentMetaService {
 	svc := &DocumentMetaService{
-		dao: dao.NewDocumentMetaDao(DBKey),
+		dbKey: dbKey,
+		dao:   dao.NewDocumentMetaDao(dbKey),
 	}
 	return svc
 }
@@ -101,7 +103,7 @@ func (t *DocumentMetaService) PublishDocumentRagEvent(ctx context.Context, cmd *
 		data.SourceType = "document"
 		data.SourceApp = "document_service"
 		evt := event.NewDocumentCreateEvent(ctx, "duxm-master-cmd-service", data)
-		err = xbase.PublishEvent(ctx, evt)
+		err = xbase.PublishEvent(ctx, evt, t.dbKey)
 		if err != nil {
 			return err
 		}

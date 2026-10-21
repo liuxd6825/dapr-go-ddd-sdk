@@ -10,17 +10,17 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 type SuTaskRecordApi struct {
 	accountService *service.SuRecordService
-	env            *env.Env
+	env            *envs.Env
 	rootPath       string
 }
 
-func NewSuTaskRecordApi(env *env.Env, rootPath string) *SuTaskRecordApi {
-	accountService := service.NewSuRecordService()
+func NewSuTaskRecordApi(env *envs.Env, rootPath string, dbKey string) *SuTaskRecordApi {
+	accountService := service.NewSuRecordService(dbKey)
 	return &SuTaskRecordApi{
 		env:            env,
 		rootPath:       rootPath,

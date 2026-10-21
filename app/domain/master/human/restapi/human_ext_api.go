@@ -17,10 +17,10 @@ type HumanExtAPI struct {
 	rootPath string
 }
 
-func NewHumanExtAPI(rootPath string) *HumanExtAPI {
+func NewHumanExtAPI(rootPath string, dbKey string) *HumanExtAPI {
 	return &HumanExtAPI{
 		rootPath: rootPath,
-		service:  service.NewHumanExtService(),
+		service:  service.NewHumanExtService(dbKey),
 	}
 }
 

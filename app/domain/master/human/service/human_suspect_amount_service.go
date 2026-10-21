@@ -2,11 +2,9 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -16,14 +14,8 @@ type HumanSuspectAmountService struct {
 	dao *dao.HumanSuspectAmountDao
 }
 
-var _humanSuspectAmountService *HumanSuspectAmountService
-var _humanSuspectAmountServiceOnce sync.Once
-
-func NewHumanSuspectAmountService() *HumanSuspectAmountService {
-	_humanSuspectAmountServiceOnce.Do(func() {
-		_humanSuspectAmountService = &HumanSuspectAmountService{dao: dao.NewHumanSuspectAmountDao(config.DBKey)}
-	})
-	return _humanSuspectAmountService
+func NewHumanSuspectAmountService(dbKey string) *HumanSuspectAmountService {
+	return &HumanSuspectAmountService{dao: dao.NewHumanSuspectAmountDao(dbKey)}
 }
 
 func (s *HumanSuspectAmountService) Create(ctx context.Context, data *model.HumanSuspectAmount, opts ...idao.CallOptions) error {

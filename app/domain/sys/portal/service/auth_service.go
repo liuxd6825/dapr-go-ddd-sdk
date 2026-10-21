@@ -2,27 +2,20 @@ package service
 
 import (
 	"context"
+
 	service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
 	client "github.com/ory/kratos-client-go"
-	"sync"
 )
 
 type AuthService struct {
 	ory *service.OryService
 }
 
-var (
-	_authOnce          sync.Once
-	_authDomainService *AuthService
-)
-
-func NewAuthService() *AuthService {
-	_authOnce.Do(func() {
-		_authDomainService = &AuthService{
-			ory: service.NewOryService(),
-		}
-	})
-	return _authDomainService
+func NewAuthService(dbKey string) *AuthService {
+	s := &AuthService{
+		ory: service.NewOryService(dbKey),
+	}
+	return s
 }
 
 func (t *AuthService) CreateLoginFlow(ctx context.Context) (*client.LoginFlow, error) {

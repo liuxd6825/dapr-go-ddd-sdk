@@ -10,28 +10,29 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type FunAPI struct {
-	env             *env.Env
+	env             *envs.Env
 	funService      *service.FunService
 	cardFileService *service.CardFileService
 	rootPath        string
+	mongoDbKey      string
 }
 
-func NewFunAPI(env *env.Env, rootPath string) *FunAPI {
+func NewFunAPI(env *envs.Env, rootPath string, mongoDbKey string) *FunAPI {
 	return &FunAPI{
 		env:             env,
-		funService:      service.NewFunService(),
-		cardFileService: service.NewCardFileService(),
+		funService:      service.NewFunService(mongoDbKey),
+		cardFileService: service.NewCardFileService(mongoDbKey),
 		rootPath:        rootPath,
 	}
 }
 
 func (s *FunAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.funService = service.NewFunService()
+	s.funService = service.NewFunService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.NewFunAPI", s)
 	ctl.Post("/fun", "Create")
 	ctl.Put("/fun", "Update")

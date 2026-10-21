@@ -10,21 +10,23 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DocumentEventHandler struct {
+	dbKey      string
 	rootPath   string
-	env        *env.Env
+	env        *envs.Env
 	docService *service.DocumentService
 }
 
-func NewDocumentEventHandler(env *env.Env, baseUrl string) *DocumentEventHandler {
+func NewDocumentEventHandler(env *envs.Env, baseUrl, mongoDbKey string) *DocumentEventHandler {
 	return &DocumentEventHandler{
 		rootPath:   baseUrl,
+		dbKey:      mongoDbKey,
 		env:        env,
-		docService: service.NewDocumentService(outside.NewDocStatusProvider()),
+		docService: service.NewDocumentService(outside.NewDocStatusProvider(mongoDbKey), mongoDbKey),
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
@@ -34,7 +34,7 @@ type runConfig struct {
 	LogLevel               applog.Level
 	DaprMaxCallRecvMsgSize *int64
 	DaprClient             dapr.DaprClient
-	EnvConfig              *env.Env
+	EnvConfig              *envs.Env
 	FsManager              *fsm.Manager
 	SubsFunc               func() []RegisterSubscribe
 	ControllersFunc        func() []Controller
@@ -90,13 +90,13 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 	switch runType {
 	case RunTypeInitDB: // 是数据库初始化
 		if opt.tables != nil {
-			env := env.GetEnv()
+			env := envs.GetEnv()
 			err = InitDb(opt.GetDbKey(), opt.tables, env, opt.GetPrefix())
 		}
 		return nil, err
 	case RunTypeCreateSqlFile: // 是生成数据库脚本
 		if opt.tables != nil {
-			env := env.GetEnv()
+			env := envs.GetEnv()
 			err = InitDbScript(opt.GetDbKey(), opt.tables, env, opt.GetPrefix(), opt.GetSqlFile())
 		}
 		return nil, err
@@ -150,7 +150,7 @@ func Run(envConfig *EnvConfig, cfg *RunConfig, options ...*RunOptions) (common.S
 	if err = InitApplication(context.Background(), envConfig, eventType, false, nil); err != nil {
 		return nil, err
 	}
-	env := env.GetEnv()
+	env := envs.GetEnv()
 	daprClient := env.Dapr.GetClient()
 	runCfg := &runConfig{
 		AppId:      envConfig.App.AppId,
@@ -235,7 +235,7 @@ func run(runCfg *runConfig, webRootPath string, runCfgs *RunConfig, runOptions .
 		ActorFactories: actorFactories,
 		AuthToken:      "",
 		WebRootPath:    webRootPath,
-		Env:            env.GetEnv(),
+		Env:            envs.GetEnv(),
 		OnInitEvents:   opt.onInitEvents,
 		OnStartEvents:  opt.onStartEvents,
 	}

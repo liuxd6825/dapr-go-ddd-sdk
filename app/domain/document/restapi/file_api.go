@@ -13,20 +13,20 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type FileAPI struct {
 	rootPath    string
-	env         *env.Env
+	env         *envs.Env
 	fileService *service.FileService
 	docService  *service.DocumentService
 }
 
-func NewFileAPI(env *env.Env, rootPath string) *FileAPI {
-	fileService := service.NewFileService()
-	docService := service.NewDocumentService()
+func NewFileAPI(env *envs.Env, rootPath string, dbKey string) *FileAPI {
+	fileService := service.NewFileService(dbKey)
+	docService := service.NewDocumentService(dbKey)
 	return &FileAPI{
 		rootPath:    rootPath,
 		env:         env,

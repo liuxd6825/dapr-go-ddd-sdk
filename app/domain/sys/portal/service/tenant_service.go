@@ -3,8 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
-	service5 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"sync"
+
+	service5 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/enum"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/orm_pkg/dao"
@@ -12,7 +13,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -33,18 +33,15 @@ var (
 	_tenantDomainService *TenantService
 )
 
-func NewTenantService() *TenantService {
-	_tenantOnce.Do(func() {
-		_tenantDomainService = &TenantService{
-			tenantOpt:         idao.NewCallOptions().SetTenantId(SystemTenantId),
-			dao:               dao.NewTenantDao(config.DBKey),
-			tuDao:             dao.NewTenantUserDao(config.DBKey),
-			userService:       NewUserService(),
-			tenantUserService: NewTenantUserService(),
-			tagService:        service5.NewTagService(),
-		}
-	})
-	return _tenantDomainService
+func NewTenantService(dbKey string) *TenantService {
+	return &TenantService{
+		tenantOpt:         idao.NewCallOptions().SetTenantId(SystemTenantId),
+		dao:               dao.NewTenantDao(dbKey),
+		tuDao:             dao.NewTenantUserDao(dbKey),
+		userService:       NewUserService(dbKey),
+		tenantUserService: NewTenantUserService(dbKey),
+		tagService:        service5.NewTagService(dbKey),
+	}
 }
 
 func (t *TenantService) InitSysTenant(ctx context.Context) error {

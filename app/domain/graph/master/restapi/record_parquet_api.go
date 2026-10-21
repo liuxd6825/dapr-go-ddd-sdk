@@ -4,9 +4,8 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -14,16 +13,16 @@ import (
 // RecordParquetAPI
 // @Description: 银行流水 parquet 导入 REST API
 type RecordParquetAPI struct {
-	env      *env.Env
+	env      *envs.Env
 	rootPath string
-	service  *service.RecordParquetService
+	service  *service.RecordService
 }
 
-func NewRecordParquetAPI(env *env.Env, rootPath string) *RecordParquetAPI {
+func NewRecordParquetAPI(env *envs.Env, recordService *service.RecordService, rootPath string) *RecordParquetAPI {
 	return &RecordParquetAPI{
 		env:      env,
 		rootPath: rootPath,
-		service:  service.NewRecordParquetService(env),
+		service:  recordService,
 	}
 }
 
@@ -50,7 +49,7 @@ func (s *RecordParquetAPI) NewAPIController(app *iris.Application) *restapi.ApiC
 }
 
 // Import 导入银行流水 parquet
-func (s *RecordParquetAPI) Import(ctx context.Context, req *ImportRecordParquetRequest, path *ImportRecordParquetPath) (*dao.ImportResult, error) {
+/*func (s *RecordParquetAPI) Import(ctx context.Context, req *ImportRecordParquetRequest, path *ImportRecordParquetPath) (*dao.ImportResult, error) {
 	opts := service.ImportOptions{
 		BatchSize:   req.BatchSize,
 		Parallel:    req.Parallel,
@@ -58,7 +57,7 @@ func (s *RecordParquetAPI) Import(ctx context.Context, req *ImportRecordParquetR
 		Retries:     req.Retries,
 	}
 	return s.service.ImportFromS3(ctx, req.S3Path, path.CaseId, opts)
-}
+}*/
 
 // Check 健康检查
 func (s *RecordParquetAPI) Check(ctx context.Context) error {

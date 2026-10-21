@@ -21,16 +21,16 @@ type RecordService struct {
 var _recordService *RecordService
 var _recordServiceOnce sync.Once
 
-func NewRecordService() *RecordService {
+func NewRecordService(dbKey string) *RecordService {
 	_recordServiceOnce.Do(func() {
-		_recordService = newRecordService()
+		_recordService = newRecordService(dbKey)
 	})
 	return _recordService
 }
 
-func newRecordService() *RecordService {
+func newRecordService(dbKey string) *RecordService {
 	return &RecordService{
-		dao: dao.NewRecordDao("doris"),
+		dao: dao.NewRecordDao(dbKey),
 	}
 }
 

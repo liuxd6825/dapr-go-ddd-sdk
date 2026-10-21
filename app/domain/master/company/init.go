@@ -5,20 +5,21 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 // Init 初始化公司子域，注册 Company 及 6 个子实体的 REST API
-func Init(app *iris.Application, baseUrl string, env *env.Env) {
+func Init(app *iris.Application, baseUrl string, env *envs.Env, config masterconfigs.Config) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service": "company"}, func() error {
-		restapi.RegisterCompany(app, baseUrl, env)
-		restapi.RegisterCompanyAccount(app, baseUrl, env)
-		restapi.RegisterCompanyCompany(app, baseUrl, env)
-		restapi.RegisterCompanyContract(app, baseUrl, env)
-		restapi.RegisterCompanyHuman(app, baseUrl, env)
-		restapi.RegisterCompanyProduct(app, baseUrl, env)
-		restapi.RegisterCompanyRecord(app, baseUrl, env)
+		restapi.RegisterCompany(app, baseUrl, env, config.MongoDbKey)
+		restapi.RegisterCompanyAccount(app, baseUrl, env, config.MongoDbKey)
+		restapi.RegisterCompanyCompany(app, baseUrl, env, config.MongoDbKey)
+		restapi.RegisterCompanyContract(app, baseUrl, env, config.MongoDbKey)
+		restapi.RegisterCompanyHuman(app, baseUrl, env, config.MongoDbKey)
+		restapi.RegisterCompanyProduct(app, baseUrl, env, config.MongoDbKey)
+		restapi.RegisterCompanyRecord(app, baseUrl, env, config.MongoDbKey)
 		return nil
 	})
 	if err != nil {

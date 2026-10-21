@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/embedding"
@@ -16,7 +15,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/sirupsen/logrus"
 )
@@ -27,17 +25,10 @@ type RagService struct {
 	chatSummaryService *ChatSummaryService
 }
 
-var ragService *RagService
-var ragServiceOnce sync.Once
-var graphRag *my_rag.GraphRag
-var graphRagOnce sync.Once
-
-func NewRagService() *RagService {
-	ragServiceOnce.Do(func() {
-		ragService = &RagService{
-			graphRag: NewGraphRag(),
-		}
-	})
+func NewRagService(ragCfg ragconfigs.RagConfig) *RagService {
+	ragService := &RagService{
+		graphRag: NewGraphRag(ragCfg),
+	}
 	return ragService
 }
 
@@ -84,26 +75,12 @@ func (s *RagService) Query(ctx context.Context, query my_rag.QueryParam, streams
 	return s.graphRag.Query(ctx, &query, streams...)
 }
 
-func NewGraphRag() *my_rag.GraphRag {
-	graphRagOnce.Do(func() {
-		graphRag = newGraphRag()
-	})
-	return graphRag
+func NewGraphRag(ragCfg ragconfigs.RagConfig) *my_rag.GraphRag {
+	return newGraphRag(ragCfg)
 }
 
-func newGraphRag() *my_rag.GraphRag {
+func newGraphRag(ragCfg ragconfigs.RagConfig) *my_rag.GraphRag {
 	ctx := context.Background()
-	e := env.GetEnv()
-	ragMeta := e.App.Meta["rag"]
-	if ragMeta == nil {
-		panic("rag not found in env.app")
-	}
-
-	ragCfg, err := config.ReadRagConfig(ragMeta)
-	if err != nil {
-		panic("read RagConfig error" + err.Error())
-	}
-
 	var llmModel model.ToolCallingChatModel
 	switch ragCfg.LLM.Type {
 	case "ollama":

@@ -2,15 +2,14 @@ package service
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
-	"sync"
 )
 
 type TagTypeService struct {
@@ -18,18 +17,10 @@ type TagTypeService struct {
 	xbase.Service
 }
 
-var (
-	_tagTypeOnce          sync.Once
-	_tagTypeDomainService *TagTypeService
-)
-
-func NewTagTypeService() *TagTypeService {
-	_tagTypeOnce.Do(func() {
-		_tagTypeDomainService = &TagTypeService{
-			dao: dao.NewTagTypeDao(config.DBKey),
-		}
-	})
-	return _tagTypeDomainService
+func NewTagTypeService(mongoDbKey string) *TagTypeService {
+	return &TagTypeService{
+		dao: dao.NewTagTypeDao(mongoDbKey),
+	}
 }
 
 func (t *TagTypeService) Create(ctx context.Context, cmd *command.TagTypeCreateCommand) error {

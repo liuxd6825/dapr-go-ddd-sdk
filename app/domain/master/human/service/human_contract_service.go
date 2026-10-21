@@ -2,11 +2,9 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -16,14 +14,8 @@ type HumanContractService struct {
 	dao *dao.HumanContractDao
 }
 
-var _humancontractService *HumanContractService
-var _humancontractServiceOnce sync.Once
-
-func NewHumanContractService() *HumanContractService {
-	_humancontractServiceOnce.Do(func() {
-		_humancontractService = &HumanContractService{dao: dao.NewHumanContractDao(config.DBKey)}
-	})
-	return _humancontractService
+func NewHumanContractService(dbKey string) *HumanContractService {
+	return &HumanContractService{dao: dao.NewHumanContractDao(dbKey)}
 }
 
 func (s *HumanContractService) CreateMany(ctx context.Context, items []*model.HumanContract, opts ...idao.CallOptions) error {

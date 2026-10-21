@@ -6,7 +6,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd/ddd_query"
@@ -16,9 +15,9 @@ type SuAccountService struct {
 	dao *dao.SuAccountDao
 }
 
-func NewSuTaskAccountService() *SuAccountService {
+func NewSuTaskAccountService(dbKey string) *SuAccountService {
 	return &SuAccountService{
-		dao: dao.NewSuAccountDao(config.DBKey),
+		dao: dao.NewSuAccountDao(dbKey),
 	}
 }
 

@@ -2,16 +2,18 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	sysconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys.dictType"}, func() error {
-		RegisterDictTypeAPI(app, baseUrl, env)
-		RegisterDictAPI(app, baseUrl, env)
+		RegisterDictTypeAPI(app, baseUrl, env, config.MongoDbKey)
+		RegisterDictAPI(app, baseUrl, env, config.MongoDbKey)
 		return nil
 	})
 	if err != nil {
@@ -19,10 +21,10 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	}
 }
 
-func RegisterDictTypeAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewDictTypeAPI(env, baseUrl))
+func RegisterDictTypeAPI(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, NewDictTypeAPI(env, baseUrl, dbKey))
 }
 
-func RegisterDictAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewDictAPI(env, baseUrl))
+func RegisterDictAPI(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, NewDictAPI(env, baseUrl, dbKey))
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/schema_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/server_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
@@ -87,7 +87,7 @@ func GetDao(dbKey string, tableName string) idao.Dao[map[string]any] {
 
 func GetKey(dbKey string, tableName string) string {
 	if dbKey == "" {
-		dbKey = env.DefaultDBKey
+		dbKey = envs.DefaultDBKey
 	} else {
 		dbKey = dao.GetDbKey(server_pkg.GetServer().Env(), dbKey)
 	}
@@ -110,9 +110,9 @@ func getInfos(sch *jsonschema.Schema) (aggField string, aggType string, tableNam
 	return
 }
 
-func getDbKey(envInst *env.Env, dbKey string) string {
+func getDbKey(envInst *envs.Env, dbKey string) string {
 	if dbKey == "" {
-		return env.DefaultDBKey
+		return envs.DefaultDBKey
 	}
 	return envInst.GetDBKeyValue(dbKey)
 }

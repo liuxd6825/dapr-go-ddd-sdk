@@ -3,13 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -20,18 +18,10 @@ type GroupService struct {
 	xbase.Service
 }
 
-var (
-	_groupOnce          sync.Once
-	_groupDomainService *GroupService
-)
-
-func NewGroupService() *GroupService {
-	_groupOnce.Do(func() {
-		_groupDomainService = &GroupService{
-			dao: dao.NewGroupDao(config.DBKey),
-		}
-	})
-	return _groupDomainService
+func NewGroupService(mongoDbKey string) *GroupService {
+	return &GroupService{
+		dao: dao.NewGroupDao(mongoDbKey),
+	}
 }
 
 func (t *GroupService) Create(ctx context.Context, cmd *command.GroupCreateCommand) error {

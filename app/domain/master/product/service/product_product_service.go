@@ -6,7 +6,6 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -19,11 +18,9 @@ type ProductProductService struct {
 var _productProductService *ProductProductService
 var _productProductServiceOnce sync.Once
 
-func NewProductProductService() *ProductProductService {
-	_productProductServiceOnce.Do(func() {
-		_productProductService = &ProductProductService{dao: dao.NewProductProductDao(config.DBKey)}
-	})
-	return _productProductService
+func NewProductProductService(dbKey string) *ProductProductService {
+	s := &ProductProductService{dao: dao.NewProductProductDao(dbKey)}
+	return s
 }
 
 func (s *ProductProductService) CreateMany(ctx context.Context, items []*model.ProductProduct, opts ...idao.CallOptions) error {

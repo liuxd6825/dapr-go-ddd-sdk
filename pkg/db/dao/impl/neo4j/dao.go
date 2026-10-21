@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_neo4j"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -31,7 +31,7 @@ func NewDao[T any](cfg *idao2.DaoConfig) idao2.Dao[T] {
 	}
 	envInst := cfg.Env
 	if envInst == nil {
-		envInst = env.GetEnv()
+		envInst = envs.GetEnv()
 	}
 
 	if driver == nil {

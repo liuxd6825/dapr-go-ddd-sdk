@@ -2,22 +2,23 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type FolderMetaAPI struct {
 	rootPath          string
-	env               *env.Env
+	env               *envs.Env
 	folderMetaService *service.FolderMetaService
 }
 
-func NewFolderMetaAPI(env *env.Env, rootPath string) *FolderMetaAPI {
-	folderMetaService := service.NewFolderMetaService()
+func NewFolderMetaAPI(env *envs.Env, rootPath string, dbKey string) *FolderMetaAPI {
+	folderMetaService := service.NewFolderMetaService(dbKey)
 	return &FolderMetaAPI{
 		rootPath:          rootPath,
 		env:               env,

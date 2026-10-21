@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/fs_pkg"
@@ -40,7 +40,7 @@ func newFileService() *FileService {
 }
 
 func (s *FileService) Init() *FileService {
-	drawFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "drawIoStore")
+	drawFs, err := fs_pkg.NewFsPkg(envs.GetEnv(), "drawIoStore")
 	if err != nil {
 		panic("drawIoStore fs not exist in config")
 	}

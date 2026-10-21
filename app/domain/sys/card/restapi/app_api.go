@@ -10,19 +10,30 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type AppAPI struct {
-	env        *env.Env
+	env        *envs.Env
 	appService *service.AppService
 	funService *service.FunService
 	rootPath   string
+	mongoDbKey string
+}
+
+func NewAppAPI(env *envs.Env, rootPath string, mongoDbKey string) *AppAPI {
+	return &AppAPI{
+		env:        env,
+		mongoDbKey: mongoDbKey,
+		appService: service.NewAppService(mongoDbKey),
+		funService: service.NewFunService(mongoDbKey),
+		rootPath:   rootPath,
+	}
 }
 
 func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.appService = service.NewAppService()
+	s.appService = service.NewAppService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.AppAPI", s)
 	ctl.Post("/app", "Create")
 	ctl.Put("/app", "Update")
@@ -47,15 +58,6 @@ func (s *AppAPI) NewAPIController(app *iris.Application) *restapi.ApiController 
 	ctl.GetData("/app:all", "FindAll")
 	return ctl
 }*/
-
-func NewAppAPI(env *env.Env, rootPath string) *AppAPI {
-	return &AppAPI{
-		env:        env,
-		appService: service.NewAppService(),
-		funService: service.NewFunService(),
-		rootPath:   rootPath,
-	}
-}
 
 func (s *AppAPI) Create(ctx context.Context, cmd *command.AppCreateCommand) error {
 	return s.appService.Create(ctx, cmd)

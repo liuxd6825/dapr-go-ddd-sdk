@@ -17,14 +17,14 @@ import (
 
 type ChatSummaryService struct {
 	*dao.ChatSummaryDao
-	config    *config.CompressConfig
+	config     *ragconfigs.CompressConfig
 	compressor *ragcontext.Compressor
 }
 
-func NewChatSummaryService(cfg *config.CompressConfig) *ChatSummaryService {
+func NewChatSummaryService(cfg *ragconfigs.CompressConfig, mongoDbKey string) *ChatSummaryService {
 	return &ChatSummaryService{
-		ChatSummaryDao: dao.NewChatSummaryDao(DBKey),
-		config:          cfg,
+		ChatSummaryDao: dao.NewChatSummaryDao(mongoDbKey),
+		config:         cfg,
 	}
 }
 
@@ -68,12 +68,12 @@ func (s *ChatSummaryService) CreateIfNotExists(ctx context.Context, chatId strin
 
 type CompressResult struct {
 	Success            bool
-	Skipped           bool
+	Skipped            bool
 	Reason             string
 	Summary            string
 	CompressedPosition int
-	OriginalTokens      int
-	CompressedTokens    int
+	OriginalTokens     int
+	CompressedTokens   int
 }
 
 func (s *ChatSummaryService) Compress(ctx context.Context, chatId string, force bool, messages []*model.Message) (*CompressResult, error) {
@@ -233,17 +233,17 @@ func (s *ChatSummaryService) SimpleSummarize(messages []*model.Message) string {
 	if messages == nil || len(messages) == 0 {
 		return ""
 	}
-	
+
 	var sb strings.Builder
 	sb.WriteString("对话摘要：")
-	
+
 	count := len(messages)
 	if count > 10 {
 		sb.WriteString("(共")
 		sb.WriteString(strconv.Itoa(count))
 		sb.WriteString("条消息) ")
 	}
-	
+
 	for i, msg := range messages {
 		if i >= 5 {
 			sb.WriteString("... (更多消息)")
@@ -259,7 +259,7 @@ func (s *ChatSummaryService) SimpleSummarize(messages []*model.Message) string {
 			sb.WriteString("; ")
 		}
 	}
-	
+
 	return sb.String()
 }
 
@@ -286,6 +286,6 @@ func (s *ChatSummaryService) ShouldCompress(ctx context.Context, totalTokens int
 	return totalTokens >= s.config.GetThreshold()
 }
 
-func (s *ChatSummaryService) GetConfig() *config.CompressConfig {
+func (s *ChatSummaryService) GetConfig() *ragconfigs.CompressConfig {
 	return s.config
 }

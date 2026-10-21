@@ -2,7 +2,7 @@ package light_rag
 
 import (
 	"encoding/json"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 type LightRagConfig struct {
@@ -11,7 +11,7 @@ type LightRagConfig struct {
 }
 
 func LoadLightRagConfig() *LightRagConfig {
-	e := env.GetEnv()
+	e := envs.GetEnv()
 	ragMeta := e.App.Meta["lightRag"]
 	var err error
 	if ragMeta == nil {

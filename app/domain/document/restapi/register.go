@@ -2,22 +2,24 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
+	docconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/subscribe"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "document"}, func() error {
-		RegisterFolderApi(app, baseUrl, env)
-		RegisterFileApi(app, baseUrl, env)
-		RegisterDocumentApi(app, baseUrl, env)
-		RegisterDocumentMetaApi(app, baseUrl, env)
-
-		RegisterSub(app, baseUrl, env)
-
+		docconfigs.Init(env)
+		dbKey := docconfigs.GetMongoDbKey()
+		RegisterFolderApi(app, baseUrl, env, dbKey)
+		RegisterFileApi(app, baseUrl, env, dbKey)
+		RegisterDocumentApi(app, baseUrl, env, dbKey)
+		RegisterDocumentMetaApi(app, baseUrl, env, dbKey)
+		RegisterSub(app, baseUrl, env, dbKey)
 		return nil
 	})
 	if err != nil {
@@ -25,22 +27,22 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	}
 }
 
-func RegisterFolderApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewFolderAPI(env, baseUrl))
+func RegisterFolderApi(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, NewFolderAPI(env, baseUrl, dbKey))
 }
 
-func RegisterDocumentApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewDocumentAPI(env, baseUrl))
+func RegisterDocumentApi(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, NewDocumentAPI(env, baseUrl, docconfigs.GetConfig()))
 }
 
-func RegisterDocumentMetaApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewDocumentMetaAPI(env, baseUrl))
+func RegisterDocumentMetaApi(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, NewDocumentMetaAPI(env, baseUrl, dbKey))
 }
 
-func RegisterFileApi(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewFileAPI(env, baseUrl))
+func RegisterFileApi(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, NewFileAPI(env, baseUrl, dbKey))
 }
 
-func RegisterSub(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, subscribe.NewFolderEventSubHandler(env, baseUrl))
+func RegisterSub(app *iris.Application, baseUrl string, env *envs.Env, dbKey string) {
+	restapi.RegisterController(app, subscribe.NewFolderEventSubHandler(env, baseUrl, dbKey))
 }

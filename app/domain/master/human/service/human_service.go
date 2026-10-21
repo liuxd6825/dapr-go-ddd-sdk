@@ -11,7 +11,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/query"
 	code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -24,6 +23,7 @@ const folderAppId = "duxm-master-cmd-service"
 
 // HumanService 人员业务服务
 type HumanService struct {
+	dbKey             string
 	dao               *dao.HumanDao
 	codeSvc           *code_service.CodeService
 	feign             any
@@ -45,24 +45,25 @@ var _humanService *HumanService
 var _humanServiceOnce sync.Once
 
 // NewHumanService 单例构造函数
-func NewHumanService() *HumanService {
+func NewHumanService(dbKey string) *HumanService {
 	_humanServiceOnce.Do(func() {
 		_humanService = &HumanService{
-			dao:               dao.NewHumanDao(config.DBKey),
-			codeSvc:           code_service.NewCodeService(),
+			dbKey:             dbKey,
+			dao:               dao.NewHumanDao(dbKey),
+			codeSvc:           code_service.NewCodeService(dbKey),
 			feign:             nil,
-			credentialDao:     dao.NewHumanCredentialDao(config.DBKey),
-			accountDao:        dao.NewHumanAccountDao(config.DBKey),
-			addressDao:        dao.NewHumanAddressDao(config.DBKey),
-			capitalDao:        dao.NewHumanCapitalDao(config.DBKey),
-			companyDao:        dao.NewHumanCompanyDao(config.DBKey),
-			contractDao:       dao.NewHumanContractDao(config.DBKey),
-			extDao:            dao.NewHumanExtDao(config.DBKey),
-			humanRelDao:       dao.NewHumanHumanDao(config.DBKey),
-			linkDao:           dao.NewHumanLinkDao(config.DBKey),
-			productDao:        dao.NewHumanProductDao(config.DBKey),
-			reportedAmountDao: dao.NewHumanReportedAmountDao(config.DBKey),
-			suspectAmountDao:  dao.NewHumanSuspectAmountDao(config.DBKey),
+			credentialDao:     dao.NewHumanCredentialDao(dbKey),
+			accountDao:        dao.NewHumanAccountDao(dbKey),
+			addressDao:        dao.NewHumanAddressDao(dbKey),
+			capitalDao:        dao.NewHumanCapitalDao(dbKey),
+			companyDao:        dao.NewHumanCompanyDao(dbKey),
+			contractDao:       dao.NewHumanContractDao(dbKey),
+			extDao:            dao.NewHumanExtDao(dbKey),
+			humanRelDao:       dao.NewHumanHumanDao(dbKey),
+			linkDao:           dao.NewHumanLinkDao(dbKey),
+			productDao:        dao.NewHumanProductDao(dbKey),
+			reportedAmountDao: dao.NewHumanReportedAmountDao(dbKey),
+			suspectAmountDao:  dao.NewHumanSuspectAmountDao(dbKey),
 		}
 	})
 	return _humanService
@@ -256,7 +257,7 @@ func (s *HumanService) publishFolderCreateEvent(ctx context.Context, human *mode
 		},
 	}
 	evt := folder_event.NewFolderCreateEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderCreateEvent error: %s", err.Error())
 	}
 }
@@ -268,7 +269,7 @@ func (s *HumanService) publishFolderUpdateAliasEvent(ctx context.Context, human 
 		Alias: human.Name,
 	}
 	evt := folder_event.NewFolderUpdateAliasEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderUpdateAliasEvent error: %s", err.Error())
 	}
 }
@@ -287,7 +288,7 @@ func (s *HumanService) publishFolderDeleteEvent(ctx context.Context, ids []strin
 		EntityId: caseId,
 	}
 	evt := folder_event.NewFolderDeleteEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderDeleteEvent error: %s", err.Error())
 	}
 }

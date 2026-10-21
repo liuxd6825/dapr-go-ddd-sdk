@@ -21,10 +21,10 @@ type CompanyAPI struct {
 }
 
 // NewCompanyAPI 构造函数
-func NewCompanyAPI(rootPath string) *CompanyAPI {
+func NewCompanyAPI(rootPath string, dbKey string) *CompanyAPI {
 	return &CompanyAPI{
 		rootPath: rootPath,
-		service:  service.NewCompanyService(),
+		service:  service.NewCompanyService(dbKey),
 	}
 }
 

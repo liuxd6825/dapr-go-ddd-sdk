@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
@@ -42,7 +42,7 @@ func Test_Dao(t *testing.T) {
 	daoCfg := &idao.DaoConfig{
 		DBKey:    "db",
 		DBSchema: dbschema.NewDBSchemaWithJsonSchema(humanSchema),
-		Env:      env.GetEnv(),
+		Env:      envs.GetEnv(),
 	}
 
 	dao := NewDao[map[string]any](daoCfg)
@@ -304,7 +304,7 @@ func Test_DaoStruct(t *testing.T) {
 	daoCfg := &idao.DaoConfig{
 		DBKey:    "db",
 		DBSchema: dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
-		Env:      env.GetEnv(),
+		Env:      envs.GetEnv(),
 	}
 
 	dao := NewDao[*Human](daoCfg)
@@ -554,7 +554,7 @@ func newHumanDao() idao.Dao[*Human] {
 	daoCfg := &idao.DaoConfig{
 		DBKey:    "db",
 		DBSchema: dbschema.NewDBSchemaWithStruct("human", &Human{}, "human"),
-		Env:      env.GetEnv(),
+		Env:      envs.GetEnv(),
 	}
 
 	return NewDao[*Human](daoCfg)

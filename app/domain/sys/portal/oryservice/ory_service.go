@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	client "github.com/ory/kratos-client-go"
 )
 
@@ -21,7 +21,7 @@ var (
 )
 
 func (t *OryService) loadConfig() {
-	e := env.GetEnv()
+	e := envs.GetEnv()
 	oryMeta := e.App.Meta["ory"]
 	var err error
 	if oryMeta == nil {
@@ -42,13 +42,11 @@ func (t *OryService) init() {
 	t.ory = client.NewAPIClient(cfg)
 }
 
-func NewOryService() *OryService {
-	_oryOnce.Do(func() {
-		_oryDomainService = &OryService{}
-		_oryDomainService.loadConfig()
-		_oryDomainService.init()
-	})
-	return _oryDomainService
+func NewOryService(dbKey string) *OryService {
+	service := &OryService{}
+	service.loadConfig()
+	service.init()
+	return service
 }
 
 func (t *OryService) CreateNativeLoginFlow(ctx context.Context) (*client.LoginFlow, error) {

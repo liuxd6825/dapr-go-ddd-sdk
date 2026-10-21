@@ -11,20 +11,22 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CurrencyAPI struct {
-	env             *env.Env
+	env             *envs.Env
 	currencyService *service.CurrencyService
 	rootPath        string
+	dbKey           string
 }
 
-func NewCurrencyAPI(env *env.Env, rootPath string) *CurrencyAPI {
+func NewCurrencyAPI(env *envs.Env, rootPath string, dbKey string) *CurrencyAPI {
 	return &CurrencyAPI{
 		env:             env,
-		currencyService: service.NewCurrencyService(),
+		dbKey:           dbKey,
+		currencyService: service.NewCurrencyService(dbKey),
 		rootPath:        rootPath,
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 	dapr2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs/userlog"
@@ -47,7 +47,7 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 
 	e := NewEnv(envCfg)
 	e.Init()
-	env.SetEnv(e)
+	envs.SetEnv(e)
 
 	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", e.App.AppId, e.Name))
 	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", e.App.HttpHost, e.App.HttpPort, e.App.RootUrl))
@@ -164,7 +164,7 @@ func setMem(val string) (string, error) {
 	return memTxt, nil
 }
 
-func newEventStores(cfg *env.Dapr, client dapr2.DaprClient) map[string]ddd.EventStore {
+func newEventStores(cfg *envs.Dapr, client dapr2.DaprClient) map[string]ddd.EventStore {
 	//创建dapr事件存储器
 	eventStoresMap := make(map[string]ddd.EventStore)
 	if !cfg.IsEnable() {

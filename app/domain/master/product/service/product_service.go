@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"sync"
 
+	folder_event "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/query"
-	folder_event "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/event"
 	code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -24,31 +23,33 @@ const folderAppId = "duxm-master-cmd-service"
 
 // ProductService 产品业务服务
 type ProductService struct {
-	dao              *dao.ProductDao
-	codeSvc          *code_service.CodeService
-	feign            any
+	dbKey             string
+	dao               *dao.ProductDao
+	codeSvc           *code_service.CodeService
+	feign             any
 	productProductDao *dao.ProductProductDao
-	contractDao      *dao.ProductContractDao
-	companyDao       *dao.ProductCompanyDao
-	humanDao         *dao.ProductHumanDao
-	recordDao        *dao.ProductRecordDao
+	contractDao       *dao.ProductContractDao
+	companyDao        *dao.ProductCompanyDao
+	humanDao          *dao.ProductHumanDao
+	recordDao         *dao.ProductRecordDao
 }
 
 var _productService *ProductService
 var _productServiceOnce sync.Once
 
 // NewProductService 单例构造函数
-func NewProductService() *ProductService {
+func NewProductService(dbKey string) *ProductService {
 	_productServiceOnce.Do(func() {
 		_productService = &ProductService{
-			dao:               dao.NewProductDao(config.DBKey),
-			codeSvc:           code_service.NewCodeService(),
+			dbKey:             dbKey,
+			dao:               dao.NewProductDao(dbKey),
+			codeSvc:           code_service.NewCodeService(dbKey),
 			feign:             nil,
-			productProductDao: dao.NewProductProductDao(config.DBKey),
-			contractDao:       dao.NewProductContractDao(config.DBKey),
-			companyDao:        dao.NewProductCompanyDao(config.DBKey),
-			humanDao:          dao.NewProductHumanDao(config.DBKey),
-			recordDao:         dao.NewProductRecordDao(config.DBKey),
+			productProductDao: dao.NewProductProductDao(dbKey),
+			contractDao:       dao.NewProductContractDao(dbKey),
+			companyDao:        dao.NewProductCompanyDao(dbKey),
+			humanDao:          dao.NewProductHumanDao(dbKey),
+			recordDao:         dao.NewProductRecordDao(dbKey),
 		}
 	})
 	return _productService
@@ -188,7 +189,7 @@ func (s *ProductService) publishFolderCreateEvent(ctx context.Context, product *
 		},
 	}
 	evt := folder_event.NewFolderCreateEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderCreateEvent error: %s", err.Error())
 	}
 }
@@ -200,7 +201,7 @@ func (s *ProductService) publishFolderUpdateAliasEvent(ctx context.Context, prod
 		Alias: product.Name,
 	}
 	evt := folder_event.NewFolderUpdateAliasEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderUpdateAliasEvent error: %s", err.Error())
 	}
 }
@@ -219,7 +220,7 @@ func (s *ProductService) publishFolderDeleteEvent(ctx context.Context, ids []str
 		EntityId: caseId,
 	}
 	evt := folder_event.NewFolderDeleteEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderDeleteEvent error: %s", err.Error())
 	}
 }

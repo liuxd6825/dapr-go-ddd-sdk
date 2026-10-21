@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	store_mongodb2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -49,7 +49,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	if v, ok := cfg.DB.(store_mongodb2.IMongoDB); ok {
 		mongoDb = v
 	} else {
-		item := env.GetDB(cfg.DBKey)
+		item := envs.GetDB(cfg.DBKey)
 		if item == nil {
 			panic(errors.New(" %s database not found", cfg.DBKey))
 		}

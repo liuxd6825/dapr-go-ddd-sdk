@@ -18,11 +18,11 @@ type FileService struct {
 	fsService     *FsService
 }
 
-func NewFileService() *FileService {
+func NewFileService(dbKey string) *FileService {
 	return &FileService{
-		dao:           dao.NewFileDao(DBKey),
-		folderService: NewFolderService(),
-		fsService:     NewFsService(),
+		dao:           dao.NewFileDao(dbKey),
+		folderService: NewFolderService(dbKey),
+		fsService:     NewFsService(dbKey),
 	}
 }
 

@@ -6,11 +6,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
-var envInv *env.Env
+var envInv *envs.Env
 var ctx context.Context
 
 func TestMain(m *testing.M) {
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 		UserName: "admin",
 		Password: "admin",
 	})
-	env.SetEnv(envInv)
+	envs.SetEnv(envInv)
 	ctx = xtest2.NewContext()
 	os.Exit(m.Run())
 }

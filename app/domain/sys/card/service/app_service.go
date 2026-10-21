@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -25,13 +24,12 @@ var (
 	_appDomainService *AppService
 )
 
-func NewAppService() *AppService {
-	_appOnce.Do(func() {
-		_appDomainService = &AppService{
-			dao: dao.NewAppDao(config.DBKey),
-		}
-	})
-	return _appDomainService
+func NewAppService(mongoDbKey string) *AppService {
+
+	return &AppService{
+		dao: dao.NewAppDao(mongoDbKey),
+	}
+
 }
 
 func (t *AppService) Create(ctx context.Context, cmd *command.AppCreateCommand) error {

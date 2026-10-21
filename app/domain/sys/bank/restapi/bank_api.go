@@ -11,20 +11,20 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type BankAPI struct {
-	env         *env.Env
+	env         *envs.Env
 	BankService *service.BankService
 	rootPath    string
 }
 
-func NewBankAPI(env *env.Env, rootPath string) *BankAPI {
+func NewBankAPI(env *envs.Env, rootPath string, dbKey string) *BankAPI {
 	return &BankAPI{
 		env:         env,
-		BankService: service.NewBankService(),
+		BankService: service.NewBankService(dbKey),
 		rootPath:    rootPath,
 	}
 }

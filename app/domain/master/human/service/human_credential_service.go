@@ -2,11 +2,9 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -16,14 +14,9 @@ type HumanCredentialService struct {
 	dao *dao.HumanCredentialDao
 }
 
-var _humancredentialService *HumanCredentialService
-var _humancredentialServiceOnce sync.Once
+func NewHumanCredentialService(mongoDbKey string) *HumanCredentialService {
+	return &HumanCredentialService{dao: dao.NewHumanCredentialDao(mongoDbKey)}
 
-func NewHumanCredentialService() *HumanCredentialService {
-	_humancredentialServiceOnce.Do(func() {
-		_humancredentialService = &HumanCredentialService{dao: dao.NewHumanCredentialDao(config.DBKey)}
-	})
-	return _humancredentialService
 }
 
 func (s *HumanCredentialService) CreateMany(ctx context.Context, items []*model.HumanCredential, opts ...idao.CallOptions) error {

@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/factory"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/view"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -18,21 +19,22 @@ import (
 // @Description: 处理数据导入事件
 type RecordEventSubHandler struct {
 	rootPath             string
-	env                  *env.Env
+	env                  *envs.Env
 	factory              *factory.RecordFactory
 	recordService        *service.RecordService
 	recordDayViewService *service.RecordDayViewService
 	tranDetailService    *service.TranDetailService
 }
 
-func NewRecordEventHandler(env *env.Env, baseUrl string) *RecordEventSubHandler {
+func NewRecordEventHandler(env *envs.Env, baseUrl string) *RecordEventSubHandler {
+	dbKey := masterconfigs.GetMongoDbKey()
 	return &RecordEventSubHandler{
 		rootPath:             baseUrl,
 		env:                  env,
-		factory:              factory.NewRecordFactory(),
-		recordService:        service.NewRecordService(),
-		recordDayViewService: service.NewRecordDayViewService(),
-		tranDetailService:    service.NewTranDetailService(),
+		factory:              factory.NewRecordFactory(dbKey),
+		recordService:        service.NewRecordService(dbKey),
+		recordDayViewService: service.NewRecordDayViewService(dbKey),
+		tranDetailService:    service.NewTranDetailService(dbKey),
 	}
 }
 

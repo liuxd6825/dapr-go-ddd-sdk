@@ -10,7 +10,7 @@ import (
 	"github.com/dop251/goja"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/common"
@@ -37,7 +37,7 @@ type Server struct {
 	srcFs        afero.Fs                      // 源代码文件系统
 	fsPkg        fspkg.IFsPkg                  // 文件系统管理器
 	services     *types.CMap[element2.Service] // 服务Map
-	env          *env.Env                      // 环境变量
+	env          *envs.Env                     // 环境变量
 	tpl          *tpl_pkg.Template             // 模板渲染服务
 	definition   *definition.Definition        // 系统定义类
 	cacheEnable  bool                          // 是否启用缓存
@@ -51,7 +51,7 @@ type Server struct {
 }
 
 // NewServer 解析 HTML 并返回 Server 对象
-func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element2.Factory, env *env.Env, opts ...element2.NewServerOptions) (element2.Server, error) {
+func NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element2.Factory, env *envs.Env, opts ...element2.NewServerOptions) (element2.Server, error) {
 	fsPkg, err := fspkg.NewFsPkg(env, "")
 	if err != nil {
 		return nil, err
@@ -380,7 +380,7 @@ func (s *Server) Logs(level logrus.Level, format string, args ...interface{}) {
 	}
 }
 
-func (s *Server) EnvConfig() *env.Env {
+func (s *Server) EnvConfig() *envs.Env {
 	return s.env
 }
 
@@ -460,7 +460,7 @@ func (s *Server) GetIsPubEvent() bool {
 	return s.isPubEvent
 }
 
-func (s *Server) GetEnvCfg() *env.Env {
+func (s *Server) GetEnvCfg() *envs.Env {
 	return s.env
 }
 

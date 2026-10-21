@@ -14,10 +14,9 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/event"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -26,7 +25,8 @@ import (
 // @Description: 处理数据导入事件
 type FolderEventSubHandler struct {
 	rootPath          string
-	env               *env.Env
+	dbKey             string
+	env               *envs.Env
 	folderService     *service.FolderService
 	folderMetaService *service.FolderMetaService
 	docService        *service.DocumentService
@@ -35,16 +35,17 @@ type FolderEventSubHandler struct {
 	fsService         *service.FsService
 }
 
-func NewFolderEventSubHandler(env *env.Env, baseUrl string) *FolderEventSubHandler {
+func NewFolderEventSubHandler(env *envs.Env, baseUrl string, dbKey string) *FolderEventSubHandler {
 	return &FolderEventSubHandler{
 		rootPath:          baseUrl,
 		env:               env,
-		folderService:     service.NewFolderService(),
-		folderMetaService: service.NewFolderMetaService(),
-		fsService:         service.NewFsService(),
-		docService:        service.NewDocumentService(),
-		docMetaService:    service.NewDocumentMetaService(),
-		fileService:       service.NewFileService(),
+		dbKey:             dbKey,
+		folderService:     service.NewFolderService(dbKey),
+		folderMetaService: service.NewFolderMetaService(dbKey),
+		fsService:         service.NewFsService(dbKey),
+		docService:        service.NewDocumentService(dbKey),
+		docMetaService:    service.NewDocumentMetaService(dbKey),
+		fileService:       service.NewFileService(dbKey),
 	}
 }
 
@@ -74,7 +75,7 @@ func (s *FolderEventSubHandler) FolderCreateEvent(ctx context.Context, event *ev
 		return nil
 	}
 
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.dbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		folder, _ := model2.NewFolder()
 		folder.Id = event.Data.Id
 		folder.BusId = event.Data.BusId
@@ -131,7 +132,7 @@ func (s *FolderEventSubHandler) FolderUpdateAliasEvent(ctx context.Context, even
 func (s *FolderEventSubHandler) FolderDeleteEvent(ctx context.Context, event *event.FolderDeleteEvent) error {
 	logs.Infofmt(ctx, "%s eventId:%s; occurredOn:%s; ", event.EventType, event.Id, event.CreatedTime.Format(time.DateTime))
 
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.dbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		arr, err := s.folderService.FindByRSQL(ctx, fmt.Sprintf("tenant_id==\"%s\" and bus_id==\"%s\" and entity_id==\"%s\"", event.Data.TenantId, event.Data.BusId, event.Data.EntityId))
 		if err != nil {
 			return err

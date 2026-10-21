@@ -17,7 +17,7 @@ func TestRecordService_Import(t *testing.T) {
 		S3User:          "minioadmin",
 		S3Pwd:           "minioadmin",
 		HGHost:          "192.168.120.200",
-		HGPort:          "18080",
+		HGPort:          18080,
 		HGGraph:         "hugegraph",
 		HGUser:          "admin",
 		HGPwd:           "admin",
@@ -32,8 +32,9 @@ func TestRecordService_Import(t *testing.T) {
 	jarFile := "s3a://spark/app/spark-import-doris-hugegraph-4.0-SNAPSHOT-shaded.jar.jar"
 	dataFile := "s3a://import-data/record/record.parquet"
 	graphName := "hugegraph"
-	err := s.Import(ctx, "1001", "2ndoebXy02tqJTdy9YisXp4I", dataFile, jarFile, graphName)
+	sparkId, err := s.CreateImportTask(ctx, "1001", "2ndoebXy02tqJTdy9YisXp4I", dataFile, jarFile, graphName)
 	if err != nil {
 		t.Error(err)
 	}
+	t.Log("sparkId:" + sparkId)
 }

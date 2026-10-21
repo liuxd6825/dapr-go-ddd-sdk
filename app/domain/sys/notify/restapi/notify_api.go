@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
@@ -21,7 +21,7 @@ type NotifyApi struct {
 	websocket     *neffos.Server
 }
 
-func NewNotifyApi(rootPath string, env *env.Env) *NotifyApi {
+func NewNotifyApi(rootPath string, env *envs.Env) *NotifyApi {
 	return &NotifyApi{
 		rootPath:      rootPath,
 		notifyService: service.NewNotifyService(dapr.GetDaprClient(), env),

@@ -7,24 +7,27 @@ import (
 	bank_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/restapi"
 	card_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/restapi"
 	case_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/case/restapi"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
 	currency_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/restapi"
 	dict_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/restapi"
 	protal_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/restapi"
 	status_api "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/status/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys"}, func() error {
-		case_api.RegisterAllApi(app, baseUrl, env)
-		currency_api.RegisterAllApi(app, baseUrl, env)
-		bank_api.RegisterAllApi(app, baseUrl, env)
-		card_api.RegisterAllApi(app, baseUrl, env)
-		dict_api.RegisterAllApi(app, baseUrl, env)
-		protal_api.RegisterAllApi(app, baseUrl, env)
-		status_api.RegisterAllApi(app, baseUrl, env)
- 
+		sysconfigs.Init(env)
+		cfg := sysconfigs.GetConfig()
+		case_api.RegisterAllApi(app, baseUrl, env, cfg)
+		currency_api.RegisterAllApi(app, baseUrl, env, cfg)
+		bank_api.RegisterAllApi(app, baseUrl, env, cfg)
+		card_api.RegisterAllApi(app, baseUrl, env, cfg)
+		dict_api.RegisterAllApi(app, baseUrl, env, cfg)
+		protal_api.RegisterAllApi(app, baseUrl, env, cfg)
+		status_api.RegisterAllApi(app, baseUrl, env, cfg)
+
 		return nil
 	})
 	if err != nil {

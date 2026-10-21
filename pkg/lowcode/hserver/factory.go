@@ -6,7 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	element2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element/base"
 	funcs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element/funcs"
@@ -35,7 +35,7 @@ func (f *factory) NewFunc(server element2.Server, config *element2.FuncConfig, l
 	return funcs2.NewFunc(server, config, logger, reader, pkg)
 }
 
-func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element2.Factory, env *env.Env, opts ...element2.NewServerOptions) (element2.Server, error) {
+func (f *factory) NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory element2.Factory, env *envs.Env, opts ...element2.NewServerOptions) (element2.Server, error) {
 	return server.NewServer(httpServer, srcFileName, srcFs, factory, env, opts...)
 }
 

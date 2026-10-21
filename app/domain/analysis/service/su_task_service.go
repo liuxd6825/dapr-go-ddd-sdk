@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/command"
+	analysisconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
@@ -13,7 +14,6 @@ import (
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/dao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -31,6 +31,7 @@ import (
 )
 
 type SuTaskService struct {
+	dbKey          string
 	tranDao        *dao2.TranDao
 	taskDao        *dao.SuTaskDao
 	accountDao     *dao.SuAccountDao
@@ -41,16 +42,17 @@ type SuTaskService struct {
 	codeService    *service.CodeService
 }
 
-func NewSuTaskService() *SuTaskService {
+func NewSuTaskService(dbKey string) *SuTaskService {
 	return &SuTaskService{
-		tranDao:        dao2.NewTranDao(config.DBKey),
-		taskDao:        dao.NewSuTaskDao(config.DBKey),
-		suRecordDao:    dao.NewSuRecordDao(config.DBKey),
-		accountDao:     dao.NewSuAccountDao(config.DBKey),
-		suBatchDao:     dao.NewSuBatchDao(config.DBKey),
-		suBatchItemDao: dao.NewSuBatchItemDao(config.DBKey),
-		taskLogDao:     dao.NewSuTaskLogDao(config.DBKey),
-		codeService:    service.NewCodeService(),
+		dbKey:          dbKey,
+		tranDao:        dao2.NewTranDao(dbKey),
+		taskDao:        dao.NewSuTaskDao(dbKey),
+		suRecordDao:    dao.NewSuRecordDao(dbKey),
+		accountDao:     dao.NewSuAccountDao(dbKey),
+		suBatchDao:     dao.NewSuBatchDao(dbKey),
+		suBatchItemDao: dao.NewSuBatchItemDao(dbKey),
+		taskLogDao:     dao.NewSuTaskLogDao(dbKey),
+		codeService:    service.NewCodeService(dbKey),
 	}
 }
 
@@ -234,8 +236,9 @@ func (s *SuTaskService) Analysis(ctx context.Context, taskId string) error {
 	}
 	ctxMap := appctx.NewMapWithContext(ctx)
 
+	dbKey := analysisconfigs.GetMongoDbKey()
 	// 开启事务
-	return tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, []string{dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 		if err := s.UpdateStatus(ctx, taskId, model.SuTaskStatus_TaskQueuing); err != nil {
 			return err
 		}
@@ -406,7 +409,7 @@ func (s *SuTaskService) analyse(ctx context.Context, task *model.SuTask, taskAcc
 		saves = append(saves, save)
 	}
 
-	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err = tx.StartTx(ctx, []string{s.dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 		if err = s.ClearAnalyseResults(ctx, task.Id); err != nil {
 			return err
 		}

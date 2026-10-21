@@ -254,7 +254,7 @@ import (
     "github.com/xitongsys/parquet-go-source/local"
     "github.com/xitongsys/parquet-go/reader"
 
-    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -567,7 +567,7 @@ import (
     "context"
     "testing"
 
-    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 func TestRecordNebulaService_EmptyPath(t *testing.T) {
@@ -637,7 +637,7 @@ import (
 
     "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 )
@@ -791,7 +791,7 @@ import (
     "github.com/kataras/iris/v12"
     "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
     "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
-    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+    "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
     "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -940,7 +940,7 @@ func TestRecordNebulaService_ImportFromS3(t *testing.T) {
 ```go
 package xtest
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 
 const (
     NebulaDBKey      = "default"

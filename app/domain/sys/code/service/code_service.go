@@ -11,7 +11,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/intutils"
@@ -26,12 +25,12 @@ type CodeService struct {
 var codeService *CodeService
 var codeServiceOnce sync.Once
 
-func NewCodeService() *CodeService {
+func NewCodeService(dbKey string) *CodeService {
 	codeServiceOnce.Do(func() {
 		codeService = &CodeService{
-			typeDAO: dao.NewCodeTypeDao(config.DBKey),
-			seqDAO:  dao.NewCodeSequenceDao(config.DBKey),
-			caseDao: case_dao.NewCaseDao(config.DBKey),
+			typeDAO: dao.NewCodeTypeDao(dbKey),
+			seqDAO:  dao.NewCodeSequenceDao(dbKey),
+			caseDao: case_dao.NewCaseDao(dbKey),
 		}
 	})
 	return codeService

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	envs "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	envs "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/miniofs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/boolutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"

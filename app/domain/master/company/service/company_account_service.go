@@ -6,7 +6,6 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -19,10 +18,10 @@ type CompanyAccountService struct {
 var _companyAccountService *CompanyAccountService
 var _companyAccountServiceOnce sync.Once
 
-func NewCompanyAccountService() *CompanyAccountService {
+func NewCompanyAccountService(dbKey string) *CompanyAccountService {
 	_companyAccountServiceOnce.Do(func() {
 		_companyAccountService = &CompanyAccountService{
-			dao: dao.NewCompanyAccountDao(config.DBKey),
+			dao: dao.NewCompanyAccountDao(dbKey),
 		}
 	})
 	return _companyAccountService

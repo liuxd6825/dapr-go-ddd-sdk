@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/minio/minio-go/v7"
 	"github.com/spf13/afero"
@@ -20,11 +20,11 @@ type Fs struct {
 	cfg      Config
 	rootPath string
 	client   *minio.Client
-	minio    *env.Minio
-	env      *env.Env
+	minio    *envs.Minio
+	env      *envs.Env
 }
 
-func NewFs(env *env.Env, minioKey string, bucketKey string) (*Fs, error) {
+func NewFs(env *envs.Env, minioKey string, bucketKey string) (*Fs, error) {
 	m, ok := env.GetMinioByKey(minioKey)
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("在配置文件中没有定义 minio.%s 节.", minioKey))
@@ -47,7 +47,7 @@ func NewFs(env *env.Env, minioKey string, bucketKey string) (*Fs, error) {
 	return &Fs{cfg: cfg, rootPath: cfg.RootPath, client: m.Client, minio: m, env: env}, nil
 }
 
-func NewFs2(cfg Config, client *minio.Client, minio *env.Minio, env *env.Env) (*Fs, error) {
+func NewFs2(cfg Config, client *minio.Client, minio *envs.Minio, env *envs.Env) (*Fs, error) {
 	return &Fs{cfg: cfg, rootPath: cfg.RootPath, client: client, minio: minio, env: env}, nil
 }
 

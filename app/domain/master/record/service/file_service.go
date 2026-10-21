@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
@@ -26,12 +26,12 @@ type IFileService interface {
 }
 
 type fileService struct {
-	env      *env.Env
+	env      *envs.Env
 	rootPath string
 	fsPkg    fspkg.IFsPkg
 }
 
-func NewFileService(env *env.Env, rootPath string) IFileService {
+func NewFileService(env *envs.Env, rootPath string) IFileService {
 	fsPkg, err := fspkg.NewFsPkg(env, rootPath)
 	if err != nil {
 		panic(err)

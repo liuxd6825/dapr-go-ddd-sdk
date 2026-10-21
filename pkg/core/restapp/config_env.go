@@ -3,14 +3,14 @@ package restapp
 import (
 	"fmt"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/mapperutils"
 )
 
-func NewEnv(cfg *EnvConfig) *env.Env {
-	env := env.NewEnv()
+func NewEnv(cfg *EnvConfig) *envs.Env {
+	env := envs.NewEnv()
 	env.Fs = cfg.Fs
 	env.Name = cfg.Name
 
@@ -28,68 +28,68 @@ func NewEnv(cfg *EnvConfig) *env.Env {
 	return env
 }
 
-func NewElastic(cfg map[string]*ElasticConfig) map[string]*env.Elastic {
-	items := map[string]*env.Elastic{}
+func NewElastic(cfg map[string]*ElasticConfig) map[string]*envs.Elastic {
+	items := map[string]*envs.Elastic{}
 	for key, item := range cfg {
-		m := &env.Elastic{}
+		m := &envs.Elastic{}
 		copy(item, m)
 		items[key] = m
 	}
 	return items
 }
 
-func NewRedis(cfg map[string]*RedisConfig) map[string]*env.Redis {
-	items := map[string]*env.Redis{}
+func NewRedis(cfg map[string]*RedisConfig) map[string]*envs.Redis {
+	items := map[string]*envs.Redis{}
 	for key, item := range cfg {
-		m := &env.Redis{}
+		m := &envs.Redis{}
 		copy(item, m)
 		items[key] = m
 	}
 	return items
 }
 
-func NewMinio(cfg map[string]*MinioConfig) map[string]*env.Minio {
-	items := map[string]*env.Minio{}
+func NewMinio(cfg map[string]*MinioConfig) map[string]*envs.Minio {
+	items := map[string]*envs.Minio{}
 	for key, item := range cfg {
-		m := env.NewMinio()
+		m := envs.NewMinio()
 		copy(item, m)
 		items[key] = m
 	}
 	return items
 }
 
-func NewNeo4j(cfg map[string]*Neo4jConfig) map[string]*env.Neo4j {
-	items := map[string]*env.Neo4j{}
+func NewNeo4j(cfg map[string]*Neo4jConfig) map[string]*envs.Neo4j {
+	items := map[string]*envs.Neo4j{}
 	for key, item := range cfg {
-		neo4j := env.NewNeo4j()
+		neo4j := envs.NewNeo4j()
 		copy(item, neo4j)
 		items[key] = neo4j
 	}
 	return items
 }
 
-func NewMySQL(cfg map[string]*MySqlConfig) map[string]*env.MySql {
-	items := map[string]*env.MySql{}
+func NewMySQL(cfg map[string]*MySqlConfig) map[string]*envs.MySql {
+	items := map[string]*envs.MySql{}
 	for key, item := range cfg {
-		mysql := env.NewMySQL()
+		mysql := envs.NewMySQL()
 		copy(item, mysql)
 		items[key] = mysql
 	}
 	return items
 }
 
-func NewMongo(cfg map[string]*MongoConfig) map[string]*env.Mongo {
-	items := map[string]*env.Mongo{}
+func NewMongo(cfg map[string]*MongoConfig) map[string]*envs.Mongo {
+	items := map[string]*envs.Mongo{}
 	for key, item := range cfg {
-		mysql := &env.Mongo{}
+		mysql := &envs.Mongo{}
 		copy(item, mysql)
 		items[key] = mysql
 	}
 	return items
 }
 
-func NewDapr(cfg *DaprConfig) *env.Dapr {
-	dapr := env.NewDapr()
+func NewDapr(cfg *DaprConfig) *envs.Dapr {
+	dapr := envs.NewDapr()
 	copy(cfg, dapr)
 	return dapr
 }
@@ -102,14 +102,14 @@ func NewAuth(cfg *AuthConfig) *env.Auth {
 }
 */
 
-func NewApp(cfg *AppConfig) *env.App {
-	app := env.NewApp()
+func NewApp(cfg *AppConfig) *envs.App {
+	app := envs.NewApp()
 	copy(cfg, app)
 	return app
 }
 
-func NewLog(cfg *LogConfig) *env.Log {
-	log := env.NewLog()
+func NewLog(cfg *LogConfig) *envs.Log {
+	log := envs.NewLog()
 	copy(cfg, log)
 	return log
 }

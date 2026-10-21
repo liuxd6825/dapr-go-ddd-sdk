@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"strconv"
-	"sync"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -22,21 +21,15 @@ import (
 // CurrencyService
 // @Description: 币种
 type CurrencyService struct {
-	dao *dao.CurrencyDao
+	dbKey string
+	dao   *dao.CurrencyDao
 }
 
-var (
-	_currencyOnce    sync.Once
-	_currencyService *CurrencyService
-)
-
-func NewCurrencyService() *CurrencyService {
-	_currencyOnce.Do(func() {
-		_currencyService = &CurrencyService{
-			dao: dao.NewCurrencyDao(config.DBKey),
-		}
-	})
-	return _currencyService
+func NewCurrencyService(dbKey string) *CurrencyService {
+	return &CurrencyService{
+		dbKey: dbKey,
+		dao:   dao.NewCurrencyDao(dbKey),
+	}
 }
 
 func (s *CurrencyService) GetConfig() *idao.DaoConfig {
@@ -102,8 +95,8 @@ func (s *CurrencyService) FindPaging(ctx context.Context, qry store.FindPagingQu
 // @param cnyRate 人民币对美元
 // @return error
 func (s *CurrencyService) UpdateAllCnyRate(ctx context.Context, cnyRate float64) error {
-	dbKey := config.DBKey
-	return tx.StartTx(ctx, []string{dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+
+	return tx.StartTx(ctx, []string{s.dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 		s.dao.UpdateByRSQL(ctx, "name='人民币'", &model.Currency{Rate: cnyRate, CnRate: 1}, idao.NewCallOptions().SetUpdateFields([]string{"Rate"}))
 		list, err := s.dao.FindByRSQL(ctx, "name!='人民币'")
 		if err != nil {

@@ -8,10 +8,13 @@ import (
 )
 
 type RecordFactory struct {
+	dbKey string
 }
 
-func NewRecordFactory() *RecordFactory {
-	return &RecordFactory{}
+func NewRecordFactory(dbKey string) *RecordFactory {
+	return &RecordFactory{
+		dbKey: dbKey,
+	}
 }
 
 func (f *RecordFactory) NewByRecordImportMasterEvent(ctx context.Context, e *event.RecordImportMasterEvent) ([]*model.Record, error) {

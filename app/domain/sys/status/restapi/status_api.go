@@ -3,18 +3,18 @@ package restapi
 import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/status/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type StatusApi struct {
 	service  *service.StatusService
-	env      *env.Env
+	env      *envs.Env
 	rootPath string
 }
 
-func NewStatusApi(env *env.Env, rootPath string) *StatusApi {
-	statusService := service.NewStatusService()
+func NewStatusApi(env *envs.Env, rootPath string, mongoDbKey string) *StatusApi {
+	statusService := service.NewStatusService(mongoDbKey)
 	return &StatusApi{
 		env:      env,
 		rootPath: rootPath,

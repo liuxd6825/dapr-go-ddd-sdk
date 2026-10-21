@@ -206,6 +206,14 @@ func GetInt(m map[string]interface{}, key string, def int64) (int, error) {
 	return int(res), nil
 }
 
+func GetIntErr(m map[string]interface{}, key string, def int64) int {
+	res, err := GetInt64(m, key, def)
+	if err != nil {
+		panic(err)
+	}
+	return int(res)
+}
+
 func Decode(input interface{}, out interface{}) error {
 	config := &mapstructure.DecoderConfig{
 		WeaklyTypedInput: true,

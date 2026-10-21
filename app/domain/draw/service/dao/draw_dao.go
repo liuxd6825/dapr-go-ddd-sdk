@@ -5,7 +5,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 type DrawDao struct {
@@ -16,7 +16,7 @@ func NewDrawDao(dbKey string) *DrawDao {
 	base := dao.NewDao[*model.Draw](&dao.DaoConfig{
 		DBKey:    dbKey,
 		DBSchema: dbschema.NewDBSchemaWithStruct("draw", &model.Draw{}, "draw"),
-		Env:      env.GetEnv(),
+		Env:      envs.GetEnv(),
 		IsCache:  true,
 	})
 	return &DrawDao{

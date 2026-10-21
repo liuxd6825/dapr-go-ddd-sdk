@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
@@ -75,7 +75,7 @@ func Test_Transaction(t *testing.T) {
 	}
 
 	txDb := tx.TxDB{}
-	txDb = append(txDb, tx.TxDBItem{DBKey: "sql", DB: db, DBType: env.DBType_Sqlite})
+	txDb = append(txDb, tx.TxDBItem{DBKey: "sql", DB: db, DBType: envs.DBType_Sqlite})
 
 	_ = tx.Start(ctx, txDb, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		iCount := dao.Create(ctx, human).RowsAffected

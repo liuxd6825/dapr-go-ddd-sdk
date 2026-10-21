@@ -17,7 +17,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/applog"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/dapr"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
@@ -36,7 +36,7 @@ type ServiceOptions struct {
 	AuthToken      string
 	WebRootPath    string
 	SwaggerDoc     string
-	Env            *env.Env
+	Env            *envs.Env
 	OnInitEvents   []OnInitEvent
 	OnStartEvents  []OnStartEvent
 }
@@ -56,7 +56,7 @@ type HttpServer struct {
 	jobEventHandlers map[string]common.JobEventHandler // 任务
 	authToken        string
 	webRootPath      string
-	env              *env.Env
+	env              *envs.Env
 	onInitEvents     []OnInitEvent
 	onStartEvents    []OnStartEvent
 	swagger          *swagger3.Swagger
@@ -114,7 +114,7 @@ func NewHttpServer(daprClient dapr.DaprClient, opts *ServiceOptions) common.Serv
 //	@Description:
 //	@receiver s
 //	@return *EnvConfig
-func (s *HttpServer) EnvConfig() *env.Env {
+func (s *HttpServer) EnvConfig() *envs.Env {
 	return s.env
 }
 

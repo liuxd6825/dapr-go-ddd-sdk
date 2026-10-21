@@ -23,11 +23,9 @@ type BusRelationDao struct {
 	client    *hugegraph.CommonClient
 }
 
-const DB_KEY_HUGE = "hugegraph"
-
-func NewBusRelationDao(client *hugegraph.CommonClient, dbSch *store.DBSchema, nodeDao dao2.IMasterNodeDao, graphMeta *schema.Graph) *BusRelationDao {
+func NewBusRelationDao(hugeDbKey string, client *hugegraph.CommonClient, dbSch *store.DBSchema, nodeDao dao2.IMasterNodeDao, graphMeta *schema.Graph) *BusRelationDao {
 	relCfg := &dao.DaoConfig{
-		DBKey:              DB_KEY_HUGE,
+		DBKey:              hugeDbKey,
 		GraphType:          idao.GraphType_Rel,
 		IsCancelModified:   true,
 		IsCancelSoftDelete: true,

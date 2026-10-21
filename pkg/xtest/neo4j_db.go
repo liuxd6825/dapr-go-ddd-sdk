@@ -1,6 +1,6 @@
 package xtest
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 
 const (
 	Neo4jDBKey      = "db"
@@ -9,8 +9,8 @@ const (
 	Neo4jHostRemote = "192.168.120.224"
 )
 
-func GetNeo4jRemoteCfg() *env.Neo4j {
-	return &env.Neo4j{
+func GetNeo4jRemoteCfg() *envs.Neo4j {
+	return &envs.Neo4j{
 		DbKey:    Neo4jDBKey,
 		Host:     Neo4jHostRemote,
 		Port:     "7687",
@@ -20,8 +20,8 @@ func GetNeo4jRemoteCfg() *env.Neo4j {
 	}
 }
 
-func GetNeo4jLocalCfg() *env.Neo4j {
-	return &env.Neo4j{
+func GetNeo4jLocalCfg() *envs.Neo4j {
+	return &envs.Neo4j{
 		DbKey:    Neo4jDBKey,
 		Host:     Neo4jHostLocal,
 		Port:     "7687",

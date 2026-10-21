@@ -1,0 +1,50 @@
+CREATE TABLE `master_record` (
+    `id` VARCHAR(100) NULL,
+    `tenant_id` VARCHAR(100) NULL,
+    `case_id` VARCHAR(100) NULL,
+    `doc_id` VARCHAR(100) NULL,
+    `task_id` VARCHAR(100) NULL,
+    `graph_id` VARCHAR(100) NULL,
+    `file_id` VARCHAR(100) NULL,
+    `sheet_id` VARCHAR(100) NULL,
+    `master_type` VARCHAR(100) NULL,
+    `master_id` VARCHAR(100) NULL,
+    `master_name` VARCHAR(100) NULL,
+    `date` DATETIME NULL,
+    `name` VARCHAR(200) NULL,
+    `acct` VARCHAR(100) NULL,
+    `acct_type` VARCHAR(100) NULL,
+    `bank_name` VARCHAR(100) NULL,
+    `opp_name` VARCHAR(100) NULL,
+    `opp_acct` VARCHAR(100) NULL,
+    `opp_acct_type` VARCHAR(100) NULL,
+    `opp_bank_name` VARCHAR(100) NULL,
+    `amount` DOUBLE NULL,
+    `balance` DOUBLE NULL,
+    `payout` DOUBLE NULL,
+    `ccy` VARCHAR(100) NULL,
+    `summary` VARCHAR(500) NULL,
+    `cash` TINYINT NULL,
+    `income` DOUBLE NULL,
+    `io` INT NULL,
+    `place` VARCHAR(500) NULL,
+    `notes` VARCHAR(500) NULL,
+    `row_num` INT NULL,
+    `serial` VARCHAR(100) NULL,
+    `year` INT NULL,
+    `month` INT NULL,
+    `day` INT NULL,
+    `creator_id` VARCHAR(100) NULL,
+    `creator_name` VARCHAR(100) NULL,
+    `created_time` DATETIME NULL,
+    `updater_id` VARCHAR(100) NULL,
+    `updater_name` VARCHAR(100) NULL,
+    `updated_time` DATETIME NULL,
+    `remark` STRING NULL
+)
+ENGINE = olap
+DUPLICATE KEY(`id`)
+DISTRIBUTED BY HASH(`id`) BUCKETS 10
+PROPERTIES (
+"replication_num" = "1"   
+);

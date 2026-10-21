@@ -17,10 +17,10 @@ type HumanAddressAPI struct {
 	rootPath string
 }
 
-func NewHumanAddressAPI(rootPath string) *HumanAddressAPI {
+func NewHumanAddressAPI(rootPath string, mongoDbKey string) *HumanAddressAPI {
 	return &HumanAddressAPI{
 		rootPath: rootPath,
-		service:  service.NewHumanAddressService(),
+		service:  service.NewHumanAddressService(mongoDbKey),
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/spf13/afero"
 )
 
@@ -71,7 +71,7 @@ func (h *RenderHandler) isDynamicPage(ctx context.Context, ictx iris.Context, fs
 	return isDynamic, nil
 }
 
-func parserHtml(doc *goquery.Document, envNpm *env.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) ([]byte, error) {
+func parserHtml(doc *goquery.Document, envNpm *envs.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) ([]byte, error) {
 	if envNpm != nil && len(envNpm.Links) > 0 {
 		doc.Find("script").Each(func(i int, s *goquery.Selection) {
 			parserImport(s, envNpm, importFileFun)
@@ -98,7 +98,7 @@ func processRawTemplate(tpl string) string {
 	return buf.String()
 }
 
-func parserImport(s *goquery.Selection, envNpm *env.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) {
+func parserImport(s *goquery.Selection, envNpm *envs.Npm, importFileFun func(scripts *goquery.Selection, importFile *strings.Builder)) {
 	typeAttr, exists := s.Attr("type")
 	if exists && typeAttr == "module" && len(s.Nodes) > 0 && s.Nodes[0].FirstChild != nil {
 		sb := transformImports(s.Nodes[0].FirstChild.Data, envNpm)
@@ -109,7 +109,7 @@ func parserImport(s *goquery.Selection, envNpm *env.Npm, importFileFun func(scri
 }
 
 // 转换导入路径
-func transformImports(content string, envNpm *env.Npm) *strings.Builder {
+func transformImports(content string, envNpm *envs.Npm) *strings.Builder {
 	lines := strings.Split(content, "\n")
 	sb := &strings.Builder{}
 	for _, line := range lines {

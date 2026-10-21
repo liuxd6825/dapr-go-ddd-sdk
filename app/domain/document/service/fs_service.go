@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/fs_pkg"
 	"github.com/spf13/afero"
@@ -26,21 +26,21 @@ var _fsServiceOnce sync.Once
 
 const FilePerm = os.ModePerm
 
-func NewFsService() *FsService {
+func NewFsService(dbKey string) *FsService {
 	_fsServiceOnce.Do(func() {
-		_fsService = newFsService()
+		_fsService = newFsService(dbKey)
 	})
 	return _fsService
 }
 
-func newFsService() *FsService {
+func newFsService(dbKey string) *FsService {
 	fsService := &FsService{}
 	fsService.Init()
 	return fsService
 }
 
 func (s *FsService) Init() *FsService {
-	docFs, err := fs_pkg.NewFsPkg(env.GetEnv(), DocumentFsName)
+	docFs, err := fs_pkg.NewFsPkg(envs.GetEnv(), DocumentFsName)
 	if err != nil {
 		panic("documentIoStore fs not exist in config")
 	}

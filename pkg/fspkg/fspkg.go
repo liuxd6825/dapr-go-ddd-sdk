@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
@@ -44,7 +44,7 @@ type IFsPkg interface {
 // @Description:  文件系统
 type FsPkg struct {
 	base        *fsm.Manager
-	cfg         *env.Env
+	cfg         *envs.Env
 	WriteModels *FsWriteModel
 	fsName      string
 }
@@ -69,7 +69,7 @@ func NewFsWriteModel() *FsWriteModel {
 //	@param cfg
 //	@return *FsPkg
 //	@return error
-func NewFsPkg(cfg *env.Env, fsName string) (*FsPkg, error) {
+func NewFsPkg(cfg *envs.Env, fsName string) (*FsPkg, error) {
 	var err error
 	fsM := cfg.Fsm
 	if fsName != "" {

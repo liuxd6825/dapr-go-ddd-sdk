@@ -17,10 +17,10 @@ type HumanRecordAPI struct {
 	rootPath string
 }
 
-func NewHumanRecordAPI(rootPath string) *HumanRecordAPI {
+func NewHumanRecordAPI(rootPath string, dbKey string) *HumanRecordAPI {
 	return &HumanRecordAPI{
 		rootPath: rootPath,
-		service:  service.NewHumanRecordService(),
+		service:  service.NewHumanRecordService(dbKey),
 	}
 }
 

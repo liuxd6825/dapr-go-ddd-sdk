@@ -3,6 +3,7 @@ package restapi
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/query"
 
@@ -11,22 +12,24 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type TagTypeAPI struct {
-	env            *env.Env
+	env            *envs.Env
 	tagTypeService *service.TagTypeService
 	tagService     *service.TagService
 	rootPath       string
+	mongoDbKey     string
 }
 
-func NewTagTypeAPI(env *env.Env, rootPath string) *TagTypeAPI {
-	tagTypeService := service.NewTagTypeService()
-	tagService := service.NewTagService()
+func NewTagTypeAPI(env *envs.Env, rootPath string, mongoDbKey string) *TagTypeAPI {
+	tagTypeService := service.NewTagTypeService(mongoDbKey)
+	tagService := service.NewTagService(mongoDbKey)
 	return &TagTypeAPI{
 		env:            env,
+		mongoDbKey:     mongoDbKey,
 		tagTypeService: tagTypeService,
 		tagService:     tagService,
 		rootPath:       rootPath,
@@ -34,7 +37,7 @@ func NewTagTypeAPI(env *env.Env, rootPath string) *TagTypeAPI {
 }
 
 func (s *TagTypeAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.tagTypeService = service.NewTagTypeService()
+	s.tagTypeService = service.NewTagTypeService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TagTypeAPI", s)
 	ctl.Post("/tag-type", "Create")
 	ctl.Put("/tag-type", "Update")

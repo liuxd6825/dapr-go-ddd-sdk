@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 )
 
@@ -92,6 +92,6 @@ func TestFs_WriteAt(t *testing.T) {
 	readFile.Close()
 }
 
-func newEnv() *env.Env {
+func newEnv() *envs.Env {
 	return xtest.NewEnvConfig_Fs("file", "./test-file")
 }

@@ -7,7 +7,7 @@ import (
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	store_mongodb2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_mongodb"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_sql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -21,18 +21,18 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc store2.TxFunc, options
 	newTxFunc := txFunc
 	if dbKeys != nil && len(dbKeys) > 0 {
 		for _, dbKey := range dbKeys {
-			item := env.GetDB(dbKey)
+			item := envs.GetDB(dbKey)
 			if item == nil {
 				return fmt.Errorf("dbKey %s not found", dbKey)
 			}
 			DBType := item.GetDBType()
 			switch DBType {
-			case env.DBType_Neo4j:
+			case envs.DBType_Neo4j:
 				break
-			case env.DBType_MongoDB:
+			case envs.DBType_MongoDB:
 				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
 				break
-			case env.DBType_Sqlite, env.DBType_MySQL, env.DBType_MsSQL, env.DBType_Oracle, env.DBType_Postgres:
+			case envs.DBType_Sqlite, envs.DBType_MySQL, envs.DBType_MsSQL, envs.DBType_Oracle, envs.DBType_Postgres:
 				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
 				break
 			}
@@ -46,7 +46,7 @@ type TxDB []TxDBItem
 type TxDBItem struct {
 	DB     any
 	DBKey  string
-	DBType env.DBType
+	DBType envs.DBType
 }
 
 // Start 开启事务
@@ -59,15 +59,15 @@ func Start(ctx context.Context, txDb TxDB, txFunc store2.TxFunc, options ...*sto
 	if txDb != nil && len(txDb) > 0 {
 		for _, item := range txDb {
 			switch item.DBType {
-			case env.DBType_Neo4j:
+			case envs.DBType_Neo4j:
 				break
-			case env.DBType_MongoDB:
+			case envs.DBType_MongoDB:
 				db, ok := item.DB.(store_mongodb2.IMongoDB)
 				if !ok {
 					return fmt.Errorf("db %s type %s is not MongoDB", item.DBKey, item.DBType)
 				}
 				newTxFunc = newMongoFunc(db, item.DBKey, newTxFunc)
-			case env.DBType_Sqlite, env.DBType_MySQL, env.DBType_MsSQL, env.DBType_Oracle, env.DBType_Postgres:
+			case envs.DBType_Sqlite, envs.DBType_MySQL, envs.DBType_MsSQL, envs.DBType_Oracle, envs.DBType_Postgres:
 				db := item.DB.(*gorm.DB)
 				newTxFunc = newGormFunc(db, item.DBKey, newTxFunc)
 				break

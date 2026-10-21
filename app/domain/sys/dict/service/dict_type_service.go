@@ -9,7 +9,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -25,10 +24,10 @@ var (
 	_dictTypeDomainService *DictTypeService
 )
 
-func NewDictTypeService() *DictTypeService {
+func NewDictTypeService(dbKey string) *DictTypeService {
 	_dictTypeOnce.Do(func() {
 		_dictTypeDomainService = &DictTypeService{
-			dao: dao.NewDictTypeDao(config.DBKey),
+			dao: dao.NewDictTypeDao(dbKey),
 		}
 	})
 	return _dictTypeDomainService

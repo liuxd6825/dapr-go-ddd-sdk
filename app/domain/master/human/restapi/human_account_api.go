@@ -15,11 +15,13 @@ import (
 type HumanAccountAPI struct {
 	service  *service.HumanAccountService
 	rootPath string
+	dbKey    string
 }
 
-func NewHumanAccountAPI(rootPath string) *HumanAccountAPI {
+func NewHumanAccountAPI(rootPath string, dbKey string) *HumanAccountAPI {
 	return &HumanAccountAPI{
 		rootPath: rootPath,
+		dbKey:    dbKey,
 		service:  service.NewHumanAccountService(),
 	}
 }

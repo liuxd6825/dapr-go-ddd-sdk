@@ -18,10 +18,10 @@ type HumanSuspectAmountAPI struct {
 	rootPath string
 }
 
-func NewHumanSuspectAmountAPI(rootPath string) *HumanSuspectAmountAPI {
+func NewHumanSuspectAmountAPI(rootPath string, dbKey string) *HumanSuspectAmountAPI {
 	return &HumanSuspectAmountAPI{
 		rootPath: rootPath,
-		service:  service.NewHumanSuspectAmountService(),
+		service:  service.NewHumanSuspectAmountService(dbKey),
 	}
 }
 

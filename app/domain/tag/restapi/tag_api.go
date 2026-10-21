@@ -3,31 +3,32 @@ package restapi
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type TagAPI struct {
-	env            *env.Env
+	env            *envs.Env
 	tagService     *service.TagService
 	tagRelationSvc *service.TagRelationService
 	rootPath       string
+	mongoDbKey     string
 }
 
-func NewTagAPI(env *env.Env, rootPath string) *TagAPI {
-	tagService := service.NewTagService()
-	tagRelationSvc := service.NewTagRelationService()
+func NewTagAPI(env *envs.Env, rootPath string, mongoDbKey string) *TagAPI {
+	tagService := service.NewTagService(mongoDbKey)
+	tagRelationSvc := service.NewTagRelationService(mongoDbKey)
 	return &TagAPI{
+		mongoDbKey:     mongoDbKey,
 		env:            env,
 		tagService:     tagService,
 		tagRelationSvc: tagRelationSvc,
@@ -36,7 +37,7 @@ func NewTagAPI(env *env.Env, rootPath string) *TagAPI {
 }
 
 func (s *TagAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.tagService = service.NewTagService()
+	s.tagService = service.NewTagService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TagAPI", s)
 	ctl.Post("/tag", "Create")
 	ctl.Put("/tag", "Update")
@@ -50,7 +51,7 @@ func (s *TagAPI) Create(ctx context.Context, cmd *command.TagCreateCommand) erro
 }
 
 func (s *TagAPI) Update(ctx context.Context, cmd *command.TagUpdateCommand) error {
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.mongoDbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		arrTagRelation, err := s.tagRelationSvc.FindByRSQL(ctx, fmt.Sprintf("tag_id=='%s'", cmd.Data.Id))
 		if err != nil {
 			return err
@@ -76,7 +77,7 @@ func (s *TagAPI) Update(ctx context.Context, cmd *command.TagUpdateCommand) erro
 }
 
 func (s *TagAPI) Delete(ctx context.Context, cmd *command.TagDeleteCommand) error {
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.mongoDbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		err := s.tagRelationSvc.DeleteByRSQL(ctx, fmt.Sprintf("tag_id=='%s'", cmd.Data.Id))
 		if err != nil {
 			return err

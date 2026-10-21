@@ -1,6 +1,6 @@
 package xtest
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 
 const (
 	MongoDBKey      = "db"
@@ -94,9 +94,9 @@ func (o *MongoOptions) SetDBName(s string) *MongoOptions {
 	return o
 }
 
-func GetMongoEnv_Remote(opts ...*MongoOptions) *env.Mongo {
+func GetMongoEnv_Remote(opts ...*MongoOptions) *envs.Mongo {
 	opt := NewMongoOptions(opts...)
-	return &env.Mongo{
+	return &envs.Mongo{
 		DbKey:         getStr(opt.GetDBKey(), MongoDBKey),
 		Host:          getStr(opt.GetHost(), MongoHostRemote),
 		ReplicaSet:    getStr(opt.GetReplicaSet(), MongoReplicaSet),
@@ -108,9 +108,9 @@ func GetMongoEnv_Remote(opts ...*MongoOptions) *env.Mongo {
 	}
 }
 
-func GetMongoEnv_Local(opts ...*MongoOptions) *env.Mongo {
+func GetMongoEnv_Local(opts ...*MongoOptions) *envs.Mongo {
 	opt := NewMongoOptions(opts...)
-	return &env.Mongo{
+	return &envs.Mongo{
 		DbKey:      MongoDBKey,
 		Host:       MongoHostLocal,
 		ReplicaSet: getStr(opt.GetReplicaSet(), "rs0"),

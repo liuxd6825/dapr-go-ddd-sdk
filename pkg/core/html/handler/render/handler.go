@@ -12,7 +12,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/html/handler/render/engine"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/utils"
@@ -23,7 +23,7 @@ import (
 )
 
 type Config struct {
-	Env         *env.Env
+	Env         *envs.Env
 	ServerFs    afero.Fs
 	WebFs       afero.Fs
 	NodeModules []afero.Fs
@@ -41,7 +41,7 @@ type RenderHandler struct {
 
 var isRegister bool
 
-func RegisterRenderHandler(irisApp *iris.Application, env *env.Env, grValue map[string]any) {
+func RegisterRenderHandler(irisApp *iris.Application, env *envs.Env, grValue map[string]any) {
 	if isRegister {
 		return
 	}
@@ -76,7 +76,7 @@ func NewRenderHandler(app *iris.Application, globalValues map[string]any, cfg *C
 		cfg:          cfg,
 		pageCache:    types.NewCMap[bool](),
 		globalValues: globalValues,
-		prodMode:     env.GetEnv().GetProdMode(),
+		prodMode:     envs.GetEnv().GetProdMode(),
 		htmlJs:       types.NewCMap[string](),
 	}
 	ctx := context.Background()
@@ -242,7 +242,7 @@ func (h *RenderHandler) render(ctx context.Context, ictx iris.Context, fs afero.
 			if err != nil {
 				return err
 			}
-			fsData, err = parserHtml(doc, &env.GetEnv().App.HServer.Npm, func(scripts *goquery.Selection, sb *strings.Builder) {
+			fsData, err = parserHtml(doc, &envs.GetEnv().App.HServer.Npm, func(scripts *goquery.Selection, sb *strings.Builder) {
 				if sb != nil {
 					scripts.Remove()
 					// 插入方式1：插入到#container末尾
@@ -339,7 +339,7 @@ func (h *RenderHandler) preloadDynamicPages(ctx context.Context, ictx iris.Conte
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".html") {
 			fileName := path + file.Name()
-			isDynamic, err := h.isDynamicPage(ctx, ictx, srcFs, fileName, env.GetEnv().GetProdMode())
+			isDynamic, err := h.isDynamicPage(ctx, ictx, srcFs, fileName, envs.GetEnv().GetProdMode())
 			if err != nil {
 				return err
 			}

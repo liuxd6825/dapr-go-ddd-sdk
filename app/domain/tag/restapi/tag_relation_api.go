@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -11,18 +12,19 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type TagRelationAPI struct {
-	env            *env.Env
+	env            *envs.Env
 	tagRelationSvc *service.TagRelationService
 	rootPath       string
+	mongoDbKey     string
 }
 
-func NewTagRelationAPI(env *env.Env, rootPath string) *TagRelationAPI {
-	tagRelationSvc := service.NewTagRelationService()
+func NewTagRelationAPI(env *envs.Env, rootPath string, mongoDbKey string) *TagRelationAPI {
+	tagRelationSvc := service.NewTagRelationService(mongoDbKey)
 	return &TagRelationAPI{
 		env:            env,
 		tagRelationSvc: tagRelationSvc,
@@ -31,7 +33,7 @@ func NewTagRelationAPI(env *env.Env, rootPath string) *TagRelationAPI {
 }
 
 func (s *TagRelationAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.tagRelationSvc = service.NewTagRelationService()
+	s.tagRelationSvc = service.NewTagRelationService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TagRelationAPI", s)
 	ctl.Post("/tag-relation", "Create")
 	ctl.Put("/tag-relation", "Update")

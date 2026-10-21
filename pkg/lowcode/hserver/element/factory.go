@@ -6,7 +6,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsopts"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
@@ -40,7 +40,7 @@ type Factory interface {
 	//  @return Server
 	//  @return error
 	//
-	NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory Factory, env *env.Env, opts ...NewServerOptions) (Server, error)
+	NewServer(httpServer *restapp.HttpServer, srcFileName string, srcFs afero.Fs, factory Factory, env *envs.Env, opts ...NewServerOptions) (Server, error)
 
 	//
 	// NewService

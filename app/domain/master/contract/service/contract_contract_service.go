@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -22,7 +22,7 @@ var _contractContractServiceOnce sync.Once
 func NewContractContractService() *ContractContractService {
 	_contractContractServiceOnce.Do(func() {
 		_contractContractService = &ContractContractService{
-			dao: dao.NewContractContractDao(config.DBKey),
+			dao: dao.NewContractContractDao(masterconfigs.GetMongoDbKey()),
 		}
 	})
 	return _contractContractService

@@ -11,7 +11,6 @@ envs:
       hServer:
         enable: false
         srcName: src
-
         basePath: ""
         reload: true
         npm:
@@ -21,35 +20,144 @@ envs:
           - name: draw
             path: /@fs/Users/lxd/Projects/duxm/h-draw
       meta:
-        db: "default"
-        ragDb: "default"
-        drawDb: "default"
-        neo4jDb: "neo4jdao"
-        redis: "default"
-        doris:
-          host: 192.168.120.224
-          port: 8040
-          database: master
-          username: admin
-          password:
-        rag:
-          llm:
-            type: "ollama"
-            baseURL: "http://192.168.120.224:11434"
-            model: "qwen3.6:27b"
-            apiKey: "ollama"
-            ctxLength: 32768
-            think: low
-          embedder:
-            baseUrl: "http://192.168.120.224:11434"
-            model:  "bge-m3:latest"
-            apiKey: ""
-          vector:
-            addr: "192.168.120.224:19530"
-            collectionName : "graph"
-            dim: 1024
+        db1: "default"
+        ragDb1: "default"
+        drawDb1: "default"
+        neo4jDb1: "neo4"
+        redis1: "default"
+        huge1: "huge"
+
         ory:
           url: "http://192.168.120.224:4434"
+        sysService:
+          mongoDbKey: "mongo"
+          s3Key: "default"
+          redis: "default"
+        analysisService:  # 可疑流水分析
+          mongoDbKey: "mongo"
+          dorisDbKey: "doris"
+          s3Key: "default"
+          redis: "default"
+        tagService:
+          mongoDbKey: "mongo"
+        masterService:
+          mongoDbKey: "mongo"
+          s3Key: "default"
+        importService:  # 数据导入服务
+          dorisDbKey: "doris"
+          rag:
+            llm:
+              type: "ollama"
+              baseURL: "http://192.168.120.224:11434"
+              model: "qwen3.6:27b"
+              apiKey: "ollama"
+              ctxLength: 32768
+              think: low
+            embedder:
+              baseUrl: "http://192.168.120.224:11434"
+              model:  "bge-m3:latest"
+              apiKey: ""
+            vector:
+              addr: "192.168.120.224:19530"
+              collectionName : "graph"
+              dim: 1024
+          livyServer:
+            ip: "192.168.120.200"
+            port: 18080
+        graphService: # 图形数据服务
+          mongoDbKey: "mongo"
+          s3Key: "default"
+          hugeDbKey: "huge"
+          dorisDbKey: "doris"
+          livyServer:
+            ip: "192.168.120.200"
+            port: 18080
+
+
+    mongo:
+      mongo:   # master 主数据写数据库
+        host: 192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020
+        replicaSet: mongors
+        dbname: master
+        user: super_admin
+        pwd: 123456
+        maxPoolSize: 20
+        operationTimeout: 300s
+        socketTimeout: 60s
+        maxConnIdleTime: 60s
+        serverSelectionTimeout: 20s
+    huge:
+      huge:  # 图数据库  用在
+        host: "192.168.120.200"
+        port: 18080
+        username: "admin"
+        password: "admin"
+
+    neo4j:
+      neo4j:
+        host: "192.168.120.224"
+        port: 7687
+        dbname:
+        user: neo4jdao
+        pwd: 12345678
+
+    doris:
+      doris: # 银行流水数据分析， 爬网公司库
+        host: "192.168.120.224"
+        port: "9030"
+        user: "root"
+        pwd:
+        dbname: "master"
+        loc: "Asia/Shanghai"
+        parseTime: true
+        charset: "utf8mb4"
+
+    log:
+      outputType: console
+      level: debug
+      saveDays: 7  #日志保存的天数
+      splitHour: 1 #文件分隔时间，单位小时
+      logFile: "./logs/${ExeName}.log"
+    dapr:
+      command: daprd
+      start: true
+      host: 127.0.0.1
+      httpPort: 43002
+      grpcPort: 43003
+      eventStores:
+        eventstore:
+          pubsub: pubsub
+      startArgs:
+        log-level: "info"
+        log-file: "./logs/dev/${ExeName}.dapr.log"
+        log-output-type: "console"
+        config: "./config/dev/dapr/${EnvName}/config.yaml"
+        components-path: "./config/dev/dapr/${EnvName}/cmd-components"
+        resources-path: "./config/dev/dapr/${EnvName}/cmd-components"
+        # placement-host-address: 127.0.0.1:50005
+        # scheduler-host-address: 127.0.0.1:50006
+        enable-metrics: false
+        metrics-port: 9191
+    temporal:
+      host: 192.168.120.224
+      port: 7233
+      namespace: "default"
+      taskQueue: "master-task"
+    redis:  # 内存数据库
+      default:
+        host: "192.168.120.224:6379"
+        db: 2
+        pwd: 123456
+        poolSize: 10
+    minio: # S3文件服务
+      default:
+        endpoint: "192.168.120.224:9000"
+        accessKey: "minioadmin"
+        secretKey: "minioadmin"
+        useSSL: false
+        buckets:
+          importData: "import-data"
+
     fs:
       - name: "documentIoStore"
         type: local
@@ -86,97 +194,5 @@ envs:
         path: "/Users/lxd/Projects/duxm/h-draw/web"
         tags:
           - node-modules
-    log:
-      outputType: console
-      level: debug
-      saveDays: 7  #日志保存的天数
-      splitHour: 1 #文件分隔时间，单位小时
-      logFile: "./logs/${ExeName}.log"
-    dapr:
-      command: daprd
-      start: true
-      host: 127.0.0.1
-      httpPort: 43002
-      grpcPort: 43003
-      eventStores:
-        eventstore:
-          pubsub: pubsub
-      startArgs:
-        log-level: "info"
-        log-file: "./logs/dev/${ExeName}.dapr.log"
-        log-output-type: "console"
-        config: "./config/dev/dapr/${EnvName}/config.yaml"
-        components-path: "./config/dev/dapr/${EnvName}/cmd-components"
-        resources-path: "./config/dev/dapr/${EnvName}/cmd-components"
-        # placement-host-address: 127.0.0.1:50005
-        # scheduler-host-address: 127.0.0.1:50006
-        enable-metrics: false
-        metrics-port: 9191
-    temporal:
-      host: 192.168.120.224
-      port: 7233
-      namespace: "default"
-      taskQueue: "master-task"
-    mongo:
-      default:
-        host: 192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020
-        replicaSet: mongors
-        dbname: master
-        user: super_admin
-        pwd: 123456
-        maxPoolSize: 20
-        operationTimeout: 300s
-        socketTimeout: 60s
-        maxConnIdleTime: 60s
-        serverSelectionTimeout: 20s
-    neo4j:
-      neo4j:
-        host: "192.168.120.224"
-        port: 7687
-        dbname:
-        user: neo4jdao
-        pwd: 12345678
-    redis:
-      default:
-        host: "192.168.120.224:6379"
-        db: 2
-        pwd: 123456
-        poolSize: 10
-    minio:
-      default:
-        endpoint: "192.168.120.224:9000"
-        accessKey: "minioadmin"
-        secretKey: "minioadmin"
-        useSSL: false
-        buckets:
-          importData: "import-data"
-    mysql:
-      doris:
-        host: "192.168.120.224"
-        port: "9030"
-        user: "root"
-        pwd:
-        dbname: "master"
-        loc: "Asia/Shanghai"
-        parseTime: true
-        charset: "utf8mb4"
-    elastic:
-      elastic:
-        addresses:
-          - "http://192.168.120.224:9200"
-        username: "elastic"
-        password: "12345678"
-        apiKey: ""
-        serviceToken: ""
-        cloudId: ""
-        caCert: ""
-        clientCert: ""
-        clientKey: ""
-        debug: false
-        retry:
-          maxRetries: 3
-          retryOnTimeout: true
-          retryBackoff: "100ms"
-
 
 

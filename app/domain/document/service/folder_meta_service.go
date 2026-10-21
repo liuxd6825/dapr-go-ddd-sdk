@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -11,12 +12,14 @@ import (
 )
 
 type FolderMetaService struct {
-	dao *dao.FolderMetaDao
+	dbKey string
+	dao   *dao.FolderMetaDao
 }
 
-func NewFolderMetaService() *FolderMetaService {
+func NewFolderMetaService(dbKey string) *FolderMetaService {
 	return &FolderMetaService{
-		dao: dao.NewFolderMetaDao(DBKey),
+		dbKey: dbKey,
+		dao:   dao.NewFolderMetaDao(dbKey),
 	}
 }
 

@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/light_rag"
 	"net/http"
-	"sync"
 	"time"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/light_rag"
 
 	"github.com/dapr/go-sdk/client"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
@@ -21,7 +21,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -35,27 +35,22 @@ type DocumentService struct {
 	current        *model.Document
 }
 
-var documentService *DocumentService
-var documentServiceOnce sync.Once
+func NewDocumentService(statusProvider interfaces.ImportStatusProvider, mongoDbKey string) *DocumentService {
 
-func NewDocumentService(statusProvider interfaces.ImportStatusProvider) *DocumentService {
-	documentServiceOnce.Do(func() {
-		ragCfg := light_rag.LoadLightRagConfig()
-		cli := light_rag.NewClient(ragCfg.Url, ragCfg.ApiKey, &http.Client{})
-		documentService = &DocumentService{
-			dao: dao.NewDocumentDao(DBKey),
-			//graphRag:       NewGraphRag(),
-			//docExtract:     doc_extract.NewExtract(logs.GetLogger2()),
-			statusProvider: statusProvider,
-			graphRag:       light_rag.NewDocumentService(cli),
-		}
-		//documentService.graphRag.SetOnEvents(documentService.initOnEvents)
-	})
-	return documentService
+	ragCfg := light_rag.LoadLightRagConfig()
+	cli := light_rag.NewClient(ragCfg.Url, ragCfg.ApiKey, &http.Client{})
+	s := &DocumentService{
+		dao: dao.NewDocumentDao(mongoDbKey),
+		//graphRag:       NewGraphRag(),
+		//docExtract:     doc_extract.NewExtract(logs.GetLogger2()),
+		statusProvider: statusProvider,
+		graphRag:       light_rag.NewDocumentService(cli),
+	}
+	return s
 }
 
-func NewDocumentServiceDefault() *DocumentService {
-	return NewDocumentService(outside.NewImportStatusProvider())
+func NewDocumentServiceDefault(dbKey string) *DocumentService {
+	return NewDocumentService(outside.NewImportStatusProvider(dbKey), dbKey)
 }
 
 func (s *DocumentService) initOnEvents(e *storage.DocEvents) {
@@ -100,7 +95,7 @@ func (s *DocumentService) Scan(userCtx context.Context, cmd *command.DocumentSca
 // @param caseId
 func (s *DocumentService) scan(ctx context.Context, tenantId string) {
 	isLockScan := false
-	env := env.GetEnv()
+	env := envs.GetEnv()
 	gp.Try(func() error {
 		caseId := ""
 		for {
@@ -336,7 +331,7 @@ func (s *DocumentService) lockScan(ctx context.Context, tenantId, caseId string)
 	storeName := "lock-store"
 	lockOwner := "rag"
 	resourceId := fmt.Sprintf("scan-%s-%s", tenantId, caseId)
-	dapr := env.GetEnv().Dapr
+	dapr := envs.GetEnv().Dapr
 	if dapr == nil {
 		panic("dapr is nil")
 	}

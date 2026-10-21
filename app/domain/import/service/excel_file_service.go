@@ -8,32 +8,30 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/pkg/readexcel"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	db "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/singleutils"
 )
 
 // ExcelFileService excel文件服务 从文档中心导入的文件
 type ExcelFileService struct {
+	dbKey          string
 	dao            *dao.ExcelFileDao
 	docFileService *service.FileService
 	sheetService   *ExcelSheetService
 	rowService     *ExcelRowService
 }
 
-func NewExcelFileService() *ExcelFileService {
-	return singleutils.CreateObj[*ExcelFileService](func() *ExcelFileService {
-		return &ExcelFileService{
-			dao:            dao.NewExcelFileDao(config.DBKey),
-			docFileService: service.NewFileService(),
-			sheetService:   NewExcelSheetService(),
-			rowService:     NewExcelRowService(),
-		}
-	})
+func NewExcelFileService(dbKey string) *ExcelFileService {
+	return &ExcelFileService{
+		dbKey:          dbKey,
+		dao:            dao.NewExcelFileDao(dbKey),
+		docFileService: service.NewFileService(dbKey),
+		sheetService:   NewExcelSheetService(dbKey),
+		rowService:     NewExcelRowService(dbKey),
+	}
 }
 
 func (s *ExcelFileService) Create(ctx context.Context, cmd *command.ExcelFileCreateCommand) (*model.ExcelFile, error) {
@@ -63,7 +61,7 @@ func (s *ExcelFileService) Create(ctx context.Context, cmd *command.ExcelFileCre
 		}
 
 		// 需要开启事物
-		err = db.StartTx(ctx, db.NewTxCfg(config.DBKey), func(txCtx context.Context, options ...*store2.SessionOptions) error {
+		err = db.StartTx(ctx, db.NewTxCfg(s.dbKey), func(txCtx context.Context, options ...*store2.SessionOptions) error {
 			res := s.dao.Create(ctx, file)
 			if res.Error != nil {
 				return res.Error

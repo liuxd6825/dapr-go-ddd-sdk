@@ -17,7 +17,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ddd"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
@@ -448,7 +448,7 @@ func (c *ApiController) GetCtx(ictx *icontext.Context) (context.Context, error) 
 
 func (c *ApiController) newContext(parent context.Context, ictx *icontext.Context) (ctx context.Context, err error) {
 	ctx = parent
-	app := env.GetEnv().App
+	app := envs.GetEnv().App
 	appId := app.AppId
 	appName := app.AppName
 	if app.ProdMode {

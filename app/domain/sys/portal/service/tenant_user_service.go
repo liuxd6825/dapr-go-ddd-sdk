@@ -3,12 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/orm_pkg/dao"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 )
@@ -19,19 +18,11 @@ type TenantUserService struct {
 	tenantOpt idao.CallOptions
 }
 
-var (
-	_tenantUserOnce    sync.Once
-	_tenantUserService *TenantUserService
-)
-
-func NewTenantUserService() *TenantUserService {
-	_tenantUserOnce.Do(func() {
-		_tenantUserService = &TenantUserService{
-			tenantOpt: idao.NewCallOptions().SetTenantId(SystemTenantId),
-			dao:       dao.NewTenantUserDao(config.DBKey),
-		}
-	})
-	return _tenantUserService
+func NewTenantUserService(dbKey string) *TenantUserService {
+	return &TenantUserService{
+		tenantOpt: idao.NewCallOptions().SetTenantId(SystemTenantId),
+		dao:       dao.NewTenantUserDao(dbKey),
+	}
 }
 
 func (t *TenantUserService) CreateTenantUser(ctx context.Context, tenantId, userId string) (*model.TenantUser, error) {

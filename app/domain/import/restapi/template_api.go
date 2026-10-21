@@ -9,26 +9,28 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type TemplateAPI struct {
-	env             *env.Env
+	env             *envs.Env
 	templateService *service.TemplateService
 	rootPath        string
+	mongoDbKey      string
 }
 
-func NewTemplateAPI(env *env.Env, rootPath string) *TemplateAPI {
+func NewTemplateAPI(env *envs.Env, rootPath string, mongoDbKey string) *TemplateAPI {
 	return &TemplateAPI{
+		mongoDbKey:      mongoDbKey,
 		env:             env,
-		templateService: service.NewTemplateService(),
+		templateService: service.NewTemplateService(mongoDbKey),
 		rootPath:        rootPath,
 	}
 }
 
 func (s *TemplateAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.templateService = service.NewTemplateService()
+	s.templateService = service.NewTemplateService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/import", "TemplateAPI", s)
 	ctl.Post("/template", "Create")
 	ctl.Put("/template", "Update")

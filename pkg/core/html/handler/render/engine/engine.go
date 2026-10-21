@@ -9,7 +9,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -22,7 +22,7 @@ type Engine struct {
 	tplSet      *pongo2.TemplateSet    // Pongo2 模板集合
 	funcs       map[string]interface{} // 自定义模板函数
 	templateMap *types.CMap[*pongo2.Template]
-	env         *env.Env
+	env         *envs.Env
 }
 
 func (e *Engine) Name() string {
@@ -34,7 +34,7 @@ func (e *Engine) Ext() string {
 }
 
 // NewEngine 创建一个新的 Afero Pongo2 引擎
-func NewEngine(env *env.Env, serverFs afero.Fs, webFs afero.Fs, extension string) *Engine {
+func NewEngine(env *envs.Env, serverFs afero.Fs, webFs afero.Fs, extension string) *Engine {
 	loader := common.NewLoader(webFs)
 	tplSet := pongo2.NewSet("afero", loader)
 	engine := &Engine{

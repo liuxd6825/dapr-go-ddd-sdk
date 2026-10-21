@@ -13,7 +13,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
@@ -23,14 +23,14 @@ type DrawFileRequest struct {
 }
 
 type DrawAPI struct {
-	env          *env.Env
+	env          *envs.Env
 	fileService  *service.FileService
 	graphService *service2.GraphService
 	drawDao      *dao.DrawDao
 	rootPath     string
 }
 
-func NewDrawIoAPI(env *env.Env, rootPath string) *DrawAPI {
+func NewDrawIoAPI(env *envs.Env, rootPath string) *DrawAPI {
 	fileService := service.NewFileService()
 	graphService := service2.NewGraphService()
 	return &DrawAPI{

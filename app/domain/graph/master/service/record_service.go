@@ -2,14 +2,13 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
-	"time"
 
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
+	envs "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/spark/livyserver"
 )
 
@@ -27,6 +26,43 @@ func NewRecordService(livyServer *livyserver.LivyServer, cfg RecordServiceConfig
 	}
 }
 
+func NewRecordServiceWithEnv(env *envs.Env, graphCfg graphconfigs.Config) *RecordService {
+	livyServer := livyserver.NewLivyServer(graphCfg.LivyServer.IP, graphCfg.LivyServer.Port)
+	s3cfg, s3ok := env.GetMinioByKey(graphCfg.S3Key)
+	if !s3ok {
+		panic("minio S3 key not found")
+	}
+
+	hgCfg, hgok := env.GetHugeByKey(graphCfg.HugeDbKey)
+	if !hgok {
+		panic("hugedb key not found")
+	}
+
+	mongoCfg, hgok := env.GetMongoByKey(graphCfg.MongoDbKey)
+	if !hgok {
+		panic("hugedb key not found")
+	}
+
+	cfg := RecordServiceConfig{
+		S3Endpoint: s3cfg.Endpoint,
+		S3User:     s3cfg.AccessKey,
+		S3Pwd:      s3cfg.SecretKey,
+
+		HGHost: hgCfg.Host,
+		HGPort: hgCfg.Port,
+		HGUser: hgCfg.Username,
+		HGPwd:  hgCfg.Password,
+
+		MongoHost:       mongoCfg.Host,
+		MongoReplicaset: mongoCfg.ReplicaSet,
+		MongoUser:       mongoCfg.User,
+		MongoPwd:        mongoCfg.Pwd,
+		MongoDB:         mongoCfg.DbName,
+	}
+
+	return NewRecordService(livyServer, cfg)
+}
+
 type RecordServiceConfig struct {
 	// S3 要导入的文件
 	S3Endpoint string // "http://192.168.120.224:9000"
@@ -35,7 +71,7 @@ type RecordServiceConfig struct {
 
 	// 图数据库
 	HGHost  string // "192.168.120.200"
-	HGPort  string // "18080"
+	HGPort  int    // "18080"
 	HGGraph string // "hugegraph"
 	HGUser  string
 	HGPwd   string
@@ -51,7 +87,29 @@ type RecordServiceConfig struct {
 	// LivyURL string // Spark Livy URL "http://192.168.120.200:8998/batches"
 }
 
-// Import
+type CreateImportTaskOptions struct {
+	DriverMemory   string // "8g"
+	ExecutorMemory string // "8g"
+	ExecutorCores  int    //  6
+}
+
+func NewCreateImportTaskOptions(opts ...CreateImportTaskOptions) *CreateImportTaskOptions {
+	o := &CreateImportTaskOptions{}
+	for _, i := range opts {
+		if i.DriverMemory != "" {
+			o.DriverMemory = i.DriverMemory
+		}
+		if i.ExecutorMemory != "" {
+			o.ExecutorMemory = i.ExecutorMemory
+		}
+		if i.ExecutorCores != 0 {
+			o.ExecutorCores = i.ExecutorCores
+		}
+	}
+	return o
+}
+
+// CreateImportTask
 //
 //	@Description: 导入流水到图数据库, Mongo数据库
 //	@receiver s
@@ -61,7 +119,8 @@ type RecordServiceConfig struct {
 //	@param s3Path 要导入的s3文件
 //	@param hugeGraphName 图名称
 //	@return error
-func (s *RecordService) Import(ctx context.Context, caseId, taskId, s3DataFile, s3JarFile, hugeGraphName string) error {
+func (s *RecordService) CreateImportTask(ctx context.Context, caseId, taskId, s3DataFile, s3JarFile, hugeGraphName string, opts ...CreateImportTaskOptions) (sparkTaskId string, err error) {
+	opt := NewCreateImportTaskOptions(opts...)
 	tenantId := appctx.GetTenantId2(ctx)
 	// 1. 构建 S3 认证与 Spark 运行配置
 	sparkConf := map[string]string{
@@ -83,7 +142,7 @@ func (s *RecordService) Import(ctx context.Context, caseId, taskId, s3DataFile, 
 	}
 
 	// 2. 构建 Spark 任务参数
-	request := livyserver.CreateTaskRequest{
+	request := livyserver.CreateBatchRequest{
 		File:      s3JarFile,
 		ClassName: "org.example.SparkJavaApp",
 		Args: []string{
@@ -92,7 +151,7 @@ func (s *RecordService) Import(ctx context.Context, caseId, taskId, s3DataFile, 
 			"--case-id", caseId, //
 			"--s3-path", s3DataFile, //
 			"--hg-host", s.cfg.HGHost, // "192.168.120.200",
-			"--hg-port", s.cfg.HGPort, // "18080",
+			"--hg-port", fmt.Sprintf("%d", s.cfg.HGPort), // "18080",
 			"--hg-graph", hugeGraphName, // "hugegraph",
 			"--hg-user", s.cfg.HGUser, //"admin",
 			"--hg-pwd", s.cfg.HGPwd, // "admin",
@@ -102,41 +161,19 @@ func (s *RecordService) Import(ctx context.Context, caseId, taskId, s3DataFile, 
 			"--mongo-user", s.cfg.MongoUser, // "super_admin",
 			"--mongo-pwd", s.cfg.MongoPwd, //"123456",
 		},
-		Conf: sparkConf,
-		//DriverMemory:   "8g",
-		//ExecutorMemory: "8g",
-		//ExecutorCores:  6,
+		Conf:           sparkConf,
+		DriverMemory:   opt.DriverMemory,
+		ExecutorMemory: opt.ExecutorMemory,
+		ExecutorCores:  opt.ExecutorCores,
 	}
-	s.livyServer.CreateTasks(ctx, request)
-	return nil
-}
 
-// trackStatus 根据批处理 ID 轮询任务状态
-func (s *RecordService) trackStatus(batchID int) {
-	statusURL := s.cfg.LivyURL + "/" + strconv.FormatInt(int64(batchID), 10)
-	ticker := time.NewTicker(2 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		resp, err := http.Get(statusURL)
-		if err != nil {
-			fmt.Printf("获取状态失败: %v\n", err)
-			continue
-		}
-
-		var statusResp LivyBatchResponse
-		body, _ := io.ReadAll(resp.Body)
-		json.Unmarshal(body, &statusResp)
-		resp.Body.Close()
-
-		fmt.Printf("BatchID [%d] AppID [%s] 当前状态: %s\n", batchID, statusResp.AppID, statusResp.State)
-		for _, logInfo := range statusResp.Log {
-			fmt.Println(logInfo)
-		}
-		// 如果状态达到终态则退出轮询
-		if statusResp.State == "success" || statusResp.State == "dead" || statusResp.State == "killed" {
-			fmt.Printf("任务结束，最终状态: %s\n", statusResp.State)
-			break
-		}
+	sparkTask, err := s.livyServer.CreateBatch(request)
+	if err != nil {
+		return "", err
 	}
+
+	if sparkTask == nil {
+		return "", errors.New("spark task is nil")
+	}
+	return strconv.Itoa(sparkTask.ID), nil
 }

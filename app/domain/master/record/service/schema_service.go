@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
 	"github.com/liuxd6825/jsonschema/v6"
@@ -27,7 +27,7 @@ type schemaService struct {
 	fileService IFileService
 }
 
-func NewSchemaService(env *env.Env, rootPath string) ISchemaService {
+func NewSchemaService(env *envs.Env, rootPath string) ISchemaService {
 	return &schemaService{
 		fileService: NewFileService(env, "src"),
 	}

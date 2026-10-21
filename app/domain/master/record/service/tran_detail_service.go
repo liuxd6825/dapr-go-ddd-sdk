@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 )
@@ -16,16 +14,10 @@ type TranDetailService struct {
 	dao *dao.TranDao
 }
 
-var _tranDetailService *TranDetailService
-var _tranDetailServiceOnce sync.Once
-
-func NewTranDetailService() *TranDetailService {
-	_tranDetailServiceOnce.Do(func() {
-		_tranDetailService = &TranDetailService{
-			dao: dao.NewTranDao(config.DBKey),
-		}
-	})
-	return _tranDetailService
+func NewTranDetailService(dbKey string) *TranDetailService {
+	return &TranDetailService{
+		dao: dao.NewTranDao(dbKey),
+	}
 }
 
 func (r *TranDetailService) CreateMany(ctx context.Context, v []*model.Tran, opts ...idao.CallOptions) error {

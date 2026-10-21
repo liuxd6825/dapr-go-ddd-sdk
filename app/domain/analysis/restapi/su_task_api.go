@@ -3,32 +3,32 @@ package restapi
 import (
 	"context"
 
-	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
-
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/command"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service"
+	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 type SuTaskApi struct {
 	taskService *service.SuTaskService
 	codeService *service2.CodeService
-	env         *env.Env
+	env         *envs.Env
 	rootPath    string
+	dbKey       string
 }
 
-func NewSuTaskApi(env *env.Env, rootPath string) *SuTaskApi {
-	taskService := service.NewSuTaskService()
-	codeService := service2.NewCodeService()
+func NewSuTaskApi(env *envs.Env, rootPath string, dbKey string) *SuTaskApi {
+	taskService := service.NewSuTaskService(dbKey)
+	codeService := service2.NewCodeService(dbKey)
 	return &SuTaskApi{
+		dbKey:       dbKey,
 		env:         env,
 		rootPath:    rootPath,
 		taskService: taskService,
@@ -39,13 +39,13 @@ func NewSuTaskApi(env *env.Env, rootPath string) *SuTaskApi {
 func (s *SuTaskApi) NewAPIController(app *iris.Application) *restapi.ApiController {
 	controller := restapi.NewController(app, s.rootPath, "analysis.SuTaskApi", s)
 
-	controller.Post("/analysis/su-task", "Create", restapi.WithTranDbKey(config.DBKey))
-	controller.Put("/analysis/su-task", "Update", restapi.WithTranDbKey(config.DBKey))
+	controller.Post("/analysis/su-task", "Create", restapi.WithTranDbKey(s.dbKey))
+	controller.Put("/analysis/su-task", "Update", restapi.WithTranDbKey(s.dbKey))
 	controller.Put("/analysis/su-task:analysis", "Analysis")
-	controller.Delete("/analysis/su-task", "Delete", restapi.WithTranDbKey(config.DBKey))
-	controller.Post("/analysis/su-task:renew", "Renew", restapi.WithTranDbKey(config.DBKey))
-	controller.Post("/analysis/su-task:close", "Close", restapi.WithTranDbKey(config.DBKey))
-	controller.Post("/analysis/su-task:complete", "Complete", restapi.WithTranDbKey(config.DBKey))
+	controller.Delete("/analysis/su-task", "Delete", restapi.WithTranDbKey(s.dbKey))
+	controller.Post("/analysis/su-task:renew", "Renew", restapi.WithTranDbKey(s.dbKey))
+	controller.Post("/analysis/su-task:close", "Close", restapi.WithTranDbKey(s.dbKey))
+	controller.Post("/analysis/su-task:complete", "Complete", restapi.WithTranDbKey(s.dbKey))
 
 	controller.GetOne("/analysis/su-task/{id}", "FindById")
 	controller.GetData("/analysis/su-task:status/{id}", "FindStatusById")

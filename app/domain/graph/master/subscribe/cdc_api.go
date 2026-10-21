@@ -6,28 +6,27 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CdcAPI struct {
-	env           *env.Env
+	env           *envs.Env
 	rootPath      string
 	masterService *service.MasterService
 	queryService  *service.MasterQueryService
-	recordService *service.RagRecordService
 }
 
 var dataChangeURL = "/subscribe/graph/master/cdc/data-change"
 
-func NewCdcAPI(env *env.Env, rootPath string) *CdcAPI {
-	masterService := service.NewMasterService().Init()
+func NewCdcAPI(env *envs.Env, rootPath string, hugeDbKey string) *CdcAPI {
+	hugeClient := env.GetHugeClient(hugeDbKey)
+	masterService := service.NewMasterService(hugeDbKey, hugeClient).Init()
 	return &CdcAPI{
 		env:           env,
 		rootPath:      rootPath,
 		masterService: masterService,
-		recordService: service.NewRecordService(),
 	}
 }
 
@@ -45,8 +44,5 @@ func (s *CdcAPI) DaprOptions(ctx context.Context) error {
 
 func (s *CdcAPI) DataChange(ctx context.Context, ictx iris.Context, cdc *dbevent.CDCRecord) error {
 	logs.Infofmt(ctx, "%s CdcAPI.DataChange(CDCRecord) table:[%s]", dataChangeURL, cdc.Table)
-	if cdc.Table == "master_record" {
-		return s.recordService.DataChange(ctx, cdc)
-	}
 	return s.masterService.DataChange(ctx, cdc)
 }

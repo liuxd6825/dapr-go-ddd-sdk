@@ -3,15 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
-	"sync"
 )
 
 type TagService struct {
@@ -20,19 +19,12 @@ type TagService struct {
 	tagTypeService *TagTypeService
 }
 
-var (
-	_tagOnce          sync.Once
-	_tagDomainService *TagService
-)
+func NewTagService(mongoDbKey string) *TagService {
+	return &TagService{
+		dao:            dao.NewTagDao(mongoDbKey),
+		tagTypeService: NewTagTypeService(mongoDbKey),
+	}
 
-func NewTagService() *TagService {
-	_tagOnce.Do(func() {
-		_tagDomainService = &TagService{
-			dao:            dao.NewTagDao(config.DBKey),
-			tagTypeService: NewTagTypeService(),
-		}
-	})
-	return _tagDomainService
 }
 
 func (t *TagService) Create(ctx context.Context, cmd *command.TagCreateCommand) error {

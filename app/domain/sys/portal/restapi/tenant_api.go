@@ -3,6 +3,7 @@ package restapi
 import (
 	"context"
 	"errors"
+
 	"github.com/kataras/iris/v12"
 	service4 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/service"
 	service3 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/service"
@@ -12,19 +13,18 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
 	service5 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 type TenantAPI struct {
-	env               *env.Env
+	env               *envs.Env
 	tenantService     *service.TenantService
 	userService       *service.UserService
 	tenantUserService *service.TenantUserService
@@ -33,24 +33,26 @@ type TenantAPI struct {
 	bankService       *service4.BankService
 	tagService        *service5.TagService
 	rootPath          string
+	dbKey             string
 }
 
-func NewTenantAPI(env *env.Env, rootPath string) *TenantAPI {
+func NewTenantAPI(env *envs.Env, rootPath string, dbKey string) *TenantAPI {
 	return &TenantAPI{
 		env:               env,
-		tenantService:     service.NewTenantService(),
-		userService:       service.NewUserService(),
-		tenantUserService: service.NewTenantUserService(),
-		oryService:        service2.NewOryService(),
-		currencyService:   service3.NewCurrencyService(),
-		bankService:       service4.NewBankService(),
-		tagService:        service5.NewTagService(),
+		dbKey:             dbKey,
+		tenantService:     service.NewTenantService(dbKey),
+		userService:       service.NewUserService(dbKey),
+		tenantUserService: service.NewTenantUserService(dbKey),
+		oryService:        service2.NewOryService(dbKey),
+		currencyService:   service3.NewCurrencyService(dbKey),
+		bankService:       service4.NewBankService(dbKey),
+		tagService:        service5.NewTagService(dbKey),
 		rootPath:          rootPath,
 	}
 }
 
 func (s *TenantAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.tenantService = service.NewTenantService()
+	s.tenantService = service.NewTenantService(s.dbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TenantAPI", s)
 	ctl.Post("/tenant", "Create")
 	ctl.Post("/tenant:init", "InitTenant")
@@ -64,7 +66,7 @@ func (s *TenantAPI) NewAPIController(app *iris.Application) *restapi.ApiControll
 
 func (s *TenantAPI) InitTenant(ctx context.Context, tenant *command.InitTenant) error {
 
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.dbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 
 		ctx, err := restapp.NewTestContext(context.Background(), func(option *restapp.ContextOption) {
 			tenantId := service.SystemTenantId
@@ -90,7 +92,7 @@ func (s *TenantAPI) InitTenant(ctx context.Context, tenant *command.InitTenant) 
 }
 
 func (s *TenantAPI) Create(ctx context.Context, cmd *command.TenantCreateCommand) error {
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.dbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 
 		err := s.tenantService.Create(ctx, &cmd.Data)
 		if err != nil {
@@ -140,7 +142,7 @@ func (s *TenantAPI) Update(ctx context.Context, cmd *command.TenantUpdateCommand
 }
 
 func (s *TenantAPI) Delete(ctx context.Context, cmd *command.TenantDeleteCommand) error {
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.dbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 		err := s.tenantUserService.DeleteByTenantIds(ctx, []string{cmd.Data.Id})
 		if err != nil {
 			return err

@@ -5,17 +5,17 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type RecordHandler struct {
-	env           *env.Env
+	env           *envs.Env
 	rootPath      string
 	recordService *RecordService
 }
 
-func NewRecordHandler(env *env.Env, rootPath string) *RecordHandler {
+func NewRecordHandler(env *envs.Env, rootPath string) *RecordHandler {
 	return &RecordHandler{
 		env:           env,
 		rootPath:      rootPath,

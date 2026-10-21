@@ -7,7 +7,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
@@ -20,11 +19,11 @@ type ExcelRowService struct {
 	sheetService *ExcelSheetService
 }
 
-func NewExcelRowService() *ExcelRowService {
+func NewExcelRowService(dbKey string) *ExcelRowService {
 	return singleutils.CreateObj[*ExcelRowService](func() *ExcelRowService {
 		return &ExcelRowService{
-			rowDao:       dao.NewExcelRowDao(config.DBKey),
-			sheetService: NewExcelSheetService(),
+			rowDao:       dao.NewExcelRowDao(dbKey),
+			sheetService: NewExcelSheetService(dbKey),
 		}
 	})
 }

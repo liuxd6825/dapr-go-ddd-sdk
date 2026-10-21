@@ -2,7 +2,7 @@ package server_pkg
 
 import (
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/fspkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/definition"
 	element2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
@@ -15,7 +15,7 @@ type IServer interface {
 	App() *iris.Application
 	SrcFs() afero.Fs
 	FsPkg() fspkg.FsPkg
-	Env() *env.Env
+	Env() *envs.Env
 	Tpl() *tpl_pkg.Template             // 模板渲染服务
 	Definition() *definition.Definition // 系统定义类
 	CacheEnable() bool                  // 是否启用缓存
@@ -27,7 +27,7 @@ type Server struct {
 	app          *iris.Application           // App应用实例
 	srcFs        afero.Fs                    // 源代码文件系统
 	fsPkg        fspkg.IFsPkg                // 文件系统管理器
-	env          *env.Env                    // 环境变量
+	env          *envs.Env                   // 环境变量
 	tpl          *tpl_pkg.Template           // 模板渲染服务
 	definition   *definition.Definition      // 系统定义类
 	cacheEnable  bool                        // 是否启用缓存
@@ -57,7 +57,7 @@ func (s *Server) FsPkg() fspkg.IFsPkg {
 	return s.fsPkg
 }
 
-func (s *Server) Env() *env.Env {
+func (s *Server) Env() *envs.Env {
 	return s.env
 }
 

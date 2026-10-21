@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -16,7 +16,7 @@ type BroadcastMessage struct {
 
 var rdb *redis.Client
 
-func InitRedis(env *env.Env) {
+func InitRedis(env *envs.Env) {
 	rdb, ok := env.GetRedis("$notify")
 	if ok && rdb != nil {
 		// 启动监听协程

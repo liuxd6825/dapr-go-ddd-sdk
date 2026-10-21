@@ -6,17 +6,17 @@ import (
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type GraphAPI struct {
-	env          *env.Env
+	env          *envs.Env
 	graphService *service.GraphService
 	rootPath     string
 }
 
-func NewGraphAPI(env *env.Env, rootPath string) *GraphAPI {
+func NewGraphAPI(env *envs.Env, rootPath string) *GraphAPI {
 	graphService := service.NewGraphService()
 	return &GraphAPI{
 		env:          env,

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"sync"
 
+	folder_event "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/event"
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/query"
-	folder_event "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/event"
 	code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -24,13 +24,14 @@ const folderAppId = "duxm-master-cmd-service"
 
 // ContractService 合同业务服务
 type ContractService struct {
-	dao         *dao.ContractDao
-	codeSvc     *code_service.CodeService
-	feign       any
+	dbKey         string
+	dao           *dao.ContractDao
+	codeSvc       *code_service.CodeService
+	feign         any
 	companyRelDao *dao.ContractCompanyDao
-	contractDao *dao.ContractContractDao
-	humanDao    *dao.ContractHumanDao
-	productDao  *dao.ContractProductDao
+	contractDao   *dao.ContractContractDao
+	humanDao      *dao.ContractHumanDao
+	productDao    *dao.ContractProductDao
 }
 
 var _contractService *ContractService
@@ -39,14 +40,16 @@ var _contractServiceOnce sync.Once
 // NewContractService 单例构造函数
 func NewContractService() *ContractService {
 	_contractServiceOnce.Do(func() {
+		dbKey := masterconfigs.GetMongoDbKey()
 		_contractService = &ContractService{
-			dao:           dao.NewContractDao(config.DBKey),
-			codeSvc:       code_service.NewCodeService(),
+			dbKey:         dbKey,
 			feign:         nil,
-			companyRelDao: dao.NewContractCompanyDao(config.DBKey),
-			contractDao:   dao.NewContractContractDao(config.DBKey),
-			humanDao:      dao.NewContractHumanDao(config.DBKey),
-			productDao:    dao.NewContractProductDao(config.DBKey),
+			dao:           dao.NewContractDao(dbKey),
+			codeSvc:       code_service.NewCodeService(dbKey),
+			companyRelDao: dao.NewContractCompanyDao(dbKey),
+			contractDao:   dao.NewContractContractDao(dbKey),
+			humanDao:      dao.NewContractHumanDao(dbKey),
+			productDao:    dao.NewContractProductDao(dbKey),
 		}
 	})
 	return _contractService
@@ -182,7 +185,7 @@ func (s *ContractService) publishFolderCreateEvent(ctx context.Context, contract
 		},
 	}
 	evt := folder_event.NewFolderCreateEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderCreateEvent error: %s", err.Error())
 	}
 }
@@ -194,7 +197,7 @@ func (s *ContractService) publishFolderUpdateAliasEvent(ctx context.Context, con
 		Alias: contract.Name,
 	}
 	evt := folder_event.NewFolderUpdateAliasEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderUpdateAliasEvent error: %s", err.Error())
 	}
 }
@@ -213,7 +216,7 @@ func (s *ContractService) publishFolderDeleteEvent(ctx context.Context, ids []st
 		EntityId: caseId,
 	}
 	evt := folder_event.NewFolderDeleteEvent(ctx, folderAppId, data)
-	if err := xbase.PublishEvent(ctx, evt); err != nil {
+	if err := xbase.PublishEvent(ctx, evt, s.dbKey); err != nil {
 		logs.Errorfmt(ctx, "publish FolderDeleteEvent error: %s", err.Error())
 	}
 }

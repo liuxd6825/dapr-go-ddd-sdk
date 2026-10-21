@@ -5,10 +5,11 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
+	graphconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/event"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/miniofs"
@@ -20,13 +21,22 @@ import (
 // @Description: 处理数据导入事件，触发 s3 parquet 批量导入 Neo4j
 type RecordEventSubHandler struct {
 	rootPath      string
-	env           *env.Env
+	env           *envs.Env
 	fs            afero.Fs
-	recordService *service.RecordParquetService
+	recordService *service.RecordService
 }
 
-func NewRecordEventHandler(env *env.Env, baseUrl string) (*RecordEventSubHandler, error) {
-	fs, err := miniofs.NewFs(env, "default", "importData")
+// NewRecordEventHandler
+//
+//	@Description:
+//	@param env
+//	@param baseUrl
+//	@param s3Key  "default",
+//	@param s3bucketKey "importData"
+//	@return *RecordEventSubHandler
+//	@return error
+func NewRecordEventHandler(env *envs.Env, baseUrl string, s3Key string, s3bucketKey string, graphCfg graphconfigs.Config) (*RecordEventSubHandler, error) {
+	fs, err := miniofs.NewFs(env, s3Key, s3bucketKey)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +44,7 @@ func NewRecordEventHandler(env *env.Env, baseUrl string) (*RecordEventSubHandler
 		rootPath:      baseUrl,
 		env:           env,
 		fs:            fs,
-		recordService: service.NewRecordParquetService(env),
+		recordService: service.NewRecordServiceWithEnv(env, graphCfg),
 	}, nil
 }
 
@@ -58,14 +68,18 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, ev 
 	}
 	data := ev.Data
 
-	s3URL := data.S3FileUrl
+	s3DataUrl := data.S3FileUrl
 	caseId := data.CaseId
+	taskId := data.TaskId
 
-	if s3URL == "" {
+	if s3DataUrl == "" {
 		return errors.New("event.Data.S3FileUrl is empty")
 	}
 	if caseId == "" {
 		return errors.New("event.Data.CaseId is empty")
+	}
+	if taskId == "" {
+		return errors.New("event.Data.TaskId is empty")
 	}
 
 	// tenantId 优先从 ctx 拿 (订阅路径已注入), 事件自身作为兜底
@@ -82,45 +96,22 @@ func (s *RecordEventSubHandler) RecordImportMasterEvent(ctx context.Context, ev 
 		" occurredOn=", ev.CreatedTime.Format(time.RFC3339Nano),
 		" tenantId=", tenantId,
 		" caseId=", caseId,
-		" s3URL=", s3URL,
+		" s3URL=", s3DataUrl,
 		" taskId=", data.TaskId,
 		" fileId=", data.FileId,
 		" fileName=", data.FileName,
 	)
 
-	opts := service.ImportOptions{
-		BatchSize:   500,
-		Parallel:    false,
-		Concurrency: 1,
-		Retries:     1,
-	}
+	s3SparkJarURL := ""
 
-	res, err := s.recordService.ImportFromS3(ctx, s3URL, caseId, opts)
+	sparkTaskId, err := s.recordService.CreateImportTask(ctx, caseId, taskId, s3DataUrl, s3SparkJarURL, taskId)
 	if err != nil {
 		logs.ErrorErr(ctx, err)
 		logs.Errorfmt(ctx, "RecordImportMasterEvent failed: eventId=%s caseId=%s err=%v", ev.Id, caseId, err)
 		return err
 	}
 
-	if res == nil {
-		return errors.New("ImportFromS3 returned nil result")
-	}
+	logs.Infofmt(ctx, "RecordImportMasterEvent end Spark Task ID: %s", sparkTaskId)
 
-	logs.InfoMsg(ctx, "RecordImportMasterEvent success",
-		" eventId=", ev.Id,
-		" tenantId=", tenantId,
-		" caseId=", caseId,
-		" batches=", res.Batches,
-		" total=", res.Total,
-		" committed=", res.CommittedOperations,
-		" failed=", res.FailedOperations,
-		" timeMs=", res.TimeTakenMs,
-	)
-
-	if res.FailedOperations > 0 {
-		logs.Errorfmt(ctx, "RecordImportMasterEvent has failures: eventId=%s failed=%d errors=%v",
-			ev.Id, res.FailedOperations, res.ErrorMessages)
-		return errors.New("record import has %d failed operations", res.FailedOperations)
-	}
 	return nil
 }

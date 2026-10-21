@@ -7,7 +7,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/status/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/status/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/status/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
@@ -17,8 +16,8 @@ type StatusService struct {
 	dao *dao.StatusDao
 }
 
-func NewStatusService() *StatusService {
-	statusDao := dao.NewStatusDao(config.DBKey)
+func NewStatusService(dbKey string) *StatusService {
+	statusDao := dao.NewStatusDao(dbKey)
 	return &StatusService{
 		dao: statusDao,
 	}

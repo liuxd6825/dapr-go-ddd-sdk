@@ -3,6 +3,7 @@ package restapi
 import (
 	"context"
 	"errors"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 
 	"github.com/kataras/iris/v12"
@@ -14,31 +15,33 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	client "github.com/ory/kratos-client-go"
 )
 
 type UserAPI struct {
-	env               *env.Env
+	env               *envs.Env
 	userService       *service.UserService
 	oryService        *service2.OryService
 	tenantUserService *service.TenantUserService
 	rootPath          string
+	mongoDbKey        string
 }
 
-func NewUserAPI(env *env.Env, rootPath string) *UserAPI {
+func NewUserAPI(env *envs.Env, rootPath string, mongoDbKey string) *UserAPI {
 	return &UserAPI{
 		env:               env,
-		userService:       service.NewUserService(),
-		oryService:        service2.NewOryService(),
-		tenantUserService: service.NewTenantUserService(),
+		mongoDbKey:        mongoDbKey,
+		userService:       service.NewUserService(mongoDbKey),
+		oryService:        service2.NewOryService(mongoDbKey),
+		tenantUserService: service.NewTenantUserService(mongoDbKey),
 		rootPath:          rootPath,
 	}
 }
 
 func (s *UserAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.userService = service.NewUserService()
+	s.userService = service.NewUserService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.UserAPI", s)
 	ctl.Post("/user", "Create")
 	ctl.Put("/user", "Update")

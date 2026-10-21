@@ -55,6 +55,12 @@ envs:
             dim: 1024
         ory:
           url: "http://127.0.0.1:4434"
+
+        graphService:
+          dbKey: "huge",
+          livyServer:
+            ip: "192.168.120.200".
+            port: 18080
     fs:
       - name: "documentIoStore"
         type: local
@@ -153,3 +159,7 @@ envs:
         db: 2
         pwd: 123456
         poolSize: 10
+    huge:
+      huge:
+        host: 192.168.120.200
+

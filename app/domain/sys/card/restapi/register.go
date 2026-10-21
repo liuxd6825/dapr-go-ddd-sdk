@@ -2,20 +2,23 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	sysconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
+func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys.card"}, func() error {
-		RegisterHomeAPI(app, baseUrl, env)
-		RegisterGroupAPI(app, baseUrl, env)
-		RegisterCardAPI(app, baseUrl, env)
-		RegisterAppAPI(app, baseUrl, env)
-		RegisterFunAPI(app, baseUrl, env)
-		RegisterCardFileAPI(app, baseUrl, env)
+
+		RegisterHomeAPI(app, baseUrl, env, config)
+		RegisterGroupAPI(app, baseUrl, env, config)
+		RegisterCardAPI(app, baseUrl, env, config)
+		RegisterAppAPI(app, baseUrl, env, config)
+		RegisterFunAPI(app, baseUrl, env, config)
+		RegisterCardFileAPI(app, baseUrl, env, config)
 		return nil
 	})
 	if err != nil {
@@ -23,27 +26,26 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *env.Env) {
 	}
 }
 
-func RegisterHomeAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewHomeAPI(env, baseUrl))
+func RegisterHomeAPI(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
+	restapi.RegisterController(app, NewHomeAPI(env, baseUrl, config.MongoDbKey))
 }
 
-func RegisterGroupAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewGroupAPI(env, baseUrl))
+func RegisterGroupAPI(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
+	restapi.RegisterController(app, NewGroupAPI(env, baseUrl, config.MongoDbKey))
 }
 
-func RegisterCardAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	api := NewCardAPI(env, baseUrl)
-	restapi.RegisterController(app, api)
+func RegisterCardAPI(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
+	restapi.RegisterController(app, NewCardAPI(env, baseUrl, config.MongoDbKey))
 }
 
-func RegisterAppAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewAppAPI(env, baseUrl))
+func RegisterAppAPI(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
+	restapi.RegisterController(app, NewAppAPI(env, baseUrl, config.MongoDbKey))
 }
 
-func RegisterFunAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewFunAPI(env, baseUrl))
+func RegisterFunAPI(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
+	restapi.RegisterController(app, NewFunAPI(env, baseUrl, config.MongoDbKey))
 }
 
-func RegisterCardFileAPI(app *iris.Application, baseUrl string, env *env.Env) {
-	restapi.RegisterController(app, NewCardFileAPI(env, baseUrl))
+func RegisterCardFileAPI(app *iris.Application, baseUrl string, env *envs.Env, config sysconfigs.Config) {
+	restapi.RegisterController(app, NewCardFileAPI(env, baseUrl, config.MongoDbKey))
 }

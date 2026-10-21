@@ -1,7 +1,7 @@
 package xtest
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 )
 
@@ -68,14 +68,14 @@ type HugeOptions struct {
 	Password string
 }
 
-func InitEnv_Neo4j(opts ...Neo4jOptions) *env.Env {
+func InitEnv_Neo4j(opts ...Neo4jOptions) *envs.Env {
 	envVal := NewEnvConfigNeo4j(opts...)
-	env.SetEnv(envVal)
+	envs.SetEnv(envVal)
 	return envVal
 }
 
-func NewEnvConfig() *env.Env {
-	res := env.NewEnv()
+func NewEnvConfig() *envs.Env {
+	res := envs.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
 	res.App.HttpHost = "localhost"
@@ -83,7 +83,7 @@ func NewEnvConfig() *env.Env {
 	return res
 }
 
-func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
+func NewEnvConfigNeo4j(opts ...Neo4jOptions) *envs.Env {
 	addr := "localhost"
 	dbKey := "neo4jdao"
 	port := "7687"
@@ -110,7 +110,7 @@ func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
 			password = opt.Password
 		}
 	}
-	res := env.NewEnv()
+	res := envs.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
 	res.App.HttpHost = ""
@@ -119,7 +119,7 @@ func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
 		"db": dbKey,
 	}
 
-	res.AddNeo4j(&env.Neo4j{
+	res.AddNeo4j(&envs.Neo4j{
 		DbKey:    dbKey,
 		Host:     addr,
 		Port:     port,
@@ -131,7 +131,7 @@ func NewEnvConfigNeo4j(opts ...Neo4jOptions) *env.Env {
 	return res
 }
 
-func NewEnvConfigHuge(opts ...HugeOptions) *env.Env {
+func NewEnvConfigHuge(opts ...HugeOptions) *envs.Env {
 	addr := "localhost"
 	dbKey := "huge"
 	port := 8080
@@ -158,7 +158,7 @@ func NewEnvConfigHuge(opts ...HugeOptions) *env.Env {
 			password = opt.Password
 		}
 	}
-	res := env.NewEnv()
+	res := envs.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
 	res.App.HttpHost = ""
@@ -168,7 +168,7 @@ func NewEnvConfigHuge(opts ...HugeOptions) *env.Env {
 	}
 	res.Dapr.SetEnable(false)
 
-	res.AddHuge(&env.Huge{
+	res.AddHuge(&envs.Huge{
 		DbKey:    dbKey,
 		Host:     addr,
 		Port:     port,
@@ -180,7 +180,7 @@ func NewEnvConfigHuge(opts ...HugeOptions) *env.Env {
 	return res
 }
 
-func NewEnvConfigNebula(opts ...NebulaOptions) *env.Env {
+func NewEnvConfigNebula(opts ...NebulaOptions) *envs.Env {
 	addr := NebulaHostLocal + ":9669"
 	dbKey := NebulaDBKey
 	user := "root"
@@ -207,7 +207,7 @@ func NewEnvConfigNebula(opts ...NebulaOptions) *env.Env {
 			poolSize = opt.PoolSize
 		}
 	}
-	res := env.NewEnv()
+	res := envs.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
 	res.App.HttpHost = ""
@@ -216,7 +216,7 @@ func NewEnvConfigNebula(opts ...NebulaOptions) *env.Env {
 		"db": dbKey,
 	}
 
-	res.AddNebula(&env.Nebula{
+	res.AddNebula(&envs.Nebula{
 		Name:     dbKey,
 		Addrs:    []string{addr},
 		User:     user,
@@ -228,33 +228,33 @@ func NewEnvConfigNebula(opts ...NebulaOptions) *env.Env {
 	return res
 }
 
-func InitEnv_Nebula(opts ...NebulaOptions) *env.Env {
+func InitEnv_Nebula(opts ...NebulaOptions) *envs.Env {
 	envVal := NewEnvConfigNebula(opts...)
-	env.SetEnv(envVal)
+	envs.SetEnv(envVal)
 	return envVal
 }
 
-func InitEnv_MongoRemoteTest(opts ...*MongoOptions) *env.Env {
+func InitEnv_MongoRemoteTest(opts ...*MongoOptions) *envs.Env {
 	envVal := NewEnvConfigMongo(GetMongoEnv_Remote(opts...))
-	env.SetEnv(envVal)
+	envs.SetEnv(envVal)
 	return envVal
 }
 
-func InitEnv_MongoRemoteMaster(opts ...*MongoOptions) *env.Env {
+func InitEnv_MongoRemoteMaster(opts ...*MongoOptions) *envs.Env {
 	opt := NewMongoOptions(opts...).SetDBName("master")
 	envVal := NewEnvConfigMongo(GetMongoEnv_Remote(opt))
-	env.SetEnv(envVal)
+	envs.SetEnv(envVal)
 	return envVal
 }
 
-func InitEnv_MongoLocal(opts ...*MongoOptions) *env.Env {
+func InitEnv_MongoLocal(opts ...*MongoOptions) *envs.Env {
 	envVal := NewEnvConfigMongo(GetMongoEnv_Local(opts...))
-	env.SetEnv(envVal)
+	envs.SetEnv(envVal)
 	return envVal
 }
 
-func NewEnvConfigMongo(mongoCfg *env.Mongo) *env.Env {
-	res := env.NewEnv()
+func NewEnvConfigMongo(mongoCfg *envs.Mongo) *envs.Env {
+	res := envs.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
 	res.App.HttpHost = "localhost"
@@ -274,8 +274,8 @@ func NewEnvConfigMongo(mongoCfg *env.Mongo) *env.Env {
 	return res
 }
 
-func NewEnvConfig_Fs(name, path string) *env.Env {
-	res := env.NewEnv()
+func NewEnvConfig_Fs(name, path string) *envs.Env {
+	res := envs.NewEnv()
 	res.App.AppId = "test"
 	res.App.AppName = "app"
 	res.App.HttpHost = "localhost"

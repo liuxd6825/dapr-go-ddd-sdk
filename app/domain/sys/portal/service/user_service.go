@@ -4,16 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/enum"
 	dao2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/goserver/pkg/orm_pkg/dao"
 	client "github.com/ory/kratos-client-go"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -29,21 +28,13 @@ type UserService struct {
 	tuDao      *dao.TenantUserDao
 }
 
-var (
-	_userOnce          sync.Once
-	_userDomainService *UserService
-)
-
-func NewUserService() *UserService {
-	_userOnce.Do(func() {
-		_userDomainService = &UserService{
-			tenantOpt:  idao.NewCallOptions().SetTenantId(SystemTenantId),
-			dao:        dao.NewUserDao(config.DBKey),
-			oryService: service2.NewOryService(),
-			tuDao:      dao.NewTenantUserDao(config.DBKey),
-		}
-	})
-	return _userDomainService
+func NewUserService(mongoDbKey string) *UserService {
+	return &UserService{
+		tenantOpt:  idao.NewCallOptions().SetTenantId(SystemTenantId),
+		dao:        dao.NewUserDao(mongoDbKey),
+		oryService: service2.NewOryService(mongoDbKey),
+		tuDao:      dao.NewTenantUserDao(mongoDbKey),
+	}
 }
 
 func (t *UserService) GetConfig() *idao.DaoConfig {

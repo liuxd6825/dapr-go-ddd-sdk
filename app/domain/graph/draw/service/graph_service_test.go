@@ -7,7 +7,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/neo4jdao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
@@ -47,7 +47,7 @@ func Test_Diff3(t *testing.T) {
 func Test_AddObject(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
-		env.SetEnv(newEnv())
+		envs.SetEnv(newEnv())
 		diff := mxgraph.NewFileDiff(addObjectJson)
 		if diff == nil {
 			return errors.New("diff is nil")
@@ -68,7 +68,7 @@ func Test_AddObject(t *testing.T) {
 func Test_UpdateLabel(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
-		env.SetEnv(newEnv())
+		envs.SetEnv(newEnv())
 		diff := mxgraph.NewFileDiff(updateLabelJson)
 		if diff == nil {
 			t.Fatal("diff is nil")
@@ -90,7 +90,7 @@ func Test_UpdateLabel(t *testing.T) {
 func Test_AllJson(t *testing.T) {
 	gp.Try(func() error {
 		ctx := xtest.NewContext()
-		env.SetEnv(newEnv())
+		envs.SetEnv(newEnv())
 
 		diff := mxgraph.NewFileDiff(allJson)
 		if diff == nil {
@@ -109,9 +109,9 @@ func Test_AllJson(t *testing.T) {
 	})
 }
 
-func newEnv() *env.Env {
+func newEnv() *envs.Env {
 	envCfg := xtest.NewEnvConfigNeo4j()
-	env.SetEnv(envCfg)
+	envs.SetEnv(envCfg)
 	return envCfg
 }
 

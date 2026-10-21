@@ -7,10 +7,10 @@ import (
 	"sync"
 
 	dapr "github.com/dapr/go-sdk/client"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/pkg"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -22,22 +22,22 @@ type BroadcastMessage struct {
 type NotifyService struct {
 	daprClient  dapr.Client
 	redisClient *redis.Client
-	env         *env.Env
+	env         *envs.Env
 	websockets  *pkg.WebsocketManager
 }
 
 var notifyServiceOnce sync.Once
 var notifyServiceInstance *NotifyService
 
-func NewNotifyService(client dapr.Client, env *env.Env) *NotifyService {
+func NewNotifyService(client dapr.Client, env *envs.Env) *NotifyService {
 	notifyServiceOnce.Do(func() {
 		notifyServiceInstance = newNotifyService(client, env)
 	})
 	return notifyServiceInstance
 }
 
-func newNotifyService(client dapr.Client, env *env.Env) *NotifyService {
-	redisClient, ok := env.GetRedis(config.GetRedisKey())
+func newNotifyService(client dapr.Client, env *envs.Env) *NotifyService {
+	redisClient, ok := env.GetRedis(sysconfigs.GetRedisKey())
 	if !ok {
 		panic("redis client not exist")
 	}

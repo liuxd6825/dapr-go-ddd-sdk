@@ -8,18 +8,18 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DocumentAPI struct {
-	env        *env.Env
+	env        *envs.Env
 	docService *service.DocumentService
 	rootPath   string
 }
 
-func NewDocumentAPI(env *env.Env, rootPath string) *DocumentAPI {
-	docService := service.NewDocumentService(outside.NewImportStatusProvider())
+func NewDocumentAPI(env *envs.Env, rootPath string, mongoDbKey string) *DocumentAPI {
+	docService := service.NewDocumentService(outside.NewImportStatusProvider(mongoDbKey), mongoDbKey)
 	return &DocumentAPI{
 		env:        env,
 		docService: docService,

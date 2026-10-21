@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -23,19 +22,12 @@ type BankService struct {
 	dao *dao.BankDao
 }
 
-var (
-	_bankOnce    sync.Once
-	_bankService *BankService
-)
-
-func NewBankService() *BankService {
-	_bankOnce.Do(func() {
-		bankDao := dao.NewBankDao(config.DBKey)
-		_bankService = &BankService{
-			dao: bankDao,
-		}
-	})
-	return _bankService
+func NewBankService(dbKey string) *BankService {
+	bankDao := dao.NewBankDao(dbKey)
+	service := &BankService{
+		dao: bankDao,
+	}
+	return service
 }
 
 func (s *BankService) GetConfig() *idao.DaoConfig {

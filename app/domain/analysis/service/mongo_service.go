@@ -7,22 +7,20 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type MongoService struct {
-	env      *env.Env
+	env      *envs.Env
 	rootPath string
 	client   *mongo.Client
 	database *mongo.Database
 }
 
-func NewMongoService(env *env.Env, rootPath string) *MongoService {
-	dbKey := env.GetDBKeyValue(config.DBKey)
+func NewMongoService(env *envs.Env, rootPath string, dbKey string) *MongoService {
 	dbItem := env.GetDB(dbKey)
 	if dbItem == nil {
 		panic("mongoDbItem is nil")

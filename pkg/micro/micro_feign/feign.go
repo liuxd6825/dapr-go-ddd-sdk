@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 const Version = "0.6.0"
@@ -40,7 +40,7 @@ func WithBaseURL(url string) BuildOption {
 //	@return BuildOption
 func WithAppIdURL(appId string) BuildOption {
 	return func(opt *buildOptions) {
-		opt.baseUrl = env.GetHttpInvoke(appId)
+		opt.baseUrl = envs.GetHttpInvoke(appId)
 	}
 }
 

@@ -2,32 +2,35 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CardAPI struct {
-	env         *env.Env
+	env         *envs.Env
 	cardService *service.CardService
 	rootPath    string
+	mongoDbKey  string
 }
 
-func NewCardAPI(env *env.Env, rootPath string) *CardAPI {
+func NewCardAPI(env *envs.Env, rootPath string, mongoDbKey string) *CardAPI {
 	return &CardAPI{
 		env:         env,
-		cardService: service.NewCardService(),
+		mongoDbKey:  mongoDbKey,
+		cardService: service.NewCardService(mongoDbKey),
 		rootPath:    rootPath,
 	}
 }
 
 func (s *CardAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.cardService = service.NewCardService()
+	s.cardService = service.NewCardService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.CardAPI", s)
 	ctl.Post("/card", "Create")
 	ctl.Put("/card", "Update")

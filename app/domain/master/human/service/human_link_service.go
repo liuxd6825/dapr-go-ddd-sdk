@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -21,7 +21,7 @@ var _humanlinkServiceOnce sync.Once
 
 func NewHumanLinkService() *HumanLinkService {
 	_humanlinkServiceOnce.Do(func() {
-		_humanlinkService = &HumanLinkService{dao: dao.NewHumanLinkDao(config.DBKey)}
+		_humanlinkService = &HumanLinkService{dao: dao.NewHumanLinkDao(masterconfigs.GetMongoDbKey())}
 	})
 	return _humanlinkService
 }

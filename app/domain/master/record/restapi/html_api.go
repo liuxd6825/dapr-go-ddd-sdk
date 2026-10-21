@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 )
@@ -13,7 +13,7 @@ type HtmlAPI struct {
 	service service.IFileService
 }
 
-func NewHtmlAPI(env *env.Env, rootPath string) *HtmlAPI {
+func NewHtmlAPI(env *envs.Env, rootPath string) *HtmlAPI {
 	return &HtmlAPI{
 		service: service.NewFileService(env, "web"),
 	}

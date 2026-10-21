@@ -2,13 +2,11 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -19,18 +17,12 @@ type TemplateService struct {
 	xbase.Service
 }
 
-var (
-	_templateOnce          sync.Once
-	_templateDomainService *TemplateService
-)
+func NewTemplateService(dbKey string) *TemplateService {
 
-func NewTemplateService() *TemplateService {
-	_templateOnce.Do(func() {
-		_templateDomainService = &TemplateService{
-			dao: dao.NewTemplateDao(config.DBKey),
-		}
-	})
-	return _templateDomainService
+	return &TemplateService{
+		dao: dao.NewTemplateDao(dbKey),
+	}
+
 }
 
 func (t *TemplateService) Create(ctx context.Context, cmd *command.TempCreateCommand) error {

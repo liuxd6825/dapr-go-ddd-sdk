@@ -16,10 +16,10 @@ type RecordAPI struct {
 	rootPath string
 }
 
-func NewRecordAPI(rootPath string) *RecordAPI {
+func NewRecordAPI(rootPath string, dbKey string) *RecordAPI {
 	return &RecordAPI{
 		rootPath: rootPath,
-		service:  service.NewRecordService(),
+		service:  service.NewRecordService(dbKey),
 	}
 }
 

@@ -1,6 +1,6 @@
 package xtest
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 
 const (
 	NebulaDBKey      = "default"
@@ -8,8 +8,8 @@ const (
 	NebulaHostRemote = "192.168.120.224"
 )
 
-func GetNebulaRemoteConfig() *env.Nebula {
-	return &env.Nebula{
+func GetNebulaRemoteConfig() *envs.Nebula {
+	return &envs.Nebula{
 		Name:     NebulaDBKey,
 		Addrs:    []string{NebulaHostRemote + ":9669"},
 		User:     "root",

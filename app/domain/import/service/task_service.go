@@ -11,7 +11,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/outside"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/interfaces"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
@@ -26,11 +25,11 @@ type TaskService struct {
 	docStatusProvider interfaces.ImportStatusProvider
 }
 
-func NewTaskService() *TaskService {
+func NewTaskService(dbKey string) *TaskService {
 	return singleutils.CreateObj[*TaskService](func() *TaskService {
 		taskService := &TaskService{
-			dao:               dao2.NewTaskDao(config.DBKey),
-			docStatusProvider: outside.NewImportStatusProvider(),
+			dao:               dao2.NewTaskDao(dbKey),
+			docStatusProvider: outside.NewImportStatusProvider(dbKey),
 		}
 		return taskService
 	})

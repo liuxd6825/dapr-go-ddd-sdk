@@ -8,7 +8,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/open2b/scriggo"
 	"github.com/open2b/scriggo/native"
@@ -25,7 +25,7 @@ type RunOptions func(options *scriggo.BuildOptions, packages native.Packages) er
 //	@param webFsName
 //	@param httpServer
 //	@return error
-func Build(httpServer *restapp.HttpServer, srcFsName string, webFsName string, env *env.Env, autoRestart bool, buildOptions *scriggo.BuildOptions, opts ...RunOptions) (*scriggo.Program, error) {
+func Build(httpServer *restapp.HttpServer, srcFsName string, webFsName string, env *envs.Env, autoRestart bool, buildOptions *scriggo.BuildOptions, opts ...RunOptions) (*scriggo.Program, error) {
 	var err error
 	defer func() {
 		err = errors.GetRecoverError(err, recover())

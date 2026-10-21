@@ -2,31 +2,33 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DocumentMetaAPI struct {
+	dbKey               string
 	rootPath            string
-	env                 *env.Env
+	env                 *envs.Env
 	documentMetaService *service.DocumentMetaService
 	docService          *service.DocumentService
 	folderService       *service.FolderService
 }
 
-func NewDocumentMetaAPI(env *env.Env, rootPath string) *DocumentMetaAPI {
-	docService := service.NewDocumentService()
-	folderService := service.NewFolderService()
-	documentMetaService := service.NewDocumentMetaService()
+func NewDocumentMetaAPI(env *envs.Env, rootPath string, dbKey string) *DocumentMetaAPI {
+	docService := service.NewDocumentService(dbKey)
+	folderService := service.NewFolderService(dbKey)
+	documentMetaService := service.NewDocumentMetaService(dbKey)
 	documentMetaService.SetInit(docService, folderService)
 	return &DocumentMetaAPI{
+		dbKey:               dbKey,
 		rootPath:            rootPath,
 		env:                 env,
 		documentMetaService: documentMetaService,
@@ -50,7 +52,7 @@ func (s *DocumentMetaAPI) Create(ctx context.Context, cmd *command.DocumentMetaC
 }
 
 func (s *DocumentMetaAPI) Save(ctx context.Context, cmd *command.DocumentMetaSubmitCommand) error {
-	err := tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
+	err := tx.StartTx(ctx, []string{s.dbKey}, func(ctx context.Context, options ...*store2.SessionOptions) error {
 		err := s.documentMetaService.Save(ctx, cmd)
 		if err != nil {
 			return err

@@ -6,7 +6,6 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/product/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -19,9 +18,9 @@ type ProductCompanyService struct {
 var _productCompanyService *ProductCompanyService
 var _productCompanyServiceOnce sync.Once
 
-func NewProductCompanyService() *ProductCompanyService {
+func NewProductCompanyService(dbKey string) *ProductCompanyService {
 	_productCompanyServiceOnce.Do(func() {
-		_productCompanyService = &ProductCompanyService{dao: dao.NewProductCompanyDao(config.DBKey)}
+		_productCompanyService = &ProductCompanyService{dao: dao.NewProductCompanyDao(dbKey)}
 	})
 	return _productCompanyService
 }

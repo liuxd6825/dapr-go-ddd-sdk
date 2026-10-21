@@ -6,17 +6,17 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CodeAPI struct {
-	env         *env.Env
+	env         *envs.Env
 	codeService *service.CodeService
 	rootPath    string
 }
 
-func NewCodeAPI(env *env.Env, rootPath string) *CodeAPI {
+func NewCodeAPI(env *envs.Env, rootPath string) *CodeAPI {
 	return &CodeAPI{
 		env:         env,
 		codeService: service.NewCodeService(),

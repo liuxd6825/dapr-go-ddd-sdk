@@ -2,32 +2,35 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/dict/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type DictAPI struct {
-	env         *env.Env
+	env         *envs.Env
 	dictService *service.DictService
 	rootPath    string
+	dbKey       string
 }
 
-func NewDictAPI(env *env.Env, rootPath string) *DictAPI {
+func NewDictAPI(env *envs.Env, rootPath string, dbKey string) *DictAPI {
 	return &DictAPI{
+		dbKey:       dbKey,
 		env:         env,
-		dictService: service.NewDictService(),
+		dictService: service.NewDictService(dbKey),
 		rootPath:    rootPath,
 	}
 }
 
 func (s *DictAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.dictService = service.NewDictService()
+	s.dictService = service.NewDictService(s.dbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.DictApi", s)
 	ctl.Post("/dictionary", "Create")
 	ctl.Put("/dictionary", "Update")

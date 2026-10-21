@@ -2,35 +2,37 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 )
 
 type TenantUserAPI struct {
-	env               *env.Env
+	env               *envs.Env
 	tenantUserService *service.TenantUserService
 	rootPath          string
+	mongoDbKey        string
 }
 
-func NewTenantUserAPI(env *env.Env, rootPath string) *TenantUserAPI {
+func NewTenantUserAPI(env *envs.Env, rootPath string, mongoDbKey string) *TenantUserAPI {
 	return &TenantUserAPI{
 		env:               env,
-		tenantUserService: service.NewTenantUserService(),
+		mongoDbKey:        mongoDbKey,
+		tenantUserService: service.NewTenantUserService(mongoDbKey),
 		rootPath:          rootPath,
 	}
 }
 
 func (s *TenantUserAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.tenantUserService = service.NewTenantUserService()
+	s.tenantUserService = service.NewTenantUserService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TenantUserAPI", s)
 	ctl.Post("/tenant-user", "Create")
 	ctl.Put("/tenant-user", "Update")
@@ -39,7 +41,7 @@ func (s *TenantUserAPI) NewAPIController(app *iris.Application) *restapi.ApiCont
 }
 
 func (s *TenantUserAPI) Create(ctx context.Context, cmd *command.TenantUserCreateCommand) error {
-	return tx.StartTx(ctx, tx.NewTxCfg(config.DBKey), func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, tx.NewTxCfg(s.mongoDbKey), func(ctx context.Context, options ...*store.SessionOptions) error {
 
 		err := s.tenantUserService.DeleteByTenantIdsAndUserIds(ctx, cmd.Data.TenIds, cmd.Data.UserIds)
 		if err != nil {

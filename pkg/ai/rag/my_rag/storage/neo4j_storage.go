@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
 
@@ -54,7 +54,7 @@ func NewNeo4jGraphStorage(dbKey string, logger logs.Logger) *Neo4jGraphStorage {
 		DBSchema:           dbschema.NewDBSchema("graph", "graph"),
 	}
 	newDao := dao.NewDao[map[string]any](nodeCfg)
-	dbItem := env.GetEnv().GetDB(dbKey)
+	dbItem := envs.GetEnv().GetDB(dbKey)
 	if dbItem == nil {
 		panic(fmt.Errorf("dbKey is nil"))
 	}

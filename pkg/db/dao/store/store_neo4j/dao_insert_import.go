@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/gocsv"
@@ -308,7 +308,7 @@ func getCreateUpdate(fields []*importField) (*strings.Builder, *strings.Builder)
 }
 
 func LocalFileImportSaveFileCallback(ctx context.Context, tenantId string, fileName string, data any) (string, ImportSaveCompleteCallback, error) {
-	neo4jPath, err := env.GetAppValue("neo4jPath")
+	neo4jPath, err := envs.GetAppValue("neo4jPath")
 	if err != nil {
 		return "", nil, err
 	}

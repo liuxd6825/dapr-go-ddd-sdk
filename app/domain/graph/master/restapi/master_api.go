@@ -6,18 +6,18 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/response"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/graph/vis_network"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type MasterAPI struct {
-	env          *env.Env
+	env          *envs.Env
 	rootPath     string
 	queryService *service.MasterQueryService
 }
 
-func NewMasterAPI(env *env.Env, rootPath string) *MasterAPI {
+func NewMasterAPI(env *envs.Env, rootPath string) *MasterAPI {
 	queryService := service.NewMasterQueryService()
 	return &MasterAPI{
 		env:          env,

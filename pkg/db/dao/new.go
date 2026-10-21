@@ -2,6 +2,7 @@ package dao
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/huge"
@@ -10,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/impl/sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
@@ -29,7 +30,7 @@ type DaoConfig struct {
 	GraphLabels        []string        `json:"graphLabels"`        // 可选
 	IsCancelModified   bool            `json:"isCancelModified"`   // 可选
 	IsCancelSoftDelete bool            `json:"isCancelSoftDelete"` // 可选
-	Env                *env.Env        `json:"-"`                  // 可选
+	Env                *envs.Env       `json:"-"`                  // 可选
 	IsCache            bool            `json:"isCache"`
 }
 
@@ -53,16 +54,16 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 
 	dbKey := newCfg.DBKey
 	tableName := newCfg.TableName
-	envInst := newCfg.Env
-	if envInst == nil {
-		envInst = env.GetEnv()
+	env := newCfg.Env
+	if env == nil {
+		env = envs.GetEnv()
 	}
 	if dbKey == "" {
-		db := env.GetDBDefault()
+		db := envs.GetDBDefault()
 		dbKey = db.GetDBKey()
 	}
 
-	dbKey = GetDbKey(envInst, dbKey)
+	dbKey = GetDbKey(env, dbKey)
 
 	if tableName == "" && newCfg.DBSchema != nil {
 		tableName = newCfg.DBSchema.TableName
@@ -92,11 +93,11 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 		panic("db.NewDao() args schema is required")
 	}
 
-	item := getDBItem(envInst, dbKey)
+	item := getDBItem(env, dbKey)
 	if item == nil && newCfg.DB != nil {
 		newCfg.DB = newCfg.DB
 	} else if item == nil {
-		panic(fmt.Sprintf("No dbKey exists  %s  ", dbKey))
+		panic(fmt.Sprintf("pkg.db.dao.NewDao() error: No dbKey exists \"%s\" in Env \"%s\", \"%s\"", dbKey, env.Name, getCallerInfo(2)))
 	}
 
 	/*
@@ -113,7 +114,7 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 		//IsPubEvent:         isPubEvent,
 		AggField:           newCfg.AggField,
 		AggType:            newCfg.AggType,
-		Env:                envInst,
+		Env:                env,
 		DBSchema:           newCfg.DBSchema,
 		GraphType:          newCfg.GraphType,
 		GraphLabels:        newCfg.GraphLabels,
@@ -129,17 +130,17 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 
 	if item != nil {
 		switch item.GetDBType() {
-		case env.DBType_MongoDB:
+		case envs.DBType_MongoDB:
 			dao = mongodb.NewDao[T](daoCfg)
-		case env.DBType_Sqlite,
-			env.DBType_Oracle,
-			env.DBType_Postgres,
-			env.DBType_MySQL,
-			env.DBType_MsSQL:
+		case envs.DBType_Sqlite,
+			envs.DBType_Oracle,
+			envs.DBType_Postgres,
+			envs.DBType_MySQL,
+			envs.DBType_MsSQL:
 			dao = sql.NewDao[T](daoCfg)
-		case env.DBType_Neo4j:
+		case envs.DBType_Neo4j:
 			dao = neo4j.NewDao[T](daoCfg)
-		case env.DBType_Huge:
+		case envs.DBType_Huge:
 			dao = huge.NewDao[T](daoCfg)
 		default:
 			panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
@@ -151,9 +152,18 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 	return dao
 }
 
-func GetDbKey(envInst *env.Env, dbKey string) string {
+func getCallerInfo(skip int) string {
+	// skip = 1 表示获取上一层调用者的信息（0表示当前函数）
+	_, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", file, line)
+}
+
+func GetDbKey(envInst *envs.Env, dbKey string) string {
 	if dbKey == "" {
-		return env.DefaultDBKey
+		return envs.DefaultDBKey
 	}
 	return envInst.GetDBKeyValue(dbKey)
 }
@@ -162,7 +172,7 @@ func getDaoKey(dbKey, tableName string, className string) string {
 	return fmt.Sprintf("%s.%s.%s", dbKey, tableName, className)
 }
 
-func getDBItem(env *env.Env, dbKey string) env.DBItem {
+func getDBItem(env *envs.Env, dbKey string) envs.DBItem {
 	item := env.GetDB(dbKey)
 	return item
 }

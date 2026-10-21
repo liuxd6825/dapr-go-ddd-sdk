@@ -17,10 +17,10 @@ type HumanCompanyAPI struct {
 	rootPath string
 }
 
-func NewHumanCompanyAPI(rootPath string) *HumanCompanyAPI {
+func NewHumanCompanyAPI(rootPath string, dbKey string) *HumanCompanyAPI {
 	return &HumanCompanyAPI{
 		rootPath: rootPath,
-		service:  service.NewHumanCompanyService(),
+		service:  service.NewHumanCompanyService(dbKey),
 	}
 }
 

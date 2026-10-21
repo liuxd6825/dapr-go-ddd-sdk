@@ -6,7 +6,6 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -19,9 +18,9 @@ type HumanAddressService struct {
 var _humanaddressService *HumanAddressService
 var _humanaddressServiceOnce sync.Once
 
-func NewHumanAddressService() *HumanAddressService {
+func NewHumanAddressService(dbKey string) *HumanAddressService {
 	_humanaddressServiceOnce.Do(func() {
-		_humanaddressService = &HumanAddressService{dao: dao.NewHumanAddressDao(config.DBKey)}
+		_humanaddressService = &HumanAddressService{dao: dao.NewHumanAddressDao(dbKey)}
 	})
 	return _humanaddressService
 }

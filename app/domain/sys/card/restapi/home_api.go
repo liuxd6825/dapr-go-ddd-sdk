@@ -3,36 +3,39 @@ package restapi
 import (
 	"context"
 	"errors"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type HomeAPI struct {
-	env          *env.Env
+	env          *envs.Env
 	homeService  *service.HomeService
 	groupService *service.GroupService
 	cardService  *service.CardService
 	rootPath     string
+	mongoDbKey   string
 }
 
-func NewHomeAPI(env *env.Env, rootPath string) *HomeAPI {
+func NewHomeAPI(env *envs.Env, rootPath string, mongoDbKey string) *HomeAPI {
 	return &HomeAPI{
 		env:          env,
-		homeService:  service.NewHomeService(),
-		groupService: service.NewGroupService(),
-		cardService:  service.NewCardService(),
+		mongoDbKey:   mongoDbKey,
+		homeService:  service.NewHomeService(mongoDbKey),
+		groupService: service.NewGroupService(mongoDbKey),
+		cardService:  service.NewCardService(mongoDbKey),
 		rootPath:     rootPath,
 	}
 }
 
 func (s *HomeAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.homeService = service.NewHomeService()
+	s.homeService = service.NewHomeService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.HomeAPI", s)
 	ctl.Post("/home", "Create")
 	ctl.Post("/home:submit", "Submit")

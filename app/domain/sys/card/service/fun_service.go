@@ -3,13 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -20,18 +18,12 @@ type FunService struct {
 	xbase.Service
 }
 
-var (
-	_funOnce          sync.Once
-	_funDomainService *FunService
-)
+func NewFunService(mongoDbKey string) *FunService {
 
-func NewFunService() *FunService {
-	_funOnce.Do(func() {
-		_funDomainService = &FunService{
-			dao: dao.NewFunDao(config.DBKey),
-		}
-	})
-	return _funDomainService
+	return &FunService{
+		dao: dao.NewFunDao(mongoDbKey),
+	}
+
 }
 
 func (t *FunService) Create(ctx context.Context, cmd *command.FunCreateCommand) error {

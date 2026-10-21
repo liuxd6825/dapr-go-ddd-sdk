@@ -6,7 +6,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
 
@@ -19,7 +19,7 @@ type DaoBase[T any] struct {
 	aggType     string           // 聚合根类型名称
 	eventPrefix string           // 事件前缀
 	store       store2.IStore[T] // 数据访问
-	env         *env.Env         // 环境变量
+	env         *envs.Env        // 环境变量
 }
 
 const (
@@ -87,7 +87,7 @@ func NewDaoBaseNoEnv[T any](store store2.IStore[T], cfg *idao.DaoConfig) *DaoBas
 	}
 }
 
-func (d *DaoBase[T]) GetEnv() *env.Env {
+func (d *DaoBase[T]) GetEnv() *envs.Env {
 	return d.env
 }
 

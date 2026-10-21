@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/dao/impl/hugedao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/master/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbevent"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/pkg/fs_pkg"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/schema"
@@ -23,14 +24,18 @@ import (
 // MasterService
 // @Description: 主数据关系图
 type MasterService struct {
+	hugeDbKey    string
+	hugeClient   *hugegraph.CommonClient
 	nodeDaoMap   *types.CMap[dao.IMasterNodeDao]
 	relDaoMap    *types.CMap[dao.IBusRelationDao]
 	dbSchMap     *types.CMap[*dbschema.DBSchema]
 	graphMetaMap *types.CMap[*schema.Graph]
 }
 
-func NewMasterService() *MasterService {
+func NewMasterService(hugeDbKey string, client *hugegraph.CommonClient) *MasterService {
 	ser := &MasterService{
+		hugeDbKey:    hugeDbKey,
+		hugeClient:   client,
 		nodeDaoMap:   types.NewCMap[dao.IMasterNodeDao](),
 		relDaoMap:    types.NewCMap[dao.IBusRelationDao](),
 		dbSchMap:     types.NewCMap[*dbschema.DBSchema](),
@@ -40,7 +45,7 @@ func NewMasterService() *MasterService {
 }
 
 func (s *MasterService) Init() *MasterService {
-	srcFs, err := fs_pkg.NewFsPkg(env.GetEnv(), "src")
+	srcFs, err := fs_pkg.NewFsPkg(envs.GetEnv(), "src")
 	if err != nil {
 		panic("src fs not exist")
 	}
@@ -60,7 +65,7 @@ func (s *MasterService) Init() *MasterService {
 			if dbSch != nil && dbSch.TableName != "" {
 				s.dbSchMap.Add(dbSch.TableName, dbSch)
 			}
-			s.AddDao(jsonSch, dbSch, metaExt, graphMeta)
+			s.AddDao(s.hugeDbKey, jsonSch, dbSch, metaExt, graphMeta)
 		}
 	}
 	elapsed := time.Since(start)
@@ -206,7 +211,7 @@ func (s *MasterService) getRelDao(record *dbevent.CDCRecord) dao.IBusRelationDao
 	return get
 }
 
-func (s *MasterService) AddDao(jsonSch *jsonschema.Schema, dbSchema *dbschema.DBSchema, metaExt *schema.MetaExtension, graphMeta *schema.Graph) {
+func (s *MasterService) AddDao(hugeDbKey string, jsonSch *jsonschema.Schema, dbSchema *dbschema.DBSchema, metaExt *schema.MetaExtension, graphMeta *schema.Graph) {
 	if jsonSch == nil {
 		panic(" jsonSch 不能为空。")
 	}
@@ -223,11 +228,11 @@ func (s *MasterService) AddDao(jsonSch *jsonschema.Schema, dbSchema *dbschema.DB
 	tableName := metaExt.DBTable.Name
 	var nodeDao dao.IMasterNodeDao
 	if graphMeta.IsNodeType() {
-		nodeDao = hugedao.NewMasterNodeDao(graphMeta.Labels, dbSchema, graphMeta)
+		nodeDao = hugedao.NewMasterNodeDao(s.hugeClient, graphMeta)
 		s.nodeDaoMap.Add(tableName, nodeDao)
 	}
 	if graphMeta.IsRelType() {
-		relDao := hugedao.NewBusRelationDao(dbSchema, nodeDao, graphMeta)
+		relDao := hugedao.NewBusRelationDao(hugeDbKey, s.hugeClient, dbSchema, nodeDao, graphMeta)
 		s.relDaoMap.Add(tableName, relDao)
 	}
 	s.graphMetaMap.Add(tableName, graphMeta)

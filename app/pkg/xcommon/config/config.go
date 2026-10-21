@@ -1,16 +1,10 @@
 package config
 
-const DBKey = "$db"
-const EventBus = "pubsub"
-const ImportAppId = "import"
-const MasterAppId = "master"
+/*const DBKey = "$db"
 const Neo4jDBKey = "$neo4jDb"
 const RedisKey = "$redis"
+const HugeDBKey = "$hugeDb"*/
 
-func GetDBKey() string {
-	return DBKey
-}
-
-func GetRedisKey() string {
-	return RedisKey
-}
+const ImportAppId = "import"
+const MasterAppId = "master"
+const EventBus = "pubsub"

@@ -34,13 +34,13 @@ func Analysis_SuTaskAnalysisWorkflow(wctx workflow.Context, taskId string, workf
 // @param workflowId
 // @param ctxMap
 // @return err
-func Analysis_SuTaskAnalysisActivity(ctx context.Context, taskId, workflowId string, ctxMap map[string]any) (err error) {
+func Analysis_SuTaskAnalysisActivity(ctx context.Context, taskId, workflowId string, ctxMap map[string]any, dbKey string) (err error) {
 	gp.Try(func() error {
 		ctx, err := appctx.NewContextWithMap(ctx, ctxMap)
 		if err != nil {
 			return err
 		}
-		taskService := NewSuTaskService()
+		taskService := NewSuTaskService(dbKey)
 		return taskService.analysisTask(ctx, taskId, workflowId)
 	}).Catch(func(e error) {
 		err = e

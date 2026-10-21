@@ -1,9 +1,10 @@
 package dao
 
 import (
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/model"
 	"context"
 	"fmt"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/model"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"

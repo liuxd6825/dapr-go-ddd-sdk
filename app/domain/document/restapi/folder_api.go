@@ -14,13 +14,13 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type FolderAPI struct {
-	env               *env.Env
+	env               *envs.Env
 	folderService     *service.FolderService
 	docService        *service.DocumentService
 	docMetaService    *service.DocumentMetaService
@@ -30,13 +30,13 @@ type FolderAPI struct {
 	rootPath          string
 }
 
-func NewFolderAPI(env *env.Env, rootPath string) *FolderAPI {
-	folderService := service.NewFolderService()
-	docService := service.NewDocumentService()
-	fileService := service.NewFileService()
-	fsService := service.NewFsService()
-	folderMetaService := service.NewFolderMetaService()
-	docMetaService := service.NewDocumentMetaService()
+func NewFolderAPI(env *envs.Env, rootPath string, dbKey string) *FolderAPI {
+	folderService := service.NewFolderService(dbKey)
+	docService := service.NewDocumentService(dbKey)
+	fileService := service.NewFileService(dbKey)
+	fsService := service.NewFsService(dbKey)
+	folderMetaService := service.NewFolderMetaService(dbKey)
+	docMetaService := service.NewDocumentMetaService(dbKey)
 	docMetaService.SetInit(docService, folderService)
 	docService.SetInit(docMetaService)
 	return &FolderAPI{

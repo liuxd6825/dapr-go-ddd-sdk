@@ -7,18 +7,18 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type RagApi struct {
-	env        *env.Env
+	env        *envs.Env
 	rootPath   string
 	ragService *service.RagService
 }
 
-func NewRagApi(env *env.Env, rootPath string) *RagApi {
+func NewRagApi(env *envs.Env, rootPath string) *RagApi {
 	return &RagApi{
 		env:        env,
 		rootPath:   rootPath,

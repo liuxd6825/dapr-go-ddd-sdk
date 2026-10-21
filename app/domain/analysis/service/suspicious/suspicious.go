@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	analysisconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/configs"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action/amount"
@@ -14,7 +15,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action/party"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis/service/suspicious/action/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
@@ -63,7 +63,7 @@ func NewAnalyse(task *model2.SuTask, accounts []*model2.SuTaskAccount, repo acti
 		task:      task,
 		rule:      rules,
 		accounts:  accounts,
-		recordDao: dao.NewRecordDao(config.DBKey),
+		recordDao: dao.NewRecordDao(analysisconfigs.GetMongoDbKey()),
 		actions:   actions,
 	}
 	return analyse

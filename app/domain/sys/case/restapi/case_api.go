@@ -14,32 +14,34 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CaseAPI struct {
-	env           *env.Env
+	env           *envs.Env
 	caseService   *service.CaseService
 	folderService *service2.FolderService
 	fsService     *service2.FsService
 	codeService   *service3.CodeService
 	rootPath      string
+	dbKey         string
 }
 
-func NewCaseAPI(env *env.Env, rootPath string) *CaseAPI {
+func NewCaseAPI(env *envs.Env, rootPath string, dbKey string) *CaseAPI {
 	return &CaseAPI{
 		env:           env,
-		caseService:   service.NewCaseService(),
-		folderService: service2.NewFolderService(),
-		fsService:     service2.NewFsService(),
-		codeService:   service3.NewCodeService(),
+		dbKey:         dbKey,
+		caseService:   service.NewCaseService(dbKey),
+		folderService: service2.NewFolderService(dbKey),
+		fsService:     service2.NewFsService(dbKey),
+		codeService:   service3.NewCodeService(dbKey),
 		rootPath:      rootPath,
 	}
 }
 
 func (s *CaseAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.caseService = service.NewCaseService()
+	s.caseService = service.NewCaseService(s.dbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/master", "sys.CaseApi", s)
 	ctl.Post("/case", "Create")
 	ctl.Put("/case", "Update")

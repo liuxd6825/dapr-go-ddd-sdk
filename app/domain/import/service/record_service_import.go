@@ -15,7 +15,7 @@ import (
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/miniofs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
 	"github.com/spf13/afero"
@@ -212,7 +212,7 @@ func (s *RecordService) Create4Excel(ctx context.Context, cmd *command2.RecordCr
 }
 
 func (s *RecordService) newDorisImporter() (*doris.DorisImporter, error) {
-	dorisAny, ok := env.GetEnv().App.Meta["doris"]
+	dorisAny, ok := envs.GetEnv().App.Meta["doris"]
 	if !ok {
 		return nil, errors.New("doris env not set")
 	}
@@ -238,7 +238,7 @@ func (s *RecordService) newDorisImporter() (*doris.DorisImporter, error) {
 // @param appcmd
 // @return error
 func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) (err error) {
-	tempFs, err := miniofs.NewFs(env.GetEnv(), "default", "importData")
+	tempFs, err := miniofs.NewFs(envs.GetEnv(), "default", "importData")
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, importe
 	docModel.SourceApp = "document_service"
 
 	// 开启事务
-	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err = tx.StartTx(ctx, []string{s.dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 		// 发布领域事件
 		if err := s.PublishImportRecordToMasterEvent(ctx, importEvent); err != nil {
 			return err
@@ -322,7 +322,7 @@ func (s *RecordService) writeParquetFile(ctx context.Context, pFile *doris.Parqu
 	pageSize := gp2.IfElse[int64](appcmd.Data.PageSize == 0, 2000, appcmd.Data.PageSize)
 	recordCount = int64(0)
 
-	err = tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	err = tx.StartTx(ctx, []string{s.dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 		for {
 			// 取得批量数据
 			qry := query.NewRecordIeFindPagingByTaskIdQuery(appcmd.Data.TaskId, false)
@@ -362,7 +362,7 @@ func (s *RecordService) writeParquetFile(ctx context.Context, pFile *doris.Parqu
 }
 
 func (s *RecordService) PublishImportRecordToMasterEvent(ctx context.Context, event *event.RecordImportMasterEvent) (err error) {
-	return xbase.PublishEvent(ctx, event)
+	return xbase.PublishEvent(ctx, event, s.dbKey)
 }
 
 func NewContext(ctx context.Context, task *TaskOptions) context.Context {
@@ -499,7 +499,7 @@ func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command2.R
 	}
 	// 拼出 s3://user:pass@host/bucket/key 完整 URL 写入 S3FileUrl，
 	// graph 域 RecordEventSubHandler 拿到后可直接传给 apoc.load.parquet
-	minioCfg, ok := env.GetEnv().GetMinioByKey("default")
+	minioCfg, ok := envs.GetEnv().GetMinioByKey("default")
 	if !ok {
 		return nil, errors.New("env minio.default not configured")
 	}

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors/assert"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/randomutils"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
@@ -12,11 +12,11 @@ import (
 
 func Test_ChatDao_Insert(t *testing.T) {
 	ctx := xtest2.NewContext()
-	e := xtest2.NewEnvConfigMongo(&env.Mongo{
+	e := xtest2.NewEnvConfigMongo(&envs.Mongo{
 		DbKey:  "db",
 		DbName: "test",
 	})
-	env.SetEnv(e)
+	envs.SetEnv(e)
 	dao := NewChatDao("db")
 	chat := &model.Chat{
 		Title: randomutils.NameCN(),

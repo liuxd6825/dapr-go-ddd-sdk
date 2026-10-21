@@ -6,17 +6,17 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/lowcode/src/human/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/lowcode/src/human/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type HumanAPI struct {
-	env          *env.Env
+	env          *envs.Env
 	rootPath     string
 	humanService *service.HumanService
 }
 
-func NewHumanAPI(env *env.Env, rootPath string) *HumanAPI {
+func NewHumanAPI(env *envs.Env, rootPath string) *HumanAPI {
 	return &HumanAPI{
 		env:          env,
 		rootPath:     rootPath,

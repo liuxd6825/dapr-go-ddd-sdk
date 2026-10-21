@@ -6,7 +6,6 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/company/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -18,10 +17,10 @@ type CompanyHumanService struct {
 var _companyHumanService *CompanyHumanService
 var _companyHumanServiceOnce sync.Once
 
-func NewCompanyHumanService() *CompanyHumanService {
+func NewCompanyHumanService(dbKey string) *CompanyHumanService {
 	_companyHumanServiceOnce.Do(func() {
 		_companyHumanService = &CompanyHumanService{
-			dao: dao.NewCompanyHumanDao(config.DBKey),
+			dao: dao.NewCompanyHumanDao(dbKey),
 		}
 	})
 	return _companyHumanService

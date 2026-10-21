@@ -17,10 +17,10 @@ type RecordDayViewApi struct {
 	rootPath string
 }
 
-func NewRecordDayViewApi(rootPath string) *RecordDayViewApi {
+func NewRecordDayViewApi(rootPath string, dbKey string) *RecordDayViewApi {
 	return &RecordDayViewApi{
 		rootPath: rootPath,
-		service:  service.NewRecordDayViewService(),
+		service:  service.NewRecordDayViewService(dbKey),
 	}
 }
 

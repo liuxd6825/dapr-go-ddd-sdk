@@ -9,21 +9,21 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type ExcelRowApi struct {
-	env        *env.Env
+	env        *envs.Env
 	rootPath   string
 	rowService *service.ExcelRowService
 }
 
-func NewExcelRowApi(env *env.Env, rootPath string) *ExcelRowApi {
+func NewExcelRowApi(env *envs.Env, rootPath string, dbKey string) *ExcelRowApi {
 	return &ExcelRowApi{
 		env:        env,
 		rootPath:   rootPath,
-		rowService: service.NewExcelRowService(),
+		rowService: service.NewExcelRowService(dbKey),
 	}
 }
 

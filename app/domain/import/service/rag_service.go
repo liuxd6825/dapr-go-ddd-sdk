@@ -12,11 +12,10 @@ import (
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/schema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
 )
 
 type RagService struct {
@@ -38,16 +37,8 @@ func NewRagService() *RagService {
 
 func newRagService() *RagService {
 	ctx := context.Background()
-	e := env.GetEnv()
-	ragMeta := e.App.Meta["rag"]
-	if ragMeta == nil {
-		panic("rag not found in env.app")
-	}
-
-	ragCfg, err := config.ReadRagConfig(ragMeta)
-	if err != nil {
-		panic("read RagConfig error" + err.Error())
-	}
+	cfg := importconfigs.GetConfig()
+	ragCfg := cfg.Rag
 
 	//chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
 	//	BaseURL: ragCfg.LLM.BaseUrl,
@@ -116,9 +107,6 @@ func newRagService() *RagService {
 		panic("rag config llm.type is null ")
 	}
 
-	if err != nil {
-		panic("create import.RagModel error" + err.Error())
-	}
 	ragService := &RagService{}
 	ragService.chatModel = llmModel
 	return ragService

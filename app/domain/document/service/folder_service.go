@@ -12,17 +12,15 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
 
-const DBKey string = "$db"
-
 type FolderService struct {
 	dao        *dao.FolderDao
 	docService *DocumentService
 }
 
-func NewFolderService() *FolderService {
+func NewFolderService(dbKey string) *FolderService {
 	return &FolderService{
-		dao:        dao.NewFolderDao(DBKey),
-		docService: NewDocumentService(),
+		dao:        dao.NewFolderDao(dbKey),
+		docService: NewDocumentService(dbKey),
 	}
 }
 

@@ -2,13 +2,11 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -20,18 +18,10 @@ type HomeService struct {
 	xbase.Service
 }
 
-var (
-	_homeOnce          sync.Once
-	_homeDomainService *HomeService
-)
-
-func NewHomeService() *HomeService {
-	_homeOnce.Do(func() {
-		_homeDomainService = &HomeService{
-			dao: dao.NewHomeDao(config.DBKey),
-		}
-	})
-	return _homeDomainService
+func NewHomeService(mongoDbKey string) *HomeService {
+	return &HomeService{
+		dao: dao.NewHomeDao(mongoDbKey),
+	}
 }
 
 func (t *HomeService) Create(ctx context.Context, cmd *command.HomeCreateCommand) error {

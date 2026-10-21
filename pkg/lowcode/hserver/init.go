@@ -5,7 +5,7 @@ import (
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/html/handler/render"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/lowcode/hserver/element"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs"
@@ -23,7 +23,7 @@ type InitOptions func(server element.Server) error
 //	@param webFsName
 //	@param httpServer
 //	@return error
-func InitHServer(httpServer *restapp.HttpServer, fileName string, srcFsName string, webFsName string, env *env.Env, autoRestart bool, options ...InitOptions) (err error) {
+func InitHServer(httpServer *restapp.HttpServer, fileName string, srcFsName string, webFsName string, env *envs.Env, autoRestart bool, options ...InitOptions) (err error) {
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 		if err != nil {

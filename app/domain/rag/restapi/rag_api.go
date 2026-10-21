@@ -10,18 +10,19 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type RagAPI struct {
-	env               *env.Env
-	ragService        *service.RagService
-	chatService       *service.ChatService
-	messageService    *service.MessageService
+	env                *envs.Env
+	ragService         *service.RagService
+	chatService        *service.ChatService
+	messageService     *service.MessageService
 	chatSummaryService *service.ChatSummaryService
-	rootPath          string
+	rootPath           string
+	ragCfg             ragconfigs.RagConfig
 }
 
 type Message struct {
@@ -34,12 +35,12 @@ type QueryRequest struct {
 	Temperature *float32  `json:"temperature"`
 }
 
-func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
-	ragService := service.NewRagService()
-	chatService := service.NewChatService()
-	compressConfig := config.DefaultCompressConfig()
-	chatSummaryService := service.NewChatSummaryService(compressConfig)
-	messageService := service.NewMessageService()
+func NewRagAPI(env *envs.Env, rootPath string, ragCfg ragconfigs.RagConfig, mongoDbKey string) *RagAPI {
+	ragService := service.NewRagService(ragCfg)
+	chatService := service.NewChatService(mongoDbKey)
+	compressConfig := ragconfigs.DefaultCompressConfig()
+	chatSummaryService := service.NewChatSummaryService(compressConfig, mongoDbKey)
+	messageService := service.NewMessageService(mongoDbKey)
 
 	messageService.SetChatSummaryService(chatSummaryService)
 	messageService.SetCompressConfig(compressConfig)
@@ -47,12 +48,13 @@ func NewRagAPI(env *env.Env, rootPath string) *RagAPI {
 	ragService.SetChatSummaryService(chatSummaryService)
 
 	return &RagAPI{
-		env:               env,
-		ragService:        ragService,
-		chatService:       chatService,
-		messageService:    messageService,
+		ragCfg:             ragCfg,
+		env:                env,
+		ragService:         ragService,
+		chatService:        chatService,
+		messageService:     messageService,
 		chatSummaryService: chatSummaryService,
-		rootPath:          rootPath,
+		rootPath:           rootPath,
 	}
 }
 

@@ -4,13 +4,14 @@ import (
 	"context"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/analysis"
-	company_lib "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/company-lib/restapi"
+	docconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/configs"
 	doc "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/document/restapi"
 	drawio "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/restapi"
 	draw_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph"
 	excelImport "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master"
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/metrics"
 	rag_command "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
 	rag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/restapi"
@@ -49,7 +50,7 @@ func main() {
 			server.Pkg().Add("drawio", drawPkg)
 
 			sysPkg := map[string]any{}
-			sysPkg["codeService"] = sys_code_service.NewCodeService()
+			sysPkg["codeService"] = sys_code_service.NewCodeService("")
 			server.Pkg().Add("sys", sysPkg)
 
 			return nil
@@ -73,7 +74,6 @@ func main() {
 				sys.RegisterAllApi(app, baseUrl, env)
 				metrics.RegisterAllApi(app, baseUrl, env)
 				notify.RegisterAllApi(app, baseUrl, env)
-				company_lib.RegisterAllApi(app, baseUrl, env)
 				render.RegisterRenderHandler(app, env, map[string]any{})
 				/*
 					if err := lowcode.Run(server); err != nil {
@@ -95,9 +95,12 @@ func main() {
 // backWorker
 // @Description: 后台服务
 func runBackWorker() {
+	masterDbKey := masterconfigs.GetMongoDbKey()
+	docDbKey := docconfigs.GetMongoDbKey()
 	go func() {
 		ctx := context.Background()
-		tenantService := service.NewTenantService()
+
+		tenantService := service.NewTenantService(masterDbKey)
 		list, err := tenantService.FindAll(context.Background())
 		if err != nil {
 			panic(err)
@@ -121,7 +124,7 @@ func runBackWorker() {
 			}
 
 			logs.InfoMsg(userCtx, "知识库开始扫描文件， tenantId：", tenant.Id, " tenantName:", tenant.Name)
-			rag_service.NewDocumentServiceDefault().Scan(userCtx, cmd)
+			rag_service.NewDocumentServiceDefault(docDbKey).Scan(userCtx, cmd)
 		}
 	}()
 }

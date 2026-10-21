@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 type DbManager interface {
-	Create(ctx context.Context, table *Table, env *env.Env, options *CreateOptions)
-	Update(ctx context.Context, table *Table, env *env.Env, options *UpdateOptions)
+	Create(ctx context.Context, table *Table, env *envs.Env, options *CreateOptions)
+	Update(ctx context.Context, table *Table, env *envs.Env, options *UpdateOptions)
 }
 
 type DbScriptManager interface {
-	GetScript(ctx context.Context, dbKey string, table []*Table, env *env.Env, options *CreateOptions) (*strings.Builder, error)
+	GetScript(ctx context.Context, dbKey string, table []*Table, env *envs.Env, options *CreateOptions) (*strings.Builder, error)
 }
 
 type InitOptions struct {

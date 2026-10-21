@@ -3,13 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
@@ -20,18 +18,11 @@ type CardService struct {
 	xbase.Service
 }
 
-var (
-	_cardOnce          sync.Once
-	_cardDomainService *CardService
-)
+func NewCardService(mongoDbKey string) *CardService {
+	return &CardService{
+		dao: dao.NewCardDao(mongoDbKey),
+	}
 
-func NewCardService() *CardService {
-	_cardOnce.Do(func() {
-		_cardDomainService = &CardService{
-			dao: dao.NewCardDao(config.DBKey),
-		}
-	})
-	return _cardDomainService
 }
 
 func (t *CardService) Create(ctx context.Context, cmd *command.CardCreateCommand) error {

@@ -13,7 +13,7 @@ import (
 	llm2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/entity"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	xtest2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/xtest"
 	"github.com/sirupsen/logrus"
@@ -207,7 +207,7 @@ func Test_GraphRag_Query(t *testing.T) {
 }
 
 func newGraphRag(ctx context.Context, isDrop bool) *GraphRag {
-	env.SetEnv(xtest2.NewEnvConfigNeo4j(xtest2.Neo4jOptions{
+	envs.SetEnv(xtest2.NewEnvConfigNeo4j(xtest2.Neo4jOptions{
 		Addr: "192.168.120.224",
 	}))
 

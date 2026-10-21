@@ -10,7 +10,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/store_sql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dbschema"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	times2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types/times"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	"gorm.io/gorm"
@@ -39,7 +39,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 	}
 
 	if db == nil {
-		item := env.GetDB(cfg.DBKey)
+		item := envs.GetDB(cfg.DBKey)
 		if item == nil {
 			panic("db item not found")
 		}

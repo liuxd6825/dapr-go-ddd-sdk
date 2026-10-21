@@ -20,10 +20,10 @@ type ProductAPI struct {
 }
 
 // NewProductAPI 构造函数
-func NewProductAPI(rootPath string) *ProductAPI {
+func NewProductAPI(rootPath string, dbKey string) *ProductAPI {
 	return &ProductAPI{
 		rootPath: rootPath,
-		service:  service.NewProductService(),
+		service:  service.NewProductService(dbKey),
 	}
 }
 

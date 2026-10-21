@@ -26,7 +26,7 @@ func TestRecordService_CreateSparkTask(t *testing.T) {
 				Host:     "192.168.120.200",
 				Port:     "8030",
 				User:     "root",
-				Password: "",
+				Password: "12345678",
 				DB:       "master",
 				Table:    "master_record",
 			},

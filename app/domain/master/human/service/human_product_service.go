@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"sync"
 
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 )
@@ -16,14 +15,8 @@ type HumanProductService struct {
 	dao *dao.HumanProductDao
 }
 
-var _humanproductService *HumanProductService
-var _humanproductServiceOnce sync.Once
-
-func NewHumanProductService() *HumanProductService {
-	_humanproductServiceOnce.Do(func() {
-		_humanproductService = &HumanProductService{dao: dao.NewHumanProductDao(config.DBKey)}
-	})
-	return _humanproductService
+func NewHumanProductService(dbKey string) *HumanProductService {
+	return &HumanProductService{dao: dao.NewHumanProductDao(masterconfigs.GetMongoDbKey())}
 }
 
 func (s *HumanProductService) CreateMany(ctx context.Context, items []*model.HumanProduct, opts ...idao.CallOptions) error {

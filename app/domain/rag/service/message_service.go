@@ -16,13 +16,13 @@ import (
 type MessageService struct {
 	*dao.MessageDao
 	chatSummaryService *ChatSummaryService
-	compressConfig     *config.CompressConfig
+	compressConfig     *ragconfigs.CompressConfig
 	compressLock       sync.Map
 }
 
-func NewMessageService() *MessageService {
+func NewMessageService(dbKey string) *MessageService {
 	return &MessageService{
-		MessageDao: dao.NewMessageDao(DBKey),
+		MessageDao: dao.NewMessageDao(dbKey),
 	}
 }
 
@@ -30,7 +30,7 @@ func (s *MessageService) SetChatSummaryService(chatSummaryService *ChatSummarySe
 	s.chatSummaryService = chatSummaryService
 }
 
-func (s *MessageService) SetCompressConfig(cfg *config.CompressConfig) {
+func (s *MessageService) SetCompressConfig(cfg *ragconfigs.CompressConfig) {
 	s.compressConfig = cfg
 }
 

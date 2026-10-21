@@ -8,7 +8,7 @@ import (
 	"github.com/apache/hugegraph-toolchain/hugegraph-client-go"
 	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"gorm.io/gorm"
 )
@@ -67,7 +67,7 @@ type testDBItem struct {
 	client *hugegraph.CommonClient
 }
 
-func (d *testDBItem) GetDBType() env.DBType             { return env.DBType_Huge }
+func (d *testDBItem) GetDBType() envs.DBType            { return envs.DBType_Huge }
 func (d *testDBItem) GetDBKey() string                  { return d.dbKey }
 func (d *testDBItem) GetNeo4j() neo4j.DriverWithContext { return nil }
 func (d *testDBItem) GetMongo() *mongodb.MongoDB        { return nil }
@@ -79,10 +79,10 @@ func (d *testDBItem) CloseDB(_ context.Context) error   { return nil }
 func (d *testDBItem) GetConfig() any                    { return nil }
 
 func registerTestEnv(client *hugegraph.CommonClient) {
-	e := env.GetEnv()
+	e := envs.GetEnv()
 	if e == nil {
-		e = env.NewEnv()
-		env.SetEnv(e)
+		e = envs.NewEnv()
+		envs.SetEnv(e)
 	}
 	if e.GetDB(testDbKey) == nil {
 		e.AddDB(&testDBItem{dbKey: testDbKey, client: client})

@@ -17,10 +17,10 @@ type ProductProductAPI struct {
 	rootPath string
 }
 
-func NewProductProductAPI(rootPath string) *ProductProductAPI {
+func NewProductProductAPI(rootPath string, dbKey string) *ProductProductAPI {
 	return &ProductProductAPI{
 		rootPath: rootPath,
-		service:  service.NewProductProductService(),
+		service:  service.NewProductProductService(dbKey),
 	}
 }
 

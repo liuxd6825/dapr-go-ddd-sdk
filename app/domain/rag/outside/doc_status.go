@@ -14,13 +14,13 @@ type DocumentMetaService struct {
 	service *service.DocumentMetaService
 }
 
-func NewImportStatusProvider() interfaces.ImportStatusProvider {
-	return NewDocStatusProvider()
+func NewImportStatusProvider(mongoDbKey string) interfaces.ImportStatusProvider {
+	return NewDocStatusProvider(mongoDbKey)
 }
 
-func NewDocStatusProvider() *DocumentMetaService {
+func NewDocStatusProvider(mongoDbKey string) *DocumentMetaService {
 	return &DocumentMetaService{
-		service: service.NewDocumentMetaService(),
+		service: service.NewDocumentMetaService(mongoDbKey),
 	}
 }
 

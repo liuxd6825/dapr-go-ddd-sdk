@@ -10,26 +10,28 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type CardFileAPI struct {
-	env             *env.Env
+	env             *envs.Env
 	cardFileService *service.CardFileService
 	rootPath        string
+	mongoDbKey      string
 }
 
-func NewCardFileAPI(env *env.Env, rootPath string) *CardFileAPI {
+func NewCardFileAPI(env *envs.Env, rootPath string, mongoDbKey string) *CardFileAPI {
 	return &CardFileAPI{
 		env:             env,
-		cardFileService: service.NewCardFileService(),
+		mongoDbKey:      mongoDbKey,
+		cardFileService: service.NewCardFileService(mongoDbKey),
 		rootPath:        rootPath,
 	}
 }
 
 func (s *CardFileAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.cardFileService = service.NewCardFileService()
+	s.cardFileService = service.NewCardFileService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.CardFileAPI", s)
 	ctl.Post("/card-file", "Create")
 	ctl.Put("/card-file", "Update")

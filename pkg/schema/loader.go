@@ -3,9 +3,10 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 	"net/url"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
 )
 
 // URLLoader knows how to load json from given url.
@@ -23,7 +24,7 @@ func NewJSONLoaderWithFsm(fsm *fsm.Manager) *JSONLoader {
 }
 
 func NewJSONLoader() *JSONLoader {
-	return &JSONLoader{fsm: env.GetEnv().Fsm}
+	return &JSONLoader{fsm: envs.GetEnv().Fsm}
 }
 
 func (cl *JSONLoader) Load(refUrl string) (any, error) {

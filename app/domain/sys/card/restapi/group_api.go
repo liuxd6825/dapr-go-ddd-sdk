@@ -2,34 +2,37 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/card/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type GroupAPI struct {
-	env          *env.Env
+	env          *envs.Env
 	groupService *service.GroupService
 	cardService  *service.CardService
 	rootPath     string
+	mongoDbKey   string
 }
 
-func NewGroupAPI(env *env.Env, rootPath string) *GroupAPI {
+func NewGroupAPI(env *envs.Env, rootPath string, mongoDbKey string) *GroupAPI {
 	return &GroupAPI{
 		env:          env,
-		groupService: service.NewGroupService(),
-		cardService:  service.NewCardService(),
+		mongoDbKey:   mongoDbKey,
+		groupService: service.NewGroupService(mongoDbKey),
+		cardService:  service.NewCardService(mongoDbKey),
 		rootPath:     rootPath,
 	}
 }
 
 func (s *GroupAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.groupService = service.NewGroupService()
+	s.groupService = service.NewGroupService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.GroupAPI", s)
 	ctl.Post("/group", "Create")
 	ctl.Put("/group", "Update")

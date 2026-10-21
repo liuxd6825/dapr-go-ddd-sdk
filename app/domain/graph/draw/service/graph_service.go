@@ -11,7 +11,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/neo4jdao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
 
@@ -262,7 +262,7 @@ func newRelation(cmd command.IDrawSaveCommand, cell *mxgraph.DiffCell) []*model2
 }
 
 func getSrcUrl(cmd command.IDrawSaveCommand) string {
-	if env.GetEnv().App.ProdMode {
+	if envs.GetEnv().App.ProdMode {
 		return fmt.Sprintf("/draw/draw.html?id=%s&case-id=%s", cmd.GetDrawId(), cmd.GetCaseId())
 	}
 	return fmt.Sprintf("/draw/draw.html?dev=1&id=%s&case-id=%s", cmd.GetDrawId(), cmd.GetCaseId())

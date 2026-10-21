@@ -4,28 +4,31 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/human/restapi"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
 // Init 初始化人员子域，注册 Human 及 13 个子实体的 REST API
-func Init(app *iris.Application, baseUrl string, env *env.Env) {
+func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service": "human"}, func() error {
-		restapi.RegisterHuman(app, baseUrl, env)
-		restapi.RegisterHumanAccount(app, baseUrl, env)
-		restapi.RegisterHumanAddress(app, baseUrl, env)
-		restapi.RegisterHumanCapital(app, baseUrl, env)
-		restapi.RegisterHumanCompany(app, baseUrl, env)
-		restapi.RegisterHumanContract(app, baseUrl, env)
-		restapi.RegisterHumanCredential(app, baseUrl, env)
-		restapi.RegisterHumanExt(app, baseUrl, env)
-		restapi.RegisterHumanHuman(app, baseUrl, env)
-		restapi.RegisterHumanLink(app, baseUrl, env)
-		restapi.RegisterHumanProduct(app, baseUrl, env)
-		restapi.RegisterHumanRecord(app, baseUrl, env)
-		restapi.RegisterHumanReportedAmount(app, baseUrl, env)
-		restapi.RegisterHumanSuspectAmount(app, baseUrl, env)
+		masterconfigs.Init(env)
+		mongoDbKey := masterconfigs.GetMongoDbKey()
+		restapi.RegisterHuman(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanAccount(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanAddress(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanCapital(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanCompany(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanContract(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanCredential(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanExt(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanHuman(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanLink(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanProduct(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanRecord(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanReportedAmount(app, baseUrl, env, mongoDbKey)
+		restapi.RegisterHumanSuspectAmount(app, baseUrl, env, mongoDbKey)
 		return nil
 	})
 	if err != nil {

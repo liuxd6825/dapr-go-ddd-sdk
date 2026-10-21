@@ -19,7 +19,6 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	bank_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/bank/service"
 	currency_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/currency/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/config"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/pkg/xcommon/xbase"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
@@ -27,12 +26,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store/tx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/maputils"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/singleutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/timeutils"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
 type RecordService struct {
+	dbKey             string
 	dao               *dao2.RecordDao
 	docFileService    *docfile.FileService
 	currencyService   *currency_service.CurrencyService
@@ -43,18 +42,17 @@ type RecordService struct {
 	livyServer        *livyserver.LivyServer
 }
 
-func NewRecordService(livyServer *livyserver.LivyServer) *RecordService {
-	return singleutils.CreateObj[*RecordService](func() *RecordService {
-		return &RecordService{
-			dao:               dao2.NewRecordDao(config.DBKey),
-			docFileService:    docfile.NewFileService(),
-			taskService:       NewTaskService(),
-			currencyService:   currency_service.NewCurrencyService(),
-			bankService:       bank_service.NewBankService(),
-			docStatusProvider: outside.NewImportStatusProvider(),
-			livyServer:        livyServer,
-		}
-	})
+func NewRecordService(livyServer *livyserver.LivyServer, dbKey string) *RecordService {
+	return &RecordService{
+		dbKey:             dbKey,
+		dao:               dao2.NewRecordDao(dbKey),
+		docFileService:    docfile.NewFileService(dbKey),
+		taskService:       NewTaskService(dbKey),
+		currencyService:   currency_service.NewCurrencyService(dbKey),
+		bankService:       bank_service.NewBankService(dbKey),
+		docStatusProvider: outside.NewImportStatusProvider(dbKey),
+		livyServer:        livyServer,
+	}
 }
 
 func (s *RecordService) addFieldError(data map[string][]string, field string, message string) {
@@ -196,7 +194,7 @@ func (s *RecordService) RevokeRecords(ctx context.Context, cmd *command.RecordRe
 	if task.State != model.TaskStateGenerated {
 		return errors.New("不可撤销，当前状态是“%s”。", task.State)
 	}
-	return tx.StartTx(ctx, []string{config.DBKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
+	return tx.StartTx(ctx, []string{s.dbKey}, func(ctx context.Context, options ...*store.SessionOptions) error {
 		err = s.taskService.SetState(ctx, cmd.Data.TaskId, model.TaskStateEditing, "生成后撤销")
 		if err != nil {
 			return err

@@ -20,10 +20,10 @@ type HumanAPI struct {
 }
 
 // NewHumanAPI 构造函数
-func NewHumanAPI(rootPath string) *HumanAPI {
+func NewHumanAPI(rootPath string, dbKey string) *HumanAPI {
 	return &HumanAPI{
 		rootPath: rootPath,
-		service:  service.NewHumanService(),
+		service:  service.NewHumanService(dbKey),
 	}
 }
 

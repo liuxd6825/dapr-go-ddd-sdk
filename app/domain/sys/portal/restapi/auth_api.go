@@ -3,18 +3,19 @@ package restapi
 import (
 	"context"
 	"errors"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/model"
 	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 	client "github.com/ory/kratos-client-go"
 )
 
 type AuthAPI struct {
-	env               *env.Env
+	env               *envs.Env
 	authService       *service.AuthService
 	userService       *service.UserService
 	tenantService     *service.TenantService
@@ -22,23 +23,25 @@ type AuthAPI struct {
 	oryService        *service2.OryService
 	jwtService        *service.JwtService
 	rootPath          string
+	mongoDbKey        string
 }
 
-func NewAuthAPI(env *env.Env, rootPath string) *AuthAPI {
+func NewAuthAPI(env *envs.Env, rootPath string, mongoDbKey string) *AuthAPI {
 	return &AuthAPI{
 		env:               env,
-		authService:       service.NewAuthService(),
-		userService:       service.NewUserService(),
-		tenantService:     service.NewTenantService(),
-		tenantUserService: service.NewTenantUserService(),
-		oryService:        service2.NewOryService(),
+		mongoDbKey:        mongoDbKey,
+		authService:       service.NewAuthService(mongoDbKey),
+		userService:       service.NewUserService(mongoDbKey),
+		tenantService:     service.NewTenantService(mongoDbKey),
+		tenantUserService: service.NewTenantUserService(mongoDbKey),
+		oryService:        service2.NewOryService(mongoDbKey),
 		jwtService:        service.NewJwtService(),
 		rootPath:          rootPath,
 	}
 }
 
 func (s *AuthAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.authService = service.NewAuthService()
+	s.authService = service.NewAuthService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.AuthAPI", s)
 	ctl.Post("/login", "Login")
 	ctl.Post("/generate", "Generate")

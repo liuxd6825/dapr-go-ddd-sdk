@@ -13,21 +13,21 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/query"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type RecordAPI struct {
-	env           *env.Env
+	env           *envs.Env
 	rootPath      string
 	recordService *service.RecordService
 }
 
-func NewRecordAPI(env *env.Env, rootPath string) *RecordAPI {
+func NewRecordAPI(env *envs.Env, rootPath string, recordService *service.RecordService) *RecordAPI {
 	return &RecordAPI{
 		env:           env,
 		rootPath:      rootPath,
-		recordService: service.NewRecordService(),
+		recordService: recordService,
 	}
 }
 

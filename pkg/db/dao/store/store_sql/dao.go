@@ -10,7 +10,7 @@ import (
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/rsql/rsql_sql"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
@@ -53,7 +53,7 @@ var fields = store2.GetFields()
 
 func NewDaoWithDbKey[T any](cfg *NewConfig) store2.IStore[T] {
 	dbKey := cfg.DbKey
-	item := env.GetDB(dbKey)
+	item := envs.GetDB(dbKey)
 	if item == nil {
 		panic(errors.New(fmt.Sprintf("db key %s not found", dbKey)))
 	}
@@ -62,15 +62,15 @@ func NewDaoWithDbKey[T any](cfg *NewConfig) store2.IStore[T] {
 	if db == nil {
 		cfg.DbType = item.GetDBType().String()
 		switch item.GetDBType() {
-		case env.DBType_Postgres:
+		case envs.DBType_Postgres:
 			db = item.GetGormDB()
-		case env.DBType_MySQL:
+		case envs.DBType_MySQL:
 			db = item.GetGormDB()
-		case env.DBType_Sqlite:
+		case envs.DBType_Sqlite:
 			db = item.GetGormDB()
-		case env.DBType_MsSQL:
+		case envs.DBType_MsSQL:
 			db = item.GetGormDB()
-		case env.DBType_Oracle:
+		case envs.DBType_Oracle:
 			db = item.GetGormDB()
 		default:
 			panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))

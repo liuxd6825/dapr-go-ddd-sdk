@@ -12,20 +12,20 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/env"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
 type ChatAPI struct {
-	env         *env.Env
+	env         *envs.Env
 	chatService *service.ChatService
 	msgService  *service.MessageService
 	rootPath    string
 }
 
-func NewChatAPI(env *env.Env, rootPath string) *ChatAPI {
-	chatService := service.NewChatService()
-	msgService := service.NewMessageService()
+func NewChatAPI(env *envs.Env, rootPath string, mongoDbKey string) *ChatAPI {
+	chatService := service.NewChatService(mongoDbKey)
+	msgService := service.NewMessageService(mongoDbKey)
 	return &ChatAPI{
 		env:         env,
 		chatService: chatService,

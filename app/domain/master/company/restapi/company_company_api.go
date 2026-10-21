@@ -18,10 +18,10 @@ type CompanyCompanyAPI struct {
 	rootPath string
 }
 
-func NewCompanyCompanyAPI(rootPath string) *CompanyCompanyAPI {
+func NewCompanyCompanyAPI(rootPath string, dbKey string) *CompanyCompanyAPI {
 	return &CompanyCompanyAPI{
 		rootPath: rootPath,
-		service:  service.NewCompanyCompanyService(),
+		service:  service.NewCompanyCompanyService(dbKey),
 	}
 }
 
