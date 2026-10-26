@@ -11,11 +11,18 @@ import (
 )
 
 type Store struct {
-	pool *ClientPool
+	pool       *ClientPool
+	hugeClient *hugegraph.CommonClient
 }
 
 func NewStore(pool *ClientPool) *Store {
 	return &Store{pool: pool}
+}
+
+func NewStoreWithClient(hugeClient *hugegraph.CommonClient) *Store {
+	return &Store{
+		hugeClient: hugeClient,
+	}
 }
 
 // Write 执行 Gremlin 脚本,返回原始 Result.Data (interface{})
@@ -102,6 +109,9 @@ func (d *Store) cypher(ctx context.Context, script string, bindings map[string]a
 }
 
 func (d *Store) getClient(ctx context.Context) (*hugegraph.CommonClient, error) {
+	if d.pool == nil && d.hugeClient != nil {
+		return d.hugeClient, nil
+	}
 	client, err := d.pool.Get(ctx)
 	return client, err
 }

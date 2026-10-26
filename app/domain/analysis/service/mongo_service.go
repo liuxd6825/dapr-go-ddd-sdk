@@ -25,8 +25,8 @@ func NewMongoService(env *envs.Env, rootPath string, dbKey string) *MongoService
 	if dbItem == nil {
 		panic("mongoDbItem is nil")
 	}
-	client := dbItem.GetMongo().Client()
-	database := dbItem.GetMongo().GetDatabase()
+	client := dbItem.GetMongoClient()
+	database := dbItem.GetMongoDB().GetDatabase()
 	return &MongoService{
 		env:      env,
 		rootPath: rootPath,

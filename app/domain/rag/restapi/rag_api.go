@@ -7,7 +7,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/command"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"

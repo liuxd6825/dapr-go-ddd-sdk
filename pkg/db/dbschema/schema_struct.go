@@ -11,6 +11,7 @@ import (
 	"github.com/jinzhu/now"
 	store2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/store"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	gormschema "gorm.io/gorm/schema"
 )
 
@@ -33,18 +34,18 @@ func NewDBSchemaWithStruct(name string, data any, tableName string) *store2.DBSc
 	defer func() {
 		err = errors.GetRecoverError(err, recover())
 		if err != nil {
-			panic(fmt.Errorf("tableName:%s; %s", tableName, err.Error()))
+			panic(fmt.Errorf("tableName:%s; %s; %s", tableName, err.Error(), reflectutils.CallerInfo(2)))
 		}
 	}()
 	gSch, err := gormschema.ParseWithSpecialTableName(data, &sync.Map{}, gormschema.NamingStrategy{}, tableName)
 	if err != nil {
-		panic(fmt.Sprintf("NewDBSchemaWithStruct() error: %s", err.Error()))
+		panic(fmt.Sprintf("NewDBSchemaWithStruct() error: %s, %s", err.Error(), reflectutils.CallerInfo(2)))
 	}
 	dbSch := store2.NewDBSchema()
 	for _, f := range gSch.Fields {
 		field, err := newField(f)
 		if err != nil {
-			err = errors.ErrorOf("field:%s; error:%s", f.Name, err.Error())
+			err = errors.ErrorOf("field:%s; error:%s; %s", f.Name, err.Error(), reflectutils.CallerInfo(1))
 			return nil
 		}
 		dbSch.AddField(field)

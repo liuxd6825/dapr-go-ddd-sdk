@@ -12,7 +12,7 @@ import (
 
 // Init 初始化产品子域，注册 Product 及 5 个子实体的 REST API
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service": "product"}, func() error {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name": "product"}, func() error {
 		masterconfigs.Init(env)
 		dbKey := masterconfigs.GetMongoDbKey()
 		restapi.RegisterProduct(app, baseUrl, env, dbKey)

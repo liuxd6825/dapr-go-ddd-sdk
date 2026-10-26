@@ -214,7 +214,7 @@ func getPids(outText string, cmdName string) []*ProcessInfo {
 		if len(text) != 0 {
 			p := newProcessInfo(text)
 			if p.CmdName == cmdName {
-				fmt.Println(text)
+				//fmt.Println(text)
 				res = append(res, p)
 			}
 		}

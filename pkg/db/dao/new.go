@@ -49,7 +49,10 @@ func IsTrue() *bool {
 
 func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 	if newCfg == nil {
-		panic("new dao must have a non-nil pointer")
+		panic("new dao must have a non-nil pointer newCfg parameter")
+	}
+	if newCfg.DBKey == "" {
+		panic("new dao must have a non-empty db key at newCfg.DBKey parameter")
 	}
 
 	dbKey := newCfg.DBKey
@@ -58,11 +61,6 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 	if env == nil {
 		env = envs.GetEnv()
 	}
-	if dbKey == "" {
-		db := envs.GetDBDefault()
-		dbKey = db.GetDBKey()
-	}
-
 	dbKey = GetDbKey(env, dbKey)
 
 	if tableName == "" && newCfg.DBSchema != nil {
@@ -130,20 +128,20 @@ func NewDao[T any](newCfg *DaoConfig) idao.Dao[T] {
 
 	if item != nil {
 		switch item.GetDBType() {
-		case envs.DBType_MongoDB:
+		case envs.DBTypeMongoDB:
 			dao = mongodb.NewDao[T](daoCfg)
-		case envs.DBType_Sqlite,
-			envs.DBType_Oracle,
-			envs.DBType_Postgres,
-			envs.DBType_MySQL,
-			envs.DBType_MsSQL:
+			break
+		case envs.DBTypeSqlite, envs.DBTypeOracle, envs.DBTypePostgres, envs.DBTypeMySQL, envs.DBTypeDoris, envs.DBTypeMsSQL:
 			dao = sql.NewDao[T](daoCfg)
-		case envs.DBType_Neo4j:
+			break
+		case envs.DBTypeNeo4j:
 			dao = neo4j.NewDao[T](daoCfg)
-		case envs.DBType_Huge:
+			break
+		case envs.DBTypeHuge:
 			dao = huge.NewDao[T](daoCfg)
+			break
 		default:
-			panic(errors.New(fmt.Sprintf("%s database not exists", dbKey)))
+			panic(errors.New(fmt.Sprintf("dao.NewDao[T any]() not supported dbKey %s database %s, tableName:%s", dbKey, item.GetDBType().String(), newCfg.TableName)))
 		}
 	}
 	if newCfg.IsCache {
@@ -162,9 +160,6 @@ func getCallerInfo(skip int) string {
 }
 
 func GetDbKey(envInst *envs.Env, dbKey string) string {
-	if dbKey == "" {
-		return envs.DefaultDBKey
-	}
 	return envInst.GetDBKeyValue(dbKey)
 }
 

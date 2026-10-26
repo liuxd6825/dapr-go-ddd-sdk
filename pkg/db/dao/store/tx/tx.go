@@ -27,13 +27,13 @@ func StartTx(ctx context.Context, dbKeys []string, txFunc store2.TxFunc, options
 			}
 			DBType := item.GetDBType()
 			switch DBType {
-			case envs.DBType_Neo4j:
+			case envs.DBTypeNeo4j:
 				break
-			case envs.DBType_MongoDB:
-				newTxFunc = newMongoFunc(item.GetMongo(), dbKey, newTxFunc)
+			case envs.DBTypeMongoDB:
+				newTxFunc = newMongoFunc(item.GetMongoDB(), dbKey, newTxFunc)
 				break
-			case envs.DBType_Sqlite, envs.DBType_MySQL, envs.DBType_MsSQL, envs.DBType_Oracle, envs.DBType_Postgres:
-				newTxFunc = newGormFunc(item.GetGormDB(), dbKey, newTxFunc)
+			case envs.DBTypeSqlite, envs.DBTypeMySQL, envs.DBTypeMsSQL, envs.DBTypeOracle, envs.DBTypePostgres, envs.DBTypeDoris:
+				newTxFunc = newGormFunc(item.GetGormDBClient(), dbKey, newTxFunc)
 				break
 			}
 		}
@@ -59,15 +59,15 @@ func Start(ctx context.Context, txDb TxDB, txFunc store2.TxFunc, options ...*sto
 	if txDb != nil && len(txDb) > 0 {
 		for _, item := range txDb {
 			switch item.DBType {
-			case envs.DBType_Neo4j:
+			case envs.DBTypeNeo4j:
 				break
-			case envs.DBType_MongoDB:
+			case envs.DBTypeMongoDB:
 				db, ok := item.DB.(store_mongodb2.IMongoDB)
 				if !ok {
 					return fmt.Errorf("db %s type %s is not MongoDB", item.DBKey, item.DBType)
 				}
 				newTxFunc = newMongoFunc(db, item.DBKey, newTxFunc)
-			case envs.DBType_Sqlite, envs.DBType_MySQL, envs.DBType_MsSQL, envs.DBType_Oracle, envs.DBType_Postgres:
+			case envs.DBTypeSqlite, envs.DBTypeMySQL, envs.DBTypeMsSQL, envs.DBTypeOracle, envs.DBTypePostgres, envs.DBTypeDoris:
 				db := item.DB.(*gorm.DB)
 				newTxFunc = newGormFunc(db, item.DBKey, newTxFunc)
 				break

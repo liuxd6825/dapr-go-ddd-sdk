@@ -3,15 +3,16 @@ package analysisconfigs
 import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 
 type Config struct {
-	MongoDbKey string `json:"mongoDbKey"`
-	DorisDbKey string `json:"dorisDbKey"`
-	S3Key      string `json:"s3Key"`
+	MongoDbKey string `yaml:"mongoDbKey"`
+	DorisDbKey string `yaml:"dorisDbKey"`
+	RedisDbKey string `yaml:"redisDbKey"`
+	S3Key      string `yaml:"s3Key"`
 }
 
 var cfg Config
 
 func Init(env *envs.Env) {
-	env.GetAppSubItem("analysisService", &cfg)
+	env.GetServiceConfig("analysis-service", &cfg)
 }
 
 func GetConfig() Config {

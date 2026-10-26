@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service/model"
 )
@@ -10,12 +11,13 @@ type DrawService struct {
 	drawDao *dao.DrawDao
 }
 
-const DBKey string = "$drawDb"
+/*const DBKey string = "$drawDb"//
 const Neo4jDBKey string = "$neo4jDb"
+*/
 
-func NewDrawService() *DrawService {
+func NewDrawService(mongoDbKey string) *DrawService {
 	return &DrawService{
-		drawDao: dao.NewDrawDao(DBKey),
+		drawDao: dao.NewDrawDao(mongoDbKey),
 	}
 }
 

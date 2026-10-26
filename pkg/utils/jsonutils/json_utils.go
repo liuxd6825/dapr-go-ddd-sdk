@@ -66,3 +66,11 @@ func MarshalNoKeyMarks(data map[string]interface{}) (string, error) {
 	sb.WriteString("}")
 	return sb.String(), nil
 }
+
+func ObjectCast(source any, target any) error {
+	txt, err := Marshal(source)
+	if err != nil {
+		return err
+	}
+	return Unmarshal([]byte(txt), target)
+}

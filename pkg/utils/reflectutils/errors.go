@@ -33,5 +33,5 @@ func NewMethodCallError(typeName, methodName, message string) error {
 }
 
 func (e *methodCallError) Error() string {
-	return fmt.Sprintf("%s.%s() doing error, %s.", e.typeName, e.methodName, e.message)
+	return fmt.Sprintf("%s.%s() doing error, %s. %s", e.typeName, e.methodName, e.message, CallerInfo(2))
 }

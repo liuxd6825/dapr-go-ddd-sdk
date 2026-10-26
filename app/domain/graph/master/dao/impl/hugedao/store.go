@@ -3,7 +3,7 @@ package hugedao
 import (
 	"sync"
 
-	ragconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
+	ragconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/hugegraph"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
@@ -16,10 +16,7 @@ func GetStore() (*hugegraph.Store, error) {
 	_storeOnce.Do(func() {
 		e := envs.GetEnv()
 		cfg := ragconfigs.GetConfig()
-		db, ok := e.Huge[cfg.HugeDbKey]
-		if !ok {
-			panic("no huge")
-		}
+		db := e.GetHugeConfig(cfg.HugeDbKey)
 		var pool *hugegraph.ClientPool
 		pool, err = hugegraph.NewClientPool(hugegraph.HugeConfig{
 			Host:     db.Host,

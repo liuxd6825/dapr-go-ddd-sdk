@@ -78,7 +78,7 @@ func InitHServer(httpServer *restapp.HttpServer, fileName string, srcFsName stri
 			restapi.View = fileHandler.RenderView
 		*/
 
-		render.RegisterRenderHandler(irisApp, env, vData)
+		render.Init(irisApp, env, vData)
 	}
 	if srcFs != nil && autoRestart {
 		NewWatcher(server, srcFs, func(rootPath, fileName string, eventType fs.WatcherEventType) error {

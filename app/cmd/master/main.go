@@ -18,7 +18,9 @@ import (
 	rag_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys"
 	sys_code_service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/code/service"
+	sysconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
 	notify "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/notify/restapi"
+	service2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/service"
 	tag "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
@@ -59,22 +61,22 @@ func main() {
 			return nil
 		},
 		OnStartEvent: func(server *restapp.HttpServer) error {
-			err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "all"}, func() error {
+			err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "all"}, func() error {
 				baseUrl := "/api/v1.0"
 				app := server.App()
 				env := server.EnvConfig()
 				master.Init(app, baseUrl, env)
 				analysis.Init(app, baseUrl, env)
-				drawio.RegisterAllApi(app, baseUrl, env)
-				graph.RegisterAllApi(app, baseUrl, env)
-				rag.RegisterAllApi(app, baseUrl, env)
-				doc.RegisterAllApi(app, baseUrl, env)
-				tag.RegisterAllApi(app, baseUrl, env)
-				excelImport.RegisterAllApi(app, baseUrl, env)
-				sys.RegisterAllApi(app, baseUrl, env)
-				metrics.RegisterAllApi(app, baseUrl, env)
-				notify.RegisterAllApi(app, baseUrl, env)
-				render.RegisterRenderHandler(app, env, map[string]any{})
+				drawio.Init(app, baseUrl, env)
+				graph.Init(app, baseUrl, env)
+				rag.Init(app, baseUrl, env)
+				doc.Init(app, baseUrl, env)
+				tag.Init(app, baseUrl, env)
+				excelImport.Init(app, baseUrl, env)
+				sys.Init(app, baseUrl, env)
+				metrics.Init(app, baseUrl, env)
+				notify.Init(app, baseUrl, env)
+				render.Init(app, env, map[string]any{})
 				/*
 					if err := lowcode.Run(server); err != nil {
 						return err
@@ -99,8 +101,8 @@ func runBackWorker() {
 	docDbKey := docconfigs.GetMongoDbKey()
 	go func() {
 		ctx := context.Background()
-
-		tenantService := service.NewTenantService(masterDbKey)
+		oryService := service2.NewOryService(sysconfigs.GetConfig().Org)
+		tenantService := service.NewTenantService(masterDbKey, oryService)
 		list, err := tenantService.FindAll(context.Background())
 		if err != nil {
 			panic(err)

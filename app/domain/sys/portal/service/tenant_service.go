@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	service "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/oryservice"
 	service5 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/service"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/enum"
@@ -33,12 +34,12 @@ var (
 	_tenantDomainService *TenantService
 )
 
-func NewTenantService(dbKey string) *TenantService {
+func NewTenantService(dbKey string, orgService *service.OryService) *TenantService {
 	return &TenantService{
 		tenantOpt:         idao.NewCallOptions().SetTenantId(SystemTenantId),
 		dao:               dao.NewTenantDao(dbKey),
 		tuDao:             dao.NewTenantUserDao(dbKey),
-		userService:       NewUserService(dbKey),
+		userService:       NewUserService(dbKey, orgService),
 		tenantUserService: NewTenantUserService(dbKey),
 		tagService:        service5.NewTagService(dbKey),
 	}

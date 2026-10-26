@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/dao"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/dao/idao"

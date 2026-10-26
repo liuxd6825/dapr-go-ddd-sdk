@@ -22,9 +22,14 @@ type NotifyApi struct {
 }
 
 func NewNotifyApi(rootPath string, env *envs.Env) *NotifyApi {
+	daprClient := dapr.GetDaprClient()
+	if daprClient == nil {
+		panic("Dapr Client is nil")
+	}
+	notifyService := service.NewNotifyService(daprClient, env)
 	return &NotifyApi{
 		rootPath:      rootPath,
-		notifyService: service.NewNotifyService(dapr.GetDaprClient(), env),
+		notifyService: notifyService,
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 
 // Init 初始化人员子域，注册 Human 及 13 个子实体的 REST API
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service": "human"}, func() error {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name": "human"}, func() error {
 		masterconfigs.Init(env)
 		mongoDbKey := masterconfigs.GetMongoDbKey()
 		restapi.RegisterHuman(app, baseUrl, env, mongoDbKey)

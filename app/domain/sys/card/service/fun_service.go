@@ -19,11 +19,9 @@ type FunService struct {
 }
 
 func NewFunService(mongoDbKey string) *FunService {
-
 	return &FunService{
 		dao: dao.NewFunDao(mongoDbKey),
 	}
-
 }
 
 func (t *FunService) Create(ctx context.Context, cmd *command.FunCreateCommand) error {

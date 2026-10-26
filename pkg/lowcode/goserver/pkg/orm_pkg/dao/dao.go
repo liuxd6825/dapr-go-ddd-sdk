@@ -86,11 +86,8 @@ func GetDao(dbKey string, tableName string) idao.Dao[map[string]any] {
 }
 
 func GetKey(dbKey string, tableName string) string {
-	if dbKey == "" {
-		dbKey = envs.DefaultDBKey
-	} else {
-		dbKey = dao.GetDbKey(server_pkg.GetServer().Env(), dbKey)
-	}
+	dbKey = dao.GetDbKey(server_pkg.GetServer().Env(), dbKey)
+
 	return fmt.Sprintf("%s.%s", dbKey, tableName)
 }
 
@@ -111,8 +108,5 @@ func getInfos(sch *jsonschema.Schema) (aggField string, aggType string, tableNam
 }
 
 func getDbKey(envInst *envs.Env, dbKey string) string {
-	if dbKey == "" {
-		return envs.DefaultDBKey
-	}
 	return envInst.GetDBKeyValue(dbKey)
 }

@@ -2,6 +2,8 @@ package reflectutils
 
 import (
 	"reflect"
+	"runtime"
+	"strconv"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 )
@@ -121,4 +123,15 @@ func checkArgsIsNil(args ...any) error {
 		}
 	}
 	return nil
+}
+
+func CallerInfo(skip int) string {
+	// runtime.Caller(skip)
+	// skip = 0 代表 Caller 自身这一层
+	// skip = 1 代表调用 printCallerInfo 的上一层（即 main 函数或其它调用方）
+	_, file, line, ok := runtime.Caller(skip + 1)
+	if !ok {
+		return ""
+	}
+	return file + ":" + strconv.Itoa(line) + " "
 }

@@ -3,12 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/pkg/mxgraph"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/draw/service"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/neo4jdao"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/dao/hugedao"
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
@@ -19,19 +17,13 @@ type GraphService struct {
 	graphDao dao.IGraphDao
 }
 
-var _graphService *GraphService
-var _graphServiceOnce sync.Once
-
-func NewGraphService() *GraphService {
-	_graphServiceOnce.Do(func() {
-		_graphService = newGraphService()
-	})
-	return _graphService
+func NewGraphService(graphDbKey string) *GraphService {
+	return newGraphService(graphDbKey)
 }
 
-func newGraphService() *GraphService {
+func newGraphService(graphDbKey string) *GraphService {
 	graphService := &GraphService{
-		graphDao: neo4jdao.NewGraphDao(service.Neo4jDBKey),
+		graphDao: hugedao.NewGraphDaoWidthDbKey(envs.GetEnv(), graphDbKey),
 	}
 
 	return graphService

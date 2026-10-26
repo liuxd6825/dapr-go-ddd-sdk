@@ -13,20 +13,23 @@ import (
 // @Author:       liuxd
 // @Date:         2021/10/18 10:57
 type App struct {
-	AppId      string         `yaml:"id" json:"id"`               // 应用ID
-	AppName    string         `yaml:"name" json:"name"`           // 应用名称
-	WebName    string         `yaml:"webName" json:"webName"`     // Web源码文件系统名称
-	ProdMode   bool           `yaml:"prodMode" json:"prodMode"`   // 是生产模式
-	HttpHost   string         `yaml:"httpHost" json:"httpHost"`   // 绑定HTTP IP
-	HttpPort   int            `yaml:"httpPort" json:"httpPort"`   // 绑定HTTP 端口
-	RootUrl    string         `yaml:"rootUrl" json:"rootUrl"`     // URL根
-	CPU        *int           `yaml:"cpu" json:"cpu"`             // CPU数量
-	Memory     *string        `yaml:"memory" json:"memory"`       // 内存大小
-	Meta       map[string]any `yaml:"meta" json:"meta"`           // 自定义配置
-	AuthToken  string         `yaml:"authToken" json:"authToken"` // 开发时Token
-	HServer    HServer        `yaml:"hServer" json:"hServer"`     // 脚本服务配置
-	IsPubEvent bool           `yaml:"isPubEvent" json:"isPubEvent"`
+	AppId      string             `yaml:"id" json:"id"`                 // 应用ID
+	AppName    string             `yaml:"name" json:"name"`             // 应用名称
+	WebName    string             `yaml:"webName" json:"webName"`       // Web源码文件系统名称
+	ProdMode   bool               `yaml:"prodMode" json:"prodMode"`     // 是生产模式
+	HttpHost   string             `yaml:"httpHost" json:"httpHost"`     // 绑定HTTP IP
+	HttpPort   int                `yaml:"httpPort" json:"httpPort"`     // 绑定HTTP 端口
+	RootUrl    string             `yaml:"rootUrl" json:"rootUrl"`       // URL根
+	CPU        *int               `yaml:"cpu" json:"cpu"`               // CPU数量
+	Memory     *string            `yaml:"memory" json:"memory"`         // 内存大小
+	Meta       map[string]any     `yaml:"meta" json:"meta"`             // 自定义配置
+	AuthToken  string             `yaml:"authToken" json:"authToken"`   // 开发时Token
+	HServer    HServer            `yaml:"hServer" json:"hServer"`       // 脚本服务配置
+	IsPubEvent bool               `yaml:"isPubEvent" json:"isPubEvent"` //
+	Services   map[string]Service `yaml:"services" json:"services"`     // 服务配置项
 }
+
+type Service map[string]any
 
 // Log 日志配置
 type Log struct {

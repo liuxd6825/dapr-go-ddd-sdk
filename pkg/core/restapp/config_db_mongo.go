@@ -19,7 +19,7 @@ type MongoConfig struct {
 	Host                   string  `yaml:"host" json:"host"`
 	DbName                 string  `yaml:"dbname" json:"dbName"`
 	User                   string  `yaml:"user" json:"user"`
-	Pwd                    string  `yaml:"pwd" json:"pwd"`
+	Password               string  `yaml:"password" json:"password"`
 	ReplicaSet             string  `yaml:"replicaSet" json:"replicaSet"`
 	WriteConcern           string  `yaml:"writeConcern" json:"writeConcern"`
 	ReadConcern            string  `yaml:"readConcern" json:"readConcern"`
@@ -36,7 +36,7 @@ type MongoConfig struct {
 }
 
 func (m MongoConfig) IsEmpty() bool {
-	if m.Host == "" && m.DbName == "" && m.Pwd == "" && m.User == "" {
+	if m.Host == "" && m.DbName == "" && m.Password == "" && m.User == "" {
 		return true
 	}
 	return false
@@ -56,7 +56,7 @@ func NewDddMongodbConfig(c *MongoConfig) *mongodb.Config {
 		Host:                   strings.ReplaceAll(c.Host, " ", ""),
 		DatabaseName:           c.DbName,
 		UserName:               c.User,
-		Password:               c.Pwd,
+		Password:               c.Password,
 		WriteConcern:           c.WriteConcern,
 		ReadConcern:            c.ReadConcern,
 		Direct:                 c.Direct,

@@ -26,6 +26,7 @@ type TagRelationAPI struct {
 func NewTagRelationAPI(env *envs.Env, rootPath string, mongoDbKey string) *TagRelationAPI {
 	tagRelationSvc := service.NewTagRelationService(mongoDbKey)
 	return &TagRelationAPI{
+		mongoDbKey:     mongoDbKey,
 		env:            env,
 		tagRelationSvc: tagRelationSvc,
 		rootPath:       rootPath,

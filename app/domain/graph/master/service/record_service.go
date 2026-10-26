@@ -33,15 +33,9 @@ func NewRecordServiceWithEnv(env *envs.Env, graphCfg graphconfigs.Config) *Recor
 		panic("minio S3 key not found")
 	}
 
-	hgCfg, hgok := env.GetHugeByKey(graphCfg.HugeDbKey)
-	if !hgok {
-		panic("hugedb key not found")
-	}
+	hgCfg := env.GetHugeConfig(graphCfg.HugeDbKey)
 
-	mongoCfg, hgok := env.GetMongoByKey(graphCfg.MongoDbKey)
-	if !hgok {
-		panic("hugedb key not found")
-	}
+	mongoCfg := env.GetMongoConfig(graphCfg.MongoDbKey)
 
 	cfg := RecordServiceConfig{
 		S3Endpoint: s3cfg.Endpoint,
@@ -56,7 +50,7 @@ func NewRecordServiceWithEnv(env *envs.Env, graphCfg graphconfigs.Config) *Recor
 		MongoHost:       mongoCfg.Host,
 		MongoReplicaset: mongoCfg.ReplicaSet,
 		MongoUser:       mongoCfg.User,
-		MongoPwd:        mongoCfg.Pwd,
+		MongoPwd:        mongoCfg.Password,
 		MongoDB:         mongoCfg.DbName,
 	}
 

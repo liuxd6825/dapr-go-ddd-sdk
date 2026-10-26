@@ -16,8 +16,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys"}, func() error {
+func Init(app *iris.Application, baseUrl string, env *envs.Env) {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "sys"}, func() error {
 		sysconfigs.Init(env)
 		cfg := sysconfigs.GetConfig()
 		case_api.RegisterAllApi(app, baseUrl, env, cfg)

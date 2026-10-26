@@ -14,6 +14,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/types"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 	"gorm.io/gorm"
 	gormschema "gorm.io/gorm/schema"
@@ -62,16 +63,24 @@ func NewDaoWithDbKey[T any](cfg *NewConfig) store2.IStore[T] {
 	if db == nil {
 		cfg.DbType = item.GetDBType().String()
 		switch item.GetDBType() {
-		case envs.DBType_Postgres:
-			db = item.GetGormDB()
-		case envs.DBType_MySQL:
-			db = item.GetGormDB()
-		case envs.DBType_Sqlite:
-			db = item.GetGormDB()
-		case envs.DBType_MsSQL:
-			db = item.GetGormDB()
-		case envs.DBType_Oracle:
-			db = item.GetGormDB()
+		case envs.DBTypePostgres:
+			db = item.GetGormDBClient()
+			break
+		case envs.DBTypeMySQL:
+			db = item.GetGormDBClient()
+			break
+		case envs.DBTypeSqlite:
+			db = item.GetGormDBClient()
+			break
+		case envs.DBTypeMsSQL:
+			db = item.GetGormDBClient()
+			break
+		case envs.DBTypeOracle:
+			db = item.GetGormDBClient()
+			break
+		case envs.DBTypeDoris:
+			db = item.GetGormDBClient()
+			break
 		default:
 			panic(errors.New(fmt.Sprintf("db type %s not supported", item.GetDBType())))
 		}
@@ -103,11 +112,16 @@ func NewDao[T any](cfg *NewConfig) *Dao[T] {
 	return newDao[T](cfg)
 }
 
+func panicError(err error, skip int) {
+	file := reflectutils.CallerInfo(skip)
+	panic(err.Error() + ": " + file)
+}
+
 func newDao[T any](cfg *NewConfig) *Dao[T] {
 	var err error
 
 	if err = cfg.Check(); err != nil {
-		panic(err)
+		panicError(err, 2)
 	}
 
 	eb := store2.NewAnyEntityBuilder[T](cfg.DBSchema)

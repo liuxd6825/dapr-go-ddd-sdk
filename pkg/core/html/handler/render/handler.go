@@ -41,7 +41,7 @@ type RenderHandler struct {
 
 var isRegister bool
 
-func RegisterRenderHandler(irisApp *iris.Application, env *envs.Env, grValue map[string]any) {
+func Init(irisApp *iris.Application, env *envs.Env, grValue map[string]any) {
 	if isRegister {
 		return
 	}

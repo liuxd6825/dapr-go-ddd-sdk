@@ -8,7 +8,7 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
+func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	graphconfigs.Init(env)
 	draw_restapi.RegisterAllApi(app, baseUrl, env)
 	master_restapi.RegisterAllApi(app, baseUrl, env)

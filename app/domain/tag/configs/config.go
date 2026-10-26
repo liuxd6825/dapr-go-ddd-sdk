@@ -1,17 +1,25 @@
 package tagconfigs
 
-import "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
+import (
+	"sync"
+
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
+)
 
 type Config struct {
-	MongoDbKey string `json:"mongoDbKey"`
-	S3Key      string `json:"s3Key"`
-	RedisKey   string `json:"redisKey"`
+	MongoDbKey string `yaml:"mongoDbKey"`
+	S3Key      string `yaml:"s3Key"`
+	RedisDbKey string `yaml:"redisDbKey"`
 }
 
 var cfg Config
+var once sync.Once
 
 func Init(env *envs.Env) {
-	env.GetAppSubItem("sysService", &cfg)
+	once.Do(func() {
+		env.GetServiceConfig("tag-service", &cfg)
+	})
+
 }
 
 func GetConfig() Config {

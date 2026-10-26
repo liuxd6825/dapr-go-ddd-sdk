@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"sync"
 
 	dapr "github.com/dapr/go-sdk/client"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
@@ -26,24 +25,16 @@ type NotifyService struct {
 	websockets  *pkg.WebsocketManager
 }
 
-var notifyServiceOnce sync.Once
-var notifyServiceInstance *NotifyService
-
 func NewNotifyService(client dapr.Client, env *envs.Env) *NotifyService {
-	notifyServiceOnce.Do(func() {
-		notifyServiceInstance = newNotifyService(client, env)
-	})
-	return notifyServiceInstance
+	return newNotifyService(client, env)
 }
 
 func newNotifyService(client dapr.Client, env *envs.Env) *NotifyService {
-	redisClient, ok := env.GetRedis(sysconfigs.GetRedisKey())
-	if !ok {
-		panic("redis client not exist")
-	}
+	redisDbKey := sysconfigs.GetRedisDbKey()
+	redisClient := env.GetRedisClient(redisDbKey)
 	service := &NotifyService{
 		daprClient:  client,
-		redisClient: redisClient.Client,
+		redisClient: redisClient,
 		env:         env,
 		websockets:  pkg.NewWebsocketManager(),
 	}

@@ -30,7 +30,7 @@ var updateLabelJson string
 var allJson string
 
 var drawId = "D001"
-var neo4jDBKey = ""
+var graphDbKey = ""
 
 func Test_Diff3(t *testing.T) {
 	drawFile, err := mxgraph.NewDrawioFile(linkUpdateTargetIsEmptyDrawio)
@@ -53,11 +53,11 @@ func Test_AddObject(t *testing.T) {
 			return errors.New("diff is nil")
 		}
 
-		graphService := NewGraphService()
+		graphService := NewGraphService(graphDbKey)
 		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
-		nodeDao := neo4jdao.NewGraphDao(neo4jDBKey)
+		nodeDao := neo4jdao.NewGraphDao(graphDbKey)
 		nodeDao.BatchSave(ctx, saveBatch, "D001")
 		return nil
 	}).Catch(func(e error) {
@@ -74,7 +74,7 @@ func Test_UpdateLabel(t *testing.T) {
 			t.Fatal("diff is nil")
 		}
 
-		graphService := NewGraphService()
+		graphService := NewGraphService(graphDbKey)
 		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 
@@ -97,7 +97,7 @@ func Test_AllJson(t *testing.T) {
 			t.Fatal("diff is nil")
 		}
 
-		graphService := NewGraphService()
+		graphService := NewGraphService(graphDbKey)
 		saveBatch := graphService.GetSaveBatch(newSaveFileCommand("", diff))
 		t.Log(saveBatch)
 

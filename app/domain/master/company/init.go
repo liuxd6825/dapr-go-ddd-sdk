@@ -12,7 +12,7 @@ import (
 
 // Init 初始化公司子域，注册 Company 及 6 个子实体的 REST API
 func Init(app *iris.Application, baseUrl string, env *envs.Env, config masterconfigs.Config) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service": "company"}, func() error {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name": "company"}, func() error {
 		restapi.RegisterCompany(app, baseUrl, env, config.MongoDbKey)
 		restapi.RegisterCompanyAccount(app, baseUrl, env, config.MongoDbKey)
 		restapi.RegisterCompanyCompany(app, baseUrl, env, config.MongoDbKey)

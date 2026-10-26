@@ -12,7 +12,7 @@ import (
 )
 
 func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) error {
-	return logs.DebugStart(context.Background(), logs.Fields{"service name ": "graph"}, func() error {
+	return logs.DebugStart(context.Background(), logs.Fields{"service-name ": "graph"}, func() error {
 		graphconfigs.Init(env)
 		RegisterDrawApi(app, baseUrl, env)
 		RegisterRecordParquetApi(app, baseUrl, env, graphconfigs.GetConfig())

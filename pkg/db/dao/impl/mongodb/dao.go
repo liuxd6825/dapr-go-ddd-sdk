@@ -53,7 +53,7 @@ func NewDao[T any](cfg *idao.DaoConfig, tableNames ...string) idao.Dao[T] {
 		if item == nil {
 			panic(errors.New(" %s database not found", cfg.DBKey))
 		}
-		mongoDb = item.GetMongo()
+		mongoDb = item.GetMongoDB()
 	}
 
 	tableName := cfg.DBSchema.Name

@@ -10,7 +10,7 @@ import (
 	"github.com/cloudwego/eino-ext/components/model/ollama"
 	"github.com/cloudwego/eino-ext/components/model/openai"
 	"github.com/cloudwego/eino/components/model"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/config"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/llm"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/my_rag/storage"
@@ -135,7 +135,7 @@ func newGraphRag(ragCfg ragconfigs.RagConfig) *my_rag.GraphRag {
 		Dim:            ragCfg.Vector.Dim,
 	})
 
-	graphStorage := storage.NewNeo4jGraphStorage("neo4jdao", logs.GetLogger())
+	graphStorage := storage.NewNeo4jGraphStorage(ragconfigs.GetGraphDbKey(), logs.GetLogger())
 	kv := storage.NewRedisKeyValueStorage()
 
 	ragConfig := storage.NewRagConfig(func(cfg *storage.RagConfig) {

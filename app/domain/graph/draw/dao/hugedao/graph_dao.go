@@ -8,6 +8,7 @@ import (
 	model2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/model"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/hugegraph"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/stringutils"
 )
@@ -45,11 +46,20 @@ const (
 	PropTable      = "table"
 )
 
-func NewGraphDao(store *hugegraph.Store) *GraphDao {
+func NewGraphDaoWidthDbKey(env *envs.Env, hugeDbKey string) *GraphDao {
+	hugeClient := env.GetHugeClient(hugeDbKey)
+	store := hugegraph.NewStoreWithClient(hugeClient)
+	return NewGraphDao(store)
+}
 
+func NewGraphDao(store *hugegraph.Store) *GraphDao {
 	return &GraphDao{
 		store: store,
 	}
+}
+
+func (d *GraphDao) GetStore() *hugegraph.Store {
+	return d.store
 }
 
 func (d *GraphDao) BatchSave(ctx context.Context, batch *model2.SaveBatch, drawId string) {

@@ -29,19 +29,18 @@ type UserAPI struct {
 	mongoDbKey        string
 }
 
-func NewUserAPI(env *envs.Env, rootPath string, mongoDbKey string) *UserAPI {
+func NewUserAPI(env *envs.Env, rootPath string, mongoDbKey string, oryService *service2.OryService) *UserAPI {
 	return &UserAPI{
 		env:               env,
 		mongoDbKey:        mongoDbKey,
-		userService:       service.NewUserService(mongoDbKey),
-		oryService:        service2.NewOryService(mongoDbKey),
+		oryService:        oryService,
+		userService:       service.NewUserService(mongoDbKey, oryService),
 		tenantUserService: service.NewTenantUserService(mongoDbKey),
 		rootPath:          rootPath,
 	}
 }
 
 func (s *UserAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.userService = service.NewUserService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.UserAPI", s)
 	ctl.Post("/user", "Create")
 	ctl.Put("/user", "Update")

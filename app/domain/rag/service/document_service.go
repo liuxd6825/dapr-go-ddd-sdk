@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	ragconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/rag/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/ai/rag/light_rag"
 
 	"github.com/dapr/go-sdk/client"
@@ -36,9 +37,8 @@ type DocumentService struct {
 }
 
 func NewDocumentService(statusProvider interfaces.ImportStatusProvider, mongoDbKey string) *DocumentService {
-
-	ragCfg := light_rag.LoadLightRagConfig()
-	cli := light_rag.NewClient(ragCfg.Url, ragCfg.ApiKey, &http.Client{})
+	lightCfg := ragconfigs.GetConfig().LightRag
+	cli := light_rag.NewClient(lightCfg.Url, lightCfg.ApiKey, &http.Client{})
 	s := &DocumentService{
 		dao: dao.NewDocumentDao(mongoDbKey),
 		//graphRag:       NewGraphRag(),

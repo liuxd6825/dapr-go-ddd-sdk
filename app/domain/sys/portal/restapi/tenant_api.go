@@ -36,14 +36,14 @@ type TenantAPI struct {
 	dbKey             string
 }
 
-func NewTenantAPI(env *envs.Env, rootPath string, dbKey string) *TenantAPI {
+func NewTenantAPI(env *envs.Env, rootPath string, dbKey string, oryService *service2.OryService) *TenantAPI {
 	return &TenantAPI{
 		env:               env,
 		dbKey:             dbKey,
-		tenantService:     service.NewTenantService(dbKey),
-		userService:       service.NewUserService(dbKey),
+		tenantService:     service.NewTenantService(dbKey, oryService),
+		userService:       service.NewUserService(dbKey, oryService),
 		tenantUserService: service.NewTenantUserService(dbKey),
-		oryService:        service2.NewOryService(dbKey),
+		oryService:        oryService,
 		currencyService:   service3.NewCurrencyService(dbKey),
 		bankService:       service4.NewBankService(dbKey),
 		tagService:        service5.NewTagService(dbKey),
@@ -52,7 +52,6 @@ func NewTenantAPI(env *envs.Env, rootPath string, dbKey string) *TenantAPI {
 }
 
 func (s *TenantAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.tenantService = service.NewTenantService(s.dbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.TenantAPI", s)
 	ctl.Post("/tenant", "Create")
 	ctl.Post("/tenant:init", "InitTenant")

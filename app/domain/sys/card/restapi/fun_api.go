@@ -25,6 +25,7 @@ type FunAPI struct {
 func NewFunAPI(env *envs.Env, rootPath string, mongoDbKey string) *FunAPI {
 	return &FunAPI{
 		env:             env,
+		mongoDbKey:      mongoDbKey,
 		funService:      service.NewFunService(mongoDbKey),
 		cardFileService: service.NewCardFileService(mongoDbKey),
 		rootPath:        rootPath,
@@ -32,7 +33,6 @@ func NewFunAPI(env *envs.Env, rootPath string, mongoDbKey string) *FunAPI {
 }
 
 func (s *FunAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.funService = service.NewFunService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/card", "sys.NewFunAPI", s)
 	ctl.Post("/fun", "Create")
 	ctl.Put("/fun", "Update")

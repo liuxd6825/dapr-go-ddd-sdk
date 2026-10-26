@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/tag/dao"
@@ -17,16 +16,10 @@ type TagRelationService struct {
 	xbase.Service
 }
 
-var (
-	_tagRelationOnce          sync.Once
-	_tagRelationDomainService *TagRelationService
-)
-
 func NewTagRelationService(mongoDbKey string) *TagRelationService {
 	return &TagRelationService{
 		dao: dao.NewTagRelationDao(mongoDbKey),
 	}
-
 }
 
 func (t *TagRelationService) Create(ctx context.Context, cmd *command.TagRelationCreateCommand) error {

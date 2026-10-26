@@ -25,8 +25,8 @@ func NewMongoQueryAPI(env *envs.Env, rootPath string, dbKey string) *MongoQueryA
 	if dbItem == nil {
 		panic("mongoDbItem is nil")
 	}
-	client := dbItem.GetMongo().Client()
-	database := dbItem.GetMongo().GetDatabase()
+	client := dbItem.GetMongoClient()
+	database := dbItem.GetMongoDB().GetDatabase()
 	mongoService := service.NewMongoService(env, rootPath, dbKey)
 	return &MongoQueryAPI{
 		dbKey:    dbKey,

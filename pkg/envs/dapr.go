@@ -22,7 +22,7 @@ type Dapr struct {
 	IdleConnTimeout     int                        `yaml:"idleConnTimeout" json:"idleConnTimeout"`
 	EventStores         map[string]*DaprEventStore `yaml:"eventStores" json:"eventStores"`
 	Actor               DaprActor                  `yaml:"actor" json:"actor"`
-	Start               bool                       `yaml:"start" json:"start"`
+	AutoStart           bool                       `yaml:"autoStart" json:"autoStart"`
 	StartArgs           map[string]any             `yaml:"startArgs" json:"startArgs"`
 	Enable              bool                       `yaml:"enable" json:"enable"`
 	ApiVersion          string                     `yaml:"apiVersion" json:"apiVersion"`

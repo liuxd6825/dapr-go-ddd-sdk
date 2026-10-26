@@ -24,11 +24,11 @@ type RecordChartService struct {
 func NewRecordChartService(env *envs.Env, rootPath string, dorisDbKey string) *RecordChartService {
 	dbItem := env.GetDB(dorisDbKey)
 	if dbItem == nil {
-		panic("mysqlDB is nil")
+		panic(fmt.Sprintf("%s is nil", dorisDbKey))
 	}
 	db, ok := dbItem.GetDB().(*gorm.DB)
 	if !ok {
-		panic("mysqlDB is nil")
+		panic(fmt.Sprintf("%s DbItem.GetDB() is nil", dorisDbKey))
 	}
 	return &RecordChartService{
 		env:      env,

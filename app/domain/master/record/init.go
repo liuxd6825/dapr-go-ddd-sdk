@@ -10,7 +10,7 @@ import (
 )
 
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "master"}, func() error {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "master"}, func() error {
 		restapi.Init(app, baseUrl, env)
 		return nil
 	})

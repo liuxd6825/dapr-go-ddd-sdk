@@ -19,12 +19,14 @@ func NewEnv(cfg *EnvConfig) *envs.Env {
 	env.Log = NewLog(cfg.Log)
 	env.Dapr = NewDapr(cfg.Dapr)
 	//env.Auth = NewAuth(cfg.Auth)
-	env.Mysql = NewMySQL(cfg.Mysql)
-	env.Mongo = NewMongo(cfg.Mongo)
-	env.Neo4j = NewNeo4j(cfg.Neo4j)
-	env.Minio = NewMinio(cfg.Minio)
-	env.Redis = NewRedis(cfg.Redis)
-	env.Elastic = NewElastic(cfg.Elastic)
+	/*	env.Mysql = NewMySQL(cfg.Mysql)
+		env.Mongo = NewMongo(cfg.Mongo)
+		env.Neo4j = NewNeo4j(cfg.Neo4j)
+		env.Minio = NewMinio(cfg.Minio)
+		env.Redis = NewRedis(cfg.Redis)
+		env.Elastic = NewElastic(cfg.Elastic)*/
+	env.Services = cfg.Services
+	env.DBs = cfg.DBs
 	return env
 }
 

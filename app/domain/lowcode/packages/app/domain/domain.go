@@ -619,7 +619,7 @@ func Packages() native.Packages {
 			"NewDocumentAPI":      pkg19.NewDocumentAPI,
 			"NewFileAPI":          pkg19.NewFileAPI,
 			"NewFolderAPI":        pkg19.NewFolderAPI,
-			"RegisterAllApi":      pkg19.RegisterAllApi,
+			"RegisterAllApi":      pkg19.Init,
 			"RegisterFolderApi":   pkg19.RegisterFolderApi,
 			"RegisterDocumentApi": pkg19.RegisterDocumentApi,
 			"RegisterFileApi":     pkg19.RegisterFileApi,
@@ -708,7 +708,7 @@ func Packages() native.Packages {
 		Declarations: native.Declarations{
 			// Functions
 			"NewDrawIoAPI":    pkg22.NewDrawIoAPI,
-			"RegisterAllApi":  pkg22.RegisterAllApi,
+			"RegisterAllApi":  pkg22.Init,
 			"RegisterDrawApi": pkg22.RegisterDrawApi,
 
 			// Types

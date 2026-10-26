@@ -2,13 +2,14 @@ package metrics
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
+func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "metrics"}, func() error {
 		RegisterMetricsAPI(app, baseUrl, env)
 		return nil

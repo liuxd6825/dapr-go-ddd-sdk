@@ -251,7 +251,7 @@ func (r *Result) getPathObjects(data map[string]any) []any {
 	return res
 }
 
-func (r *Result) GetGraphView() *graph.GraphView {
+func (r *Result) NewGraphView() *graph.GraphView {
 	graphView := graph.NewGraphView()
 	var nodes []*graph.Node
 	for _, i := range r.Nodes {

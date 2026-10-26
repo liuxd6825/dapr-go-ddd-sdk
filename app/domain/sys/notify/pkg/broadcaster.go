@@ -17,10 +17,10 @@ type BroadcastMessage struct {
 var rdb *redis.Client
 
 func InitRedis(env *envs.Env) {
-	rdb, ok := env.GetRedis("$notify")
-	if ok && rdb != nil {
+	client := env.GetRedisClient("$notify")
+	if client != nil {
 		// 启动监听协程
-		go subscribeToBroadcast(rdb.Client)
+		go subscribeToBroadcast(client)
 	} else {
 		panic("notify redis is nil")
 	}

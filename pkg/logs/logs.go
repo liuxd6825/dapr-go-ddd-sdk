@@ -6,6 +6,7 @@ import (
 
 	appctx2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/appctx"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/idutils"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/runtimeutils"
 
 	"time"
@@ -351,7 +352,7 @@ func DebugStart(ctx context.Context, fields Fields, fun func() error) (err error
 			err = errors.GetRecoverError(err, recover())
 			if err != nil {
 				logLevel = ErrorLevel
-				SetField(fs, "error", err.Error())
+				SetField(fs, "error", err.Error()+", "+reflectutils.CallerInfo(2))
 			}
 			write(ctx, fs, logLevel, nil, func(ctx context.Context, l Logger, args ...any) {
 				if logLevel == ErrorLevel {

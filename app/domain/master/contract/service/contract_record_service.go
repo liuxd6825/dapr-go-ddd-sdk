@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"sync"
 
 	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/dao"
@@ -16,16 +15,11 @@ type ContractRecordService struct {
 	dao *dao.ContractRecordDao
 }
 
-var _contractRecordService *ContractRecordService
-var _contractRecordServiceOnce sync.Once
-
 func NewContractRecordService() *ContractRecordService {
-	_contractRecordServiceOnce.Do(func() {
-		_contractRecordService = &ContractRecordService{
-			dao: dao.NewContractRecordDao(masterconfigs.GetMongoDbKey()),
-		}
-	})
-	return _contractRecordService
+	res := &ContractRecordService{
+		dao: dao.NewContractRecordDao(masterconfigs.GetMongoDbKey()),
+	}
+	return res
 }
 
 func (s *ContractRecordService) CreateMany(ctx context.Context, items []*model.ContractRecord, opts ...idao.CallOptions) error {

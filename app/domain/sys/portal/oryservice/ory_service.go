@@ -2,49 +2,28 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
-	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/portal/config"
-	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
+	sysconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/sys/configs"
 	client "github.com/ory/kratos-client-go"
 )
 
 type OryService struct {
-	ory    *client.APIClient
-	oryCfg *config.OryConfig
-}
-
-var (
-	_oryOnce          sync.Once
-	_oryDomainService *OryService
-)
-
-func (t *OryService) loadConfig() {
-	e := envs.GetEnv()
-	oryMeta := e.App.Meta["ory"]
-	var err error
-	if oryMeta == nil {
-		panic("ory not found in env.app ")
-	}
-
-	t.oryCfg, err = config.ReadOryConfig(oryMeta)
-	if err != nil {
-		panic("read OryConfig error" + err.Error())
-	}
+	ory *client.APIClient
+	cfg sysconfigs.OryConfig
 }
 
 func (t *OryService) init() {
 	cfg := client.NewConfiguration()
 	cfg.Servers = client.ServerConfigurations{
-		{URL: fmt.Sprintf(t.oryCfg.Url)},
+		{URL: t.cfg.Url},
 	}
 	t.ory = client.NewAPIClient(cfg)
 }
 
-func NewOryService(dbKey string) *OryService {
-	service := &OryService{}
-	service.loadConfig()
+func NewOryService(cfg sysconfigs.OryConfig) *OryService {
+	service := &OryService{
+		cfg: cfg,
+	}
 	service.init()
 	return service
 }

@@ -28,11 +28,11 @@ type UserService struct {
 	tuDao      *dao.TenantUserDao
 }
 
-func NewUserService(mongoDbKey string) *UserService {
+func NewUserService(mongoDbKey string, oryService *service2.OryService) *UserService {
 	return &UserService{
 		tenantOpt:  idao.NewCallOptions().SetTenantId(SystemTenantId),
 		dao:        dao.NewUserDao(mongoDbKey),
-		oryService: service2.NewOryService(mongoDbKey),
+		oryService: oryService,
 		tuDao:      dao.NewTenantUserDao(mongoDbKey),
 	}
 }

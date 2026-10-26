@@ -28,12 +28,18 @@ func NewMongoScriptManager() DbScriptManager {
 }
 
 func (m *MongoManager) GetScript(ctx context.Context, dbKey string, tables []*Table, env *envs.Env, options *CreateOptions) (*strings.Builder, error) {
-	cfg, ok := env.Mongo[dbKey]
-	if !ok {
+	dbItem := env.GetDB(dbKey)
+	if dbItem == nil {
 		return nil, errors.New(fmt.Sprintf("dbKey not found %s", dbKey))
 	}
+	if dbItem.GetDBType() != envs.DBTypeMongoDB {
+		return nil, errors.New(fmt.Sprintf("dbItem type %s not supported", dbItem.GetDBType()))
+	}
+
+	cfg := dbItem.GetConfig().(MongoConfig)
+
 	user := cfg.User
-	pwd := cfg.Pwd
+	pwd := cfg.Password
 	dbName := cfg.DbName
 	dbScript := fmt.Sprintf(`
 db.createUser({
@@ -159,29 +165,29 @@ func (m *MongoManager) Create(ctx context.Context, table *Table, env *envs.Env, 
 		return
 	}
 
-	mongodb := db.GetMongo()
-	if mongodb == nil {
+	mongoDb := db.GetMongoDB()
+	if mongoDb == nil {
 		opt.Log(errors.New(fmt.Sprintf("Dbkey:%s 不存在", table.DbKey)))
 		return
 	}
 
-	opt.Printf("dbName:%s; ", mongodb.GetDatabase().Name())
+	opt.Printf("dbName:%s; ", mongoDb.GetDatabase().Name())
 	collName := options.Prefix + table.TableName
 
-	has, err := mongodb.ExistCollection(ctx, collName)
+	has, err := mongoDb.ExistCollection(ctx, collName)
 	if err != nil {
 		opt.Log(err)
 		return
 	}
 	if !has {
-		err = mongodb.CreateCollection(collName)
+		err = mongoDb.CreateCollection(collName)
 		if err != nil {
 			opt.Log(err)
 			return
 		}
 	}
 
-	coll := mongodb.GetCollection(collName)
+	coll := mongoDb.GetCollection(collName)
 	names, err := m.createIndexes(ctx, table, coll)
 	if err != nil {
 		opt.Log(err)
@@ -213,20 +219,14 @@ func (m *MongoManager) Update(ctx context.Context, table *Table, env *envs.Env, 
 }
 
 func (m *MongoManager) getDb(ctx context.Context, dbKey string) (*mongodb.MongoDB, error) {
-	mongodb, ok := envs.GetMongoByKey(dbKey)
-	if !ok {
-		return nil, errors.New(fmt.Sprintf("Dbkey %s 不存在", dbKey))
-	}
-	return mongodb, nil
+	mongoDb := envs.GetMongo(dbKey)
+	return mongoDb, nil
 }
 
 func (m *MongoManager) getCollection(ctx context.Context, dbKey string, prefix string, tableName string) (*mongo.Collection, error) {
 	collName := prefix + tableName
-	mongodb, ok := envs.GetMongoByKey(collName)
-	if !ok {
-		return nil, errors.New(fmt.Sprintf("Dbkey %s 不存在", dbKey))
-	}
-	coll := mongodb.GetCollection(collName)
+	mongoDb := envs.GetMongo(collName)
+	coll := mongoDb.GetCollection(collName)
 	return coll, nil
 }
 

@@ -12,6 +12,7 @@ import (
 const defaultNebulaPort = 9669
 
 type Nebula struct {
+	DbKey    string                 `yaml:"dbKey" json:"dbKey"`
 	Name     string                 `yaml:"-"`
 	Addrs    []string               `yaml:"addrs"`
 	User     string                 `yaml:"user"`
@@ -21,47 +22,46 @@ type Nebula struct {
 	pool     *nebula.ConnectionPool `yaml:"-"`
 }
 
-func InitDBNebula(env *Env) {
-	if env.Nebula == nil {
-		env.Nebula = map[string]*Nebula{}
-		return
+func NewNebulaWithMap(meta map[string]any) (*Nebula, error) {
+	var val Nebula
+	if err := copyObject(meta, &val); err != nil {
+		return nil, err
 	}
-	for dbKey, cfg := range env.Nebula {
-		if len(cfg.Addrs) == 0 {
-			continue
-		}
-		if cfg.PoolSize <= 0 {
-			cfg.PoolSize = 10
-		}
-		addrs := toNebulaHostAddresses(cfg.Addrs)
-		pool, err := nebula.NewConnectionPool(addrs, nebula.PoolConfig{
-			MaxConnPoolSize: cfg.PoolSize,
-		}, nebula.DefaultLogger{})
-		if err != nil {
-			panic(fmt.Sprintf("nebula 连接池创建失败: %v", err))
-		}
-		cfg.pool = pool
-		key := strings.ToLower(dbKey)
-		cfg.Name = key
-	}
+	return &val, nil
 }
 
-func (env *Env) GetNebulaByKey(dbKey string) (*Nebula, bool) {
-	if env.Nebula == nil {
-		return nil, false
+func AddDBNebula(env *Env, cfg *Nebula) error {
+	if len(cfg.Addrs) == 0 {
+		return fmt.Errorf("neo4j address is empty")
 	}
-	n := env.Nebula[dbKey]
-	return n, n != nil
+	if cfg.PoolSize <= 0 {
+		cfg.PoolSize = 10
+	}
+	addrs := toNebulaHostAddresses(cfg.Addrs)
+	pool, err := nebula.NewConnectionPool(addrs, nebula.PoolConfig{
+		MaxConnPoolSize: cfg.PoolSize,
+	}, nebula.DefaultLogger{})
+
+	if err != nil {
+		panic(fmt.Sprintf("nebula 连接池创建失败: %v", err))
+	}
+
+	cfg.pool = pool
+	dbKey := strings.ToLower(cfg.DbKey)
+	cfg.Name = dbKey
+	env.AddDB(&dbItem{dbKey: dbKey, dbType: DBTypeMongoDB, nebulaPool: pool, config: cfg})
+	return nil
 }
 
-func (env *Env) AddNebula(cfg *Nebula) {
-	if cfg == nil {
-		return
+func (env *Env) GetNebulaClient(dbKey string) *nebula.ConnectionPool {
+	item := env.GetDB(dbKey)
+	if item == nil {
+		panic(fmt.Sprintf("dbKey %s not ", dbKey))
 	}
-	if env.Nebula == nil {
-		env.Nebula = map[string]*Nebula{}
+	if item.GetDBType() != DBTypeNebula {
+		panic(fmt.Sprintf("dbKey %s is not Nebula", dbKey))
 	}
-	env.Nebula[cfg.Name] = cfg
+	return item.GetNebulaClient()
 }
 
 // GetSession 从连接池获取一个已认证的 Nebula Session

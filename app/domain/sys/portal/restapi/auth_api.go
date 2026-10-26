@@ -26,22 +26,21 @@ type AuthAPI struct {
 	mongoDbKey        string
 }
 
-func NewAuthAPI(env *envs.Env, rootPath string, mongoDbKey string) *AuthAPI {
+func NewAuthAPI(env *envs.Env, rootPath string, mongoDbKey string, orgService *service2.OryService) *AuthAPI {
 	return &AuthAPI{
 		env:               env,
 		mongoDbKey:        mongoDbKey,
-		authService:       service.NewAuthService(mongoDbKey),
-		userService:       service.NewUserService(mongoDbKey),
-		tenantService:     service.NewTenantService(mongoDbKey),
+		authService:       service.NewAuthService(mongoDbKey, orgService),
+		userService:       service.NewUserService(mongoDbKey, orgService),
+		tenantService:     service.NewTenantService(mongoDbKey, orgService),
 		tenantUserService: service.NewTenantUserService(mongoDbKey),
-		oryService:        service2.NewOryService(mongoDbKey),
+		oryService:        orgService,
 		jwtService:        service.NewJwtService(),
 		rootPath:          rootPath,
 	}
 }
 
 func (s *AuthAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
-	s.authService = service.NewAuthService(s.mongoDbKey)
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.AuthAPI", s)
 	ctl.Post("/login", "Login")
 	ctl.Post("/generate", "Generate")

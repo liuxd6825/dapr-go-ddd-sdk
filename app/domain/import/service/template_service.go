@@ -18,11 +18,9 @@ type TemplateService struct {
 }
 
 func NewTemplateService(dbKey string) *TemplateService {
-
 	return &TemplateService{
 		dao: dao.NewTemplateDao(dbKey),
 	}
-
 }
 
 func (t *TemplateService) Create(ctx context.Context, cmd *command.TempCreateCommand) error {

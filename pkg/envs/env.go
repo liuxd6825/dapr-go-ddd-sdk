@@ -10,8 +10,12 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	logs2 "github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/os/fs/fsm"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/boolutils"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/reflectutils"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/redis/go-redis/v9"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Config struct {
@@ -25,18 +29,36 @@ type Env struct {
 	Log       *Log                 `yaml:"log" json:"log"`
 	Dapr      *Dapr                `yaml:"dapr" json:"dapr"`
 	Resources map[string]*Resource `yaml:"resources" json:"resources"`
-	Mongo     map[string]*Mongo    `yaml:"mongo" json:"mongo"`
-	Neo4j     map[string]*Neo4j    `yaml:"neo4jdao" json:"neo4J"`
-	Mysql     map[string]*MySql    `yaml:"mysql" json:"mysql"`
-	Minio     map[string]*Minio    `yaml:"minio" json:"minio"`
-	Nebula    map[string]*Nebula   `yaml:"nebula" json:"nebula"`
-	Elastic   map[string]*Elastic  `yaml:"elastic" json:"elastic"`
-	Redis     map[string]*Redis    `yaml:"redis" json:"redis"`
-	Huge      map[string]*Huge     `yaml:"hugedao" json:"hugedao"`
-	Fs        []map[string]any     `yaml:"fs" json:"fs"`
+	/*
+		Mongo     map[string]*Mongo    `yaml:"mongo" json:"mongo"`
+		Neo4j     map[string]*Neo4j    `yaml:"neo4jdao" json:"neo4J"`
+		Mysql     map[string]*MySql    `yaml:"mysql" json:"mysql"`
+		Nebula    map[string]*Nebula   `yaml:"nebula" json:"nebula"`
+		Elastic   map[string]*Elastic  `yaml:"elastic" json:"elastic"`
+
+		Redis     map[string]*Redis    `yaml:"redis" json:"redis"`
+	*/
+
+	Minio    map[string]*Minio  `yaml:"minio" json:"minio"`
+	DBs      map[string]DBInfo  `yaml:"dbs" json:"dbs"`
+	Services map[string]Service `yaml:"services" json:"services"`
 	//Auth      *Auth                `yaml:"auth" json:"auth"`
-	Fsm *fsm.Manager `yaml:"-" json:"-"`
-	dbs map[string]DBItem
+	Fs        []map[string]any `yaml:"fs" json:"fs"`
+	Fsm       *fsm.Manager     `yaml:"-" json:"-"`
+	dbs       map[string]DBItem
+	dbsConfig *DbsConfig
+}
+
+type DbsConfig struct {
+	Mongo    map[string]*Mongo
+	Neo4j    map[string]*Neo4j
+	Mysql    map[string]*MySql
+	Doris    map[string]*Doris
+	Postgres map[string]*Postgres
+	Nebula   map[string]*Nebula
+	Elastic  map[string]*Elastic
+	Huge     map[string]*Huge
+	Redis    map[string]*Redis
 }
 
 var _env *Env
@@ -57,6 +79,8 @@ func GetEnv() *Env {
 	return _env
 }
 
+type DBInfo map[string]any
+
 func NewEnv() *Env {
 	return &Env{
 		Name:      "",
@@ -64,24 +88,32 @@ func NewEnv() *Env {
 		Log:       NewLog(),
 		Dapr:      NewDapr(),
 		Resources: map[string]*Resource{},
-		Mongo:     map[string]*Mongo{},
-		Neo4j:     map[string]*Neo4j{},
-		Mysql:     map[string]*MySql{},
+		DBs:       map[string]DBInfo{},
 		Minio:     map[string]*Minio{},
-		Nebula:    map[string]*Nebula{},
-		Elastic:   map[string]*Elastic{},
-		Redis:     map[string]*Redis{},
-		Huge:      map[string]*Huge{},
 		Fs:        []map[string]any{},
-		//Auth:      &Auth{},
-		Fsm: fsm.NewManager(),
-		dbs: map[string]DBItem{},
+		Fsm:       fsm.NewManager(),
+		dbs:       map[string]DBItem{},
+		dbsConfig: newDbsConfig(),
 	}
 }
 
-func (env *Env) Init() {
+func newDbsConfig() *DbsConfig {
+	return &DbsConfig{
+		Mongo:    map[string]*Mongo{},
+		Neo4j:    map[string]*Neo4j{},
+		Mysql:    map[string]*MySql{},
+		Doris:    map[string]*Doris{},
+		Postgres: map[string]*Postgres{},
+		Nebula:   map[string]*Nebula{},
+		Elastic:  map[string]*Elastic{},
+		Huge:     map[string]*Huge{},
+		Redis:    map[string]*Redis{},
+	}
+}
+
+func (env *Env) Init() *Env {
 	if env == nil {
-		return
+		panicError(errors.New("env is nil"))
 	}
 	for _, m := range env.Fs {
 		for k, v := range m {
@@ -92,81 +124,213 @@ func (env *Env) Init() {
 	}
 	initLog(env)
 	initApp(env)
-
-	InitDBMongo(env)
-	InitDBMySql(env)
-	InitDBNeo4j(env)
-	InitDBHuge(env)
-
-	initMinio(env)
-	InitDBNebula(env)
-	initDapr(env)
 	initResources(env)
-
-	InitDBElastic(env)
-	initRedis(env)
+	initDapr(env)
+	initMinio(env)
+	InitDB(env)
 
 	env.Fsm = env.NewFsManager(env.Fs)
+	return env
+}
+
+func InitDB(env *Env) {
+	errList := errors.NewErrors()
+	for dbKey, info := range env.DBs {
+		dbType, isHas := info["dbType"]
+		info["dbKey"] = strings.ToLower(dbKey)
+		if !isHas {
+			errList.AddError(errors.New("%s dbType is required", dbKey))
+		}
+		enable := boolutils.GetBool(info["enable"], true)
+		if !enable {
+			continue
+		}
+
+		switch dbType {
+		case DBTypeDoris.String():
+			db, err := NewDorisWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBDoris(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Doris[db.DbKey] = db
+			break
+		case DBTypePostgres.String():
+			db, err := NewPostgresWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBPostgres(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Postgres[db.DbKey] = db
+			break
+		case DBTypeMySQL.String():
+			db, err := NewMySQLWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBMySql(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Mysql[db.DbKey] = db
+			break
+		case DBTypeMongoDB.String():
+			db, err := NewMongoWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBMongo(env, db); err != nil {
+				errList.AddError(err)
+			}
+
+			env.dbsConfig.Mongo[db.DbKey] = db
+			break
+		case DBTypeNeo4j.String():
+			db, err := NewNeo4jWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBNeo4j(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Neo4j[db.DbKey] = db
+			break
+		case DBTypeElastic.String():
+			db, err := NewElasticWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBElastic(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Elastic[db.DbKey] = db
+			break
+		case DBTypeRedis.String():
+			db, err := NewRedisWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBRedis(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Redis[db.DbKey] = db
+			break
+
+		case DBTypeHuge.String():
+			db, err := NewHugeWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBHuge(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Huge[db.DbKey] = db
+			break
+		case DBTypeNebula.String():
+			db, err := NewNebulaWithMap(info)
+			if err != nil {
+				errList.AddError(errors.New("dbKey %s error: %s", dbKey, err.Error()))
+				continue
+			}
+			if err := AddDBNebula(env, db); err != nil {
+				errList.AddError(err)
+			}
+			env.dbsConfig.Nebula[db.DbKey] = db
+			break
+		default:
+			errList.AddError(errors.New("dbType is invalid, ", dbKey))
+		}
+
+	}
+
+	if errList.HasError() {
+		panicError(errList)
+	}
 }
 
 func (env *Env) NewFsManager(fs []map[string]any) *fsm.Manager {
 	if len(env.Fs) != 0 {
 		fsManager, err := fsm.NewManagerWithConfigs(fs, env.App.HServer.SrcName)
 		if err != nil {
-			panic(errors.New("fs.NewManagerWithConfigs() err: %s", err.Error()))
+			panicError(errors.New("fs.NewManagerWithConfigs() err: %s", err.Error()))
 		}
 		return fsManager
 	}
 	return fsm.NewManager()
 }
 
+func (env *Env) GetServiceConfig(serviceKey string, cfg any) {
+	meta := env.Services[serviceKey]
+	err := copyObject(meta, cfg)
+	if err != nil {
+		panicError(errors.New("%s config %s error: %s ", serviceKey, err.Error()))
+	}
+}
+
 func (env *Env) GetProdMode() bool {
 	return env.App.ProdMode
+}
+
+func panicError(err error) {
+	file := reflectutils.CallerInfo(4)
+	panic(err.Error() + ": " + file)
 }
 
 func (env *Env) AddDB(dbItem DBItem) {
 	dbKey := dbItem.GetDBKey()
 	_, ok := env.dbs[dbKey]
 	if ok {
-		panic(errors.New("db \"%s\" already exists", dbKey))
+		panicError(errors.New("db \"%s\" already exists", dbKey))
 	}
 	env.dbs[dbKey] = dbItem
 }
 
+/*
 func (env *Env) AddNeo4j(neo4jCfg *Neo4j) {
 	if neo4jCfg == nil {
-		panic(errors.New("dbCfg is nil"))
+		panicError(errors.New("dbCfg is nil"))
 	}
 	env.Neo4j[neo4jCfg.DbKey] = neo4jCfg
 }
 
 func (env *Env) AddMongo(mongoCfg *Mongo) {
 	if mongoCfg == nil {
-		panic(errors.New("mongoCfg is nil"))
+		panicError(errors.New("mongoCfg is nil"))
 	}
 	env.Mongo[mongoCfg.DbKey] = mongoCfg
 }
 
 func (env *Env) AddMySql(mysqlCfg *MySql) {
 	if mysqlCfg == nil {
-		panic(errors.New("mysqlCfg is nil"))
+		panicError(errors.New("mysqlCfg is nil"))
 	}
 	env.Mysql[mysqlCfg.DbKey] = mysqlCfg
 }
 
 func (env *Env) AddHuge(hugeCfg *Huge) {
 	if hugeCfg == nil {
-		panic(errors.New("hugeCfg is nil"))
+		panicError(errors.New("hugeCfg is nil"))
 	}
 	env.Huge[hugeCfg.DbKey] = hugeCfg
 }
 
 func (env *Env) AddMinio(minoCfg *Minio) {
 	if minoCfg == nil {
-		panic(errors.New("minoCfg is nil"))
+		panicError(errors.New("minoCfg is nil"))
 	}
 	env.Minio[minoCfg.Name] = minoCfg
-}
+}*/
 
 func (env *Env) CloseDB(ctx context.Context) error {
 	for _, d := range env.dbs {
@@ -181,19 +345,84 @@ func (env *Env) GetDB(dbKey string) DBItem {
 	return item
 }
 
+func (env *Env) GetHugeConfig(dbKey string) *Huge {
+	cfg, ok := env.dbsConfig.Huge[dbKey]
+	if !ok {
+		panicError(errors.New("huge dbKey %s not found", dbKey))
+	}
+	return cfg
+}
+
+func (env *Env) GetRedisConfig(dbKey string) *Redis {
+	cfg, ok := env.dbsConfig.Redis[dbKey]
+	if !ok {
+		panicError(errors.New("redis dbKey %s not found", dbKey))
+	}
+	return cfg
+}
+
+func (env *Env) GetNeo4jConfig(dbKey string) *Neo4j {
+	cfg, ok := env.dbsConfig.Neo4j[dbKey]
+	if !ok {
+		panicError(errors.New("neo4j dbKey %s not found", dbKey))
+	}
+	return cfg
+}
+
+func (env *Env) GetElasticConfig(dbKey string) *Elastic {
+	cfg, ok := env.dbsConfig.Elastic[dbKey]
+	if !ok {
+		panicError(errors.New("elastic dbKey %s not found", dbKey))
+	}
+	return cfg
+}
+
+func (env *Env) GetMongoConfig(dbKey string) *Mongo {
+	cfg, ok := env.dbsConfig.Mongo[dbKey]
+	if !ok {
+		panicError(errors.New("mongo dbKey %s not found", dbKey))
+	}
+	return cfg
+}
+
+func (env *Env) GetPostgresConfig(dbKey string) *Postgres {
+	cfg, ok := env.dbsConfig.Postgres[dbKey]
+	if !ok {
+		panicError(errors.New("postgres dbKey %s not found", dbKey))
+	}
+	return cfg
+}
+
+func (env *Env) GetNeo4jClient(dbKey string) neo4j.DriverWithContext {
+	dbKey = env.GetDBKeyValue(dbKey)
+	item, isHas := env.dbs[dbKey]
+	if !isHas {
+		panicError(errors.New("neo4j dbKey \"%s\" not found", dbKey))
+	}
+	if item.GetDBType() != DBTypeNeo4j {
+		panicError(errors.New("dbKey %s is not neo4j, ", dbKey))
+	}
+	return item.GetNeo4jClient()
+}
+
 func (env *Env) GetHugeClient(dbKey string) *hugegraph.CommonClient {
 	dbKey = env.GetDBKeyValue(dbKey)
 	item := env.dbs[dbKey]
 	if item == nil {
-		panic(errors.New("db \"%s\" not found", dbKey))
+		panicError(errors.New("huge dbKey \"%s\" not found", dbKey))
 	}
-	return item.GetHuge()
+	return item.GetHugeClient()
 }
 
-func (env *Env) GetRedis(key string) (*Redis, bool) {
-	key = env.GetDBKeyValue(key)
-	redis, ok := env.Redis[key]
-	return redis, ok
+func (env *Env) GetRedisClient(key string) *redis.Client {
+	item := env.GetDB(key)
+	if item == nil {
+		panicError(errors.New("redis dbKey \"%s\" not found", key))
+	}
+	if item.GetDBType() != DBTypeRedis {
+		panicError(errors.New("dbType is invalid, ", item.GetDBType()))
+	}
+	return item.GetRedisClient()
 }
 
 func (env *Env) GetField(key string) any {
@@ -207,11 +436,11 @@ func (env *Env) GetDBKeyValue(dbKey string) string {
 			if keyVal, ok := env.App.Meta[dbKey]; ok {
 				dbKey = keyVal.(string)
 			} else {
-				panic("invalid db key")
+				panicError(errors.New("invalid db key", dbKey))
 			}
 			return nil
 		}).Catch(func(e error) {
-			panic(fmt.Sprintf("dbKey must start with $%s", dbKey))
+			panicError(errors.New("dbKey must start with $%s", dbKey))
 		})
 	}
 	return dbKey
@@ -222,19 +451,15 @@ func (env *Env) GetMinioByKey(dbKey string) (*Minio, bool) {
 	return mdb, mdb != nil
 }
 
-func (env *Env) GetMongoByKey(dbKey string) (*Mongo, bool) {
-	mdb := env.Mongo[dbKey]
-	return mdb, mdb != nil
-}
-
-func (env *Env) GetAppSubItem(subkey string, cfg any) {
-	if env == nil || env.App == nil {
-		panic(errors.New("env.App is nil"))
+func (env *Env) GetMongoByKey(dbKey string) *mongo.Client {
+	item := env.GetDB(dbKey)
+	if item == nil {
+		panicError(errors.New("db \"%s\" not found", dbKey))
 	}
-	err := env.App.GetSubItem(subkey, cfg)
-	if err != nil {
-		panic(errors.New("env.App is nil %s", err.Error()))
+	if item.GetDBType() != DBTypeMongoDB {
+		panicError(errors.New("dbType is invalid, ", item.GetDBType()))
 	}
+	return item.GetMongoClient()
 }
 
 //
@@ -248,21 +473,35 @@ func CloseDB(ctx context.Context) error {
 	return _env.CloseDB(ctx)
 }
 
-func GetDBDefault() DBItem {
+/*func GetDBDefault() DBItem {
 	env := GetEnv()
 	for _, item := range env.dbs {
 		return item
 	}
 	return nil
 }
+*/
 
-func GetMongoByKey(dbKey string) (*mongodb.MongoDB, bool) {
+func GetMongoClient(dbKey string) *mongo.Client {
 	item := GetDB(dbKey)
 	if item == nil {
-		return nil, false
+		panicError(errors.New("db \"%s\" not found", dbKey))
 	}
-	mdb := item.GetMongo()
-	return mdb, mdb != nil
+	if item.GetDBType() != DBTypeMongoDB {
+		panicError(errors.New("dbType is invalid, ", item.GetDBType()))
+	}
+	return item.GetMongoClient()
+}
+
+func GetMongo(dbKey string) *mongodb.MongoDB {
+	item := GetDB(dbKey)
+	if item == nil {
+		panicError(errors.New("db \"%s\" not found", dbKey))
+	}
+	if item.GetDBType() != DBTypeMongoDB {
+		panicError(errors.New("dbType is invalid, ", item.GetDBType()))
+	}
+	return item.GetMongoDB()
 }
 
 func GetMinioByKey(dbKey string) (*Minio, bool) {

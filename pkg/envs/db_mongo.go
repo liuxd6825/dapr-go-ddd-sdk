@@ -7,18 +7,19 @@ import (
 	"time"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/db/mongodb"
+	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/errors"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/intutils"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Mongo struct {
-	DbKey                  string  `json:"dbKey"`
+	DbKey                  string  `yaml:"dbKey" json:"dbKey"`
 	AppName                string  `yaml:"appName" json:"appName"`
 	Host                   string  `yaml:"host" json:"host"`
 	DbName                 string  `yaml:"dbname" json:"dbName"`
 	User                   string  `yaml:"user" json:"user"`
-	Pwd                    string  `yaml:"pwd" json:"pwd"`
+	Password               string  `yaml:"password" json:"password"`
 	ReplicaSet             string  `yaml:"replicaSet" json:"replicaSet"`
 	WriteConcern           string  `yaml:"writeConcern" json:"writeConcern"`
 	ReadConcern            string  `yaml:"readConcern" json:"readConcern"`
@@ -40,44 +41,47 @@ func NewMongo() *Mongo {
 	return &Mongo{}
 }
 
+func NewMongoWithMap(meta map[string]any) (*Mongo, error) {
+	var val Mongo
+	if err := copyObject(meta, &val); err != nil {
+		return nil, err
+	}
+	return &val, nil
+}
+
 func (m *Mongo) IsEmpty() bool {
-	if m.Host == "" && m.DbName == "" && m.Pwd == "" && m.User == "" {
+	if m.Host == "" && m.DbName == "" && m.Password == "" && m.User == "" {
 		return true
 	}
 	return false
 }
 
-func InitDBMongo(env *Env) {
-	if env.Mongo == nil {
-		env.Mongo = map[string]*Mongo{}
-		return
+func AddDBMongo(env *Env, c *Mongo) error {
+	if c.IsEmpty() {
+		return errors.New("")
 	}
+	config := NewStoreMongoConfig(c)
 
-	for k, c := range env.Mongo {
-		if c.IsEmpty() {
-			continue
-		}
-		config := NewStoreMongoConfig(c)
-
-		db, err := mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
-			logs.Infofmt(context.Background(), "config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
-				"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
-				opts.Hosts, opts.Auth.Username, getPStr(opts.ReplicaSet), getPInt(opts.MaxPoolSize), config.ConnectTimeout,
-				config.SocketTimeout, config.ServerSelectionTimeout, config.MaxConnIdleTime, config.OperationTimeout, config.SocketTimeout)
-			return nil
-		})
-		if err != nil {
-			panic(fmt.Sprintf("mongo连接%s失败, error:%s", config.Host, err.Error()))
-		}
-		dbKey := strings.ToLower(k)
-		c.DbKey = dbKey
-		env.AddDB(&dbItem{
-			dbKey:  dbKey,
-			dbType: DBType_MongoDB,
-			mongo:  db,
-			config: config,
-		})
+	db, err := mongodb.NewMongoDB(config, func(opts *options.ClientOptions) error {
+		logs.Infofmt(context.Background(), "config mongo  hosts=%v; user=%s; replicasSet=%s; maxPoolSize=%s; connectTimeout=%v; "+
+			"socketTimeout=%v; serverSelectionTimeout=%v; maxConnIdleTime=%v; operationTimeout=%v; socketTimeout=%v ",
+			opts.Hosts, opts.Auth.Username, getPStr(opts.ReplicaSet), getPInt(opts.MaxPoolSize), config.ConnectTimeout,
+			config.SocketTimeout, config.ServerSelectionTimeout, config.MaxConnIdleTime, config.OperationTimeout, config.SocketTimeout)
+		return nil
+	})
+	if err != nil {
+		panic(fmt.Sprintf("mongo连接%s失败, error:%s", config.Host, err.Error()))
 	}
+	dbKey := strings.ToLower(c.DbKey)
+	c.DbKey = dbKey
+	env.AddDB(&dbItem{
+		dbKey:  dbKey,
+		dbType: DBTypeMongoDB,
+		mongo:  db,
+		config: config,
+	})
+
+	return nil
 }
 
 func NewStoreMongoConfig(c *Mongo) *mongodb.Config {
@@ -94,7 +98,7 @@ func NewStoreMongoConfig(c *Mongo) *mongodb.Config {
 		Host:                   strings.ReplaceAll(c.Host, " ", ""),
 		DatabaseName:           c.DbName,
 		UserName:               c.User,
-		Password:               c.Pwd,
+		Password:               c.Password,
 		WriteConcern:           c.WriteConcern,
 		ReadConcern:            c.ReadConcern,
 		Direct:                 c.Direct,

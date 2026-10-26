@@ -10,8 +10,8 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/restapi"
 )
 
-func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "sys.tag"}, func() error {
+func Init(app *iris.Application, baseUrl string, env *envs.Env) {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "tag"}, func() error {
 		tagconfigs.Init(env)
 		RegisterTagApi(app, baseUrl, env)
 		RegisterTagTypeApi(app, baseUrl, env)

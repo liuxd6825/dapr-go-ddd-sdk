@@ -39,7 +39,7 @@ func startDapr(env *EnvConfig) error {
 	if env == nil {
 		return nil
 	}
-	if !env.Dapr.Start {
+	if !env.Dapr.AutoStart {
 		return nil
 	}
 

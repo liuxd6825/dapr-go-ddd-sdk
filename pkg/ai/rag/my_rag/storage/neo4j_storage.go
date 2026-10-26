@@ -44,9 +44,9 @@ type Neo4jGraphStorage struct {
 // NewNeo4jGraphStorage creates a new Neo4j client connection with the provided connection parameters.
 // It returns an initialized Neo4J struct and any error encountered during connection setup.
 // The returned Neo4J instance must be closed with Close() when no longer needed to free up resources.
-func NewNeo4jGraphStorage(dbKey string, logger logs.Logger) *Neo4jGraphStorage {
+func NewNeo4jGraphStorage(neo4jDbKey string, logger logs.Logger) *Neo4jGraphStorage {
 	nodeCfg := &dao.DaoConfig{
-		DBKey:              dbKey,
+		DBKey:              neo4jDbKey,
 		GraphType:          idao.GraphType_Node,
 		GraphLabels:        []string{"doc"},
 		IsCancelModified:   true,
@@ -54,13 +54,9 @@ func NewNeo4jGraphStorage(dbKey string, logger logs.Logger) *Neo4jGraphStorage {
 		DBSchema:           dbschema.NewDBSchema("graph", "graph"),
 	}
 	newDao := dao.NewDao[map[string]any](nodeCfg)
-	dbItem := envs.GetEnv().GetDB(dbKey)
-	if dbItem == nil {
-		panic(fmt.Errorf("dbKey is nil"))
-	}
-
+	neo4jClient := envs.GetEnv().GetNeo4jClient(neo4jDbKey)
 	return &Neo4jGraphStorage{
-		client: dbItem.GetNeo4j(),
+		client: neo4jClient,
 		dao:    newDao,
 		logger: logger,
 	}

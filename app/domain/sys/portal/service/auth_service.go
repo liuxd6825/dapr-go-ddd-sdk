@@ -11,9 +11,9 @@ type AuthService struct {
 	ory *service.OryService
 }
 
-func NewAuthService(dbKey string) *AuthService {
+func NewAuthService(dbKey string, oryService *service.OryService) *AuthService {
 	s := &AuthService{
-		ory: service.NewOryService(dbKey),
+		ory: oryService,
 	}
 	return s
 }

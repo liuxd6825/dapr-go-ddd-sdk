@@ -30,14 +30,14 @@ type DrawAPI struct {
 	rootPath     string
 }
 
-func NewDrawIoAPI(env *envs.Env, rootPath string) *DrawAPI {
+func NewDrawIoAPI(env *envs.Env, rootPath string, graphDbKey string) *DrawAPI {
 	fileService := service.NewFileService()
-	graphService := service2.NewGraphService()
+	graphService := service2.NewGraphService(graphDbKey)
 	return &DrawAPI{
 		env:          env,
 		fileService:  fileService,
 		graphService: graphService,
-		drawDao:      dao.NewDrawDao(service.DBKey),
+		drawDao:      dao.NewDrawDao(graphDbKey),
 		rootPath:     rootPath,
 	}
 }

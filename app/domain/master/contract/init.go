@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kataras/iris/v12"
+	masterconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/configs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/contract/restapi"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/logs"
@@ -11,7 +12,8 @@ import (
 
 // Init 初始化合同子域，注册 Contract 及 5 个子实体的 REST API
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
-	err := logs.DebugStart(context.Background(), logs.Fields{"service": "contract"}, func() error {
+	err := logs.DebugStart(context.Background(), logs.Fields{"service-name": "contract"}, func() error {
+		masterconfigs.Init(env)
 		restapi.RegisterContract(app, baseUrl, env)
 		restapi.RegisterContractCompany(app, baseUrl, env)
 		restapi.RegisterContractContract(app, baseUrl, env)

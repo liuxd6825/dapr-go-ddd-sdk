@@ -28,7 +28,7 @@ func (d *MasterGraphDao) FindByCaseId(ctx context.Context, caseId string) *graph
 	if err != nil {
 		panic(err)
 	}
-	return res.GetGraphView()
+	return res.NewGraphView()
 }
 
 func (d *MasterGraphDao) FindById(ctx context.Context, caseId string, id string) *graph.GraphView {
@@ -37,7 +37,7 @@ func (d *MasterGraphDao) FindById(ctx context.Context, caseId string, id string)
 	if err != nil {
 		panic(err)
 	}
-	return res.GetGraphView()
+	return res.NewGraphView()
 }
 
 func (d *MasterGraphDao) FindByName(ctx context.Context, caseId string, name string) *graph.GraphView {
@@ -46,7 +46,7 @@ func (d *MasterGraphDao) FindByName(ctx context.Context, caseId string, name str
 	if err != nil {
 		panic(err)
 	}
-	return res.GetGraphView()
+	return res.NewGraphView()
 }
 
 func (d *MasterGraphDao) FindByContainName(ctx context.Context, caseId string, name string) *graph.GraphView {
@@ -55,7 +55,7 @@ func (d *MasterGraphDao) FindByContainName(ctx context.Context, caseId string, n
 	if err != nil {
 		panic(err)
 	}
-	return res.GetGraphView()
+	return res.NewGraphView()
 }
 
 func (d *MasterGraphDao) FindByStartWithName(ctx context.Context, caseId string, name string) *graph.GraphView {
@@ -65,5 +65,5 @@ func (d *MasterGraphDao) FindByStartWithName(ctx context.Context, caseId string,
 	if err != nil {
 		panic(err)
 	}
-	return res.GetGraphView()
+	return res.NewGraphView()
 }

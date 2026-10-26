@@ -1,53 +1,59 @@
 package importconfigs
 
 import (
+	"sync"
+
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/envs"
 )
 
 type Config struct {
-	MongoDbKey string     `json:"mongoDbKey"`
-	DorisDbKey string     `json:"dorisDbKey"`
-	LivyServer LivyServer `json:"livyServer"`
-	Rag        RagConfig  `json:"rag"`
+	MongoDbKey string     `yaml:"mongoDbKey"`
+	DorisDbKey string     `yaml:"dorisDbKey"`
+	RedisDbKey string     `yaml:"redisDbKey"`
+	LivyServer LivyServer `yaml:"livyServer"`
+	Rag        RagConfig  `yaml:"rag"`
 }
 type RagConfig struct {
-	LLM      LLMConfig      `json:"llm"`
-	Embedder EmbedderConfig `json:"embedder"`
-	Vector   VectorConfig   `json:"vector"`
+	LLM      LLMConfig      `yaml:"llm"`
+	Embedder EmbedderConfig `yaml:"embedder"`
+	Vector   VectorConfig   `yaml:"vector"`
 }
 
 type LivyServer struct {
-	IP   string `json:"ip"`
-	Port int    `json:"port"`
+	IP   string `yaml:"ip"`
+	Port int    `yaml:"port"`
 }
 
 type LLMConfig struct {
-	Type      string `json:"type"` // ollama;
-	Model     string `json:"model"`
-	APIKey    string `json:"apiKey"`
-	BaseUrl   string `json:"baseUrl"`
-	CtxLength int    `json:"ctxLength"`
-	Think     string `json:"think"`
+	Type      string `yaml:"type"` // ollama;
+	Model     string `yaml:"model"`
+	APIKey    string `yaml:"apiKey"`
+	BaseUrl   string `yaml:"baseUrl"`
+	CtxLength int    `yaml:"ctxLength"`
+	Think     string `yaml:"think"`
 }
 
 type EmbedderConfig struct {
-	BaseURL string `json:"baseUrl"`
-	Model   string `json:"model"`
-	ApiKey  string `json:"apiKey"`
+	BaseURL string `yaml:"baseUrl"`
+	Model   string `yaml:"model"`
+	ApiKey  string `yaml:"apiKey"`
 }
 
 type VectorConfig struct {
-	Addr           string `json:"addr"`
-	CollectionName string `json:"collectionName"`
-	Dim            int    `json:"dim"`
+	Addr           string `yaml:"addr"`
+	CollectionName string `yaml:"collectionName"`
+	Dim            int    `yaml:"dim"`
 }
 
-var _cfg Config
+var cfg Config
+var once sync.Once
 
 func GetConfig() Config {
-	return _cfg
+	return cfg
 }
 
 func Init(env *envs.Env) {
-	env.GetAppSubItem("importService", &_cfg)
+	once.Do(func() {
+		env.GetServiceConfig("import-service", &cfg)
+	})
 }

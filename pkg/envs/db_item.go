@@ -9,17 +9,22 @@ import (
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/utils/gp"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/redis/go-redis/v9"
+	nebula "github.com/vesoft-inc/nebula-go/v3"
+	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
 type DBItem interface {
 	GetDBType() DBType
 	GetDBKey() string
-	GetNeo4j() neo4j.DriverWithContext
-	GetMongo() *mongodb.MongoDB
-	GetGormDB() *gorm.DB
-	GetElastic() *elasticsearch.Client
-	GetHuge() *hugegraph.CommonClient
+	GetNeo4jClient() neo4j.DriverWithContext
+	GetMongoClient() *mongo.Client
+	GetMongoDB() *mongodb.MongoDB
+	GetGormDBClient() *gorm.DB
+	GetElasticClient() *elasticsearch.Client
+	GetHugeClient() *hugegraph.CommonClient
+	GetRedisClient() *redis.Client
+	GetNebulaClient() *nebula.ConnectionPool
 	GetDB() any
 	CloseDB(ctx context.Context) error
 	GetConfig() any
@@ -38,25 +43,25 @@ type dbItem struct {
 	gormDb     *gorm.DB
 	elastic    *elasticsearch.Client
 	hugeClient *hugegraph.CommonClient
-	doris      *gorm.DB
+	nebulaPool *nebula.ConnectionPool
 	config     any
 }
 
 type DBType string
 
-const DefaultDBKey string = "default"
-
 const (
-	DBType_Postgres DBType = "postgres"
-	DBType_MySQL    DBType = "mysql"
-	DBType_Sqlite   DBType = "sqlite"
-	DBType_Neo4j    DBType = "neo4j"
-	DBType_MongoDB  DBType = "mongodb"
-	DBType_MsSQL    DBType = "mssql"
-	DBType_Oracle   DBType = "oracle"
-	DBType_Elastic  DBType = "elastic"
-	DBType_Huge     DBType = "huge"
-	DBType_Doris    DBType = "doris"
+	DBTypePostgres DBType = "postgres"
+	DBTypeMySQL    DBType = "mysql"
+	DBTypeSqlite   DBType = "sqlite"
+	DBTypeNeo4j    DBType = "neo4j"
+	DBTypeMongoDB  DBType = "mongodb"
+	DBTypeMsSQL    DBType = "mssql"
+	DBTypeOracle   DBType = "oracle"
+	DBTypeElastic  DBType = "elastic"
+	DBTypeHuge     DBType = "hugegraph"
+	DBTypeDoris    DBType = "doris"
+	DBTypeNebula   DBType = "nebula"
+	DBTypeRedis    DBType = "redis"
 )
 
 func (d DBType) String() string {
@@ -65,26 +70,28 @@ func (d DBType) String() string {
 
 func (d *dbItem) GetDB() any {
 	switch d.dbType {
-	case DBType_Postgres:
+	case DBTypePostgres:
 		return d.gormDb
-	case DBType_MySQL:
+	case DBTypeMySQL:
 		return d.gormDb
-	case DBType_Sqlite:
+	case DBTypeSqlite:
 		return d.gormDb
-	case DBType_Neo4j:
+	case DBTypeNeo4j:
 		return d.neo4j
-	case DBType_MongoDB:
+	case DBTypeMongoDB:
 		return d.mongo
-	case DBType_MsSQL:
+	case DBTypeMsSQL:
 		return d.gormDb
-	case DBType_Oracle:
+	case DBTypeOracle:
 		return d.gormDb
-	case DBType_Elastic:
+	case DBTypeElastic:
 		return d.elastic
-	case DBType_Huge:
+	case DBTypeHuge:
 		return d.hugeClient
-	case DBType_Doris:
-		return d.doris
+	case DBTypeDoris:
+		return d.gormDb
+	case DBTypeNebula:
+		return d.nebulaPool
 	default:
 		panic("db type not supported")
 	}
@@ -98,24 +105,36 @@ func (d *dbItem) GetDBKey() string {
 	return d.dbKey
 }
 
-func (d *dbItem) GetNeo4j() neo4j.DriverWithContext {
+func (d *dbItem) GetNeo4jClient() neo4j.DriverWithContext {
 	return d.neo4j
 }
 
-func (d *dbItem) GetMongo() *mongodb.MongoDB {
+func (d *dbItem) GetMongoClient() *mongo.Client {
+	return d.mongo.GetClient()
+}
+
+func (d *dbItem) GetMongoDB() *mongodb.MongoDB {
 	return d.mongo
 }
 
-func (d *dbItem) GetGormDB() *gorm.DB {
+func (d *dbItem) GetGormDBClient() *gorm.DB {
 	return d.gormDb
 }
 
-func (d *dbItem) GetElastic() *elasticsearch.Client {
+func (d *dbItem) GetElasticClient() *elasticsearch.Client {
 	return d.elastic
 }
 
-func (d *dbItem) GetHuge() *hugegraph.CommonClient {
+func (d *dbItem) GetHugeClient() *hugegraph.CommonClient {
 	return d.hugeClient
+}
+
+func (d *dbItem) GetRedisClient() *redis.Client {
+	return d.redis
+}
+
+func (d *dbItem) GetNebulaClient() *nebula.ConnectionPool {
+	return d.nebulaPool
 }
 
 func (d *dbItem) CloseDB(ctx context.Context) error {

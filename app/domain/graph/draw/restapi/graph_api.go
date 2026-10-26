@@ -2,6 +2,7 @@ package restapi
 
 import (
 	"context"
+
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/mvc"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/graph/draw/service"
@@ -16,8 +17,8 @@ type GraphAPI struct {
 	rootPath     string
 }
 
-func NewGraphAPI(env *envs.Env, rootPath string) *GraphAPI {
-	graphService := service.NewGraphService()
+func NewGraphAPI(env *envs.Env, rootPath string, graphDbKey string) *GraphAPI {
+	graphService := service.NewGraphService(graphDbKey)
 	return &GraphAPI{
 		env:          env,
 		graphService: graphService,
