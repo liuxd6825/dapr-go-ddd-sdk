@@ -16,7 +16,7 @@ func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env, config
 		sysconfigs.Init(env)
 		mongoDbKey := config.MongoDbKey
 
-		oryService := service.NewOryService(sysconfigs.GetConfig().Org)
+		oryService := service.NewOryService(sysconfigs.GetConfig().Kratos)
 
 		RegisterTenantAPI(app, baseUrl, env, mongoDbKey, oryService)
 		RegisterUserAPI(app, baseUrl, env, mongoDbKey, oryService)

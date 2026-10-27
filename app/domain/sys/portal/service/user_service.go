@@ -209,7 +209,7 @@ func (t *UserService) FindPagingByTenantId(ctx context.Context, tenantId string,
 		uv.Remark = user.Remark
 		uv.Status = user.Status
 		uv.OryIdentityId = user.OryIdentityId
-		uv.HeadPicture = user.HeadPicture
+		//uv.HeadPicture = user.HeadPicture
 		uv.TanId = tu.TenId
 		uv.TenantUserId = tu.Id
 		uv.IsAdmin = tu.IsAdmin
