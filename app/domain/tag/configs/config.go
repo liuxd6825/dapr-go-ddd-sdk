@@ -8,8 +8,9 @@ import (
 
 type Config struct {
 	MongoDbKey string `yaml:"mongoDbKey"`
-	S3Key      string `yaml:"s3Key"`
 	RedisDbKey string `yaml:"redisDbKey"`
+	S3Key      string `yaml:"s3Key"`
+	Enable     bool   `yaml:"enable"`
 }
 
 var cfg Config
@@ -28,4 +29,14 @@ func GetConfig() Config {
 
 func GetMongoDbKey() string {
 	return cfg.MongoDbKey
+}
+
+func GetRedisDbKey() string {
+	return cfg.RedisDbKey
+}
+func GetS3Key() string {
+	return cfg.S3Key
+}
+func GetEnable() bool {
+	return cfg.Enable
 }

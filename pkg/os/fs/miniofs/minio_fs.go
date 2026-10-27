@@ -24,17 +24,17 @@ type Fs struct {
 	env      *envs.Env
 }
 
-func NewFs(env *envs.Env, minioKey string, bucketKey string) (*Fs, error) {
-	m, ok := env.GetMinioByKey(minioKey)
-	if !ok {
+func NewFs(env *envs.Env, minioFsKey string, bucketKey string) (*Fs, error) {
+	m := env.GetMinioConfig(minioFsKey)
+	/*	//if !ok {
 		return nil, errors.New(fmt.Sprintf("在配置文件中没有定义 minio.%s 节.", minioKey))
-	}
+	}*/
 	if m.Client == nil {
 		return nil, errors.New(fmt.Sprintf(""))
 	}
 	bucketName, ok := m.Buckets[bucketKey]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("在配置文件中没有定义 minio.%s.buckets.%s 值.", minioKey, bucketKey))
+		return nil, errors.New(fmt.Sprintf("在配置文件中没有定义 minio.%s.buckets.%s 值.", minioFsKey, bucketKey))
 	}
 
 	cfg := Config{

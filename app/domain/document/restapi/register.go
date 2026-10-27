@@ -14,12 +14,15 @@ import (
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "document"}, func() error {
 		docconfigs.Init(env)
-		dbKey := docconfigs.GetMongoDbKey()
-		RegisterFolderApi(app, baseUrl, env, dbKey)
-		RegisterFileApi(app, baseUrl, env, dbKey)
-		RegisterDocumentApi(app, baseUrl, env, dbKey)
-		RegisterDocumentMetaApi(app, baseUrl, env, dbKey)
-		RegisterSub(app, baseUrl, env, dbKey)
+		if docconfigs.GetEnable() {
+			dbKey := docconfigs.GetMongoDbKey()
+			RegisterFolderApi(app, baseUrl, env, dbKey)
+			RegisterFileApi(app, baseUrl, env, dbKey)
+			RegisterDocumentApi(app, baseUrl, env, dbKey)
+			RegisterDocumentMetaApi(app, baseUrl, env, dbKey)
+			RegisterSub(app, baseUrl, env, dbKey)
+		}
+
 		return nil
 	})
 	if err != nil {

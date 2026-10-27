@@ -9,11 +9,11 @@ import (
 type Config struct {
 	LivyServer LivyServer `yaml:"livyServer"`
 	MongoDbKey string     `yaml:"mongoDbKey"`
-	HugeDbKey  string     `yaml:"hugeDbKey"`
 	DorisDbKey string     `yaml:"dorisDbKey"`
-	Neo4jDbKey string     `yaml:"neo4jDbKey"`
-	RedisDbKey string     `yaml:"redisDbKey"`
-	S3Key      string     `yaml:"s3Key"`
+	GraphDbKey string     `yaml:"graphDbKey"`
+	ImdbKey    string     `yaml:"imdbKey"`
+	OssKey     string     `yaml:"ossKey"`
+	Enable     bool       `yaml:"enable"`
 }
 
 type LivyServer struct {
@@ -35,24 +35,20 @@ func Init(env *envs.Env) {
 
 }
 
-func GetGraphDbKey() string {
-	return cfg.Neo4jDbKey
+func GetEnable() bool {
+	return cfg.Enable
 }
 
-func GetNeo4jDbKey() string {
-	return cfg.Neo4jDbKey
+func GetGraphDbKey() string {
+	return cfg.GraphDbKey
 }
 
 func GetMongoDbKey() string {
 	return cfg.MongoDbKey
 }
 
-func GetS3Key() string {
-	return cfg.S3Key
-}
-
-func GetHugeDbKey() string {
-	return cfg.HugeDbKey
+func GetOssKey() string {
+	return cfg.OssKey
 }
 
 func GetDorisDbKey() string {

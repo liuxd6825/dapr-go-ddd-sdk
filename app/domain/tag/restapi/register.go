@@ -13,9 +13,12 @@ import (
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "tag"}, func() error {
 		tagconfigs.Init(env)
-		RegisterTagApi(app, baseUrl, env)
-		RegisterTagTypeApi(app, baseUrl, env)
-		RegisterTagRelationApi(app, baseUrl, env)
+		if tagconfigs.GetEnable() {
+			RegisterTagApi(app, baseUrl, env)
+			RegisterTagTypeApi(app, baseUrl, env)
+			RegisterTagRelationApi(app, baseUrl, env)
+		}
+
 		return nil
 	})
 	if err != nil {

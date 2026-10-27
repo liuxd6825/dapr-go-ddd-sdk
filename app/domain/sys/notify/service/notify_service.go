@@ -30,7 +30,7 @@ func NewNotifyService(client dapr.Client, env *envs.Env) *NotifyService {
 }
 
 func newNotifyService(client dapr.Client, env *envs.Env) *NotifyService {
-	redisDbKey := sysconfigs.GetRedisDbKey()
+	redisDbKey := sysconfigs.GetImdbKey()
 	redisClient := env.GetRedisClient(redisDbKey)
 	service := &NotifyService{
 		daprClient:  client,

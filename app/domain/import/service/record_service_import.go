@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	importconfigs "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/configs"
 	command2 "github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/command"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/import/service/doris"
 	"github.com/liuxd6825/dapr-go-ddd-sdk/app/domain/master/record/event"
@@ -238,7 +239,8 @@ func (s *RecordService) newDorisImporter() (*doris.DorisImporter, error) {
 // @param appcmd
 // @return error
 func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.RecordImport2MasterCommand) (err error) {
-	tempFs, err := miniofs.NewFs(envs.GetEnv(), "default", "importData")
+
+	tempFs, err := miniofs.NewFs(envs.GetEnv(), s.minioFsKey, s.minioBucket)
 	if err != nil {
 		return err
 	}
@@ -251,6 +253,7 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.Reco
 	if err != nil {
 		return err
 	}
+
 	parquetFileName := fmt.Sprintf("/record/record_%s.parquet", appcmd.CommandId)
 	parquetFile, err := doris.NewParquetFile[*doris.Record](tempFs, parquetFileName)
 	if err != nil {
@@ -263,10 +266,10 @@ func (s *RecordService) Import2Master(ctx context.Context, appcmd *command2.Reco
 		return err
 	}
 
-	return s.importData(ctx, tempFs, loader, appcmd, tempFs.GetBucketName(), parquetFileName, recordCount)
+	return s.importData(ctx, tempFs, loader, appcmd, parquetFileName, recordCount)
 }
 
-func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, importer *doris.DorisImporter, appcmd *command2.RecordImport2MasterCommand, s3BucketName, pFileName string, recordCount int64) error {
+func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, importer *doris.DorisImporter, appcmd *command2.RecordImport2MasterCommand, pFileName string, recordCount int64) error {
 	taskId := appcmd.Data.TaskId
 	// 导入数据到Doris数据库中
 	_, err := importer.ImportFile(tempFs, pFileName, doris.LoadOptions{
@@ -278,7 +281,7 @@ func (s *RecordService) importData(ctx context.Context, tempFs afero.Fs, importe
 	}
 
 	// 创建导入事件
-	importEvent, err := newRecordCreateManyFromExcelCommand(ctx, appcmd, s3BucketName, pFileName)
+	importEvent, err := newRecordCreateManyFromExcelCommand(ctx, appcmd, s.minioBucket, pFileName)
 	if err != nil {
 		return err
 	}
@@ -499,10 +502,7 @@ func newRecordCreateManyFromExcelCommand(ctx context.Context, appcmd *command2.R
 	}
 	// 拼出 s3://user:pass@host/bucket/key 完整 URL 写入 S3FileUrl，
 	// graph 域 RecordEventSubHandler 拿到后可直接传给 apoc.load.parquet
-	minioCfg, ok := envs.GetEnv().GetMinioByKey("default")
-	if !ok {
-		return nil, errors.New("env minio.default not configured")
-	}
+	minioCfg := envs.GetEnv().GetMinioConfig(importconfigs.GetConfig().OssKey)
 	s3FileUrl := fmt.Sprintf("s3://%s:%s@%s/%s/%s",
 		minioCfg.AccessKey, minioCfg.SecretKey, minioCfg.Endpoint,
 		s3Bucket, strings.TrimLeft(s3FilePath, "/"))

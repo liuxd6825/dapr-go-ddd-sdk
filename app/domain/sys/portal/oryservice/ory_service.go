@@ -9,7 +9,7 @@ import (
 
 type OryService struct {
 	ory *client.APIClient
-	cfg sysconfigs.OryConfig
+	cfg sysconfigs.KratosConfig
 }
 
 func (t *OryService) init() {
@@ -20,7 +20,7 @@ func (t *OryService) init() {
 	t.ory = client.NewAPIClient(cfg)
 }
 
-func NewOryService(cfg sysconfigs.OryConfig) *OryService {
+func NewOryService(cfg sysconfigs.KratosConfig) *OryService {
 	service := &OryService{
 		cfg: cfg,
 	}

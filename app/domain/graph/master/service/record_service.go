@@ -28,13 +28,8 @@ func NewRecordService(livyServer *livyserver.LivyServer, cfg RecordServiceConfig
 
 func NewRecordServiceWithEnv(env *envs.Env, graphCfg graphconfigs.Config) *RecordService {
 	livyServer := livyserver.NewLivyServer(graphCfg.LivyServer.IP, graphCfg.LivyServer.Port)
-	s3cfg, s3ok := env.GetMinioByKey(graphCfg.S3Key)
-	if !s3ok {
-		panic("minio S3 key not found")
-	}
-
-	hgCfg := env.GetHugeConfig(graphCfg.HugeDbKey)
-
+	s3cfg := env.GetMinioConfig(graphCfg.OssKey)
+	hgCfg := env.GetHugeConfig(graphCfg.GraphDbKey)
 	mongoCfg := env.GetMongoConfig(graphCfg.MongoDbKey)
 
 	cfg := RecordServiceConfig{

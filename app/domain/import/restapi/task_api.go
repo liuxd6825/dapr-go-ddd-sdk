@@ -25,13 +25,13 @@ type TaskAPI struct {
 	rootPath      string
 }
 
-func NewTaskAPI(env *envs.Env, rootPath string, livyServer *livyserver.LivyServer, dbKey string) *TaskAPI {
+func NewTaskAPI(env *envs.Env, rootPath string, livyServer *livyserver.LivyServer, dbKey string, minioFsKey, minioBucket string) *TaskAPI {
 	return &TaskAPI{
 		dbKey:         dbKey,
 		env:           env,
 		rootPath:      rootPath,
 		taskService:   service.NewTaskService(dbKey),
-		recordService: service.NewRecordService(livyServer, dbKey),
+		recordService: service.NewRecordService(livyServer, dbKey, minioFsKey, minioBucket),
 	}
 }
 

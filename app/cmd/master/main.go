@@ -101,7 +101,7 @@ func runBackWorker() {
 	docDbKey := docconfigs.GetMongoDbKey()
 	go func() {
 		ctx := context.Background()
-		oryService := service2.NewOryService(sysconfigs.GetConfig().Org)
+		oryService := service2.NewOryService(sysconfigs.GetConfig().Kratos)
 		tenantService := service.NewTenantService(masterDbKey, oryService)
 		list, err := tenantService.FindAll(context.Background())
 		if err != nil {

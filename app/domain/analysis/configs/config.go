@@ -7,6 +7,7 @@ type Config struct {
 	DorisDbKey string `yaml:"dorisDbKey"`
 	RedisDbKey string `yaml:"redisDbKey"`
 	S3Key      string `yaml:"s3Key"`
+	Enable     bool   `yaml:"enable"`
 }
 
 var cfg Config
@@ -25,4 +26,7 @@ func GetMongoDbKey() string {
 
 func GetDorisDbKey() string {
 	return cfg.DorisDbKey
+}
+func GetEnable() bool {
+	return cfg.Enable
 }

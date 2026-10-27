@@ -40,9 +40,11 @@ type RecordService struct {
 	runtimeOptions    readexcel.RuntimeOptions
 	docStatusProvider interfaces.ImportStatusProvider
 	livyServer        *livyserver.LivyServer
+	minioFsKey        string
+	minioBucket       string
 }
 
-func NewRecordService(livyServer *livyserver.LivyServer, dbKey string) *RecordService {
+func NewRecordService(livyServer *livyserver.LivyServer, dbKey string, minioFsKey, minioBucket string) *RecordService {
 	return &RecordService{
 		dbKey:             dbKey,
 		dao:               dao2.NewRecordDao(dbKey),
@@ -52,6 +54,8 @@ func NewRecordService(livyServer *livyserver.LivyServer, dbKey string) *RecordSe
 		bankService:       bank_service.NewBankService(dbKey),
 		docStatusProvider: outside.NewImportStatusProvider(dbKey),
 		livyServer:        livyServer,
+		minioFsKey:        minioFsKey,
+		minioBucket:       minioBucket,
 	}
 }
 

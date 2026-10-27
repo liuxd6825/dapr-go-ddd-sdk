@@ -11,6 +11,7 @@ type Config struct {
 	HugeDbKey  string `yaml:"hugeDbKey"`
 	DorisDbKey string `yaml:"dorisDbKey"`
 	RedisDbKey string `yaml:"redisDbKey"`
+	Enable     bool   `yaml:"enable"`
 }
 
 var cfg Config
@@ -24,4 +25,8 @@ func Init(env *envs.Env) {
 	once.Do(func() {
 		env.GetServiceConfig("draw-service", &cfg)
 	})
+}
+
+func GetEnable() bool {
+	return cfg.Enable
 }

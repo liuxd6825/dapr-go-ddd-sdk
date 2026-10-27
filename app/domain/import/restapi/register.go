@@ -15,18 +15,20 @@ import (
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "import"}, func() error {
 		importconfigs.Init(env)
+		if importconfigs.GetEnable() {
+			cfg := importconfigs.GetConfig()
+			livyServer := livyserver.NewLivyServer(cfg.LivyServer.IP, cfg.LivyServer.Port)
+			recordService := service.NewRecordService(livyServer, cfg.DorisDbKey, cfg.OssKey, cfg.OssBucket)
 
-		cfg := importconfigs.GetConfig()
-		livyServer := livyserver.NewLivyServer(cfg.LivyServer.IP, cfg.LivyServer.Port)
-		recordService := service.NewRecordService(livyServer, cfg.DorisDbKey)
+			RegisterExcelRowApi(app, baseUrl, env)
+			RegisterExcelFileApi(app, baseUrl, env)
+			RegisterExcelSheetApi(app, baseUrl, env)
+			RegisterTaskApi(app, baseUrl, env, livyServer)
+			RegisterRecordAPI(app, baseUrl, env, recordService)
+			RegisterTemplateAPI(app, baseUrl, env)
+			RegisterRagAPI(app, baseUrl, env)
+		}
 
-		RegisterExcelRowApi(app, baseUrl, env)
-		RegisterExcelFileApi(app, baseUrl, env)
-		RegisterExcelSheetApi(app, baseUrl, env)
-		RegisterTaskApi(app, baseUrl, env, livyServer)
-		RegisterRecordAPI(app, baseUrl, env, recordService)
-		RegisterTemplateAPI(app, baseUrl, env)
-		RegisterRagAPI(app, baseUrl, env)
 		return nil
 	})
 	if err != nil {
@@ -50,7 +52,8 @@ func RegisterExcelSheetApi(app *iris.Application, baseUrl string, env *envs.Env)
 }
 
 func RegisterTaskApi(app *iris.Application, baseUrl string, env *envs.Env, livyServer *livyserver.LivyServer) {
-	api := NewTaskAPI(env, baseUrl, livyServer, importconfigs.GetConfig().DorisDbKey)
+	cfg := importconfigs.GetConfig()
+	api := NewTaskAPI(env, baseUrl, livyServer, cfg.DorisDbKey, cfg.OssKey, cfg.OssBucket)
 	restapi.RegisterController(app, api)
 }
 

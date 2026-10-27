@@ -10,6 +10,7 @@ type Config struct {
 	MongoDbKey string `yaml:"mongoDbKey"`
 	S3Key      string `yaml:"s3Key"`
 	RedisDbKey string `yaml:"redisDbKey"`
+	Enable     bool   `yaml:"enable"`
 }
 
 var cfg Config
@@ -19,7 +20,6 @@ func Init(env *envs.Env) {
 	once.Do(func() {
 		env.GetServiceConfig("analysis-service", &cfg)
 	})
-
 }
 
 func GetConfig() Config {
@@ -28,4 +28,7 @@ func GetConfig() Config {
 
 func GetMongoDbKey() string {
 	return cfg.MongoDbKey
+}
+func GetEnable() bool {
+	return cfg.Enable
 }

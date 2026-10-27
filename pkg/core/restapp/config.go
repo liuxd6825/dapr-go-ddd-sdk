@@ -24,18 +24,14 @@ type EnvConfig struct {
 	Log       *LogConfig                 `yaml:"log" json:"log"`
 	Dapr      *DaprConfig                `yaml:"dapr" json:"dapr"`
 	Resources map[string]*ResourceConfig `yaml:"resources" json:"resources"`
-	Minio     map[string]*MinioConfig    `yaml:"minio" json:"minio"`
-	/*	Mongo     map[string]*MongoConfig    `yaml:"mongo" json:"mongo"`
-		Neo4j     map[string]*Neo4jConfig    `yaml:"neo4jdao" json:"neo4J"`
-		Mysql     map[string]*MySqlConfig    `yaml:"mysql" json:"mysql"`
-
-		Redis     map[string]*RedisConfig    `yaml:"redis" json:"redis"`
-		Elastic   map[string]*ElasticConfig  `yaml:"elastic" json:"elastic"`*/
-	DBs      map[string]envs.DBInfo  `yaml:"dbs" json:"dbs"`
-	Services map[string]envs.Service `yaml:"services" json:"services"`
-	Fs       []map[string]any        `yaml:"fs" json:"fs"`
-	Auth     *AuthConfig             `yaml:"auth" json:"auth"`
-	Temporal *TemporalConfig         `yaml:"temporal" json:"temporal"`
+	OSS       map[string]envs.Metadata   `yaml:"oss" json:"oss"`
+	DBs       map[string]envs.Metadata   `yaml:"dbs" json:"dbs"`
+	Graphdb   map[string]envs.Metadata   `yaml:"graphdb" json:"graphdb"`
+	IMDB      map[string]envs.Metadata   `yaml:"imdb" json:"imdb"`
+	Services  map[string]envs.Service    `yaml:"services" json:"services"`
+	Fs        []map[string]any           `yaml:"fs" json:"fs"`
+	Auth      *AuthConfig                `yaml:"auth" json:"auth"`
+	Temporal  *TemporalConfig            `yaml:"temporal" json:"temporal"`
 }
 
 func NewEnvConfig(name string) *EnvConfig {
@@ -45,18 +41,13 @@ func NewEnvConfig(name string) *EnvConfig {
 		Log:       newLogConfig(),
 		Dapr:      newDaprConfig(),
 		Resources: map[string]*ResourceConfig{},
-		Minio:     map[string]*MinioConfig{},
-		/*
-			Mongo:     map[string]*MongoConfig{},
-			Neo4j:     map[string]*Neo4jConfig{},
-			Mysql:     map[string]*MySqlConfig{},
-			Redis:     map[string]*RedisConfig{},
-			Elastic:   map[string]*ElasticConfig{},
-		*/
-		DBs:      map[string]envs.DBInfo{},
-		Fs:       []map[string]any{},
-		Auth:     &AuthConfig{},
-		Temporal: &TemporalConfig{},
+		OSS:       map[string]envs.Metadata{},
+		DBs:       map[string]envs.Metadata{},
+		Graphdb:   map[string]envs.Metadata{},
+		IMDB:      map[string]envs.Metadata{},
+		Fs:        []map[string]any{},
+		Auth:      &AuthConfig{},
+		Temporal:  &TemporalConfig{},
 	}
 }
 

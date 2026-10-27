@@ -10,6 +10,9 @@ import (
 
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	graphconfigs.Init(env)
-	draw_restapi.RegisterAllApi(app, baseUrl, env)
-	master_restapi.RegisterAllApi(app, baseUrl, env)
+	if graphconfigs.GetEnable() {
+		draw_restapi.RegisterAllApi(app, baseUrl, env)
+		master_restapi.RegisterAllApi(app, baseUrl, env)
+	}
+
 }

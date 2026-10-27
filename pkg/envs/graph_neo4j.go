@@ -31,7 +31,7 @@ func NewNeo4jWithMap(meta map[string]any) (*Neo4j, error) {
 	return &val, nil
 }
 
-func AddDBNeo4j(env *Env, config *Neo4j) error {
+func AddGraphDBNeo4j(env *Env, config *Neo4j) error {
 	if config.Host == "<no value>" && config.Port == "<no value>" {
 		return errors.New("")
 	}

@@ -46,8 +46,6 @@ func InitApplication(ctx context.Context, envCfg *EnvConfig, eventTypes []Regist
 	}
 
 	e := NewEnv(envCfg)
-	e.Init()
-	envs.SetEnv(e)
 
 	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=app; appId=%s; env=%s;", e.App.AppId, e.Name))
 	logs2.Infof(ctx, nil, fmt.Sprintf("ctype=app; httpHost=%s; httpPort=%d; httpRootUrl=%s;", e.App.HttpHost, e.App.HttpPort, e.App.RootUrl))

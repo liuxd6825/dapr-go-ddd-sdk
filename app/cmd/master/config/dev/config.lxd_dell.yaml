@@ -28,33 +28,40 @@ envs:
         huge1: "huge"
         ory:
           url: "http://192.168.120.224:4434"
+
     services:
       draw-service:
+        enable: true
         hugeDbKey: "huge"
 
       sys-service:
+        enable: true
         mongoDbKey: "mongo"
-        redisDbKey: "redis"
-        s3Key: "default"
-        ory:
+        imdbKey: "redis"
+        ossKey: "minio"
+        kratos:
           url: "http://192.168.120.224:4434"
 
       analysis-service:  # 可疑流水分析
+        enable: true
         mongoDbKey: "mongo"
         dorisDbKey: "doris"
         s3Key: "default"
         redisDbKey: "redis"
 
       tag-service:
+        enable: true
         mongoDbKey: "mongo"
         redisDbKey: "redis"
 
       master-service:
+        enable: true
         mongoDbKey: "mongo"
         s3Key: "default"
         redisDbKey: "redis"
 
       rag-service:
+        enable: true
         mongoDbKey: "mongo"
         hugeDbKey: "huge"
         neo4jDbKey: "neo4j"
@@ -83,9 +90,12 @@ envs:
           port: 18080
 
       import-service:  # 数据导入服务
+        enable: true
         mongoDbKey: "mongo"
         dorisDbKey: "doris"
-        redisDbKey: "redis"
+        imdbKey: "redis"
+        ossKey: "minio"
+        ossBucket : "import-data"
         rag:
           llm:
             type: "ollama"
@@ -107,23 +117,17 @@ envs:
           port: 18080
 
       graph-service: # 图形数据服务
+        enable: true
         mongoDbKey: "mongo"
-        s3Key: "default"
-        hugeDbKey: "huge"
         dorisDbKey: "doris"
-        redisDbKey: "redis"
+        graphDbKey: "huge"
+        imdbKey: "redis"
+        ossKey: "minio"
         livyServer:
           ip: "192.168.120.200"
           port: 18080
 
     dbs:
-      redis: # 内存数据库
-        dbType: "redis"
-        host: "192.168.120.224:6379"
-        db: 2
-        pwd: "123456"
-        poolSize: 10
-
       mongo:   # master 主数据写数据库
         dbType: "mongodb"
         host: "192.168.120.224:27018,192.168.120.224:27019,192.168.120.224:27020"
@@ -137,22 +141,6 @@ envs:
         maxConnIdleTime: "60s"
         serverSelectionTimeout: "20s"
 
-      huge:  # 图数据库  用在
-        dbType: "hugegraph"
-        host: "192.168.120.200"
-        port: 18080
-        username: "admin"
-        password: "admin"
-
-      neo4j:
-        enable: "true"
-        dbType: "neo4j"
-        host: "192.168.120.224"
-        port: "7687"
-        dbname: ""
-        user: "neo4j"
-        password: "12345678"
-
       doris: # 银行流水数据分析， 爬网公司库
         dbType: "doris"
         host: "192.168.120.224"
@@ -163,6 +151,42 @@ envs:
         loc: "Asia/Shanghai"
         parseTime: true
         charset: "utf8mb4"
+
+    graphdb:
+      huge:  # 图数据库  用在
+        enable: true
+        dbType: "hugegraph"
+        host: "192.168.120.200"
+        port: 18080
+        username: "admin"
+        password: "admin"
+
+      neo4j:
+        enable: true
+        dbType: "neo4j"
+        host: "192.168.120.224"
+        port: "7687"
+        dbname: ""
+        user: "neo4j"
+        password: "12345678"
+
+    imdb: #内存数据库
+      redis:
+        enable: true
+        dbType: "redis"
+        host: "192.168.120.224:6379"
+        db: 2
+        pwd: "123456"
+        poolSize: 10
+
+    oss: # 对象存储服务
+      minio:
+        enable: true
+        ossType: "minio"
+        endpoint: "192.168.120.224:9000"
+        accessKey: "minioadmin"
+        secretKey: "minioadmin"
+        useSSL: false
 
     log:
       outputType: console
@@ -192,25 +216,12 @@ envs:
         # scheduler-host-address: 127.0.0.1:50006
         enable-metrics: false
         metrics-port: 9191
+
     temporal:
       host: "192.168.120.224"
       port: 7233
       namespace: "default"
       taskQueue: "master-task"
-    redis:  # 内存数据库
-      default:
-        host: "192.168.120.224:6379"
-        db: 2
-        pwd: "123456"
-        poolSize: 10
-    minio: # S3文件服务
-      default:
-        endpoint: "192.168.120.224:9000"
-        accessKey: "minioadmin"
-        secretKey: "minioadmin"
-        useSSL: false
-        buckets:
-          importData: "import-data"
 
     fs:
       - name: "documentIoStore"

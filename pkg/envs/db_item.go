@@ -64,10 +64,6 @@ const (
 	DBTypeRedis    DBType = "redis"
 )
 
-func (d DBType) String() string {
-	return string(d)
-}
-
 func (d *dbItem) GetDB() any {
 	switch d.dbType {
 	case DBTypePostgres:

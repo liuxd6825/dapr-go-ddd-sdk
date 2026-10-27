@@ -9,9 +9,12 @@ import (
 type Config struct {
 	MongoDbKey string     `yaml:"mongoDbKey"`
 	DorisDbKey string     `yaml:"dorisDbKey"`
-	RedisDbKey string     `yaml:"redisDbKey"`
+	ImdbKey    string     `yaml:"imdbKey"`
+	OssKey     string     `yaml:"ossKey"`
+	OssBucket  string     `yaml:"ossBucket"`
 	LivyServer LivyServer `yaml:"livyServer"`
 	Rag        RagConfig  `yaml:"rag"`
+	Enable     bool       `yaml:"enable"`
 }
 type RagConfig struct {
 	LLM      LLMConfig      `yaml:"llm"`
@@ -56,4 +59,8 @@ func Init(env *envs.Env) {
 	once.Do(func() {
 		env.GetServiceConfig("import-service", &cfg)
 	})
+}
+
+func GetEnable() bool {
+	return cfg.Enable
 }

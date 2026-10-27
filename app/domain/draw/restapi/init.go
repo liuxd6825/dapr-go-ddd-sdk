@@ -13,7 +13,9 @@ import (
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "draw"}, func() error {
 		drawconfigs.Init(env)
-		RegisterDrawApi(app, baseUrl, env)
+		if drawconfigs.GetEnable() {
+			RegisterDrawApi(app, baseUrl, env)
+		}
 		return nil
 	})
 	if err != nil {

@@ -13,6 +13,7 @@ type Config struct {
 	RedisDbKey string         `yaml:"redisDbKey"`
 	Rag        RagConfig      `yaml:"rag"`
 	LightRag   LightRagConfig `yaml:"lightRag"`
+	Enable     bool           `yaml:"enable"`
 }
 type RagConfig struct {
 	LLM      LLMConfig      `yaml:"llm" yaml:"llm"`
@@ -63,4 +64,8 @@ func GetMongoDbKey() string {
 
 func GetGraphDbKey() string {
 	return cfg.Neo4jDbKey
+}
+
+func GetEnable() bool {
+	return cfg.Enable
 }

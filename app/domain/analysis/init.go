@@ -14,8 +14,10 @@ import (
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "analyse"}, func() error {
 		analysisconfigs.Init(env)
-		restapi.Register(app, baseUrl, env)
-		service.RegisterWorkflow()
+		if analysisconfigs.GetEnable() {
+			restapi.Register(app, baseUrl, env)
+			service.RegisterWorkflow()
+		}
 		return nil
 	})
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 func RegisterAllApi(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "draw"}, func() error {
 		graphconfigs.Init(env)
-		RegisterDrawGraphApi(app, baseUrl, env, graphconfigs.GetConfig().HugeDbKey)
+		RegisterDrawGraphApi(app, baseUrl, env, graphconfigs.GetGraphDbKey())
 		return nil
 	})
 	if err != nil {

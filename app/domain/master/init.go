@@ -13,9 +13,11 @@ import (
 
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	masterconfigs.Init(env)
-	record.Init(app, baseUrl, env)
-	company.Init(app, baseUrl, env, masterconfigs.GetConfig())
-	contract.Init(app, baseUrl, env)
-	human.Init(app, baseUrl, env)
-	product.Init(app, baseUrl, env)
+	if masterconfigs.GetEnable() {
+		record.Init(app, baseUrl, env)
+		company.Init(app, baseUrl, env, masterconfigs.GetConfig())
+		contract.Init(app, baseUrl, env)
+		human.Init(app, baseUrl, env)
+		product.Init(app, baseUrl, env)
+	}
 }

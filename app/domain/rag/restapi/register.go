@@ -14,10 +14,13 @@ import (
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service-name ": "master"}, func() error {
 		ragconfigs.Init(env)
-		RegisterRagApi(app, baseUrl, env)
-		RegisterChatApi(app, baseUrl, env)
-		RegisterMessageApi(app, baseUrl, env)
-		RegisterDocumentApi(app, baseUrl, env)
+		if ragconfigs.GetEnable() {
+			RegisterRagApi(app, baseUrl, env)
+			RegisterChatApi(app, baseUrl, env)
+			RegisterMessageApi(app, baseUrl, env)
+			RegisterDocumentApi(app, baseUrl, env)
+		}
+
 		return nil
 	})
 	if err != nil {

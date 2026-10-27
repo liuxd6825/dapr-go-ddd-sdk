@@ -18,76 +18,16 @@ func NewEnv(cfg *EnvConfig) *envs.Env {
 	env.Fsm = NewFsm(cfg.Fs, cfg.App.HServer.SrcName)
 	env.Log = NewLog(cfg.Log)
 	env.Dapr = NewDapr(cfg.Dapr)
-	//env.Auth = NewAuth(cfg.Auth)
-	/*	env.Mysql = NewMySQL(cfg.Mysql)
-		env.Mongo = NewMongo(cfg.Mongo)
-		env.Neo4j = NewNeo4j(cfg.Neo4j)
-		env.Minio = NewMinio(cfg.Minio)
-		env.Redis = NewRedis(cfg.Redis)
-		env.Elastic = NewElastic(cfg.Elastic)*/
 	env.Services = cfg.Services
 	env.DBs = cfg.DBs
+	env.OSS = cfg.OSS
+	env.Graphdb = cfg.Graphdb
+	env.IMDB = cfg.IMDB
+
+	env.Init()
+	envs.SetEnv(env)
+
 	return env
-}
-
-func NewElastic(cfg map[string]*ElasticConfig) map[string]*envs.Elastic {
-	items := map[string]*envs.Elastic{}
-	for key, item := range cfg {
-		m := &envs.Elastic{}
-		copy(item, m)
-		items[key] = m
-	}
-	return items
-}
-
-func NewRedis(cfg map[string]*RedisConfig) map[string]*envs.Redis {
-	items := map[string]*envs.Redis{}
-	for key, item := range cfg {
-		m := &envs.Redis{}
-		copy(item, m)
-		items[key] = m
-	}
-	return items
-}
-
-func NewMinio(cfg map[string]*MinioConfig) map[string]*envs.Minio {
-	items := map[string]*envs.Minio{}
-	for key, item := range cfg {
-		m := envs.NewMinio()
-		copy(item, m)
-		items[key] = m
-	}
-	return items
-}
-
-func NewNeo4j(cfg map[string]*Neo4jConfig) map[string]*envs.Neo4j {
-	items := map[string]*envs.Neo4j{}
-	for key, item := range cfg {
-		neo4j := envs.NewNeo4j()
-		copy(item, neo4j)
-		items[key] = neo4j
-	}
-	return items
-}
-
-func NewMySQL(cfg map[string]*MySqlConfig) map[string]*envs.MySql {
-	items := map[string]*envs.MySql{}
-	for key, item := range cfg {
-		mysql := envs.NewMySQL()
-		copy(item, mysql)
-		items[key] = mysql
-	}
-	return items
-}
-
-func NewMongo(cfg map[string]*MongoConfig) map[string]*envs.Mongo {
-	items := map[string]*envs.Mongo{}
-	for key, item := range cfg {
-		mysql := &envs.Mongo{}
-		copy(item, mysql)
-		items[key] = mysql
-	}
-	return items
 }
 
 func NewDapr(cfg *DaprConfig) *envs.Dapr {

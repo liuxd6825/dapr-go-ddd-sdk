@@ -11,6 +11,7 @@ import (
 
 func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 	err := logs.DebugStart(context.Background(), logs.Fields{"service name ": "metrics"}, func() error {
+		
 		RegisterMetricsAPI(app, baseUrl, env)
 		return nil
 	})

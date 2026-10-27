@@ -30,7 +30,7 @@ func NewNebulaWithMap(meta map[string]any) (*Nebula, error) {
 	return &val, nil
 }
 
-func AddDBNebula(env *Env, cfg *Nebula) error {
+func AddGraphDBNebula(env *Env, cfg *Nebula) error {
 	if len(cfg.Addrs) == 0 {
 		return fmt.Errorf("neo4j address is empty")
 	}

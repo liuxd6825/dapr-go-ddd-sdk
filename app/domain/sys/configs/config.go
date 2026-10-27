@@ -7,13 +7,14 @@ import (
 )
 
 type Config struct {
-	MongoDbKey string    `yaml:"mongoDbKey"`
-	S3Key      string    `yaml:"s3Key"`
-	RedisDbKey string    `yaml:"redisDbKey"`
-	Org        OryConfig `yaml:"org"`
+	MongoDbKey string       `yaml:"mongoDbKey"`
+	OssKey     string       `yaml:"ossKey"`
+	ImdbKey    string       `yaml:"imdbKey"`
+	Kratos     KratosConfig `yaml:"kratos"`
+	Enable     bool         `yaml:"enable"`
 }
 
-type OryConfig struct {
+type KratosConfig struct {
 	Url string `yaml:"url"`
 }
 
@@ -34,6 +35,14 @@ func GetMongoDbKey() string {
 	return cfg.MongoDbKey
 }
 
-func GetRedisDbKey() string {
-	return cfg.RedisDbKey
+func GetImdbKey() string {
+	return cfg.ImdbKey
+}
+
+func GetOssKey() string {
+	return cfg.OssKey
+}
+
+func GetEnable() bool {
+	return cfg.Enable
 }

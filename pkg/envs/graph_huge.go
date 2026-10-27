@@ -36,7 +36,7 @@ func NewHugeWithMap(meta map[string]any) (*Huge, error) {
 	return &val, nil
 }
 
-func AddDBHuge(env *Env, config *Huge) error {
+func AddGraphDBHuge(env *Env, config *Huge) error {
 	if config.Host == "<no value>" {
 		return errors.New("db hugegraph host is empty")
 	}

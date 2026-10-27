@@ -38,7 +38,7 @@ func NewRedisWithMap(meta map[string]any) (*Redis, error) {
 	return &val, nil
 }
 
-func AddDBRedis(env *Env, cfg *Redis) error {
+func AddIMDBRedis(env *Env, cfg *Redis) error {
 	second5 := 5 * time.Second
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.Host,
@@ -68,30 +68,6 @@ func AddDBRedis(env *Env, cfg *Redis) error {
 	}
 	cfg.DbKey = strings.ToLower(cfg.DbKey)
 	cfg.Client = rdb
-	item := &dbItem{
-		dbKey:  cfg.DbKey,
-		dbType: DBTypeRedis,
-		redis:  rdb,
-		config: cfg,
-	}
-	env.AddDB(item)
+	env.AddIMDB(newIMDBItem(cfg.DbKey, IMDBTypeRedis, rdb, cfg))
 	return nil
-}
-
-func parseInt(name string, val *int, defaultVal int) int {
-	if val == nil {
-		return defaultVal
-	}
-	return *val
-}
-
-func parseDuration(name string, val *string, defaultDur time.Duration) time.Duration {
-	if val == nil || *val == "" {
-		return defaultDur
-	}
-	dur, err := time.ParseDuration(*val)
-	if err != nil {
-		panic(name + err.Error())
-	}
-	return dur
 }

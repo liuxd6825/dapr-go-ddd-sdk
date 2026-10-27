@@ -16,7 +16,7 @@ func Init(app *iris.Application, baseUrl string, env *envs.Env) {
 
 	RegisterSchema(app, baseUrl, env)
 	RegisterHtml(app, baseUrl, env)
-	RegisterCdcToNeo4j(app, baseUrl, env)
+	//RegisterCdcToNeo4j(app, baseUrl, env)
 	RegisterSub(app, baseUrl, env)
 	RegisterRecord(app, baseUrl, env, dbKey)
 	RegisterRecordDay(app, baseUrl, env, dbKey)
