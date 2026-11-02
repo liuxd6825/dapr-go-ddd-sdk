@@ -3,6 +3,9 @@ package restapi
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"regexp"
 
 	"github.com/liuxd6825/dapr-go-ddd-sdk/pkg/core/restapp"
 
@@ -24,6 +27,7 @@ type UserAPI struct {
 	env               *envs.Env
 	userService       *service.UserService
 	oryService        *service2.OryService
+	fsService         *service.FsService
 	tenantUserService *service.TenantUserService
 	rootPath          string
 	mongoDbKey        string
@@ -36,6 +40,7 @@ func NewUserAPI(env *envs.Env, rootPath string, mongoDbKey string, oryService *s
 		oryService:        oryService,
 		userService:       service.NewUserService(mongoDbKey, oryService),
 		tenantUserService: service.NewTenantUserService(mongoDbKey),
+		fsService:         service.NewFsService(mongoDbKey),
 		rootPath:          rootPath,
 	}
 }
@@ -43,6 +48,7 @@ func NewUserAPI(env *envs.Env, rootPath string, mongoDbKey string, oryService *s
 func (s *UserAPI) NewAPIController(app *iris.Application) *restapi.ApiController {
 	ctl := restapi.NewController(app, s.rootPath+"/sys", "sys.UserAPI", s)
 	ctl.Post("/user", "Create")
+	ctl.Post("/user:upload-header-image", "UploadHeaderImage")
 	ctl.Put("/user", "Update")
 	ctl.Put("/user:reset-password", "ResetPassword")
 	ctl.Put("/user:update-password", "UpdatePassword")
@@ -52,6 +58,7 @@ func (s *UserAPI) NewAPIController(app *iris.Application) *restapi.ApiController
 	ctl.GetPaging("/user", "FindPaging")
 	ctl.GetPaging("/user:view", "FindPagingByTenantId")
 	ctl.GetPaging("/user:out", "FindPagingByNotInTenantUser")
+	ctl.GetData("/user:download", "Download")
 	return ctl
 }
 
@@ -83,6 +90,41 @@ func (s *UserAPI) Create(ctx context.Context, cmd *command.UserCreateCommand) er
 		return s.userService.Create(ctx, cmd)
 	})
 	return err
+}
+
+func (s *UserAPI) UploadHeaderImage(ctx context.Context, iCtx iris.Context) error {
+	file, _, err := iCtx.FormFile("file")
+	userId := iCtx.FormValue("userId")
+	extName := iCtx.FormValue("extName")
+	if err != nil {
+		return err
+	}
+	data, err := io.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	fileName := fmt.Sprintf("%s.%s", userId, extName)
+	if !s.fsService.Exists(fileName) {
+		s.fsService.Create(fileName)
+	}
+	err = s.fsService.WriteFile(fileName, data)
+	return err
+}
+
+func (s *UserAPI) Download(ctx context.Context, ictx iris.Context) error {
+	fileName := ictx.FormValue("file-name")
+
+	has := s.fsService.Exists(fileName)
+	if !has {
+		return errors.New("没有找到文件")
+	}
+
+	err := s.fsService.Download(ictx, fileName, fileName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *UserAPI) Update(ctx context.Context, cmd *command.UserUpdateCommand) error {
@@ -144,7 +186,23 @@ func (s *UserAPI) Delete(ctx context.Context, cmd *command.UserDeleteCommand) er
 		if err != nil {
 			return err
 		}
-		return s.userService.Delete(ctx, cmd)
+		user, err := s.userService.FindById(ctx, cmd.Data.Id)
+		if err != nil {
+			return err
+		}
+		err = s.userService.Delete(ctx, cmd)
+		if err != nil {
+			return err
+		}
+		if user.HeadPicture != "" {
+			re := regexp.MustCompile(`file-name=([^&]+)`)
+			matches := re.FindStringSubmatch(user.HeadPicture)
+			if len(matches) > 1 {
+				fileName := matches[1]
+				s.fsService.RemoveFile(fileName)
+			}
+		}
+		return nil
 	})
 	return err
 }
